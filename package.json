@@ -1,0 +1,30 @@
+{
+  "name": "jobloom",
+  "version": "1.0.0",
+  "description": "A monorepo for JobloomMonorepo - Chrome extension and job board for tracking sponsored roles",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev:web",
+    "dev:web": "npm run dev -w packages/web",
+    "dev:extension": "npm run dev -w packages/extension",
+    "dev:convex": "npm run dev -w packages/convex",
+    "dev:all": "concurrently \"npm run dev:web\" \"npm run dev:extension\"",
+    "build": "npm run build --workspaces",
+    "lint": "npm run lint --workspaces",
+    "test": "npm run test --workspaces",
+    "convex:deploy": "npm run build -w packages/convex",
+    "convex:codegen": "npm run codegen -w packages/convex"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "@jobloom/convex",
+  "version": "1.0.0",
+  "description": "Convex backend for JobloomMonorepo job tracking",
+  "main": "index.js",
+  "scripts": {
+    "dev": "convex dev",
+    "build": "convex deploy",
+    "codegen": "convex codegen"
+  },
+  "dependencies": {
+    "convex": "^1.0.0",
+    "svix": "^1.68.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}
