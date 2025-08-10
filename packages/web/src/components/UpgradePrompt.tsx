@@ -36,7 +36,7 @@ export function UpgradePrompt() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <Card className="bg-gradient-to-br from-indigo-50 to-purple-50 border-indigo-100 shadow-sm">
+        <Card className="bg-gradient-to-br from-primary/10 to-secondary/10 border-primary/20 shadow-sm">
           <CardContent className="p-8">
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold text-foreground mb-4">
@@ -75,7 +75,7 @@ export function UpgradePrompt() {
                 <Button
                   onMouseEnter={() => setIsHovered(true)}
                   onMouseLeave={() => setIsHovered(false)}
-                  className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold py-6 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 text-lg"
+                  className="bg-gradient-to-r from-primary to-secondary text-white font-semibold py-6 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 text-lg"
                   size="lg"
                 >
                   {isHovered ? "🚀 Upgrade Now" : "🌟 Upgrade to Pro"}

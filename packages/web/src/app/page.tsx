@@ -16,7 +16,7 @@ export default async function Home() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-indigo-50 via-white to-cyan-50 overflow-hidden pt-16">
+      <section className="relative bg-gradient-to-br from-primary/5 via-white to-secondary/5 overflow-hidden pt-16">
         {/* Animated background elements */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
@@ -28,7 +28,7 @@ export default async function Home() {
           <div className="text-center">
             <h1 className="text-4xl font-extrabold text-gray-900 sm:text-5xl lg:text-6xl animate-fade-in-up">
               Stop Missing
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 animate-gradient">
+              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary animate-gradient">
                 Sponsored Job Opportunities
               </span>
             </h1>

@@ -133,7 +133,7 @@ export default function Header() {
             >
               🎯
             </motion.span>
-            <span className="text-xl font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">
+            <span className="text-xl font-bold text-gray-900 group-hover:text-primary transition-colors">
               Jobloom
             </span>
           </Link>
@@ -161,7 +161,7 @@ export default function Header() {
                   <span className="sr-only">Toggle menu</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+              <SheetContent side="right" className="w-full sm:w-full">
                 <SheetHeader>
                   <SheetTitle>
                     <Link
@@ -176,11 +176,11 @@ export default function Header() {
                     </Link>
                   </SheetTitle>
                 </SheetHeader>
-                <div className="flex flex-col space-y-6 mt-6">
+                <div className="flex flex-col space-y-6 mt-6 h-full">
                   <nav className="flex flex-col space-y-4">
                     <NavItems />
                   </nav>
-                  <div className="pt-4 border-t border-gray-200">
+                  <div className="pt-4 border-t border-gray-200 mt-auto">
                     <AuthButtons />
                   </div>
                   {isSignedIn && (

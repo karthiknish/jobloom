@@ -16,7 +16,7 @@ export default function NotFound() {
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ type: "spring", stiffness: 200, damping: 15 }}
-          className="text-9xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 mb-4"
+          className="text-9xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary mb-4"
         >
           404
         </motion.div>
@@ -48,7 +48,7 @@ export default function NotFound() {
         >
           <Link
             href="/"
-            className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all transform hover:scale-105 shadow-lg"
+            className="px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white font-medium rounded-lg hover:from-primary hover:to-secondary/90 transition-all transform hover:scale-105 shadow-lg"
           >
             Go Back Home
           </Link>
@@ -70,7 +70,7 @@ export default function NotFound() {
             Need help?{" "}
             <Link
               href="/contact"
-              className="text-indigo-600 hover:text-indigo-700 underline"
+              className="text-primary hover:text-primary/80 underline"
             >
               Contact Support
             </Link>

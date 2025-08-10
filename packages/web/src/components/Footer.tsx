@@ -15,7 +15,7 @@ export default function Footer() {
       className="mt-24 text-gray-400"
     >
       {/* Decorative gradient top border */}
-      <div className="h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
+      <div className="h-1 bg-gradient-to-r from-primary via-secondary to-pink-500" />
 
       {/* Main footer */}
       <div className="bg-gray-900">

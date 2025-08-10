@@ -7,6 +7,22 @@ import { useUser } from "@clerk/nextjs";
 import { useApiQuery } from "@/hooks/useApi";
 import { dashboardApi } from "@/utils/api/dashboard";
 import { importJobsFromCSV, importJobsFromAPI, downloadSampleCSV } from "@/utils/jobImport";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 
 interface JobImportModalProps {
   isOpen: boolean;
@@ -102,53 +118,39 @@ export function JobImportModal({ isOpen, onClose, onImportComplete }: JobImportM
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-gray-900">Import Jobs</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-500"
-          >
-            <span className="text-2xl">&times;</span>
-          </button>
-        </div>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Import Jobs</DialogTitle>
+        </DialogHeader>
 
         {/* Import Method Selection */}
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <Label className="block text-sm font-medium mb-2">
             Import Method
-          </label>
+          </Label>
           <div className="grid grid-cols-2 gap-4">
-            <button
+            <Button
+              variant={importMethod === "csv" ? "default" : "outline"}
               onClick={() => setImportMethod("csv")}
-              className={`p-4 border rounded-lg text-center ${
-                importMethod === "csv"
-                  ? "border-indigo-500 bg-indigo-50"
-                  : "border-gray-300 hover:border-gray-400"
-              }`}
+              className="p-4 h-auto flex flex-col items-center justify-center gap-2"
             >
               <div className="font-medium">CSV File</div>
-              <div className="text-sm text-gray-500 mt-1">
+              <div className="text-xs opacity-80">
                 Upload jobs from a spreadsheet
               </div>
-            </button>
-            <button
+            </Button>
+            <Button
+              variant={importMethod === "api" ? "default" : "outline"}
               onClick={() => setImportMethod("api")}
-              className={`p-4 border rounded-lg text-center ${
-                importMethod === "api"
-                  ? "border-indigo-500 bg-indigo-50"
-                  : "border-gray-300 hover:border-gray-400"
-              }`}
+              className="p-4 h-auto flex flex-col items-center justify-center gap-2"
             >
               <div className="font-medium">Job Board API</div>
-              <div className="text-sm text-gray-500 mt-1">
+              <div className="text-xs opacity-80">
                 Import from LinkedIn, Indeed, etc.
               </div>
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -156,28 +158,28 @@ export function JobImportModal({ isOpen, onClose, onImportComplete }: JobImportM
         {importMethod === "csv" && (
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <Label className="block text-sm font-medium mb-2">
                 Upload CSV File
-              </label>
-              <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+              </Label>
+              <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-lg">
                 <div className="space-y-1 text-center">
-                  <div className="flex text-sm text-gray-600">
-                    <label className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500">
+                  <div className="flex text-sm justify-center">
+                    <Label className="relative cursor-pointer rounded-md font-medium hover:opacity-80">
                       <span>Upload a file</span>
-                      <input
+                      <Input
                         type="file"
                         className="sr-only"
                         accept=".csv,text/csv"
                         onChange={handleFileChange}
                       />
-                    </label>
+                    </Label>
                     <p className="pl-1">or drag and drop</p>
                   </div>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs opacity-70">
                     CSV files only
                   </p>
                   {csvFile && (
-                    <p className="text-sm text-gray-900 mt-2">
+                    <p className="text-sm mt-2">
                       Selected: {csvFile.name}
                     </p>
                   )}
@@ -195,30 +197,29 @@ export function JobImportModal({ isOpen, onClose, onImportComplete }: JobImportM
                     Download our sample CSV template to get started
                   </p>
                 </div>
-                <button
+                <Button
+                  variant="outline"
                   onClick={downloadSampleCSV}
-                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
                   Download Template
-                </button>
+                </Button>
               </div>
             </div>
 
             <div className="flex justify-end space-x-3">
-              <button
+              <Button
+                variant="outline"
                 onClick={onClose}
                 disabled={isImporting}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={handleCsvImport}
                 disabled={isImporting || !csvFile}
-                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
               >
                 {isImporting ? "Importing..." : "Import CSV"}
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -227,44 +228,43 @@ export function JobImportModal({ isOpen, onClose, onImportComplete }: JobImportM
         {importMethod === "api" && (
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <Label className="block text-sm font-medium mb-2">
                 Job Board
-              </label>
-              <select
-                value={apiSource}
-                onChange={(e) => setApiSource(e.target.value as "linkedin" | "indeed" | "glassdoor" | "custom")}
-                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-              >
-                <option value="linkedin">LinkedIn</option>
-                <option value="indeed">Indeed</option>
-                <option value="glassdoor">Glassdoor</option>
-                <option value="custom">Other (Custom)</option>
-              </select>
+              </Label>
+              <Select value={apiSource} onValueChange={setApiSource}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="linkedin">LinkedIn</SelectItem>
+                  <SelectItem value="indeed">Indeed</SelectItem>
+                  <SelectItem value="glassdoor">Glassdoor</SelectItem>
+                  <SelectItem value="custom">Other (Custom)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <Label className="block text-sm font-medium mb-2">
                 Search Query
-              </label>
-              <input
+              </Label>
+              <Input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="e.g., software engineer, marketing manager"
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <Label className="block text-sm font-medium mb-2">
                 Location
-              </label>
-              <input
+              </Label>
+              <Input
                 type="text"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
                 placeholder="e.g., San Francisco, Remote"
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
               />
             </div>
 
@@ -294,24 +294,23 @@ export function JobImportModal({ isOpen, onClose, onImportComplete }: JobImportM
             </div>
 
             <div className="flex justify-end space-x-3">
-              <button
+              <Button
+                variant="outline"
                 onClick={onClose}
                 disabled={isImporting}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={handleApiImport}
                 disabled={isImporting}
-                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
               >
                 {isImporting ? "Importing..." : "Import from API"}
-              </button>
+              </Button>
             </div>
           </div>
         )}
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
