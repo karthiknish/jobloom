@@ -160,6 +160,20 @@ export function CvAnalysisHistory({ analyses }: CvAnalysisHistoryProps) {
                         {analysis.strengths.slice(0, 2).join(", ")}
                         {analysis.strengths.length > 2 && "..."}
                       </p>
+                      {analysis.atsCompatibility && (
+                        <p className="text-sm text-gray-600 mt-1">
+                          <span className="font-medium">ATS Score:</span>{" "}
+                          <span className={
+                            analysis.atsCompatibility.score >= 80 
+                              ? "text-green-600" 
+                              : analysis.atsCompatibility.score >= 60 
+                                ? "text-yellow-600" 
+                                : "text-red-600"
+                          }>
+                            {analysis.atsCompatibility.score}/100
+                          </span>
+                        </p>
+                      )}
                     </div>
                   )}
               </div>

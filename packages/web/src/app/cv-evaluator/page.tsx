@@ -150,15 +150,15 @@ export default function CvEvaluatorPage() {
                 <div className="p-6">
                   <div className="flex items-center">
                     <div className="flex-shrink-0 bg-yellow-100 rounded-lg p-3">
-                      <span className="text-2xl">🎯</span>
+                      <span className="text-2xl">🤖</span>
                     </div>
                     <div className="ml-5 w-0 flex-1">
                       <dl>
                         <dt className="text-sm font-medium text-gray-600 truncate">
-                          Latest Score
+                          Latest ATS Score
                         </dt>
                         <dd className="text-2xl font-bold text-gray-900">
-                          {cvStats.recentAnalysis?.overallScore || "N/A"}
+                          {cvStats.recentAnalysis?.atsCompatibility?.score || "N/A"}
                         </dd>
                       </dl>
                     </div>

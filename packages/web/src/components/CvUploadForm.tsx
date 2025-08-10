@@ -240,13 +240,22 @@ export function CvUploadForm({ userId }: CvUploadFormProps) {
           💡 Tips for better analysis:
         </h4>
         <ul className="text-sm text-blue-800 space-y-1">
-          <li>• Use a clean, well-formatted CV</li>
+          <li>• Use a clean, well-formatted CV without complex layouts</li>
           <li>• Include specific role and industry for targeted feedback</li>
           <li>
             • Ensure your CV has clear sections (Experience, Skills, Education)
           </li>
           <li>• Remove any sensitive personal information before uploading</li>
         </ul>
+        <div className="mt-3 p-3 bg-yellow-50 rounded border border-yellow-200">
+          <h5 className="text-xs font-medium text-yellow-900 mb-1">
+            🤖 ATS Optimization Tip:
+          </h5>
+          <p className="text-xs text-yellow-800">
+            For best results with Applicant Tracking Systems, use standard section headings 
+            (Work Experience, Skills, Education) and avoid graphics, tables, or columns.
+          </p>
+        </div>
       </div>
     </form>
   );
