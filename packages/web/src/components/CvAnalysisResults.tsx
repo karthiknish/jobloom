@@ -1,9 +1,10 @@
 "use client";
 
 import { format } from "date-fns";
+import type { CvAnalysis } from "../types/convex";
 
 interface CvAnalysisResultsProps {
-  analysis: any; // We'll type this properly based on the schema
+  analysis: CvAnalysis;
 }
 
 export function CvAnalysisResults({ analysis }: CvAnalysisResultsProps) {

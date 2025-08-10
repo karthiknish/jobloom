@@ -6,9 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "build:ignore-types": "next build --no-lint",
+    "vercel-build": "next build"
   },
   "dependencies": {
+    "@jobloom/convex": "workspace:*",
     "@clerk/nextjs": "^6.0.0",
     "@google/generative-ai": "^0.24.1",
     "@heroicons/react": "^2.0.0",

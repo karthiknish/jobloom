@@ -2,34 +2,31 @@
 
 import { useState } from "react";
 import { useUser } from "@clerk/nextjs";
-import { useQuery } from "convex/react";
-import { anyApi } from "convex/server";
-// Runtime proxy for Convex functions; loosen typing for now
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const api: any = anyApi;
 import { FeatureGate } from "../../components/UpgradePrompt";
 import { CvUploadForm } from "../../components/CvUploadForm";
 import { CvAnalysisHistory } from "../../components/CvAnalysisHistory";
 import { motion } from "framer-motion";
+import { useApiQuery } from "../../hooks/useApi";
+import { cvEvaluatorApi } from "../../utils/api/cvEvaluator";
 
 export default function CvEvaluatorPage() {
   const { user } = useUser();
   const [activeTab, setActiveTab] = useState<"upload" | "history">("upload");
 
-  const userRecord = useQuery(
-    api.users.getUserByClerkId,
-    user ? { clerkId: user.id } : "skip",
-  );
+  const userRecord = useApiQuery(
+    () => user ? cvEvaluatorApi.getUserByClerkId(user.id) : Promise.reject(new Error("No user")),
+    [user?.id]
+  ).data;
 
-  const cvAnalyses = useQuery(
-    api.cvAnalysis.getUserCvAnalyses,
-    userRecord ? { userId: userRecord._id } : "skip",
-  );
+  const cvAnalyses = useApiQuery(
+    () => userRecord ? cvEvaluatorApi.getUserCvAnalyses(userRecord._id) : Promise.reject(new Error("No user record")),
+    [userRecord?._id]
+  ).data;
 
-  const cvStats = useQuery(
-    api.cvAnalysis.getCvAnalysisStats,
-    userRecord ? { userId: userRecord._id } : "skip",
-  );
+  const cvStats = useApiQuery(
+    () => userRecord ? cvEvaluatorApi.getCvAnalysisStats(userRecord._id) : Promise.reject(new Error("No user record")),
+    [userRecord?._id]
+  ).data;
 
   if (!user) {
     return (

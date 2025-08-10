@@ -39,3 +39,22 @@ The monorepo uses npm workspaces to manage multiple packages:
 ## Development
 
 Each package has its own development environment. See individual package READMEs for specific setup instructions.
+
+### Chrome Extension Configuration
+
+The Chrome extension uses environment variables for backend configuration. See `packages/extension/README.md` for details.
+
+## Deployment
+
+### Vercel Deployment
+
+This monorepo is configured for deployment to Vercel. The web application (`packages/web`) will be automatically built and deployed.
+
+1. Push your code to a Git repository
+2. Connect your repository to Vercel
+3. Configure the project with these settings:
+   - Build Command: `npm run vercel-build`
+   - Output Directory: `.next`
+   - Root Directory: `packages/web`
+
+The `vercel.json` file in the root handles the routing for the Next.js application.

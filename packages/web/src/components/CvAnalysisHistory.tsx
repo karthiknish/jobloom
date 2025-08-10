@@ -4,21 +4,27 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { CvAnalysisResults } from "./CvAnalysisResults";
 import { EyeIcon, TrashIcon } from "@heroicons/react/24/outline";
-import { useMutation } from "convex/react";
-import { api } from "../../convex/_generated/api";
 import toast from "react-hot-toast";
+import type { CvAnalysis, Id } from "../types/convex";
+import { useApiMutation } from "../hooks/useApi";
+import { cvEvaluatorApi } from "../utils/api/cvEvaluator";
 
 interface CvAnalysisHistoryProps {
-  analyses: any[]; // We'll type this properly based on the schema
+  analyses: CvAnalysis[];
 }
 
 export function CvAnalysisHistory({ analyses }: CvAnalysisHistoryProps) {
-  const [selectedAnalysis, setSelectedAnalysis] = useState<any>(null);
+  const [selectedAnalysis, setSelectedAnalysis] = useState<CvAnalysis | null>(null);
   const [showResults, setShowResults] = useState(false);
 
-  const deleteAnalysis = useMutation(api.cvAnalysis.deleteCvAnalysis);
+  const { mutate: deleteAnalysis } = useApiMutation(
+    (variables: Record<string, unknown>) => {
+      const { analysisId } = variables;
+      return cvEvaluatorApi.deleteCvAnalysis(analysisId as string);
+    }
+  );
 
-  const handleViewAnalysis = (analysis: any) => {
+  const handleViewAnalysis = (analysis: CvAnalysis) => {
     setSelectedAnalysis(analysis);
     setShowResults(true);
   };
@@ -29,7 +35,7 @@ export function CvAnalysisHistory({ analyses }: CvAnalysisHistoryProps) {
     }
 
     try {
-      await deleteAnalysis({ analysisId: analysisId as any });
+      await deleteAnalysis({ analysisId: analysisId as Id<"cvAnalyses"> });
       toast.success("Analysis deleted successfully");
     } catch (error) {
       console.error("Error deleting analysis:", error);

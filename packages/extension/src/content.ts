@@ -89,7 +89,8 @@ class JobTracker {
   private observer: MutationObserver | null = null;
 
   constructor() {
-    this.convexUrl = 'https://your-convex-deployment.convex.cloud'; // This will be set from storage
+    // Default Convex URL - will be updated from storage
+    this.convexUrl = 'https://rare-chihuahua-615.convex.cloud';
     this.currentJobSite = this.detectJobSite();
     this.init();
   }
@@ -972,7 +973,7 @@ class JobTracker {
     }
   }
 
-  private clearHighlights() {
+  public clearHighlights() {
     document.querySelectorAll('.jobloom-highlighted').forEach(element => {
       element.classList.remove('jobloom-highlighted');
       (element as HTMLElement).style.border = '';
@@ -1690,6 +1691,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (peopleSearchBtn) {
       peopleSearchBtn.click();
     }
+    return true;
   }
   
   if (request.action === 'triggerAutofill') {
@@ -1697,7 +1699,24 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (autofillBtn && autofillBtn.style.display !== 'none') {
       autofillBtn.click();
     }
+    return true;
   }
+  
+  if (request.action === 'toggleHighlight') {
+    const highlightBtn = document.getElementById('jobloom-toggle') as HTMLButtonElement;
+    if (highlightBtn) {
+      highlightBtn.click();
+    }
+    return true;
+  }
+  
+  if (request.action === 'clearHighlights') {
+    const jobTracker = new JobTracker();
+    jobTracker.clearHighlights();
+    return true;
+  }
+  
+  return false;
 });
 
 function initJobloomTracker() {

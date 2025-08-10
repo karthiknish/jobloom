@@ -51,6 +51,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (tabs[0]?.id) {
         // The content script handles the highlighting now
         chrome.tabs.sendMessage(tabs[0].id, { action: "toggleHighlight" });
+        window.close(); // Close popup after triggering
       }
     });
   });
@@ -105,6 +106,7 @@ document.addEventListener("DOMContentLoaded", () => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs[0]?.id) {
         chrome.tabs.sendMessage(tabs[0].id, { action: "clearHighlights" });
+        window.close(); // Close popup after clearing
       }
     });
   });
@@ -124,7 +126,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- Authentication via web app ---
   function openAuthPage(mode: "sign-in" | "sign-up") {
     chrome.storage.sync.get(["webAppUrl"], (result) => {
-      const baseUrl = result.webAppUrl || "http://localhost:3000";
+      const baseUrl = result.webAppUrl || process.env.WEB_APP_URL || "http://localhost:3000";
       const authUrl = `${baseUrl}/${mode}?extension=true&return_to=extension`;
 
       // Show a message to the user
@@ -172,11 +174,15 @@ document.addEventListener("DOMContentLoaded", () => {
                       // Fallback: show success message and ask user to refresh
                       showAuthSuccessMessage();
                     } else if (response && response.userId) {
-                      chrome.storage.sync.set({ userId: response.userId });
-                      // Close the auth tab
-                      chrome.tabs.remove(tabId);
-                      // Refresh popup to show features
-                      window.location.reload();
+                      chrome.storage.sync.set({ userId: response.userId }, () => {
+                        console.log("UserId saved from web app:", response.userId);
+                        // Ensure user exists in Convex
+                        ensureUserExists(response.userId);
+                        // Close the auth tab
+                        chrome.tabs.remove(tabId);
+                        // Refresh popup to show features
+                        window.location.reload();
+                      });
                     } else {
                       // Fallback: show success message
                       showAuthSuccessMessage();
@@ -201,6 +207,43 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  function ensureUserExists(clerkId: string) {
+    chrome.storage.sync.get(["convexUrl"], async (result) => {
+      const convexUrl = result.convexUrl || process.env.CONVEX_URL || "https://rare-chihuahua-615.convex.cloud";
+      
+      if (!convexUrl || convexUrl.includes("your-convex")) return;
+
+      try {
+        // Check if user exists
+        const queryResp = await fetch(`${convexUrl}/api/query`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            path: "users:getUserByClerkId",
+            args: { clerkId },
+          }),
+        });
+        
+        if (!queryResp.ok) return;
+        const existing = await queryResp.json();
+        if (existing) return; // user already present
+
+        // Create minimal user
+        await fetch(`${convexUrl}/api/mutation`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            path: "users:createUser",
+            args: { email: "", name: "", clerkId },
+          }),
+        });
+        console.log("Created user on Convex backend");
+      } catch (e) {
+        console.error("Error ensuring user exists", e);
+      }
+    });
+  }
+
   signinBtn?.addEventListener("click", () => {
     openAuthPage("sign-in");
   });
@@ -212,6 +255,23 @@ document.addEventListener("DOMContentLoaded", () => {
   // Sign out logic
   signoutBtn?.addEventListener("click", () => {
     chrome.storage.sync.remove(["userId"], () => {
+      // Also remove from localStorage if present
+      chrome.tabs.query({}, (tabs) => {
+        tabs.forEach(tab => {
+          if (tab.url && (tab.url.includes("localhost") || tab.url.includes("jobloom"))) {
+            chrome.scripting.executeScript({
+              target: { tabId: tab.id! },
+              func: () => {
+                localStorage.removeItem("__clerk_user");
+                localStorage.removeItem("__clerk_session");
+              }
+            }).catch(() => {
+              // Ignore errors
+            });
+          }
+        });
+      });
+      
       // Simply reload the popup; UI will revert to signed-out state
       window.location.reload();
     });
@@ -437,7 +497,7 @@ function showSettings() {
   `;
 
   // Load current settings
-  const DEFAULT_CONVEX_URL = "https://rare-chihuahua-615.convex.cloud";
+  const DEFAULT_CONVEX_URL = process.env.CONVEX_URL;
 
   chrome.storage.sync.get(
     [
@@ -661,7 +721,7 @@ function loadStats() {
 }
 
 function loadSettings() {
-  const DEFAULT_CONVEX_URL = "https://rare-chihuahua-615.convex.cloud";
+  const DEFAULT_CONVEX_URL = process.env.CONVEX_URL;
   chrome.storage.sync.get(["convexUrl"], (result) => {
     if (!result.convexUrl) {
       // Persist the default so future loads skip this step

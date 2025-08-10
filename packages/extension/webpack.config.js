@@ -1,5 +1,6 @@
 const path = require("path");
 const CopyPlugin = require("copy-webpack-plugin");
+const Dotenv = require("dotenv-webpack");
 
 module.exports = {
   entry: {
@@ -26,6 +27,14 @@ module.exports = {
     clean: true,
   },
   plugins: [
+    new Dotenv({
+      path: "./.env",
+      safe: true,
+      allowEmptyValues: true,
+      systemvars: true,
+      silent: true,
+      defaults: false,
+    }),
     new CopyPlugin({
       patterns: [
         { from: "manifest.json", to: "manifest.json" },

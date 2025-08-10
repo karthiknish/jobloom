@@ -1,15 +1,12 @@
 "use client";
 
 import { useUser } from "@clerk/nextjs";
-import { useQuery, useMutation } from "convex/react";
-import { anyApi } from "convex/server";
-// Runtime proxy for Convex functions; loosen typing for now
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const api: any = anyApi;
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
+import { useApiQuery, useApiMutation } from "../../hooks/useApi";
+import { dashboardApi } from "../../utils/api/dashboard";
 
 export default function Dashboard() {
   const { user } = useUser();
@@ -17,49 +14,36 @@ export default function Dashboard() {
   const [showRecruitmentAgency, setShowRecruitmentAgency] =
     useState<boolean>(true);
 
-  const userRecord = useQuery(
-    api.users.getUserByClerkId,
-    user ? { clerkId: user.id } : "skip",
-  );
+  // Expose user ID to extension for authentication
+  useEffect(() => {
+    if (user) {
+      // Set user ID in window object for extension access
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).__clerk_user = {
+        id: user.id,
+        email: user.primaryEmailAddress?.emailAddress,
+        name: user.fullName,
+      };
 
-  const applications = useQuery(
-    api.applications.getApplicationsByUser,
-    userRecord ? { userId: userRecord._id } : "skip",
-  );
-
-  const jobStats = useQuery(
-    api.jobs.getJobStats,
-    userRecord ? { userId: userRecord._id } : "skip",
-  );
-
-  const updateApplicationStatus = useMutation(
-    api.applications.updateApplicationStatus,
-  );
-
-  const handleStatusChange = async (
-    applicationId: string,
-    newStatus: string,
-  ) => {
-    try {
-      await updateApplicationStatus({
-        applicationId: applicationId as any,
-        status: newStatus as any,
-      });
-      toast.success("Application status updated!");
-    } catch (_error) {
-      // We intentionally ignore the specific error details here in the UI.
-      toast.error("Failed to update status");
+      // Also set in localStorage for extension access
+      localStorage.setItem(
+        "__clerk_user",
+        JSON.stringify({
+          id: user.id,
+          email: user.primaryEmailAddress?.emailAddress,
+          name: user.fullName,
+        })
+      );
     }
-  };
+  }, [user]);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const filteredApplications = applications?.filter((app: any) => {
-    const statusMatch =
-      selectedStatus === "all" || app.status === selectedStatus;
-    const agencyMatch = showRecruitmentAgency || !app.job?.isRecruitmentAgency;
-    return statusMatch && agencyMatch;
-  });
+  // Fetch user record
+  const { data: userRecord } = useApiQuery(
+    () => user ? dashboardApi.getUserByClerkId(user.id) : Promise.reject(new Error("No user")),
+    [user?.id]
+  );
 
+  // Application & status types inferred from local statusColors keys
   const statusColors = {
     interested: "bg-blue-100 text-blue-800",
     applied: "bg-yellow-100 text-yellow-800",
@@ -67,7 +51,51 @@ export default function Dashboard() {
     offered: "bg-green-100 text-green-800",
     rejected: "bg-red-100 text-red-800",
     withdrawn: "bg-gray-100 text-gray-800",
+  } as const;
+  type ApplicationStatus = keyof typeof statusColors;
+  
+  // Fetch applications
+  const { data: applications } = useApiQuery(
+    () => userRecord ? dashboardApi.getApplicationsByUser(userRecord._id) : Promise.reject(new Error("No user record")),
+    [userRecord?._id]
+  );
+
+  // Fetch job stats
+  const { data: jobStats } = useApiQuery(
+    () => userRecord ? dashboardApi.getJobStats(userRecord._id) : Promise.reject(new Error("No user record")),
+    [userRecord?._id]
+  );
+
+  // Update application status mutation
+  const { mutate: updateApplicationStatus } = useApiMutation(
+    (variables: Record<string, unknown>) => {
+      const { applicationId, status } = variables;
+      return dashboardApi.updateApplicationStatus(
+        applicationId as string,
+        status as string
+      );
+    }
+  );
+
+  const handleStatusChange = async (
+    applicationId: string,
+    newStatus: ApplicationStatus
+  ) => {
+    try {
+      await updateApplicationStatus({ applicationId, status: newStatus });
+      toast.success("Application status updated!");
+    } catch {
+      // We intentionally ignore the specific error details here in the UI.
+      toast.error("Failed to update status");
+    }
   };
+
+  const filteredApplications = applications?.filter((app) => {
+    const statusMatch =
+      selectedStatus === "all" || app.status === selectedStatus;
+    const agencyMatch = showRecruitmentAgency || !app.job?.isRecruitmentAgency;
+    return statusMatch && agencyMatch;
+  });
 
   if (!user) {
     return (
@@ -278,7 +306,7 @@ export default function Dashboard() {
 
           {filteredApplications && filteredApplications.length > 0 ? (
             <ul className="divide-y divide-gray-200">
-              {filteredApplications.map((application: any, index: number) => (
+              {filteredApplications.map((application, index: number) => (
                 <motion.li
                   key={application._id}
                   initial={{ opacity: 0, x: -20 }}
@@ -320,7 +348,7 @@ export default function Dashboard() {
                           {application.appliedDate
                             ? format(
                                 new Date(application.appliedDate),
-                                "MMM d, yyyy",
+                                "MMM d, yyyy"
                               )
                             : "Not yet"}
                         </span>
@@ -330,7 +358,10 @@ export default function Dashboard() {
                       <select
                         value={application.status}
                         onChange={(e) =>
-                          handleStatusChange(application._id, e.target.value)
+                          handleStatusChange(
+                            application._id,
+                            e.target.value as ApplicationStatus
+                          )
                         }
                         className="block w-32 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-lg shadow-sm"
                       >

@@ -36,8 +36,8 @@ export default function NotFound() {
           transition={{ delay: 0.3 }}
           className="text-lg text-gray-600 mb-8 max-w-md mx-auto"
         >
-          It looks like you've wandered off the job search path. The page you're
-          looking for doesn't exist or has been moved.
+          It looks like you&apos;ve wandered off the job search path. The page you&apos;re
+          looking for doesn&apos;t exist or has been moved.
         </motion.p>
 
         <motion.div

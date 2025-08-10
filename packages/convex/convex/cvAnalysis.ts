@@ -180,22 +180,32 @@ export const getCvAnalysisTemplates = query({
     jobLevel: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    let query = ctx.db.query("cvAnalysisTemplates");
-
+    const query = ctx.db.query("cvAnalysisTemplates");
+    
     if (args.industry) {
-      query = query.withIndex("by_industry", (q) =>
-        q.eq("industry", args.industry),
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const filteredQuery = query.withIndex("by_industry", (q) =>
+        q.eq("industry", args.industry as string),
       );
+      const templates = await filteredQuery.collect();
+      
+      if (args.jobLevel) {
+        return templates.filter(
+          (t) => t.jobLevel === args.jobLevel && t.isActive,
+        );
+      }
+      
+      return templates.filter((t) => t.isActive);
     }
-
+    
     const templates = await query.collect();
-
+    
     if (args.jobLevel) {
       return templates.filter(
         (t) => t.jobLevel === args.jobLevel && t.isActive,
       );
     }
-
+    
     return templates.filter((t) => t.isActive);
   },
 });

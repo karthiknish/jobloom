@@ -26,19 +26,10 @@ export function UpgradePrompt({
 }
 
 interface FeatureGateProps {
-  feature: string;
-  fallback?: React.ReactNode;
-  upgradePrompt?: {
-    title: string;
-    description: string;
-  };
   children: React.ReactNode;
 }
 
 export function FeatureGate({
-  feature,
-  fallback,
-  upgradePrompt,
   children,
 }: FeatureGateProps) {
   // All features are now available to all users

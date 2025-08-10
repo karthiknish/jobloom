@@ -1,12 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation } from "convex/react";
-import { api } from "../../../convex/_generated/api";
 import toast from "react-hot-toast";
+import { useApiMutation } from "../../hooks/useApi";
+import { contactApi } from "../../utils/api/contact";
 
 export default function ContactPage() {
-  const createContact = useMutation(api.contacts.createContact);
+  const { mutate: createContact } = useApiMutation(
+    (variables: Record<string, unknown>) => {
+      const { name, email, message } = variables;
+      return contactApi.createContact({
+        name: name as string,
+        email: email as string,
+        message: message as string
+      });
+    }
+  );
+  
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");

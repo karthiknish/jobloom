@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "webpack --mode development --watch",
     "build": "webpack --mode production",
+    "build:dev": "CONVEX_URL=https://rare-chihuahua-615.convex.cloud WEB_APP_URL=http://localhost:3000 webpack --mode production",
+    "build:prod": "CONVEX_URL=https://rare-chihuahua-615.convex.cloud WEB_APP_URL=https://jobloom.ai webpack --mode production",
     "lint": "eslint src --ext .ts,.js"
   },
   "dependencies": {
@@ -13,7 +15,9 @@
   },
   "devDependencies": {
     "@types/chrome": "^0.0.246",
+    "@types/node": "^20.0.0",
     "copy-webpack-plugin": "^11.0.0",
+    "dotenv-webpack": "^8.0.0",
     "ts-loader": "^9.4.0",
     "webpack": "^5.88.0",
     "webpack-cli": "^5.1.0",

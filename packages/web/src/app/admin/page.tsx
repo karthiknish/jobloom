@@ -1,11 +1,11 @@
 "use client";
 
 import { useUser } from "@clerk/nextjs";
-import { useQuery, useMutation } from "convex/react";
-import { api } from "../../../convex/_generated/api";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { useRateLimit } from "../../hooks/useRateLimit";
+import { useApiQuery, useApiMutation } from "../../hooks/useApi";
+import { adminApi } from "../../utils/api/admin";
 
 export default function AdminPage() {
   const { user } = useUser();
@@ -26,13 +26,35 @@ export default function AdminPage() {
     endpoint: 'addSponsoredCompany'
   });
 
-  const userRecord = useQuery(api.users.getUserByClerkId, 
-    user ? { clerkId: user.id } : "skip"
-  );
+  const userRecord = useApiQuery(
+    () => user ? adminApi.getUserByClerkId(user.id) : Promise.reject(new Error("No user")),
+    [user?.id]
+  ).data;
 
-  const sponsoredCompanies = useQuery(api.sponsorship.getAllSponsoredCompanies);
-  const sponsorshipStats = useQuery(api.sponsorship.getSponsorshipStats);
-  const addSponsoredCompany = useMutation(api.sponsorship.addSponsoredCompany);
+  const sponsoredCompanies = useApiQuery(
+    () => adminApi.getAllSponsoredCompanies(),
+    []
+  ).data;
+
+  const sponsorshipStats = useApiQuery(
+    () => adminApi.getSponsorshipStats(),
+    []
+  ).data;
+
+  const { mutate: addSponsoredCompany } = useApiMutation(
+    (variables: Record<string, unknown>) => {
+      const { name, aliases, sponsorshipType, description, website, industry, createdBy } = variables;
+      return adminApi.addSponsoredCompany({
+        name: name as string,
+        aliases: aliases as string[],
+        sponsorshipType: sponsorshipType as string,
+        description: description as string | undefined,
+        website: website as string | undefined,
+        industry: industry as string | undefined,
+        createdBy: createdBy as string
+      });
+    }
+  );
 
   const handleAddCompany = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,8 +82,8 @@ export default function AdminPage() {
         industry: ""
       });
       setShowAddForm(false);
-    } catch (error: any) {
-      if (error.message && error.message.includes('Rate limit exceeded')) {
+    } catch (error: unknown) {
+      if (error instanceof Error && error.message.includes('Rate limit exceeded')) {
         toast.error(`Rate limit exceeded. ${error.message}`);
       } else {
         toast.error("Failed to add sponsored company");

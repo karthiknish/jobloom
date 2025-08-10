@@ -40,7 +40,7 @@ chrome.runtime.onInstalled.addListener(() => {
   chrome.storage.sync.get(["convexUrl"], (result) => {
     if (!result.convexUrl) {
       chrome.storage.sync.set({
-        convexUrl: "https://your-convex-deployment.convex.cloud",
+        convexUrl: process.env.CONVEX_URL || "https://rare-chihuahua-615.convex.cloud",
       });
     }
   });
@@ -82,8 +82,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           if (res && res.userId) {
             chrome.storage.sync.set({ userId: res.userId }, () => {
               console.log("UserId saved from web app:", res.userId);
-              // verify user exists on Convex
-              ensureUserExists(res.userId);
             });
           }
         });
@@ -219,37 +217,4 @@ async function getOrCreateClientId(): Promise<string> {
       }
     });
   });
-}
-
-async function ensureUserExists(clerkId: string) {
-  try {
-    const { convexUrl } = await chrome.storage.sync.get("convexUrl");
-    if (!convexUrl || convexUrl.includes("your-convex")) return;
-
-    // Check if user exists
-    const queryResp = await fetch(`${convexUrl}/api/query`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        path: "users:getUserByClerkId",
-        args: { clerkId },
-      }),
-    });
-    if (!queryResp.ok) return;
-    const existing = await queryResp.json();
-    if (existing) return; // user already present
-
-    // Create minimal user
-    await fetch(`${convexUrl}/api/mutation`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        path: "users:createUser",
-        args: { email: "", name: "", clerkId },
-      }),
-    });
-    console.log("Created user on Convex backend");
-  } catch (e) {
-    console.error("Error ensuring user exists", e);
-  }
 }

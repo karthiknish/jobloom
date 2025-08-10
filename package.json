@@ -16,7 +16,8 @@
     "lint": "npm run lint --workspaces",
     "test": "npm run test --workspaces",
     "convex:deploy": "npm run build -w packages/convex",
-    "convex:codegen": "npm run codegen -w packages/convex"
+    "convex:codegen": "npm run codegen -w packages/convex",
+    "vercel-build": "npm run build -w packages/web"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

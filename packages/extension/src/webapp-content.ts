@@ -28,10 +28,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (!userId) {
       try {
         const userData =
-          localStorage.getItem("user") || localStorage.getItem("userId");
+          localStorage.getItem("user") || localStorage.getItem("__clerk_user");
         if (userData) {
-          userId =
-            typeof userData === "string" ? userData : JSON.parse(userData).id;
+          const parsedData = typeof userData === "string" ? JSON.parse(userData) : userData;
+          userId = parsedData?.id || parsedData?.clerkId;
         }
       } catch (e) {
         // Ignore parsing errors
@@ -92,6 +92,33 @@ new MutationObserver(() => {
     }
   }
 }).observe(document, { subtree: true, childList: true });
+
+// Listen for messages from the web app
+window.addEventListener("message", (event) => {
+  // Only accept messages from the same origin
+  if (event.origin !== window.location.origin) return;
+  
+  // Handle Clerk authentication success message
+  if (event.data.type === "CLERK_AUTH_SUCCESS") {
+    // Try to get user ID and notify extension
+    setTimeout(() => {
+      let userId = null;
+      
+      // Try to get user ID from various sources
+      if ((window as any).__clerk_user) {
+        userId = (window as any).__clerk_user.id;
+      } else if ((window as any).Clerk && (window as any).Clerk.user) {
+        userId = (window as any).Clerk.user.id;
+      }
+      
+      if (userId) {
+        chrome.runtime.sendMessage({ action: "authSuccess", userId });
+        // Also persist directly
+        chrome.storage.sync.set({ userId });
+      }
+    }, 1000);
+  }
+});
 
 // After existing listener for onMessage, add auto-detection
 
