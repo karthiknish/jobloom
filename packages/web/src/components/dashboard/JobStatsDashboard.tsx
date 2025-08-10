@@ -25,8 +25,16 @@ interface JobStatsDashboardProps {
 }
 
 export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
-  const statusVariants = {
-    interested: "blue",
+  const statusVariants: Record<
+    | "interested"
+    | "applied"
+    | "interviewing"
+    | "offered"
+    | "rejected"
+    | "withdrawn",
+    "yellow" | "purple" | "green" | "destructive" | "secondary" | "default"
+  > = {
+    interested: "default",
     applied: "yellow",
     interviewing: "purple",
     offered: "green",

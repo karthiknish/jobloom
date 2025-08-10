@@ -72,8 +72,16 @@ export function JobList({
   const [sortBy, setSortBy] = useState<string>("dateFound");
   const [applicationToDelete, setApplicationToDelete] = useState<Application | null>(null);
 
-  const statusVariants = {
-    interested: "blue",
+  const statusVariants: Record<
+    | "interested"
+    | "applied"
+    | "interviewing"
+    | "offered"
+    | "rejected"
+    | "withdrawn",
+    "yellow" | "purple" | "green" | "destructive" | "secondary" | "default"
+  > = {
+    interested: "default",
     applied: "yellow",
     interviewing: "purple",
     offered: "green",
@@ -126,7 +134,9 @@ export function JobList({
       <Card>
         <CardHeader>
           <CardTitle>Job Filters</CardTitle>
-          <CardDescription>Filter and sort your job applications</CardDescription>
+          <CardDescription>
+            Filter and sort your job applications
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -170,13 +180,15 @@ export function JobList({
               </Select>
             </div>
           </div>
-          
+
           <div className="flex items-center space-x-2">
             <Checkbox
-                id="show-agency"
-                checked={showRecruitmentAgency}
-                onCheckedChange={(checked) => setShowRecruitmentAgency(checked === true)}
-              />
+              id="show-agency"
+              checked={showRecruitmentAgency}
+              onCheckedChange={(checked) =>
+                setShowRecruitmentAgency(checked === true)
+              }
+            />
             <Label htmlFor="show-agency">Show Recruitment Agency Jobs</Label>
           </div>
         </CardContent>
@@ -202,7 +214,8 @@ export function JobList({
                             {application.job?.title}
                           </h3>
                           <p className="text-sm text-muted-foreground">
-                            {application.job?.company} • {application.job?.location}
+                            {application.job?.company} •{" "}
+                            {application.job?.location}
                           </p>
                         </div>
                         <div className="flex items-center space-x-2">
@@ -218,38 +231,50 @@ export function JobList({
                               </Tooltip>
                             </TooltipProvider>
                           )}
-                          <Badge variant={statusVariants[application.status as keyof typeof statusVariants] || "secondary"}>
+                          <Badge
+                            variant={
+                              statusVariants[
+                                application.status as keyof typeof statusVariants
+                              ] || "secondary"
+                            }
+                          >
                             {application.status}
                           </Badge>
                         </div>
                       </div>
-                      
+
                       <div className="mt-2 flex flex-wrap items-center text-sm text-muted-foreground gap-4">
                         <span>
-                          Found: {format(new Date(application.job?.dateFound || 0), "MMM d, yyyy")}
+                          Found:{" "}
+                          {format(
+                            new Date(application.job?.dateFound || 0),
+                            "MMM d, yyyy"
+                          )}
                         </span>
                         {application.appliedDate && (
                           <span>
-                            Applied: {format(new Date(application.appliedDate), "MMM d, yyyy")}
+                            Applied:{" "}
+                            {format(
+                              new Date(application.appliedDate),
+                              "MMM d, yyyy"
+                            )}
                           </span>
                         )}
                         {application.job?.salary && (
-                          <span>
-                            Salary: {application.job.salary}
-                          </span>
+                          <span>Salary: {application.job.salary}</span>
                         )}
                         <span className="capitalize">
                           Source: {application.job?.source}
                         </span>
                       </div>
-                      
+
                       {application.notes && (
                         <p className="mt-2 text-sm text-foreground line-clamp-2">
                           {application.notes}
                         </p>
                       )}
                     </div>
-                    
+
                     <div className="flex space-x-2">
                       <TooltipProvider>
                         <Tooltip>
@@ -267,7 +292,7 @@ export function JobList({
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
-                      
+
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -284,7 +309,7 @@ export function JobList({
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
-                      
+
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -300,15 +325,22 @@ export function JobList({
                               </AlertDialogTrigger>
                               <AlertDialogContent>
                                 <AlertDialogHeader>
-                                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                  <AlertDialogTitle>
+                                    Are you sure?
+                                  </AlertDialogTitle>
                                   <AlertDialogDescription>
-                                    This action cannot be undone. This will permanently delete the application
-                                    for "{application.job?.title}" at {application.job?.company}.
+                                    This action cannot be undone. This will
+                                    permanently delete the application for
+                                    &quot;{application.job?.title}&quot; at{" "}
+                                    {application.job?.company}.
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">
+                                  <AlertDialogAction
+                                    onClick={confirmDelete}
+                                    className="bg-destructive hover:bg-destructive/90"
+                                  >
                                     Delete
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
@@ -335,8 +367,8 @@ export function JobList({
               No jobs found
             </h3>
             <p className="text-muted-foreground mb-6">
-              {searchQuery || selectedStatus !== "all" 
-                ? "Try adjusting your filters or search terms" 
+              {searchQuery || selectedStatus !== "all"
+                ? "Try adjusting your filters or search terms"
                 : "Start by installing the Chrome extension to track jobs automatically"}
             </p>
           </CardContent>
