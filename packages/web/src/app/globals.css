@@ -22,11 +22,11 @@
   --card: 0 0% 100%;
   --card-foreground: 222.2 47.4% 11.2%;
   
-  --primary: 25 31% 29%;
-  --primary-foreground: 0 0% 100%;
-  
-  --secondary: 20 30% 75%;
-  --secondary-foreground: 222.2 47.4% 11.2%;
+  --color-primary: 25 31% 29%;
+  --color-primary-foreground: 0 0% 100%;
+
+  --color-secondary: 20 30% 75%;
+  --color-secondary-foreground: 222.2 47.4% 11.2%;
   
   --accent: 210 40% 96.1%;
   --accent-foreground: 222.2 47.4% 11.2%;
