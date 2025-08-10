@@ -2,6 +2,15 @@
 
 import { useState } from "react";
 import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { PlusCircle, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface Job {
   _id: string;
@@ -65,9 +74,22 @@ export function ApplicationForm({
     { value: "withdrawn", label: "Withdrawn" },
   ];
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const statusBadges = {
+    interested: "blue",
+    applied: "yellow",
+    interviewing: "purple",
+    offered: "green",
+    rejected: "destructive",
+    withdrawn: "secondary",
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleStatusChange = (value: string) => {
+    setFormData(prev => ({ ...prev, status: value }));
   };
 
   const addInterviewDate = () => {
@@ -116,146 +138,143 @@ export function ApplicationForm({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <h2 className="text-xl font-bold text-gray-900 mb-6">
-        {application ? "Edit Application" : "Add New Application"}
-      </h2>
-      
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Job Information (if editing existing application) */}
-        {application?.job && (
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h3 className="font-medium text-gray-900 mb-2">Job Details</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
-              <div>
-                <span className="font-medium">Title:</span> {application.job.title}
+    <Card className="w-full max-w-4xl mx-auto">
+      <CardHeader>
+        <CardTitle>{application ? "Edit Application" : "Add New Application"}</CardTitle>
+        <CardDescription>Track your job application progress</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Job Information (if editing existing application) */}
+          {application?.job && (
+            <div className="bg-muted rounded-lg p-4 space-y-3">
+              <h3 className="font-medium text-foreground">Job Details</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
+                <div>
+                  <span className="font-medium">Title:</span> {application.job.title}
+                </div>
+                <div>
+                  <span className="font-medium">Company:</span> {application.job.company}
+                </div>
+                <div>
+                  <span className="font-medium">Location:</span> {application.job.location}
+                </div>
               </div>
-              <div>
-                <span className="font-medium">Company:</span> {application.job.company}
-              </div>
-              <div>
-                <span className="font-medium">Location:</span> {application.job.location}
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {/* Status */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Application Status
-          </label>
-          <select
-            name="status"
-            value={formData.status}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          >
-            {statusOptions.map(option => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        
-        {/* Applied Date */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Applied Date
-          </label>
-          <input
-            type="date"
-            name="appliedDate"
-            value={formData.appliedDate}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-        </div>
-        
-        {/* Interview Dates */}
-        <div>
-          <div className="flex items-center justify-between mb-1">
-            <label className="block text-sm font-medium text-gray-700">
-              Interview Dates
-            </label>
-            <button
-              type="button"
-              onClick={addInterviewDate}
-              className="text-sm text-indigo-600 hover:text-indigo-500"
-            >
-              + Add Date
-            </button>
-          </div>
-          <div className="space-y-2">
-            {interviewDates.map((date, index) => (
-              <div key={index} className="flex items-center space-x-2">
-                <input
-                  type="date"
-                  value={date}
-                  onChange={(e) => updateInterviewDate(index, e.target.value)}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-                {interviewDates.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => removeInterviewDate(index)}
-                    className="p-2 text-red-600 hover:text-red-800"
-                  >
-                    Remove
-                  </button>
+              <div className="flex items-center gap-2">
+                <span className="font-medium">Status:</span>
+                <Badge variant={statusBadges[formData.status as keyof typeof statusBadges] || "secondary"}>
+                  {statusOptions.find(opt => opt.value === formData.status)?.label || formData.status}
+                </Badge>
+                {application.job.isSponsored && (
+                  <Badge variant="orange">Sponsored</Badge>
                 )}
               </div>
-            ))}
+            </div>
+          )}
+          
+          <Separator />
+          
+          {/* Status */}
+          <div className="space-y-2">
+            <Label htmlFor="status">Application Status</Label>
+            <Select value={formData.status} onValueChange={handleStatusChange}>
+              <SelectTrigger id="status">
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                {statusOptions.map(option => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-        </div>
-        
-        {/* Follow-up Date */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Follow-up Date
-          </label>
-          <input
-            type="date"
-            name="followUpDate"
-            value={formData.followUpDate}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-        </div>
-        
-        {/* Notes */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Notes
-          </label>
-          <textarea
-            name="notes"
-            value={formData.notes}
-            onChange={handleChange}
-            rows={4}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            placeholder="Add any notes about this application..."
-          />
-        </div>
-        
-        {/* Actions */}
-        <div className="flex justify-end space-x-3">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          >
-            {application ? "Update Application" : "Create Application"}
-          </button>
-        </div>
-      </form>
-    </div>
+          
+          {/* Applied Date */}
+          <div className="space-y-2">
+            <Label htmlFor="appliedDate">Applied Date</Label>
+            <Input
+              id="appliedDate"
+              name="appliedDate"
+              type="date"
+              value={formData.appliedDate}
+              onChange={handleChange}
+            />
+          </div>
+          
+          {/* Interview Dates */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label>Interview Dates</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addInterviewDate}
+                className="gap-1"
+              >
+                <PlusCircle className="h-4 w-4" />
+                Add Date
+              </Button>
+            </div>
+            <div className="space-y-2">
+              {interviewDates.map((date, index) => (
+                <div key={index} className="flex items-center space-x-2">
+                  <Input
+                    type="date"
+                    value={date}
+                    onChange={(e) => updateInterviewDate(index, e.target.value)}
+                  />
+                  {interviewDates.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => removeInterviewDate(index)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Follow-up Date */}
+          <div className="space-y-2">
+            <Label htmlFor="followUpDate">Follow-up Date</Label>
+            <Input
+              id="followUpDate"
+              name="followUpDate"
+              type="date"
+              value={formData.followUpDate}
+              onChange={handleChange}
+            />
+          </div>
+          
+          {/* Notes */}
+          <div className="space-y-2">
+            <Label htmlFor="notes">Notes</Label>
+            <Textarea
+              id="notes"
+              name="notes"
+              value={formData.notes}
+              onChange={handleChange}
+              rows={4}
+              placeholder="Add any notes about this application..."
+            />
+          </div>
+        </form>
+      </CardContent>
+      <CardFooter className="flex justify-end space-x-3">
+        <Button variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button onClick={handleSubmit}>
+          {application ? "Update Application" : "Create Application"}
+        </Button>
+      </CardFooter>
+    </Card>
   );
 }

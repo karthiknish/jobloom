@@ -71,7 +71,15 @@ export default function AdminPage() {
     }
   );
 
-  const handleAddCompany = async (data: Record<string, unknown>) => {
+  const handleAddCompany = async (data: {
+    name: string;
+    aliases: string[];
+    sponsorshipType: string;
+    description?: string;
+    website?: string;
+    industry?: string;
+    isActive: boolean;
+  }) => {
     if (!userRecord) return;
 
     // Check rate limit before making request

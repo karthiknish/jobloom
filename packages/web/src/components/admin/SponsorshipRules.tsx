@@ -3,6 +3,13 @@ import { useState } from "react";
 import { useApiMutation, useApiQuery } from "../../hooks/useApi";
 import { adminApi } from "../../utils/api/admin";
 import toast from "react-hot-toast";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 
 export function SponsorshipRules() {
   const [showAddForm, setShowAddForm] = useState(false);
@@ -42,11 +49,10 @@ export function SponsorshipRules() {
   );
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value, type } = e.target;
-    const checked = type === 'checkbox' ? (e.target as HTMLInputElement).checked : undefined;
+    const { name, value } = e.target;
     setFormData(prev => ({ 
       ...prev, 
-      [name]: type === 'checkbox' ? checked : value 
+      [name]: value 
     }));
   };
 
@@ -92,6 +98,10 @@ export function SponsorshipRules() {
     }));
   };
 
+  const handleActiveChange = (checked: boolean) => {
+    setFormData(prev => ({ ...prev, isActive: checked }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -131,215 +141,187 @@ export function SponsorshipRules() {
   };
 
   return (
-    <div className="bg-white shadow overflow-hidden sm:rounded-md">
-      <div className="px-4 py-5 sm:px-6">
+    <Card>
+      <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg leading-6 font-medium text-gray-900">
-              Sponsorship Rules
-            </h3>
-            <p className="mt-1 max-w-2xl text-sm text-gray-500">
+            <CardTitle>Sponsorship Rules</CardTitle>
+            <CardDescription>
               Manage rules for automatically identifying sponsored jobs.
+            </CardDescription>
+          </div>
+          <Button onClick={() => setShowAddForm(!showAddForm)}>
+            {showAddForm ? "Cancel" : "Add Rule"}
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {showAddForm && (
+          <div className="border rounded-lg p-6 mb-6">
+            <h3 className="text-lg font-medium mb-4">Add New Rule</h3>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Rule Name</Label>
+                  <Input
+                    id="name"
+                    name="name"
+                    required
+                    value={formData.name}
+                    onChange={handleChange}
+                    placeholder="e.g., LinkedIn Sponsored Jobs"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="jobSite">Job Site</Label>
+                  <Input
+                    id="jobSite"
+                    name="jobSite"
+                    required
+                    value={formData.jobSite}
+                    onChange={handleChange}
+                    placeholder="e.g., linkedin.com"
+                  />
+                </div>
+                <div className="sm:col-span-2 space-y-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    name="description"
+                    value={formData.description}
+                    onChange={handleChange}
+                    rows={2}
+                    placeholder="Describe what this rule identifies"
+                  />
+                </div>
+                <div className="sm:col-span-2 space-y-2">
+                  <Label>CSS Selectors</Label>
+                  <div className="space-y-3">
+                    {formData.selectors.map((selector, index) => (
+                      <div key={index} className="flex gap-2">
+                        <Input
+                          value={selector}
+                          onChange={(e) => updateSelector(index, e.target.value)}
+                          placeholder="e.g., .job-card-container.sponsored"
+                        />
+                        {formData.selectors.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => removeSelector(index)}
+                          >
+                            Remove
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={addSelectorField}
+                    >
+                      + Add another selector
+                    </Button>
+                  </div>
+                </div>
+                <div className="sm:col-span-2 space-y-2">
+                  <Label>Keywords</Label>
+                  <div className="space-y-3">
+                    {formData.keywords.map((keyword, index) => (
+                      <div key={index} className="flex gap-2">
+                        <Input
+                          value={keyword}
+                          onChange={(e) => updateKeyword(index, e.target.value)}
+                          placeholder="e.g., SPONSORED, PROMOTED"
+                        />
+                        {formData.keywords.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => removeKeyword(index)}
+                          >
+                            Remove
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={addKeywordField}
+                    >
+                      + Add another keyword
+                    </Button>
+                  </div>
+                </div>
+                <div className="sm:col-span-2 flex items-center space-x-2">
+                  <Switch
+                    id="isActive"
+                    checked={formData.isActive}
+                    onCheckedChange={handleActiveChange}
+                  />
+                  <Label htmlFor="isActive">Active</Label>
+                </div>
+              </div>
+              <div className="flex justify-end">
+                <Button type="submit" disabled={addRuleLoading}>
+                  {addRuleLoading ? "Adding..." : "Add Rule"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {rules && rules.length > 0 ? (
+          <div className="space-y-4">
+            {rules.map((rule) => (
+              <div key={rule._id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {rule.name}
+                      </p>
+                      <Badge variant={rule.isActive ? "default" : "secondary"}>
+                        {rule.isActive ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </div>
+                    <div className="mt-2 flex flex-wrap items-center text-sm text-muted-foreground gap-2">
+                      <span>{rule.jobSite}</span>
+                      <span>•</span>
+                      <span>{rule.selectors.length} selectors</span>
+                      <span>•</span>
+                      <span>{rule.keywords.length} keywords</span>
+                    </div>
+                    <div className="mt-2">
+                      <p className="text-sm text-foreground">{rule.description}</p>
+                    </div>
+                  </div>
+                  <div className="flex-shrink-0">
+                    <Button
+                      variant={rule.isActive ? "destructive" : "default"}
+                      size="sm"
+                      onClick={() => toggleRuleStatus(rule._id, rule.isActive)}
+                    >
+                      {rule.isActive ? 'Deactivate' : 'Activate'}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <span className="text-4xl">📋</span>
+            <h3 className="mt-2 text-sm font-medium text-foreground">No sponsorship rules yet</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Get started by adding a new rule.
             </p>
           </div>
-          <button
-            onClick={() => setShowAddForm(!showAddForm)}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-md text-sm font-medium"
-          >
-            {showAddForm ? "Cancel" : "Add Rule"}
-          </button>
-        </div>
-      </div>
-
-      {showAddForm && (
-        <div className="px-4 py-5 sm:px-6 border-t border-gray-200">
-          <h4 className="text-md font-medium text-gray-900 mb-4">Add New Rule</h4>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Rule Name</label>
-                <input
-                  type="text"
-                  name="name"
-                  required
-                  value={formData.name}
-                  onChange={handleChange}
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                  placeholder="e.g., LinkedIn Sponsored Jobs"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Job Site</label>
-                <input
-                  type="text"
-                  name="jobSite"
-                  required
-                  value={formData.jobSite}
-                  onChange={handleChange}
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                  placeholder="e.g., linkedin.com"
-                />
-              </div>
-              <div className="sm:col-span-2">
-                <label className="block text-sm font-medium text-gray-700">Description</label>
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                  rows={2}
-                  placeholder="Describe what this rule identifies"
-                />
-              </div>
-              <div className="sm:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">CSS Selectors</label>
-                <div className="space-y-2">
-                  {formData.selectors.map((selector, index) => (
-                    <div key={index} className="flex gap-2">
-                      <input
-                        type="text"
-                        value={selector}
-                        onChange={(e) => updateSelector(index, e.target.value)}
-                        className="flex-1 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                        placeholder="e.g., .job-card-container.sponsored"
-                      />
-                      {formData.selectors.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeSelector(index)}
-                          className="px-3 py-2 text-red-600 hover:text-red-800"
-                        >
-                          Remove
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={addSelectorField}
-                    className="text-indigo-600 hover:text-indigo-800 text-sm"
-                  >
-                    + Add another selector
-                  </button>
-                </div>
-              </div>
-              <div className="sm:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Keywords</label>
-                <div className="space-y-2">
-                  {formData.keywords.map((keyword, index) => (
-                    <div key={index} className="flex gap-2">
-                      <input
-                        type="text"
-                        value={keyword}
-                        onChange={(e) => updateKeyword(index, e.target.value)}
-                        className="flex-1 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                        placeholder="e.g., SPONSORED, PROMOTED"
-                      />
-                      {formData.keywords.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeKeyword(index)}
-                          className="px-3 py-2 text-red-600 hover:text-red-800"
-                        >
-                          Remove
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={addKeywordField}
-                    className="text-indigo-600 hover:text-indigo-800 text-sm"
-                  >
-                    + Add another keyword
-                  </button>
-                </div>
-              </div>
-              <div className="sm:col-span-2">
-                <div className="flex items-center">
-                  <input
-                    id="isActive"
-                    name="isActive"
-                    type="checkbox"
-                    checked={formData.isActive}
-                    onChange={handleChange}
-                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                  />
-                  <label htmlFor="isActive" className="ml-2 block text-sm text-gray-900">
-                    Active
-                  </label>
-                </div>
-              </div>
-            </div>
-            <div className="flex justify-end">
-              <button
-                type="submit"
-                disabled={addRuleLoading}
-                className="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-              >
-                {addRuleLoading ? "Adding..." : "Add Rule"}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {rules && rules.length > 0 ? (
-        <ul className="divide-y divide-gray-200">
-          {rules.map((rule) => (
-            <li key={rule._id} className="px-4 py-4 sm:px-6">
-              <div className="flex items-center justify-between">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium text-gray-900 truncate">
-                      {rule.name}
-                    </p>
-                    <div className="ml-2 flex-shrink-0 flex">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        rule.isActive 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {rule.isActive ? 'Active' : 'Inactive'}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="mt-1 flex text-sm text-gray-500">
-                    <span>{rule.jobSite}</span>
-                    <span className="mx-2">•</span>
-                    <span>{rule.selectors.length} selectors</span>
-                    <span className="mx-2">•</span>
-                    <span>{rule.keywords.length} keywords</span>
-                  </div>
-                  <div className="mt-2">
-                    <p className="text-sm text-gray-600">{rule.description}</p>
-                  </div>
-                </div>
-                <div className="ml-4 flex-shrink-0">
-                  <button
-                    onClick={() => toggleRuleStatus(rule._id, rule.isActive)}
-                    className={`${
-                      rule.isActive
-                        ? 'text-red-600 hover:text-red-900'
-                        : 'text-green-600 hover:text-green-900'
-                    } text-sm font-medium`}
-                  >
-                    {rule.isActive ? 'Deactivate' : 'Activate'}
-                  </button>
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <div className="px-4 py-12 text-center">
-          <span className="text-4xl">📋</span>
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No sponsorship rules yet</h3>
-          <p className="mt-1 text-sm text-gray-500">
-            Get started by adding a new rule.
-          </p>
-        </div>
-      )}
-    </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

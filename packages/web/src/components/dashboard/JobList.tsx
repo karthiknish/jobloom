@@ -4,6 +4,25 @@ import { useState, useMemo } from "react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
 import { EyeIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface Job {
   _id: string;
@@ -51,14 +70,15 @@ export function JobList({
   const [showRecruitmentAgency, setShowRecruitmentAgency] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [sortBy, setSortBy] = useState<string>("dateFound");
+  const [applicationToDelete, setApplicationToDelete] = useState<Application | null>(null);
 
-  const statusColors = {
-    interested: "bg-blue-100 text-blue-800",
-    applied: "bg-yellow-100 text-yellow-800",
-    interviewing: "bg-purple-100 text-purple-800",
-    offered: "bg-green-100 text-green-800",
-    rejected: "bg-red-100 text-red-800",
-    withdrawn: "bg-gray-100 text-gray-800",
+  const statusVariants = {
+    interested: "blue",
+    applied: "yellow",
+    interviewing: "purple",
+    offered: "green",
+    rejected: "destructive",
+    withdrawn: "secondary",
   };
 
   const filteredAndSortedApplications = useMemo(() => {
@@ -89,165 +109,238 @@ export function JobList({
     return filtered;
   }, [applications, selectedStatus, showRecruitmentAgency, searchQuery, sortBy]);
 
+  const handleDeleteClick = (application: Application) => {
+    setApplicationToDelete(application);
+  };
+
+  const confirmDelete = () => {
+    if (applicationToDelete) {
+      onDeleteApplication(applicationToDelete._id);
+      setApplicationToDelete(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Filters and Search */}
-      <div className="bg-white rounded-lg shadow p-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="md:col-span-2">
-            <input
-              type="text"
-              placeholder="Search jobs..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+      <Card>
+        <CardHeader>
+          <CardTitle>Job Filters</CardTitle>
+          <CardDescription>Filter and sort your job applications</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="lg:col-span-2 space-y-2">
+              <Label htmlFor="search">Search</Label>
+              <Input
+                id="search"
+                placeholder="Search jobs..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                <SelectTrigger id="status">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="interested">Interested</SelectItem>
+                  <SelectItem value="applied">Applied</SelectItem>
+                  <SelectItem value="interviewing">Interviewing</SelectItem>
+                  <SelectItem value="offered">Offered</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                  <SelectItem value="withdrawn">Withdrawn</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="sort">Sort By</Label>
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger id="sort">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="dateFound">Date Found</SelectItem>
+                  <SelectItem value="title">Title</SelectItem>
+                  <SelectItem value="company">Company</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-          <div>
-            <select
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-            >
-              <option value="all">All Statuses</option>
-              <option value="interested">Interested</option>
-              <option value="applied">Applied</option>
-              <option value="interviewing">Interviewing</option>
-              <option value="offered">Offered</option>
-              <option value="rejected">Rejected</option>
-              <option value="withdrawn">Withdrawn</option>
-            </select>
+          
+          <div className="flex items-center space-x-2">
+            <Checkbox
+                id="show-agency"
+                checked={showRecruitmentAgency}
+                onCheckedChange={(checked) => setShowRecruitmentAgency(checked === true)}
+              />
+            <Label htmlFor="show-agency">Show Recruitment Agency Jobs</Label>
           </div>
-          <div>
-            <select
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-            >
-              <option value="dateFound">Date Found</option>
-              <option value="title">Title</option>
-              <option value="company">Company</option>
-            </select>
-          </div>
-        </div>
-        
-        <div className="mt-4 flex items-center">
-          <label className="flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-              checked={showRecruitmentAgency}
-              onChange={(e) => setShowRecruitmentAgency(e.target.checked)}
-            />
-            <span className="ml-2 text-sm text-gray-600">Show Recruitment Agency Jobs</span>
-          </label>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Job List */}
       {filteredAndSortedApplications.length > 0 ? (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <ul className="divide-y divide-gray-200">
-            {filteredAndSortedApplications.map((application) => (
-              <motion.li
-                key={application._id}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="px-6 py-4 hover:bg-gray-50 transition-colors"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900 truncate">
-                          {application.job?.title}
-                        </h3>
-                        <p className="text-sm text-gray-600">
-                          {application.job?.company} • {application.job?.location}
-                        </p>
+        <Card>
+          <CardContent className="p-0">
+            <ul className="divide-y divide-border">
+              {filteredAndSortedApplications.map((application) => (
+                <motion.li
+                  key={application._id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="p-6 hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                          <h3 className="text-lg font-semibold text-foreground truncate">
+                            {application.job?.title}
+                          </h3>
+                          <p className="text-sm text-muted-foreground">
+                            {application.job?.company} • {application.job?.location}
+                          </p>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          {application.job?.isSponsored && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Badge variant="orange">Sponsored</Badge>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>This job is sponsored by the company</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+                          <Badge variant={statusVariants[application.status as keyof typeof statusVariants] || "secondary"}>
+                            {application.status}
+                          </Badge>
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        {application.job?.isSponsored && (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                            Sponsored
+                      
+                      <div className="mt-2 flex flex-wrap items-center text-sm text-muted-foreground gap-4">
+                        <span>
+                          Found: {format(new Date(application.job?.dateFound || 0), "MMM d, yyyy")}
+                        </span>
+                        {application.appliedDate && (
+                          <span>
+                            Applied: {format(new Date(application.appliedDate), "MMM d, yyyy")}
                           </span>
                         )}
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            statusColors[application.status as keyof typeof statusColors] || "bg-gray-100 text-gray-800"
-                          }`}
-                        >
-                          {application.status}
+                        {application.job?.salary && (
+                          <span>
+                            Salary: {application.job.salary}
+                          </span>
+                        )}
+                        <span className="capitalize">
+                          Source: {application.job?.source}
                         </span>
                       </div>
+                      
+                      {application.notes && (
+                        <p className="mt-2 text-sm text-foreground line-clamp-2">
+                          {application.notes}
+                        </p>
+                      )}
                     </div>
                     
-                    <div className="mt-2 flex flex-wrap items-center text-sm text-gray-500 gap-4">
-                      <span>
-                        Found: {format(new Date(application.job?.dateFound || 0), "MMM d, yyyy")}
-                      </span>
-                      {application.appliedDate && (
-                        <span>
-                          Applied: {format(new Date(application.appliedDate), "MMM d, yyyy")}
-                        </span>
-                      )}
-                      {application.job?.salary && (
-                        <span>
-                          Salary: {application.job.salary}
-                        </span>
-                      )}
-                      <span className="capitalize">
-                        Source: {application.job?.source}
-                      </span>
+                    <div className="flex space-x-2">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => onViewApplication(application)}
+                            >
+                              <EyeIcon className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>View Details</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => onEditApplication(application)}
+                            >
+                              <PencilIcon className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Edit Application</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleDeleteClick(application)}
+                                >
+                                  <TrashIcon className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This action cannot be undone. This will permanently delete the application
+                                    for "{application.job?.title}" at {application.job?.company}.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Delete Application</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
-                    
-                    {application.notes && (
-                      <p className="mt-2 text-sm text-gray-600 line-clamp-2">
-                        {application.notes}
-                      </p>
-                    )}
                   </div>
-                  
-                  <div className="ml-4 flex space-x-2">
-                    <button
-                      onClick={() => onViewApplication(application)}
-                      className="p-2 text-gray-500 hover:text-indigo-600 rounded-full hover:bg-gray-100"
-                      title="View Details"
-                    >
-                      <EyeIcon className="h-5 w-5" />
-                    </button>
-                    <button
-                      onClick={() => onEditApplication(application)}
-                      className="p-2 text-gray-500 hover:text-indigo-600 rounded-full hover:bg-gray-100"
-                      title="Edit"
-                    >
-                      <PencilIcon className="h-5 w-5" />
-                    </button>
-                    <button
-                      onClick={() => onDeleteApplication(application._id)}
-                      className="p-2 text-gray-500 hover:text-red-600 rounded-full hover:bg-gray-100"
-                      title="Delete"
-                    >
-                      <TrashIcon className="h-5 w-5" />
-                    </button>
-                  </div>
-                </div>
-              </motion.li>
-            ))}
-          </ul>
-        </div>
+                </motion.li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
       ) : (
-        <div className="bg-white rounded-lg shadow p-8 text-center">
-          <div className="text-gray-400 text-6xl mb-4">📋</div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            No jobs found
-          </h3>
-          <p className="text-gray-600 mb-6">
-            {searchQuery || selectedStatus !== "all" 
-              ? "Try adjusting your filters or search terms" 
-              : "Start by installing the Chrome extension to track jobs automatically"}
-          </p>
-        </div>
+        <Card>
+          <CardContent className="p-8 text-center">
+            <div className="text-muted-foreground text-6xl mb-4">📋</div>
+            <h3 className="text-lg font-medium text-foreground mb-2">
+              No jobs found
+            </h3>
+            <p className="text-muted-foreground mb-6">
+              {searchQuery || selectedStatus !== "all" 
+                ? "Try adjusting your filters or search terms" 
+                : "Start by installing the Chrome extension to track jobs automatically"}
+            </p>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

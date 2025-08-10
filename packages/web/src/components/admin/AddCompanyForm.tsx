@@ -1,9 +1,37 @@
 // components/admin/AddCompanyForm.tsx
 import { useState } from "react";
-import type { SponsoredCompany } from "../../types/convex";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+interface AddCompanyFormData {
+  name: string;
+  aliases: string[];
+  sponsorshipType: string;
+  description?: string;
+  website?: string;
+  industry?: string;
+  isActive: boolean;
+}
 
 interface AddCompanyFormProps {
-  onSubmit: (data: Omit<SponsoredCompany, "_id" | "createdAt" | "updatedAt"> & { createdBy: string }) => void;
+  onSubmit: (data: AddCompanyFormData) => void;
   onCancel: () => void;
 }
 
@@ -14,12 +42,15 @@ export function AddCompanyForm({ onSubmit, onCancel }: AddCompanyFormProps) {
     sponsorshipType: "sponsored",
     description: "",
     website: "",
-    industry: ""
+    industry: "",
+    isActive: true,
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const addAliasField = () => {
@@ -43,128 +74,127 @@ export function AddCompanyForm({ onSubmit, onCancel }: AddCompanyFormProps) {
     }));
   };
 
+  const handleSponsorshipTypeChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, sponsorshipType: value }));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit({
       ...formData,
-      aliases: formData.aliases.filter(alias => alias.trim() !== ""),
-      createdBy: "" // This will be filled by the parent component
+      aliases: formData.aliases.filter((alias) => alias.trim() !== ""),
     });
   };
 
   return (
-    <div className="bg-white shadow rounded-lg p-6 mb-6">
-      <h3 className="text-lg font-medium text-gray-900 mb-4">Add New Sponsored Company</h3>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Company Name</label>
-            <input
-              type="text"
-              name="name"
-              required
-              value={formData.name}
-              onChange={handleChange}
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-              placeholder="e.g., Google"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Industry</label>
-            <input
-              type="text"
-              name="industry"
-              value={formData.industry}
-              onChange={handleChange}
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-              placeholder="e.g., Technology"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Website</label>
-            <input
-              type="url"
-              name="website"
-              value={formData.website}
-              onChange={handleChange}
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-              placeholder="https://company.com"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Sponsorship Type</label>
-            <select
-              name="sponsorshipType"
-              value={formData.sponsorshipType}
-              onChange={handleChange}
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-            >
-              <option value="sponsored">Sponsored</option>
-              <option value="promoted">Promoted</option>
-              <option value="featured">Featured</option>
-              <option value="premium">Premium</option>
-            </select>
-          </div>
-          <div className="sm:col-span-2">
-            <label className="block text-sm font-medium text-gray-700">Description</label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-              rows={3}
-              placeholder="Why is this company marked as sponsored?"
-            />
-          </div>
-          <div className="sm:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Company Aliases</label>
+    <Card className="w-full max-w-4xl mx-auto">
+      <CardHeader>
+        <CardTitle>Add New Sponsored Company</CardTitle>
+        <CardDescription>Add a company to the sponsored list</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             <div className="space-y-2">
-              {formData.aliases.map((alias, index) => (
-                <div key={index} className="flex gap-2">
-                  <input
-                    type="text"
-                    value={alias}
-                    onChange={(e) => updateAlias(index, e.target.value)}
-                    className="flex-1 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                    placeholder="e.g., Alphabet Inc, Google LLC"
-                  />
-                  {formData.aliases.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeAlias(index)}
-                      className="px-3 py-2 text-red-600 hover:text-red-800"
-                    >
-                      Remove
-                    </button>
-                  )}
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={addAliasField}
-                className="text-indigo-600 hover:text-indigo-800 text-sm"
+              <Label htmlFor="name">Company Name</Label>
+              <Input
+                id="name"
+                name="name"
+                required
+                value={formData.name}
+                onChange={handleChange}
+                placeholder="e.g., Google"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="industry">Industry</Label>
+              <Input
+                id="industry"
+                name="industry"
+                value={formData.industry}
+                onChange={handleChange}
+                placeholder="e.g., Technology"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="website">Website</Label>
+              <Input
+                id="website"
+                name="website"
+                type="url"
+                value={formData.website}
+                onChange={handleChange}
+                placeholder="https://company.com"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="sponsorshipType">Sponsorship Type</Label>
+              <Select
+                value={formData.sponsorshipType}
+                onValueChange={handleSponsorshipTypeChange}
               >
-                + Add another alias
-              </button>
+                <SelectTrigger id="sponsorshipType">
+                  <SelectValue placeholder="Select sponsorship type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sponsored">Sponsored</SelectItem>
+                  <SelectItem value="promoted">Promoted</SelectItem>
+                  <SelectItem value="featured">Featured</SelectItem>
+                  <SelectItem value="premium">Premium</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="sm:col-span-2 space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                rows={3}
+                placeholder="Why is this company marked as sponsored?"
+              />
+            </div>
+            <div className="sm:col-span-2 space-y-2">
+              <Label>Company Aliases</Label>
+              <div className="space-y-3">
+                {formData.aliases.map((alias, index) => (
+                  <div key={index} className="flex gap-2">
+                    <Input
+                      value={alias}
+                      onChange={(e) => updateAlias(index, e.target.value)}
+                      placeholder="e.g., Alphabet Inc, Google LLC"
+                    />
+                    {formData.aliases.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => removeAlias(index)}
+                      >
+                        Remove
+                      </Button>
+                    )}
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addAliasField}
+                >
+                  + Add another alias
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
-        <div className="flex justify-end space-x-3">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-          >
-            Add Sponsored Company
-          </button>
-        </div>
-      </form>
-    </div>
+        </form>
+      </CardContent>
+      <CardFooter className="flex justify-end space-x-3">
+        <Button variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button onClick={handleSubmit}>Add Sponsored Company</Button>
+      </CardFooter>
+    </Card>
   );
 }

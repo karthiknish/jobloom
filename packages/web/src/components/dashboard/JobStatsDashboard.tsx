@@ -1,6 +1,15 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface JobStats {
   totalJobs: number;
@@ -16,13 +25,13 @@ interface JobStatsDashboardProps {
 }
 
 export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
-  const statusColors = {
-    interested: "bg-blue-500",
-    applied: "bg-yellow-500",
-    interviewing: "bg-purple-500",
-    offered: "bg-green-500",
-    rejected: "bg-red-500",
-    withdrawn: "bg-gray-500",
+  const statusVariants = {
+    interested: "blue",
+    applied: "yellow",
+    interviewing: "purple",
+    offered: "green",
+    rejected: "destructive",
+    withdrawn: "secondary",
   };
 
   const statusLabels = {
@@ -34,6 +43,10 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
     withdrawn: "Withdrawn",
   };
 
+  const getPercentage = (value: number, total: number) => {
+    return total > 0 ? Math.round((value / total) * 100) : 0;
+  };
+
   return (
     <div className="space-y-6">
       {/* Main Stats Cards */}
@@ -42,68 +55,80 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="bg-white rounded-lg shadow p-6"
         >
-          <div className="flex items-center">
-            <div className="p-3 rounded-full bg-blue-100">
-              <span className="text-blue-600 text-xl">💼</span>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Jobs</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.totalJobs}</p>
-            </div>
-          </div>
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center">
+                <div className="p-3 rounded-full bg-blue-100">
+                  <span className="text-blue-600 text-xl">💼</span>
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-muted-foreground">Total Jobs</p>
+                  <p className="text-2xl font-bold text-foreground">{stats.totalJobs}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.1 }}
-          className="bg-white rounded-lg shadow p-6"
         >
-          <div className="flex items-center">
-            <div className="p-3 rounded-full bg-orange-100">
-              <span className="text-orange-600 text-xl">🎯</span>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Sponsored Jobs</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.sponsoredJobs}</p>
-            </div>
-          </div>
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center">
+                <div className="p-3 rounded-full bg-orange-100">
+                  <span className="text-orange-600 text-xl">🎯</span>
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-muted-foreground">Sponsored Jobs</p>
+                  <p className="text-2xl font-bold text-foreground">{stats.sponsoredJobs}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.2 }}
-          className="bg-white rounded-lg shadow p-6"
         >
-          <div className="flex items-center">
-            <div className="p-3 rounded-full bg-green-100">
-              <span className="text-green-600 text-xl">📝</span>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Applications</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.totalApplications}</p>
-            </div>
-          </div>
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center">
+                <div className="p-3 rounded-full bg-green-100">
+                  <span className="text-green-600 text-xl">📝</span>
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-muted-foreground">Applications</p>
+                  <p className="text-2xl font-bold text-foreground">{stats.totalApplications}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.3 }}
-          className="bg-white rounded-lg shadow p-6"
         >
-          <div className="flex items-center">
-            <div className="p-3 rounded-full bg-purple-100">
-              <span className="text-purple-600 text-xl">📅</span>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Jobs Today</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.jobsToday}</p>
-            </div>
-          </div>
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center">
+                <div className="p-3 rounded-full bg-purple-100">
+                  <span className="text-purple-600 text-xl">📅</span>
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-muted-foreground">Jobs Today</p>
+                  <p className="text-2xl font-bold text-foreground">{stats.jobsToday}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </motion.div>
       </div>
 
@@ -114,29 +139,35 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.4 }}
-          className="bg-white rounded-lg shadow p-6"
         >
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Applications by Status</h3>
-          <div className="space-y-4">
-            {Object.entries(stats.byStatus).map(([status, count]) => (
-              <div key={status}>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium text-gray-700">
-                    {statusLabels[status as keyof typeof statusLabels] || status}
-                  </span>
-                  <span className="text-sm font-medium text-gray-900">{count}</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className={`h-2 rounded-full ${statusColors[status as keyof typeof statusColors] || "bg-gray-500"}`}
-                    style={{ 
-                      width: `${stats.totalApplications > 0 ? (count / stats.totalApplications) * 100 : 0}%` 
-                    }}
-                  ></div>
-                </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Applications by Status</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {Object.entries(stats.byStatus).map(([status, count]) => (
+                  <div key={status}>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <Badge variant={statusVariants[status as keyof typeof statusVariants] || "secondary"}>
+                          {statusLabels[status as keyof typeof statusLabels] || status}
+                        </Badge>
+                      </div>
+                      <span className="text-sm font-medium text-foreground">{count}</span>
+                    </div>
+                    <Progress 
+                      value={getPercentage(count, stats.totalApplications)} 
+                      className="h-2"
+                    />
+                    <div className="text-right text-xs text-muted-foreground mt-1">
+                      {getPercentage(count, stats.totalApplications)}%
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </CardContent>
+          </Card>
         </motion.div>
 
         {/* Recruitment Agency Jobs */}
@@ -144,36 +175,69 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.5 }}
-          className="bg-white rounded-lg shadow p-6"
         >
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Recruitment Insights</h3>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
-              <div className="flex items-center">
-                <div className="p-2 rounded-full bg-purple-100">
-                  <span className="text-purple-600">🏢</span>
+          <Card>
+            <CardHeader>
+              <CardTitle>Recruitment Insights</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors cursor-help">
+                        <div className="flex items-center">
+                          <div className="p-2 rounded-full bg-purple-100">
+                            <span className="text-purple-600">🏢</span>
+                          </div>
+                          <span className="ml-3 font-medium text-foreground">Agency Jobs</span>
+                        </div>
+                        <span className="text-lg font-bold text-purple-600">
+                          {stats.recruitmentAgencyJobs || 0}
+                        </span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Jobs posted by recruitment agencies</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors cursor-help">
+                        <div className="flex items-center">
+                          <div className="p-2 rounded-full bg-orange-100">
+                            <span className="text-orange-600">🎯</span>
+                          </div>
+                          <span className="ml-3 font-medium text-foreground">Sponsored %</span>
+                        </div>
+                        <span className="text-lg font-bold text-orange-600">
+                          {getPercentage(stats.sponsoredJobs, stats.totalJobs)}%
+                        </span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Percentage of jobs that are sponsored</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                
+                <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                  <div className="flex items-center">
+                    <div className="p-2 rounded-full bg-blue-100">
+                      <span className="text-blue-600">📊</span>
+                    </div>
+                    <span className="ml-3 font-medium text-foreground">Application Rate</span>
+                  </div>
+                  <span className="text-lg font-bold text-blue-600">
+                    {getPercentage(stats.totalApplications, stats.totalJobs)}%
+                  </span>
                 </div>
-                <span className="ml-3 font-medium text-gray-900">Agency Jobs</span>
               </div>
-              <span className="text-lg font-bold text-purple-600">
-                {stats.recruitmentAgencyJobs || 0}
-              </span>
-            </div>
-            
-            <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
-              <div className="flex items-center">
-                <div className="p-2 rounded-full bg-orange-100">
-                  <span className="text-orange-600">🎯</span>
-                </div>
-                <span className="ml-3 font-medium text-gray-900">Sponsored %</span>
-              </div>
-              <span className="text-lg font-bold text-orange-600">
-                {stats.totalJobs > 0 
-                  ? Math.round((stats.sponsoredJobs / stats.totalJobs) * 100) 
-                  : 0}%
-              </span>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </motion.div>
       </div>
     </div>

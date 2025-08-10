@@ -4,9 +4,18 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useState } from "react";
 import { SignInButton, SignUpButton, UserButton, useUser } from "@clerk/nextjs";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Menu, X } from "lucide-react";
 
 export default function Header() {
-  const { isSignedIn } = useUser();
+  const { isSignedIn, user } = useUser();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navLinks = [
@@ -71,27 +80,45 @@ export default function Header() {
           {/* Desktop Auth Buttons */}
           <div className="hidden md:flex items-center space-x-4">
             {isSignedIn ? (
-              <div className="flex items-center space-x-4">
-                <UserButton
-                  afterSignOutUrl="/"
-                  appearance={{
-                    elements: {
-                      avatarBox: "w-10 h-10",
-                    },
-                  }}
-                />
-              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={user?.imageUrl} alt={user?.firstName || "User"} />
+                      <AvatarFallback>
+                        {user?.firstName?.charAt(0)}
+                        {user?.lastName?.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end" forceMount>
+                  <DropdownMenuItem>
+                    <Link href="/account" className="w-full">
+                      Account Settings
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Link href="/dashboard" className="w-full">
+                      Dashboard
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Link href="/cv-evaluator" className="w-full">
+                      CV Evaluator
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : (
               <>
                 <SignInButton mode="modal">
-                  <button className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">
+                  <Button variant="ghost" size="sm">
                     Sign In
-                  </button>
+                  </Button>
                 </SignInButton>
                 <SignUpButton mode="modal">
-                  <button className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-all hover:shadow-lg">
-                    Get Started
-                  </button>
+                  <Button size="sm">Get Started</Button>
                 </SignUpButton>
               </>
             )}
@@ -102,21 +129,11 @@ export default function Header() {
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
           >
-            <svg
-              className="w-6 h-6 text-gray-600"
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              {isMobileMenuOpen ? (
-                <path d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path d="M4 6h16M4 12h16M4 18h16" />
-              )}
-            </svg>
+            {isMobileMenuOpen ? (
+              <X className="h-6 w-6 text-gray-600" />
+            ) : (
+              <Menu className="h-6 w-6 text-gray-600" />
+            )}
           </button>
         </div>
       </div>
@@ -159,7 +176,21 @@ export default function Header() {
               <div className="pt-4 border-t border-gray-200 space-y-3">
                 {isSignedIn ? (
                   <div className="flex items-center justify-between px-3">
-                    <span className="text-sm text-gray-600">Account</span>
+                    <div className="flex items-center space-x-3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={user?.imageUrl} alt={user?.firstName || "User"} />
+                        <AvatarFallback>
+                          {user?.firstName?.charAt(0)}
+                          {user?.lastName?.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="text-sm font-medium">
+                          {user?.firstName} {user?.lastName}
+                        </p>
+                        <p className="text-xs text-gray-500">{user?.primaryEmailAddress?.emailAddress}</p>
+                      </div>
+                    </div>
                     <UserButton
                       afterSignOutUrl="/"
                       appearance={{
@@ -170,18 +201,16 @@ export default function Header() {
                     />
                   </div>
                 ) : (
-                  <>
+                  <div className="flex flex-col space-y-2">
                     <SignInButton mode="modal">
-                      <button className="w-full px-4 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors">
+                      <Button variant="ghost" className="w-full">
                         Sign In
-                      </button>
+                      </Button>
                     </SignInButton>
                     <SignUpButton mode="modal">
-                      <button className="w-full px-4 py-2 text-base font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors">
-                        Get Started
-                      </button>
+                      <Button className="w-full">Get Started</Button>
                     </SignUpButton>
-                  </>
+                  </div>
                 )}
               </div>
             </div>

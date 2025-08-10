@@ -1,6 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface JobFormProps {
   onSubmit: (data: Record<string, unknown>) => Promise<void>;
@@ -20,13 +27,25 @@ export function JobForm({ onSubmit, onCancel }: JobFormProps) {
     source: "manual",
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
-    const checked = (e.target as HTMLInputElement).checked;
-    
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value
+      [name]: value
+    }));
+  };
+
+  const handleSelectChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      source: value
+    }));
+  };
+
+  const handleCheckboxChange = (name: string, checked: boolean | "indeterminate") => {
+    setFormData(prev => ({
+      ...prev,
+      [name]: checked === true
     }));
   };
 
@@ -36,168 +55,135 @@ export function JobForm({ onSubmit, onCancel }: JobFormProps) {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <h2 className="text-xl font-bold text-gray-900 mb-6">Add New Job</h2>
-      
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Job Details */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Job Title *
-            </label>
-            <input
-              type="text"
-              name="title"
-              value={formData.title}
+    <Card className="w-full max-w-4xl mx-auto">
+      <CardHeader>
+        <CardTitle>Add New Job</CardTitle>
+        <CardDescription>Track a new job opportunity in your dashboard</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Job Details */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="title">Job Title *</Label>
+              <Input
+                id="title"
+                name="title"
+                value={formData.title}
+                onChange={handleChange}
+                required
+                placeholder="e.g., Software Engineer"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="company">Company *</Label>
+              <Input
+                id="company"
+                name="company"
+                value={formData.company}
+                onChange={handleChange}
+                required
+                placeholder="e.g., Google"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="location">Location</Label>
+              <Input
+                id="location"
+                name="location"
+                value={formData.location}
+                onChange={handleChange}
+                placeholder="e.g., San Francisco, CA"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="salary">Salary</Label>
+              <Input
+                id="salary"
+                name="salary"
+                value={formData.salary}
+                onChange={handleChange}
+                placeholder="e.g., $120,000 - $150,000"
+              />
+            </div>
+            
+            <div className="md:col-span-2 space-y-2">
+              <Label htmlFor="url">Job URL</Label>
+              <Input
+                id="url"
+                name="url"
+                type="url"
+                value={formData.url}
+                onChange={handleChange}
+                placeholder="https://company.com/jobs/123"
+              />
+            </div>
+          </div>
+          
+          {/* Description */}
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              name="description"
+              value={formData.description}
               onChange={handleChange}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              placeholder="e.g., Software Engineer"
-              aria-required="true"
+              rows={4}
+              placeholder="Paste the job description here..."
             />
           </div>
           
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Company *
-            </label>
-            <input
-              type="text"
-              name="company"
-              value={formData.company}
-              onChange={handleChange}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              placeholder="e.g., Google"
-              aria-required="true"
-            />
+          {/* Tags */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="isSponsored"
+                checked={formData.isSponsored}
+                onCheckedChange={(checked) => handleCheckboxChange("isSponsored", checked === true)}
+              />
+              <Label htmlFor="isSponsored">Sponsored Job</Label>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="isRecruitmentAgency"
+                checked={formData.isRecruitmentAgency}
+                onCheckedChange={(checked) => handleCheckboxChange("isRecruitmentAgency", checked === true)}
+              />
+              <Label htmlFor="isRecruitmentAgency">Recruitment Agency</Label>
+            </div>
           </div>
           
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Location
-            </label>
-            <input
-              type="text"
-              name="location"
-              value={formData.location}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              placeholder="e.g., San Francisco, CA"
-            />
+          {/* Source */}
+          <div className="space-y-2">
+            <Label htmlFor="source">Source</Label>
+            <Select value={formData.source} onValueChange={handleSelectChange}>
+              <SelectTrigger id="source">
+                <SelectValue placeholder="Select source" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="manual">Manual Entry</SelectItem>
+                <SelectItem value="extension">Chrome Extension</SelectItem>
+                <SelectItem value="linkedin">LinkedIn</SelectItem>
+                <SelectItem value="indeed">Indeed</SelectItem>
+                <SelectItem value="glassdoor">Glassdoor</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Salary
-            </label>
-            <input
-              type="text"
-              name="salary"
-              value={formData.salary}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              placeholder="e.g., $120,000 - $150,000"
-            />
-          </div>
-          
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Job URL
-            </label>
-            <input
-              type="url"
-              name="url"
-              value={formData.url}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              placeholder="https://company.com/jobs/123"
-            />
-          </div>
-        </div>
-        
-        {/* Description */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Description
-          </label>
-          <textarea
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            rows={4}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            placeholder="Paste the job description here..."
-          />
-        </div>
-        
-        {/* Tags */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              name="isSponsored"
-              checked={formData.isSponsored}
-              onChange={handleChange}
-              className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-            />
-            <label className="ml-2 block text-sm text-gray-900">
-              Sponsored Job
-            </label>
-          </div>
-          
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              name="isRecruitmentAgency"
-              checked={formData.isRecruitmentAgency}
-              onChange={handleChange}
-              className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-            />
-            <label className="ml-2 block text-sm text-gray-900">
-              Recruitment Agency
-            </label>
-          </div>
-        </div>
-        
-        {/* Source */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Source
-          </label>
-          <select
-            name="source"
-            value={formData.source}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          >
-            <option value="manual">Manual Entry</option>
-            <option value="extension">Chrome Extension</option>
-            <option value="linkedin">LinkedIn</option>
-            <option value="indeed">Indeed</option>
-            <option value="glassdoor">Glassdoor</option>
-            <option value="other">Other</option>
-          </select>
-        </div>
-        
-        {/* Actions */}
-        <div className="flex justify-end space-x-3">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          >
-            Add Job
-          </button>
-        </div>
-      </form>
-    </div>
+        </form>
+      </CardContent>
+      <CardFooter className="flex justify-end space-x-3">
+        <Button variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button onClick={handleSubmit}>
+          Add Job
+        </Button>
+      </CardFooter>
+    </Card>
   );
 }

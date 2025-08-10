@@ -1,5 +1,6 @@
 // utils/api/dashboard.ts
 import { convexApi } from "../../services/api/convexApi";
+import { ImportJob, ImportResult } from "../jobImport";
 
 export interface Job {
   _id: string;
@@ -84,6 +85,20 @@ export const dashboardApi = {
     // This would need to be implemented in your Convex backend
     await convexApi.request(`/applications/${applicationId}`, {
       method: "DELETE",
+    });
+  },
+
+  importJobsFromCSV: async (data: { userId: string; jobs: ImportJob[] }): Promise<ImportResult> => {
+    return convexApi.request("/jobs/import", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  importJobsFromAPI: async (data: { userId: string; source: string; searchQuery?: string; location?: string }): Promise<ImportResult> => {
+    return convexApi.request("/jobs/import-api", {
+      method: "POST",
+      body: JSON.stringify(data),
     });
   }
 };

@@ -1,4 +1,4 @@
-import type { Doc } from "../../convex/_generated/dataModel";
+import type { Doc } from "@convex-generated/dataModel";
 
 // Define Id type for Convex
 export type Id<T extends string> = string & { __tableName: T };

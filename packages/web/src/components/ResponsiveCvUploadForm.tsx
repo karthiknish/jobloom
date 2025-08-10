@@ -1,26 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { CloudArrowUpIcon, FileTextIcon } from "@heroicons/react/24/outline";
+import { CloudArrowUpIcon } from "@heroicons/react/24/outline";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { 
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
-interface CvUploadFormProps {
+interface ResponsiveCvUploadFormProps {
   userId: string;
 }
 
-export function CvUploadForm({ userId }: CvUploadFormProps) {
+export function ResponsiveCvUploadForm({ userId }: ResponsiveCvUploadFormProps) {
   const [file, setFile] = useState<File | null>(null);
   const [targetRole, setTargetRole] = useState("");
   const [industry, setIndustry] = useState("");
@@ -129,80 +122,48 @@ export function CvUploadForm({ userId }: CvUploadFormProps) {
             onDrop={handleDrop}
           >
             <div className="text-center">
-              {file ? (
-                <div className="flex flex-col items-center">
-                  <FileTextIcon className="mx-auto h-12 w-12 text-muted-foreground" />
-                  <div className="mt-4">
-                    <p className="mt-2 block text-sm font-medium text-foreground truncate max-w-xs">
-                      {file.name}
-                    </p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {formatFileSize(file.size)}
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <CloudArrowUpIcon className="mx-auto h-12 w-12 text-muted-foreground" />
-                  <div className="mt-4">
-                    <Label htmlFor="file-upload" className="cursor-pointer">
-                      <span className="mt-2 block text-sm font-medium text-foreground">
-                        Drop your CV here or click to browse
-                      </span>
-                      <Input
-                        id="file-upload"
-                        name="file-upload"
-                        type="file"
-                        className="sr-only"
-                        accept=".pdf,.txt"
-                        onChange={handleFileChange}
-                      />
-                    </Label>
-                    <p className="mt-1 text-xs text-muted-foreground">PDF or TXT up to 5MB</p>
-                  </div>
-                </>
-              )}
+              <CloudArrowUpIcon className="mx-auto h-12 w-12 text-muted-foreground" />
+              <div className="mt-4">
+                <Label htmlFor="file-upload" className="cursor-pointer">
+                  <span className="mt-2 block text-sm font-medium text-foreground">
+                    {file ? file.name : "Drop your CV here or click to browse"}
+                  </span>
+                  <Input
+                    id="file-upload"
+                    name="file-upload"
+                    type="file"
+                    className="sr-only"
+                    accept=".pdf,.txt"
+                    onChange={handleFileChange}
+                  />
+                </Label>
+                {file && (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {formatFileSize(file.size)} • {file.type}
+                  </p>
+                )}
+                <p className="mt-1 text-xs text-muted-foreground">PDF or TXT up to 5MB</p>
+              </div>
             </div>
           </div>
 
           {/* Optional Context Fields */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Label htmlFor="target-role">Target Role</Label>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Badge variant="secondary" className="text-xs">Optional</Badge>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Helps provide more targeted feedback</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
+              <Label htmlFor="target-role">Target Role (Optional)</Label>
               <Input
                 id="target-role"
                 value={targetRole}
                 onChange={(e) => setTargetRole(e.target.value)}
                 placeholder="e.g., Software Engineer, Marketing Manager"
               />
+              <p className="text-xs text-muted-foreground">
+                Helps provide more targeted feedback
+              </p>
             </div>
 
             <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Label htmlFor="industry">Industry</Label>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Badge variant="secondary" className="text-xs">Optional</Badge>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Industry-specific recommendations</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
+              <Label htmlFor="industry">Industry (Optional)</Label>
               <Select value={industry} onValueChange={setIndustry}>
                 <SelectTrigger id="industry">
                   <SelectValue placeholder="Select industry" />
@@ -221,12 +182,15 @@ export function CvUploadForm({ userId }: CvUploadFormProps) {
                   <SelectItem value="Other">Other</SelectItem>
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground">
+                Industry-specific recommendations
+              </p>
             </div>
           </div>
 
           {/* Tips */}
           <div className="rounded-lg border bg-blue-50 border-blue-200 p-4">
-            <h4 className="text-sm font-medium text-blue-900 mb-2 flex items-center gap-2">
+            <h4 className="text-sm font-medium text-blue-900 mb-2">
               💡 Tips for better analysis:
             </h4>
             <ul className="text-sm text-blue-800 space-y-1">
@@ -238,7 +202,7 @@ export function CvUploadForm({ userId }: CvUploadFormProps) {
               <li>• Remove any sensitive personal information before uploading</li>
             </ul>
             <div className="mt-3 p-3 bg-yellow-50 rounded border border-yellow-200">
-              <h5 className="text-xs font-medium text-yellow-900 mb-1 flex items-center gap-1">
+              <h5 className="text-xs font-medium text-yellow-900 mb-1">
                 🤖 ATS Optimization Tip:
               </h5>
               <p className="text-xs text-yellow-800">
@@ -254,7 +218,6 @@ export function CvUploadForm({ userId }: CvUploadFormProps) {
           type="submit"
           disabled={!file || uploading}
           onClick={handleSubmit}
-          className="w-full sm:w-auto"
         >
           {uploading ? (
             <>

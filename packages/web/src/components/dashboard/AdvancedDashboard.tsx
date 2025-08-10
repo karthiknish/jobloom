@@ -11,6 +11,16 @@ import { JobStatsDashboard } from "@/components/dashboard/JobStatsDashboard";
 import { ApplicationForm } from "@/components/dashboard/ApplicationForm";
 import { JobForm } from "@/components/dashboard/JobForm";
 import { ExtensionIntegration } from "@/components/dashboard/ExtensionIntegration";
+import { JobImportModal } from "@/components/dashboard/JobImportModal";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface Job {
   _id: string;
@@ -45,6 +55,7 @@ export function AdvancedDashboard() {
   const { user } = useUser();
   const [showApplicationForm, setShowApplicationForm] = useState(false);
   const [showJobForm, setShowJobForm] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [editingApplication, setEditingApplication] = useState<Application | null>(null);
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
   const [view, setView] = useState<"dashboard" | "jobs" | "applications">("dashboard");
@@ -151,18 +162,21 @@ export function AdvancedDashboard() {
               </p>
             </div>
             <div className="flex space-x-3">
-              <button
-                onClick={() => setShowJobForm(true)}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              <Button
+                onClick={() => setShowImportModal(true)}
+                variant="default"
               >
+                Import Jobs
+              </Button>
+              <Button onClick={() => setShowJobForm(true)} variant="default">
                 Add Job
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => setShowApplicationForm(true)}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                variant="outline"
               >
                 Add Application
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -204,16 +218,16 @@ export function AdvancedDashboard() {
           >
             {/* Stats Dashboard */}
             {jobStats && <JobStatsDashboard stats={jobStats} />}
-            
+
             {/* Extension Integration */}
             {userRecord && <ExtensionIntegration userId={userRecord._id} />}
-            
+
             {/* Recent Applications */}
-            <div className="bg-white rounded-lg shadow">
-              <div className="px-6 py-5 border-b border-gray-200">
-                <h2 className="text-lg font-medium text-gray-900">Recent Applications</h2>
-              </div>
-              <div className="p-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Applications</CardTitle>
+              </CardHeader>
+              <CardContent>
                 {applications && applications.length > 0 ? (
                   <JobList
                     applications={applications.slice(0, 5)}
@@ -224,14 +238,16 @@ export function AdvancedDashboard() {
                 ) : (
                   <div className="text-center py-8">
                     <span className="text-4xl">📋</span>
-                    <h3 className="mt-2 text-sm font-medium text-gray-900">No applications yet</h3>
-                    <p className="mt-1 text-sm text-gray-500">
+                    <h3 className="mt-2 text-sm font-medium text-foreground">
+                      No applications yet
+                    </h3>
+                    <p className="mt-1 text-sm text-muted-foreground">
                       Get started by adding a job or application.
                     </p>
                   </div>
                 )}
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           </motion.div>
         )}
 
@@ -253,119 +269,148 @@ export function AdvancedDashboard() {
         )}
 
         {/* Modals */}
-        {showApplicationForm && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
-              <ApplicationForm
-                application={editingApplication || undefined}
-                onSubmit={handleApplicationSubmit}
-                onCancel={() => {
-                  setShowApplicationForm(false);
-                  setEditingApplication(null);
-                }}
-              />
-            </div>
-          </div>
+        <Dialog
+          open={showApplicationForm}
+          onOpenChange={setShowApplicationForm}
+        >
+          <DialogContent className="max-w-4xl">
+            <ApplicationForm
+              application={editingApplication || undefined}
+              onSubmit={handleApplicationSubmit}
+              onCancel={() => {
+                setShowApplicationForm(false);
+                setEditingApplication(null);
+              }}
+            />
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={showJobForm} onOpenChange={setShowJobForm}>
+          <DialogContent className="max-w-4xl">
+            <JobForm
+              onSubmit={handleJobSubmit}
+              onCancel={() => setShowJobForm(false)}
+            />
+          </DialogContent>
+        </Dialog>
+
+        {showImportModal && (
+          <JobImportModal
+            isOpen={showImportModal}
+            onClose={() => setShowImportModal(false)}
+            onImportComplete={() => {
+              refetchJobStats();
+              refetchApplications();
+            }}
+          />
         )}
 
-        {showJobForm && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
-              <JobForm
-                onSubmit={handleJobSubmit}
-                onCancel={() => setShowJobForm(false)}
-              />
-            </div>
-          </div>
-        )}
+        <Dialog
+          open={!!selectedApplication}
+          onOpenChange={() => setSelectedApplication(null)}
+        >
+          <DialogContent className="max-w-2xl">
+            {selectedApplication && (
+              <>
+                <DialogHeader>
+                  <DialogTitle>{selectedApplication.job?.title}</DialogTitle>
+                  <DialogDescription>
+                    View application details
+                  </DialogDescription>
+                </DialogHeader>
 
-        {selectedApplication && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-gray-900">
-                  {selectedApplication.job?.title}
-                </h2>
-                <button
-                  onClick={() => setSelectedApplication(null)}
-                  className="text-gray-400 hover:text-gray-500"
-                >
-                  <span className="text-2xl">&times;</span>
-                </button>
-              </div>
-              
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-600">Company</p>
-                    <p className="font-medium">{selectedApplication.job?.company}</p>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Company</p>
+                      <p className="font-medium">
+                        {selectedApplication.job?.company}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Location</p>
+                      <p className="font-medium">
+                        {selectedApplication.job?.location}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Status</p>
+                      <p className="font-medium capitalize">
+                        {selectedApplication.status}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">
+                        Date Found
+                      </p>
+                      <p className="font-medium">
+                        {new Date(
+                          selectedApplication.job?.dateFound || 0
+                        ).toLocaleDateString()}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Location</p>
-                    <p className="font-medium">{selectedApplication.job?.location}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Status</p>
-                    <p className="font-medium capitalize">{selectedApplication.status}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Date Found</p>
-                    <p className="font-medium">
-                      {new Date(selectedApplication.job?.dateFound || 0).toLocaleDateString()}
-                    </p>
-                  </div>
+
+                  {selectedApplication.appliedDate && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">
+                        Applied Date
+                      </p>
+                      <p className="font-medium">
+                        {new Date(
+                          selectedApplication.appliedDate
+                        ).toLocaleDateString()}
+                      </p>
+                    </div>
+                  )}
+
+                  {selectedApplication.interviewDates &&
+                    selectedApplication.interviewDates.length > 0 && (
+                      <div>
+                        <p className="text-sm text-muted-foreground">
+                          Interview Dates
+                        </p>
+                        <ul className="list-disc list-inside">
+                          {selectedApplication.interviewDates.map(
+                            (date, index) => (
+                              <li key={index} className="font-medium">
+                                {new Date(date).toLocaleDateString()}
+                              </li>
+                            )
+                          )}
+                        </ul>
+                      </div>
+                    )}
+
+                  {selectedApplication.notes && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">Notes</p>
+                      <p className="font-medium">{selectedApplication.notes}</p>
+                    </div>
+                  )}
                 </div>
-                
-                {selectedApplication.appliedDate && (
-                  <div>
-                    <p className="text-sm text-gray-600">Applied Date</p>
-                    <p className="font-medium">
-                      {new Date(selectedApplication.appliedDate).toLocaleDateString()}
-                    </p>
-                  </div>
-                )}
-                
-                {selectedApplication.interviewDates && selectedApplication.interviewDates.length > 0 && (
-                  <div>
-                    <p className="text-sm text-gray-600">Interview Dates</p>
-                    <ul className="list-disc list-inside">
-                      {selectedApplication.interviewDates.map((date, index) => (
-                        <li key={index} className="font-medium">
-                          {new Date(date).toLocaleDateString()}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                
-                {selectedApplication.notes && (
-                  <div>
-                    <p className="text-sm text-gray-600">Notes</p>
-                    <p className="font-medium">{selectedApplication.notes}</p>
-                  </div>
-                )}
-              </div>
-              
-              <div className="mt-6 flex justify-end space-x-3">
-                <button
-                  onClick={() => {
-                    setSelectedApplication(null);
-                    handleEditApplication(selectedApplication);
-                  }}
-                  className="px-4 py-2 text-sm font-medium text-indigo-700 bg-indigo-100 border border-transparent rounded-md hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => setSelectedApplication(null)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+
+                <div className="mt-6 flex justify-end space-x-3">
+                  <Button
+                    variant="default"
+                    onClick={() => {
+                      setSelectedApplication(null);
+                      handleEditApplication(selectedApplication);
+                    }}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setSelectedApplication(null)}
+                  >
+                    Close
+                  </Button>
+                </div>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
