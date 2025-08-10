@@ -44,7 +44,7 @@ export default function Header() {
           <Link
             key={link.href}
             href={link.href}
-            className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium"
+            className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium w-full text-center py-2"
             onClick={() => setIsMobileMenuOpen(false)}
           >
             {link.label}
@@ -56,7 +56,7 @@ export default function Header() {
           <Link
             key={link.href}
             href={link.href}
-            className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium"
+            className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium w-full text-center py-2"
             onClick={() => setIsMobileMenuOpen(false)}
           >
             {link.label}
@@ -102,7 +102,7 @@ export default function Header() {
           </DropdownMenuContent>
         </DropdownMenu>
       ) : (
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center justify-center space-x-2 w-full">
           <SignInButton mode="modal">
             <Button variant="ghost" size="sm">
               Sign In
@@ -161,7 +161,7 @@ export default function Header() {
                   <span className="sr-only">Toggle menu</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-full sm:w-full">
+              <SheetContent side="right" className="w-full sm:w-full bg-white">
                 <SheetHeader>
                   <SheetTitle>
                     <Link
@@ -176,11 +176,11 @@ export default function Header() {
                     </Link>
                   </SheetTitle>
                 </SheetHeader>
-                <div className="flex flex-col space-y-6 mt-6 h-full">
-                  <nav className="flex flex-col space-y-4">
+                <div className="flex flex-col items-center space-y-6 mt-6 h-full">
+                  <nav className="flex flex-col space-y-4 items-center">
                     <NavItems />
                   </nav>
-                  <div className="pt-4 border-t border-gray-200 mt-auto">
+                  <div className="pt-4 border-t border-gray-200 mt-auto flex justify-center">
                     <AuthButtons />
                   </div>
                   {isSignedIn && (
