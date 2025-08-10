@@ -6,34 +6,34 @@
   --font-mono: var(--font-geist-mono);
 }
 
-:root {
+@theme {
   --background: 0 0% 100%;
   --foreground: 222.2 47.4% 11.2%;
-  
+
   --muted: 210 40% 96.1%;
   --muted-foreground: 215.4 16.3% 46.9%;
-  
+
   --popover: 0 0% 100%;
   --popover-foreground: 222.2 47.4% 11.2%;
-  
+
   --border: 214.3 31.8% 91.4%;
   --input: 214.3 31.8% 91.4%;
-  
+
   --card: 0 0% 100%;
   --card-foreground: 222.2 47.4% 11.2%;
-  
+
   --color-primary: 25 31% 29%;
   --color-primary-foreground: 0 0% 100%;
 
   --color-secondary: 20 30% 75%;
   --color-secondary-foreground: 222.2 47.4% 11.2%;
-  
+
   --accent: 210 40% 96.1%;
   --accent-foreground: 222.2 47.4% 11.2%;
-  
+
   --destructive: 0 100% 50%;
   --destructive-foreground: 210 40% 98%;
-  
+
   --ring: 25 31% 29%;
 }
 
