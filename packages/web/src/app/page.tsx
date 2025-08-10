@@ -531,12 +531,12 @@ export default async function Home() {
       {/* Testimonials Section */}
 
       {/* CTA Section */}
-                <section className="py-20 bg-primary">
+      <section className="py-20 bg-secondary">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-white sm:text-4xl">
+          <h2 className="text-3xl font-bold text-gray-800 sm:text-4xl">
             Ready to Supercharge Your Job Search?
           </h2>
-                      <p className="mt-4 text-xl text-primary-foreground/80">
+          <p className="mt-4 text-xl text-gray-800">
             Join thousands of job seekers who are already using Jobloom to land
             better opportunities faster.
           </p>
@@ -560,7 +560,7 @@ export default async function Home() {
               </SignUpButton>
             )}
           </div>
-                      <p className="mt-4 text-sm text-primary-foreground/60">
+          <p className="mt-4 text-sm text-gray-500  ">
             No credit card required • Free forever • 2-minute setup
           </p>
         </div>

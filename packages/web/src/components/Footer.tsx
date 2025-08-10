@@ -12,13 +12,13 @@ export default function Footer() {
       initial={{ opacity: 0 }}
       whileInView={{ opacity: 1 }}
       transition={{ duration: 0.4 }}
-      className="mt-24 text-gray-400"
+      className=" text-white"
     >
       {/* Decorative gradient top border */}
       <div className="h-1 bg-gradient-to-r from-primary via-secondary to-pink-500" />
 
       {/* Main footer */}
-      <div className="bg-gray-900">
+      <div className="bg-primary">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12">
           {/* Brand */}
           <div>
@@ -36,7 +36,10 @@ export default function Footer() {
             <h4 className="text-white font-semibold mb-4">Product</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/#how-it-works" className="hover:text-white transition-colors">
+                <Link
+                  href="/#how-it-works"
+                  className="hover:text-white transition-colors"
+                >
                   Features
                 </Link>
               </li>
@@ -59,17 +62,26 @@ export default function Footer() {
             <h4 className="text-white font-semibold mb-4">Company</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/about" className="hover:text-white transition-colors">
+                <Link
+                  href="/about"
+                  className="hover:text-white transition-colors"
+                >
                   About
                 </Link>
               </li>
               <li>
-                <Link href="/blog" className="hover:text-white transition-colors">
+                <Link
+                  href="/blog"
+                  className="hover:text-white transition-colors"
+                >
                   Blog
                 </Link>
               </li>
               <li>
-                <Link href="/careers" className="hover:text-white transition-colors">
+                <Link
+                  href="/careers"
+                  className="hover:text-white transition-colors"
+                >
                   Careers
                 </Link>
               </li>
@@ -81,12 +93,18 @@ export default function Footer() {
             <h4 className="text-white font-semibold mb-4">Legal</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/privacy" className="hover:text-white transition-colors">
+                <Link
+                  href="/privacy"
+                  className="hover:text-white transition-colors"
+                >
                   Privacy Policy
                 </Link>
               </li>
               <li>
-                <Link href="/terms" className="hover:text-white transition-colors">
+                <Link
+                  href="/terms"
+                  className="hover:text-white transition-colors"
+                >
                   Terms of Service
                 </Link>
               </li>
