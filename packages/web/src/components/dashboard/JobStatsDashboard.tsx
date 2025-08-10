@@ -127,8 +127,8 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center">
-                <div className="p-3 rounded-full bg-purple-100">
-                  <span className="text-purple-600 text-xl">📅</span>
+                <div className="p-3 rounded-full bg-secondary/20">
+                  <span className="text-secondary text-xl">📅</span>
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-muted-foreground">Jobs Today</p>
@@ -193,14 +193,14 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors cursor-help">
+                      <div className="flex items-center justify-between p-3 bg-secondary/10 rounded-lg hover:bg-secondary/20 transition-colors cursor-help">
                         <div className="flex items-center">
-                          <div className="p-2 rounded-full bg-purple-100">
-                            <span className="text-purple-600">🏢</span>
+                          <div className="p-2 rounded-full bg-secondary/20">
+                            <span className="text-secondary">🏢</span>
                           </div>
                           <span className="ml-3 font-medium text-foreground">Agency Jobs</span>
                         </div>
-                        <span className="text-lg font-bold text-purple-600">
+                        <span className="text-lg font-bold text-secondary">
                           {stats.recruitmentAgencyJobs || 0}
                         </span>
                       </div>

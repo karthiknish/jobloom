@@ -12,7 +12,7 @@ export function AdminAccessDenied() {
         </p>
         <Link 
           href="/" 
-          className="inline-block bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700"
+          className="inline-block bg-primary text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary/90"
         >
           Return to Home
         </Link>

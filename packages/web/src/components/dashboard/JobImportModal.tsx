@@ -175,13 +175,9 @@ export function JobImportModal({ isOpen, onClose, onImportComplete }: JobImportM
                     </Label>
                     <p className="pl-1">or drag and drop</p>
                   </div>
-                  <p className="text-xs opacity-70">
-                    CSV files only
-                  </p>
+                  <p className="text-xs opacity-70">CSV files only</p>
                   {csvFile && (
-                    <p className="text-sm mt-2">
-                      Selected: {csvFile.name}
-                    </p>
+                    <p className="text-sm mt-2">Selected: {csvFile.name}</p>
                   )}
                 </div>
               </div>
@@ -197,10 +193,7 @@ export function JobImportModal({ isOpen, onClose, onImportComplete }: JobImportM
                     Download our sample CSV template to get started
                   </p>
                 </div>
-                <Button
-                  variant="outline"
-                  onClick={downloadSampleCSV}
-                >
+                <Button variant="outline" onClick={downloadSampleCSV}>
                   Download Template
                 </Button>
               </div>
@@ -231,7 +224,14 @@ export function JobImportModal({ isOpen, onClose, onImportComplete }: JobImportM
               <Label className="block text-sm font-medium mb-2">
                 Job Board
               </Label>
-              <Select value={apiSource} onValueChange={setApiSource}>
+              <Select
+                value={apiSource}
+                onValueChange={(value) =>
+                  setApiSource(
+                    value as "custom" | "linkedin" | "indeed" | "glassdoor"
+                  )
+                }
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -257,9 +257,7 @@ export function JobImportModal({ isOpen, onClose, onImportComplete }: JobImportM
             </div>
 
             <div>
-              <Label className="block text-sm font-medium mb-2">
-                Location
-              </Label>
+              <Label className="block text-sm font-medium mb-2">Location</Label>
               <Input
                 type="text"
                 value={location}
@@ -279,14 +277,17 @@ export function JobImportModal({ isOpen, onClose, onImportComplete }: JobImportM
                   </h3>
                   <div className="mt-2 text-sm text-yellow-700">
                     <p>
-                      Job board API integrations require proper authentication and may have rate limits.
-                      This is a demonstration feature - in a production environment, you would need to:
+                      Job board API integrations require proper authentication
+                      and may have rate limits. This is a demonstration feature
+                      - in a production environment, you would need to:
                     </p>
                     <ul className="list-disc list-inside mt-2 space-y-1">
                       <li>Set up API keys for each job board</li>
                       <li>Handle authentication tokens</li>
                       <li>Respect rate limits and terms of service</li>
-                      <li>Parse and normalize job data from different sources</li>
+                      <li>
+                        Parse and normalize job data from different sources
+                      </li>
                     </ul>
                   </div>
                 </div>
@@ -301,10 +302,7 @@ export function JobImportModal({ isOpen, onClose, onImportComplete }: JobImportM
               >
                 Cancel
               </Button>
-              <Button
-                onClick={handleApiImport}
-                disabled={isImporting}
-              >
+              <Button onClick={handleApiImport} disabled={isImporting}>
                 {isImporting ? "Importing..." : "Import from API"}
               </Button>
             </div>

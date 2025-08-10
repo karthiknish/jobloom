@@ -183,7 +183,7 @@ export function CvAnalysisResults({ analysis }: CvAnalysisResultsProps) {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
-              <span className="text-purple-500 mr-2">💡</span>
+              <span className="text-secondary mr-2">💡</span>
               Actionable Recommendations
             </CardTitle>
           </CardHeader>
@@ -192,7 +192,7 @@ export function CvAnalysisResults({ analysis }: CvAnalysisResultsProps) {
               {analysis.recommendations.map(
                 (recommendation: string, index: number) => (
                   <li key={index} className="flex items-start">
-                    <span className="text-purple-500 mr-2 mt-1 flex-shrink-0">✓</span>
+                    <span className="text-secondary mr-2 mt-1 flex-shrink-0">✓</span>
                     <span className="text-foreground">{recommendation}</span>
                   </li>
                 ),
@@ -230,7 +230,7 @@ export function CvAnalysisResults({ analysis }: CvAnalysisResultsProps) {
                 </div>
                 <div className="bg-muted rounded-full h-2">
                   <div
-                    className="bg-indigo-500 h-2 rounded-full"
+                    className="bg-primary h-2 rounded-full"
                     style={{ width: `${analysis.industryAlignment.score}%` }}
                   ></div>
                 </div>

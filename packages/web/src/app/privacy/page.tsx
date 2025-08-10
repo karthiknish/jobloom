@@ -64,7 +64,7 @@ export default function PrivacyPolicy() {
               If you have questions about this policy, email us at
               <Link
                 href="mailto:privacy@jobloom.ai"
-                className="text-indigo-600 hover:underline"
+                className="text-primary hover:underline"
               >
                 {" "}
                 privacy@jobloom.ai

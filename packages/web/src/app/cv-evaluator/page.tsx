@@ -8,37 +8,53 @@ import { CvAnalysisHistory } from "../../components/CvAnalysisHistory";
 import { motion } from "framer-motion";
 import { useApiQuery } from "../../hooks/useApi";
 import { cvEvaluatorApi } from "../../utils/api/cvEvaluator";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 export default function CvEvaluatorPage() {
   const { user } = useUser();
   const [activeTab, setActiveTab] = useState<"upload" | "history">("upload");
 
   const userRecord = useApiQuery(
-    () => user ? cvEvaluatorApi.getUserByClerkId(user.id) : Promise.reject(new Error("No user")),
+    () =>
+      user
+        ? cvEvaluatorApi.getUserByClerkId(user.id)
+        : Promise.reject(new Error("No user")),
     [user?.id]
   ).data;
 
   const cvAnalyses = useApiQuery(
-    () => userRecord ? cvEvaluatorApi.getUserCvAnalyses(userRecord._id) : Promise.reject(new Error("No user record")),
+    () =>
+      userRecord
+        ? cvEvaluatorApi.getUserCvAnalyses(userRecord._id)
+        : Promise.reject(new Error("No user record")),
     [userRecord?._id]
   ).data;
 
   const cvStats = useApiQuery(
-    () => userRecord ? cvEvaluatorApi.getCvAnalysisStats(userRecord._id) : Promise.reject(new Error("No user record")),
+    () =>
+      userRecord
+        ? cvEvaluatorApi.getCvAnalysisStats(userRecord._id)
+        : Promise.reject(new Error("No user record")),
     [userRecord?._id]
   ).data;
 
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Please sign in to access the CV evaluator
-          </h2>
-          <p className="text-gray-600">
-            Get AI-powered insights to improve your CV
-          </p>
-        </div>
+        <Card className="max-w-md w-full">
+          <CardHeader>
+            <CardTitle>Please sign in to access the CV evaluator</CardTitle>
+            <CardDescription>
+              Get AI-powered insights to improve your CV
+            </CardDescription>
+          </CardHeader>
+        </Card>
       </div>
     );
   }
@@ -49,13 +65,13 @@ export default function CvEvaluatorPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="bg-gradient-to-r from-blue-600 to-cyan-600 shadow-lg"
+        className="bg-gradient-to-r from-primary to-secondary shadow-lg"
       >
         <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
           <div className="md:flex md:items-center md:justify-between">
             <div className="flex-1 min-w-0">
               <h1 className="text-3xl font-bold text-white">CV Evaluator 📄</h1>
-              <p className="mt-2 text-blue-100">
+              <p className="mt-2 text-primary-foreground/80">
                 Get AI-powered insights to improve your CV and increase your
                 chances of landing interviews
               </p>
@@ -74,171 +90,132 @@ export default function CvEvaluatorPage() {
               transition={{ duration: 0.5, delay: 0.1 }}
               className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8"
             >
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                className="bg-white overflow-hidden shadow-lg rounded-xl hover:shadow-xl transition-shadow"
-              >
-                <div className="p-6">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0 bg-blue-100 rounded-lg p-3">
-                      <span className="text-2xl">📄</span>
+              <motion.div whileHover={{ scale: 1.05 }}>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">
+                      Total Analyses
+                    </CardTitle>
+                    <div className="bg-blue-100 rounded-lg w-10 h-10 flex items-center justify-center">
+                      <span className="text-blue-600 text-lg">📊</span>
                     </div>
-                    <div className="ml-5 w-0 flex-1">
-                      <dl>
-                        <dt className="text-sm font-medium text-gray-600 truncate">
-                          Total Analyses
-                        </dt>
-                        <dd className="text-2xl font-bold text-gray-900">
-                          {cvStats.totalAnalyses}
-                        </dd>
-                      </dl>
-                    </div>
-                  </div>
-                </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{cvStats.total}</div>
+                    <p className="text-xs text-muted-foreground">
+                      CVs analyzed
+                    </p>
+                  </CardContent>
+                </Card>
               </motion.div>
 
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                className="bg-white overflow-hidden shadow-lg rounded-xl hover:shadow-xl transition-shadow"
-              >
-                <div className="p-6">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0 bg-green-100 rounded-lg p-3">
-                      <span className="text-2xl">✅</span>
+              <motion.div whileHover={{ scale: 1.05 }}>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">
+                      Avg. Score
+                    </CardTitle>
+                    <div className="bg-green-100 rounded-lg w-10 h-10 flex items-center justify-center">
+                      <span className="text-green-600 text-lg">⭐</span>
                     </div>
-                    <div className="ml-5 w-0 flex-1">
-                      <dl>
-                        <dt className="text-sm font-medium text-gray-600 truncate">
-                          Completed
-                        </dt>
-                        <dd className="text-2xl font-bold text-gray-900">
-                          {cvStats.completedAnalyses}
-                        </dd>
-                      </dl>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {cvStats.averageScore}%
                     </div>
-                  </div>
-                </div>
+                    <p className="text-xs text-muted-foreground">
+                      Overall improvement
+                    </p>
+                  </CardContent>
+                </Card>
               </motion.div>
 
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                className="bg-white overflow-hidden shadow-lg rounded-xl hover:shadow-xl transition-shadow"
-              >
-                <div className="p-6">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0 bg-purple-100 rounded-lg p-3">
-                      <span className="text-2xl">📊</span>
+              <motion.div whileHover={{ scale: 1.05 }}>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">
+                      Keywords
+                    </CardTitle>
+                    <div className="bg-secondary/20 rounded-lg w-10 h-10 flex items-center justify-center">
+                      <span className="text-secondary text-lg">🔍</span>
                     </div>
-                    <div className="ml-5 w-0 flex-1">
-                      <dl>
-                        <dt className="text-sm font-medium text-gray-600 truncate">
-                          Average Score
-                        </dt>
-                        <dd className="text-2xl font-bold text-gray-900">
-                          {cvStats.averageScore}/100
-                        </dd>
-                      </dl>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {cvStats.averageKeywords}
                     </div>
-                  </div>
-                </div>
+                    <p className="text-xs text-muted-foreground">
+                      Avg. per analysis
+                    </p>
+                  </CardContent>
+                </Card>
               </motion.div>
 
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                className="bg-white overflow-hidden shadow-lg rounded-xl hover:shadow-xl transition-shadow"
-              >
-                <div className="p-6">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0 bg-yellow-100 rounded-lg p-3">
-                      <span className="text-2xl">🤖</span>
+              <motion.div whileHover={{ scale: 1.05 }}>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">
+                      Success Rate
+                    </CardTitle>
+                    <div className="bg-yellow-100 rounded-lg w-10 h-10 flex items-center justify-center">
+                      <span className="text-yellow-600 text-lg">🎯</span>
                     </div>
-                    <div className="ml-5 w-0 flex-1">
-                      <dl>
-                        <dt className="text-sm font-medium text-gray-600 truncate">
-                          Latest ATS Score
-                        </dt>
-                        <dd className="text-2xl font-bold text-gray-900">
-                          {cvStats.recentAnalysis?.atsCompatibility?.score || "N/A"}
-                        </dd>
-                      </dl>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {cvStats.successRate}%
                     </div>
-                  </div>
-                </div>
+                    <p className="text-xs text-muted-foreground">
+                      Improvement potential
+                    </p>
+                  </CardContent>
+                </Card>
               </motion.div>
             </motion.div>
           )}
 
           {/* Tab Navigation */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="bg-white shadow-lg rounded-xl overflow-hidden"
-          >
-            <div className="border-b border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100">
-              <nav className="-mb-px flex">
-                <button
-                  onClick={() => setActiveTab("upload")}
-                  className={`py-4 px-6 text-sm font-medium border-b-2 transition-all ${
-                    activeTab === "upload"
-                      ? "border-blue-500 text-blue-600 bg-white"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                  }`}
-                >
-                  <span className="flex items-center gap-2">
-                    <span>📤</span>
-                    Upload & Analyze
-                  </span>
-                </button>
-                <button
-                  onClick={() => setActiveTab("history")}
-                  className={`py-4 px-6 text-sm font-medium border-b-2 transition-all ${
-                    activeTab === "history"
-                      ? "border-blue-500 text-blue-600 bg-white"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                  }`}
-                >
-                  <span className="flex items-center gap-2">
-                    <span>📜</span>
-                    Analysis History
-                  </span>
-                </button>
-              </nav>
-            </div>
+          <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg mb-6 w-fit">
+            <button
+              onClick={() => setActiveTab("upload")}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                activeTab === "upload"
+                  ? "bg-white shadow"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              Upload CV
+            </button>
+            <button
+              onClick={() => setActiveTab("history")}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                activeTab === "history"
+                  ? "bg-white shadow"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              Analysis History
+            </button>
+          </div>
 
-            <div className="p-8">
-              {activeTab === "upload" && (
-                <motion.div
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="space-y-6"
-                >
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <h3 className="text-sm font-medium text-blue-900 mb-1">
-                      Pro Tip
-                    </h3>
-                    <p className="text-sm text-blue-700">
-                      Upload your CV in PDF format for best results. Our AI will
-                      analyze keywords, formatting, and ATS compatibility.
-                    </p>
-                  </div>
-                  <CvUploadForm userId={user.id} />
-                </motion.div>
-              )}
-
-              {activeTab === "history" && (
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="space-y-6"
-                >
-                  <CvAnalysisHistory analyses={cvAnalyses || []} />
-                </motion.div>
-              )}
-            </div>
-          </motion.div>
+          {/* Tab Content */}
+          {activeTab === "upload" ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3 }}
+            >
+              <CvUploadForm userId={userRecord?._id || ""} />
+            </motion.div>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3 }}
+            >
+              <CvAnalysisHistory analyses={cvAnalyses || []} />
+            </motion.div>
+          )}
         </FeatureGate>
       </div>
     </div>

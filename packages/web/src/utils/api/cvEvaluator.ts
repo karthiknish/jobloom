@@ -8,9 +8,12 @@ export interface UserRecord {
 }
 
 export interface CvStats {
-  totalAnalyses: number;
-  completedAnalyses: number;
+  total: number;
   averageScore: number;
+  averageKeywords: number;
+  successRate: number;
+  totalAnalyses?: number;
+  completedAnalyses?: number;
   recentAnalysis?: CvAnalysis;
 }
 
@@ -24,7 +27,24 @@ export const cvEvaluatorApi = {
   },
 
   getCvAnalysisStats: async (userId: string): Promise<CvStats> => {
-    return convexApi.getCvAnalysisStats(userId);
+    type StatsWithExtras = {
+      totalAnalyses?: number;
+      completedAnalyses?: number;
+      averageScore?: number;
+      recentAnalysis?: CvAnalysis;
+      averageKeywords?: number;
+      successRate?: number;
+    };
+    const stats: StatsWithExtras = await convexApi.getCvAnalysisStats(userId);
+    return {
+      total: stats.totalAnalyses ?? 0,
+      averageScore: stats.averageScore ?? 0,
+      averageKeywords: stats.averageKeywords ?? 0,
+      successRate: stats.successRate ?? 0,
+      totalAnalyses: stats.totalAnalyses,
+      completedAnalyses: stats.completedAnalyses,
+      recentAnalysis: stats.recentAnalysis,
+    };
   },
 
   deleteCvAnalysis: async (analysisId: string): Promise<void> => {

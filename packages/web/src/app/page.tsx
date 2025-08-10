@@ -145,8 +145,8 @@ export default async function Home() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-20">
             <div>
-              <div className="bg-indigo-100 rounded-full w-12 h-12 flex items-center justify-center mb-4">
-                <span className="text-xl font-bold text-indigo-600">1</span>
+              <div className="bg-primary/10 rounded-full w-12 h-12 flex items-center justify-center mb-4">
+                <span className="text-xl font-bold text-primary">1</span>
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">
                 Install the Chrome Extension
@@ -170,7 +170,7 @@ export default async function Home() {
                 </li>
               </ul>
             </div>
-            <div className="bg-gradient-to-br from-indigo-50 to-cyan-50 rounded-2xl p-8">
+            <div className="bg-gradient-to-br from-primary/5 to-secondary/5 rounded-2xl p-8">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardDescription className="text-sm font-medium text-gray-500">
@@ -181,7 +181,7 @@ export default async function Home() {
                   </span>
                 </CardHeader>
                 <CardContent>
-                  <Button className="w-full bg-indigo-600 hover:bg-indigo-700">
+                  <Button className="w-full bg-primary hover:bg-primary/90">
                     🎯 Check Sponsored Jobs
                   </Button>
                 </CardContent>
@@ -205,9 +205,9 @@ export default async function Home() {
                         Senior Software Engineer at Google
                       </p>
                     </div>
-                    <div className="border-l-4 border-purple-400 bg-purple-50 p-4 rounded-r-lg">
+                    <div className="border-l-4 border-secondary bg-secondary/10 p-4 rounded-r-lg">
                       <div className="flex items-center">
-                        <span className="text-purple-600 mr-2">🎯</span>
+                        <span className="text-secondary mr-2">🎯</span>
                         <span className="font-medium text-gray-900">
                           PROMOTED
                         </span>
@@ -305,7 +305,7 @@ export default async function Home() {
                       <span className="text-sm text-gray-600">
                         Interviewing
                       </span>
-                      <span className="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">
+                      <span className="bg-secondary/20 text-secondary text-xs px-2 py-1 rounded-full">
                         3
                       </span>
                     </div>
@@ -335,10 +335,10 @@ export default async function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <Card className="group hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
               <CardHeader>
-                <div className="bg-indigo-100 rounded-lg w-12 h-12 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <div className="bg-primary/10 rounded-lg w-12 h-12 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                   <span className="text-2xl">🎯</span>
                 </div>
-                <CardTitle className="group-hover:text-indigo-600 transition-colors">
+                <CardTitle className="group-hover:text-primary transition-colors">
                   Smart Company Detection
                 </CardTitle>
               </CardHeader>
@@ -369,10 +369,10 @@ export default async function Home() {
 
             <Card className="group hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
               <CardHeader>
-                <div className="bg-purple-100 rounded-lg w-12 h-12 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <div className="bg-secondary/20 rounded-lg w-12 h-12 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                   <span className="text-2xl">🔄</span>
                 </div>
-                <CardTitle className="group-hover:text-purple-600 transition-colors">
+                <CardTitle className="group-hover:text-secondary transition-colors">
                   Real-time Sync
                 </CardTitle>
               </CardHeader>
@@ -531,12 +531,12 @@ export default async function Home() {
       {/* Testimonials Section */}
 
       {/* CTA Section */}
-      <section className="py-20 bg-indigo-600">
+                <section className="py-20 bg-primary">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-white sm:text-4xl">
             Ready to Supercharge Your Job Search?
           </h2>
-          <p className="mt-4 text-xl text-indigo-100">
+                      <p className="mt-4 text-xl text-primary-foreground/80">
             Join thousands of job seekers who are already using Jobloom to land
             better opportunities faster.
           </p>
@@ -545,7 +545,7 @@ export default async function Home() {
               <Button
                 asChild
                 size="lg"
-                className="text-lg px-8 py-6 bg-white text-indigo-600 hover:bg-gray-100"
+                className="text-lg px-8 py-6 bg-white text-primary hover:bg-gray-100"
               >
                 <Link href="/dashboard">Go to Dashboard</Link>
               </Button>
@@ -553,14 +553,14 @@ export default async function Home() {
               <SignUpButton mode="modal">
                 <Button
                   size="lg"
-                  className="text-lg px-8 py-6 bg-white text-indigo-600 hover:bg-gray-100"
+                  className="text-lg px-8 py-6 bg-white text-primary hover:bg-gray-100"
                 >
                   Start Free Today
                 </Button>
               </SignUpButton>
             )}
           </div>
-          <p className="mt-4 text-sm text-indigo-200">
+                      <p className="mt-4 text-sm text-primary-foreground/60">
             No credit card required • Free forever • 2-minute setup
           </p>
         </div>

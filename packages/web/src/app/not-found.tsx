@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
 
 export default function NotFound() {
   return (
@@ -46,18 +47,20 @@ export default function NotFound() {
           transition={{ delay: 0.4 }}
           className="flex flex-col sm:flex-row gap-4 justify-center items-center"
         >
-          <Link
-            href="/"
-            className="px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white font-medium rounded-lg hover:from-primary hover:to-secondary/90 transition-all transform hover:scale-105 shadow-lg"
-          >
-            Go Back Home
-          </Link>
-          <Link
-            href="/dashboard"
-            className="px-6 py-3 bg-white text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors border border-gray-300 shadow-sm"
-          >
-            View Dashboard
-          </Link>
+          <Button asChild>
+            <Link
+              href="/"
+            >
+              Go Back Home
+            </Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link
+              href="/dashboard"
+            >
+              View Dashboard
+            </Link>
+          </Button>
         </motion.div>
 
         <motion.div
