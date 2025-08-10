@@ -13,11 +13,10 @@ export async function GET(
 ) {
   try {
     const params = await context.params;
-    const { userId } = params;
 
     // Call the Convex function to check if user is admin
     const isAdmin = await convex.query(api.admin.isUserAdmin, {
-      userId: userId as Id<"users">,
+      userId: params.userId as Id<"users">,
     });
 
     return NextResponse.json(isAdmin);

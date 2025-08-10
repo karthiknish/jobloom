@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "@jobloom/convex/convex/_generated/api";
+import { Id } from "@jobloom/convex/convex/_generated/dataModel";
 
 // Create a Convex HTTP client
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
@@ -14,7 +15,7 @@ export async function GET(
     const params = await context.params;
     // Call the Convex function to get applications
     const applications = await convex.query(api.applications.getApplicationsByUser, { 
-      userId: params.userId 
+      userId: params.userId as Id<"users">
     });
     
     return NextResponse.json(applications);
@@ -38,7 +39,7 @@ export async function PATCH(
     
     // Call the Convex function to update application status
     await convex.mutation(api.applications.updateApplicationStatus, { 
-      applicationId: params.applicationId,
+      applicationId: params.applicationId as Id<"applications">,
       status
     });
     

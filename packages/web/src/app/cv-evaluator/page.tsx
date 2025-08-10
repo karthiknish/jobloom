@@ -65,14 +65,7 @@ export default function CvEvaluatorPage() {
       </motion.div>
 
       <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        <FeatureGate
-          feature="cv_analysis"
-          upgradePrompt={{
-            title: "CV Analysis",
-            description:
-              "Unlock AI-powered CV analysis to identify gaps, improve ATS compatibility, and get personalized recommendations for your job search.",
-          }}
-        >
+        <FeatureGate>
           {/* Stats Cards */}
           {cvStats && (
             <motion.div

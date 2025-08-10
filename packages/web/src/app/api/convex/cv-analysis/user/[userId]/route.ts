@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "@jobloom/convex/convex/_generated/api";
+import { Id } from "@jobloom/convex/convex/_generated/dataModel";
 
 // Create a Convex HTTP client
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
@@ -13,7 +14,7 @@ export async function GET(
   try {
     const params = await context.params;
     const analyses = await convex.query(api.cvAnalysis.getUserCvAnalyses, {
-      userId: params.userId,
+      userId: params.userId as Id<"users">,
     });
     
     return NextResponse.json(analyses);

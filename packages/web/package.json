@@ -11,10 +11,10 @@
     "vercel-build": "next build"
   },
   "dependencies": {
-    "@jobloom/convex": "file:../convex",
     "@clerk/nextjs": "^6.0.0",
     "@google/generative-ai": "^0.24.1",
     "@heroicons/react": "^2.0.0",
+    "@jobloom/convex": "file:../convex",
     "@radix-ui/react-slot": "^1.2.3",
     "class-variance-authority": "^0.7.1",
     "convex": "^1.0.0",

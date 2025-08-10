@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "@jobloom/convex/convex/_generated/api";
+import { Id } from "@jobloom/convex/convex/_generated/dataModel";
 
 // Create a Convex HTTP client
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
@@ -13,7 +14,7 @@ export async function DELETE(
   try {
     const params = await context.params;
     await convex.mutation(api.cvAnalysis.deleteCvAnalysis, {
-      analysisId: params.analysisId,
+      analysisId: params.analysisId as Id<"cvAnalyses">,
     });
     
     return NextResponse.json({ success: true });
