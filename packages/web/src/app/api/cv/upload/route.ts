@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "@convex-generated/api";
-import pdf from "pdf-parse";
-
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function POST(req: NextRequest) {
   try {
+    // Create a Convex HTTP client inside the function
+    const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+    
     const formData = await req.formData();
     const file = formData.get("file") as File;
     const userId = formData.get("userId") as string;
@@ -62,6 +62,8 @@ export async function POST(req: NextRequest) {
 
     try {
       if (file.type === "application/pdf") {
+        // Import pdf-parse dynamically inside the function
+        const pdf = (await import("pdf-parse")).default;
         const pdfData = await pdf(Buffer.from(buffer));
         cvText = pdfData.text;
       } else if (file.type === "text/plain") {

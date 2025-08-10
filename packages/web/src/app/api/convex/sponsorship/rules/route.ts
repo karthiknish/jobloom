@@ -3,11 +3,11 @@ import { NextResponse } from "next/server";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "@jobloom/convex/convex/_generated/api";
 
-// Create a Convex HTTP client
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
-
 export async function GET() {
   try {
+    // Create a Convex HTTP client inside the function
+    const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+    
     // Call the Convex function to get all sponsorship rules
     const rules = await convex.query(api.sponsorship.getAllSponsorshipRules);
     
@@ -23,6 +23,9 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    // Create a Convex HTTP client inside the function
+    const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+    
     const body = await request.json();
     
     // Call the Convex function to add a new sponsorship rule

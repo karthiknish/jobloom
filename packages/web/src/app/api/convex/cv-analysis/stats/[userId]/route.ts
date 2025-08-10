@@ -4,14 +4,14 @@ import { ConvexHttpClient } from "convex/browser";
 import { api } from "@jobloom/convex/convex/_generated/api";
 import { Id } from "@jobloom/convex/convex/_generated/dataModel";
 
-// Create a Convex HTTP client
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
-
 export async function GET(
   request: Request,
   context: { params: Promise<{ userId: string }> }
 ) {
   try {
+    // Create a Convex HTTP client inside the function
+    const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+    
     const params = await context.params;
     const stats = await convex.query(api.cvAnalysis.getCvAnalysisStats, {
       userId: params.userId as Id<"users">,

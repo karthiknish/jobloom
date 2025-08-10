@@ -4,14 +4,14 @@ import { ConvexHttpClient } from "convex/browser";
 import { api } from "@jobloom/convex/convex/_generated/api";
 import { Id } from "@jobloom/convex/convex/_generated/dataModel";
 
-// Create a Convex HTTP client
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
-
 export async function PATCH(
   request: Request,
   context: { params: Promise<{ applicationId: string }> }
 ) {
   try {
+    // Create a Convex HTTP client inside the function
+    const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+    
     const params = await context.params;
     const body = await request.json();
     const { status } = body;

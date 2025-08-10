@@ -7,11 +7,11 @@ import { ConvexHttpClient } from "convex/browser";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const api: any = anyApi;
 
-// Create a Convex HTTP client
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
-
 export async function POST(request: Request) {
   try {
+    // Create a Convex HTTP client inside the function
+    const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+    
     const body = await request.json();
     const { name, email, message } = body;
     

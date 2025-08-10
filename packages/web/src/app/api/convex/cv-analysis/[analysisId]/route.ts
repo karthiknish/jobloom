@@ -4,14 +4,14 @@ import { ConvexHttpClient } from "convex/browser";
 import { api } from "@jobloom/convex/convex/_generated/api";
 import { Id } from "@jobloom/convex/convex/_generated/dataModel";
 
-// Create a Convex HTTP client
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
-
 export async function DELETE(
   request: Request,
   context: { params: Promise<{ analysisId: string }> }
 ) {
   try {
+    // Create a Convex HTTP client inside the function
+    const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+    
     const params = await context.params;
     await convex.mutation(api.cvAnalysis.deleteCvAnalysis, {
       analysisId: params.analysisId as Id<"cvAnalyses">,

@@ -3,14 +3,14 @@ import { NextResponse } from "next/server";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "@jobloom/convex/convex/_generated/api";
 
-// Create a Convex HTTP client
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
-
 export async function GET(
   request: Request,
   context: { params: Promise<{ clerkId: string }> }
 ) {
   try {
+    // Create a Convex HTTP client inside the function
+    const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+    
     const params = await context.params;
     const user = await convex.query(api.users.getUserByClerkId, {
       clerkId: params.clerkId,
