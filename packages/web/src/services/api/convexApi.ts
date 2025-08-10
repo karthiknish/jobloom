@@ -45,7 +45,11 @@ class ConvexApiClient {
 
   // User endpoints
   async getUserByClerkId(clerkId: string) {
-    return this.request<{ _id: string; clerkId: string }>(`/users/${clerkId}`);
+    return this.request<{ _id: string; clerkId: string; isAdmin?: boolean; email: string; name: string; createdAt: number }>(`/users/${clerkId}`);
+  }
+
+  async getAllUsers() {
+    return this.request<Array<{ _id: string; email: string; name: string; isAdmin?: boolean; createdAt: number }>>(`/users`);
   }
 
   // Job endpoints
@@ -121,6 +125,42 @@ class ConvexApiClient {
     });
   }
 
+  // Sponsorship rules endpoints
+  async getAllSponsorshipRules() {
+    return this.request<Array<{
+      _id: string;
+      name: string;
+      description: string;
+      jobSite: string;
+      selectors: string[];
+      keywords: string[];
+      isActive: boolean;
+      createdAt: number;
+      updatedAt: number;
+    }>>(`/sponsorship/rules`);
+  }
+
+  async addSponsorshipRule(data: {
+    name: string;
+    description: string;
+    jobSite: string;
+    selectors: string[];
+    keywords: string[];
+    isActive: boolean;
+  }) {
+    return this.request<{ ruleId: string }>(`/sponsorship/rules`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateSponsorshipRuleStatus(ruleId: string, isActive: boolean) {
+    return this.request(`/sponsorship/rules/${ruleId}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ isActive }),
+    });
+  }
+
   // CV Analysis endpoints
   async getUserCvAnalyses(userId: string) {
     return this.request<CvAnalysis[]>(`/cv-analysis/user/${userId}`);
@@ -140,6 +180,25 @@ class ConvexApiClient {
     return this.request(`/contacts`, {
       method: "POST",
       body: JSON.stringify(data),
+    });
+  }
+
+  // Admin endpoints
+  async isUserAdmin(userId: string) {
+    return this.request<boolean>(`/admin/is-admin/${userId}`);
+  }
+
+  async setAdminUser(userId: string, requesterId: string) {
+    return this.request(`/admin/set-admin`, {
+      method: "POST",
+      body: JSON.stringify({ userId, requesterId }),
+    });
+  }
+
+  async removeAdminUser(userId: string, requesterId: string) {
+    return this.request(`/admin/remove-admin`, {
+      method: "POST",
+      body: JSON.stringify({ userId, requesterId }),
     });
   }
 }

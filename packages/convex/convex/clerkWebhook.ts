@@ -47,11 +47,15 @@ export const clerkWebhook = httpAction(async (ctx, request) => {
       const name: string = [user.first_name, user.last_name]
         .filter(Boolean)
         .join(" ");
+      
+      // Check if user should be admin based on email
+      const isAdmin = email === process.env.ADMIN_EMAIL;
 
       await ctx.runMutation(api.users.createUser, {
         clerkId,
         email,
         name,
+        isAdmin, // Add isAdmin field
       });
     }
 

@@ -6,6 +6,7 @@ export default defineSchema({
     email: v.string(),
     name: v.string(),
     clerkId: v.string(),
+    isAdmin: v.optional(v.boolean()), // Add admin field
     createdAt: v.number(),
   }).index("by_clerk_id", ["clerkId"]),
 

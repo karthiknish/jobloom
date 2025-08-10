@@ -274,3 +274,44 @@ export const getSponsorshipStats = query({
     };
   },
 });
+
+// Sponsorship rules functions
+export const getAllSponsorshipRules = query({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db.query("sponsorshipRules").collect();
+  },
+});
+
+export const addSponsorshipRule = mutation({
+  args: {
+    name: v.string(),
+    description: v.string(),
+    jobSite: v.string(),
+    selectors: v.array(v.string()),
+    keywords: v.array(v.string()),
+    isActive: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    const ruleId = await ctx.db.insert("sponsorshipRules", {
+      ...args,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+
+    return { ruleId };
+  },
+});
+
+export const updateSponsorshipRuleStatus = mutation({
+  args: {
+    ruleId: v.id("sponsorshipRules"),
+    isActive: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.ruleId, {
+      isActive: args.isActive,
+      updatedAt: Date.now(),
+    });
+  },
+});
