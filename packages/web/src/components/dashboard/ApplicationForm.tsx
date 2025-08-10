@@ -74,8 +74,23 @@ export function ApplicationForm({
     { value: "withdrawn", label: "Withdrawn" },
   ];
 
-  const statusBadges = {
-    interested: "blue",
+  const statusBadges: Record<
+    | "interested"
+    | "applied"
+    | "interviewing"
+    | "offered"
+    | "rejected"
+    | "withdrawn",
+    | "secondary"
+    | "destructive"
+    | "default"
+    | "outline"
+    | "green"
+    | "orange"
+    | "purple"
+    | "yellow"
+  > = {
+    interested: "default",
     applied: "yellow",
     interviewing: "purple",
     offered: "green",

@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import Link from "next/link";
 import { useState } from "react";
 import { SignInButton, SignUpButton, UserButton, useUser } from "@clerk/nextjs";
@@ -12,7 +12,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Menu, X } from "lucide-react";
+import { Menu } from "lucide-react";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 export default function Header() {
   const { isSignedIn, user } = useUser();
@@ -29,6 +36,85 @@ export default function Header() {
     { href: "/cv-evaluator", label: "CV Evaluator" },
     { href: "/account", label: "Account" },
   ];
+
+  const NavItems = () => (
+    <>
+      {!isSignedIn &&
+        navLinks.map((link) => (
+          <Link
+            key={link.href}
+            href={link.href}
+            className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            {link.label}
+          </Link>
+        ))}
+
+      {isSignedIn &&
+        userLinks.map((link) => (
+          <Link
+            key={link.href}
+            href={link.href}
+            className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            {link.label}
+          </Link>
+        ))}
+    </>
+  );
+
+  const AuthButtons = () => (
+    <>
+      {isSignedIn ? (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+              <Avatar className="h-10 w-10">
+                <AvatarImage
+                  src={user?.imageUrl}
+                  alt={user?.firstName || "User"}
+                />
+                <AvatarFallback>
+                  {user?.firstName?.charAt(0)}
+                  {user?.lastName?.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56" align="end" forceMount>
+            <DropdownMenuItem>
+              <Link href="/account" className="w-full">
+                Account Settings
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Link href="/dashboard" className="w-full">
+                Dashboard
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Link href="/cv-evaluator" className="w-full">
+                CV Evaluator
+              </Link>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : (
+        <div className="flex items-center space-x-2">
+          <SignInButton mode="modal">
+            <Button variant="ghost" size="sm">
+              Sign In
+            </Button>
+          </SignInButton>
+          <SignUpButton mode="modal">
+            <Button size="sm">Get Started</Button>
+          </SignUpButton>
+        </div>
+      )}
+    </>
+  );
 
   return (
     <motion.header
@@ -54,169 +140,89 @@ export default function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            {!isSignedIn &&
-              navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium"
-                >
-                  {link.label}
-                </Link>
-              ))}
-
-            {isSignedIn &&
-              userLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium"
-                >
-                  {link.label}
-                </Link>
-              ))}
+            <NavItems />
           </nav>
 
           {/* Desktop Auth Buttons */}
           <div className="hidden md:flex items-center space-x-4">
-            {isSignedIn ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={user?.imageUrl} alt={user?.firstName || "User"} />
-                      <AvatarFallback>
-                        {user?.firstName?.charAt(0)}
-                        {user?.lastName?.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end" forceMount>
-                  <DropdownMenuItem>
-                    <Link href="/account" className="w-full">
-                      Account Settings
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Link href="/dashboard" className="w-full">
-                      Dashboard
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Link href="/cv-evaluator" className="w-full">
-                      CV Evaluator
-                    </Link>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <>
-                <SignInButton mode="modal">
-                  <Button variant="ghost" size="sm">
-                    Sign In
-                  </Button>
-                </SignInButton>
-                <SignUpButton mode="modal">
-                  <Button size="sm">Get Started</Button>
-                </SignUpButton>
-              </>
-            )}
+            <AuthButtons />
           </div>
 
           {/* Mobile Menu Button */}
-          <button
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
-          >
-            {isMobileMenuOpen ? (
-              <X className="h-6 w-6 text-gray-600" />
-            ) : (
-              <Menu className="h-6 w-6 text-gray-600" />
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile Menu */}
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="md:hidden bg-white border-t border-gray-100"
-          >
-            <div className="px-4 py-6 space-y-4">
-              {!isSignedIn &&
-                navLinks.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 rounded-lg transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-
-              {isSignedIn &&
-                userLinks.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 rounded-lg transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-
-              <div className="pt-4 border-t border-gray-200 space-y-3">
-                {isSignedIn ? (
-                  <div className="flex items-center justify-between px-3">
-                    <div className="flex items-center space-x-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={user?.imageUrl} alt={user?.firstName || "User"} />
-                        <AvatarFallback>
-                          {user?.firstName?.charAt(0)}
-                          {user?.lastName?.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="text-sm font-medium">
-                          {user?.firstName} {user?.lastName}
-                        </p>
-                        <p className="text-xs text-gray-500">{user?.primaryEmailAddress?.emailAddress}</p>
+          <div className="md:hidden flex items-center">
+            <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsMobileMenuOpen(true)}
+                >
+                  <Menu className="h-6 w-6 text-gray-600" />
+                  <span className="sr-only">Toggle menu</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+                <SheetHeader>
+                  <SheetTitle>
+                    <Link
+                      href="/"
+                      className="flex items-center space-x-2"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <span className="text-2xl">🎯</span>
+                      <span className="text-xl font-bold text-gray-900">
+                        Jobloom
+                      </span>
+                    </Link>
+                  </SheetTitle>
+                </SheetHeader>
+                <div className="flex flex-col space-y-6 mt-6">
+                  <nav className="flex flex-col space-y-4">
+                    <NavItems />
+                  </nav>
+                  <div className="pt-4 border-t border-gray-200">
+                    <AuthButtons />
+                  </div>
+                  {isSignedIn && (
+                    <div className="pt-4 border-t border-gray-200">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage
+                              src={user?.imageUrl}
+                              alt={user?.firstName || "User"}
+                            />
+                            <AvatarFallback>
+                              {user?.firstName?.charAt(0)}
+                              {user?.lastName?.charAt(0)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="text-sm font-medium">
+                              {user?.firstName} {user?.lastName}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {user?.primaryEmailAddress?.emailAddress}
+                            </p>
+                          </div>
+                        </div>
+                        <UserButton
+                          afterSignOutUrl="/"
+                          appearance={{
+                            elements: {
+                              avatarBox: "w-10 h-10",
+                            },
+                          }}
+                        />
                       </div>
                     </div>
-                    <UserButton
-                      afterSignOutUrl="/"
-                      appearance={{
-                        elements: {
-                          avatarBox: "w-8 h-8",
-                        },
-                      }}
-                    />
-                  </div>
-                ) : (
-                  <div className="flex flex-col space-y-2">
-                    <SignInButton mode="modal">
-                      <Button variant="ghost" className="w-full">
-                        Sign In
-                      </Button>
-                    </SignInButton>
-                    <SignUpButton mode="modal">
-                      <Button className="w-full">Get Started</Button>
-                    </SignUpButton>
-                  </div>
-                )}
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                  )}
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
+        </div>
+      </div>
     </motion.header>
   );
 }

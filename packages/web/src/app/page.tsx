@@ -1,6 +1,14 @@
 import Link from "next/link";
 import { SignUpButton } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 export default async function Home() {
   const { userId } = await auth();
@@ -32,25 +40,24 @@ export default async function Home() {
             </p>
             <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
               {userId ? (
-                <Link
-                  href="/dashboard"
-                  className="inline-flex items-center justify-center px-8 py-4 border border-transparent text-lg font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-lg hover:shadow-xl"
-                >
-                  Go to Dashboard
-                </Link>
+                <Button asChild size="lg" className="text-lg px-8 py-6">
+                  <Link href="/dashboard">Go to Dashboard</Link>
+                </Button>
               ) : (
                 <>
                   <SignUpButton mode="modal">
-                    <button className="inline-flex items-center justify-center px-8 py-4 border border-transparent text-lg font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-lg hover:shadow-xl">
+                    <Button size="lg" className="text-lg px-8 py-6">
                       Start Free Today
-                    </button>
+                    </Button>
                   </SignUpButton>
-                  <a
-                    href="#how-it-works"
-                    className="inline-flex items-center justify-center px-8 py-4 border border-gray-300 text-lg font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                  <Button
+                    asChild
+                    size="lg"
+                    variant="outline"
+                    className="text-lg px-8 py-6"
                   >
-                    See How It Works
-                  </a>
+                    <a href="#how-it-works">See How It Works</a>
+                  </Button>
                 </>
               )}
             </div>
@@ -75,44 +82,50 @@ export default async function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl">😵‍💫</span>
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Invisible Sponsorships
-              </h3>
-              <p className="text-gray-600">
-                Sponsored jobs blend in with organic listings, making it
-                impossible to know which companies are actively hiring.
-              </p>
-            </div>
+            <Card className="text-center">
+              <CardHeader>
+                <div className="bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                  <span className="text-2xl">😵‍💫</span>
+                </div>
+                <CardTitle>Invisible Sponsorships</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">
+                  Sponsored jobs blend in with organic listings, making it
+                  impossible to know which companies are actively hiring.
+                </p>
+              </CardContent>
+            </Card>
 
-            <div className="text-center">
-              <div className="bg-yellow-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl">📊</span>
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Scattered Applications
-              </h3>
-              <p className="text-gray-600">
-                Job applications spread across multiple platforms with no
-                central tracking or status management.
-              </p>
-            </div>
+            <Card className="text-center">
+              <CardHeader>
+                <div className="bg-yellow-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                  <span className="text-2xl">📊</span>
+                </div>
+                <CardTitle>Scattered Applications</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">
+                  Job applications spread across multiple platforms with no
+                  central tracking or status management.
+                </p>
+              </CardContent>
+            </Card>
 
-            <div className="text-center">
-              <div className="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl">⏰</span>
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Missed Opportunities
-              </h3>
-              <p className="text-gray-600">
-                Without knowing which companies are investing in hiring, you
-                might miss the best opportunities.
-              </p>
-            </div>
+            <Card className="text-center">
+              <CardHeader>
+                <div className="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                  <span className="text-2xl">⏰</span>
+                </div>
+                <CardTitle>Missed Opportunities</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">
+                  Without knowing which companies are investing in hiring, you
+                  might miss the best opportunities.
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
@@ -158,55 +171,59 @@ export default async function Home() {
               </ul>
             </div>
             <div className="bg-gradient-to-br from-indigo-50 to-cyan-50 rounded-2xl p-8">
-              <div className="bg-white rounded-lg shadow-lg p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-sm font-medium text-gray-500">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardDescription className="text-sm font-medium text-gray-500">
                     Chrome Extension
-                  </span>
+                  </CardDescription>
                   <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
                     Active
                   </span>
-                </div>
-                <button className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-indigo-700 transition-colors">
-                  🎯 Check Sponsored Jobs
-                </button>
-              </div>
+                </CardHeader>
+                <CardContent>
+                  <Button className="w-full bg-indigo-600 hover:bg-indigo-700">
+                    🎯 Check Sponsored Jobs
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-20">
             <div className="order-2 lg:order-1">
-              <div className="bg-white rounded-2xl shadow-xl p-6">
-                <div className="space-y-4">
-                  <div className="border-l-4 border-orange-400 bg-orange-50 p-4 rounded-r-lg">
-                    <div className="flex items-center">
-                      <span className="text-orange-600 mr-2">🎯</span>
-                      <span className="font-medium text-gray-900">
-                        SPONSORED
-                      </span>
+              <Card>
+                <CardContent className="p-6">
+                  <div className="space-y-4">
+                    <div className="border-l-4 border-orange-400 bg-orange-50 p-4 rounded-r-lg">
+                      <div className="flex items-center">
+                        <span className="text-orange-600 mr-2">🎯</span>
+                        <span className="font-medium text-gray-900">
+                          SPONSORED
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Senior Software Engineer at Google
+                      </p>
                     </div>
-                    <p className="text-sm text-gray-600 mt-1">
-                      Senior Software Engineer at Google
-                    </p>
-                  </div>
-                  <div className="border-l-4 border-purple-400 bg-purple-50 p-4 rounded-r-lg">
-                    <div className="flex items-center">
-                      <span className="text-purple-600 mr-2">🎯</span>
-                      <span className="font-medium text-gray-900">
-                        PROMOTED
-                      </span>
+                    <div className="border-l-4 border-purple-400 bg-purple-50 p-4 rounded-r-lg">
+                      <div className="flex items-center">
+                        <span className="text-purple-600 mr-2">🎯</span>
+                        <span className="font-medium text-gray-900">
+                          PROMOTED
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Product Manager at Microsoft
+                      </p>
                     </div>
-                    <p className="text-sm text-gray-600 mt-1">
-                      Product Manager at Microsoft
-                    </p>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <p className="text-sm text-gray-600">
+                        Data Scientist at StartupCorp
+                      </p>
+                    </div>
                   </div>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <p className="text-sm text-gray-600">
-                      Data Scientist at StartupCorp
-                    </p>
-                  </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             </div>
             <div className="order-1 lg:order-2">
               <div className="bg-orange-100 rounded-full w-12 h-12 flex items-center justify-center mb-4">
@@ -266,37 +283,41 @@ export default async function Home() {
               </ul>
             </div>
             <div className="bg-gradient-to-br from-green-50 to-blue-50 rounded-2xl p-8">
-              <div className="bg-white rounded-lg shadow-lg p-6">
-                <h4 className="font-semibold text-gray-900 mb-4">
-                  Application Pipeline
-                </h4>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Interested</span>
-                    <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
-                      12
-                    </span>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Application Pipeline</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Interested</span>
+                      <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                        12
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Applied</span>
+                      <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">
+                        8
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">
+                        Interviewing
+                      </span>
+                      <span className="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">
+                        3
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Offered</span>
+                      <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+                        1
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Applied</span>
-                    <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">
-                      8
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Interviewing</span>
-                    <span className="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">
-                      3
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Offered</span>
-                    <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-                      1
-                    </span>
-                  </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
@@ -312,83 +333,107 @@ export default async function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <div className="group bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
-              <div className="bg-indigo-100 rounded-lg w-12 h-12 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <span className="text-2xl">🎯</span>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3 group-hover:text-indigo-600 transition-colors">
-                Smart Company Detection
-              </h3>
-              <p className="text-gray-600">
-                Our algorithm identifies sponsored companies across all major
-                job sites with fuzzy matching and alias support.
-              </p>
-            </div>
+            <Card className="group hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
+              <CardHeader>
+                <div className="bg-indigo-100 rounded-lg w-12 h-12 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <span className="text-2xl">🎯</span>
+                </div>
+                <CardTitle className="group-hover:text-indigo-600 transition-colors">
+                  Smart Company Detection
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">
+                  Our algorithm identifies sponsored companies across all major
+                  job sites with fuzzy matching and alias support.
+                </p>
+              </CardContent>
+            </Card>
 
-            <div className="group bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
-              <div className="bg-green-100 rounded-lg w-12 h-12 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <span className="text-2xl">📊</span>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3 group-hover:text-green-600 transition-colors">
-                Application Analytics
-              </h3>
-              <p className="text-gray-600">
-                Track your job search progress with detailed analytics and
-                insights into your application success rates.
-              </p>
-            </div>
+            <Card className="group hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
+              <CardHeader>
+                <div className="bg-green-100 rounded-lg w-12 h-12 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <span className="text-2xl">📊</span>
+                </div>
+                <CardTitle className="group-hover:text-green-600 transition-colors">
+                  Application Analytics
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">
+                  Track your job search progress with detailed analytics and
+                  insights into your application success rates.
+                </p>
+              </CardContent>
+            </Card>
 
-            <div className="group bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
-              <div className="bg-purple-100 rounded-lg w-12 h-12 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <span className="text-2xl">🔄</span>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3 group-hover:text-purple-600 transition-colors">
-                Real-time Sync
-              </h3>
-              <p className="text-gray-600">
-                Your data syncs instantly across all devices. Access your job
-                search from anywhere, anytime.
-              </p>
-            </div>
+            <Card className="group hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
+              <CardHeader>
+                <div className="bg-purple-100 rounded-lg w-12 h-12 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <span className="text-2xl">🔄</span>
+                </div>
+                <CardTitle className="group-hover:text-purple-600 transition-colors">
+                  Real-time Sync
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">
+                  Your data syncs instantly across all devices. Access your job
+                  search from anywhere, anytime.
+                </p>
+              </CardContent>
+            </Card>
 
-            <div className="group bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
-              <div className="bg-orange-100 rounded-lg w-12 h-12 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <span className="text-2xl">🏢</span>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3 group-hover:text-orange-600 transition-colors">
-                Company Insights
-              </h3>
-              <p className="text-gray-600">
-                Learn which companies are actively investing in hiring and
-                prioritize your applications accordingly.
-              </p>
-            </div>
+            <Card className="group hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
+              <CardHeader>
+                <div className="bg-orange-100 rounded-lg w-12 h-12 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <span className="text-2xl">🏢</span>
+                </div>
+                <CardTitle className="group-hover:text-orange-600 transition-colors">
+                  Company Insights
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">
+                  Learn which companies are actively investing in hiring and
+                  prioritize your applications accordingly.
+                </p>
+              </CardContent>
+            </Card>
 
-            <div className="group bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
-              <div className="bg-blue-100 rounded-lg w-12 h-12 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <span className="text-2xl">🔒</span>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors">
-                Privacy First
-              </h3>
-              <p className="text-gray-600">
-                Your job search data is private and secure. We never share your
-                information with employers or third parties.
-              </p>
-            </div>
+            <Card className="group hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
+              <CardHeader>
+                <div className="bg-blue-100 rounded-lg w-12 h-12 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <span className="text-2xl">🔒</span>
+                </div>
+                <CardTitle className="group-hover:text-blue-600 transition-colors">
+                  Privacy First
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">
+                  Your job search data is private and secure. We never share
+                  your information with employers or third parties.
+                </p>
+              </CardContent>
+            </Card>
 
-            <div className="group bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
-              <div className="bg-yellow-100 rounded-lg w-12 h-12 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <span className="text-2xl">⚡</span>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3 group-hover:text-yellow-600 transition-colors">
-                Lightning Fast
-              </h3>
-              <p className="text-gray-600">
-                Lightweight extension that doesn&apos;t slow down your browsing.
-                Get insights instantly with one click.
-              </p>
-            </div>
+            <Card className="group hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
+              <CardHeader>
+                <div className="bg-yellow-100 rounded-lg w-12 h-12 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <span className="text-2xl">⚡</span>
+                </div>
+                <CardTitle className="group-hover:text-yellow-600 transition-colors">
+                  Lightning Fast
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">
+                  Lightweight extension that doesn&apos;t slow down your
+                  browsing. Get insights instantly with one click.
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
@@ -406,66 +451,79 @@ export default async function Home() {
           </div>
 
           <div className="space-y-8">
-            <div className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                How does Jobloom detect sponsored jobs?
-              </h3>
-              <p className="text-gray-600">
-                Our Chrome extension uses advanced algorithms to identify when
-                companies are paying to promote their job listings across
-                LinkedIn, Indeed, Glassdoor, and other major job sites. We
-                analyze various signals including placement, labels, and company
-                patterns.
-              </p>
-            </div>
+            <Card className="hover:shadow-md transition-shadow">
+              <CardHeader>
+                <CardTitle>How does Jobloom detect sponsored jobs?</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">
+                  Our Chrome extension uses advanced algorithms to identify when
+                  companies are paying to promote their job listings across
+                  LinkedIn, Indeed, Glassdoor, and other major job sites. We
+                  analyze various signals including placement, labels, and
+                  company patterns.
+                </p>
+              </CardContent>
+            </Card>
 
-            <div className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Is Jobloom free to use?
-              </h3>
-              <p className="text-gray-600">
-                Yes! Jobloom offers a generous free tier that includes sponsored
-                job detection, basic application tracking, and the Chrome
-                extension. Premium features like advanced analytics and
-                unlimited CV evaluations are available in our paid plans.
-              </p>
-            </div>
+            <Card className="hover:shadow-md transition-shadow">
+              <CardHeader>
+                <CardTitle>Is Jobloom free to use?</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">
+                  Yes! Jobloom offers a generous free tier that includes
+                  sponsored job detection, basic application tracking, and the
+                  Chrome extension. Premium features like advanced analytics and
+                  unlimited CV evaluations are available in our paid plans.
+                </p>
+              </CardContent>
+            </Card>
 
-            <div className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Which job sites does Jobloom work with?
-              </h3>
-              <p className="text-gray-600">
-                Jobloom currently supports LinkedIn, Indeed, Glassdoor,
-                ZipRecruiter, and Monster. We&apos;re constantly adding support
-                for more job sites based on user feedback. The extension
-                automatically activates when you visit supported sites.
-              </p>
-            </div>
+            <Card className="hover:shadow-md transition-shadow">
+              <CardHeader>
+                <CardTitle>Which job sites does Jobloom work with?</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">
+                  Jobloom currently supports LinkedIn, Indeed, Glassdoor,
+                  ZipRecruiter, and Monster. We&apos;re constantly adding
+                  support for more job sites based on user feedback. The
+                  extension automatically activates when you visit supported
+                  sites.
+                </p>
+              </CardContent>
+            </Card>
 
-            <div className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Is my job search data private?
-              </h3>
-              <p className="text-gray-600">
-                Absolutely. We take privacy seriously. Your job search data is
-                encrypted and stored securely. We never share your information
-                with employers or third parties. You have full control over your
-                data and can delete it at any time.
-              </p>
-            </div>
+            <Card className="hover:shadow-md transition-shadow">
+              <CardHeader>
+                <CardTitle>Is my job search data private?</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">
+                  Absolutely. We take privacy seriously. Your job search data is
+                  encrypted and stored securely. We never share your information
+                  with employers or third parties. You have full control over
+                  your data and can delete it at any time.
+                </p>
+              </CardContent>
+            </Card>
 
-            <div className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                How accurate is the sponsored job detection?
-              </h3>
-              <p className="text-gray-600">
-                Our detection algorithm has over 95% accuracy in identifying
-                sponsored listings. We continuously improve our detection
-                methods and update the extension regularly to maintain high
-                accuracy across all supported job sites.
-              </p>
-            </div>
+            <Card className="hover:shadow-md transition-shadow">
+              <CardHeader>
+                <CardTitle>
+                  How accurate is the sponsored job detection?
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">
+                  Our detection algorithm has over 95% accuracy in identifying
+                  sponsored listings. We continuously improve our detection
+                  methods and update the extension regularly to maintain high
+                  accuracy across all supported job sites.
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
@@ -484,17 +542,21 @@ export default async function Home() {
           </p>
           <div className="mt-8">
             {userId ? (
-              <Link
-                href="/dashboard"
-                className="inline-flex items-center justify-center px-8 py-4 border border-transparent text-lg font-medium rounded-lg text-indigo-600 bg-white hover:bg-gray-50 transition-colors shadow-lg hover:shadow-xl"
+              <Button
+                asChild
+                size="lg"
+                className="text-lg px-8 py-6 bg-white text-indigo-600 hover:bg-gray-100"
               >
-                Go to Dashboard
-              </Link>
+                <Link href="/dashboard">Go to Dashboard</Link>
+              </Button>
             ) : (
               <SignUpButton mode="modal">
-                <button className="inline-flex items-center justify-center px-8 py-4 border border-transparent text-lg font-medium rounded-lg text-indigo-600 bg-white hover:bg-gray-50 transition-colors shadow-lg hover:shadow-xl">
+                <Button
+                  size="lg"
+                  className="text-lg px-8 py-6 bg-white text-indigo-600 hover:bg-gray-100"
+                >
                   Start Free Today
-                </button>
+                </Button>
               </SignUpButton>
             )}
           </div>

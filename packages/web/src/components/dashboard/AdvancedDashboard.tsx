@@ -21,6 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Job {
   _id: string;
@@ -152,7 +153,7 @@ export function AdvancedDashboard() {
       {/* Header */}
       <div className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center py-6 gap-4">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
                 Job Dashboard
@@ -161,19 +162,25 @@ export function AdvancedDashboard() {
                 Welcome back, {user.firstName}!
               </p>
             </div>
-            <div className="flex space-x-3">
+            <div className="flex flex-wrap gap-2">
               <Button
                 onClick={() => setShowImportModal(true)}
                 variant="default"
+                size="sm"
               >
                 Import Jobs
               </Button>
-              <Button onClick={() => setShowJobForm(true)} variant="default">
+              <Button
+                onClick={() => setShowJobForm(true)}
+                variant="default"
+                size="sm"
+              >
                 Add Job
               </Button>
               <Button
                 onClick={() => setShowApplicationForm(true)}
                 variant="outline"
+                size="sm"
               >
                 Add Application
               </Button>
@@ -184,30 +191,26 @@ export function AdvancedDashboard() {
 
       <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
         {/* Navigation Tabs */}
-        <div className="border-b border-gray-200 mb-6">
-          <nav className="-mb-px flex space-x-8">
-            <button
-              onClick={() => setView("dashboard")}
-              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
-                view === "dashboard"
-                  ? "border-indigo-500 text-indigo-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
-            >
-              Dashboard
-            </button>
-            <button
-              onClick={() => setView("jobs")}
-              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
-                view === "jobs"
-                  ? "border-indigo-500 text-indigo-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
-            >
+        <Tabs
+          value={view}
+          onValueChange={(value) =>
+            setView(
+              value === "dashboard" ||
+                value === "jobs" ||
+                value === "applications"
+                ? value
+                : "dashboard"
+            )
+          }
+          className="mb-6"
+        >
+          <TabsList>
+            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+            <TabsTrigger value="jobs">
               Jobs ({applications?.length || 0})
-            </button>
-          </nav>
-        </div>
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
 
         {/* Main Content */}
         {view === "dashboard" && (
@@ -273,7 +276,7 @@ export function AdvancedDashboard() {
           open={showApplicationForm}
           onOpenChange={setShowApplicationForm}
         >
-          <DialogContent className="max-w-4xl">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <ApplicationForm
               application={editingApplication || undefined}
               onSubmit={handleApplicationSubmit}
@@ -286,7 +289,7 @@ export function AdvancedDashboard() {
         </Dialog>
 
         <Dialog open={showJobForm} onOpenChange={setShowJobForm}>
-          <DialogContent className="max-w-4xl">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <JobForm
               onSubmit={handleJobSubmit}
               onCancel={() => setShowJobForm(false)}
@@ -309,7 +312,7 @@ export function AdvancedDashboard() {
           open={!!selectedApplication}
           onOpenChange={() => setSelectedApplication(null)}
         >
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             {selectedApplication && (
               <>
                 <DialogHeader>
