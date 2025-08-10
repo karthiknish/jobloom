@@ -1,20 +1,17 @@
 // app/api/convex/cv-analysis/user/[userId]/route.ts
 import { NextResponse } from "next/server";
-import { anyApi } from "convex/server";
 import { ConvexHttpClient } from "convex/browser";
-
-// Runtime proxy for Convex functions; loosen typing for now
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const api: any = anyApi;
+import { api } from "@jobloom/convex/convex/_generated/api";
 
 // Create a Convex HTTP client
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function GET(
   request: Request,
-  { params }: { params: { userId: string } }
+  context: { params: Promise<{ userId: string }> }
 ) {
   try {
+    const params = await context.params;
     const analyses = await convex.query(api.cvAnalysis.getUserCvAnalyses, {
       userId: params.userId,
     });

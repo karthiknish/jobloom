@@ -9,14 +9,17 @@ const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function GET(
   request: Request,
-  { params }: { params: { userId: string } }
+  context: { params: Promise<{ userId: string }> }
 ) {
   try {
+    const params = await context.params;
     const { userId } = params;
-    
+
     // Call the Convex function to check if user is admin
-    const isAdmin = await convex.query(api.admin.isUserAdmin, { userId: userId as Id<"users"> });
-    
+    const isAdmin = await convex.query(api.admin.isUserAdmin, {
+      userId: userId as Id<"users">,
+    });
+
     return NextResponse.json(isAdmin);
   } catch (error) {
     console.error("Error checking admin status:", error);

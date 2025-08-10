@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import toast from 'react-hot-toast';
 
 interface RateLimitState {
@@ -23,7 +23,7 @@ const DEFAULT_CONFIG: RateLimitConfig = {
 };
 
 export function useRateLimit(config: Partial<RateLimitConfig> = {}) {
-  const finalConfig = { ...DEFAULT_CONFIG, ...config };
+  const finalConfig = useMemo(() => ({ ...DEFAULT_CONFIG, ...config }), [config]);
   const storageKey = `rateLimit_${finalConfig.endpoint}`;
   
   const [rateLimitState, setRateLimitState] = useState<RateLimitState>(() => {
@@ -95,7 +95,7 @@ export function useRateLimit(config: Partial<RateLimitConfig> = {}) {
     localStorage.setItem(storageKey, JSON.stringify(newState));
     
     return true;
-  }, [rateLimitState, finalConfig, storageKey]);
+  }, [rateLimitState, finalConfig.maxRequests, finalConfig.windowMs, storageKey]);
 
   const getRemainingRequests = useCallback((): number => {
     const now = Date.now();
@@ -106,7 +106,7 @@ export function useRateLimit(config: Partial<RateLimitConfig> = {}) {
     }
     
     return rateLimitState.remaining;
-  }, [rateLimitState, finalConfig]);
+  }, [rateLimitState, finalConfig.maxRequests, finalConfig.windowMs]);
 
   const getTimeUntilReset = useCallback((): number => {
     const now = Date.now();
@@ -123,7 +123,7 @@ export function useRateLimit(config: Partial<RateLimitConfig> = {}) {
     };
     setRateLimitState(newState);
     localStorage.setItem(storageKey, JSON.stringify(newState));
-  }, [finalConfig, storageKey]);
+  }, [finalConfig.maxRequests, finalConfig.windowMs, storageKey]);
 
   return {
     checkRateLimit,

@@ -9,16 +9,16 @@ const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { ruleId: string } }
+  context: { params: Promise<{ ruleId: string }> }
 ) {
   try {
+    const params = await context.params;
     const body = await request.json();
-    const { ruleId } = params;
     const { isActive } = body;
     
     // Call the Convex function to update sponsorship rule status
     await convex.mutation(api.sponsorship.updateSponsorshipRuleStatus, { 
-      ruleId: ruleId as Id<"sponsorshipRules">,
+      ruleId: params.ruleId as Id<"sponsorshipRules">,
       isActive 
     });
     

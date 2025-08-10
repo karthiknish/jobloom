@@ -41,15 +41,6 @@ interface Application {
   job?: Job;
 }
 
-interface JobStatsData {
-  totalJobs: number;
-  sponsoredJobs: number;
-  totalApplications: number;
-  jobsToday: number;
-  recruitmentAgencyJobs?: number;
-  byStatus: Record<string, number>;
-}
-
 export function AdvancedDashboard() {
   const { user } = useUser();
   const [showApplicationForm, setShowApplicationForm] = useState(false);

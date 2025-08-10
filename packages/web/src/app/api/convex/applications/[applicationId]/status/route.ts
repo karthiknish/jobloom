@@ -1,25 +1,23 @@
 // app/api/convex/applications/[applicationId]/status/route.ts
 import { NextResponse } from "next/server";
-import { anyApi } from "convex/server";
 import { ConvexHttpClient } from "convex/browser";
-
-// Runtime proxy for Convex functions; loosen typing for now
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const api: any = anyApi;
+import { api } from "@jobloom/convex/convex/_generated/api";
+import { Id } from "@jobloom/convex/convex/_generated/dataModel";
 
 // Create a Convex HTTP client
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { applicationId: string } }
+  context: { params: Promise<{ applicationId: string }> }
 ) {
   try {
+    const params = await context.params;
     const body = await request.json();
     const { status } = body;
     
     await convex.mutation(api.applications.updateApplicationStatus, {
-      applicationId: params.applicationId,
+      applicationId: params.applicationId as Id<"applications">,
       status,
     });
     

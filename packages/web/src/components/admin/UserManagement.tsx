@@ -1,5 +1,4 @@
 // components/admin/UserManagement.tsx
-import { useState } from "react";
 import { useApiMutation } from "../../hooks/useApi";
 import { adminApi } from "../../utils/api/admin";
 import toast from "react-hot-toast";
@@ -19,8 +18,6 @@ interface UserManagementProps {
 }
 
 export function UserManagement({ users, currentUser, onUsersUpdate }: UserManagementProps) {
-  const [selectedUser, setSelectedUser] = useState<string | null>(null);
-  
   const { mutate: setAdminUser, loading: setAdminLoading } = useApiMutation(
     (variables: Record<string, unknown>) => {
       const { userId } = variables;

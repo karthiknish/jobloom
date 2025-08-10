@@ -4,18 +4,6 @@ import { useApiMutation, useApiQuery } from "../../hooks/useApi";
 import { adminApi } from "../../utils/api/admin";
 import toast from "react-hot-toast";
 
-interface SponsorshipRule {
-  _id: string;
-  name: string;
-  description: string;
-  jobSite: string;
-  selectors: string[];
-  keywords: string[];
-  isActive: boolean;
-  createdAt: number;
-  updatedAt: number;
-}
-
 export function SponsorshipRules() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [formData, setFormData] = useState({

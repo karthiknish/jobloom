@@ -1,18 +1,27 @@
 // app/api/convex/applications/route.ts
 import { NextResponse } from "next/server";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "@jobloom/convex/convex/_generated/api";
 
-export async function POST(request: Request) {
+// Create a Convex HTTP client
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+
+export async function GET(
+  request: Request,
+  context: { params: Promise<{ userId: string }> }
+) {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const body = await request.json();
+    const params = await context.params;
+    // Call the Convex function to get applications
+    const applications = await convex.query(api.applications.getApplicationsByUser, { 
+      userId: params.userId 
+    });
     
-    // This would need to be implemented in your Convex backend
-    // For now, we'll just return a placeholder response
-    return NextResponse.json({ applicationId: "placeholder-id" });
+    return NextResponse.json(applications);
   } catch (error) {
-    console.error("Error creating application:", error);
+    console.error("Error fetching applications:", error);
     return NextResponse.json(
-      { error: "Failed to create application" },
+      { error: "Failed to fetch applications" },
       { status: 500 }
     );
   }
@@ -20,36 +29,24 @@ export async function POST(request: Request) {
 
 export async function PATCH(
   request: Request,
-  { params: _params }: { params: { id: string } }
+  context: { params: Promise<{ applicationId: string }> }
 ) {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const params = await context.params;
     const body = await request.json();
+    const { status } = body;
     
-    // This would need to be implemented in your Convex backend
-    // For now, we'll just return a placeholder response
+    // Call the Convex function to update application status
+    await convex.mutation(api.applications.updateApplicationStatus, { 
+      applicationId: params.applicationId,
+      status
+    });
+    
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error updating application:", error);
+    console.error("Error updating application status:", error);
     return NextResponse.json(
-      { error: "Failed to update application" },
-      { status: 500 }
-    );
-  }
-}
-
-export async function DELETE(
-  _request: Request,
-  { params: _params }: { params: { id: string } }
-) {
-  try {
-    // This would need to be implemented in your Convex backend
-    // For now, we'll just return a placeholder response
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Error deleting application:", error);
-    return NextResponse.json(
-      { error: "Failed to delete application" },
+      { error: "Failed to update application status" },
       { status: 500 }
     );
   }

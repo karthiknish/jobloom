@@ -1235,9 +1235,22 @@ class JobTracker {
       button.disabled = true;
       
       try {
-        const success = await this.addToJobBoard(jobData, sponsorshipData);
+        // Import the JobBoardManager and use it
+        const { JobBoardManager } = await import('./addToBoard');
         
-        if (success) {
+        // Check if job already exists
+        const jobExists = await JobBoardManager.checkIfJobExists(jobData);
+        if (jobExists) {
+          button.innerHTML = '📋 Already Added';
+          button.style.background = '#6b7280';
+          button.disabled = true;
+          return;
+        }
+        
+        // Add job to board
+        const result = await JobBoardManager.addToBoard(jobData);
+        
+        if (result.success) {
           button.innerHTML = '✅ Added!';
           button.style.background = '#10b981';
           
@@ -1254,7 +1267,7 @@ class JobTracker {
             button.disabled = true;
           }, 2000);
         } else {
-          throw new Error('Failed to add to job board');
+          throw new Error(result.message);
         }
       } catch (error) {
         console.error('Error adding to job board:', error);
@@ -1572,115 +1585,10 @@ class JobTracker {
   }
 
   private async addToJobBoard(jobData: JobData, sponsorshipData: any): Promise<boolean> {
-    try {
-      // Generate unique ID for the job
-      const jobId = `${jobData.company}-${jobData.title}-${Date.now()}`.replace(/[^a-zA-Z0-9-]/g, '-');
-      
-      // Create job board entry
-      const jobBoardEntry: JobBoardEntry = {
-        id: jobId,
-        company: jobData.company,
-        title: jobData.title,
-        location: jobData.location,
-        url: jobData.url,
-        dateAdded: new Date().toISOString(),
-        status: 'interested',
-        notes: '',
-        sponsorshipInfo: sponsorshipData ? {
-          isSponsored: sponsorshipData.isSponsored,
-          sponsorshipType: sponsorshipData.sponsorshipType
-        } : undefined,
-        isRecruitmentAgency: jobData.isRecruitmentAgency
-      };
-
-      // Get existing job board data
-      const existingData = await this.getJobBoardData();
-      
-      // Check for duplicates (same company and similar title)
-      const isDuplicate = existingData.some(entry => 
-        entry.company.toLowerCase() === jobData.company.toLowerCase() &&
-        this.similarTitles(entry.title, jobData.title)
-      );
-
-      if (isDuplicate) {
-        console.log('Job already exists in board');
-        return false;
-      }
-
-      // Add new entry
-      existingData.push(jobBoardEntry);
-      
-      // Save to storage
-      await this.saveJobBoardData(existingData);
-      
-      // Send message to background script for analytics
-      chrome.runtime.sendMessage({
-        action: 'jobAddedToBoard',
-        data: jobBoardEntry
-      });
-
-      console.log('Job added to board successfully:', jobBoardEntry);
-      return true;
-      
-    } catch (error) {
-      console.error('Failed to add job to board:', error);
-      return false;
-    }
-  }
-
-  private async getJobBoardData(): Promise<JobBoardEntry[]> {
-    return new Promise((resolve) => {
-      chrome.storage.local.get(['jobBoardData'], (result) => {
-        resolve(result.jobBoardData || []);
-      });
-    });
-  }
-
-  private async saveJobBoardData(data: JobBoardEntry[]): Promise<void> {
-    return new Promise((resolve) => {
-      chrome.storage.local.set({ jobBoardData: data }, () => {
-        resolve();
-      });
-    });
-  }
-
-  private similarTitles(title1: string, title2: string): boolean {
-    // Simple similarity check - normalize and compare
-    const normalize = (str: string) => str.toLowerCase().replace(/[^a-z0-9]/g, '');
-    const norm1 = normalize(title1);
-    const norm2 = normalize(title2);
-    
-    // Check if one title contains the other or they're very similar
-    return norm1.includes(norm2) || norm2.includes(norm1) || 
-           this.levenshteinDistance(norm1, norm2) < Math.min(norm1.length, norm2.length) * 0.3;
-  }
-
-  private levenshteinDistance(str1: string, str2: string): number {
-    const matrix = [];
-    
-    for (let i = 0; i <= str2.length; i++) {
-      matrix[i] = [i];
-    }
-    
-    for (let j = 0; j <= str1.length; j++) {
-      matrix[0][j] = j;
-    }
-    
-    for (let i = 1; i <= str2.length; i++) {
-      for (let j = 1; j <= str1.length; j++) {
-        if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
-          matrix[i][j] = matrix[i - 1][j - 1];
-        } else {
-          matrix[i][j] = Math.min(
-            matrix[i - 1][j - 1] + 1,
-            matrix[i][j - 1] + 1,
-            matrix[i - 1][j] + 1
-          );
-        }
-      }
-    }
-    
-    return matrix[str2.length][str1.length];
+    // This function is now handled by JobBoardManager
+    // Keeping it for backward compatibility but it's deprecated
+    console.warn('addToJobBoard is deprecated. Use JobBoardManager instead.');
+    return true;
   }
 }
 
