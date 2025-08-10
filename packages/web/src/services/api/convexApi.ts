@@ -56,6 +56,7 @@ class ConvexApiClient {
       totalApplications: number;
       jobsToday: number;
       recruitmentAgencyJobs?: number;
+      byStatus: Record<string, number>;
     }>(`/jobs/stats/${userId}`);
   }
 
@@ -63,15 +64,29 @@ class ConvexApiClient {
   async getApplicationsByUser(userId: string) {
     return this.request<Array<{
       _id: string;
+      jobId: string;
+      userId: string;
       status: string;
-      job?: {
-        title?: string;
-        company?: string;
-        location?: string;
-        isRecruitmentAgency?: boolean;
-      };
-      appliedDate?: string | number | Date;
+      appliedDate?: number;
       notes?: string;
+      interviewDates?: number[];
+      followUpDate?: number;
+      createdAt: number;
+      updatedAt: number;
+      job?: {
+        _id: string;
+        title: string;
+        company: string;
+        location: string;
+        url?: string;
+        description?: string;
+        salary?: string;
+        isSponsored: boolean;
+        isRecruitmentAgency?: boolean;
+        source: string;
+        dateFound: number;
+        userId: string;
+      };
     }>>(`/applications/user/${userId}`);
   }
 

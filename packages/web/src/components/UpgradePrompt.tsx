@@ -27,10 +27,17 @@ export function UpgradePrompt({
 
 interface FeatureGateProps {
   children: React.ReactNode;
+  feature?: string;
+  upgradePrompt?: {
+    title: string;
+    description: string;
+  };
 }
 
 export function FeatureGate({
   children,
+  feature,
+  upgradePrompt,
 }: FeatureGateProps) {
   // All features are now available to all users
   return <>{children}</>;
