@@ -8,9 +8,11 @@
     "build": "webpack --mode production",
     "build:dev": "CONVEX_URL=https://rare-chihuahua-615.convex.cloud WEB_APP_URL=http://localhost:3000 webpack --mode production",
     "build:prod": "CONVEX_URL=https://rare-chihuahua-615.convex.cloud WEB_APP_URL=https://jobloom.ai webpack --mode production",
+    "build:test": "cp .env.test .env && webpack --mode production",
     "lint": "eslint src --ext .ts,.js"
   },
   "dependencies": {
+    "@clerk/clerk-js": "^6.0.0",
     "convex": "^1.0.0"
   },
   "devDependencies": {

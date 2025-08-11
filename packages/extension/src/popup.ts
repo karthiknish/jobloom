@@ -1,5 +1,8 @@
 /// <reference types="chrome" />
 
+// Dynamically import Clerk to avoid loading it on every popup open
+let Clerk: any = null;
+
 document.addEventListener("DOMContentLoaded", () => {
   const highlightBtn = document.getElementById("highlight-btn");
   const autofillBtn = document.getElementById("autofill-btn");
@@ -10,6 +13,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const signinBtn = document.getElementById("signin-btn");
   const signupBtn = document.getElementById("signup-btn");
   const signoutBtn = document.getElementById("signout-btn");
+  const clerkComponents = document.getElementById("clerk-components");
+  const backToMainBtn = document.getElementById("back-to-main");
+  const authActions = document.querySelector(".auth-actions");
 
   loadStats();
   loadSettings();
@@ -123,87 +129,149 @@ document.addEventListener("DOMContentLoaded", () => {
     showSettings();
   });
 
-  // --- Authentication via web app ---
-  function openAuthPage(mode: "sign-in" | "sign-up") {
-    chrome.storage.sync.get(["webAppUrl"], (result) => {
-      const baseUrl = result.webAppUrl || process.env.WEB_APP_URL || "http://localhost:3000";
-      const authUrl = `${baseUrl}/${mode}?extension=true&return_to=extension`;
+  // --- Clerk Authentication ---
+  signinBtn?.addEventListener("click", async () => {
+    await showClerkComponent("signIn");
+  });
 
-      // Show a message to the user
-      const authMessage = document.createElement("div");
-      authMessage.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        background: #3b82f6;
-        color: white;
-        padding: 8px;
-        text-align: center;
-        font-size: 12px;
-        z-index: 1000;
-      `;
-      authMessage.textContent = `Opening ${mode} page... Please complete authentication and return to this popup.`;
-      document.body.appendChild(authMessage);
+  signupBtn?.addEventListener("click", async () => {
+    await showClerkComponent("signUp");
+  });
 
-      chrome.tabs.create({ url: authUrl }, (tab) => {
-        if (!tab.id) return;
+  backToMainBtn?.addEventListener("click", () => {
+    hideClerkComponent();
+  });
 
-        // Listen for tab updates to detect successful authentication
-        const listener = (
-          tabId: number,
-          changeInfo: chrome.tabs.TabChangeInfo,
-        ) => {
-          if (tabId === tab.id && changeInfo.url) {
-            // Check if redirected to dashboard or success page
-            if (
-              changeInfo.url.includes("/dashboard") ||
-              changeInfo.url.includes("/account")
-            ) {
-              // Wait a bit for the page to load, then try to get user ID
-              setTimeout(() => {
-                chrome.tabs.sendMessage(
-                  tabId,
-                  { action: "getUserId" },
-                  (response) => {
-                    if (chrome.runtime.lastError) {
-                      console.log(
-                        "Could not get user ID from tab:",
-                        chrome.runtime.lastError.message,
-                      );
-                      // Fallback: show success message and ask user to refresh
-                      showAuthSuccessMessage();
-                    } else if (response && response.userId) {
-                      chrome.storage.sync.set({ userId: response.userId }, () => {
-                        console.log("UserId saved from web app:", response.userId);
-                        // Ensure user exists in Convex
-                        ensureUserExists(response.userId);
-                        // Close the auth tab
-                        chrome.tabs.remove(tabId);
-                        // Refresh popup to show features
-                        window.location.reload();
-                      });
-                    } else {
-                      // Fallback: show success message
-                      showAuthSuccessMessage();
-                    }
-                  },
-                );
-              }, 2000);
-              chrome.tabs.onUpdated.removeListener(listener);
-            }
-          }
-        };
-        chrome.tabs.onUpdated.addListener(listener);
+  // Sign out logic
+  signoutBtn?.addEventListener("click", () => {
+    signOut();
+  });
 
-        // Clean up listener after 5 minutes
-        setTimeout(() => {
-          chrome.tabs.onUpdated.removeListener(listener);
-          if (document.body.contains(authMessage)) {
-            document.body.removeChild(authMessage);
-          }
-        }, 300000);
+  async function showClerkComponent(mode: "signIn" | "signUp") {
+    // Hide main content and show Clerk component
+    const mainContent = document.querySelector(".popup-content > *:not(#clerk-components)");
+    if (mainContent) {
+      (mainContent as HTMLElement).style.display = "none";
+    }
+    
+    if (clerkComponents) {
+      clerkComponents.style.display = "block";
+    }
+
+    // Load Clerk only when needed
+    if (!Clerk) {
+      const clerkScript = document.createElement("script");
+      clerkScript.src = "https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js";
+      clerkScript.async = true;
+      document.head.appendChild(clerkScript);
+      
+      await new Promise((resolve) => {
+        clerkScript.onload = resolve;
       });
+      
+      // Get the publishable key from environment variables
+      const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || "pk_test_YOUR_CLERK_PUBLISHABLE_KEY";
+      
+      // Initialize Clerk
+      Clerk = (window as any).Clerk;
+      await Clerk.load({ publishableKey });
+    }
+
+    // Mount the appropriate component
+    const componentDiv = document.getElementById("clerk-component");
+    if (componentDiv) {
+      componentDiv.innerHTML = ""; // Clear previous content
+      
+      const signInUrl = process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL || "/sign-in";
+      const signUpUrl = process.env.NEXT_PUBLIC_CLERK_SIGN_UP_URL || "/sign-up";
+      const afterSignInUrl = process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL || "/dashboard";
+      const afterSignUpUrl = process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL || "/dashboard";
+      
+      if (mode === "signIn") {
+        Clerk.openSignIn({
+          appearance: {
+            elements: {
+              card: {
+                boxShadow: "none",
+                border: "1px solid #e5e7eb"
+              }
+            }
+          },
+          redirectUrl: window.location.href,
+          signUpUrl: signUpUrl,
+          afterSignInUrl: afterSignInUrl
+        });
+      } else {
+        Clerk.openSignUp({
+          appearance: {
+            elements: {
+              card: {
+                boxShadow: "none",
+                border: "1px solid #e5e7eb"
+              }
+            }
+          },
+          redirectUrl: window.location.href,
+          signInUrl: signInUrl,
+          afterSignUpUrl: afterSignUpUrl
+        });
+      }
+    }
+
+    // Listen for successful authentication
+    const unsubscribe = Clerk.addListener((event: any) => {
+      if (event.user) {
+        // User is signed in
+        const userId = event.user.id;
+        chrome.storage.sync.set({ userId }, () => {
+          console.log("UserId saved from Clerk:", userId);
+          // Ensure user exists in Convex
+          ensureUserExists(userId);
+          // Refresh popup to show features
+          window.location.reload();
+        });
+        unsubscribe(); // Stop listening
+      }
+    });
+  }
+
+  function hideClerkComponent() {
+    // Show main content and hide Clerk component
+    const mainContent = document.querySelector(".popup-content > *:not(#clerk-components)");
+    if (mainContent) {
+      (mainContent as HTMLElement).style.display = "";
+    }
+    
+    if (clerkComponents) {
+      clerkComponents.style.display = "none";
+    }
+  }
+
+  async function signOut() {
+    if (Clerk) {
+      await Clerk.signOut();
+    }
+    
+    chrome.storage.sync.remove(["userId"], () => {
+      // Also remove from localStorage if present
+      chrome.tabs.query({}, (tabs) => {
+        tabs.forEach(tab => {
+          if (tab.url && (tab.url.includes("localhost") || tab.url.includes("jobloom"))) {
+            chrome.scripting.executeScript({
+              target: { tabId: tab.id! },
+              func: () => {
+                localStorage.removeItem("__clerk_user");
+                localStorage.removeItem("__clerk_session");
+              }
+            }).catch(() => {
+              // Ignore errors
+            });
+          }
+        });
+      });
+      
+      // Simply reload the popup; UI will revert to signed-out state
+      window.location.reload();
     });
   }
 
@@ -243,39 +311,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   }
-
-  signinBtn?.addEventListener("click", () => {
-    openAuthPage("sign-in");
-  });
-
-  signupBtn?.addEventListener("click", () => {
-    openAuthPage("sign-up");
-  });
-
-  // Sign out logic
-  signoutBtn?.addEventListener("click", () => {
-    chrome.storage.sync.remove(["userId"], () => {
-      // Also remove from localStorage if present
-      chrome.tabs.query({}, (tabs) => {
-        tabs.forEach(tab => {
-          if (tab.url && (tab.url.includes("localhost") || tab.url.includes("jobloom"))) {
-            chrome.scripting.executeScript({
-              target: { tabId: tab.id! },
-              func: () => {
-                localStorage.removeItem("__clerk_user");
-                localStorage.removeItem("__clerk_session");
-              }
-            }).catch(() => {
-              // Ignore errors
-            });
-          }
-        });
-      });
-      
-      // Simply reload the popup; UI will revert to signed-out state
-      window.location.reload();
-    });
-  });
 });
 
 function showAuthSuccessMessage() {

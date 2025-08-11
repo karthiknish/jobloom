@@ -88,6 +88,15 @@
     .popup-content {
       position: relative;
     }
+    #clerk-components {
+      display: none;
+    }
+    .clerk-component-container {
+      min-height: 300px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
   </style>
 </head>
 <body>
@@ -98,52 +107,62 @@
       <p class="subtitle">Job Tracker & Highlighter</p>
     </div>
 
-  <div class="stats">
-    <div class="stat-item">
-      <span class="stat-label">Jobs Found Today:</span>
-      <span class="stat-value" id="jobs-today">0</span>
+    <div class="stats">
+      <div class="stat-item">
+        <span class="stat-label">Jobs Found Today:</span>
+        <span class="stat-value" id="jobs-today">0</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Sponsored Jobs:</span>
+        <span class="stat-value" id="sponsored-jobs">0</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Jobs on Board:</span>
+        <span class="stat-value" id="applications">0</span>
+      </div>
     </div>
-    <div class="stat-item">
-      <span class="stat-label">Sponsored Jobs:</span>
-      <span class="stat-value" id="sponsored-jobs">0</span>
-    </div>
-    <div class="stat-item">
-      <span class="stat-label">Jobs on Board:</span>
-      <span class="stat-value" id="applications">0</span>
-    </div>
-  </div>
 
-  <!-- Auth buttons start -->
-  <div class="auth-actions" style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
-    <button class="btn btn-secondary" id="signin-btn">
-      🔐 Sign In
-    </button>
-    <button class="btn btn-secondary" id="signup-btn">
-      🆕 Sign Up
-    </button>
-    <button class="btn btn-secondary" id="signout-btn" style="display: none;">
-      🚪 Sign Out
-    </button>
-  </div>
-  <!-- Auth buttons end -->
+    <!-- Auth buttons start -->
+    <div class="auth-actions" style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+      <button class="btn btn-secondary" id="signin-btn">
+        🔐 Sign In
+      </button>
+      <button class="btn btn-secondary" id="signup-btn">
+        🆕 Sign Up
+      </button>
+      <button class="btn btn-secondary" id="signout-btn" style="display: none;">
+        🚪 Sign Out
+      </button>
+    </div>
+    <!-- Auth buttons end -->
 
-  <div class="actions">
-    <button class="btn btn-primary" id="highlight-btn">
-      🎯 Check Sponsored Jobs
-    </button>
-    <button class="btn btn-primary" id="autofill-btn" style="background: #059669;">
-      📝 Autofill Application
-    </button>
-    <button class="btn btn-primary" id="people-search-btn" style="background: #0a66c2;">
-      👥 Find Relevant People
-    </button>
-    <button class="btn btn-secondary" id="clear-btn">
-      ❌ Clear Highlights
-    </button>
-    <button class="btn btn-secondary" id="open-board-btn">
-      📋 Open Job Board
-    </button>
-  </div>
+    <!-- Clerk components container -->
+    <div id="clerk-components">
+      <div class="clerk-component-container">
+        <div id="clerk-component"></div>
+      </div>
+      <button class="btn btn-secondary" id="back-to-main" style="margin-top: 10px;">
+        ← Back to Main
+      </button>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" id="highlight-btn">
+        🎯 Check Sponsored Jobs
+      </button>
+      <button class="btn btn-primary" id="autofill-btn" style="background: #059669;">
+        📝 Autofill Application
+      </button>
+      <button class="btn btn-primary" id="people-search-btn" style="background: #0a66c2;">
+        👥 Find Relevant People
+      </button>
+      <button class="btn btn-secondary" id="clear-btn">
+        ❌ Clear Highlights
+      </button>
+      <button class="btn btn-secondary" id="open-board-btn">
+        📋 Open Job Board
+      </button>
+    </div>
 
     <div class="footer">
       <a href="#" id="settings-link">Settings & Sync</a>

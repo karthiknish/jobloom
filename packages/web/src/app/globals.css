@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+html {
+scroll-behavior: smooth;
+}
 @theme {
   --radius: 0.5rem;
   --font-sans: var(--font-geist-sans);
