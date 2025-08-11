@@ -3,6 +3,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { playfair } from "@/font";
 
 const faqs = [
   {
@@ -38,7 +39,9 @@ export default function FAQSection() {
     <section className="py-20 bg-gray-50">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
+          <h2
+            className={`text-3xl font-bold text-gray-900 sm:text-4xl ${playfair.className}`}
+          >
             Frequently Asked Questions
           </h2>
           <p className="mt-4 text-xl text-gray-600">

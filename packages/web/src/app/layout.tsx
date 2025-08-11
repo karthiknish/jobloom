@@ -20,12 +20,11 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html
-        lang="en"
-        suppressHydrationWarning
-        className={`${playfair.variable} ${inter.variable}`}
-      >
-        <body className={`font-inter antialiased`}>
+      <html lang="en">
+        <body
+          suppressHydrationWarning
+          className={`${playfair.className} ${inter.className} antialiased`}
+        >
           <ConvexClientProvider>
             <Header />
             {children}

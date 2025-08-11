@@ -1,7 +1,5 @@
 @import "tailwindcss";
 
-@tailwind utilities;
-
 @theme {
   --radius: 0.5rem;
   --font-sans: var(--font-geist-sans);

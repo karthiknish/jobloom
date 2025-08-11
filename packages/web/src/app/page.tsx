@@ -21,9 +21,11 @@ export default async function Home() {
       <section className="relative bg-gradient-to-br from-primary/5 via-white to-secondary/5 overflow-hidden pt-16">
         {/* Animated background elements */}
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-yellow-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
-          <div className="absolute top-40 left-40 w-80 h-80 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/80 rounded-full mix-blend-multiply filter blur-xl animate-blob"></div>
+
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/50 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
+
+          <div className="absolute top-40 left-40 w-80 h-80 bg-primary/30 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
         </div>
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32 ">
