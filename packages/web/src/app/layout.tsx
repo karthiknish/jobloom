@@ -5,7 +5,7 @@ import { ConvexClientProvider } from "@/providers/convex-provider";
 import { Toaster } from "react-hot-toast";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { playfair, inter } from "@/font";
+import { inter } from "@/font";
 import "./globals.css";
 
 export const metadata: Metadata = {
