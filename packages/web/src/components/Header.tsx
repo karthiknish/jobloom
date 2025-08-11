@@ -44,7 +44,7 @@ export default function Header() {
           <Link
             key={link.href}
             href={link.href}
-            className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium w-full text-center py-2"
+            className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium w-fit text-center py-2"
             onClick={() => setIsMobileMenuOpen(false)}
           >
             {link.label}
@@ -56,7 +56,7 @@ export default function Header() {
           <Link
             key={link.href}
             href={link.href}
-            className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium w-full text-center py-2"
+            className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium w-fit text-center py-2 flex"
             onClick={() => setIsMobileMenuOpen(false)}
           >
             {link.label}

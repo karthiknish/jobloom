@@ -23,7 +23,7 @@ export default function RootLayout({
       <html lang="en">
         <body
           suppressHydrationWarning
-          className={`${playfair.className} ${inter.className} antialiased`}
+          className={`${inter.className} antialiased`}
         >
           <ConvexClientProvider>
             <Header />
