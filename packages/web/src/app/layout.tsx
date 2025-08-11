@@ -1,13 +1,12 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ConvexClientProvider } from "@/providers/convex-provider";
 import { Toaster } from "react-hot-toast";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-
-const inter = Inter({ subsets: ["latin"] });
+import { playfair, inter } from "@/font";
+import "./globals.css";
 
 export const metadata: Metadata = {
   title: "JobloomMonorepo - Job Tracker",
@@ -21,8 +20,12 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="en">
-        <body className={`${inter.className} antialiased`}>
+      <html
+        lang="en"
+        suppressHydrationWarning
+        className={`${playfair.variable} ${inter.variable}`}
+      >
+        <body className={`font-inter antialiased`}>
           <ConvexClientProvider>
             <Header />
             {children}

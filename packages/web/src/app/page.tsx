@@ -9,6 +9,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import FAQSection from "@/components/custom/Testimonials";
+import { playfair } from "@/font";
 
 export default async function Home() {
   const { userId } = await auth();
@@ -24,11 +26,13 @@ export default async function Home() {
           <div className="absolute top-40 left-40 w-80 h-80 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
         </div>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32 ">
           <div className="text-center">
-            <h1 className="text-4xl font-extrabold text-gray-900 sm:text-5xl lg:text-6xl animate-fade-in-up">
+            <h1
+              className={`text-4xl font-extrabold text-gray-900 sm:text-5xl lg:text-6xl animate-fade-in-up ${playfair.className}`}
+            >
               Stop Missing
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary animate-gradient">
+              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary animate-gradient z-10 leading-normal">
                 Sponsored Job Opportunities
               </span>
             </h1>
@@ -72,7 +76,9 @@ export default async function Home() {
       <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
+            <h2
+              className={`text-3xl font-bold text-gray-900 sm:text-4xl ${playfair.className}`}
+            >
               The Hidden Job Market Problem
             </h2>
             <p className="mt-4 text-xl text-gray-600 max-w-3xl mx-auto">
@@ -87,7 +93,9 @@ export default async function Home() {
                 <div className="bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                   <span className="text-2xl">😵‍💫</span>
                 </div>
-                <CardTitle>Invisible Sponsorships</CardTitle>
+                <CardTitle className={playfair.className}>
+                  Invisible Sponsorships
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-gray-600">
@@ -102,7 +110,9 @@ export default async function Home() {
                 <div className="bg-yellow-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                   <span className="text-2xl">📊</span>
                 </div>
-                <CardTitle>Scattered Applications</CardTitle>
+                <CardTitle className={playfair.className}>
+                  Scattered Applications
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-gray-600">
@@ -117,7 +127,9 @@ export default async function Home() {
                 <div className="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                   <span className="text-2xl">⏰</span>
                 </div>
-                <CardTitle>Missed Opportunities</CardTitle>
+                <CardTitle className={playfair.className}>
+                  Missed Opportunities
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-gray-600">
@@ -134,9 +146,12 @@ export default async function Home() {
       <section id="how-it-works" className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
+            <h2
+              className={`text-3xl font-bold text-gray-900 sm:text-4xl font-safe ${playfair.className}`}
+            >
               How Jobloom Works
             </h2>
+
             <p className="mt-4 text-xl text-gray-600 max-w-3xl mx-auto">
               Our Chrome extension and web platform work together to give you
               unprecedented insight into the job market.
@@ -148,7 +163,9 @@ export default async function Home() {
               <div className="bg-primary/10 rounded-full w-12 h-12 flex items-center justify-center mb-4">
                 <span className="text-xl font-bold text-primary">1</span>
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">
+              <h3
+                className={`text-2xl font-bold text-gray-900 mb-4 ${playfair.className}`}
+              >
                 Install the Chrome Extension
               </h3>
               <p className="text-lg text-gray-600 mb-6">
@@ -229,7 +246,9 @@ export default async function Home() {
               <div className="bg-orange-100 rounded-full w-12 h-12 flex items-center justify-center mb-4">
                 <span className="text-xl font-bold text-orange-600">2</span>
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">
+              <h3
+                className={`text-2xl font-bold text-gray-900 mb-4 ${playfair.className}`}
+              >
                 Reveal Sponsored Jobs
               </h3>
               <p className="text-lg text-gray-600 mb-6">
@@ -259,7 +278,9 @@ export default async function Home() {
               <div className="bg-green-100 rounded-full w-12 h-12 flex items-center justify-center mb-4">
                 <span className="text-xl font-bold text-green-600">3</span>
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">
+              <h3
+                className={`text-2xl font-bold text-gray-900 mb-4 ${playfair.className}`}
+              >
                 Track Your Applications
               </h3>
               <p className="text-lg text-gray-600 mb-6">
@@ -285,7 +306,9 @@ export default async function Home() {
             <div className="bg-gradient-to-br from-green-50 to-blue-50 rounded-2xl p-8">
               <Card>
                 <CardHeader>
-                  <CardTitle>Application Pipeline</CardTitle>
+                  <CardTitle className={playfair.className}>
+                    Application Pipeline
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
@@ -327,7 +350,9 @@ export default async function Home() {
       <section id="features" className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
+            <h2
+              className={`text-3xl font-bold text-gray-900 sm:text-4xl ${playfair.className}`}
+            >
               Everything You Need to Land Your Dream Job
             </h2>
           </div>
@@ -338,7 +363,9 @@ export default async function Home() {
                 <div className="bg-primary/10 rounded-lg w-12 h-12 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                   <span className="text-2xl">🎯</span>
                 </div>
-                <CardTitle className="group-hover:text-primary transition-colors">
+                <CardTitle
+                  className={`group-hover:text-primary transition-colors ${playfair.className}`}
+                >
                   Smart Company Detection
                 </CardTitle>
               </CardHeader>
@@ -355,7 +382,9 @@ export default async function Home() {
                 <div className="bg-green-100 rounded-lg w-12 h-12 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                   <span className="text-2xl">📊</span>
                 </div>
-                <CardTitle className="group-hover:text-green-600 transition-colors">
+                <CardTitle
+                  className={`group-hover:text-green-600 transition-colors ${playfair.className}`}
+                >
                   Application Analytics
                 </CardTitle>
               </CardHeader>
@@ -372,7 +401,9 @@ export default async function Home() {
                 <div className="bg-secondary/20 rounded-lg w-12 h-12 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                   <span className="text-2xl">🔄</span>
                 </div>
-                <CardTitle className="group-hover:text-secondary transition-colors">
+                <CardTitle
+                  className={`group-hover:text-secondary transition-colors ${playfair.className}`}
+                >
                   Real-time Sync
                 </CardTitle>
               </CardHeader>
@@ -389,7 +420,9 @@ export default async function Home() {
                 <div className="bg-orange-100 rounded-lg w-12 h-12 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                   <span className="text-2xl">🏢</span>
                 </div>
-                <CardTitle className="group-hover:text-orange-600 transition-colors">
+                <CardTitle
+                  className={`group-hover:text-orange-600 transition-colors ${playfair.className}`}
+                >
                   Company Insights
                 </CardTitle>
               </CardHeader>
@@ -406,7 +439,9 @@ export default async function Home() {
                 <div className="bg-blue-100 rounded-lg w-12 h-12 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                   <span className="text-2xl">🔒</span>
                 </div>
-                <CardTitle className="group-hover:text-blue-600 transition-colors">
+                <CardTitle
+                  className={`group-hover:text-blue-600 transition-colors ${playfair.className}`}
+                >
                   Privacy First
                 </CardTitle>
               </CardHeader>
@@ -423,7 +458,9 @@ export default async function Home() {
                 <div className="bg-yellow-100 rounded-lg w-12 h-12 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                   <span className="text-2xl">⚡</span>
                 </div>
-                <CardTitle className="group-hover:text-yellow-600 transition-colors">
+                <CardTitle
+                  className={`group-hover:text-yellow-600 transition-colors ${playfair.className}`}
+                >
                   Lightning Fast
                 </CardTitle>
               </CardHeader>
@@ -439,101 +476,16 @@ export default async function Home() {
       </section>
 
       {/* FAQ Section */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
-              Frequently Asked Questions
-            </h2>
-            <p className="mt-4 text-xl text-gray-600">
-              Everything you need to know about Jobloom
-            </p>
-          </div>
-
-          <div className="space-y-8">
-            <Card className="hover:shadow-md transition-shadow">
-              <CardHeader>
-                <CardTitle>How does Jobloom detect sponsored jobs?</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">
-                  Our Chrome extension uses advanced algorithms to identify when
-                  companies are paying to promote their job listings across
-                  LinkedIn, Indeed, Glassdoor, and other major job sites. We
-                  analyze various signals including placement, labels, and
-                  company patterns.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:shadow-md transition-shadow">
-              <CardHeader>
-                <CardTitle>Is Jobloom free to use?</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">
-                  Yes! Jobloom offers a generous free tier that includes
-                  sponsored job detection, basic application tracking, and the
-                  Chrome extension. Premium features like advanced analytics and
-                  unlimited CV evaluations are available in our paid plans.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:shadow-md transition-shadow">
-              <CardHeader>
-                <CardTitle>Which job sites does Jobloom work with?</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">
-                  Jobloom currently supports LinkedIn, Indeed, Glassdoor,
-                  ZipRecruiter, and Monster. We&apos;re constantly adding
-                  support for more job sites based on user feedback. The
-                  extension automatically activates when you visit supported
-                  sites.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:shadow-md transition-shadow">
-              <CardHeader>
-                <CardTitle>Is my job search data private?</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">
-                  Absolutely. We take privacy seriously. Your job search data is
-                  encrypted and stored securely. We never share your information
-                  with employers or third parties. You have full control over
-                  your data and can delete it at any time.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:shadow-md transition-shadow">
-              <CardHeader>
-                <CardTitle>
-                  How accurate is the sponsored job detection?
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">
-                  Our detection algorithm has over 95% accuracy in identifying
-                  sponsored listings. We continuously improve our detection
-                  methods and update the extension regularly to maintain high
-                  accuracy across all supported job sites.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
+      <FAQSection />
 
       {/* Testimonials Section */}
 
       {/* CTA Section */}
       <section className="py-20 bg-secondary">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-gray-800 sm:text-4xl">
+          <h2
+            className={`text-3xl font-bold text-gray-800 sm:text-4xl ${playfair.className}`}
+          >
             Ready to Supercharge Your Job Search?
           </h2>
           <p className="mt-4 text-xl text-gray-800">

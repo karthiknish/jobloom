@@ -8,11 +8,14 @@ const config: Config = {
   ],
   theme: {
     extend: {
-      // Using Tailwind v4 @theme variables directly; explicit color mapping not needed
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      fontFamily: {
+        playfair: ["var(--font-playfair)"],
+        inter: ["var(--font-inter)"],
       },
     },
   },
