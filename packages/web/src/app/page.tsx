@@ -9,8 +9,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import FAQSection from "@/components/custom/Testimonials";
+import FAQSection from "@/components/custom/FAQSection";
 import { playfair } from "@/font";
+import TestimonialSection from "@/components/custom/TestimonialSection";
 
 export default async function Home() {
   const { userId } = await auth();
@@ -481,6 +482,9 @@ export default async function Home() {
       <FAQSection />
 
       {/* Testimonials Section */}
+      <section id="testimonials">
+        <TestimonialSection />
+      </section>
 
       {/* CTA Section */}
       <section className="py-20 bg-secondary">
