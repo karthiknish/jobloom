@@ -4,10 +4,23 @@ import { useState } from "react";
 import { CloudArrowUpIcon } from "@heroicons/react/24/outline";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface CvUploadFormProps {
   userId: string;
@@ -77,7 +90,7 @@ export function CvUploadForm({ userId }: CvUploadFormProps) {
         setIndustry("");
         // Reset file input
         const fileInput = document.getElementById(
-          "file-upload",
+          "file-upload"
         ) as HTMLInputElement;
         if (fileInput) fileInput.value = "";
       } else {
@@ -104,7 +117,8 @@ export function CvUploadForm({ userId }: CvUploadFormProps) {
       <CardHeader>
         <CardTitle>Upload Your CV for Analysis</CardTitle>
         <CardDescription>
-          Get AI-powered insights to improve your CV. Supported formats: PDF, TXT (max 5MB)
+          Get AI-powered insights to improve your CV. Supported formats: PDF,
+          TXT (max 5MB)
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -142,7 +156,9 @@ export function CvUploadForm({ userId }: CvUploadFormProps) {
                     {formatFileSize(file.size)} • {file.type}
                   </p>
                 )}
-                <p className="mt-1 text-xs text-muted-foreground">PDF or TXT up to 5MB</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  PDF or TXT up to 5MB
+                </p>
               </div>
             </div>
           </div>
@@ -169,7 +185,6 @@ export function CvUploadForm({ userId }: CvUploadFormProps) {
                   <SelectValue placeholder="Select industry" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Select industry</SelectItem>
                   <SelectItem value="Technology">Technology</SelectItem>
                   <SelectItem value="Finance">Finance</SelectItem>
                   <SelectItem value="Healthcare">Healthcare</SelectItem>
@@ -195,19 +210,25 @@ export function CvUploadForm({ userId }: CvUploadFormProps) {
             </h4>
             <ul className="text-sm text-blue-800 space-y-1">
               <li>• Use a clean, well-formatted CV without complex layouts</li>
-              <li>• Include specific role and industry for targeted feedback</li>
               <li>
-                • Ensure your CV has clear sections (Experience, Skills, Education)
+                • Include specific role and industry for targeted feedback
               </li>
-              <li>• Remove any sensitive personal information before uploading</li>
+              <li>
+                • Ensure your CV has clear sections (Experience, Skills,
+                Education)
+              </li>
+              <li>
+                • Remove any sensitive personal information before uploading
+              </li>
             </ul>
             <div className="mt-3 p-3 bg-yellow-50 rounded border border-yellow-200">
               <h5 className="text-xs font-medium text-yellow-900 mb-1">
                 🤖 ATS Optimization Tip:
               </h5>
               <p className="text-xs text-yellow-800">
-                For best results with Applicant Tracking Systems, use standard section headings 
-                (Work Experience, Skills, Education) and avoid graphics, tables, or columns.
+                For best results with Applicant Tracking Systems, use standard
+                section headings (Work Experience, Skills, Education) and avoid
+                graphics, tables, or columns.
               </p>
             </div>
           </div>

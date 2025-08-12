@@ -57,25 +57,38 @@ export function AdvancedDashboard() {
   const [showApplicationForm, setShowApplicationForm] = useState(false);
   const [showJobForm, setShowJobForm] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
-  const [editingApplication, setEditingApplication] = useState<Application | null>(null);
-  const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
-  const [view, setView] = useState<"dashboard" | "jobs" | "applications">("dashboard");
+  const [editingApplication, setEditingApplication] =
+    useState<Application | null>(null);
+  const [selectedApplication, setSelectedApplication] =
+    useState<Application | null>(null);
+  const [view, setView] = useState<"dashboard" | "jobs" | "applications">(
+    "dashboard"
+  );
 
   // Fetch user record
   const { data: userRecord } = useApiQuery(
-    () => user ? dashboardApi.getUserByClerkId(user.id) : Promise.reject(new Error("No user")),
+    () =>
+      user
+        ? dashboardApi.getUserByClerkId(user.id)
+        : Promise.reject(new Error("No user")),
     [user?.id]
   );
 
   // Fetch applications
   const { data: applications, refetch: refetchApplications } = useApiQuery(
-    () => userRecord ? dashboardApi.getApplicationsByUser(userRecord._id) : Promise.reject(new Error("No user record")),
+    () =>
+      userRecord
+        ? dashboardApi.getApplicationsByUser(userRecord._id)
+        : Promise.reject(new Error("No user record")),
     [userRecord?._id]
   );
 
   // Fetch job stats
   const { data: jobStats, refetch: refetchJobStats } = useApiQuery(
-    () => userRecord ? dashboardApi.getJobStats(userRecord._id) : Promise.reject(new Error("No user record")),
+    () =>
+      userRecord
+        ? dashboardApi.getJobStats(userRecord._id)
+        : Promise.reject(new Error("No user record")),
     [userRecord?._id]
   );
 
