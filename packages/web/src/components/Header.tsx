@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 import { SignInButton, SignUpButton, UserButton, useUser } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
@@ -126,16 +127,13 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <Link href="/" className="flex items-center space-x-2 group">
-            <motion.span
-              className="text-2xl"
-              whileHover={{ rotate: 360 }}
-              transition={{ duration: 0.5 }}
-            >
-              🎯
-            </motion.span>
-            <span className="text-xl font-bold text-gray-900 group-hover:text-primary transition-colors">
-              Jobloom
-            </span>
+            <Image
+              src="/jobloom-logo.svg"
+              alt="JobBloom"
+              width={140}
+              height={32}
+              priority
+            />
           </Link>
 
           {/* Desktop Navigation */}
@@ -169,10 +167,12 @@ export default function Header() {
                       className="flex items-center space-x-2"
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
-                      <span className="text-2xl">🎯</span>
-                      <span className="text-xl font-bold text-gray-900">
-                        Jobloom
-                      </span>
+                      <Image
+                        src="/jobloom-logo.svg"
+                        alt="JobBloom"
+                        width={140}
+                        height={32}
+                      />
                     </Link>
                   </SheetTitle>
                 </SheetHeader>

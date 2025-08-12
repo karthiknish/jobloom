@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
+import Image from "next/image";
 import { Separator } from "@/components/ui/separator";
 
 export default function Footer() {
@@ -23,8 +24,12 @@ export default function Footer() {
           {/* Brand */}
           <div>
             <div className="flex items-center space-x-2 mb-4">
-              <span className="text-3xl">🎯</span>
-              <span className="text-2xl font-bold text-white">Jobloom</span>
+              <Image
+                src="/jobloom-logo-light.svg"
+                alt="JobBloom"
+                width={160}
+                height={32}
+              />
             </div>
             <p className="text-sm leading-relaxed">
               Revealing the hidden job market, one sponsored listing at a time.
