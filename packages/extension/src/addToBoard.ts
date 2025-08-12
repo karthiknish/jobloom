@@ -5,6 +5,8 @@ interface JobData {
   company: string;
   location: string;
   url: string;
+  description?: string;
+  salary?: string;
   isSponsored: boolean;
   isRecruitmentAgency?: boolean;
   sponsorshipType?: string;
@@ -18,7 +20,7 @@ interface JobBoardEntry {
   location: string;
   url: string;
   dateAdded: string;
-  status: 'interested' | 'applied' | 'interviewing' | 'rejected' | 'offer';
+  status: "interested" | "applied" | "interviewing" | "rejected" | "offer";
   notes: string;
   salary?: string;
   sponsorshipInfo?: {
@@ -31,15 +33,15 @@ interface JobBoardEntry {
 export class JobBoardManager {
   private static async getConvexUrl(): Promise<string> {
     return new Promise((resolve) => {
-      chrome.storage.sync.get(['convexUrl'], (result) => {
-        resolve(result.convexUrl || 'https://rare-chihuahua-615.convex.cloud');
+      chrome.storage.sync.get(["convexUrl"], (result) => {
+        resolve(result.convexUrl || "https://rare-chihuahua-615.convex.cloud");
       });
     });
   }
 
   private static async getUserId(): Promise<string | null> {
     return new Promise((resolve) => {
-      chrome.storage.sync.get(['userId'], (result) => {
+      chrome.storage.sync.get(["userId"], (result) => {
         resolve(result.userId || null);
       });
     });
@@ -47,11 +49,12 @@ export class JobBoardManager {
 
   private static async getOrCreateClientId(): Promise<string> {
     return new Promise((resolve) => {
-      chrome.storage.local.get(['clientId'], (result) => {
+      chrome.storage.local.get(["clientId"], (result) => {
         if (result.clientId) {
           resolve(result.clientId);
         } else {
-          const newClientId = 'ext-' + Math.random().toString(36).substr(2, 9) + '-' + Date.now();
+          const newClientId =
+            "ext-" + Math.random().toString(36).substr(2, 9) + "-" + Date.now();
           chrome.storage.local.set({ clientId: newClientId }, () => {
             resolve(newClientId);
           });
@@ -60,23 +63,42 @@ export class JobBoardManager {
     });
   }
 
-  public static async addToBoard(jobData: JobData): Promise<{ success: boolean; message: string }> {
+  public static async addToBoard(
+    jobData: JobData
+  ): Promise<{ success: boolean; message: string }> {
+    return this.addToBoardWithStatus(jobData, "interested");
+  }
+
+  public static async addToBoardWithStatus(
+    jobData: JobData,
+    status:
+      | "interested"
+      | "applied"
+      | "interviewing"
+      | "offered"
+      | "rejected"
+      | "withdrawn" = "interested"
+  ): Promise<{ success: boolean; message: string }> {
     try {
       // Get user ID
       const userId = await this.getUserId();
       if (!userId) {
-        return { 
-          success: false, 
-          message: 'User not authenticated. Please sign in to Jobloom.' 
+        return {
+          success: false,
+          message: "User not authenticated. Please sign in to Jobloom.",
         };
       }
 
       // Get Convex URL
       const convexUrl = await this.getConvexUrl();
-      if (!convexUrl || convexUrl === 'https://your-convex-deployment.convex.cloud') {
-        return { 
-          success: false, 
-          message: 'Convex URL not configured. Please set it in extension settings.' 
+      if (
+        !convexUrl ||
+        convexUrl === "https://your-convex-deployment.convex.cloud"
+      ) {
+        return {
+          success: false,
+          message:
+            "Convex URL not configured. Please set it in extension settings.",
         };
       }
 
@@ -85,20 +107,22 @@ export class JobBoardManager {
 
       // Send job data to Convex
       const response = await fetch(`${convexUrl}/api/mutation`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          path: 'jobs:createJob',
+          path: "jobs:createJob",
           args: {
             title: jobData.title,
             company: jobData.company,
             location: jobData.location,
             url: jobData.url,
+            description: jobData.description || undefined,
+            salary: jobData.salary || undefined,
             isSponsored: jobData.isSponsored,
             isRecruitmentAgency: jobData.isRecruitmentAgency || false,
-            source: 'extension',
+            source: "extension",
             userId: userId,
             clientId: clientId,
           },
@@ -106,15 +130,43 @@ export class JobBoardManager {
       });
 
       if (response.status === 429) {
-        return { 
-          success: false, 
-          message: 'Rate limit exceeded. Please try again later.' 
+        return {
+          success: false,
+          message: "Rate limit exceeded. Please try again later.",
         };
       }
 
       if (response.ok) {
+        let createdJobId: string | null = null;
+        try {
+          const created = await response.json();
+          createdJobId = created || null;
+        } catch {}
+
+        // Create application with selected status if we have a job id
+        if (createdJobId) {
+          try {
+            await fetch(`${convexUrl}/api/mutation`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                path: "applications:createApplication",
+                args: {
+                  jobId: createdJobId,
+                  userId: userId,
+                  status: status,
+                  appliedDate: status === "applied" ? Date.now() : undefined,
+                },
+              }),
+            });
+          } catch (e) {
+            // Non-fatal: job was created, application creation failed
+            console.warn("Failed to create application with status", e);
+          }
+        }
+
         // Update local stats
-        chrome.storage.local.get(['jobBoardStats'], (result) => {
+        chrome.storage.local.get(["jobBoardStats"], (result) => {
           const stats = result.jobBoardStats || {
             totalAdded: 0,
             addedToday: 0,
@@ -134,29 +186,29 @@ export class JobBoardManager {
           chrome.storage.local.set({ jobBoardStats: stats });
         });
 
-        return { 
-          success: true, 
-          message: 'Job successfully added to your board!' 
+        return {
+          success: true,
+          message: `Job added and status set to "${status}"`,
         };
       } else {
         const errorText = await response.text();
-        if (errorText.includes('Rate limit exceeded')) {
-          return { 
-            success: false, 
-            message: 'Server rate limit exceeded. Please try again later.' 
+        if (errorText.includes("Rate limit exceeded")) {
+          return {
+            success: false,
+            message: "Server rate limit exceeded. Please try again later.",
           };
         } else {
-          return { 
-            success: false, 
-            message: 'Failed to add job to board. Please try again.' 
+          return {
+            success: false,
+            message: "Failed to add job to board. Please try again.",
           };
         }
       }
     } catch (error) {
-      console.error('Error adding job to board:', error);
-      return { 
-        success: false, 
-        message: 'An error occurred. Please try again.' 
+      console.error("Error adding job to board:", error);
+      return {
+        success: false,
+        message: "An error occurred. Please try again.",
       };
     }
   }
@@ -171,12 +223,12 @@ export class JobBoardManager {
 
       // Check if job already exists in user's job board
       const response = await fetch(`${convexUrl}/api/query`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          path: 'jobs:getUserJobs',
+          path: "jobs:getUserJobs",
           args: {
             userId: userId,
             clientId: clientId,
@@ -186,43 +238,49 @@ export class JobBoardManager {
 
       if (response.ok) {
         const userJobs = await response.json();
-        
+
         // Check for duplicates (same company and similar title)
-        return userJobs.some((job: any) => 
-          job.company.toLowerCase() === jobData.company.toLowerCase() &&
-          this.similarTitles(job.title, jobData.title)
+        return userJobs.some(
+          (job: any) =>
+            job.company.toLowerCase() === jobData.company.toLowerCase() &&
+            this.similarTitles(job.title, jobData.title)
         );
       }
-      
+
       return false;
     } catch (error) {
-      console.error('Error checking if job exists:', error);
+      console.error("Error checking if job exists:", error);
       return false;
     }
   }
 
   private static similarTitles(title1: string, title2: string): boolean {
     // Simple similarity check - normalize and compare
-    const normalize = (str: string) => str.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const normalize = (str: string) =>
+      str.toLowerCase().replace(/[^a-z0-9]/g, "");
     const norm1 = normalize(title1);
     const norm2 = normalize(title2);
-    
+
     // Check if one title contains the other or they're very similar
-    return norm1.includes(norm2) || norm2.includes(norm1) || 
-           this.levenshteinDistance(norm1, norm2) < Math.min(norm1.length, norm2.length) * 0.3;
+    return (
+      norm1.includes(norm2) ||
+      norm2.includes(norm1) ||
+      this.levenshteinDistance(norm1, norm2) <
+        Math.min(norm1.length, norm2.length) * 0.3
+    );
   }
 
   private static levenshteinDistance(str1: string, str2: string): number {
     const matrix = [];
-    
+
     for (let i = 0; i <= str2.length; i++) {
       matrix[i] = [i];
     }
-    
+
     for (let j = 0; j <= str1.length; j++) {
       matrix[0][j] = j;
     }
-    
+
     for (let i = 1; i <= str2.length; i++) {
       for (let j = 1; j <= str1.length; j++) {
         if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
@@ -236,7 +294,7 @@ export class JobBoardManager {
         }
       }
     }
-    
+
     return matrix[str2.length][str1.length];
   }
 }

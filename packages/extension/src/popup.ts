@@ -1,7 +1,7 @@
 /// <reference types="chrome" />
 
-// Dynamically import Clerk to avoid loading it on every popup open
-let Clerk: any = null;
+// Singleton Clerk instance for the popup
+let clerk: any = null;
 
 document.addEventListener("DOMContentLoaded", () => {
   const highlightBtn = document.getElementById("highlight-btn");
@@ -42,13 +42,14 @@ document.addEventListener("DOMContentLoaded", () => {
       const popupContent = document.querySelector(".popup-content");
       popupContent?.insertBefore(
         prompt,
-        popupContent.firstChild?.nextSibling || null,
+        popupContent.firstChild?.nextSibling || null
       );
     } else {
       // User is authenticated: hide sign-in/up, show sign-out
       (signinBtn as HTMLElement | null)?.style.setProperty("display", "none");
       (signupBtn as HTMLElement | null)?.style.setProperty("display", "none");
-      if (signoutBtn) (signoutBtn as HTMLElement).style.removeProperty("display");
+      if (signoutBtn)
+        (signoutBtn as HTMLElement).style.removeProperty("display");
     }
   });
 
@@ -149,77 +150,71 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function showClerkComponent(mode: "signIn" | "signUp") {
     // Hide main content and show Clerk component
-    const mainContent = document.querySelector(".popup-content > *:not(#clerk-components)");
+    const mainContent = document.querySelector(
+      ".popup-content > *:not(#clerk-components)"
+    );
     if (mainContent) {
       (mainContent as HTMLElement).style.display = "none";
     }
-    
+
     if (clerkComponents) {
       clerkComponents.style.display = "block";
     }
 
-    // Load Clerk only when needed
-    if (!Clerk) {
-      const clerkScript = document.createElement("script");
-      clerkScript.src = "https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js";
-      clerkScript.async = true;
-      document.head.appendChild(clerkScript);
-      
-      await new Promise((resolve) => {
-        clerkScript.onload = resolve;
-      });
-      
-      // Get the publishable key from environment variables
-      const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || "pk_test_YOUR_CLERK_PUBLISHABLE_KEY";
-      
-      // Initialize Clerk
-      Clerk = (window as any).Clerk;
-      await Clerk.load({ publishableKey });
+    // Initialize Clerk only when needed (lazy-load module)
+    if (!clerk) {
+      const { Clerk } = await import("@clerk/clerk-js");
+      const publishableKey =
+        process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || "";
+      clerk = new Clerk(publishableKey);
+      await clerk.load();
     }
 
     // Mount the appropriate component
     const componentDiv = document.getElementById("clerk-component");
     if (componentDiv) {
       componentDiv.innerHTML = ""; // Clear previous content
-      
+
       const signInUrl = process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL || "/sign-in";
       const signUpUrl = process.env.NEXT_PUBLIC_CLERK_SIGN_UP_URL || "/sign-up";
-      const afterSignInUrl = process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL || "/dashboard";
-      const afterSignUpUrl = process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL || "/dashboard";
-      
+      const afterSignInUrl =
+        process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL || "/dashboard";
+      const afterSignUpUrl =
+        process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL || "/dashboard";
+
       if (mode === "signIn") {
-        Clerk.openSignIn({
+        clerk.openSignIn({
           appearance: {
             elements: {
               card: {
                 boxShadow: "none",
-                border: "1px solid #e5e7eb"
-              }
-            }
+                border: "1px solid #e5e7eb",
+              },
+            },
           },
           redirectUrl: window.location.href,
           signUpUrl: signUpUrl,
-          afterSignInUrl: afterSignInUrl
+          afterSignInUrl: afterSignInUrl,
         });
       } else {
-        Clerk.openSignUp({
+        clerk.openSignUp({
           appearance: {
             elements: {
               card: {
                 boxShadow: "none",
-                border: "1px solid #e5e7eb"
-              }
-            }
+                border: "1px solid #e5e7eb",
+              },
+            },
           },
           redirectUrl: window.location.href,
           signInUrl: signInUrl,
-          afterSignUpUrl: afterSignUpUrl
+          afterSignUpUrl: afterSignUpUrl,
         });
       }
     }
 
     // Listen for successful authentication
-    const unsubscribe = Clerk.addListener((event: any) => {
+    const unsubscribe = clerk.addListener((event: any) => {
       if (event.user) {
         // User is signed in
         const userId = event.user.id;
@@ -237,39 +232,46 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function hideClerkComponent() {
     // Show main content and hide Clerk component
-    const mainContent = document.querySelector(".popup-content > *:not(#clerk-components)");
+    const mainContent = document.querySelector(
+      ".popup-content > *:not(#clerk-components)"
+    );
     if (mainContent) {
       (mainContent as HTMLElement).style.display = "";
     }
-    
+
     if (clerkComponents) {
       clerkComponents.style.display = "none";
     }
   }
 
   async function signOut() {
-    if (Clerk) {
-      await Clerk.signOut();
+    if (clerk) {
+      await clerk.signOut();
     }
-    
+
     chrome.storage.sync.remove(["userId"], () => {
       // Also remove from localStorage if present
       chrome.tabs.query({}, (tabs) => {
-        tabs.forEach(tab => {
-          if (tab.url && (tab.url.includes("localhost") || tab.url.includes("jobloom"))) {
-            chrome.scripting.executeScript({
-              target: { tabId: tab.id! },
-              func: () => {
-                localStorage.removeItem("__clerk_user");
-                localStorage.removeItem("__clerk_session");
-              }
-            }).catch(() => {
-              // Ignore errors
-            });
+        tabs.forEach((tab) => {
+          if (
+            tab.url &&
+            (tab.url.includes("localhost") || tab.url.includes("jobloom"))
+          ) {
+            chrome.scripting
+              .executeScript({
+                target: { tabId: tab.id! },
+                func: () => {
+                  localStorage.removeItem("__clerk_user");
+                  localStorage.removeItem("__clerk_session");
+                },
+              })
+              .catch(() => {
+                // Ignore errors
+              });
           }
         });
       });
-      
+
       // Simply reload the popup; UI will revert to signed-out state
       window.location.reload();
     });
@@ -277,8 +279,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function ensureUserExists(clerkId: string) {
     chrome.storage.sync.get(["convexUrl"], async (result) => {
-      const convexUrl = result.convexUrl || process.env.CONVEX_URL || "https://rare-chihuahua-615.convex.cloud";
-      
+      const convexUrl =
+        result.convexUrl ||
+        process.env.CONVEX_URL ||
+        "https://rare-chihuahua-615.convex.cloud";
+
       if (!convexUrl || convexUrl.includes("your-convex")) return;
 
       try {
@@ -291,7 +296,7 @@ document.addEventListener("DOMContentLoaded", () => {
             args: { clerkId },
           }),
         });
-        
+
         if (!queryResp.ok) return;
         const existing = await queryResp.json();
         if (existing) return; // user already present

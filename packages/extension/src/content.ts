@@ -3,6 +3,8 @@ interface JobData {
   company: string;
   location: string;
   url: string;
+  description?: string;
+  salary?: string;
   isSponsored: boolean;
   isRecruitmentAgency?: boolean;
   sponsorshipType?: string;
@@ -66,7 +68,7 @@ interface JobBoardEntry {
   location: string;
   url: string;
   dateAdded: string;
-  status: 'interested' | 'applied' | 'interviewing' | 'rejected' | 'offer';
+  status: "interested" | "applied" | "interviewing" | "rejected" | "offer";
   notes: string;
   salary?: string;
   sponsorshipInfo?: {
@@ -90,7 +92,7 @@ class JobTracker {
 
   constructor() {
     // Default Convex URL - will be updated from storage
-    this.convexUrl = 'https://rare-chihuahua-615.convex.cloud';
+    this.convexUrl = "https://rare-chihuahua-615.convex.cloud";
     this.currentJobSite = this.detectJobSite();
     this.init();
   }
@@ -99,7 +101,10 @@ class JobTracker {
     this.loadConvexUrl();
     this.createToggleButton();
     this.createAutofillButton();
-    if (this.currentJobSite === 'linkedin' && window.location.pathname.includes('/jobs/')) {
+    if (
+      this.currentJobSite === "linkedin" &&
+      window.location.pathname.includes("/jobs/")
+    ) {
       this.createPeopleSearchButton();
     }
     this.setupAutoDetection();
@@ -107,34 +112,34 @@ class JobTracker {
 
   private async loadConvexUrl() {
     try {
-      const result = await chrome.storage.sync.get(['convexUrl']);
+      const result = await chrome.storage.sync.get(["convexUrl"]);
       if (result.convexUrl) {
         this.convexUrl = result.convexUrl;
       }
     } catch (error) {
-      console.error('Failed to load Convex URL:', error);
+      console.error("Failed to load Convex URL:", error);
     }
   }
 
   private detectJobSite(): string {
     const hostname = window.location.hostname.toLowerCase();
-    if (hostname.includes('linkedin')) return 'linkedin';
-    if (hostname.includes('indeed')) return 'indeed';
-    if (hostname.includes('glassdoor')) return 'glassdoor';
-    if (hostname.includes('monster')) return 'monster';
-    if (hostname.includes('ziprecruiter')) return 'ziprecruiter';
-    if (hostname.includes('jobs.google')) return 'google_jobs';
-    if (hostname.includes('seek.com')) return 'seek';
-    if (hostname.includes('totaljobs')) return 'totaljobs';
-    if (hostname.includes('reed.co.uk')) return 'reed';
-    if (hostname.includes('jobsite.co.uk')) return 'jobsite';
-    return 'unknown';
+    if (hostname.includes("linkedin")) return "linkedin";
+    if (hostname.includes("indeed")) return "indeed";
+    if (hostname.includes("glassdoor")) return "glassdoor";
+    if (hostname.includes("monster")) return "monster";
+    if (hostname.includes("ziprecruiter")) return "ziprecruiter";
+    if (hostname.includes("jobs.google")) return "google_jobs";
+    if (hostname.includes("seek.com")) return "seek";
+    if (hostname.includes("totaljobs")) return "totaljobs";
+    if (hostname.includes("reed.co.uk")) return "reed";
+    if (hostname.includes("jobsite.co.uk")) return "jobsite";
+    return "unknown";
   }
 
   private createToggleButton() {
-    const button = document.createElement('button');
-    button.id = 'jobloom-toggle';
-    button.textContent = '🎯 Check Sponsored Jobs';
+    const button = document.createElement("button");
+    button.id = "jobloom-toggle";
+    button.textContent = "🎯 Check Sponsored Jobs";
     button.style.cssText = `
       position: fixed;
       top: 140px;
@@ -151,44 +156,45 @@ class JobTracker {
       transition: all 0.2s;
     `;
 
-    button.addEventListener('click', async () => {
+    button.addEventListener("click", async () => {
       if (this.isHighlightMode) {
         this.clearHighlights();
-        button.textContent = '🎯 Check Sponsored Jobs';
-        button.style.background = '#4f46e5';
+        button.textContent = "🎯 Check Sponsored Jobs";
+        button.style.background = "#4f46e5";
         this.isHighlightMode = false;
       } else {
         // Check rate limit before proceeding
-        if (!await this.checkRateLimit()) {
-          const timeUntilReset = this.rateLimitWindow - (Date.now() - this.lastRequestTime);
+        if (!(await this.checkRateLimit())) {
+          const timeUntilReset =
+            this.rateLimitWindow - (Date.now() - this.lastRequestTime);
           button.textContent = `⏰ Rate limited (${Math.ceil(timeUntilReset / 1000)}s)`;
-          button.style.background = '#f59e0b';
-          
+          button.style.background = "#f59e0b";
+
           // Reset button after rate limit expires
           setTimeout(() => {
-            button.textContent = '🎯 Check Sponsored Jobs';
-            button.style.background = '#4f46e5';
+            button.textContent = "🎯 Check Sponsored Jobs";
+            button.style.background = "#4f46e5";
           }, timeUntilReset);
           return;
         }
 
-        button.textContent = '⏳ Checking...';
+        button.textContent = "⏳ Checking...";
         button.disabled = true;
-        
+
         try {
           await this.checkAndHighlightSponsoredJobs();
-          button.textContent = '❌ Clear Highlights';
-          button.style.background = '#ef4444';
+          button.textContent = "❌ Clear Highlights";
+          button.style.background = "#ef4444";
           this.isHighlightMode = true;
         } catch (error) {
-          console.error('Error checking sponsored jobs:', error);
-          button.textContent = '❌ Error occurred';
-          button.style.background = '#ef4444';
-          
+          console.error("Error checking sponsored jobs:", error);
+          button.textContent = "❌ Error occurred";
+          button.style.background = "#ef4444";
+
           // Reset button after error
           setTimeout(() => {
-            button.textContent = '🎯 Check Sponsored Jobs';
-            button.style.background = '#4f46e5';
+            button.textContent = "🎯 Check Sponsored Jobs";
+            button.style.background = "#4f46e5";
           }, 3000);
         } finally {
           button.disabled = false;
@@ -200,9 +206,9 @@ class JobTracker {
   }
 
   private createAutofillButton() {
-    const button = document.createElement('button');
-    button.id = 'jobloom-autofill';
-    button.textContent = '📝 Autofill Application';
+    const button = document.createElement("button");
+    button.id = "jobloom-autofill";
+    button.textContent = "📝 Autofill Application";
     button.style.cssText = `
       position: fixed;
       top: 80px;
@@ -220,43 +226,43 @@ class JobTracker {
       display: none;
     `;
 
-    button.addEventListener('click', async () => {
-      button.textContent = '⏳ Filling...';
+    button.addEventListener("click", async () => {
+      button.textContent = "⏳ Filling...";
       button.disabled = true;
-      
+
       try {
         await this.autofillApplication();
-        button.textContent = '✅ Filled!';
-        button.style.background = '#10b981';
-        
+        button.textContent = "✅ Filled!";
+        button.style.background = "#10b981";
+
         setTimeout(() => {
-          button.textContent = '📝 Autofill Application';
-          button.style.background = '#059669';
+          button.textContent = "📝 Autofill Application";
+          button.style.background = "#059669";
           button.disabled = false;
         }, 3000);
       } catch (error) {
-        console.error('Autofill error:', error);
-        button.textContent = '❌ Error';
-        button.style.background = '#ef4444';
-        
+        console.error("Autofill error:", error);
+        button.textContent = "❌ Error";
+        button.style.background = "#ef4444";
+
         setTimeout(() => {
-          button.textContent = '📝 Autofill Application';
-          button.style.background = '#059669';
+          button.textContent = "📝 Autofill Application";
+          button.style.background = "#059669";
           button.disabled = false;
         }, 3000);
       }
     });
 
     document.body.appendChild(button);
-    
+
     // Show button only when application forms are detected
     this.detectApplicationForms();
   }
 
   private createPeopleSearchButton() {
-    const button = document.createElement('button');
-    button.id = 'jobloom-people-search';
-    button.textContent = '👥 Find Relevant People';
+    const button = document.createElement("button");
+    button.id = "jobloom-people-search";
+    button.textContent = "👥 Find Relevant People";
     button.style.cssText = `
       position: fixed;
       top: 80px;
@@ -273,16 +279,16 @@ class JobTracker {
       transition: all 0.2s;
     `;
 
-    button.addEventListener('click', () => {
+    button.addEventListener("click", () => {
       if (this.isPeopleSearchMode) {
         this.closePeopleSearchPanel();
-        button.textContent = '👥 Find Relevant People';
-        button.style.background = '#0a66c2';
+        button.textContent = "👥 Find Relevant People";
+        button.style.background = "#0a66c2";
         this.isPeopleSearchMode = false;
       } else {
         this.openPeopleSearchPanel();
-        button.textContent = '❌ Close People Search';
-        button.style.background = '#ef4444';
+        button.textContent = "❌ Close People Search";
+        button.style.background = "#ef4444";
         this.isPeopleSearchMode = true;
       }
     });
@@ -292,12 +298,12 @@ class JobTracker {
 
   private openPeopleSearchPanel() {
     if (this.peopleSearchPanel) {
-      this.peopleSearchPanel.style.display = 'block';
+      this.peopleSearchPanel.style.display = "block";
       return;
     }
 
-    const panel = document.createElement('div');
-    panel.id = 'jobloom-people-panel';
+    const panel = document.createElement("div");
+    panel.id = "jobloom-people-panel";
     panel.style.cssText = `
       position: fixed;
       top: 140px;
@@ -361,9 +367,11 @@ class JobTracker {
     this.peopleSearchPanel = panel;
 
     // Add event listeners
-    const searchBtn = panel.querySelector('#search-people-btn') as HTMLButtonElement;
+    const searchBtn = panel.querySelector(
+      "#search-people-btn"
+    ) as HTMLButtonElement;
 
-    searchBtn.addEventListener('click', () => this.searchRelevantPeople());
+    searchBtn.addEventListener("click", () => this.searchRelevantPeople());
 
     // Load default settings
     this.loadPeopleSearchDefaults();
@@ -371,22 +379,26 @@ class JobTracker {
 
   private closePeopleSearchPanel() {
     if (this.peopleSearchPanel) {
-      this.peopleSearchPanel.style.display = 'none';
+      this.peopleSearchPanel.style.display = "none";
     }
   }
 
   private async loadPeopleSearchDefaults() {
     try {
       const result = await chrome.storage.sync.get([
-        'defaultKeywords', 
-        'defaultConnectionLevel'
+        "defaultKeywords",
+        "defaultConnectionLevel",
       ]);
-      
+
       const panel = this.peopleSearchPanel;
       if (!panel) return;
 
-      const keywordsInput = panel.querySelector('#people-keywords') as HTMLInputElement;
-      const connectionSelect = panel.querySelector('#people-connection') as HTMLSelectElement;
+      const keywordsInput = panel.querySelector(
+        "#people-keywords"
+      ) as HTMLInputElement;
+      const connectionSelect = panel.querySelector(
+        "#people-connection"
+      ) as HTMLSelectElement;
 
       if (keywordsInput && result.defaultKeywords) {
         keywordsInput.value = result.defaultKeywords;
@@ -395,7 +407,7 @@ class JobTracker {
         connectionSelect.value = result.defaultConnectionLevel;
       }
     } catch (error) {
-      console.error('Failed to load people search defaults:', error);
+      console.error("Failed to load people search defaults:", error);
     }
   }
 
@@ -403,33 +415,49 @@ class JobTracker {
     const panel = this.peopleSearchPanel;
     if (!panel) return;
 
-    const keywords = (panel.querySelector('#people-keywords') as HTMLInputElement).value;
-    const company = (panel.querySelector('#people-company') as HTMLInputElement).value;
-    const location = (panel.querySelector('#people-location') as HTMLInputElement).value;
-    const connectionLevel = (panel.querySelector('#people-connection') as HTMLSelectElement).value;
-    const resultsDiv = panel.querySelector('#people-results') as HTMLElement;
-    const searchBtn = panel.querySelector('#search-people-btn') as HTMLButtonElement;
+    const keywords = (
+      panel.querySelector("#people-keywords") as HTMLInputElement
+    ).value;
+    const company = (panel.querySelector("#people-company") as HTMLInputElement)
+      .value;
+    const location = (
+      panel.querySelector("#people-location") as HTMLInputElement
+    ).value;
+    const connectionLevel = (
+      panel.querySelector("#people-connection") as HTMLSelectElement
+    ).value;
+    const resultsDiv = panel.querySelector("#people-results") as HTMLElement;
+    const searchBtn = panel.querySelector(
+      "#search-people-btn"
+    ) as HTMLButtonElement;
 
     if (!keywords.trim()) {
-      resultsDiv.innerHTML = '<div style="color: #ef4444; text-align: center; padding: 20px;">Please enter search keywords</div>';
+      resultsDiv.innerHTML =
+        '<div style="color: #ef4444; text-align: center; padding: 20px;">Please enter search keywords</div>';
       return;
     }
 
-    searchBtn.textContent = '⏳ Searching...';
+    searchBtn.textContent = "⏳ Searching...";
     searchBtn.disabled = true;
 
     try {
       // Check rate limit
-      if (!await this.checkRateLimit()) {
-        resultsDiv.innerHTML = '<div style="color: #f59e0b; text-align: center; padding: 20px;">Rate limited. Please wait before searching again.</div>';
+      if (!(await this.checkRateLimit())) {
+        resultsDiv.innerHTML =
+          '<div style="color: #f59e0b; text-align: center; padding: 20px;">Rate limited. Please wait before searching again.</div>';
         return;
       }
 
       // Build LinkedIn search URL
-      const searchUrl = this.buildLinkedInPeopleSearchUrl(keywords, company, location, connectionLevel);
-      
+      const searchUrl = this.buildLinkedInPeopleSearchUrl(
+        keywords,
+        company,
+        location,
+        connectionLevel
+      );
+
       // Navigate to search results or extract current page people
-      if (window.location.href.includes('/search/people/')) {
+      if (window.location.href.includes("/search/people/")) {
         // Already on people search page, extract results
         const people = this.extractPeopleFromCurrentPage();
         const relevantPeople = this.filterRelevantPeople(people, keywords);
@@ -447,43 +475,51 @@ class JobTracker {
           </div>
         `;
       }
-
     } catch (error) {
-      console.error('Error searching people:', error);
-      resultsDiv.innerHTML = '<div style="color: #ef4444; text-align: center; padding: 20px;">Error occurred while searching. Please try again.</div>';
+      console.error("Error searching people:", error);
+      resultsDiv.innerHTML =
+        '<div style="color: #ef4444; text-align: center; padding: 20px;">Error occurred while searching. Please try again.</div>';
     } finally {
-      searchBtn.textContent = '🔍 Search People';
+      searchBtn.textContent = "🔍 Search People";
       searchBtn.disabled = false;
     }
   }
 
-  private buildLinkedInPeopleSearchUrl(keywords: string, company: string, location: string, connectionLevel: string): string {
-    const baseUrl = 'https://www.linkedin.com/search/results/people/';
+  private buildLinkedInPeopleSearchUrl(
+    keywords: string,
+    company: string,
+    location: string,
+    connectionLevel: string
+  ): string {
+    const baseUrl = "https://www.linkedin.com/search/results/people/";
     const params = new URLSearchParams();
 
     // Add keywords to search
     if (keywords.trim()) {
-      params.append('keywords', keywords.trim());
+      params.append("keywords", keywords.trim());
     }
 
     // Add company filter
     if (company.trim()) {
-      params.append('currentCompany', `["${company.trim()}"]`);
+      params.append("currentCompany", `["${company.trim()}"]`);
     }
 
     // Add location filter
     if (location.trim()) {
-      params.append('geoUrn', `["${location.trim()}"]`);
+      params.append("geoUrn", `["${location.trim()}"]`);
     }
 
     // Add connection level filter
-    if (connectionLevel !== 'all') {
+    if (connectionLevel !== "all") {
       const connectionMap = {
-        '1st': 'F',
-        '2nd': 'S',
-        '3rd': 'O'
+        "1st": "F",
+        "2nd": "S",
+        "3rd": "O",
       };
-      params.append('network', `["${connectionMap[connectionLevel as keyof typeof connectionMap]}"]`);
+      params.append(
+        "network",
+        `["${connectionMap[connectionLevel as keyof typeof connectionMap]}"]`
+      );
     }
 
     return `${baseUrl}?${params.toString()}`;
@@ -491,82 +527,111 @@ class JobTracker {
 
   private extractPeopleFromCurrentPage(): PersonData[] {
     const people: PersonData[] = [];
-    
+
     // LinkedIn people search result selectors
-    const peopleElements = document.querySelectorAll('.reusable-search__result-container, .search-result__wrapper');
-    
-    peopleElements.forEach(element => {
+    const peopleElements = document.querySelectorAll(
+      ".reusable-search__result-container, .search-result__wrapper"
+    );
+
+    peopleElements.forEach((element) => {
       try {
-        const nameEl = element.querySelector('.entity-result__title-text a, .search-result__result-link');
-        const titleEl = element.querySelector('.entity-result__primary-subtitle, .subline-level-1');
-        const companyEl = element.querySelector('.entity-result__secondary-subtitle, .subline-level-2');
-        const locationEl = element.querySelector('.entity-result__summary, .search-result__snippets');
-        const connectionEl = element.querySelector('.entity-result__badge-text, .dist-value');
+        const nameEl = element.querySelector(
+          ".entity-result__title-text a, .search-result__result-link"
+        );
+        const titleEl = element.querySelector(
+          ".entity-result__primary-subtitle, .subline-level-1"
+        );
+        const companyEl = element.querySelector(
+          ".entity-result__secondary-subtitle, .subline-level-2"
+        );
+        const locationEl = element.querySelector(
+          ".entity-result__summary, .search-result__snippets"
+        );
+        const connectionEl = element.querySelector(
+          ".entity-result__badge-text, .dist-value"
+        );
         const profileLinkEl = element.querySelector('a[href*="/in/"]');
 
         if (nameEl && titleEl) {
           const person: PersonData = {
-            name: nameEl.textContent?.trim() || 'Unknown',
-            title: titleEl.textContent?.trim() || 'Unknown',
-            company: companyEl?.textContent?.trim() || 'Unknown',
-            location: locationEl?.textContent?.trim() || 'Unknown',
-            profileUrl: profileLinkEl?.getAttribute('href') || '',
-            connectionDegree: connectionEl?.textContent?.trim() || 'Unknown',
-            isRelevant: false
+            name: nameEl.textContent?.trim() || "Unknown",
+            title: titleEl.textContent?.trim() || "Unknown",
+            company: companyEl?.textContent?.trim() || "Unknown",
+            location: locationEl?.textContent?.trim() || "Unknown",
+            profileUrl: profileLinkEl?.getAttribute("href") || "",
+            connectionDegree: connectionEl?.textContent?.trim() || "Unknown",
+            isRelevant: false,
           };
-          
+
           people.push(person);
         }
       } catch (error) {
-        console.error('Error extracting person data:', error);
+        console.error("Error extracting person data:", error);
       }
     });
 
     return people;
   }
 
-  private filterRelevantPeople(people: PersonData[], keywords: string): PersonData[] {
-    const keywordList = keywords.toLowerCase().split(',').map(k => k.trim());
-    
-    return people.map(person => {
-      let relevanceScore = 0;
-      const matchedKeywords: string[] = [];
-      
-      // Check keywords against title and company
-      const searchText = `${person.title} ${person.company}`.toLowerCase();
-      
-      keywordList.forEach(keyword => {
-        if (searchText.includes(keyword)) {
-          relevanceScore += 1;
-          matchedKeywords.push(keyword);
+  private filterRelevantPeople(
+    people: PersonData[],
+    keywords: string
+  ): PersonData[] {
+    const keywordList = keywords
+      .toLowerCase()
+      .split(",")
+      .map((k) => k.trim());
+
+    return people
+      .map((person) => {
+        let relevanceScore = 0;
+        const matchedKeywords: string[] = [];
+
+        // Check keywords against title and company
+        const searchText = `${person.title} ${person.company}`.toLowerCase();
+
+        keywordList.forEach((keyword) => {
+          if (searchText.includes(keyword)) {
+            relevanceScore += 1;
+            matchedKeywords.push(keyword);
+          }
+        });
+
+        // Boost score for exact title matches
+        if (
+          keywordList.some((keyword) =>
+            person.title.toLowerCase().includes(keyword)
+          )
+        ) {
+          relevanceScore += 0.5;
         }
-      });
-      
-      // Boost score for exact title matches
-      if (keywordList.some(keyword => person.title.toLowerCase().includes(keyword))) {
-        relevanceScore += 0.5;
-      }
-      
-      return {
-        ...person,
-        isRelevant: relevanceScore > 0,
-        relevanceScore,
-        keywords: matchedKeywords
-      };
-    }).filter(person => person.isRelevant)
+
+        return {
+          ...person,
+          isRelevant: relevanceScore > 0,
+          relevanceScore,
+          keywords: matchedKeywords,
+        };
+      })
+      .filter((person) => person.isRelevant)
       .sort((a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0));
   }
 
   private displayPeopleResults(people: PersonData[]) {
-    const resultsDiv = this.peopleSearchPanel?.querySelector('#people-results') as HTMLElement;
+    const resultsDiv = this.peopleSearchPanel?.querySelector(
+      "#people-results"
+    ) as HTMLElement;
     if (!resultsDiv) return;
 
     if (people.length === 0) {
-      resultsDiv.innerHTML = '<div style="text-align: center; color: #666; padding: 20px;">No relevant people found. Try different keywords or navigate to LinkedIn people search results.</div>';
+      resultsDiv.innerHTML =
+        '<div style="text-align: center; color: #666; padding: 20px;">No relevant people found. Try different keywords or navigate to LinkedIn people search results.</div>';
       return;
     }
 
-    const resultsHtml = people.map(person => `
+    const resultsHtml = people
+      .map(
+        (person) => `
       <div style="border: 1px solid #eee; border-radius: 8px; padding: 12px; margin-bottom: 10px; background: white;">
         <div style="display: flex; justify-content: between; align-items: start; margin-bottom: 8px;">
           <div style="flex: 1;">
@@ -583,16 +648,24 @@ class JobTracker {
             </span>
           </div>
         </div>
-        ${person.keywords && person.keywords.length > 0 ? `
+        ${
+          person.keywords && person.keywords.length > 0
+            ? `
           <div style="margin-top: 8px;">
             <div style="font-size: 10px; color: #666; margin-bottom: 4px;">Matched keywords:</div>
             <div style="display: flex; flex-wrap: wrap; gap: 4px;">
-              ${person.keywords.map(keyword => `
+              ${person.keywords
+                .map(
+                  (keyword) => `
                 <span style="background: #f0f8ff; color: #0a66c2; padding: 2px 6px; border-radius: 3px; font-size: 10px;">${keyword}</span>
-              `).join('')}
+              `
+                )
+                .join("")}
             </div>
           </div>
-        ` : ''}
+        `
+            : ""
+        }
         <div style="margin-top: 10px; display: flex; gap: 6px;">
           <button onclick="window.open('${person.profileUrl}', '_blank')" 
                   style="flex: 1; background: #0a66c2; color: white; border: none; padding: 6px; border-radius: 4px; font-size: 11px; cursor: pointer;">
@@ -604,7 +677,9 @@ class JobTracker {
           </button>
         </div>
       </div>
-    `).join('');
+    `
+      )
+      .join("");
 
     resultsDiv.innerHTML = `
       <div style="margin-bottom: 15px; padding: 10px; background: #f0f8ff; border-radius: 6px;">
@@ -618,8 +693,8 @@ class JobTracker {
 
   private async checkAndHighlightSponsoredJobs() {
     const jobElements = this.findJobElements();
-    const jobsToCheck: Array<{element: Element, data: JobData}> = [];
-    
+    const jobsToCheck: Array<{ element: Element; data: JobData }> = [];
+
     // Extract job data from all elements
     jobElements.forEach((element) => {
       const jobData = this.extractJobData(element);
@@ -627,117 +702,139 @@ class JobTracker {
     });
 
     if (jobsToCheck.length === 0) {
-      console.log('No job elements found on this page');
+      console.log("No job elements found on this page");
       return;
     }
 
     // Extract unique company names for batch checking
-    const companyNames = [...new Set(jobsToCheck.map(job => job.data.company))];
-    
+    const companyNames = [
+      ...new Set(jobsToCheck.map((job) => job.data.company)),
+    ];
+
     // Check company sponsorship status via Convex
     const sponsorshipResults = await this.checkCompanySponsorship(companyNames);
-    
+
     // Create a map for quick lookup
     const sponsorshipMap = new Map();
-    sponsorshipResults.forEach(result => {
+    sponsorshipResults.forEach((result) => {
       sponsorshipMap.set(result.company, result);
     });
-    
+
     // Apply highlights based on results
     jobsToCheck.forEach((job) => {
       const sponsorshipData = sponsorshipMap.get(job.data.company);
       if (sponsorshipData && sponsorshipData.isSponsored) {
         job.data.isSponsored = true;
-        job.data.sponsorshipType = sponsorshipData.sponsorshipType || 'sponsored';
-        this.applyHighlight(job.element, sponsorshipData.sponsorshipType || 'sponsored');
+        job.data.sponsorshipType =
+          sponsorshipData.sponsorshipType || "sponsored";
+        this.applyHighlight(
+          job.element,
+          sponsorshipData.sponsorshipType || "sponsored"
+        );
         this.addJobToBoard(job.data);
       } else if (job.data.isRecruitmentAgency) {
         // Highlight recruitment agency jobs
-        this.applyHighlight(job.element, 'recruitment_agency');
+        this.applyHighlight(job.element, "recruitment_agency");
         this.addJobToBoard(job.data);
       }
     });
 
     // Show summary
-    const sponsoredCount = jobsToCheck.filter(job => job.data.isSponsored).length;
-    const recruitmentAgencyCount = jobsToCheck.filter(job => job.data.isRecruitmentAgency).length;
-    console.log(`Found ${sponsoredCount} sponsored jobs and ${recruitmentAgencyCount} recruitment agency jobs out of ${jobsToCheck.length} total jobs`);
+    const sponsoredCount = jobsToCheck.filter(
+      (job) => job.data.isSponsored
+    ).length;
+    const recruitmentAgencyCount = jobsToCheck.filter(
+      (job) => job.data.isRecruitmentAgency
+    ).length;
+    console.log(
+      `Found ${sponsoredCount} sponsored jobs and ${recruitmentAgencyCount} recruitment agency jobs out of ${jobsToCheck.length} total jobs`
+    );
   }
 
   private async checkRateLimit(): Promise<boolean> {
     const now = Date.now();
-    
+
     // Reset counter if window has passed
     if (now - this.lastRequestTime > this.rateLimitWindow) {
       this.requestCount = 0;
       this.lastRequestTime = now;
     }
-    
+
     // Check if we've exceeded the limit
     if (this.requestCount >= this.maxRequestsPerWindow) {
-      const timeUntilReset = this.rateLimitWindow - (now - this.lastRequestTime);
-      console.warn(`Rate limit exceeded. Try again in ${Math.ceil(timeUntilReset / 1000)} seconds.`);
+      const timeUntilReset =
+        this.rateLimitWindow - (now - this.lastRequestTime);
+      console.warn(
+        `Rate limit exceeded. Try again in ${Math.ceil(timeUntilReset / 1000)} seconds.`
+      );
       return false;
     }
-    
+
     return true;
   }
 
   private generateClientId(): string {
     // Generate a session-based client ID for rate limiting
-    let clientId = localStorage.getItem('jobloom-client-id');
+    let clientId = localStorage.getItem("jobloom-client-id");
     if (!clientId) {
-      clientId = 'ext-' + Math.random().toString(36).substr(2, 9) + '-' + Date.now();
-      localStorage.setItem('jobloom-client-id', clientId);
+      clientId =
+        "ext-" + Math.random().toString(36).substr(2, 9) + "-" + Date.now();
+      localStorage.setItem("jobloom-client-id", clientId);
     }
     return clientId;
   }
 
-  private async checkCompanySponsorship(companies: string[]): Promise<ConvexSponsorshipData[]> {
+  private async checkCompanySponsorship(
+    companies: string[]
+  ): Promise<ConvexSponsorshipData[]> {
     // Check rate limit before making request
-    if (!await this.checkRateLimit()) {
-      return companies.map(company => ({ 
+    if (!(await this.checkRateLimit())) {
+      return companies.map((company) => ({
         company,
-        isSponsored: false, 
-        sponsorshipType: null, 
-        source: 'rate_limited' 
+        isSponsored: false,
+        sponsorshipType: null,
+        source: "rate_limited",
       }));
     }
 
     try {
       // Increment request counter
       this.requestCount++;
-      
+
       // Limit companies per request
       const maxCompaniesPerRequest = 50;
       const limitedCompanies = companies.slice(0, maxCompaniesPerRequest);
-      
+
       if (companies.length > maxCompaniesPerRequest) {
-        console.warn(`Too many companies (${companies.length}). Limited to ${maxCompaniesPerRequest}.`);
+        console.warn(
+          `Too many companies (${companies.length}). Limited to ${maxCompaniesPerRequest}.`
+        );
       }
 
       const response = await fetch(`${this.convexUrl}/api/query`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          path: 'sponsorship:checkCompanySponsorship',
-          args: { 
+          path: "sponsorship:checkCompanySponsorship",
+          args: {
             companies: limitedCompanies,
-            clientId: this.generateClientId()
-          }
-        })
+            clientId: this.generateClientId(),
+          },
+        }),
       });
 
       if (response.status === 429) {
         // Rate limited by server
-        console.warn('Rate limited by server. Please wait before making more requests.');
-        return companies.map(company => ({ 
+        console.warn(
+          "Rate limited by server. Please wait before making more requests."
+        );
+        return companies.map((company) => ({
           company,
-          isSponsored: false, 
-          sponsorshipType: null, 
-          source: 'server_rate_limited' 
+          isSponsored: false,
+          sponsorshipType: null,
+          source: "server_rate_limited",
         }));
       }
 
@@ -746,27 +843,27 @@ class JobTracker {
       }
 
       const results = await response.json();
-      
+
       // Handle rate limit error from Convex
-      if (results.error && results.error.includes('Rate limit exceeded')) {
-        console.warn('Convex rate limit exceeded:', results.error);
-        return companies.map(company => ({ 
+      if (results.error && results.error.includes("Rate limit exceeded")) {
+        console.warn("Convex rate limit exceeded:", results.error);
+        return companies.map((company) => ({
           company,
-          isSponsored: false, 
-          sponsorshipType: null, 
-          source: 'convex_rate_limited' 
+          isSponsored: false,
+          sponsorshipType: null,
+          source: "convex_rate_limited",
         }));
       }
 
       return results;
     } catch (error) {
-      console.error('Failed to check company sponsorship:', error);
+      console.error("Failed to check company sponsorship:", error);
       // Fallback: return empty results
-      return companies.map(company => ({ 
+      return companies.map((company) => ({
         company,
-        isSponsored: false, 
-        sponsorshipType: null, 
-        source: 'error' 
+        isSponsored: false,
+        sponsorshipType: null,
+        source: "error",
       }));
     }
   }
@@ -774,75 +871,50 @@ class JobTracker {
   private findJobElements(): Element[] {
     const siteSelectors = {
       linkedin: [
-        '.jobs-search-results__list-item',
-        '.job-card-container',
-        '[data-job-id]',
-        '.reusable-search__result-container'
+        ".jobs-search-results__list-item",
+        ".job-card-container",
+        "[data-job-id]",
+        ".reusable-search__result-container",
       ],
       indeed: [
-        '.job_seen_beacon',
-        '.slider_container .slider_item',
-        '[data-jk]',
-        '.jobsearch-SerpJobCard'
+        ".job_seen_beacon",
+        ".slider_container .slider_item",
+        "[data-jk]",
+        ".jobsearch-SerpJobCard",
       ],
       glassdoor: [
-        '.react-job-listing',
-        '.jobContainer',
+        ".react-job-listing",
+        ".jobContainer",
         '[data-test=\"job-listing\"]',
-        '.JobCard'
+        ".JobCard",
       ],
-      monster: [
-        '.job-card',
-        '.job-listing',
-        '[data-jobid]'
-      ],
-      ziprecruiter: [
-        '.job_content',
-        '.job-listing',
-        '[data-job-id]'
-      ],
+      monster: [".job-card", ".job-listing", "[data-jobid]"],
+      ziprecruiter: [".job_content", ".job-listing", "[data-job-id]"],
       google_jobs: [
-        '.PwjeAc',
-        '.gws-plugins-horizon-jobs__li-ed',
-        '[data-ved]'
+        ".PwjeAc",
+        ".gws-plugins-horizon-jobs__li-ed",
+        "[data-ved]",
       ],
-      seek: [
-        '.job-card',
-        '[data-automation=\"jobListing\"]',
-        '.JobCard'
-      ],
-      totaljobs: [
-        '.job',
-        '.job-item',
-        '[data-job-id]'
-      ],
-      reed: [
-        '.job-result',
-        '.job-card',
-        '[data-id]'
-      ],
-      jobsite: [
-        '.job',
-        '.job-item',
-        '.job-card'
-      ],
-      unknown: [
-        '.job-card',
-        '.job-listing',
-        '.job-result',
-        '[data-job-id]'
-      ]
+      seek: [".job-card", '[data-automation=\"jobListing\"]', ".JobCard"],
+      totaljobs: [".job", ".job-item", "[data-job-id]"],
+      reed: [".job-result", ".job-card", "[data-id]"],
+      jobsite: [".job", ".job-item", ".job-card"],
+      unknown: [".job-card", ".job-listing", ".job-result", "[data-job-id]"],
     };
 
-    const selectors = siteSelectors[this.currentJobSite as keyof typeof siteSelectors] || siteSelectors.unknown;
+    const selectors =
+      siteSelectors[this.currentJobSite as keyof typeof siteSelectors] ||
+      siteSelectors.unknown;
     const elements: Element[] = [];
-    
-    selectors.forEach(selector => {
+
+    selectors.forEach((selector) => {
       elements.push(...Array.from(document.querySelectorAll(selector)));
     });
 
     // Remove nested duplicates: keep only outermost elements
-    const filtered = elements.filter(el => !elements.some(other => other !== el && other.contains(el)));
+    const filtered = elements.filter(
+      (el) => !elements.some((other) => other !== el && other.contains(el))
+    );
 
     // Return unique elements (in case of duplicates in selectors)
     return Array.from(new Set(filtered));
@@ -851,54 +923,74 @@ class JobTracker {
   private extractJobData(element: Element): JobData {
     const siteSpecificSelectors = {
       linkedin: {
-        title: '.job-card-list__title, .job-card-container__link',
-        company: '.job-card-container__primary-description, .job-card-list__company',
-        location: '.job-card-container__metadata-item, .job-card-list__metadata',
-        link: 'a[data-control-name="job_card_click"]'
+        title: ".job-card-list__title, .job-card-container__link",
+        company:
+          ".job-card-container__primary-description, .job-card-list__company",
+        location:
+          ".job-card-container__metadata-item, .job-card-list__metadata",
+        link: 'a[data-control-name="job_card_click"]',
       },
       indeed: {
         title: '[data-testid="job-title"], .jobTitle',
         company: '[data-testid="company-name"], .companyName',
         location: '[data-testid="job-location"], .companyLocation',
-        link: 'h2 a, .jobTitle a'
+        link: "h2 a, .jobTitle a",
       },
       glassdoor: {
         title: '[data-test="job-title"], .jobTitle',
         company: '[data-test="employer-name"], .employerName',
         location: '[data-test="job-location"], .location',
-        link: '[data-test="job-link"], .jobTitle a'
+        link: '[data-test="job-link"], .jobTitle a',
       },
       unknown: {
         title: 'h3, .job-title, [data-testid="job-title"]',
         company: '.company, .job-company, [data-testid="job-company"]',
         location: '.location, .job-location, [data-testid="job-location"]',
-        link: 'a'
-      }
+        link: "a",
+      },
     };
 
-    const selectors = siteSpecificSelectors[this.currentJobSite as keyof typeof siteSpecificSelectors] || siteSpecificSelectors.unknown;
+    const selectors =
+      siteSpecificSelectors[
+        this.currentJobSite as keyof typeof siteSpecificSelectors
+      ] || siteSpecificSelectors.unknown;
 
     const titleEl = element.querySelector(selectors.title);
     const companyEl = element.querySelector(selectors.company);
     const locationEl = element.querySelector(selectors.location);
     const linkEl = element.querySelector(selectors.link);
 
-    const title = titleEl?.textContent?.trim() || 'Unknown Title';
-    const company = companyEl?.textContent?.trim() || 'Unknown Company';
-    const location = locationEl?.textContent?.trim() || 'Unknown Location';
-    
+    const title = titleEl?.textContent?.trim() || "Unknown Title";
+    const company = companyEl?.textContent?.trim() || "Unknown Company";
+    const location = locationEl?.textContent?.trim() || "Unknown Location";
+    const description = element.textContent?.trim().slice(0, 2000) || undefined;
+    const salaryMatch = (element.textContent || "").match(
+      /\$\s?\d[\d,]*(?:\s?-\s?\$?\d[\d,]*)?|£\s?\d[\d,]*/
+    );
+    const salary = salaryMatch ? salaryMatch[0] : undefined;
+
     return {
       title,
       company,
       location,
-      url: linkEl?.getAttribute('href') || window.location.href,
+      url: linkEl?.getAttribute("href") || window.location.href,
+      description,
+      salary,
       isSponsored: false,
-      isRecruitmentAgency: this.detectRecruitmentAgency(title, company, element),
-      dateFound: new Date().toISOString()
+      isRecruitmentAgency: this.detectRecruitmentAgency(
+        title,
+        company,
+        element
+      ),
+      dateFound: new Date().toISOString(),
     };
   }
 
-  private detectRecruitmentAgency(title: string, company: string, element: Element): boolean {
+  private detectRecruitmentAgency(
+    title: string,
+    company: string,
+    element: Element
+  ): boolean {
     const recruitmentAgencyIndicators = [
       // Common recruitment agency names
       /recruitment|recruiting|staffing|talent|headhunt|placement|search|consulting/i,
@@ -907,7 +999,7 @@ class JobTracker {
       // Job title indicators
       /recruiter|talent acquisition|hr consultant|staffing specialist/i,
       // Description indicators (check element text content)
-      /on behalf of|our client|leading company|confidential client|global organization/i
+      /on behalf of|our client|leading company|confidential client|global organization/i,
     ];
 
     // Check company name
@@ -923,27 +1015,55 @@ class JobTracker {
     }
 
     // Check element text content for recruitment agency language
-    const elementText = element.textContent || '';
-    if (/on behalf of|our client|leading company|confidential client/i.test(elementText)) {
+    const elementText = element.textContent || "";
+    if (
+      /on behalf of|our client|leading company|confidential client/i.test(
+        elementText
+      )
+    ) {
       return true;
     }
 
     return false;
   }
 
-  private applyHighlight(element: Element, sponsorshipType: string = 'sponsored') {
+  private applyHighlight(
+    element: Element,
+    sponsorshipType: string = "sponsored"
+  ) {
     const htmlElement = element as HTMLElement;
-    htmlElement.classList.add('jobloom-highlighted');
-    
+    htmlElement.classList.add("jobloom-highlighted");
+
     const colors = {
-      sponsored: { border: '#ff6b35', bg: 'rgba(255, 107, 53, 0.1)', badge: '#ff6b35' },
-      promoted: { border: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.1)', badge: '#8b5cf6' },
-      featured: { border: '#10b981', bg: 'rgba(16, 185, 129, 0.1)', badge: '#10b981' },
-      premium: { border: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)', badge: '#f59e0b' },
-      recruitment_agency: { border: '#dc2626', bg: 'rgba(220, 38, 38, 0.1)', badge: '#dc2626' }
+      sponsored: {
+        border: "#ff6b35",
+        bg: "rgba(255, 107, 53, 0.1)",
+        badge: "#ff6b35",
+      },
+      promoted: {
+        border: "#8b5cf6",
+        bg: "rgba(139, 92, 246, 0.1)",
+        badge: "#8b5cf6",
+      },
+      featured: {
+        border: "#10b981",
+        bg: "rgba(16, 185, 129, 0.1)",
+        badge: "#10b981",
+      },
+      premium: {
+        border: "#f59e0b",
+        bg: "rgba(245, 158, 11, 0.1)",
+        badge: "#f59e0b",
+      },
+      recruitment_agency: {
+        border: "#dc2626",
+        bg: "rgba(220, 38, 38, 0.1)",
+        badge: "#dc2626",
+      },
     };
 
-    const color = colors[sponsorshipType as keyof typeof colors] || colors.sponsored;
+    const color =
+      colors[sponsorshipType as keyof typeof colors] || colors.sponsored;
 
     htmlElement.style.cssText += `
       border: 3px solid ${color.border} !important;
@@ -951,11 +1071,14 @@ class JobTracker {
       position: relative !important;
     `;
 
-    if (!element.querySelector('.jobloom-badge')) {
-      const badge = document.createElement('div');
-      badge.className = 'jobloom-badge';
-      const badgeIcon = sponsorshipType === 'recruitment_agency' ? '🏢' : '🎯';
-      const badgeText = sponsorshipType === 'recruitment_agency' ? 'AGENCY' : sponsorshipType.toUpperCase();
+    if (!element.querySelector(".jobloom-badge")) {
+      const badge = document.createElement("div");
+      badge.className = "jobloom-badge";
+      const badgeIcon = sponsorshipType === "recruitment_agency" ? "🏢" : "🎯";
+      const badgeText =
+        sponsorshipType === "recruitment_agency"
+          ? "AGENCY"
+          : sponsorshipType.toUpperCase();
       badge.textContent = `${badgeIcon} ${badgeText}`;
       badge.style.cssText = `
         position: absolute;
@@ -974,17 +1097,17 @@ class JobTracker {
   }
 
   public clearHighlights() {
-    document.querySelectorAll('.jobloom-highlighted').forEach(element => {
-      element.classList.remove('jobloom-highlighted');
-      (element as HTMLElement).style.border = '';
-      (element as HTMLElement).style.background = '';
+    document.querySelectorAll(".jobloom-highlighted").forEach((element) => {
+      element.classList.remove("jobloom-highlighted");
+      (element as HTMLElement).style.border = "";
+      (element as HTMLElement).style.background = "";
     });
 
-    document.querySelectorAll('.jobloom-badge').forEach(badge => {
+    document.querySelectorAll(".jobloom-badge").forEach((badge) => {
       badge.remove();
     });
 
-    document.querySelectorAll('.jobloom-company-info').forEach(info => {
+    document.querySelectorAll(".jobloom-company-info").forEach((info) => {
       info.remove();
     });
   }
@@ -1001,7 +1124,7 @@ class JobTracker {
 
     this.observer.observe(document.body, {
       childList: true,
-      subtree: true
+      subtree: true,
     });
 
     // Initial auto-detection - always enabled by default
@@ -1020,26 +1143,29 @@ class JobTracker {
       for (let i = 0; i < jobElements.length; i += batchSize) {
         const batch = jobElements.slice(i, i + batchSize);
         await this.processBatchWithBadges(batch);
-        
+
         // Small delay between batches
         if (i + batchSize < jobElements.length) {
-          await new Promise(resolve => setTimeout(resolve, 500));
+          await new Promise((resolve) => setTimeout(resolve, 500));
         }
       }
     } catch (error) {
-      console.error('Auto-detection error:', error);
+      console.error("Auto-detection error:", error);
     }
   }
 
   private async processBatchWithBadges(jobElements: Element[]) {
-    const jobsToCheck: Array<{element: Element, data: JobData}> = [];
-    
+    const jobsToCheck: Array<{ element: Element; data: JobData }> = [];
+
     jobElements.forEach((element) => {
       // Skip if already processed
-      if (element.querySelector('.jobloom-badge') || element.querySelector('.jobloom-company-info')) {
+      if (
+        element.querySelector(".jobloom-badge") ||
+        element.querySelector(".jobloom-company-info")
+      ) {
         return;
       }
-      
+
       const jobData = this.extractJobData(element);
       jobsToCheck.push({ element, data: jobData });
     });
@@ -1047,27 +1173,30 @@ class JobTracker {
     if (jobsToCheck.length === 0) return;
 
     // Extract unique company names for batch checking
-    const companyNames = [...new Set(jobsToCheck.map(job => job.data.company))];
-    
+    const companyNames = [
+      ...new Set(jobsToCheck.map((job) => job.data.company)),
+    ];
+
     // Check company sponsorship status via Convex
     const sponsorshipResults = await this.checkCompanySponsorship(companyNames);
-    
+
     // Create a map for quick lookup
     const sponsorshipMap = new Map();
-    sponsorshipResults.forEach(result => {
+    sponsorshipResults.forEach((result) => {
       sponsorshipMap.set(result.company, result);
     });
-    
+
     // Apply badges, company info, and job board buttons
     jobsToCheck.forEach((job) => {
       const sponsorshipData = sponsorshipMap.get(job.data.company);
       this.addJobBadge(job.element, sponsorshipData);
       this.addCompanyInfo(job.element, sponsorshipData);
       this.addJobBoardButton(job.element, job.data, sponsorshipData);
-      
+
       if (sponsorshipData && sponsorshipData.isSponsored) {
         job.data.isSponsored = true;
-        job.data.sponsorshipType = sponsorshipData.sponsorshipType || 'sponsored';
+        job.data.sponsorshipType =
+          sponsorshipData.sponsorshipType || "sponsored";
         this.addJobToBoard(job.data);
       }
     });
@@ -1075,13 +1204,13 @@ class JobTracker {
 
   private addJobBadge(element: Element, sponsorshipData: any) {
     // Add badge at the top of the job posting (like UK Visa Checker)
-    const badge = document.createElement('div');
-    badge.className = 'jobloom-badge';
-    
+    const badge = document.createElement("div");
+    badge.className = "jobloom-badge";
+
     if (sponsorshipData && sponsorshipData.isSponsored) {
-      const sponsorshipType = sponsorshipData.sponsorshipType || 'sponsored';
+      const sponsorshipType = sponsorshipData.sponsorshipType || "sponsored";
       const badgeConfig = this.getBadgeConfig(sponsorshipType);
-      
+
       badge.innerHTML = `
         <span style="
           background: ${badgeConfig.background};
@@ -1120,7 +1249,7 @@ class JobTracker {
         </span>
       `;
     }
-    
+
     badge.style.cssText = `
       position: absolute;
       top: 8px;
@@ -1128,13 +1257,13 @@ class JobTracker {
       z-index: 1002;
       pointer-events: none;
     `;
-    
+
     // Make parent element relative if it's not already
     const htmlElement = element as HTMLElement;
-    if (getComputedStyle(htmlElement).position === 'static') {
-      htmlElement.style.position = 'relative';
+    if (getComputedStyle(htmlElement).position === "static") {
+      htmlElement.style.position = "relative";
     }
-    
+
     element.appendChild(badge);
   }
 
@@ -1143,13 +1272,13 @@ class JobTracker {
     const companyElement = this.findCompanyElement(element);
     if (!companyElement) return;
 
-    const infoDiv = document.createElement('div');
-    infoDiv.className = 'jobloom-company-info';
-    
+    const infoDiv = document.createElement("div");
+    infoDiv.className = "jobloom-company-info";
+
     if (sponsorshipData && sponsorshipData.isSponsored) {
-      const sponsorshipType = sponsorshipData.sponsorshipType || 'sponsored';
+      const sponsorshipType = sponsorshipData.sponsorshipType || "sponsored";
       const badgeConfig = this.getBadgeConfig(sponsorshipType);
-      
+
       infoDiv.innerHTML = `
         <div style="
           margin-top: 4px;
@@ -1162,8 +1291,12 @@ class JobTracker {
           font-weight: 600;
         ">
           ${badgeConfig.icon} Sponsors ${sponsorshipType} positions
-          ${sponsorshipData.matchedName && sponsorshipData.matchedName !== sponsorshipData.company ? 
-            `<br><span style="font-size: 10px; opacity: 0.8;">Matched as: ${sponsorshipData.matchedName}</span>` : ''}
+          ${
+            sponsorshipData.matchedName &&
+            sponsorshipData.matchedName !== sponsorshipData.company
+              ? `<br><span style="font-size: 10px; opacity: 0.8;">Matched as: ${sponsorshipData.matchedName}</span>`
+              : ""
+          }
         </div>
       `;
     } else {
@@ -1182,22 +1315,60 @@ class JobTracker {
         </div>
       `;
     }
-    
+
     companyElement.appendChild(infoDiv);
   }
 
-  private addJobBoardButton(element: Element, jobData: JobData, sponsorshipData: any) {
+  private addJobBoardButton(
+    element: Element,
+    jobData: JobData,
+    sponsorshipData: any
+  ) {
     // Skip if button already exists
-    if (element.querySelector('.jobloom-job-board-btn')) return;
+    if (element.querySelector(".jobloom-job-board-btn")) return;
 
-    const button = document.createElement('button');
-    button.className = 'jobloom-job-board-btn';
-    button.innerHTML = '📋 Add to Board';
-    
-    button.style.cssText = `
+    // Container to hold status select and add button
+    const container = document.createElement("div");
+    container.style.cssText = `
       position: absolute;
       top: 8px;
       left: 8px;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      z-index: 1003;
+    `;
+
+    const statusSelect = document.createElement("select");
+    statusSelect.className = "jobloom-status-select";
+    statusSelect.innerHTML = `
+      <option value="interested">Interested</option>
+      <option value="applied">Applied</option>
+      <option value="interviewing">Interviewing</option>
+      <option value="offered">Offered</option>
+      <option value="rejected">Rejected</option>
+      <option value="withdrawn">Withdrawn</option>
+    `;
+    statusSelect.style.cssText = `
+      height: 28px;
+      padding: 2px 6px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      background: #ffffff;
+      font-size: 11px;
+    `;
+
+    // Load default status from settings if available
+    chrome.storage.sync.get(["defaultJobStatus"], (res) => {
+      if (res.defaultJobStatus) {
+        statusSelect.value = res.defaultJobStatus;
+      }
+    });
+
+    const button = document.createElement("button");
+    button.className = "jobloom-job-board-btn";
+    button.innerHTML = "📋 Add to Board";
+    button.style.cssText = `
       background: #4f46e5;
       color: white;
       border: none;
@@ -1206,7 +1377,6 @@ class JobTracker {
       font-size: 11px;
       font-weight: 600;
       cursor: pointer;
-      z-index: 1003;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       transition: all 0.2s ease;
       display: flex;
@@ -1214,69 +1384,73 @@ class JobTracker {
       gap: 4px;
     `;
 
-    button.addEventListener('mouseenter', () => {
-      button.style.background = '#4338ca';
-      button.style.transform = 'translateY(-1px)';
-      button.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
+    button.addEventListener("mouseenter", () => {
+      button.style.background = "#4338ca";
+      button.style.transform = "translateY(-1px)";
+      button.style.boxShadow = "0 4px 8px rgba(0,0,0,0.15)";
     });
 
-    button.addEventListener('mouseleave', () => {
-      button.style.background = '#4f46e5';
-      button.style.transform = 'translateY(0)';
-      button.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+    button.addEventListener("mouseleave", () => {
+      button.style.background = "#4f46e5";
+      button.style.transform = "translateY(0)";
+      button.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
     });
 
-    button.addEventListener('click', async (e) => {
+    button.addEventListener("click", async (e) => {
       e.preventDefault();
       e.stopPropagation();
-      
+
       const originalContent = button.innerHTML;
-      button.innerHTML = '⏳ Adding...';
+      button.innerHTML = "⏳ Adding...";
       button.disabled = true;
-      
+
       try {
         // Import the JobBoardManager and use it
-        const { JobBoardManager } = await import('./addToBoard');
-        
+        const { JobBoardManager } = await import("./addToBoard");
+
         // Check if job already exists
         const jobExists = await JobBoardManager.checkIfJobExists(jobData);
         if (jobExists) {
-          button.innerHTML = '📋 Already Added';
-          button.style.background = '#6b7280';
+          button.innerHTML = "📋 Already Added";
+          button.style.background = "#6b7280";
           button.disabled = true;
           return;
         }
-        
-        // Add job to board
-        const result = await JobBoardManager.addToBoard(jobData);
-        
+
+        // Add job to board with selected status
+        const selectedStatus = (statusSelect.value as any) || "interested";
+        const result = await JobBoardManager.addToBoardWithStatus(
+          jobData,
+          selectedStatus
+        );
+
         if (result.success) {
-          button.innerHTML = '✅ Added!';
-          button.style.background = '#10b981';
-          
+          button.innerHTML = "✅ Added!";
+          button.style.background = "#10b981";
+
           // Show success animation
-          button.style.transform = 'scale(1.1)';
+          button.style.transform = "scale(1.1)";
           setTimeout(() => {
-            button.style.transform = 'scale(1)';
+            button.style.transform = "scale(1)";
           }, 150);
-          
+
           // Revert after 2 seconds
           setTimeout(() => {
-            button.innerHTML = '📋 On Board';
-            button.style.background = '#6b7280';
+            button.innerHTML = "📋 On Board";
+            button.style.background = "#6b7280";
             button.disabled = true;
           }, 2000);
         } else {
           throw new Error(result.message);
         }
       } catch (error) {
-        console.error('Error adding to job board:', error);
-        button.innerHTML = '❌ Error';
-        button.style.background = '#ef4444';
-        
+        console.error("Error adding to job board:", error);
+        button.innerHTML = "❌ Error";
+        button.style.background = "#ef4444";
+
         setTimeout(() => {
           button.innerHTML = originalContent;
-          button.style.background = '#4f46e5';
+          button.style.background = "#4f46e5";
           button.disabled = false;
         }, 2000);
       }
@@ -1284,66 +1458,74 @@ class JobTracker {
 
     // Make parent element relative if it's not already
     const htmlElement = element as HTMLElement;
-    if (getComputedStyle(htmlElement).position === 'static') {
-      htmlElement.style.position = 'relative';
+    if (getComputedStyle(htmlElement).position === "static") {
+      htmlElement.style.position = "relative";
     }
-    
-    element.appendChild(button);
+
+    container.appendChild(statusSelect);
+    container.appendChild(button);
+    element.appendChild(container);
   }
 
   private findCompanyElement(jobElement: Element): Element | null {
     const siteSpecificSelectors = {
-      linkedin: '.job-card-container__primary-description, .job-card-list__company, .entity-result__primary-subtitle',
+      linkedin:
+        ".job-card-container__primary-description, .job-card-list__company, .entity-result__primary-subtitle",
       indeed: '[data-testid="company-name"], .companyName',
       glassdoor: '[data-test="employer-name"], .employerName',
-      google_jobs: '.vNEEBe, .nJlQNd',
+      google_jobs: ".vNEEBe, .nJlQNd",
       seek: '[data-automation="jobCompany"], .company',
-      totaljobs: '.company, .job-company',
-      reed: '.gtmJobListingPostedBy, .company',
-      jobsite: '.company, .job-company',
-      unknown: '.company, .job-company, [data-testid="job-company"]'
+      totaljobs: ".company, .job-company",
+      reed: ".gtmJobListingPostedBy, .company",
+      jobsite: ".company, .job-company",
+      unknown: '.company, .job-company, [data-testid="job-company"]',
     };
 
-    const selectors = siteSpecificSelectors[this.currentJobSite as keyof typeof siteSpecificSelectors] || siteSpecificSelectors.unknown;
+    const selectors =
+      siteSpecificSelectors[
+        this.currentJobSite as keyof typeof siteSpecificSelectors
+      ] || siteSpecificSelectors.unknown;
     return jobElement.querySelector(selectors);
   }
 
   private getBadgeConfig(sponsorshipType: string) {
     const configs = {
-      sponsored: { 
-        background: '#ef4444', 
-        color: 'white', 
-        icon: '🎯' 
+      sponsored: {
+        background: "#ef4444",
+        color: "white",
+        icon: "🎯",
       },
-      promoted: { 
-        background: '#8b5cf6', 
-        color: 'white', 
-        icon: '⭐' 
+      promoted: {
+        background: "#8b5cf6",
+        color: "white",
+        icon: "⭐",
       },
-      featured: { 
-        background: '#10b981', 
-        color: 'white', 
-        icon: '🌟' 
+      featured: {
+        background: "#10b981",
+        color: "white",
+        icon: "🌟",
       },
-      premium: { 
-        background: '#f59e0b', 
-        color: 'white', 
-        icon: '👑' 
+      premium: {
+        background: "#f59e0b",
+        color: "white",
+        icon: "👑",
       },
-      verified: { 
-        background: '#3b82f6', 
-        color: 'white', 
-        icon: '✅' 
-      }
+      verified: {
+        background: "#3b82f6",
+        color: "white",
+        icon: "✅",
+      },
     };
 
-    return configs[sponsorshipType as keyof typeof configs] || configs.sponsored;
+    return (
+      configs[sponsorshipType as keyof typeof configs] || configs.sponsored
+    );
   }
 
   private addJobToBoard(jobData: JobData) {
     chrome.runtime.sendMessage({
-      action: 'addJob',
-      data: jobData
+      action: "addJob",
+      data: jobData,
     });
   }
 
@@ -1356,12 +1538,12 @@ class JobTracker {
       'form[id*="application"]',
       'form[class*="apply"]',
       'form[class*="application"]',
-      '.application-form',
-      '.job-application',
-      '.apply-form',
-      '#application-form',
+      ".application-form",
+      ".job-application",
+      ".apply-form",
+      "#application-form",
       '[data-testid*="application"]',
-      '[data-testid*="apply"]'
+      '[data-testid*="apply"]',
     ];
 
     const inputSelectors = [
@@ -1371,18 +1553,18 @@ class JobTracker {
       'input[type="email"]',
       'textarea[name*="cover"]',
       'input[name*="resume"]',
-      'input[type="file"]'
+      'input[type="file"]',
     ];
 
-    const hasApplicationForm = formSelectors.some(selector => 
-      document.querySelector(selector)
-    ) || inputSelectors.some(selector => 
-      document.querySelectorAll(selector).length >= 2
-    );
+    const hasApplicationForm =
+      formSelectors.some((selector) => document.querySelector(selector)) ||
+      inputSelectors.some(
+        (selector) => document.querySelectorAll(selector).length >= 2
+      );
 
-    const autofillButton = document.getElementById('jobloom-autofill');
+    const autofillButton = document.getElementById("jobloom-autofill");
     if (autofillButton) {
-      autofillButton.style.display = hasApplicationForm ? 'block' : 'none';
+      autofillButton.style.display = hasApplicationForm ? "block" : "none";
     }
 
     // Re-check periodically as forms may load dynamically
@@ -1393,7 +1575,9 @@ class JobTracker {
     // Load user profile data
     const profile = await this.loadAutofillProfile();
     if (!profile) {
-      throw new Error('No autofill profile configured. Please set up your profile in settings.');
+      throw new Error(
+        "No autofill profile configured. Please set up your profile in settings."
+      );
     }
 
     // Find and fill form fields
@@ -1406,67 +1590,78 @@ class JobTracker {
         if (value && this.fillField(field.element, value)) {
           filledCount++;
           // Small delay between fills to appear more natural
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await new Promise((resolve) => setTimeout(resolve, 100));
         }
       } catch (error) {
-        console.warn('Failed to fill field:', field.name, error);
+        console.warn("Failed to fill field:", field.name, error);
       }
     }
 
     console.log(`Autofilled ${filledCount} fields`);
-    
+
     if (filledCount === 0) {
-      throw new Error('No compatible form fields found on this page.');
+      throw new Error("No compatible form fields found on this page.");
     }
   }
 
   private async loadAutofillProfile(): Promise<AutofillProfile | null> {
     return new Promise((resolve) => {
-      chrome.storage.sync.get(['autofillProfile'], (result) => {
+      chrome.storage.sync.get(["autofillProfile"], (result) => {
         resolve(result.autofillProfile || null);
       });
     });
   }
 
   private findFormFields() {
-    const fields: Array<{element: HTMLElement, name: string, type: string}> = [];
-    
+    const fields: Array<{ element: HTMLElement; name: string; type: string }> =
+      [];
+
     // Common field patterns for job applications
     const fieldPatterns = [
       // Personal Information
-      { pattern: /first.*name|fname|given.*name/i, type: 'firstName' },
-      { pattern: /last.*name|lname|family.*name|surname/i, type: 'lastName' },
-      { pattern: /full.*name|name/i, type: 'fullName' },
-      { pattern: /email/i, type: 'email' },
-      { pattern: /phone|mobile|tel/i, type: 'phone' },
-      { pattern: /address|street/i, type: 'address' },
-      { pattern: /city/i, type: 'city' },
-      { pattern: /state|province/i, type: 'state' },
-      { pattern: /zip|postal/i, type: 'zipCode' },
-      { pattern: /country/i, type: 'country' },
-      
+      { pattern: /first.*name|fname|given.*name/i, type: "firstName" },
+      { pattern: /last.*name|lname|family.*name|surname/i, type: "lastName" },
+      { pattern: /full.*name|name/i, type: "fullName" },
+      { pattern: /email/i, type: "email" },
+      { pattern: /phone|mobile|tel/i, type: "phone" },
+      { pattern: /address|street/i, type: "address" },
+      { pattern: /city/i, type: "city" },
+      { pattern: /state|province/i, type: "state" },
+      { pattern: /zip|postal/i, type: "zipCode" },
+      { pattern: /country/i, type: "country" },
+
       // Professional Information
-      { pattern: /current.*title|job.*title|position/i, type: 'currentTitle' },
-      { pattern: /experience|years/i, type: 'experience' },
-      { pattern: /education|degree|school|university/i, type: 'education' },
-      { pattern: /skills|expertise/i, type: 'skills' },
-      { pattern: /linkedin|profile/i, type: 'linkedinUrl' },
-      { pattern: /portfolio|website/i, type: 'portfolioUrl' },
-      { pattern: /github/i, type: 'githubUrl' },
-      
+      { pattern: /current.*title|job.*title|position/i, type: "currentTitle" },
+      { pattern: /experience|years/i, type: "experience" },
+      { pattern: /education|degree|school|university/i, type: "education" },
+      { pattern: /skills|expertise/i, type: "skills" },
+      { pattern: /linkedin|profile/i, type: "linkedinUrl" },
+      { pattern: /portfolio|website/i, type: "portfolioUrl" },
+      { pattern: /github/i, type: "githubUrl" },
+
       // Application Specific
-      { pattern: /salary|compensation|expected.*pay/i, type: 'salaryExpectation' },
-      { pattern: /start.*date|available|when/i, type: 'availableStartDate' },
-      { pattern: /authorization|visa|work.*status/i, type: 'workAuthorization' },
-      { pattern: /relocate|move|willing/i, type: 'relocate' },
-      { pattern: /cover.*letter|motivation|why/i, type: 'coverLetter' }
+      {
+        pattern: /salary|compensation|expected.*pay/i,
+        type: "salaryExpectation",
+      },
+      { pattern: /start.*date|available|when/i, type: "availableStartDate" },
+      {
+        pattern: /authorization|visa|work.*status/i,
+        type: "workAuthorization",
+      },
+      { pattern: /relocate|move|willing/i, type: "relocate" },
+      { pattern: /cover.*letter|motivation|why/i, type: "coverLetter" },
     ];
 
     // Find input fields
-    const inputs = document.querySelectorAll('input, textarea, select');
-    inputs.forEach(input => {
+    const inputs = document.querySelectorAll("input, textarea, select");
+    inputs.forEach((input) => {
       const element = input as HTMLElement;
-      const name = element.getAttribute('name') || element.getAttribute('id') || element.getAttribute('placeholder') || '';
+      const name =
+        element.getAttribute("name") ||
+        element.getAttribute("id") ||
+        element.getAttribute("placeholder") ||
+        "";
       const label = this.findFieldLabel(element);
       const searchText = `${name} ${label}`.toLowerCase();
 
@@ -1475,7 +1670,7 @@ class JobTracker {
           fields.push({
             element,
             name: searchText,
-            type: pattern.type
+            type: pattern.type,
           });
           break;
         }
@@ -1487,107 +1682,142 @@ class JobTracker {
 
   private findFieldLabel(element: HTMLElement): string {
     // Try to find associated label
-    const id = element.getAttribute('id');
+    const id = element.getAttribute("id");
     if (id) {
       const label = document.querySelector(`label[for="${id}"]`);
-      if (label) return label.textContent || '';
+      if (label) return label.textContent || "";
     }
 
     // Look for nearby label or text
     const parent = element.parentElement;
     if (parent) {
-      const label = parent.querySelector('label');
-      if (label) return label.textContent || '';
-      
+      const label = parent.querySelector("label");
+      if (label) return label.textContent || "";
+
       // Check for text content in parent
-      const textContent = parent.textContent || '';
-      return textContent.replace(element.textContent || '', '').trim();
+      const textContent = parent.textContent || "";
+      return textContent.replace(element.textContent || "", "").trim();
     }
 
-    return element.getAttribute('placeholder') || '';
+    return element.getAttribute("placeholder") || "";
   }
 
-  private getValueForField(field: {element: HTMLElement, name: string, type: string}, profile: AutofillProfile): string {
+  private getValueForField(
+    field: { element: HTMLElement; name: string; type: string },
+    profile: AutofillProfile
+  ): string {
     switch (field.type) {
       // Personal Information
-      case 'firstName': return profile.personalInfo.firstName;
-      case 'lastName': return profile.personalInfo.lastName;
-      case 'fullName': return `${profile.personalInfo.firstName} ${profile.personalInfo.lastName}`;
-      case 'email': return profile.personalInfo.email;
-      case 'phone': return profile.personalInfo.phone;
-      case 'address': return profile.personalInfo.address;
-      case 'city': return profile.personalInfo.city;
-      case 'state': return profile.personalInfo.state;
-      case 'zipCode': return profile.personalInfo.zipCode;
-      case 'country': return profile.personalInfo.country;
-      
+      case "firstName":
+        return profile.personalInfo.firstName;
+      case "lastName":
+        return profile.personalInfo.lastName;
+      case "fullName":
+        return `${profile.personalInfo.firstName} ${profile.personalInfo.lastName}`;
+      case "email":
+        return profile.personalInfo.email;
+      case "phone":
+        return profile.personalInfo.phone;
+      case "address":
+        return profile.personalInfo.address;
+      case "city":
+        return profile.personalInfo.city;
+      case "state":
+        return profile.personalInfo.state;
+      case "zipCode":
+        return profile.personalInfo.zipCode;
+      case "country":
+        return profile.personalInfo.country;
+
       // Professional Information
-      case 'currentTitle': return profile.professional.currentTitle;
-      case 'experience': return profile.professional.experience;
-      case 'education': return profile.professional.education;
-      case 'skills': return profile.professional.skills;
-      case 'linkedinUrl': return profile.professional.linkedinUrl;
-      case 'portfolioUrl': return profile.professional.portfolioUrl;
-      case 'githubUrl': return profile.professional.githubUrl;
-      
+      case "currentTitle":
+        return profile.professional.currentTitle;
+      case "experience":
+        return profile.professional.experience;
+      case "education":
+        return profile.professional.education;
+      case "skills":
+        return profile.professional.skills;
+      case "linkedinUrl":
+        return profile.professional.linkedinUrl;
+      case "portfolioUrl":
+        return profile.professional.portfolioUrl;
+      case "githubUrl":
+        return profile.professional.githubUrl;
+
       // Application Specific
-      case 'salaryExpectation': return profile.preferences.salaryExpectation;
-      case 'availableStartDate': return profile.preferences.availableStartDate;
-      case 'workAuthorization': return profile.preferences.workAuthorization;
-      case 'relocate': return profile.preferences.relocate ? 'Yes' : 'No';
-      case 'coverLetter': return profile.preferences.coverLetter;
-      
-      default: return '';
+      case "salaryExpectation":
+        return profile.preferences.salaryExpectation;
+      case "availableStartDate":
+        return profile.preferences.availableStartDate;
+      case "workAuthorization":
+        return profile.preferences.workAuthorization;
+      case "relocate":
+        return profile.preferences.relocate ? "Yes" : "No";
+      case "coverLetter":
+        return profile.preferences.coverLetter;
+
+      default:
+        return "";
     }
   }
 
   private fillField(element: HTMLElement, value: string): boolean {
     try {
-      const input = element as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
-      
-      if (input.type === 'checkbox' || input.type === 'radio') {
+      const input = element as
+        | HTMLInputElement
+        | HTMLTextAreaElement
+        | HTMLSelectElement;
+
+      if (input.type === "checkbox" || input.type === "radio") {
         const checkboxInput = input as HTMLInputElement;
-        const shouldCheck = value.toLowerCase() === 'yes' || value.toLowerCase() === 'true';
+        const shouldCheck =
+          value.toLowerCase() === "yes" || value.toLowerCase() === "true";
         if (checkboxInput.checked !== shouldCheck) {
           checkboxInput.checked = shouldCheck;
-          checkboxInput.dispatchEvent(new Event('change', { bubbles: true }));
+          checkboxInput.dispatchEvent(new Event("change", { bubbles: true }));
         }
         return true;
       }
-      
-      if (input.tagName === 'SELECT') {
+
+      if (input.tagName === "SELECT") {
         const select = input as HTMLSelectElement;
         // Try to find matching option
         for (let i = 0; i < select.options.length; i++) {
           const option = select.options[i];
-          if (option.text.toLowerCase().includes(value.toLowerCase()) || 
-              option.value.toLowerCase().includes(value.toLowerCase())) {
+          if (
+            option.text.toLowerCase().includes(value.toLowerCase()) ||
+            option.value.toLowerCase().includes(value.toLowerCase())
+          ) {
             select.selectedIndex = i;
-            select.dispatchEvent(new Event('change', { bubbles: true }));
+            select.dispatchEvent(new Event("change", { bubbles: true }));
             return true;
           }
         }
         return false;
       }
-      
+
       // Regular input or textarea
       if (input.value !== value) {
         input.value = value;
-        input.dispatchEvent(new Event('input', { bubbles: true }));
-        input.dispatchEvent(new Event('change', { bubbles: true }));
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        input.dispatchEvent(new Event("change", { bubbles: true }));
       }
-      
+
       return true;
     } catch (error) {
-      console.warn('Failed to fill field:', error);
+      console.warn("Failed to fill field:", error);
       return false;
     }
   }
 
-  private async addToJobBoard(jobData: JobData, sponsorshipData: any): Promise<boolean> {
+  private async addToJobBoard(
+    jobData: JobData,
+    sponsorshipData: any
+  ): Promise<boolean> {
     // This function is now handled by JobBoardManager
     // Keeping it for backward compatibility but it's deprecated
-    console.warn('addToJobBoard is deprecated. Use JobBoardManager instead.');
+    console.warn("addToJobBoard is deprecated. Use JobBoardManager instead.");
     return true;
   }
 }
