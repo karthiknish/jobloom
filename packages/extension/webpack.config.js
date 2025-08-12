@@ -30,11 +30,37 @@ module.exports = {
   plugins: [
     new Dotenv({
       path: "./.env",
-      safe: true,
+      // Do not require an example file during local dev builds
+      safe: false,
       allowEmptyValues: true,
       systemvars: true,
       silent: true,
       defaults: false,
+    }),
+    // Ensure reasonable defaults if env vars are missing so build-time
+    // replacements always produce a string in the bundle
+    new webpack.DefinePlugin({
+      "process.env.CONVEX_URL": JSON.stringify(
+        process.env.CONVEX_URL || "https://rare-chihuahua-615.convex.cloud"
+      ),
+      "process.env.WEB_APP_URL": JSON.stringify(
+        process.env.WEB_APP_URL || "http://localhost:3000"
+      ),
+      "process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY": JSON.stringify(
+        process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || ""
+      ),
+      "process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL": JSON.stringify(
+        process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL || "/sign-in"
+      ),
+      "process.env.NEXT_PUBLIC_CLERK_SIGN_UP_URL": JSON.stringify(
+        process.env.NEXT_PUBLIC_CLERK_SIGN_UP_URL || "/sign-up"
+      ),
+      "process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL": JSON.stringify(
+        process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL || "/dashboard"
+      ),
+      "process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL": JSON.stringify(
+        process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL || "/dashboard"
+      ),
     }),
     new CopyPlugin({
       patterns: [
