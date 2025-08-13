@@ -8,6 +8,7 @@ import { CvAnalysisHistory } from "../../components/CvAnalysisHistory";
 import { motion } from "framer-motion";
 import { useApiQuery } from "../../hooks/useApi";
 import { cvEvaluatorApi } from "../../utils/api/cvEvaluator";
+import { FileText, BarChart3, Star, Search, Target } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -68,13 +69,18 @@ export default function CvEvaluatorPage() {
         className="bg-gradient-to-r from-primary to-secondary shadow-lg"
       >
         <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-          <div className="md:flex md:items-center md:justify-between">
-            <div className="flex-1 min-w-0">
-              <h1 className="text-3xl font-bold text-white">CV Evaluator 📄</h1>
-              <p className="mt-2 text-primary-foreground/80">
-                Get AI-powered insights to improve your CV and increase your
-                chances of landing interviews
-              </p>
+          <div className="flex items-start sm:items-center justify-between">
+            <div className="flex items-start sm:items-center gap-4">
+              <div className="h-12 w-12 rounded-xl bg-white/10 ring-1 ring-white/20 flex items-center justify-center">
+                <FileText className="h-6 w-6 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-3xl font-bold text-white">CV Evaluator</h1>
+                <p className="mt-2 text-primary-foreground/80">
+                  Get AI-powered insights to improve your CV and increase your
+                  chances of landing interviews
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -97,7 +103,7 @@ export default function CvEvaluatorPage() {
                       Total Analyses
                     </CardTitle>
                     <div className="bg-blue-100 rounded-lg w-10 h-10 flex items-center justify-center">
-                      <span className="text-blue-600 text-lg">📊</span>
+                      <BarChart3 className="h-5 w-5 text-blue-600" />
                     </div>
                   </CardHeader>
                   <CardContent>
@@ -116,7 +122,7 @@ export default function CvEvaluatorPage() {
                       Avg. Score
                     </CardTitle>
                     <div className="bg-green-100 rounded-lg w-10 h-10 flex items-center justify-center">
-                      <span className="text-green-600 text-lg">⭐</span>
+                      <Star className="h-5 w-5 text-green-600" />
                     </div>
                   </CardHeader>
                   <CardContent>
@@ -137,7 +143,7 @@ export default function CvEvaluatorPage() {
                       Keywords
                     </CardTitle>
                     <div className="bg-secondary/20 rounded-lg w-10 h-10 flex items-center justify-center">
-                      <span className="text-secondary text-lg">🔍</span>
+                      <Search className="h-5 w-5 text-secondary" />
                     </div>
                   </CardHeader>
                   <CardContent>
@@ -158,7 +164,7 @@ export default function CvEvaluatorPage() {
                       Success Rate
                     </CardTitle>
                     <div className="bg-yellow-100 rounded-lg w-10 h-10 flex items-center justify-center">
-                      <span className="text-yellow-600 text-lg">🎯</span>
+                      <Target className="h-5 w-5 text-yellow-600" />
                     </div>
                   </CardHeader>
                   <CardContent>

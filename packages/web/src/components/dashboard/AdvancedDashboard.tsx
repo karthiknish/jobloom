@@ -22,7 +22,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ClipboardList } from "lucide-react";
+import { ClipboardList, LayoutDashboard } from "lucide-react";
 
 interface Job {
   _id: string;
@@ -55,6 +55,13 @@ interface Application {
 
 export function AdvancedDashboard() {
   const { user } = useUser();
+  const hours = new Date().getHours();
+  const greeting =
+    hours < 12
+      ? "Good morning"
+      : hours < 18
+        ? "Good afternoon"
+        : "Good evening";
   const [showApplicationForm, setShowApplicationForm] = useState(false);
   const [showJobForm, setShowJobForm] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
@@ -167,39 +174,80 @@ export function AdvancedDashboard() {
       {/* Header */}
       <div className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center py-6 gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Job Dashboard
-              </h1>
-              <p className="mt-1 text-sm text-gray-600">
-                Welcome back, {user.firstName}!
-              </p>
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, ease: "easeOut" }}
+            className="flex flex-col md:flex-row justify-between items-start md:items-center py-6 gap-4"
+          >
+            <div className="flex items-start md:items-center gap-3">
+              <motion.div
+                initial={{ scale: 0.9, rotate: -4, opacity: 0 }}
+                animate={{ scale: 1, rotate: 0, opacity: 1 }}
+                transition={{ type: "spring", stiffness: 260, damping: 18 }}
+                whileHover={{ scale: 1.05 }}
+                className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center"
+              >
+                <LayoutDashboard className="h-5 w-5 text-primary" />
+              </motion.div>
+              <div>
+                <motion.h1
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.05, duration: 0.35 }}
+                  className="text-2xl font-bold text-gray-900"
+                >
+                  Job Dashboard
+                </motion.h1>
+                <motion.p
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.12, duration: 0.35 }}
+                  className="mt-1 text-sm text-gray-600"
+                >
+                  {greeting}, {user.firstName}!
+                </motion.p>
+              </div>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button
-                onClick={() => setShowImportModal(true)}
-                variant="default"
-                size="sm"
+              <motion.div
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.98 }}
               >
-                Import Jobs
-              </Button>
-              <Button
-                onClick={() => setShowJobForm(true)}
-                variant="default"
-                size="sm"
+                <Button
+                  onClick={() => setShowImportModal(true)}
+                  variant="default"
+                  size="sm"
+                >
+                  Import Jobs
+                </Button>
+              </motion.div>
+              <motion.div
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.98 }}
               >
-                Add Job
-              </Button>
-              <Button
-                onClick={() => setShowApplicationForm(true)}
-                variant="outline"
-                size="sm"
+                <Button
+                  onClick={() => setShowJobForm(true)}
+                  variant="default"
+                  size="sm"
+                >
+                  Add Job
+                </Button>
+              </motion.div>
+              <motion.div
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.98 }}
               >
-                Add Application
-              </Button>
+                <Button
+                  onClick={() => setShowApplicationForm(true)}
+                  variant="outline"
+                  size="sm"
+                >
+                  Add Application
+                </Button>
+              </motion.div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
 

@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { motion } from "framer-motion";
+import { Settings } from "lucide-react";
 
 export default function AccountPage() {
   const { user } = useUser();
@@ -26,11 +27,20 @@ export default function AccountPage() {
         transition={{ duration: 0.5, ease: "easeOut" }}
         className="bg-gradient-to-r from-primary to-secondary shadow-lg py-8"
       >
-        <div className="max-w-7xl mx-auto py-3 px-4 sm:px-6 lg:px-8">
-          <h1 className="text-3xl font-bold text-white">Account Settings</h1>
-          <p className="mt-2 text-primary-foreground/80">
-            Manage your account and preferences
-          </p>
+        <div className="max-w-7xl mx-auto py-2 px-4 sm:px-6 lg:px-8">
+          <div className="flex items-start sm:items-center gap-4">
+            <div className="h-10 w-10 rounded-xl bg-white/10 ring-1 ring-white/20 flex items-center justify-center">
+              <Settings className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-white">
+                Account Settings
+              </h1>
+              <p className="mt-2 text-primary-foreground/80">
+                Manage your account and preferences
+              </p>
+            </div>
+          </div>
         </div>
       </motion.div>
 
