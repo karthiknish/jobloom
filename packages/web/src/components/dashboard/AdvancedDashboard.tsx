@@ -22,6 +22,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ClipboardList } from "lucide-react";
 
 interface Job {
   _id: string;
@@ -252,14 +253,33 @@ export function AdvancedDashboard() {
                     onViewApplication={handleViewApplication}
                   />
                 ) : (
-                  <div className="text-center py-8">
-                    <span className="text-4xl">📋</span>
-                    <h3 className="mt-2 text-sm font-medium text-foreground">
-                      No applications yet
-                    </h3>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      Get started by adding a job or application.
-                    </p>
+                  <div className="py-10">
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                      <ClipboardList className="h-6 w-6 text-primary" />
+                    </div>
+                    <div className="mt-4 text-center">
+                      <h3 className="text-base font-semibold text-foreground">
+                        No applications yet
+                      </h3>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        Get started by adding a job or application.
+                      </p>
+                      <div className="mt-6 flex items-center justify-center gap-2">
+                        <Button
+                          onClick={() => setShowApplicationForm(true)}
+                          size="sm"
+                        >
+                          Add Application
+                        </Button>
+                        <Button
+                          onClick={() => setShowJobForm(true)}
+                          variant="outline"
+                          size="sm"
+                        >
+                          Add Job
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 )}
               </CardContent>
