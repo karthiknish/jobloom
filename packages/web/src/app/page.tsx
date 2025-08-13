@@ -19,9 +19,9 @@ export default async function Home() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-primary/5 via-white to-secondary/5 overflow-hidden pt-16">
+      <section className="relative bg-gradient-to-br from-primary/5 via-white to-secondary/5 overflow-visible pt-16">
         {/* Animated background elements */}
-        <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute inset-0 overflow-visible pointer-events-none z-10">
           <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/80 rounded-full mix-blend-multiply filter blur-xl animate-blob"></div>
 
           <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/50 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
