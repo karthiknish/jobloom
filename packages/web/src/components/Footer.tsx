@@ -118,7 +118,7 @@ export default function Footer() {
         </div>
 
         {/* Bottom bar */}
-        <Separator className="bg-gray-800" />
+        <Separator className="bg-gray-800 h-[0.5px]" />
         <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col items-center justify-between text-sm bg-secondary gap-2">
           <p className="text-gray-900">
             © {currentYear} Jobloom. All rights reserved.
