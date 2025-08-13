@@ -22,7 +22,7 @@
     "https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"
   ],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "dist/background.js"
   },
   "content_scripts": [
     {
@@ -38,8 +38,8 @@
         "https://*.reed.co.uk/*",
         "https://*.jobsite.co.uk/*"
       ],
-      "js": ["content.js"],
-      "css": ["styles.css"]
+      "js": ["dist/content.js"],
+      "css": ["dist/styles.css"]
     },
     {
       "matches": [
@@ -48,16 +48,16 @@
         "https://*.netlify.app/*",
         "https://jobloom.ai/*"
       ],
-      "js": ["webapp-content.js"]
+      "js": ["dist/webapp-content.js"]
     }
   ],
   "action": {
-    "default_popup": "popup.html",
+    "default_popup": "dist/popup.html",
     "default_title": "JobloomMonorepo Job Tracker"
   },
   "icons": {
-    "16": "icons/icon16.png",
-    "48": "icons/icon48.png",
-    "128": "icons/icon128.png"
+    "16": "dist/icons/icon16.png",
+    "48": "dist/icons/icon48.png",
+    "128": "dist/icons/icon128.png"
   }
 }

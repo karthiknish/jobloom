@@ -4,7 +4,13 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
-import { SignInButton, SignUpButton, UserButton, useUser } from "@clerk/nextjs";
+import {
+  SignInButton,
+  SignUpButton,
+  UserButton,
+  useUser,
+  SignOutButton,
+} from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -99,6 +105,13 @@ export default function Header() {
               <Link href="/cv-evaluator" className="w-full">
                 CV Evaluator
               </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <SignOutButton signOutOptions={{ redirectUrl: "/" }}>
+                <div className="w-full flex items-center justify-center">
+                  Log out
+                </div>
+              </SignOutButton>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -215,6 +228,11 @@ export default function Header() {
                           }}
                         />
                       </div>
+                      <SignOutButton signOutOptions={{ redirectUrl: "/" }}>
+                        <Button variant="destructive" className="w-full mt-4">
+                          Log out
+                        </Button>
+                      </SignOutButton>
                     </div>
                   )}
                 </div>
