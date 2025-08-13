@@ -25,7 +25,7 @@ export default function Footer() {
           <div>
             <div className="flex items-center space-x-2 mb-4">
               <Image
-                src="/jobloom-logo-light.svg"
+                src="/jobloom-logo.svg"
                 alt="JobBloom"
                 width={160}
                 height={32}

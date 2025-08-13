@@ -34,8 +34,8 @@ export default function AccountPage() {
       >
         <div className="max-w-7xl mx-auto py-2 px-4 sm:px-6 lg:px-8">
           <div className="flex items-start sm:items-center gap-4">
-            <div className="h-10 w-10 rounded-xl bg-white/10 ring-1 ring-white/20 flex items-center justify-center">
-              <Settings className="h-5 w-5 text-white" />
+            <div className="h-10 w-10 rounded-xl bg-white ring-1 ring-white/30 flex items-center justify-center">
+              <Settings className="h-5 w-5 text-gray-900" />
             </div>
             <div>
               <h1 className="text-3xl font-bold text-white">
@@ -114,10 +114,10 @@ export default function AccountPage() {
                     whileHover={{ y: -2 }}
                     className="text-center"
                   >
-                    <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                      <Briefcase className="h-5 w-5 text-primary" />
+                    <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-gray-100">
+                      <Briefcase className="h-5 w-5 text-gray-900" />
                     </div>
-                    <div className="mt-2 text-2xl font-bold text-primary">
+                    <div className="mt-2 text-2xl font-bold text-gray-900">
                       0
                     </div>
                     <div className="text-sm text-gray-500">Jobs Tracked</div>
@@ -129,10 +129,10 @@ export default function AccountPage() {
                     whileHover={{ y: -2 }}
                     className="text-center"
                   >
-                    <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-green-50">
-                      <ClipboardList className="h-5 w-5 text-green-600" />
+                    <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-gray-100">
+                      <ClipboardList className="h-5 w-5 text-gray-900" />
                     </div>
-                    <div className="mt-2 text-2xl font-bold text-green-600">
+                    <div className="mt-2 text-2xl font-bold text-gray-900">
                       0
                     </div>
                     <div className="text-sm text-gray-500">Applications</div>
@@ -144,10 +144,10 @@ export default function AccountPage() {
                     whileHover={{ y: -2 }}
                     className="text-center"
                   >
-                    <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-secondary/10">
-                      <CalendarCheck className="h-5 w-5 text-secondary" />
+                    <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-gray-100">
+                      <CalendarCheck className="h-5 w-5 text-gray-900" />
                     </div>
-                    <div className="mt-2 text-2xl font-bold text-secondary">
+                    <div className="mt-2 text-2xl font-bold text-gray-900">
                       0
                     </div>
                     <div className="text-sm text-gray-500">Interviews</div>
