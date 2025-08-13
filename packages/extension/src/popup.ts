@@ -1,8 +1,5 @@
 /// <reference types="chrome" />
 
-// Singleton Clerk instance for the popup
-let clerk: any = null;
-
 document.addEventListener("DOMContentLoaded", () => {
   const highlightBtn = document.getElementById("highlight-btn");
   const autofillBtn = document.getElementById("autofill-btn");
@@ -21,8 +18,8 @@ document.addEventListener("DOMContentLoaded", () => {
   loadSettings();
 
   // Check authentication status
-  chrome.storage.sync.get(["userId"], (res) => {
-    if (!res.userId) {
+  chrome.storage.sync.get(["convexUserId"], (res) => {
+    if (!res.convexUserId) {
       // Hide feature buttons and stats
       const stats = document.querySelector(".stats") as HTMLElement | null;
       const actions = document.querySelector(".actions") as HTMLElement | null;
@@ -130,17 +127,44 @@ document.addEventListener("DOMContentLoaded", () => {
     showSettings();
   });
 
-  // --- Clerk Authentication ---
-  signinBtn?.addEventListener("click", async () => {
-    await showClerkComponent("signIn");
-  });
+  // --- Authentication via Clerk hosted pages (no components) ---
+  function openAuthPage(mode: "sign-in" | "sign-up") {
+    chrome.storage.sync.get(["webAppUrl"], (result) => {
+      const appBase = (
+        result.webAppUrl ||
+        process.env.WEB_APP_URL ||
+        "http://localhost:3000"
+      ).replace(/\/$/, "");
+      const afterPath = (
+        process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL || "/dashboard"
+      ).replace(/\/$/, "");
+      const redirect = encodeURIComponent(`${appBase}${afterPath}`);
 
-  signupBtn?.addEventListener("click", async () => {
-    await showClerkComponent("signUp");
-  });
+      const envUrl =
+        (mode === "sign-in"
+          ? process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL
+          : process.env.NEXT_PUBLIC_CLERK_SIGN_UP_URL) || "";
+
+      if (/^https?:\/\//i.test(envUrl)) {
+        const url = `${envUrl}${envUrl.includes("?") ? "&" : "?"}redirect_url=${redirect}`;
+        chrome.tabs.create({ url });
+        window.close();
+        return;
+      }
+
+      const fallbackPath = mode === "sign-in" ? "/sign-in" : "/sign-up";
+      const url = `${appBase}${fallbackPath}?redirect_url=${redirect}`;
+      chrome.tabs.create({ url });
+      window.close();
+    });
+  }
+
+  signinBtn?.addEventListener("click", () => openAuthPage("sign-in"));
+  signupBtn?.addEventListener("click", () => openAuthPage("sign-up"));
 
   backToMainBtn?.addEventListener("click", () => {
-    hideClerkComponent();
+    // In API-based flow, just reload the popup to return to main UI
+    window.location.reload();
   });
 
   // Sign out logic
@@ -148,109 +172,11 @@ document.addEventListener("DOMContentLoaded", () => {
     signOut();
   });
 
-  async function showClerkComponent(mode: "signIn" | "signUp") {
-    // Hide main content and show Clerk component
-    const mainContent = document.querySelector(
-      ".popup-content > *:not(#clerk-components)"
-    );
-    if (mainContent) {
-      (mainContent as HTMLElement).style.display = "none";
-    }
-
-    if (clerkComponents) {
-      clerkComponents.style.display = "block";
-    }
-
-    // Initialize Clerk only when needed (lazy-load module)
-    if (!clerk) {
-      const { Clerk } = await import("@clerk/clerk-js");
-      const publishableKey =
-        process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || "";
-      clerk = new Clerk(publishableKey);
-      await clerk.load();
-    }
-
-    // Mount the appropriate component
-    const componentDiv = document.getElementById("clerk-component");
-    if (componentDiv) {
-      componentDiv.innerHTML = ""; // Clear previous content
-
-      const signInUrl = process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL || "/sign-in";
-      const signUpUrl = process.env.NEXT_PUBLIC_CLERK_SIGN_UP_URL || "/sign-up";
-      const afterSignInUrl =
-        process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL || "/dashboard";
-      const afterSignUpUrl =
-        process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL || "/dashboard";
-
-      if (mode === "signIn") {
-        clerk.openSignIn({
-          appearance: {
-            elements: {
-              card: {
-                boxShadow: "none",
-                border: "1px solid #e5e7eb",
-              },
-            },
-          },
-          redirectUrl: window.location.href,
-          signUpUrl: signUpUrl,
-          afterSignInUrl: afterSignInUrl,
-        });
-      } else {
-        clerk.openSignUp({
-          appearance: {
-            elements: {
-              card: {
-                boxShadow: "none",
-                border: "1px solid #e5e7eb",
-              },
-            },
-          },
-          redirectUrl: window.location.href,
-          signInUrl: signInUrl,
-          afterSignUpUrl: afterSignUpUrl,
-        });
-      }
-    }
-
-    // Listen for successful authentication
-    const unsubscribe = clerk.addListener((event: any) => {
-      if (event.user) {
-        // User is signed in
-        const userId = event.user.id;
-        chrome.storage.sync.set({ userId }, () => {
-          console.log("UserId saved from Clerk:", userId);
-          // Ensure user exists in Convex
-          ensureUserExists(userId);
-          // Refresh popup to show features
-          window.location.reload();
-        });
-        unsubscribe(); // Stop listening
-      }
-    });
-  }
-
-  function hideClerkComponent() {
-    // Show main content and hide Clerk component
-    const mainContent = document.querySelector(
-      ".popup-content > *:not(#clerk-components)"
-    );
-    if (mainContent) {
-      (mainContent as HTMLElement).style.display = "";
-    }
-
-    if (clerkComponents) {
-      clerkComponents.style.display = "none";
-    }
-  }
+  // Clerk UI removed - we now open web app pages to authenticate.
 
   async function signOut() {
-    if (clerk) {
-      await clerk.signOut();
-    }
-
-    chrome.storage.sync.remove(["userId"], () => {
-      // Also remove from localStorage if present
+    chrome.storage.sync.remove(["convexUserId"], () => {
+      // Attempt to clear any web-app session artifacts (optional)
       chrome.tabs.query({}, (tabs) => {
         tabs.forEach((tab) => {
           if (
@@ -272,7 +198,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
       });
 
-      // Simply reload the popup; UI will revert to signed-out state
+      // Reload the popup; UI will revert to signed-out state
       window.location.reload();
     });
   }

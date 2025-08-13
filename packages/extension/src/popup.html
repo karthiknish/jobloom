@@ -3,10 +3,34 @@
 <head>
   <meta charset="utf-8">
   <style>
+    :root {
+      --radius: 8px;
+      --color-background: #ffffff;
+      --color-foreground: #18181b;
+      --color-muted: #f4f4f5;
+      --color-muted-foreground: #71717a;
+      --color-popover: #ffffff;
+      --color-popover-foreground: #18181b;
+      --color-border: #e4e4e7;
+      --color-input: #e4e4e7;
+      --color-card: #ffffff;
+      --color-card-foreground: #18181b;
+      --color-primary: #b86e37;
+      --color-primary-foreground: #ffffff;
+      --color-secondary: #e6c9a8;
+      --color-secondary-foreground: #18181b;
+      --color-accent: #f4f4f5;
+      --color-accent-foreground: #18181b;
+      --color-destructive: #ef4444;
+      --color-destructive-foreground: #f4f4f5;
+      --color-ring: #b86e37;
+    }
     body {
       width: 350px;
       padding: 20px;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--color-background);
+      color: var(--color-foreground);
+      font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', Arial, sans-serif;
     }
     .header {
       text-align: center;
@@ -28,10 +52,11 @@
       margin: 4px 0 0 0;
     }
     .stats {
-      background: #f9fafb;
+      background: var(--color-accent);
       border-radius: 8px;
       padding: 16px;
       margin: 16px 0;
+      border: 1px solid var(--color-border);
     }
     .stat-item {
       display: flex;
@@ -60,19 +85,20 @@
       transition: all 0.2s;
     }
     .btn-primary {
-      background: #4f46e5;
-      color: white;
+      background: var(--color-primary);
+      color: var(--color-primary-foreground);
+      border: 1px solid var(--color-ring);
     }
     .btn-primary:hover {
-      background: #4338ca;
+      filter: brightness(0.95);
     }
     .btn-secondary {
-      background: #f3f4f6;
-      color: #374151;
-      border: 1px solid #d1d5db;
+      background: var(--color-secondary);
+      color: var(--color-secondary-foreground);
+      border: 1px solid var(--color-border);
     }
     .btn-secondary:hover {
-      background: #e5e7eb;
+      filter: brightness(0.96);
     }
     .footer {
       text-align: center;
@@ -81,16 +107,14 @@
       border-top: 1px solid #e5e7eb;
     }
     .footer a {
-      color: #4f46e5;
+      color: var(--color-primary);
       text-decoration: none;
       font-size: 14px;
     }
     .popup-content {
       position: relative;
     }
-    #clerk-components {
-      display: none;
-    }
+    #clerk-components { display: none; }
     .clerk-component-container {
       min-height: 300px;
       display: flex;

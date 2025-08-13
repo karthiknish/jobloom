@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ConvexClientProvider } from "@/providers/convex-provider";
-import { Toaster } from "react-hot-toast";
+import { AppToaster } from "@/components/ui/Toast";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { inter } from "@/font";
@@ -29,7 +29,7 @@ export default function RootLayout({
             <Header />
             {children}
             <Footer />
-            <Toaster position="top-right" />
+            <AppToaster />
           </ConvexClientProvider>
         </body>
       </html>

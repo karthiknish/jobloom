@@ -70,21 +70,69 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     });
     return true; // Keep message channel open for async response
   } else if (request.action === "authSuccess") {
-    // Handle successful authentication from web app
-    console.log("Authentication successful, user redirected to:", request.url);
+    // After web app login, resolve Clerk ID -> Convex userId and store it
+    console.log("Authentication successful, resolving Convex user id");
     if (sender.tab && sender.tab.id) {
       try {
-        chrome.tabs.sendMessage(sender.tab.id, { action: "getUserId" }, (res) => {
-          if (chrome.runtime.lastError) {
-            console.warn("Could not retrieve userId:", chrome.runtime.lastError.message);
-            return;
+        chrome.tabs.sendMessage(
+          sender.tab.id,
+          { action: "getUserId" },
+          async (res) => {
+            if (chrome.runtime.lastError) {
+              console.warn(
+                "Could not retrieve userId:",
+                chrome.runtime.lastError.message
+              );
+              return;
+            }
+            const clerkId = res && res.userId ? String(res.userId) : null;
+            if (!clerkId) return;
+
+            const { convexUrl } = await chrome.storage.sync.get(["convexUrl"]);
+            const base =
+              convexUrl ||
+              process.env.CONVEX_URL ||
+              "https://rare-chihuahua-615.convex.cloud";
+            try {
+              const resp = await fetch(`${base}/api/query`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  path: "users:getUserByClerkId",
+                  args: { clerkId },
+                }),
+              });
+              let convexUser: any = null;
+              if (resp.ok) {
+                convexUser = await resp.json();
+              }
+              if (!convexUser) {
+                // create minimal user
+                const createResp = await fetch(`${base}/api/mutation`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    path: "users:createUser",
+                    args: { email: "", name: "", clerkId },
+                  }),
+                });
+                if (createResp.ok) {
+                  convexUser = await createResp.json();
+                }
+              }
+
+              if (convexUser) {
+                const convexUserId =
+                  typeof convexUser === "string" ? convexUser : convexUser._id;
+                chrome.storage.sync.set({ convexUserId }, () => {
+                  console.log("Saved convexUserId:", convexUserId);
+                });
+              }
+            } catch (err) {
+              console.error("Failed to resolve Convex user id:", err);
+            }
           }
-          if (res && res.userId) {
-            chrome.storage.sync.set({ userId: res.userId }, () => {
-              console.log("UserId saved from web app:", res.userId);
-            });
-          }
-        });
+        );
       } catch (e) {
         console.error("Error requesting userId", e);
       }

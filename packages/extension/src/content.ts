@@ -145,8 +145,8 @@ class JobTracker {
       top: 140px;
       right: 20px;
       z-index: 10000;
-      background: #4f46e5;
-      color: white;
+      background: #b86e37;
+      color: #ffffff;
       border: none;
       padding: 12px 16px;
       border-radius: 8px;
@@ -160,7 +160,7 @@ class JobTracker {
       if (this.isHighlightMode) {
         this.clearHighlights();
         button.textContent = "🎯 Check Sponsored Jobs";
-        button.style.background = "#4f46e5";
+        button.style.background = "#b86e37";
         this.isHighlightMode = false;
       } else {
         // Check rate limit before proceeding
@@ -214,8 +214,8 @@ class JobTracker {
       top: 80px;
       right: 20px;
       z-index: 10000;
-      background: #059669;
-      color: white;
+      background: #e6c9a8;
+      color: #18181b;
       border: none;
       padding: 12px 16px;
       border-radius: 8px;
@@ -233,11 +233,11 @@ class JobTracker {
       try {
         await this.autofillApplication();
         button.textContent = "✅ Filled!";
-        button.style.background = "#10b981";
+        button.style.background = "#b86e37";
 
         setTimeout(() => {
           button.textContent = "📝 Autofill Application";
-          button.style.background = "#059669";
+          button.style.background = "#e6c9a8";
           button.disabled = false;
         }, 3000);
       } catch (error) {
@@ -247,7 +247,7 @@ class JobTracker {
 
         setTimeout(() => {
           button.textContent = "📝 Autofill Application";
-          button.style.background = "#059669";
+          button.style.background = "#e6c9a8";
           button.disabled = false;
         }, 3000);
       }
@@ -268,8 +268,8 @@ class JobTracker {
       top: 80px;
       right: 20px;
       z-index: 10000;
-      background: #0a66c2;
-      color: white;
+      background: #b86e37;
+      color: #ffffff;
       border: none;
       padding: 12px 16px;
       border-radius: 8px;
@@ -283,7 +283,7 @@ class JobTracker {
       if (this.isPeopleSearchMode) {
         this.closePeopleSearchPanel();
         button.textContent = "👥 Find Relevant People";
-        button.style.background = "#0a66c2";
+        button.style.background = "#b86e37";
         this.isPeopleSearchMode = false;
       } else {
         this.openPeopleSearchPanel();
@@ -1036,29 +1036,29 @@ class JobTracker {
 
     const colors = {
       sponsored: {
-        border: "#ff6b35",
-        bg: "rgba(255, 107, 53, 0.1)",
-        badge: "#ff6b35",
+        border: "#b86e37",
+        bg: "rgba(184, 110, 55, 0.12)",
+        badge: "#b86e37",
       },
       promoted: {
         border: "#8b5cf6",
-        bg: "rgba(139, 92, 246, 0.1)",
+        bg: "rgba(139, 92, 246, 0.12)",
         badge: "#8b5cf6",
       },
       featured: {
         border: "#10b981",
-        bg: "rgba(16, 185, 129, 0.1)",
+        bg: "rgba(16, 185, 129, 0.12)",
         badge: "#10b981",
       },
       premium: {
-        border: "#f59e0b",
-        bg: "rgba(245, 158, 11, 0.1)",
-        badge: "#f59e0b",
+        border: "#e6c9a8",
+        bg: "rgba(230, 201, 168, 0.2)",
+        badge: "#e6c9a8",
       },
       recruitment_agency: {
-        border: "#dc2626",
-        bg: "rgba(220, 38, 38, 0.1)",
-        badge: "#dc2626",
+        border: "#ef4444",
+        bg: "rgba(239, 68, 68, 0.12)",
+        badge: "#ef4444",
       },
     };
 
@@ -1450,7 +1450,7 @@ class JobTracker {
 
         setTimeout(() => {
           button.innerHTML = originalContent;
-          button.style.background = "#4f46e5";
+          button.style.background = "#b86e37";
           button.disabled = false;
         }, 2000);
       }
@@ -1824,49 +1824,57 @@ class JobTracker {
 
 // Listen for messages from popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === 'togglePeopleSearch') {
-    const peopleSearchBtn = document.getElementById('jobloom-people-search') as HTMLButtonElement;
+  if (request.action === "togglePeopleSearch") {
+    const peopleSearchBtn = document.getElementById(
+      "jobloom-people-search"
+    ) as HTMLButtonElement;
     if (peopleSearchBtn) {
       peopleSearchBtn.click();
     }
     return true;
   }
-  
-  if (request.action === 'triggerAutofill') {
-    const autofillBtn = document.getElementById('jobloom-autofill') as HTMLButtonElement;
-    if (autofillBtn && autofillBtn.style.display !== 'none') {
+
+  if (request.action === "triggerAutofill") {
+    const autofillBtn = document.getElementById(
+      "jobloom-autofill"
+    ) as HTMLButtonElement;
+    if (autofillBtn && autofillBtn.style.display !== "none") {
       autofillBtn.click();
     }
     return true;
   }
-  
-  if (request.action === 'toggleHighlight') {
-    const highlightBtn = document.getElementById('jobloom-toggle') as HTMLButtonElement;
+
+  if (request.action === "toggleHighlight") {
+    const highlightBtn = document.getElementById(
+      "jobloom-toggle"
+    ) as HTMLButtonElement;
     if (highlightBtn) {
       highlightBtn.click();
     }
     return true;
   }
-  
-  if (request.action === 'clearHighlights') {
+
+  if (request.action === "clearHighlights") {
     const jobTracker = new JobTracker();
     jobTracker.clearHighlights();
     return true;
   }
-  
+
   return false;
 });
 
 function initJobloomTracker() {
-  chrome.storage.sync.get(['userId'], (result) => {
-    if (result.userId) {
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => new JobTracker());
+  chrome.storage.sync.get(["convexUserId"], (result) => {
+    if (result.convexUserId) {
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", () => new JobTracker());
       } else {
         new JobTracker();
       }
     } else {
-      console.log('Jobloom: user not signed in, extension features disabled on this page.');
+      console.log(
+        "Jobloom: user not signed in, extension features disabled on this page."
+      );
     }
   });
 }

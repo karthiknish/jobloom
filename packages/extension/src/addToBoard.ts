@@ -41,8 +41,8 @@ export class JobBoardManager {
 
   private static async getUserId(): Promise<string | null> {
     return new Promise((resolve) => {
-      chrome.storage.sync.get(["userId"], (result) => {
-        resolve(result.userId || null);
+      chrome.storage.sync.get(["convexUserId"], (result) => {
+        resolve(result.convexUserId || null);
       });
     });
   }
@@ -215,7 +215,7 @@ export class JobBoardManager {
 
   public static async checkIfJobExists(jobData: JobData): Promise<boolean> {
     try {
-      const userId = await this.getUserId();
+       const userId = await this.getUserId();
       if (!userId) return false;
 
       const convexUrl = await this.getConvexUrl();
