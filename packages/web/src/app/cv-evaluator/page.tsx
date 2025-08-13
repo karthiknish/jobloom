@@ -8,7 +8,15 @@ import { CvAnalysisHistory } from "../../components/CvAnalysisHistory";
 import { motion } from "framer-motion";
 import { useApiQuery } from "../../hooks/useApi";
 import { cvEvaluatorApi } from "../../utils/api/cvEvaluator";
-import { FileText, BarChart3, Star, Search, Target } from "lucide-react";
+import {
+  FileText,
+  BarChart3,
+  Star,
+  Search,
+  Target,
+  Upload,
+  History,
+} from "lucide-react";
 import {
   Card,
   CardContent,
@@ -68,21 +76,55 @@ export default function CvEvaluatorPage() {
         transition={{ duration: 0.5 }}
         className="bg-gradient-to-r from-primary to-secondary shadow-lg"
       >
-        <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-          <div className="flex items-start sm:items-center justify-between">
+        <div className="relative max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, ease: "easeOut" }}
+            className="flex items-start sm:items-center justify-between"
+          >
             <div className="flex items-start sm:items-center gap-4">
-              <div className="h-12 w-12 rounded-xl bg-white/10 ring-1 ring-white/20 flex items-center justify-center">
+              <motion.div
+                initial={{ scale: 0.9, rotate: -4, opacity: 0 }}
+                animate={{ scale: 1, rotate: 0, opacity: 1 }}
+                transition={{ type: "spring", stiffness: 240, damping: 18 }}
+                whileHover={{ scale: 1.05 }}
+                className="h-12 w-12 rounded-xl bg-white/10 ring-1 ring-white/20 flex items-center justify-center"
+              >
                 <FileText className="h-6 w-6 text-white" />
-              </div>
+              </motion.div>
               <div className="flex-1 min-w-0">
-                <h1 className="text-3xl font-bold text-white">CV Evaluator</h1>
-                <p className="mt-2 text-primary-foreground/80">
+                <motion.h1
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.05, duration: 0.35 }}
+                  className="text-3xl font-bold text-white"
+                >
+                  CV Evaluator
+                </motion.h1>
+                <motion.p
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.12, duration: 0.35 }}
+                  className="mt-2 text-primary-foreground/80"
+                >
                   Get AI-powered insights to improve your CV and increase your
                   chances of landing interviews
-                </p>
+                </motion.p>
               </div>
             </div>
-          </div>
+          </motion.div>
+
+          <motion.div
+            aria-hidden
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.6 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="pointer-events-none absolute inset-0 -z-10"
+          >
+            <div className="absolute -top-6 -left-6 h-32 w-32 rounded-full bg-white/10 blur-3xl" />
+            <div className="absolute -bottom-10 -right-10 h-40 w-40 rounded-full bg-black/10 blur-3xl" />
+          </motion.div>
         </div>
       </motion.div>
 
@@ -181,42 +223,51 @@ export default function CvEvaluatorPage() {
           )}
 
           {/* Tab Navigation */}
-          <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg mb-6 w-fit">
+          <div className="relative grid grid-cols-2 bg-gray-100 p-1 rounded-lg mb-6 w-[min(360px,100%)]">
+            <motion.div
+              className="absolute top-1 bottom-1 left-1 w-1/2 rounded-md bg-white shadow"
+              animate={{ x: activeTab === "upload" ? "0%" : "100%" }}
+              transition={{ type: "spring", stiffness: 260, damping: 22 }}
+            />
             <button
               onClick={() => setActiveTab("upload")}
-              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+              className={`relative z-10 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                 activeTab === "upload"
-                  ? "bg-white shadow"
+                  ? "text-gray-900"
                   : "text-gray-600 hover:text-gray-900"
               }`}
             >
-              Upload CV
+              <span className="inline-flex items-center gap-2 whitespace-nowrap">
+                <Upload className="h-4 w-4" /> Upload CV
+              </span>
             </button>
             <button
               onClick={() => setActiveTab("history")}
-              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+              className={`relative z-10 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                 activeTab === "history"
-                  ? "bg-white shadow"
+                  ? "text-gray-900"
                   : "text-gray-600 hover:text-gray-900"
               }`}
             >
-              Analysis History
+              <span className="inline-flex w-fit items-center gap-2 whitespace-nowrap">
+                <History className="h-4 w-4" /> Analysis History
+              </span>
             </button>
           </div>
 
           {/* Tab Content */}
           {activeTab === "upload" ? (
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
             >
               <CvUploadForm userId={userRecord?._id || ""} />
             </motion.div>
           ) : (
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
             >
               <CvAnalysisHistory analyses={cvAnalyses || []} />
