@@ -2,13 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import {
-  UploadCloud,
-  Lightbulb,
-  Bot,
-  CheckCircle2,
-  Loader2,
-} from "lucide-react";
+import { UploadCloud, CheckCircle2, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import {
