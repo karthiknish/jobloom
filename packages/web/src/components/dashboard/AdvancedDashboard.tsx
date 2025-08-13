@@ -229,7 +229,7 @@ export function AdvancedDashboard() {
                   variant="default"
                   size="sm"
                 >
-                  Import Jobs
+                  <UploadCloud className="mr-2 h-4 w-4" /> Import Jobs
                 </Button>
               </motion.div>
               <motion.div
@@ -241,7 +241,7 @@ export function AdvancedDashboard() {
                   variant="default"
                   size="sm"
                 >
-                  Add Job
+                  <FilePlus className="mr-2 h-4 w-4" /> Add Job
                 </Button>
               </motion.div>
               <motion.div
@@ -253,7 +253,7 @@ export function AdvancedDashboard() {
                   variant="outline"
                   size="sm"
                 >
-                  Add Application
+                  <ClipboardList className="mr-2 h-4 w-4" /> Add Application
                 </Button>
               </motion.div>
             </div>
