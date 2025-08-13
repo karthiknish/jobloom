@@ -22,7 +22,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ClipboardList, LayoutDashboard } from "lucide-react";
+import {
+  ClipboardList,
+  LayoutDashboard,
+  Inbox,
+  FilePlus,
+  UploadCloud,
+  ArrowRight,
+} from "lucide-react";
 
 interface Job {
   _id: string;
@@ -99,6 +106,9 @@ export function AdvancedDashboard() {
         : Promise.reject(new Error("No user record")),
     [userRecord?._id]
   );
+
+  const hasApplications =
+    Array.isArray(applications) && applications.length > 0;
 
   const handleEditApplication = (application: Application) => {
     setEditingApplication(application);
@@ -275,65 +285,108 @@ export function AdvancedDashboard() {
         </Tabs>
 
         {/* Main Content */}
-        {view === "dashboard" && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-6"
-          >
-            {/* Stats Dashboard */}
-            {jobStats && <JobStatsDashboard stats={jobStats} />}
-
-            {/* Extension Integration */}
-            {userRecord && <ExtensionIntegration userId={userRecord._id} />}
-
-            {/* Recent Applications */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Applications</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {applications && applications.length > 0 ? (
+        {view === "dashboard" &&
+          (hasApplications ? (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-6"
+            >
+              {jobStats && <JobStatsDashboard stats={jobStats} />}
+              {userRecord && <ExtensionIntegration userId={userRecord._id} />}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Recent Applications</CardTitle>
+                </CardHeader>
+                <CardContent>
                   <JobList
-                    applications={applications.slice(0, 5)}
+                    applications={applications!.slice(0, 5)}
                     onEditApplication={handleEditApplication}
                     onDeleteApplication={handleDeleteApplication}
                     onViewApplication={handleViewApplication}
                   />
-                ) : (
-                  <div className="py-10">
-                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-                      <ClipboardList className="h-6 w-6 text-primary" />
-                    </div>
-                    <div className="mt-4 text-center">
-                      <h3 className="text-base font-semibold text-foreground">
-                        No applications yet
-                      </h3>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        Get started by adding a job or application.
-                      </p>
-                      <div className="mt-6 flex items-center justify-center gap-2">
-                        <Button
-                          onClick={() => setShowApplicationForm(true)}
-                          size="sm"
-                        >
-                          Add Application
-                        </Button>
-                        <Button
-                          onClick={() => setShowJobForm(true)}
-                          variant="outline"
-                          size="sm"
-                        >
-                          Add Job
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
+                </CardContent>
+              </Card>
+            </motion.div>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, ease: "easeOut" }}
+              className="space-y-6"
+            >
+              <div className="rounded-xl  bg-white p-10 text-center">
+                <motion.div
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: "spring", stiffness: 240, damping: 18 }}
+                  className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10"
+                >
+                  <Inbox className="h-7 w-7 text-primary" />
+                </motion.div>
+                <motion.h3
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.05, duration: 0.35 }}
+                  className="mt-4 text-lg font-semibold text-foreground"
+                >
+                  No applications yet
+                </motion.h3>
+                <motion.p
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1, duration: 0.35 }}
+                  className="mt-1 text-sm text-muted-foreground"
+                >
+                  Get started by importing your jobs or adding a new one.
+                </motion.p>
+                <div className="mt-6 flex items-center justify-center gap-2">
+                  <motion.div
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Button onClick={() => setShowImportModal(true)} size="sm">
+                      <UploadCloud className="mr-2 h-4 w-4" /> Import Jobs
+                    </Button>
+                  </motion.div>
+                  <motion.div
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Button
+                      onClick={() => setShowJobForm(true)}
+                      variant="secondary"
+                      size="sm"
+                    >
+                      <FilePlus className="mr-2 h-4 w-4" /> Add Job
+                    </Button>
+                  </motion.div>
+                  <motion.div
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Button
+                      onClick={() => setShowApplicationForm(true)}
+                      variant="ghost"
+                      size="sm"
+                    >
+                      Add Application <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </motion.div>
+                </div>
+              </div>
+
+              {userRecord && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.15, duration: 0.35 }}
+                >
+                  <ExtensionIntegration userId={userRecord._id} />
+                </motion.div>
+              )}
+            </motion.div>
+          ))}
 
         {view === "jobs" && (
           <motion.div
@@ -341,13 +394,47 @@ export function AdvancedDashboard() {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-6"
           >
-            {applications && (
+            {hasApplications ? (
               <JobList
-                applications={applications}
+                applications={applications!}
                 onEditApplication={handleEditApplication}
                 onDeleteApplication={handleDeleteApplication}
                 onViewApplication={handleViewApplication}
               />
+            ) : (
+              <div className="rounded-xl  bg-white p-10 text-center">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+                  <ClipboardList className="h-7 w-7 text-primary" />
+                </div>
+                <h3 className="mt-4 text-lg font-semibold text-foreground">
+                  No jobs or applications yet
+                </h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Add your first job or import from a file to get started.
+                </p>
+                <div className="mt-6 flex items-center justify-center gap-2">
+                  <motion.div
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Button onClick={() => setShowJobForm(true)} size="sm">
+                      <FilePlus className="mr-2 h-4 w-4" /> Add Job
+                    </Button>
+                  </motion.div>
+                  <motion.div
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Button
+                      onClick={() => setShowImportModal(true)}
+                      variant="secondary"
+                      size="sm"
+                    >
+                      <UploadCloud className="mr-2 h-4 w-4" /> Import Jobs
+                    </Button>
+                  </motion.div>
+                </div>
+              </div>
             )}
           </motion.div>
         )}
