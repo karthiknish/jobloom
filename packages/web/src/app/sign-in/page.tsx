@@ -8,10 +8,12 @@ import {
   getRedirectUrlComplete,
   getAfterPath,
 } from "@/lib/auth";
+import { useRedirectIfAuthenticated } from "@/hooks/useAuthRedirect";
 
 export default function SignInPage() {
   const router = useRouter();
   const { isLoaded, signIn, setActive } = useSignIn();
+  const { isLoading, shouldRedirect } = useRedirectIfAuthenticated();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -20,6 +22,19 @@ export default function SignInPage() {
 
   const afterPath = getAfterPath("sign-in");
   const redirectUrlComplete = getRedirectUrlComplete(afterPath);
+
+  // Show loading state while checking authentication or redirecting
+  if (isLoading || shouldRedirect) {
+    return (
+      <main className="flex min-h-screen items-center justify-center p-4">
+        <div className="w-full max-w-sm rounded-md border border-[var(--color-border,#e4e4e7)] bg-[var(--color-card,#fff)] p-6 shadow-sm">
+          <div className="text-center text-sm text-[var(--color-muted-foreground,#71717a)]">
+            Loading...
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   // error handled via util
 
