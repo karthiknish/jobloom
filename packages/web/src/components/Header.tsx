@@ -19,7 +19,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Menu } from "lucide-react";
+import {
+  Menu,
+  Settings as SettingsIcon,
+  LayoutDashboard,
+  FileText,
+  LogOut,
+} from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -92,23 +98,33 @@ export default function Header() {
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56" align="end" forceMount>
             <DropdownMenuItem>
-              <Link href="/account" className="w-full">
+              <Link href="/account" className="w-full flex items-center gap-2">
+                <SettingsIcon className="h-4 w-4 text-gray-600" />
                 Account Settings
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem>
-              <Link href="/dashboard" className="w-full">
+              <Link
+                href="/dashboard"
+                className="w-full flex items-center gap-2"
+              >
+                <LayoutDashboard className="h-4 w-4 text-gray-600" />
                 Dashboard
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem>
-              <Link href="/cv-evaluator" className="w-full">
+              <Link
+                href="/cv-evaluator"
+                className="w-full flex items-center gap-2"
+              >
+                <FileText className="h-4 w-4 text-gray-600" />
                 CV Evaluator
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <SignOutButton signOutOptions={{ redirectUrl: "/" }}>
-                <div className="w-full flex items-center justify-center">
+                <div className="w-full flex items-center gap-2 text-red-600 hover:text-red-700 focus:text-red-700 hover:bg-red-50 focus:bg-red-50">
+                  <LogOut className="h-4 w-4 mr-2 " />
                   Log out
                 </div>
               </SignOutButton>
