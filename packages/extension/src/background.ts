@@ -1,3 +1,4 @@
+import { DEFAULT_WEB_APP_URL } from "./constants";
 // Rate limiting configuration
 const RATE_LIMITS = {
   addJob: { maxRequests: 20, windowMs: 60000 }, // 20 requests per minute
@@ -36,11 +37,11 @@ function checkRateLimit(endpoint: string): boolean {
 chrome.runtime.onInstalled.addListener(() => {
   console.log("JobloomMonorepo extension installed");
 
-  // Set default Convex URL if not already set
-  chrome.storage.sync.get(["convexUrl"], (result) => {
-    if (!result.convexUrl) {
+  // Ensure web app URL exists for API calls
+  chrome.storage.sync.get(["webAppUrl"], (result) => {
+    if (!result.webAppUrl) {
       chrome.storage.sync.set({
-        convexUrl: process.env.CONVEX_URL || "https://rare-chihuahua-615.convex.cloud",
+  webAppUrl: process.env.WEB_APP_URL || DEFAULT_WEB_APP_URL,
       });
     }
   });
@@ -59,25 +60,28 @@ chrome.runtime.onInstalled.addListener(() => {
 // Handle messages from content script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "addJob") {
-    // Store job data and sync with Convex
+    // Store job data and sync with web API
     handleJobData(request.data);
   } else if (request.action === "jobAddedToBoard") {
     // Handle job board analytics
     handleJobBoardAddition(request.data);
-  } else if (request.action === "getConvexUrl") {
-    chrome.storage.sync.get(["convexUrl"], (result) => {
-      sendResponse({ convexUrl: result.convexUrl });
+  } else if (request.action === "getWebAppUrl") {
+    // Respond with webAppUrl
+    chrome.storage.sync.get(["webAppUrl"], (result) => {
+      sendResponse({
+        webAppUrl: result.webAppUrl,
+      });
     });
-    return true; // Keep message channel open for async response
+    return true;
   } else if (request.action === "authSuccess") {
-    // After web app login, resolve Clerk ID -> Convex userId and store it
-    console.log("Authentication successful, resolving Convex user id");
+    // After web app login, capture Firebase UID and store
+    console.log("Authentication successful, capturing Firebase uid");
     if (sender.tab && sender.tab.id) {
       try {
         chrome.tabs.sendMessage(
           sender.tab.id,
           { action: "getUserId" },
-          async (res) => {
+          (res) => {
             if (chrome.runtime.lastError) {
               console.warn(
                 "Could not retrieve userId:",
@@ -85,52 +89,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
               );
               return;
             }
-            const clerkId = res && res.userId ? String(res.userId) : null;
-            if (!clerkId) return;
-
-            const { convexUrl } = await chrome.storage.sync.get(["convexUrl"]);
-            const base =
-              convexUrl ||
-              process.env.CONVEX_URL ||
-              "https://rare-chihuahua-615.convex.cloud";
-            try {
-              const resp = await fetch(`${base}/api/query`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  path: "users:getUserByClerkId",
-                  args: { clerkId },
-                }),
-              });
-              let convexUser: any = null;
-              if (resp.ok) {
-                convexUser = await resp.json();
-              }
-              if (!convexUser) {
-                // create minimal user
-                const createResp = await fetch(`${base}/api/mutation`, {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    path: "users:createUser",
-                    args: { email: "", name: "", clerkId },
-                  }),
-                });
-                if (createResp.ok) {
-                  convexUser = await createResp.json();
-                }
-              }
-
-              if (convexUser) {
-                const convexUserId =
-                  typeof convexUser === "string" ? convexUser : convexUser._id;
-                chrome.storage.sync.set({ convexUserId }, () => {
-                  console.log("Saved convexUserId:", convexUserId);
-                });
-              }
-            } catch (err) {
-              console.error("Failed to resolve Convex user id:", err);
-            }
+            const uid = res && res.userId ? String(res.userId) : null;
+            if (!uid) return;
+            chrome.storage.sync.set({ firebaseUid: uid }, () => {
+              console.log("Saved firebaseUid:", uid);
+            });
           }
         );
       } catch (e) {
@@ -148,52 +111,44 @@ async function handleJobData(jobData: any) {
   }
 
   try {
-    // Get Convex URL from storage
-    const result = await chrome.storage.sync.get(["convexUrl"]);
-    const convexUrl = result.convexUrl;
-
-    if (
-      !convexUrl ||
-      convexUrl === "https://your-convex-deployment.convex.cloud"
-    ) {
-      console.warn(
-        "Convex URL not configured. Please set it in the extension popup.",
-      );
+    // Get web app URL and user id from storage
+    const result = await chrome.storage.sync.get([
+      "webAppUrl",
+      "firebaseUid",
+      "userId",
+    ]);
+    const baseUrl = (
+      result.webAppUrl ||
+  process.env.WEB_APP_URL ||
+  DEFAULT_WEB_APP_URL
+    ).replace(/\/$/, "");
+    const uid = result.firebaseUid || result.userId;
+    if (!uid) {
+      console.warn("No Firebase user id present; cannot sync job.");
       return;
     }
 
-    // Generate client ID for rate limiting
-    const clientId = await getOrCreateClientId();
+    // Generate client ID for rate limiting (local only)
+    await getOrCreateClientId();
 
-    // Send job data to Convex
-    const response = await fetch(`${convexUrl}/api/mutation`, {
+    // Create job in web API
+  const response = await fetch(`${baseUrl}/api/app/jobs`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        path: "jobs:createJob",
-        args: {
-          title: jobData.title,
-          company: jobData.company,
-          location: jobData.location,
-          url: jobData.url,
-          isSponsored: jobData.isSponsored,
-          isRecruitmentAgency: jobData.isRecruitmentAgency || false,
-          source: "extension",
-          userId: "temp-user-id", // This should be replaced with actual user ID from auth
-          clientId: clientId,
-        },
+        title: jobData.title,
+        company: jobData.company,
+        location: jobData.location,
+        url: jobData.url,
+        isSponsored: jobData.isSponsored,
+        isRecruitmentAgency: jobData.isRecruitmentAgency || false,
+        source: "extension",
+        userId: uid,
       }),
     });
 
-    if (response.status === 429) {
-      console.warn("Rate limited by Convex server");
-      return;
-    }
-
     if (response.ok) {
-      console.log("Job data synced to Convex successfully");
+      console.log("Job data synced successfully");
 
       // Update local storage stats
       chrome.storage.local.get(["sponsoredJobs", "jobsToday"], (result) => {
@@ -208,11 +163,7 @@ async function handleJobData(jobData: any) {
       });
     } else {
       const errorText = await response.text();
-      if (errorText.includes("Rate limit exceeded")) {
-        console.warn("Convex rate limit exceeded:", errorText);
-      } else {
-        console.error("Failed to sync job data to Convex:", errorText);
-      }
+      console.error("Failed to sync job data:", errorText);
     }
   } catch (error) {
     console.error("Error handling job data:", error);
@@ -244,8 +195,7 @@ async function handleJobBoardAddition(jobBoardEntry: any) {
       chrome.storage.local.set({ jobBoardStats: stats });
     });
 
-    // Optionally sync to Convex for analytics
-    // This could be used for tracking user engagement
+  // Optionally sync analytics to the web app in the future
   } catch (error) {
     console.error("Error handling job board addition:", error);
   }

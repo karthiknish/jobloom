@@ -1,5 +1,9 @@
-// services/api/convexApi.ts
-import type { CvAnalysis, SponsoredCompany, SponsorshipStats } from "../../types/convex";
+// services/api/convexApi.ts (now backed by Firebase Admin endpoints)
+import type {
+  CvAnalysis,
+  SponsoredCompany,
+  SponsorshipStats,
+} from "../../types/convex";
 
 // Generic API error class
 export class ApiError extends Error {
@@ -14,11 +18,11 @@ export class ApiError extends Error {
 }
 
 // Base API client
-class ConvexApiClient {
+class AppApiClientCompat {
   private baseUrl: string;
 
   constructor() {
-    this.baseUrl = "/api/convex";
+  this.baseUrl = "/api/app";
   }
 
   async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -34,7 +38,8 @@ class ConvexApiClient {
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new ApiError(
-        errorData.message || `API request failed with status ${response.status}`,
+        errorData.message ||
+          `API request failed with status ${response.status}`,
         response.status,
         errorData.code
       );
@@ -43,13 +48,29 @@ class ConvexApiClient {
     return response.json();
   }
 
-  // User endpoints
-  async getUserByClerkId(clerkId: string) {
-    return this.request<{ _id: string; clerkId: string; isAdmin?: boolean; email: string; name: string; createdAt: number }>(`/users/${clerkId}`);
+  // User endpoints (Firebase userId)
+  async getUserById(userId: string) {
+    return this.request<{
+      _id: string;
+      clerkId: string; // kept for migration compatibility in types
+      isAdmin?: boolean;
+      email: string;
+      name: string;
+      createdAt: number;
+    }>(`/users/${userId}`);
   }
 
+
   async getAllUsers() {
-    return this.request<Array<{ _id: string; email: string; name: string; isAdmin?: boolean; createdAt: number }>>(`/users`);
+    return this.request<
+      Array<{
+        _id: string;
+        email: string;
+        name: string;
+        isAdmin?: boolean;
+        createdAt: number;
+      }>
+    >(`/users`);
   }
 
   // Job endpoints
@@ -66,32 +87,34 @@ class ConvexApiClient {
 
   // Application endpoints
   async getApplicationsByUser(userId: string) {
-    return this.request<Array<{
-      _id: string;
-      jobId: string;
-      userId: string;
-      status: string;
-      appliedDate?: number;
-      notes?: string;
-      interviewDates?: number[];
-      followUpDate?: number;
-      createdAt: number;
-      updatedAt: number;
-      job?: {
+    return this.request<
+      Array<{
         _id: string;
-        title: string;
-        company: string;
-        location: string;
-        url?: string;
-        description?: string;
-        salary?: string;
-        isSponsored: boolean;
-        isRecruitmentAgency?: boolean;
-        source: string;
-        dateFound: number;
+        jobId: string;
         userId: string;
-      };
-    }>>(`/applications/user/${userId}`);
+        status: string;
+        appliedDate?: number;
+        notes?: string;
+        interviewDates?: number[];
+        followUpDate?: number;
+        createdAt: number;
+        updatedAt: number;
+        job?: {
+          _id: string;
+          title: string;
+          company: string;
+          location: string;
+          url?: string;
+          description?: string;
+          salary?: string;
+          isSponsored: boolean;
+          isRecruitmentAgency?: boolean;
+          source: string;
+          dateFound: number;
+          userId: string;
+        };
+      }>
+    >(`/applications/user/${userId}`);
   }
 
   async updateApplicationStatus(applicationId: string, status: string) {
@@ -127,17 +150,19 @@ class ConvexApiClient {
 
   // Sponsorship rules endpoints
   async getAllSponsorshipRules() {
-    return this.request<Array<{
-      _id: string;
-      name: string;
-      description: string;
-      jobSite: string;
-      selectors: string[];
-      keywords: string[];
-      isActive: boolean;
-      createdAt: number;
-      updatedAt: number;
-    }>>(`/sponsorship/rules`);
+    return this.request<
+      Array<{
+        _id: string;
+        name: string;
+        description: string;
+        jobSite: string;
+        selectors: string[];
+        keywords: string[];
+        isActive: boolean;
+        createdAt: number;
+        updatedAt: number;
+      }>
+    >(`/sponsorship/rules`);
   }
 
   async addSponsorshipRule(data: {
@@ -176,7 +201,7 @@ class ConvexApiClient {
   }
 
   // Contact endpoints
-  async createContact(data: { name: string; email: string; message: string; }) {
+  async createContact(data: { name: string; email: string; message: string }) {
     return this.request(`/contacts`, {
       method: "POST",
       body: JSON.stringify(data),
@@ -204,4 +229,4 @@ class ConvexApiClient {
 }
 
 // Export singleton instance
-export const convexApi = new ConvexApiClient();
+export const convexApi = new AppApiClientCompat();

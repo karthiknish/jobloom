@@ -1,6 +1,6 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
+import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { format } from "date-fns";
 import {
   Card,
@@ -18,10 +18,19 @@ import {
 } from "lucide-react";
 
 export default function AccountPage() {
-  const { user } = useUser();
+  const { user } = useFirebaseAuth();
 
   if (!user) {
-    return <div>Please sign in to access your account.</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center mt-14">
+        <div className="text-center">
+          <p className="mb-4">Please sign in to access your account.</p>
+          <a className="underline" href="/sign-in">
+            Sign in
+          </a>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -70,21 +79,24 @@ export default function AccountPage() {
                   <div>
                     <p className="text-sm font-medium text-gray-700">Name</p>
                     <p className="mt-1 text-sm text-gray-900">
-                      {user.fullName}
+                      {user.displayName || user.email}
                     </p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-700">Email</p>
-                    <p className="mt-1 text-sm text-gray-900">
-                      {user.emailAddresses[0]?.emailAddress}
-                    </p>
+                    <p className="mt-1 text-sm text-gray-900">{user.email}</p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-700">
                       Member Since
                     </p>
                     <p className="mt-1 text-sm text-gray-900">
-                      {format(new Date(user.createdAt!), "MMMM d, yyyy")}
+                      {user.metadata?.creationTime
+                        ? format(
+                            new Date(user.metadata.creationTime),
+                            "MMMM d, yyyy"
+                          )
+                        : "—"}
                     </p>
                   </div>
                 </div>

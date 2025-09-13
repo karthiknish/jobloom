@@ -4,8 +4,7 @@
 
 - Node.js 18+ and npm 9+
 - Chrome browser for extension testing
-- Clerk account for authentication
-- Convex account for backend
+- Firebase project (Auth + Firestore)
 
 ## Quick Start
 
@@ -15,34 +14,29 @@
    npm install
    ```
 
-2. **Set up Convex Backend**
-   ```bash
-   cd packages/convex
-   npx convex dev
-   # Follow the prompts to create a new Convex project
-   ```
+2. **Set up Firebase**
+   - Create a Firebase project
+   - Enable Authentication (Email/Password, Google, etc. as desired)
+   - Create a Firestore database
+   - Create a service account and download JSON credentials
 
-3. **Set up Clerk Authentication**
-   - Create a Clerk application at https://clerk.com
-   - Copy your keys to `packages/web/.env.local`
-
-4. **Configure Environment Variables**
+3. **Configure Environment Variables**
    ```bash
    # packages/web/.env.local
-   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
-   CLERK_SECRET_KEY=your_clerk_secret_key
-   NEXT_PUBLIC_CONVEX_URL=your_convex_deployment_url
+   NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+   # One of the following for Admin SDK initialization:
+   # Option A: Base64-encoded service account JSON
+   FIREBASE_SERVICE_ACCOUNT_BASE64=base64_of_json
+   # Option B: Inline service account JSON
+   FIREBASE_SERVICE_ACCOUNT={"type":"service_account", ...}
    ```
 
 5. **Start Development Servers**
    ```bash
-   # Terminal 1: Start Convex
-   cd packages/convex && npm run dev
-   
-   # Terminal 2: Start Web App
+   # Terminal 1: Start Web App
    cd packages/web && npm run dev
    
-   # Terminal 3: Build Extension
+   # Terminal 2: Build Extension
    cd packages/extension && npm run dev
    ```
 
@@ -64,43 +58,43 @@
 ## Usage
 
 1. **Web Application**: Visit http://localhost:3000
-   - Sign up/Sign in with Clerk
+   - Sign up/Sign in (Firebase)
    - View your job tracking dashboard
    - Access admin panel at `/admin` to manage sponsored job database
 
-2. **Chrome Extension**: 
+2. **Chrome Extension**:
    - Visit job sites (LinkedIn, Indeed, etc.)
    - Click "🎯 Check Sponsored Jobs" button in the extension popup or floating button
-   - Extension queries Convex database for sponsorship data
+   - Extension queries the web app API (Firestore-backed) for sponsorship data
    - Sponsored jobs are highlighted based on database matches
    - Jobs are synced to your dashboard
 
 3. **Sponsorship Management**:
    - Use the admin panel to add **sponsored companies** to the database
    - Configure company aliases for better matching (e.g., "Google" + "Alphabet Inc")
-   - Configure extension settings with your Convex URL
+   - Configure extension settings with your Web App URL (default http://localhost:3000)
    - Extension will highlight **all jobs from sponsored companies**
 
 ## Features
 
 ### Chrome Extension
 - ✅ **On-demand sponsored job checking** (button click only)
-- ✅ **Company-based sponsorship matching** via Convex database
+- ✅ **Company-based sponsorship matching** via Firestore database
 - ✅ **Fuzzy company name matching** with aliases support
 - ✅ Visual highlighting with color-coded badges
 - ✅ Site-specific job element detection
 - ✅ Support for major job sites (LinkedIn, Indeed, Glassdoor, Monster, ZipRecruiter)
 - ✅ Real-time sync with backend
-- ✅ Configurable Convex URL in extension settings
+- ✅ Configurable Web App URL in extension settings
 
 ### Web Application
-- ✅ User authentication with Clerk
+- ✅ User authentication with Firebase Auth
 - ✅ Job application tracking
 - ✅ Status management (interested → applied → interviewing → offered/rejected)
 - ✅ Statistics dashboard
 - ✅ Real-time updates
 
-### Backend (Convex)
+### Backend (Firebase + Firestore)
 - ✅ User management
 - ✅ Job storage and retrieval
 - ✅ Application status tracking
@@ -108,8 +102,7 @@
 - ✅ **Fuzzy matching algorithm** for company name variations
 - ✅ Admin API for managing sponsored companies
 - ✅ Industry and sponsorship type categorization
-- ✅ Real-time synchronization
-- ✅ Data persistence
+- ✅ Data persistence in Firestore
 
 ## Development
 
@@ -125,13 +118,13 @@ Edit the `sponsoredKeywords` array in:
 - `packages/extension/src/content.ts`
 - `packages/extension/src/background.ts`
 
-### Database Schema
+### Database Collections (Firestore)
 
-The Convex schema includes:
-- `users`: User profiles linked to Clerk
-- `jobs`: Job postings with metadata
-- `applications`: Application tracking with status
-- `jobAlerts`: Future feature for job alerts
+We use Firestore collections:
+- `users`: User profiles keyed by Firebase UID
+- `jobs`: Job postings with metadata and userId
+- `applications`: Application tracking with status and userId
+- `sponsoredCompanies`: Company names and optional aliases/types
 
 ## Deployment
 
@@ -140,13 +133,6 @@ The Convex schema includes:
 cd packages/web
 npm run build
 # Deploy to Vercel, Netlify, or your preferred platform
-```
-
-### Convex Backend
-```bash
-cd packages/convex
-npm run build
-# Automatically deployed via Convex CLI
 ```
 
 ### Chrome Extension
@@ -161,19 +147,17 @@ npm run build
 ### Extension Not Working
 - Check if the extension is enabled in Chrome
 - Verify the manifest.json permissions
-- **Configure Convex URL in extension settings**
 - Check browser console for errors
-- **Ensure sponsored companies exist in the Convex database**
+- Ensure sponsored companies exist in the database
 - Verify company names match between job sites and database (use aliases for variations)
 
 ### Web App Authentication Issues
-- Verify Clerk environment variables
-- Check Clerk dashboard for configuration
+- Verify Firebase environment variables
+- Check Firebase console for configuration
 
 ### Backend Connection Issues
-- Ensure Convex is running (`npm run dev`)
-- Verify CONVEX_URL in environment variables
-- Check Convex dashboard for deployment status
+- Verify Firestore access and service account credentials
+- Ensure the web app API routes are reachable
 
 ## Contributing
 
@@ -187,5 +171,5 @@ npm run build
 
 For issues and questions:
 - Check the troubleshooting section
-- Review the Convex and Clerk documentation
+- Review Firebase Auth and Firestore documentation
 - Open an issue in the repository

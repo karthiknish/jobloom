@@ -1,12 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ConvexHttpClient } from "convex/browser";
-import { api } from "@convex-generated/api";
+import { getAdminDb } from "@/firebase/admin";
 
 export async function POST(req: NextRequest) {
   try {
-    // Create a Convex HTTP client inside the function
-    const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
-    
     const formData = await req.formData();
     const file = formData.get("file") as File;
     const userId = formData.get("userId") as string;
@@ -16,7 +12,7 @@ export async function POST(req: NextRequest) {
     if (!file || !userId) {
       return NextResponse.json(
         { error: "Missing file or userId" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -34,7 +30,7 @@ export async function POST(req: NextRequest) {
           error:
             "Unsupported file type. Please upload PDF, DOC, DOCX, or TXT files.",
         },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -43,18 +39,11 @@ export async function POST(req: NextRequest) {
     if (file.size > maxSize) {
       return NextResponse.json(
         { error: "File too large. Maximum size is 5MB." },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
-    // Get user from Convex
-    const user = await convex.query(api.users.getUserByClerkId, {
-      clerkId: userId,
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
+    // Assume userId is Firebase UID provided by client; creation of user doc handled elsewhere
 
     // Extract text from file
     let cvText = "";
@@ -76,32 +65,37 @@ export async function POST(req: NextRequest) {
             error:
               "DOC/DOCX support coming soon. Please upload PDF or TXT files.",
           },
-          { status: 400 },
+          { status: 400 }
         );
       }
     } catch (extractError) {
       console.error("Error extracting text from file:", extractError);
       return NextResponse.json(
         { error: "Failed to extract text from file" },
-        { status: 500 },
+        { status: 500 }
       );
     }
 
     if (!cvText.trim()) {
       return NextResponse.json(
         { error: "No text content found in the file" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
-    // Create CV analysis record
-    const analysisId = await convex.mutation(api.cvAnalysis.createCvAnalysis, {
-      userId: user._id,
+    // Create CV analysis record in Firestore
+    const db = getAdminDb();
+    const createdRef = await db.collection("cvAnalyses").add({
+      userId,
       fileName: file.name,
       fileSize: file.size,
       fileType: file.type,
       cvText: cvText.trim(),
-    });
+      analysisStatus: "pending",
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    } as any);
+    const analysisId = createdRef.id;
 
     // Start analysis in background
     try {

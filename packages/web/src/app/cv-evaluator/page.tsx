@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useUser } from "@clerk/nextjs";
+import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { FeatureGate } from "../../components/UpgradePrompt";
 import { CvUploadForm } from "../../components/CvUploadForm";
 import { CvAnalysisHistory } from "../../components/CvAnalysisHistory";
@@ -26,15 +26,15 @@ import {
 } from "@/components/ui/card";
 
 export default function CvEvaluatorPage() {
-  const { user } = useUser();
+  const { user } = useFirebaseAuth();
   const [activeTab, setActiveTab] = useState<"upload" | "history">("upload");
 
   const userRecord = useApiQuery(
     () =>
-      user
-        ? cvEvaluatorApi.getUserByClerkId(user.id)
+      user && user.uid
+        ? cvEvaluatorApi.getUserByFirebaseUid(user.uid)
         : Promise.reject(new Error("No user")),
-    [user?.id]
+    [user?.uid]
   ).data;
 
   const cvAnalyses = useApiQuery(

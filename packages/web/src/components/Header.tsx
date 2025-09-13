@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
-import { SignInButton, SignUpButton, UserButton, useUser } from "@clerk/nextjs";
+import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Menu } from "lucide-react";
+import { ModeToggle } from "@/components/ModeToggle";
 import {
   Sheet,
   SheetContent,
@@ -23,7 +24,8 @@ import {
 } from "@/components/ui/sheet";
 
 export default function Header() {
-  const { isSignedIn, user } = useUser();
+  const { user } = useFirebaseAuth();
+  const isSignedIn = !!user;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navLinks = [
@@ -45,7 +47,7 @@ export default function Header() {
           <Link
             key={link.href}
             href={link.href}
-            className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium w-fit text-center py-2"
+            className="text-muted-foreground hover:text-foreground transition-colors text-sm font-medium w-fit text-center py-2"
             onClick={() => setIsMobileMenuOpen(false)}
           >
             {link.label}
@@ -57,7 +59,7 @@ export default function Header() {
           <Link
             key={link.href}
             href={link.href}
-            className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium w-fit text-center py-2 flex"
+            className="text-muted-foreground hover:text-foreground transition-colors text-sm font-medium w-fit text-center py-2 flex"
             onClick={() => setIsMobileMenuOpen(false)}
           >
             {link.label}
@@ -74,12 +76,13 @@ export default function Header() {
             <Button variant="ghost" className="relative h-10 w-10 rounded-full">
               <Avatar className="h-10 w-10">
                 <AvatarImage
-                  src={user?.imageUrl}
-                  alt={user?.firstName || "User"}
+                  src={user?.photoURL || undefined}
+                  alt={user?.displayName || "User"}
                 />
                 <AvatarFallback>
-                  {user?.firstName?.charAt(0)}
-                  {user?.lastName?.charAt(0)}
+                  {user?.displayName?.charAt(0) ||
+                    user?.email?.charAt(0) ||
+                    "U"}
                 </AvatarFallback>
               </Avatar>
             </Button>
@@ -104,14 +107,14 @@ export default function Header() {
         </DropdownMenu>
       ) : (
         <div className="flex items-center justify-center space-x-2 w-full">
-          <SignInButton mode="modal">
+          <Link href="/sign-in">
             <Button variant="ghost" size="sm">
               Sign In
             </Button>
-          </SignInButton>
-          <SignUpButton mode="modal">
+          </Link>
+          <Link href="/sign-up">
             <Button size="sm">Get Started</Button>
-          </SignUpButton>
+          </Link>
         </div>
       )}
     </>
@@ -122,7 +125,7 @@ export default function Header() {
       initial={{ y: -60, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: "spring", stiffness: 120, damping: 14 }}
-      className="fixed top-0 w-full bg-white/80 backdrop-blur-md z-50 border-b border-gray-100"
+      className="fixed top-0 w-full bg-background/80 backdrop-blur-md z-50 border-b border"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
@@ -141,8 +144,9 @@ export default function Header() {
             <NavItems />
           </nav>
 
-          {/* Desktop Auth Buttons */}
-          <div className="hidden md:flex items-center space-x-4">
+          {/* Desktop Controls */}
+          <div className="hidden md:flex items-center space-x-2">
+            <ModeToggle />
             <AuthButtons />
           </div>
 
@@ -159,7 +163,10 @@ export default function Header() {
                   <span className="sr-only">Toggle menu</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-full sm:w-full bg-white">
+              <SheetContent
+                side="right"
+                className="w-full sm:w-full bg-background"
+              >
                 <SheetHeader>
                   <SheetTitle>
                     <Link
@@ -180,7 +187,8 @@ export default function Header() {
                   <nav className="flex flex-col space-y-4 items-center">
                     <NavItems />
                   </nav>
-                  <div className="pt-4 border-t border-gray-200 mt-auto flex justify-center">
+                  <div className="pt-4 border-t mt-auto flex justify-center">
+                    <ModeToggle />
                     <AuthButtons />
                   </div>
                   {isSignedIn && (
@@ -189,31 +197,25 @@ export default function Header() {
                         <div className="flex items-center space-x-3">
                           <Avatar className="h-10 w-10">
                             <AvatarImage
-                              src={user?.imageUrl}
-                              alt={user?.firstName || "User"}
+                              src={user?.photoURL || undefined}
+                              alt={user?.displayName || "User"}
                             />
                             <AvatarFallback>
-                              {user?.firstName?.charAt(0)}
-                              {user?.lastName?.charAt(0)}
+                              {user?.displayName?.charAt(0) ||
+                                user?.email?.charAt(0) ||
+                                "U"}
                             </AvatarFallback>
                           </Avatar>
                           <div>
                             <p className="text-sm font-medium">
-                              {user?.firstName} {user?.lastName}
+                              {user?.displayName || user?.email}
                             </p>
-                            <p className="text-xs text-gray-500">
-                              {user?.primaryEmailAddress?.emailAddress}
+                            <p className="text-xs text-muted-foreground">
+                              {user?.email}
                             </p>
                           </div>
                         </div>
-                        <UserButton
-                          afterSignOutUrl="/"
-                          appearance={{
-                            elements: {
-                              avatarBox: "w-10 h-10",
-                            },
-                          }}
-                        />
+                        {/* Sign-out handled inside Account or via a simple button elsewhere */}
                       </div>
                     </div>
                   )}

@@ -1,62 +1,66 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useSignIn } from "@clerk/nextjs";
-import {
-  getClerkErrorMessage,
-  getRedirectUrlComplete,
-  getAfterPath,
-} from "@/lib/auth";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
+import { useEffect } from "react";
 
-export default function SignInPage() {
+function SignInInner() {
   const router = useRouter();
-  const { isLoaded, signIn, setActive } = useSignIn();
+  const search = useSearchParams();
+  const { signIn, signInWithGoogle } = useFirebaseAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const afterPath = getAfterPath("sign-in");
-  const redirectUrlComplete = getRedirectUrlComplete(afterPath);
+  const redirectUrlComplete = search.get("redirect_url") || "/dashboard";
 
-  // error handled via util
+  // Auto-trigger Google sign-in if requested via query
+  useEffect(() => {
+    const qp = search;
+    const provider = qp.get("provider");
+    const googleFlag = qp.get("google");
+    if (
+      (provider === "google" || googleFlag === "1") &&
+      typeof window !== "undefined"
+    ) {
+      (async () => {
+        try {
+          await signInWithGoogle();
+          router.replace(redirectUrlComplete);
+        } catch {
+          // Ignore; user can use the button manually
+        }
+      })();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function handlePasswordSignIn(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!isLoaded) return;
     setError(null);
     setLoading(true);
     try {
-      const result = await signIn.create({ identifier: email, password });
-      if (result.status === "complete") {
-        await setActive({ session: result.createdSessionId });
-        try {
-          window.postMessage({ type: "CLERK_AUTH_SUCCESS" }, "*");
-        } catch {}
-        router.replace(redirectUrlComplete);
-      } else {
-        setError("Additional steps required. Unsupported flow.");
-      }
+      await signIn(email, password);
+      router.replace(redirectUrlComplete);
     } catch (err: unknown) {
-      setError(getClerkErrorMessage(err, "Sign in failed"));
+      const e = err as { message?: string };
+      setError(e?.message || "Sign in failed");
     } finally {
       setLoading(false);
     }
   }
 
   async function handleGoogle() {
-    if (!isLoaded) return;
     setError(null);
     try {
-      await signIn.authenticateWithRedirect({
-        strategy: "oauth_google",
-        redirectUrl: "/sso-callback",
-        redirectUrlComplete,
-      });
-    } catch (err: unknown) {
-      setError(getClerkErrorMessage(err, "Google sign-in failed"));
+      await signInWithGoogle();
+      router.replace(redirectUrlComplete);
+      } catch (err: unknown) {
+      const e = err as { message?: string };
+      setError(e?.message || "Google sign-in failed");
     }
   }
 
@@ -117,12 +121,22 @@ export default function SignInPage() {
           Don’t have an account?{" "}
           <a
             className="underline"
-            href={`/sign-up?redirect_url=${encodeURIComponent(redirectUrlComplete)}`}
+            href={`/sign-up?redirect_url=${encodeURIComponent(
+              redirectUrlComplete
+            )}`}
           >
             Sign up
           </a>
         </div>
       </div>
     </main>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={null}>
+      <SignInInner />
+    </Suspense>
   );
 }

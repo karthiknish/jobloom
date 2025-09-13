@@ -133,17 +133,17 @@ export async function importJobsFromCSV(userId: string, csvData: string): Promis
     }
     
     // Send to API
-    const response = await fetch("/api/convex/jobs/import", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        userId,
-        jobs,
-        source: "csv",
-      }),
-    });
+  const response = await fetch("/api/app/jobs/import", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      userId,
+      jobs,
+      source: "csv",
+    }),
+  });
     
     if (!response.ok) {
       const errorData = await response.json();
@@ -174,18 +174,18 @@ export async function importJobsFromAPI(
 ): Promise<ImportResult> {
   try {
     // Send to API
-    const response = await fetch("/api/convex/jobs/import-api", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        userId,
-        source,
-        searchQuery,
-        location,
-      }),
-    });
+  const response = await fetch("/api/app/jobs/import-api", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      userId,
+      source,
+      searchQuery,
+      location,
+    }),
+  });
     
     if (!response.ok) {
       const errorData = await response.json();

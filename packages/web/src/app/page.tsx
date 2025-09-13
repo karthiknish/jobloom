@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { SignUpButton } from "@clerk/nextjs";
-import { auth } from "@clerk/nextjs/server";
+// Clerk imports removed as part of Firebase migration
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -14,7 +13,8 @@ import { playfair } from "@/font";
 import TestimonialSection from "@/components/custom/TestimonialSection";
 
 export default async function Home() {
-  const { userId } = await auth();
+  // TODO: Replace with Firebase server-side auth if needed. For now assume logged-out.
+  const userId = null as string | null;
 
   return (
     <div className="min-h-screen bg-white">
@@ -52,11 +52,9 @@ export default async function Home() {
                 </Button>
               ) : (
                 <>
-                  <SignUpButton mode="modal">
-                    <Button size="lg" className="text-lg px-8 py-6">
-                      Start Free Today
-                    </Button>
-                  </SignUpButton>
+                  <Button asChild size="lg" className="text-lg px-8 py-6">
+                    <Link href="/sign-up">Start Free Today</Link>
+                  </Button>
                   <Button
                     asChild
                     size="lg"
@@ -508,14 +506,13 @@ export default async function Home() {
                 <Link href="/dashboard">Go to Dashboard</Link>
               </Button>
             ) : (
-              <SignUpButton mode="modal">
-                <Button
-                  size="lg"
-                  className="text-lg px-8 py-6 bg-white text-primary hover:bg-gray-100"
-                >
-                  Start Free Today
-                </Button>
-              </SignUpButton>
+              <Button
+                asChild
+                size="lg"
+                className="text-lg px-8 py-6 bg-white text-primary hover:bg-gray-100"
+              >
+                <Link href="/sign-up">Start Free Today</Link>
+              </Button>
             )}
           </div>
           <p className="mt-4 text-sm text-gray-500  ">

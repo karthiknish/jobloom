@@ -1,13 +1,56 @@
-import type { Doc } from "@convex-generated/dataModel";
-
-// Define Id type for Convex
-export type Id<T extends string> = string & { __tableName: T };
+// Minimal Firebase-backed types replacing Convex Doc utilities
+export type Id<T extends string> = string & { __tableName?: T };
 
 // Define types for the sponsored companies
-export type SponsoredCompany = Doc<"sponsoredCompanies">;
+export interface SponsoredCompany {
+  _id: string; // Firestore doc id
+  name: string;
+  aliases: string[];
+  sponsorshipType: string;
+  description?: string;
+  website?: string;
+  industry?: string;
+  createdBy: string;
+  createdAt: number;
+  updatedAt?: number;
+}
 
 // Define types for CV analysis
-export type CvAnalysis = Doc<"cvAnalyses">;
+export interface CvAnalysis {
+  _id: string; // Firestore doc id
+  userId: string;
+  // File naming can vary; include both for compatibility
+  filename?: string;
+  fileName?: string;
+  fileSize?: number;
+  fileUrl?: string;
+  analysisStatus: "pending" | "processing" | "completed" | "failed" | "error";
+  score?: number;
+  overallScore?: number;
+  errorMessage?: string;
+  strengths?: string[];
+  weaknesses?: string[];
+  recommendations?: string[];
+  missingSkills?: string[];
+  atsCompatibility?: { score: number; issues?: string[]; suggestions?: string[] };
+  summary?: string;
+  createdAt: number;
+  updatedAt?: number;
+  keywordAnalysis?: {
+    presentKeywords?: string[];
+    missingKeywords?: string[];
+    keywordDensity: number;
+  };
+  industryAlignment?: { score: number; feedback: string };
+  sectionAnalysis?: {
+    hasSummary: boolean;
+    hasExperience: boolean;
+    hasEducation: boolean;
+    hasSkills: boolean;
+    hasContact: boolean;
+    missingsections?: string[];
+  };
+}
 
 // Define types for sponsorship stats
 export interface SponsorshipStats {

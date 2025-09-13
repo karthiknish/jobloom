@@ -1,10 +1,17 @@
 // utils/api/admin.ts
-import { convexApi } from "../../services/api/convexApi";
 import type { SponsoredCompany, SponsorshipStats } from "../../types/convex";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  addDoc,
+  updateDoc,
+} from "firebase/firestore";
+import { getDb, getAuthClient } from "@/firebase/client";
 
 export interface UserRecord {
   _id: string;
-  clerkId?: string;
   isAdmin?: boolean;
   email: string;
   name: string;
@@ -23,17 +30,113 @@ export interface SponsorshipRule {
   updatedAt: number;
 }
 
+type FireUser = {
+  email?: string;
+  name?: string;
+  isAdmin?: boolean;
+  createdAt?: number;
+  updatedAt?: number;
+};
+
+type FireCompany = {
+  name: string;
+  aliases?: string[];
+  sponsorshipType?: string;
+  description?: string;
+  website?: string;
+  industry?: string;
+  isActive?: boolean;
+  createdAt?: number;
+  updatedAt?: number;
+};
+
+type FireRule = {
+  name: string;
+  description?: string;
+  jobSite: string;
+  selectors?: string[];
+  keywords?: string[];
+  isActive?: boolean;
+  createdAt?: number;
+  updatedAt?: number;
+};
+
 export const adminApi = {
-  getUserByClerkId: async (clerkId: string): Promise<UserRecord> => {
-    return convexApi.getUserByClerkId(clerkId);
+  // Fetch user doc by Firebase UID; create minimal doc if missing
+  getUserByFirebaseUid: async (firebaseUid: string): Promise<UserRecord> => {
+    const db = getDb();
+    if (!db) throw new Error("Firestore not initialized");
+    const userRef = doc(db, "users", firebaseUid);
+    const snap = await getDoc(userRef);
+    if (snap.exists()) {
+      const d = snap.data() as FireUser;
+      return {
+        _id: snap.id,
+        email: d.email ?? "",
+        name: d.name ?? "",
+        isAdmin: d.isAdmin ?? false,
+        createdAt: typeof d.createdAt === "number" ? d.createdAt : Date.now(),
+      };
+    }
+    const auth = getAuthClient();
+    const u = auth?.currentUser;
+    const payload: FireUser = {
+      email: u?.email ?? "",
+      name: u?.displayName ?? "",
+      createdAt: Date.now(),
+      isAdmin: false,
+    };
+    const { setDoc } = await import("firebase/firestore");
+    await setDoc(userRef, payload, { merge: true });
+    return {
+      _id: firebaseUid,
+      email: payload.email ?? "",
+      name: payload.name ?? "",
+      isAdmin: false,
+      createdAt: payload.createdAt ?? Date.now(),
+    };
   },
 
+  // Backward alias removed; use getUserByFirebaseUid instead of any Clerk naming
+
   getAllSponsoredCompanies: async (): Promise<SponsoredCompany[]> => {
-    return convexApi.getAllSponsoredCompanies();
+    const db = getDb();
+    if (!db) throw new Error("Firestore not initialized");
+    const snap = await getDocs(collection(db, "sponsoredCompanies"));
+    return snap.docs.map((d) => {
+      const data = d.data() as FireCompany;
+      return {
+        _id: d.id,
+        name: data.name,
+        aliases: Array.isArray(data.aliases) ? data.aliases : [],
+        sponsorshipType: data.sponsorshipType ?? "sponsored",
+        description: data.description ?? "",
+        website: data.website ?? "",
+        industry: data.industry ?? "",
+        createdAt: data.createdAt ?? Date.now(),
+        updatedAt: data.updatedAt ?? Date.now(),
+        isActive: data.isActive ?? true,
+      } as unknown as SponsoredCompany;
+    });
   },
 
   getSponsorshipStats: async (): Promise<SponsorshipStats> => {
-    return convexApi.getSponsorshipStats();
+    const companies = await adminApi.getAllSponsoredCompanies();
+    const industryStats: Record<string, number> = {};
+    const sponsorshipTypeStats: Record<string, number> = {};
+    type MinimalCompany = { industry?: string; sponsorshipType?: string };
+    companies.forEach((c) => {
+      const mc = c as unknown as MinimalCompany;
+      const ind = mc.industry || "Unknown";
+      industryStats[ind] = (industryStats[ind] ?? 0) + 1;
+      const type = mc.sponsorshipType || "sponsored";
+      sponsorshipTypeStats[type] = (sponsorshipTypeStats[type] ?? 0) + 1;
+    });
+    return {
+      totalSponsoredCompanies: companies.length,
+      industryStats,
+      sponsorshipTypeStats,
+    };
   },
 
   addSponsoredCompany: async (data: {
@@ -45,29 +148,106 @@ export const adminApi = {
     industry?: string;
     createdBy: string;
   }): Promise<{ companyId: string }> => {
-    return convexApi.addSponsoredCompany(data);
+    const db = getDb();
+    if (!db) throw new Error("Firestore not initialized");
+    const payload = {
+      name: data.name,
+      aliases: data.aliases ?? [],
+      sponsorshipType: data.sponsorshipType,
+      description: data.description ?? "",
+      website: data.website ?? "",
+      industry: data.industry ?? "",
+      createdBy: data.createdBy,
+      isActive: true,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+    const res = await addDoc(collection(db, "sponsoredCompanies"), payload);
+    return { companyId: res.id };
   },
 
   isUserAdmin: async (userId: string): Promise<boolean> => {
-    return convexApi.isUserAdmin(userId);
+    const db = getDb();
+    if (!db) throw new Error("Firestore not initialized");
+    const snap = await getDoc(doc(db, "users", userId));
+    const data = snap.exists() ? (snap.data() as FireUser) : undefined;
+    return !!(data && data.isAdmin === true);
   },
 
-  setAdminUser: async (userId: string, requesterId: string): Promise<void> => {
-    await convexApi.setAdminUser(userId, requesterId);
+  setAdminUser: async (userId: string, _requesterId: string): Promise<void> => {
+    const db = getDb();
+    if (!db) throw new Error("Firestore not initialized");
+    void _requesterId;
+    // NOTE: No server-side enforcement; assumes UI gating.
+    await updateDoc(doc(db, "users", userId), {
+      isAdmin: true,
+      updatedAt: Date.now(),
+    }).catch(async () => {
+      const { setDoc } = await import("firebase/firestore");
+      await setDoc(
+        doc(db, "users", userId),
+        { isAdmin: true, updatedAt: Date.now() },
+        { merge: true }
+      );
+    });
   },
 
-  removeAdminUser: async (userId: string, requesterId: string): Promise<void> => {
-    await convexApi.removeAdminUser(userId, requesterId);
+  removeAdminUser: async (
+    userId: string,
+    _requesterId: string
+  ): Promise<void> => {
+    const db = getDb();
+    if (!db) throw new Error("Firestore not initialized");
+    void _requesterId;
+    await updateDoc(doc(db, "users", userId), {
+      isAdmin: false,
+      updatedAt: Date.now(),
+    }).catch(async () => {
+      const { setDoc } = await import("firebase/firestore");
+      await setDoc(
+        doc(db, "users", userId),
+        { isAdmin: false, updatedAt: Date.now() },
+        { merge: true }
+      );
+    });
   },
 
   // User management
   getAllUsers: async (): Promise<UserRecord[]> => {
-    return convexApi.getAllUsers();
+    const db = getDb();
+    if (!db) throw new Error("Firestore not initialized");
+    const snap = await getDocs(collection(db, "users"));
+    return snap.docs.map((d) => {
+      const data = d.data() as FireUser;
+      return {
+        _id: d.id,
+        email: data.email ?? "",
+        name: data.name ?? "",
+        isAdmin: !!data.isAdmin,
+        createdAt: data.createdAt ?? Date.now(),
+      } as UserRecord;
+    });
   },
 
   // Sponsorship rules
   getAllSponsorshipRules: async (): Promise<SponsorshipRule[]> => {
-    return convexApi.getAllSponsorshipRules();
+    const db = getDb();
+    if (!db) throw new Error("Firestore not initialized");
+    const snap = await getDocs(collection(db, "sponsorshipRules"));
+    return snap.docs.map((d) => {
+      const data = d.data() as FireRule;
+      return {
+        _id: d.id,
+        name: data.name ?? "",
+        description: data.description ?? "",
+        jobSite: data.jobSite ?? "",
+        selectors: Array.isArray(data.selectors) ? data.selectors : [],
+        keywords: Array.isArray(data.keywords) ? data.keywords : [],
+        isActive: data.isActive ?? true,
+        createdAt: data.createdAt ?? Date.now(),
+        updatedAt: data.updatedAt ?? Date.now(),
+      } as SponsorshipRule;
+    });
   },
 
   addSponsorshipRule: async (data: {
@@ -78,10 +258,28 @@ export const adminApi = {
     keywords: string[];
     isActive: boolean;
   }): Promise<{ ruleId: string }> => {
-    return convexApi.addSponsorshipRule(data);
+    const db = getDb();
+    if (!db) throw new Error("Firestore not initialized");
+    const payload = {
+      ...data,
+      selectors: data.selectors ?? [],
+      keywords: data.keywords ?? [],
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+    const res = await addDoc(collection(db, "sponsorshipRules"), payload);
+    return { ruleId: res.id };
   },
 
-  updateSponsorshipRuleStatus: async (ruleId: string, isActive: boolean): Promise<void> => {
-    await convexApi.updateSponsorshipRuleStatus(ruleId, isActive);
-  }
+  updateSponsorshipRuleStatus: async (
+    ruleId: string,
+    isActive: boolean
+  ): Promise<void> => {
+    const db = getDb();
+    if (!db) throw new Error("Firestore not initialized");
+    await updateDoc(doc(db, "sponsorshipRules", ruleId), {
+      isActive,
+      updatedAt: Date.now(),
+    });
+  },
 };

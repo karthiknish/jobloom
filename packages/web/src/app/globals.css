@@ -38,9 +38,64 @@ html {
   --color-ring: #b86e37;
 }
 
+/* Dark theme tokens */
+.dark {
+  --color-background: #0b0b0e;
+  --color-foreground: #e5e7eb;
+
+  --color-muted: #111217;
+  --color-muted-foreground: #9ca3af;
+
+  --color-popover: #0f1115;
+  --color-popover-foreground: #e5e7eb;
+
+  --color-border: #1f2937;
+  --color-input: #1f2937;
+
+  --color-card: #0f1115;
+  --color-card-foreground: #e5e7eb;
+
+  --color-primary: #d08a55;
+  --color-primary-foreground: #0b0b0e;
+
+  --color-secondary: #1a1b20;
+  --color-secondary-foreground: #e5e7eb;
+
+  --color-accent: #14161b;
+  --color-accent-foreground: #e5e7eb;
+
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #111827;
+
+  --color-ring: #d08a55;
+}
+
+/* Map to shadcn token names so UI components pick these up */
+:root {
+  --background: var(--color-background);
+  --foreground: var(--color-foreground);
+  --muted: var(--color-muted);
+  --muted-foreground: var(--color-muted-foreground);
+  --popover: var(--color-popover);
+  --popover-foreground: var(--color-popover-foreground);
+  --border: var(--color-border);
+  --input: var(--color-input);
+  --card: var(--color-card);
+  --card-foreground: var(--color-card-foreground);
+  --primary: var(--color-primary);
+  --primary-foreground: var(--color-primary-foreground);
+  --secondary: var(--color-secondary);
+  --secondary-foreground: var(--color-secondary-foreground);
+  --accent: var(--color-accent);
+  --accent-foreground: var(--color-accent-foreground);
+  --destructive: var(--color-destructive);
+  --destructive-foreground: var(--color-destructive-foreground);
+  --ring: var(--color-ring);
+}
+
 body {
-  background: hsl(var(--color-background));
-  color: hsl(var(--color-foreground));
+  background: var(--background);
+  color: var(--foreground);
   font-family: var(--font-sans);
 }
 

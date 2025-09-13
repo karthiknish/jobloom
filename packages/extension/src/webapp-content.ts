@@ -4,62 +4,28 @@
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "getUserId") {
     // Try to get user ID from various sources
-    let userId = null;
+    let userId: string | null = null;
 
-    // Method 1: Check if there's a Clerk user object in the global scope
-    if ((window as any).__clerk_user) {
-      userId = (window as any).__clerk_user.id;
+    // Method 1: Firebase signal on window from app provider
+    if ((window as any).__firebase_user?.id) {
+      userId = String((window as any).__firebase_user.id);
     }
 
-    // Method 2: Check localStorage for Clerk session
+    // Method 2: Check localStorage for firebase user
     if (!userId) {
       try {
-        const clerkSession = localStorage.getItem("__clerk_session");
-        if (clerkSession) {
-          const sessionData = JSON.parse(clerkSession);
-          userId = sessionData?.user?.id;
+        const firebaseUser = localStorage.getItem("__firebase_user");
+        if (firebaseUser) {
+          const data = JSON.parse(firebaseUser);
+          userId = data?.id ? String(data.id) : null;
         }
-      } catch (e) {
-        // Ignore parsing errors
-      }
+      } catch {}
     }
 
-    // Method 3: Check for user data in localStorage
+    // Method 3: Fallback DOM attribute
     if (!userId) {
-      try {
-        const userData =
-          localStorage.getItem("user") || localStorage.getItem("__clerk_user");
-        if (userData) {
-          const parsedData = typeof userData === "string" ? JSON.parse(userData) : userData;
-          userId = parsedData?.id || parsedData?.clerkId;
-        }
-      } catch (e) {
-        // Ignore parsing errors
-      }
-    }
-
-    // Method 4: Try to extract from DOM if user info is displayed
-    if (!userId) {
-      const userElements = document.querySelectorAll(
-        "[data-user-id], [data-clerk-user-id]",
-      );
-      if (userElements.length > 0) {
-        userId =
-          userElements[0].getAttribute("data-user-id") ||
-          userElements[0].getAttribute("data-clerk-user-id");
-      }
-    }
-
-    // Method 5: Check if we can access Clerk from window
-    if (!userId && (window as any).Clerk) {
-      try {
-        const clerk = (window as any).Clerk;
-        if (clerk.user) {
-          userId = clerk.user.id;
-        }
-      } catch (e) {
-        // Ignore errors
-      }
+      const el = document.querySelector("[data-user-id]");
+      if (el) userId = el.getAttribute("data-user-id");
     }
 
     sendResponse({ userId });
@@ -97,20 +63,21 @@ new MutationObserver(() => {
 window.addEventListener("message", (event) => {
   // Only accept messages from the same origin
   if (event.origin !== window.location.origin) return;
-  
-  // Handle Clerk authentication success message
-  if (event.data.type === "CLERK_AUTH_SUCCESS") {
+
+  // Handle Firebase authentication success message
+  if (event.data.type === "FIREBASE_AUTH_SUCCESS") {
     // Try to get user ID and notify extension
     setTimeout(() => {
-      let userId = null;
-      
-      // Try to get user ID from various sources
-      if ((window as any).__clerk_user) {
-        userId = (window as any).__clerk_user.id;
-      } else if ((window as any).Clerk && (window as any).Clerk.user) {
-        userId = (window as any).Clerk.user.id;
+      let userId: string | null = null;
+      if ((window as any).__firebase_user?.id) {
+        userId = String((window as any).__firebase_user.id);
+      } else {
+        try {
+          const s = localStorage.getItem("__firebase_user");
+          if (s) userId = JSON.parse(s)?.id ?? null;
+        } catch {}
       }
-      
+
       if (userId) {
         chrome.runtime.sendMessage({ action: "authSuccess", userId });
         // Also persist directly
@@ -118,18 +85,62 @@ window.addEventListener("message", (event) => {
       }
     }, 1000);
   }
+
+  // Web page requests the extension to send settings to web (for syncing)
+  if (event.data.type === "JOBLOOM_REQUEST_SETTINGS_SYNC") {
+    try {
+      // Read extension settings and relay to background for upload if needed
+      chrome.storage.sync.get([
+        "webAppUrl",
+        "defaultKeywords",
+        "defaultConnectionLevel",
+        "autoConnectLimit",
+        "autoMessage",
+        "connectionMessage",
+        "autofillProfile",
+        "firebaseUid",
+        "userId",
+      ], async (res) => {
+        const uid = res.firebaseUid || res.userId;
+        if (!uid) return;
+        const base = (res.webAppUrl || window.location.origin).replace(/\/$/, "");
+        const body = {
+          defaultKeywords: res.defaultKeywords,
+          defaultConnectionLevel: res.defaultConnectionLevel,
+          autoConnectLimit: res.autoConnectLimit,
+          autoMessage: res.autoMessage,
+          connectionMessage: res.connectionMessage,
+          autofillProfile: res.autofillProfile,
+        };
+        try {
+          await fetch(`${base}/api/app/users/${encodeURIComponent(uid)}/settings`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
+        } catch {
+          // ignore failures
+        }
+      });
+    } catch {
+      // ignore
+    }
+  }
 });
 
 // After existing listener for onMessage, add auto-detection
 
-// --- Auto-detect Clerk user and notify background ---
+// --- Auto-detect Firebase user and notify background ---
 function trySendUserId() {
   let userId: string | null = null;
   const w: any = window;
-  if (w.Clerk && w.Clerk.user) {
-    userId = w.Clerk.user.id;
-  } else if (w.__clerk_user) {
-    userId = w.__clerk_user.id;
+  if (w.__firebase_user?.id) {
+    userId = String(w.__firebase_user.id);
+  } else {
+    try {
+      const s = localStorage.getItem("__firebase_user");
+      if (s) userId = JSON.parse(s)?.id ?? null;
+    } catch {}
   }
   if (userId) {
     chrome.runtime.sendMessage({ action: "authSuccess", userId });

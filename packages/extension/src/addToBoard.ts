@@ -1,3 +1,4 @@
+import { DEFAULT_WEB_APP_URL } from "./constants";
 // addToBoard.ts - Utility functions for adding jobs to the user's board
 
 interface JobData {
@@ -31,18 +32,18 @@ interface JobBoardEntry {
 }
 
 export class JobBoardManager {
-  private static async getConvexUrl(): Promise<string> {
+  private static async getWebAppUrl(): Promise<string> {
     return new Promise((resolve) => {
-      chrome.storage.sync.get(["convexUrl"], (result) => {
-        resolve(result.convexUrl || "https://rare-chihuahua-615.convex.cloud");
+      chrome.storage.sync.get(["webAppUrl"], (result) => {
+  resolve(result.webAppUrl || DEFAULT_WEB_APP_URL);
       });
     });
   }
 
   private static async getUserId(): Promise<string | null> {
     return new Promise((resolve) => {
-      chrome.storage.sync.get(["convexUserId"], (result) => {
-        resolve(result.convexUserId || null);
+      chrome.storage.sync.get(["firebaseUid", "userId"], (result) => {
+        resolve(result.firebaseUid || result.userId || null);
       });
     });
   }
@@ -89,43 +90,27 @@ export class JobBoardManager {
         };
       }
 
-      // Get Convex URL
-      const convexUrl = await this.getConvexUrl();
-      if (
-        !convexUrl ||
-        convexUrl === "https://your-convex-deployment.convex.cloud"
-      ) {
-        return {
-          success: false,
-          message:
-            "Convex URL not configured. Please set it in extension settings.",
-        };
-      }
+      // Get Web App URL
+      const webAppUrl = (await this.getWebAppUrl()).replace(/\/$/, "");
 
       // Generate client ID for rate limiting
       const clientId = await this.getOrCreateClientId();
 
-      // Send job data to Convex
-      const response = await fetch(`${convexUrl}/api/mutation`, {
+      // Create job via web API
+  const response = await fetch(`${webAppUrl}/api/app/jobs`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          path: "jobs:createJob",
-          args: {
-            title: jobData.title,
-            company: jobData.company,
-            location: jobData.location,
-            url: jobData.url,
-            description: jobData.description || undefined,
-            salary: jobData.salary || undefined,
-            isSponsored: jobData.isSponsored,
-            isRecruitmentAgency: jobData.isRecruitmentAgency || false,
-            source: "extension",
-            userId: userId,
-            clientId: clientId,
-          },
+          title: jobData.title,
+          company: jobData.company,
+          location: jobData.location,
+          url: jobData.url,
+          description: jobData.description || undefined,
+          salary: jobData.salary || undefined,
+          isSponsored: jobData.isSponsored,
+          isRecruitmentAgency: jobData.isRecruitmentAgency || false,
+          source: "extension",
+          userId: userId,
         }),
       });
 
@@ -146,21 +131,17 @@ export class JobBoardManager {
         // Create application with selected status if we have a job id
         if (createdJobId) {
           try {
-            await fetch(`${convexUrl}/api/mutation`, {
+            await fetch(`${webAppUrl}/api/app/applications`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
-                path: "applications:createApplication",
-                args: {
-                  jobId: createdJobId,
-                  userId: userId,
-                  status: status,
-                  appliedDate: status === "applied" ? Date.now() : undefined,
-                },
+                jobId: createdJobId,
+                userId: userId,
+                status: status,
+                appliedDate: status === "applied" ? Date.now() : undefined,
               }),
             });
           } catch (e) {
-            // Non-fatal: job was created, application creation failed
             console.warn("Failed to create application with status", e);
           }
         }
@@ -215,26 +196,16 @@ export class JobBoardManager {
 
   public static async checkIfJobExists(jobData: JobData): Promise<boolean> {
     try {
-       const userId = await this.getUserId();
+      const userId = await this.getUserId();
       if (!userId) return false;
 
-      const convexUrl = await this.getConvexUrl();
+      const base = (await this.getWebAppUrl()).replace(/\/$/, "");
       const clientId = await this.getOrCreateClientId();
 
       // Check if job already exists in user's job board
-      const response = await fetch(`${convexUrl}/api/query`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          path: "jobs:getUserJobs",
-          args: {
-            userId: userId,
-            clientId: clientId,
-          },
-        }),
-      });
+      const response = await fetch(
+  `${base}/api/app/jobs/user/${encodeURIComponent(userId)}`
+      );
 
       if (response.ok) {
         const userJobs = await response.json();

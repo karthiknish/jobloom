@@ -200,7 +200,9 @@ export function CvAnalysisHistory({ analyses }: CvAnalysisHistoryProps) {
                         )}
                       </span>
                       <span>•</span>
-                      <span>{(analysis.fileSize / 1024).toFixed(1)} KB</span>
+                      {typeof analysis.fileSize === "number" && (
+                        <span>{(analysis.fileSize / 1024).toFixed(1)} KB</span>
+                      )}
                       {analysis.overallScore && (
                         <>
                           <span>•</span>

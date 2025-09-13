@@ -1,80 +1,67 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useSignUp } from "@clerk/nextjs";
-import {
-  getClerkErrorMessage,
-  getRedirectUrlComplete,
-  getAfterPath,
-} from "@/lib/auth";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
+import { useEffect } from "react";
 
-export default function SignUpPage() {
+function SignUpInner() {
   const router = useRouter();
-  const { isLoaded, signUp, setActive } = useSignUp();
+  const search = useSearchParams();
+  const { signUp, signInWithGoogle } = useFirebaseAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [code, setCode] = useState("");
-  const [pendingVerification, setPendingVerification] = useState(false);
+  const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const afterPath = getAfterPath("sign-up");
-  const redirectUrlComplete = getRedirectUrlComplete(afterPath);
+  const redirectUrlComplete = search.get("redirect_url") || "/dashboard";
 
-  // error handled via util
+  // Auto-trigger Google sign-up if requested via query
+  useEffect(() => {
+    const qp = search;
+    const provider = qp.get("provider");
+    const googleFlag = qp.get("google");
+    if (
+      (provider === "google" || googleFlag === "1") &&
+      typeof window !== "undefined"
+    ) {
+      (async () => {
+        try {
+          await signInWithGoogle();
+          router.replace(redirectUrlComplete);
+        } catch {
+          // Ignore; user can use the button manually
+        }
+      })();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function handleStartSignUp(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!isLoaded) return;
     setError(null);
     setLoading(true);
     try {
-      await signUp.create({ emailAddress: email, password });
-      await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
-      setPendingVerification(true);
+      await signUp(email, password, name || undefined);
+      router.replace(redirectUrlComplete);
     } catch (err: unknown) {
-      setError(getClerkErrorMessage(err, "Sign up failed"));
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleVerify(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    if (!isLoaded) return;
-    setError(null);
-    setLoading(true);
-    try {
-      const res = await signUp.attemptEmailAddressVerification({ code });
-      if (res.status === "complete") {
-        await setActive({ session: res.createdSessionId });
-        try {
-          window.postMessage({ type: "CLERK_AUTH_SUCCESS" }, "*");
-        } catch {}
-        router.replace(redirectUrlComplete);
-      } else {
-        setError("Verification not complete");
-      }
-    } catch (err: unknown) {
-      setError(getClerkErrorMessage(err, "Verification failed"));
+      const e = err as { message?: string };
+      setError(e?.message || "Sign up failed");
     } finally {
       setLoading(false);
     }
   }
 
   async function handleGoogle() {
-    if (!isLoaded) return;
     setError(null);
     try {
-      await signUp.authenticateWithRedirect({
-        strategy: "oauth_google",
-        redirectUrl: "/sso-callback",
-        redirectUrlComplete,
-      });
+      await signInWithGoogle();
+      router.replace(redirectUrlComplete);
     } catch (err: unknown) {
-      setError(getClerkErrorMessage(err, "Google sign-up failed"));
+      const e = err as { message?: string };
+      setError(e?.message || "Google sign-up failed");
     }
   }
 
@@ -87,66 +74,53 @@ export default function SignUpPage() {
             {error}
           </div>
         )}
-        {!pendingVerification ? (
-          <form onSubmit={handleStartSignUp} className="space-y-3">
-            <div>
-              <label className="mb-1 block text-sm text-[var(--color-muted-foreground,#71717a)]">
-                Email
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full rounded border border-[var(--color-input,#e4e4e7)] px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--color-ring,#b86e37)]"
-                placeholder="you@example.com"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm text-[var(--color-muted-foreground,#71717a)]">
-                Password
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full rounded border border-[var(--color-input,#e4e4e7)] px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--color-ring,#b86e37)]"
-                placeholder="••••••••"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="mt-2 w-full rounded bg-[var(--color-primary,#b86e37)] px-3 py-2 text-sm font-semibold text-[var(--color-primary-foreground,#fff)] hover:brightness-95 disabled:opacity-60"
-            >
-              {loading ? "Creating..." : "Create account"}
-            </button>
-          </form>
-        ) : (
-          <form onSubmit={handleVerify} className="space-y-3">
-            <div>
-              <label className="mb-1 block text-sm text-[var(--color-muted-foreground,#71717a)]">
-                Verification code
-              </label>
-              <input
-                type="text"
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                required
-                className="w-full rounded border border-[var(--color-input,#e4e4e7)] px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--color-ring,#b86e37)]"
-                placeholder="123456"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="mt-2 w-full rounded bg-[var(--color-primary,#b86e37)] px-3 py-2 text-sm font-semibold text-[var(--color-primary-foreground,#fff)] hover:brightness-95 disabled:opacity-60"
-            >
-              {loading ? "Verifying..." : "Verify & continue"}
-            </button>
-          </form>
-        )}
+        <form onSubmit={handleStartSignUp} className="space-y-3">
+          <div>
+            <label className="mb-1 block text-sm text-[var(--color-muted-foreground,#71717a)]">
+              Name (optional)
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full rounded border border-[var(--color-input,#e4e4e7)] px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--color-ring,#b86e37)]"
+              placeholder="Your name"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm text-[var(--color-muted-foreground,#71717a)]">
+              Email
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full rounded border border-[var(--color-input,#e4e4e7)] px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--color-ring,#b86e37)]"
+              placeholder="you@example.com"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm text-[var(--color-muted-foreground,#71717a)]">
+              Password
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="w-full rounded border border-[var(--color-input,#e4e4e7)] px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--color-ring,#b86e37)]"
+              placeholder="••••••••"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="mt-2 w-full rounded bg-[var(--color-primary,#b86e37)] px-3 py-2 text-sm font-semibold text-[var(--color-primary-foreground,#fff)] hover:brightness-95 disabled:opacity-60"
+          >
+            {loading ? "Creating..." : "Create account"}
+          </button>
+        </form>
         <div className="my-3 text-center text-xs text-[var(--color-muted-foreground,#71717a)]">
           or
         </div>
@@ -160,12 +134,22 @@ export default function SignUpPage() {
           Already have an account?{" "}
           <a
             className="underline"
-            href={`/sign-in?redirect_url=${encodeURIComponent(redirectUrlComplete)}`}
+            href={`/sign-in?redirect_url=${encodeURIComponent(
+              redirectUrlComplete
+            )}`}
           >
             Sign in
           </a>
         </div>
       </div>
     </main>
+  );
+}
+
+export default function SignUpPage() {
+  return (
+    <Suspense fallback={null}>
+      <SignUpInner />
+    </Suspense>
   );
 }

@@ -1,4 +1,31 @@
 /// <reference types="chrome" />
+import { DEFAULT_WEB_APP_URL } from "./constants";
+
+// Toast helper (top-level so all functions can use it)
+function showToast(
+  message: string,
+  opts: { type?: "success" | "info" | "warning" | "error"; duration?: number } = {}
+) {
+  const { type = "info", duration = 2500 } = opts;
+  const root = document.getElementById("toast-root");
+  if (!root) return;
+  const el = document.createElement("div");
+  el.className = `toast ${type}`;
+  const icon =
+    type === "success" ? "✅" : type === "warning" ? "⚠️" : type === "error" ? "❌" : "🔔";
+  el.innerHTML = `
+    <span class="icon">${icon}</span>
+    <div class="message">${message}</div>
+    <button class="close" aria-label="Close">×</button>
+  `;
+  const remove = () => {
+    el.style.animation = "toast-out 150ms ease-in forwards";
+    setTimeout(() => el.remove(), 160);
+  };
+  el.querySelector(".close")?.addEventListener("click", remove);
+  root.appendChild(el);
+  setTimeout(remove, duration);
+}
 
 document.addEventListener("DOMContentLoaded", () => {
   const highlightBtn = document.getElementById("highlight-btn");
@@ -8,18 +35,19 @@ document.addEventListener("DOMContentLoaded", () => {
   const openBoardBtn = document.getElementById("open-board-btn");
   const settingsLink = document.getElementById("settings-link");
   const signinBtn = document.getElementById("signin-btn");
+  const signinGoogleBtn = document.getElementById("signin-google-btn");
   const signupBtn = document.getElementById("signup-btn");
+  const signupGoogleBtn = document.getElementById("signup-google-btn");
   const signoutBtn = document.getElementById("signout-btn");
-  const clerkComponents = document.getElementById("clerk-components");
   const backToMainBtn = document.getElementById("back-to-main");
-  const authActions = document.querySelector(".auth-actions");
 
   loadStats();
   loadSettings();
 
   // Check authentication status
-  chrome.storage.sync.get(["convexUserId"], (res) => {
-    if (!res.convexUserId) {
+  chrome.storage.sync.get(["firebaseUid", "userId"], (res) => {
+    const uid = res.firebaseUid || res.userId;
+    if (!uid) {
       // Hide feature buttons and stats
       const stats = document.querySelector(".stats") as HTMLElement | null;
       const actions = document.querySelector(".actions") as HTMLElement | null;
@@ -65,15 +93,11 @@ document.addEventListener("DOMContentLoaded", () => {
       if (tabs[0]?.id) {
         chrome.storage.sync.get(["autofillProfile"], (result) => {
           if (!result.autofillProfile) {
-            // Show message to configure profile first
-            const btn = autofillBtn as HTMLButtonElement;
-            const originalText = btn.textContent;
-            btn.textContent = "⚠️ Setup Profile First";
-            btn.style.background = "#f59e0b";
-            setTimeout(() => {
-              btn.textContent = originalText;
-              btn.style.background = "#059669";
-            }, 3000);
+            // Show toast to configure profile first
+            showToast("Please configure your Autofill Profile in Settings.", {
+              type: "warning",
+              duration: 3000,
+            });
             return;
           }
 
@@ -92,15 +116,10 @@ document.addEventListener("DOMContentLoaded", () => {
           chrome.tabs.sendMessage(tabs[0].id, { action: "togglePeopleSearch" });
           window.close(); // Close popup after triggering
         } else {
-          // Show message to navigate to LinkedIn
-          const btn = peopleSearchBtn as HTMLButtonElement;
-          const originalText = btn.textContent;
-          btn.textContent = "⚠️ Open a LinkedIn Job Page";
-          btn.style.background = "#f59e0b";
-          setTimeout(() => {
-            btn.textContent = originalText;
-            btn.style.background = "#0a66c2";
-          }, 2000);
+          // Toast: navigate to LinkedIn
+          showToast("Open a LinkedIn Job page to use People Search.", {
+            type: "warning",
+          });
         }
       }
     });
@@ -117,7 +136,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   openBoardBtn?.addEventListener("click", () => {
     chrome.storage.sync.get(["webAppUrl"], (result) => {
-      const url = result.webAppUrl || "http://localhost:3000";
+      const url = result.webAppUrl || DEFAULT_WEB_APP_URL;
       chrome.tabs.create({ url });
     });
   });
@@ -127,40 +146,27 @@ document.addEventListener("DOMContentLoaded", () => {
     showSettings();
   });
 
-  // --- Authentication via Clerk hosted pages (no components) ---
-  function openAuthPage(mode: "sign-in" | "sign-up") {
+  // Authentication: open web app sign-in/up pages
+  function openAuthPage(mode: "sign-in" | "sign-up", provider?: "google") {
     chrome.storage.sync.get(["webAppUrl"], (result) => {
       const appBase = (
         result.webAppUrl ||
         process.env.WEB_APP_URL ||
-        "http://localhost:3000"
+        DEFAULT_WEB_APP_URL
       ).replace(/\/$/, "");
-      const afterPath = (
-        process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL || "/dashboard"
-      ).replace(/\/$/, "");
-      const redirect = encodeURIComponent(`${appBase}${afterPath}`);
-
-      const envUrl =
-        (mode === "sign-in"
-          ? process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL
-          : process.env.NEXT_PUBLIC_CLERK_SIGN_UP_URL) || "";
-
-      if (/^https?:\/\//i.test(envUrl)) {
-        const url = `${envUrl}${envUrl.includes("?") ? "&" : "?"}redirect_url=${redirect}`;
-        chrome.tabs.create({ url });
-        window.close();
-        return;
-      }
-
-      const fallbackPath = mode === "sign-in" ? "/sign-in" : "/sign-up";
-      const url = `${appBase}${fallbackPath}?redirect_url=${redirect}`;
+      const path = mode === "sign-in" ? "/sign-in" : "/sign-up";
+      const url = provider
+        ? `${appBase}${path}?provider=${provider}&google=1&redirect_url=${encodeURIComponent("/extension/connect")}`
+        : `${appBase}${path}?redirect_url=${encodeURIComponent("/extension/connect")}`;
       chrome.tabs.create({ url });
       window.close();
     });
   }
 
   signinBtn?.addEventListener("click", () => openAuthPage("sign-in"));
+  signinGoogleBtn?.addEventListener("click", () => openAuthPage("sign-in", "google"));
   signupBtn?.addEventListener("click", () => openAuthPage("sign-up"));
+  signupGoogleBtn?.addEventListener("click", () => openAuthPage("sign-up", "google"));
 
   backToMainBtn?.addEventListener("click", () => {
     // In API-based flow, just reload the popup to return to main UI
@@ -172,10 +178,10 @@ document.addEventListener("DOMContentLoaded", () => {
     signOut();
   });
 
-  // Clerk UI removed - we now open web app pages to authenticate.
+  // Authentication flows are handled in the web app using Firebase.
 
   async function signOut() {
-    chrome.storage.sync.remove(["convexUserId"], () => {
+    chrome.storage.sync.remove(["firebaseUid", "userId"], () => {
       // Attempt to clear any web-app session artifacts (optional)
       chrome.tabs.query({}, (tabs) => {
         tabs.forEach((tab) => {
@@ -187,8 +193,7 @@ document.addEventListener("DOMContentLoaded", () => {
               .executeScript({
                 target: { tabId: tab.id! },
                 func: () => {
-                  localStorage.removeItem("__clerk_user");
-                  localStorage.removeItem("__clerk_session");
+                  localStorage.removeItem("__firebase_user");
                 },
               })
               .catch(() => {
@@ -203,45 +208,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  function ensureUserExists(clerkId: string) {
-    chrome.storage.sync.get(["convexUrl"], async (result) => {
-      const convexUrl =
-        result.convexUrl ||
-        process.env.CONVEX_URL ||
-        "https://rare-chihuahua-615.convex.cloud";
-
-      if (!convexUrl || convexUrl.includes("your-convex")) return;
-
-      try {
-        // Check if user exists
-        const queryResp = await fetch(`${convexUrl}/api/query`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            path: "users:getUserByClerkId",
-            args: { clerkId },
-          }),
-        });
-
-        if (!queryResp.ok) return;
-        const existing = await queryResp.json();
-        if (existing) return; // user already present
-
-        // Create minimal user
-        await fetch(`${convexUrl}/api/mutation`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            path: "users:createUser",
-            args: { email: "", name: "", clerkId },
-          }),
-        });
-        console.log("Created user on Convex backend");
-      } catch (e) {
-        console.error("Error ensuring user exists", e);
-      }
-    });
-  }
+  // ensureUserExists is no longer needed with Firebase; web app handles user creation
 });
 
 function showAuthSuccessMessage() {
@@ -301,7 +268,7 @@ function showManualSetup() {
 
   document.getElementById("save-user-id")?.addEventListener("click", () => {
     const userIdInput = document.getElementById(
-      "manual-user-id",
+      "manual-user-id"
     ) as HTMLInputElement;
     const userId = userIdInput.value.trim();
 
@@ -333,14 +300,8 @@ function showSettings() {
 
     <div style="padding: 20px; max-height: 400px; overflow-y: auto;">
       <div style="margin-bottom: 16px;">
-        <label style="display: block; margin-bottom: 4px; font-weight: 600;">Convex URL:</label>
-        <input type="text" id="convex-url" placeholder="https://your-deployment.convex.cloud" 
-               style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;">
-      </div>
-      
-      <div style="margin-bottom: 16px;">
         <label style="display: block; margin-bottom: 4px; font-weight: 600;">Web App URL:</label>
-        <input type="text" id="web-app-url" placeholder="http://localhost:3000" 
+  <input type="text" id="web-app-url" placeholder="${DEFAULT_WEB_APP_URL}" 
                style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;">
       </div>
 
@@ -463,11 +424,8 @@ function showSettings() {
   `;
 
   // Load current settings
-  const DEFAULT_CONVEX_URL = process.env.CONVEX_URL;
-
   chrome.storage.sync.get(
     [
-      "convexUrl",
       "webAppUrl",
       "defaultKeywords",
       "defaultConnectionLevel",
@@ -477,59 +435,54 @@ function showSettings() {
       "autofillProfile",
     ],
     (result) => {
-      const convexUrlInput = document.getElementById(
-        "convex-url",
-      ) as HTMLInputElement;
       const webAppUrlInput = document.getElementById(
-        "web-app-url",
+        "web-app-url"
       ) as HTMLInputElement;
       const defaultKeywordsInput = document.getElementById(
-        "default-keywords",
+        "default-keywords"
       ) as HTMLInputElement;
       const defaultConnectionLevelSelect = document.getElementById(
-        "default-connection-level",
+        "default-connection-level"
       ) as HTMLSelectElement;
       const autoConnectLimitSelect = document.getElementById(
-        "auto-connect-limit",
+        "auto-connect-limit"
       ) as HTMLSelectElement;
       const autoMessageCheckbox = document.getElementById(
-        "auto-message",
+        "auto-message"
       ) as HTMLInputElement;
       const connectionMessageTextarea = document.getElementById(
-        "connection-message",
+        "connection-message"
       ) as HTMLTextAreaElement;
 
       // Autofill profile fields
       const firstNameInput = document.getElementById(
-        "first-name",
+        "first-name"
       ) as HTMLInputElement;
       const lastNameInput = document.getElementById(
-        "last-name",
+        "last-name"
       ) as HTMLInputElement;
       const emailInput = document.getElementById("email") as HTMLInputElement;
       const phoneInput = document.getElementById("phone") as HTMLInputElement;
       const currentTitleInput = document.getElementById(
-        "current-title",
+        "current-title"
       ) as HTMLInputElement;
       const experienceInput = document.getElementById(
-        "experience",
+        "experience"
       ) as HTMLInputElement;
       const linkedinUrlInput = document.getElementById(
-        "linkedin-url",
+        "linkedin-url"
       ) as HTMLInputElement;
       const salaryExpectationInput = document.getElementById(
-        "salary-expectation",
+        "salary-expectation"
       ) as HTMLInputElement;
       const workAuthorizationSelect = document.getElementById(
-        "work-authorization",
+        "work-authorization"
       ) as HTMLSelectElement;
       const coverLetterTextarea = document.getElementById(
-        "cover-letter",
+        "cover-letter"
       ) as HTMLTextAreaElement;
-
-      if (convexUrlInput) convexUrlInput.value = result.convexUrl || DEFAULT_CONVEX_URL;
       if (webAppUrlInput)
-        webAppUrlInput.value = result.webAppUrl || "http://localhost:3000";
+        webAppUrlInput.value = result.webAppUrl || DEFAULT_WEB_APP_URL;
       if (defaultKeywordsInput)
         defaultKeywordsInput.value = result.defaultKeywords || "";
       if (defaultConnectionLevelSelect)
@@ -568,7 +521,7 @@ function showSettings() {
         if (coverLetterTextarea)
           coverLetterTextarea.value = profile.preferences?.coverLetter || "";
       }
-    },
+    }
   );
 
   // Add event listeners
@@ -577,9 +530,6 @@ function showSettings() {
   });
 
   document.getElementById("save-settings")?.addEventListener("click", () => {
-    const convexUrl = (
-      document.getElementById("convex-url") as HTMLInputElement
-    ).value;
     const webAppUrl = (
       document.getElementById("web-app-url") as HTMLInputElement
     ).value;
@@ -643,9 +593,8 @@ function showSettings() {
       },
     };
 
-    chrome.storage.sync.set(
+  chrome.storage.sync.set(
       {
-        convexUrl,
         webAppUrl,
         defaultKeywords,
         defaultConnectionLevel,
@@ -655,16 +604,32 @@ function showSettings() {
         autofillProfile,
       },
       () => {
-        // Show success message
-        const saveBtn = document.getElementById("save-settings");
-        if (saveBtn) {
-          saveBtn.textContent = "✓ Saved!";
-          saveBtn.style.background = "#10b981";
-          setTimeout(() => {
-            location.reload();
-          }, 1000);
+    // Attempt to sync settings to web app if we have a user
+    chrome.storage.sync.get(["firebaseUid", "userId"], async (res) => {
+      const uid = res.firebaseUid || res.userId;
+      if (uid) {
+        try {
+          const base = (webAppUrl || DEFAULT_WEB_APP_URL).replace(/\/$/, "");
+          await fetch(`${base}/api/app/users/${encodeURIComponent(uid)}/settings`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              defaultKeywords,
+              defaultConnectionLevel,
+              autoConnectLimit,
+              autoMessage,
+              connectionMessage,
+              autofillProfile,
+            }),
+          });
+        } catch {
+          // ignore network errors; local save still succeeded
         }
-      },
+      }
+      showToast("Settings saved", { type: "success" });
+      setTimeout(() => location.reload(), 800);
+    });
+      }
     );
   });
 }
@@ -687,30 +652,6 @@ function loadStats() {
 }
 
 function loadSettings() {
-  const DEFAULT_CONVEX_URL = process.env.CONVEX_URL;
-  chrome.storage.sync.get(["convexUrl"], (result) => {
-    if (!result.convexUrl) {
-      // Persist the default so future loads skip this step
-      chrome.storage.sync.set({ convexUrl: DEFAULT_CONVEX_URL });
-    }
-
-    const url = result.convexUrl || DEFAULT_CONVEX_URL;
-
-    // Only warn if still placeholder string from template
-    if (url === "https://your-convex-deployment.convex.cloud") {
-      const warningDiv = document.createElement("div");
-      warningDiv.style.cssText = `
-        background: #fef3c7;
-        border: 1px solid #f59e0b;
-        color: #92400e;
-        padding: 8px;
-        border-radius: 4px;
-        margin: 10px;
-        font-size: 12px;
-        text-align: center;
-      `;
-      warningDiv.textContent = "⚠️ Please configure Convex URL in settings";
-      document.body.insertBefore(warningDiv, document.body.firstChild);
-    }
-  });
+  // No legacy settings needed anymore
+  return;
 }

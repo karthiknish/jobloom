@@ -1,17 +1,29 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
 import { EyeIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { 
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -22,7 +34,21 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { dashboardApi } from "@/utils/api/dashboard";
+import toast from "react-hot-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
 
 interface Job {
   _id: string;
@@ -58,20 +84,153 @@ interface JobListProps {
   onEditApplication: (application: Application) => void;
   onDeleteApplication: (applicationId: string) => void;
   onViewApplication: (application: Application) => void;
+  onChanged?: () => void;
 }
 
-export function JobList({ 
-  applications, 
-  onEditApplication, 
+export function JobList({
+  applications,
+  onEditApplication,
   onDeleteApplication,
-  onViewApplication
+  onViewApplication,
+  onChanged,
 }: JobListProps) {
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
-  const [showRecruitmentAgency, setShowRecruitmentAgency] = useState<boolean>(true);
+  const [showRecruitmentAgency, setShowRecruitmentAgency] =
+    useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [sortBy, setSortBy] = useState<string>("dateFound");
-  const [applicationToDelete, setApplicationToDelete] = useState<Application | null>(null);
+  // Restore filters from localStorage
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("joblist:filters");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (typeof parsed.selectedStatus === "string")
+          setSelectedStatus(parsed.selectedStatus);
+        if (typeof parsed.showRecruitmentAgency === "boolean")
+          setShowRecruitmentAgency(parsed.showRecruitmentAgency);
+        if (typeof parsed.searchQuery === "string")
+          setSearchQuery(parsed.searchQuery);
+        if (typeof parsed.sortBy === "string") setSortBy(parsed.sortBy);
+      }
+    } catch {}
+  }, []);
 
+  // Persist filters
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        "joblist:filters",
+        JSON.stringify({
+          selectedStatus,
+          showRecruitmentAgency,
+          searchQuery,
+          sortBy,
+        })
+      );
+    } catch {}
+  }, [selectedStatus, showRecruitmentAgency, searchQuery, sortBy]);
+  const [applicationToDelete, setApplicationToDelete] =
+    useState<Application | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkStatus, setBulkStatus] = useState<string>("applied");
+  const [bulkFollowUp, setBulkFollowUp] = useState<string>("");
+  const [savedViews, setSavedViews] = useState<
+    { id: string; name: string; filters: any }[]
+  >([]);
+  const [newViewName, setNewViewName] = useState("");
+  const [viewsOpen, setViewsOpen] = useState(false);
+  const [remindersOpen, setRemindersOpen] = useState(false);
+  const [reminderDate, setReminderDate] = useState("");
+  const [reminderEnable, setReminderEnable] = useState(true);
+  // ...existing code...
+  useEffect(() => {
+    dashboardApi
+      .getSavedViews()
+      .then(setSavedViews)
+      .catch(() => {});
+  }, []);
+
+  const saveCurrentView = async () => {
+    try {
+      await dashboardApi.saveSavedView({
+        name: newViewName || `View ${savedViews.length + 1}`,
+        filters: { selectedStatus, showRecruitmentAgency, searchQuery, sortBy },
+      });
+      setSavedViews(await dashboardApi.getSavedViews());
+      setNewViewName("");
+      toast.success("View saved");
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to save view");
+    }
+  };
+
+  const applySavedView = (id: string) => {
+    const v = savedViews.find((x) => x.id === id);
+    if (!v) return;
+    const f = v.filters || {};
+    if (typeof f.selectedStatus === "string")
+      setSelectedStatus(f.selectedStatus);
+    if (typeof f.showRecruitmentAgency === "boolean")
+      setShowRecruitmentAgency(f.showRecruitmentAgency);
+    if (typeof f.searchQuery === "string") setSearchQuery(f.searchQuery);
+    if (typeof f.sortBy === "string") setSortBy(f.sortBy);
+    toast.success(`Applied "${v.name}"`);
+  };
+
+  const deleteSavedView = async (id: string) => {
+    try {
+      await dashboardApi.deleteSavedView(id);
+      setSavedViews(await dashboardApi.getSavedViews());
+      toast.success("View deleted");
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to delete view");
+    }
+  };
+
+  const toggleSelect = (id: string, checked: boolean) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = (checked: boolean) => {
+    if (checked)
+      setSelectedIds(new Set(filteredAndSortedApplications.map((a) => a._id)));
+    else setSelectedIds(new Set());
+  };
+
+  const doBulkStatus = async () => {
+    try {
+      await dashboardApi.bulkUpdateApplicationsStatus(
+        Array.from(selectedIds),
+        bulkStatus
+      );
+      toast.success("Status updated");
+      setSelectedIds(new Set());
+      onChanged?.();
+    } catch (e: any) {
+      toast.error(e?.message || "Bulk update failed");
+    }
+  };
+
+  const doBulkFollowUp = async () => {
+    try {
+      const ts = bulkFollowUp ? new Date(bulkFollowUp).getTime() : undefined;
+      await dashboardApi.bulkUpdateApplicationsFollowUp(
+        Array.from(selectedIds),
+        ts
+      );
+      toast.success("Follow-up set");
+      setSelectedIds(new Set());
+          onChanged?.();
+    } catch (e: any) {
+      toast.error(e?.message || "Bulk update failed");
+    }
+  };
   const statusVariants: Record<
     | "interested"
     | "applied"
@@ -90,14 +249,17 @@ export function JobList({
   };
 
   const filteredAndSortedApplications = useMemo(() => {
-    const filtered = applications.filter(app => {
-      const matchesStatus = selectedStatus === "all" || app.status === selectedStatus;
-      const matchesAgency = showRecruitmentAgency || !app.job?.isRecruitmentAgency;
-      const matchesSearch = searchQuery === "" || 
-        (app.job?.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-         app.job?.company?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-         app.job?.location?.toLowerCase().includes(searchQuery.toLowerCase()));
-      
+    const filtered = applications.filter((app) => {
+      const matchesStatus =
+        selectedStatus === "all" || app.status === selectedStatus;
+      const matchesAgency =
+        showRecruitmentAgency || !app.job?.isRecruitmentAgency;
+      const matchesSearch =
+        searchQuery === "" ||
+        app.job?.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        app.job?.company?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        app.job?.location?.toLowerCase().includes(searchQuery.toLowerCase());
+
       return matchesStatus && matchesAgency && matchesSearch;
     });
 
@@ -115,7 +277,13 @@ export function JobList({
     });
 
     return filtered;
-  }, [applications, selectedStatus, showRecruitmentAgency, searchQuery, sortBy]);
+  }, [
+    applications,
+    selectedStatus,
+    showRecruitmentAgency,
+    searchQuery,
+    sortBy,
+  ]);
 
   const handleDeleteClick = (application: Application) => {
     setApplicationToDelete(application);
@@ -191,6 +359,23 @@ export function JobList({
             />
             <Label htmlFor="show-agency">Show Recruitment Agency Jobs</Label>
           </div>
+          <div className="flex flex-wrap items-center gap-2 pt-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setViewsOpen(true)}
+            >
+              Saved Views
+            </Button>
+            <Input
+              placeholder="New view name"
+              value={newViewName}
+              onChange={(e) => setNewViewName(e.target.value)}
+            />
+            <Button size="sm" onClick={saveCurrentView}>
+              Save view
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -198,6 +383,68 @@ export function JobList({
       {filteredAndSortedApplications.length > 0 ? (
         <Card>
           <CardContent className="p-0">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 p-4 border-b">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="select-all"
+                  checked={
+                    selectedIds.size > 0 &&
+                    selectedIds.size === filteredAndSortedApplications.length
+                  }
+                  onCheckedChange={(checked) =>
+                    toggleSelectAll(checked === true)
+                  }
+                />
+                <Label htmlFor="select-all">Select all</Label>
+                <span className="text-sm text-muted-foreground">
+                  {selectedIds.size} selected
+                </span>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Select value={bulkStatus} onValueChange={setBulkStatus}>
+                  <SelectTrigger className="w-[160px]">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="interested">Interested</SelectItem>
+                    <SelectItem value="applied">Applied</SelectItem>
+                    <SelectItem value="interviewing">Interviewing</SelectItem>
+                    <SelectItem value="offered">Offered</SelectItem>
+                    <SelectItem value="rejected">Rejected</SelectItem>
+                    <SelectItem value="withdrawn">Withdrawn</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={doBulkStatus}
+                  disabled={!selectedIds.size}
+                >
+                  Set status
+                </Button>
+                <Input
+                  type="date"
+                  value={bulkFollowUp}
+                  onChange={(e) => setBulkFollowUp(e.target.value)}
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={doBulkFollowUp}
+                  disabled={!selectedIds.size}
+                >
+                  Set follow-up
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setRemindersOpen(true)}
+                  disabled={!selectedIds.size}
+                >
+                  Reminders…
+                </Button>
+              </div>
+            </div>
             <ul className="divide-y divide-border">
               {filteredAndSortedApplications.map((application) => (
                 <motion.li
@@ -208,6 +455,21 @@ export function JobList({
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Checkbox
+                          id={`sel-${application._id}`}
+                          checked={selectedIds.has(application._id)}
+                          onCheckedChange={(checked) =>
+                            toggleSelect(application._id, checked === true)
+                          }
+                        />
+                        <Label
+                          htmlFor={`sel-${application._id}`}
+                          className="sr-only"
+                        >
+                          Select
+                        </Label>
+                      </div>
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                         <div>
                           <h3 className="text-lg font-semibold text-foreground truncate">
@@ -374,6 +636,109 @@ export function JobList({
           </CardContent>
         </Card>
       )}
+
+      <Dialog open={viewsOpen} onOpenChange={setViewsOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Saved Views</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            {savedViews.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                No saved views yet.
+              </p>
+            )}
+            {savedViews.map((v) => (
+              <div
+                key={v.id}
+                className="flex items-center justify-between gap-2"
+              >
+                <div>
+                  <div className="font-medium">{v.name}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {Object.entries(v.filters || {})
+                      .map(([k, val]) => `${k}:${String(val)}`)
+                      .join(" • ")}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => applySavedView(v.id)}
+                  >
+                    Apply
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => deleteSavedView(v.id)}
+                  >
+                    Delete
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={remindersOpen} onOpenChange={setRemindersOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Quick Reminders</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-medium">Enable reminders</div>
+                <div className="text-sm text-muted-foreground">
+                  Toggle follow-up reminders for selected items
+                </div>
+              </div>
+              <Switch
+                checked={reminderEnable}
+                onCheckedChange={(v) => setReminderEnable(v === true)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="reminder-date">Remind on</Label>
+              <Input
+                id="reminder-date"
+                type="datetime-local"
+                value={reminderDate}
+                onChange={(e) => setReminderDate(e.target.value)}
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="ghost" onClick={() => setRemindersOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={async () => {
+                  try {
+                    const ts =
+                      reminderEnable && reminderDate
+                        ? new Date(reminderDate).getTime()
+                        : undefined;
+                    await dashboardApi.bulkUpdateApplicationsFollowUp(
+                      Array.from(selectedIds),
+                      ts
+                    );
+                    toast.success("Reminders updated");
+                    setRemindersOpen(false);
+                    setSelectedIds(new Set());
+                  } catch (e: any) {
+                    toast.error(e?.message || "Failed to update reminders");
+                  }
+                }}
+              >
+                Save
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

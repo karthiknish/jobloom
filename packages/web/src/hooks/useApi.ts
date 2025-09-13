@@ -1,6 +1,6 @@
 // hooks/useApi.ts
 import { useState, useEffect, useCallback } from "react";
-import { ApiError } from "../services/api/convexApi";
+import { ApiError } from "../services/api/appApi";
 
 interface UseQueryResult<T> {
   data: T | undefined;

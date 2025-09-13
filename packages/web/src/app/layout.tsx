@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { ClerkProvider } from "@clerk/nextjs";
-import { ConvexClientProvider } from "@/providers/convex-provider";
+import { FirebaseAuthProvider } from "@/providers/firebase-auth-provider";
 import { AppToaster } from "@/components/ui/Toast";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { inter } from "@/font";
 import "./globals.css";
+import { ThemeProvider } from "@/components/theme-provider";
 
 export const metadata: Metadata = {
   title: "JobloomMonorepo - Job Tracker",
@@ -19,20 +19,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
-      <html lang="en">
-        <body
-          suppressHydrationWarning
-          className={`${inter.className} antialiased`}
-        >
-          <ConvexClientProvider>
+    <html lang="en">
+      <body
+        suppressHydrationWarning
+        className={`${inter.className} antialiased`}
+      >
+        <ThemeProvider>
+          <FirebaseAuthProvider>
             <Header />
             {children}
             <Footer />
             <AppToaster />
-          </ConvexClientProvider>
-        </body>
-      </html>
-    </ClerkProvider>
+          </FirebaseAuthProvider>
+        </ThemeProvider>
+      </body>
+    </html>
   );
 }

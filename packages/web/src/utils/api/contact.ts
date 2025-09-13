@@ -1,8 +1,12 @@
 // utils/api/contact.ts
-import { convexApi } from "../../services/api/convexApi";
+import { appApi } from "../../services/api/appApi";
 
 export const contactApi = {
-  createContact: async (data: { name: string; email: string; message: string; }): Promise<void> => {
-    await convexApi.createContact(data);
-  }
+  createContact: async (data: {
+    name: string;
+    email: string;
+    message: string;
+  }): Promise<void> => {
+    await appApi.createContact(data);
+  },
 };

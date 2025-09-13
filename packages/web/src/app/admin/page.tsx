@@ -1,6 +1,6 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
+import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { useRateLimit } from "../../hooks/useRateLimit";
@@ -16,15 +16,20 @@ import { UserManagement } from "../../components/admin/UserManagement";
 import { SponsorshipRules } from "../../components/admin/SponsorshipRules";
 
 export default function AdminPage() {
-  const { user } = useUser();
+  const { user } = useFirebaseAuth();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-  const [activeTab, setActiveTab] = useState<"companies" | "users" | "rules">("companies");
+  const [activeTab, setActiveTab] = useState<"companies" | "users" | "rules">(
+    "companies"
+  );
   const [showAddForm, setShowAddForm] = useState(false);
 
   // Check if user is admin
   const { data: userRecord, refetch: refetchUserRecord } = useApiQuery(
-    () => user ? adminApi.getUserByClerkId(user.id) : Promise.reject(new Error("No user")),
-    [user?.id]
+    () =>
+      user && user.uid
+        ? adminApi.getUserByFirebaseUid(user.uid)
+        : Promise.reject(new Error("No user")),
+    [user?.uid]
   );
 
   // Check admin status
@@ -38,7 +43,7 @@ export default function AdminPage() {
   const addCompanyRateLimit = useRateLimit({
     maxRequests: 5,
     windowMs: 60000, // 1 minute
-    endpoint: 'addSponsoredCompany'
+    endpoint: "addSponsoredCompany",
   });
 
   const { data: sponsoredCompanies, refetch: refetchCompanies } = useApiQuery(
@@ -58,7 +63,15 @@ export default function AdminPage() {
 
   const { mutate: addSponsoredCompany } = useApiMutation(
     (variables: Record<string, unknown>) => {
-      const { name, aliases, sponsorshipType, description, website, industry, createdBy } = variables;
+      const {
+        name,
+        aliases,
+        sponsorshipType,
+        description,
+        website,
+        industry,
+        createdBy,
+      } = variables;
       return adminApi.addSponsoredCompany({
         name: name as string,
         aliases: aliases as string[],
@@ -66,7 +79,7 @@ export default function AdminPage() {
         description: description as string | undefined,
         website: website as string | undefined,
         industry: industry as string | undefined,
-        createdBy: createdBy as string
+        createdBy: createdBy as string,
       });
     }
   );
@@ -92,17 +105,20 @@ export default function AdminPage() {
         ...data,
         createdBy: userRecord._id,
       });
-      
+
       toast.success("Sponsored company added successfully!");
       setShowAddForm(false);
       refetchCompanies();
     } catch (error: unknown) {
-      if (error instanceof Error && error.message.includes('Rate limit exceeded')) {
+      if (
+        error instanceof Error &&
+        error.message.includes("Rate limit exceeded")
+      ) {
         toast.error(`Rate limit exceeded. ${error.message}`);
       } else {
         toast.error("Failed to add sponsored company");
       }
-      console.error('Error adding company:', error);
+      console.error("Error adding company:", error);
     }
   };
 
@@ -188,7 +204,7 @@ export default function AdminPage() {
               >
                 {showAddForm ? "Cancel" : "Add Sponsored Company"}
               </button>
-              
+
               {/* Rate limit status */}
               <RateLimitInfo rateLimit={addCompanyRateLimit} />
             </div>
@@ -211,10 +227,10 @@ export default function AdminPage() {
       {activeTab === "users" && (
         <div>
           {allUsers && userRecord && (
-            <UserManagement 
-              users={allUsers} 
-              currentUser={userRecord} 
-              onUsersUpdate={handleUsersUpdate} 
+            <UserManagement
+              users={allUsers}
+              currentUser={userRecord}
+              onUsersUpdate={handleUsersUpdate}
             />
           )}
         </div>

@@ -37,6 +37,60 @@
       margin-bottom: 20px;
     }
     .logo {
+    
+      /* Toasts */
+      .toast-container {
+        position: fixed;
+        bottom: 12px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        z-index: 9999;
+        pointer-events: none;
+      }
+      .toast {
+        min-width: 220px;
+        max-width: 320px;
+        background: #111827;
+        color: #f9fafb;
+        border-radius: 8px;
+        border: 1px solid rgba(255,255,255,0.12);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        padding: 10px 12px;
+        font-size: 13px;
+        line-height: 1.3;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        opacity: 0;
+        transform: translate(-50%, 8px);
+        animation: toast-in 120ms ease-out forwards;
+        pointer-events: auto;
+      }
+      .toast.success { background: #065f46; border-color: #10b981; }
+      .toast.info { background: #1f2937; border-color: #60a5fa; }
+      .toast.warning { background: #7c2d12; border-color: #f59e0b; }
+      .toast.error { background: #7f1d1d; border-color: #ef4444; }
+      .toast .icon { font-size: 14px; }
+      .toast .message { flex: 1; }
+      .toast .close {
+        background: transparent;
+        border: none;
+        color: inherit;
+        opacity: 0.8;
+        cursor: pointer;
+        padding: 0 4px;
+        font-size: 14px;
+      }
+      @keyframes toast-in {
+        from { opacity: 0; transform: translate(-50%, 8px); }
+        to { opacity: 1; transform: translate(-50%, 0); }
+      }
+      @keyframes toast-out {
+        from { opacity: 1; transform: translate(-50%, 0); }
+        to { opacity: 0; transform: translate(-50%, -6px); }
       font-size: 24px;
       margin-bottom: 8px;
     }
@@ -100,6 +154,9 @@
     .btn-secondary:hover {
       filter: brightness(0.96);
     }
+
+    <!-- Toast root -->
+    <div id="toast-root" class="toast-container" aria-live="polite" aria-atomic="true"></div>
     .footer {
       text-align: center;
       margin-top: 20px;
@@ -114,13 +171,7 @@
     .popup-content {
       position: relative;
     }
-    #clerk-components { display: none; }
-    .clerk-component-container {
-      min-height: 300px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-    }
+    
   </style>
 </head>
 <body>
@@ -151,8 +202,14 @@
       <button class="btn btn-secondary" id="signin-btn">
         🔐 Sign In
       </button>
+      <button class="btn btn-secondary" id="signin-google-btn">
+        🌐 Sign In with Google
+      </button>
       <button class="btn btn-secondary" id="signup-btn">
         🆕 Sign Up
+      </button>
+      <button class="btn btn-secondary" id="signup-google-btn">
+        🌐 Sign Up with Google
       </button>
       <button class="btn btn-secondary" id="signout-btn" style="display: none;">
         🚪 Sign Out
@@ -160,15 +217,7 @@
     </div>
     <!-- Auth buttons end -->
 
-    <!-- Clerk components container -->
-    <div id="clerk-components">
-      <div class="clerk-component-container">
-        <div id="clerk-component"></div>
-      </div>
-      <button class="btn btn-secondary" id="back-to-main" style="margin-top: 10px;">
-        ← Back to Main
-      </button>
-    </div>
+    
 
     <div class="actions">
       <button class="btn btn-primary" id="highlight-btn">

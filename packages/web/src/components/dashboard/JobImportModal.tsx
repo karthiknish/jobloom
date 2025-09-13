@@ -3,10 +3,14 @@
 
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { useUser } from "@clerk/nextjs";
+import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { useApiQuery } from "@/hooks/useApi";
 import { dashboardApi } from "@/utils/api/dashboard";
-import { importJobsFromCSV, importJobsFromAPI, downloadSampleCSV } from "@/utils/jobImport";
+import {
+  importJobsFromCSV,
+  importJobsFromAPI,
+  downloadSampleCSV,
+} from "@/utils/jobImport";
 import {
   Dialog,
   DialogContent,
@@ -30,19 +34,28 @@ interface JobImportModalProps {
   onImportComplete: () => void;
 }
 
-export function JobImportModal({ isOpen, onClose, onImportComplete }: JobImportModalProps) {
-  const { user } = useUser();
+export function JobImportModal({
+  isOpen,
+  onClose,
+  onImportComplete,
+}: JobImportModalProps) {
+  const { user } = useFirebaseAuth();
   const [importMethod, setImportMethod] = useState<"csv" | "api">("csv");
   const [csvFile, setCsvFile] = useState<File | null>(null);
-  const [apiSource, setApiSource] = useState<"linkedin" | "indeed" | "glassdoor" | "custom">("linkedin");
+  const [apiSource, setApiSource] = useState<
+    "linkedin" | "indeed" | "glassdoor" | "custom"
+  >("linkedin");
   const [searchQuery, setSearchQuery] = useState("");
   const [location, setLocation] = useState("");
   const [isImporting, setIsImporting] = useState(false);
 
   // Fetch user record
   const { data: userRecord } = useApiQuery(
-    () => user ? dashboardApi.getUserByClerkId(user.id) : Promise.reject(new Error("No user")),
-    [user?.id]
+    () =>
+      user && user.uid
+        ? dashboardApi.getUserByFirebaseUid(user.uid)
+        : Promise.reject(new Error("No user")),
+    [user?.uid]
   );
 
   const handleCsvImport = async () => {
@@ -52,15 +65,17 @@ export function JobImportModal({ isOpen, onClose, onImportComplete }: JobImportM
     }
 
     setIsImporting(true);
-    
+
     try {
       // Read CSV file
       const csvText = await csvFile.text();
-      
+
       // Import jobs
       const result = await importJobsFromCSV(userRecord._id, csvText);
-      
-      toast.success(`Successfully imported ${result.importedCount} jobs (${result.skippedCount} duplicates skipped)`);
+
+      toast.success(
+        `Successfully imported ${result.importedCount} jobs (${result.skippedCount} duplicates skipped)`
+      );
       onImportComplete();
       onClose();
     } catch (error: unknown) {
@@ -87,12 +102,19 @@ export function JobImportModal({ isOpen, onClose, onImportComplete }: JobImportM
     }
 
     setIsImporting(true);
-    
+
     try {
       // Import jobs from API
-      const result = await importJobsFromAPI(userRecord._id, apiSource, searchQuery, location);
-      
-      toast.success(`Successfully imported ${result.importedCount} jobs from ${result.source} (${result.skippedCount} duplicates skipped)`);
+      const result = await importJobsFromAPI(
+        userRecord._id,
+        apiSource,
+        searchQuery,
+        location
+      );
+
+      toast.success(
+        `Successfully imported ${result.importedCount} jobs from ${result.source} (${result.skippedCount} duplicates skipped)`
+      );
       onImportComplete();
       onClose();
     } catch (error: unknown) {

@@ -1,38 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { ConvexHttpClient } from "convex/browser";
-import { api } from "@convex-generated/api";
+import { getAdminDb } from "@/firebase/admin";
 
 // Check if the environment variables are defined
 if (!process.env.GOOGLE_GEMINI_API_KEY) {
   throw new Error("GOOGLE_GEMINI_API_KEY environment variable is not defined");
 }
 
-if (!process.env.NEXT_PUBLIC_CONVEX_URL) {
-  throw new Error("NEXT_PUBLIC_CONVEX_URL environment variable is not defined");
-}
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY!);
 
 export async function POST(req: NextRequest) {
   try {
-    // Create a Convex HTTP client inside the function
-    const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
-    
     const { analysisId, cvText, targetRole, industry } = await req.json();
 
     if (!analysisId || !cvText) {
       return NextResponse.json(
         { error: "Missing analysisId or cvText" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
-    // Update status to processing
-    await convex.mutation(api.cvAnalysis.updateCvAnalysisStatus, {
-      analysisId,
-      status: "processing",
-    });
+    const db = getAdminDb();
+    await db
+      .collection("cvAnalyses")
+      .doc(analysisId)
+      .update({ analysisStatus: "processing", updatedAt: Date.now() });
 
     // Create the analysis prompt
     const prompt = createAnalysisPrompt(cvText, targetRole, industry);
@@ -55,19 +48,19 @@ export async function POST(req: NextRequest) {
       }
     } catch (parseError) {
       console.error("Failed to parse Gemini response:", parseError);
-      await convex.mutation(api.cvAnalysis.updateCvAnalysisError, {
-        analysisId,
+      await db.collection("cvAnalyses").doc(analysisId).update({
+        analysisStatus: "error",
         errorMessage: "Failed to parse AI analysis results",
+        updatedAt: Date.now(),
       });
       return NextResponse.json(
         { error: "Failed to parse analysis results" },
-        { status: 500 },
+        { status: 500 }
       );
     }
 
-    // Update the analysis with results
-    await convex.mutation(api.cvAnalysis.updateCvAnalysisResults, {
-      analysisId,
+    await db.collection("cvAnalyses").doc(analysisId).update({
+      analysisStatus: "completed",
       overallScore: analysisData.overallScore,
       strengths: analysisData.strengths,
       weaknesses: analysisData.weaknesses,
@@ -77,6 +70,7 @@ export async function POST(req: NextRequest) {
       atsCompatibility: analysisData.atsCompatibility,
       keywordAnalysis: analysisData.keywordAnalysis,
       sectionAnalysis: analysisData.sectionAnalysis,
+      updatedAt: Date.now(),
     });
 
     return NextResponse.json({ success: true, analysisData });
@@ -87,13 +81,20 @@ export async function POST(req: NextRequest) {
     if (req.body) {
       try {
         const { analysisId } = await req.json();
-        // Create a Convex HTTP client inside the function
-        const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
-        await convex.mutation(api.cvAnalysis.updateCvAnalysisError, {
-          analysisId,
-          errorMessage:
-            error instanceof Error ? error.message : "Unknown error occurred",
-        });
+        const db = getAdminDb();
+        if (analysisId) {
+          await db
+            .collection("cvAnalyses")
+            .doc(analysisId)
+            .update({
+              analysisStatus: "error",
+              errorMessage:
+                error instanceof Error
+                  ? error.message
+                  : "Unknown error occurred",
+              updatedAt: Date.now(),
+            });
+        }
       } catch (updateError) {
         console.error("Failed to update error status:", updateError);
       }
@@ -101,7 +102,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(
       { error: "Failed to analyze CV" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

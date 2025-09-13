@@ -1,3 +1,4 @@
+import { DEFAULT_WEB_APP_URL } from "./constants";
 interface JobData {
   title: string;
   company: string;
@@ -23,7 +24,7 @@ interface PersonData {
   keywords?: string[];
 }
 
-interface ConvexSponsorshipData {
+interface SponsorshipCheckResult {
   company: string;
   isSponsored: boolean;
   sponsorshipType: string | null;
@@ -81,7 +82,7 @@ interface JobBoardEntry {
 class JobTracker {
   private isHighlightMode = false;
   private isPeopleSearchMode = false;
-  private convexUrl: string;
+  private webAppUrl: string;
   private currentJobSite: string;
   private lastRequestTime = 0;
   private requestCount = 0;
@@ -91,14 +92,14 @@ class JobTracker {
   private observer: MutationObserver | null = null;
 
   constructor() {
-    // Default Convex URL - will be updated from storage
-    this.convexUrl = "https://rare-chihuahua-615.convex.cloud";
+    // Default Web App URL - will be updated from storage
+  this.webAppUrl = DEFAULT_WEB_APP_URL;
     this.currentJobSite = this.detectJobSite();
     this.init();
   }
 
   private init() {
-    this.loadConvexUrl();
+    this.loadWebAppUrl();
     this.createToggleButton();
     this.createAutofillButton();
     if (
@@ -110,14 +111,14 @@ class JobTracker {
     this.setupAutoDetection();
   }
 
-  private async loadConvexUrl() {
+  private async loadWebAppUrl() {
     try {
-      const result = await chrome.storage.sync.get(["convexUrl"]);
-      if (result.convexUrl) {
-        this.convexUrl = result.convexUrl;
+      const result = await chrome.storage.sync.get(["webAppUrl"]);
+      if (result.webAppUrl) {
+        this.webAppUrl = result.webAppUrl;
       }
     } catch (error) {
-      console.error("Failed to load Convex URL:", error);
+      console.error("Failed to load web app URL:", error);
     }
   }
 
@@ -711,7 +712,7 @@ class JobTracker {
       ...new Set(jobsToCheck.map((job) => job.data.company)),
     ];
 
-    // Check company sponsorship status via Convex
+    // Check company sponsorship status via web API
     const sponsorshipResults = await this.checkCompanySponsorship(companyNames);
 
     // Create a map for quick lookup
@@ -786,7 +787,7 @@ class JobTracker {
 
   private async checkCompanySponsorship(
     companies: string[]
-  ): Promise<ConvexSponsorshipData[]> {
+  ): Promise<SponsorshipCheckResult[]> {
     // Check rate limit before making request
     if (!(await this.checkRateLimit())) {
       return companies.map((company) => ({
@@ -811,18 +812,14 @@ class JobTracker {
         );
       }
 
-      const response = await fetch(`${this.convexUrl}/api/query`, {
+  const base = (this.webAppUrl || DEFAULT_WEB_APP_URL).replace(
+        /\/$/,
+        ""
+      );
+  const response = await fetch(`${base}/api/app/sponsorship/check`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          path: "sponsorship:checkCompanySponsorship",
-          args: {
-            companies: limitedCompanies,
-            clientId: this.generateClientId(),
-          },
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ companies: limitedCompanies }),
       });
 
       if (response.status === 429) {
@@ -842,19 +839,7 @@ class JobTracker {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const results = await response.json();
-
-      // Handle rate limit error from Convex
-      if (results.error && results.error.includes("Rate limit exceeded")) {
-        console.warn("Convex rate limit exceeded:", results.error);
-        return companies.map((company) => ({
-          company,
-          isSponsored: false,
-          sponsorshipType: null,
-          source: "convex_rate_limited",
-        }));
-      }
-
+  const results = await response.json();
       return results;
     } catch (error) {
       console.error("Failed to check company sponsorship:", error);
@@ -1177,7 +1162,7 @@ class JobTracker {
       ...new Set(jobsToCheck.map((job) => job.data.company)),
     ];
 
-    // Check company sponsorship status via Convex
+  // Check company sponsorship status via web API
     const sponsorshipResults = await this.checkCompanySponsorship(companyNames);
 
     // Create a map for quick lookup
@@ -1864,8 +1849,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 function initJobloomTracker() {
-  chrome.storage.sync.get(["convexUserId"], (result) => {
-    if (result.convexUserId) {
+  chrome.storage.sync.get(["firebaseUid", "userId"], (result) => {
+    const uid = result.firebaseUid || result.userId;
+    if (uid) {
       if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", () => new JobTracker());
       } else {

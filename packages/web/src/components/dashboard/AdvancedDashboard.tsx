@@ -1,12 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { useUser } from "@clerk/nextjs";
+import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import { useApiQuery } from "@/hooks/useApi";
 import { dashboardApi } from "@/utils/api/dashboard";
 import { JobList } from "@/components/dashboard/JobList";
+import { KanbanBoard } from "@/components/dashboard/KanbanBoard";
+import { ExportCsvButton } from "@/components/dashboard/ExportCsvButton";
+import { UpcomingFollowUps } from "@/components/dashboard/UpcomingFollowUps";
+import { SponsorshipQuickCheck } from "@/components/dashboard/SponsorshipQuickCheck";
 import { JobStatsDashboard } from "@/components/dashboard/JobStatsDashboard";
 import { ApplicationForm } from "@/components/dashboard/ApplicationForm";
 import { JobForm } from "@/components/dashboard/JobForm";
@@ -61,14 +65,14 @@ interface Application {
 }
 
 export function AdvancedDashboard() {
-  const { user } = useUser();
+  const { user } = useFirebaseAuth();
   const hours = new Date().getHours();
   const greeting =
     hours < 12
       ? "Good morning"
       : hours < 18
-        ? "Good afternoon"
-        : "Good evening";
+      ? "Good afternoon"
+      : "Good evening";
   const [showApplicationForm, setShowApplicationForm] = useState(false);
   const [showJobForm, setShowJobForm] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
@@ -79,14 +83,15 @@ export function AdvancedDashboard() {
   const [view, setView] = useState<"dashboard" | "jobs" | "applications">(
     "dashboard"
   );
+  const [boardMode, setBoardMode] = useState<"list" | "kanban">("list");
 
   // Fetch user record
   const { data: userRecord } = useApiQuery(
     () =>
-      user
-        ? dashboardApi.getUserByClerkId(user.id)
+      user && user.uid
+        ? dashboardApi.getUserByFirebaseUid(user.uid)
         : Promise.reject(new Error("No user")),
-    [user?.id]
+    [user?.uid]
   );
 
   // Fetch applications
@@ -215,7 +220,7 @@ export function AdvancedDashboard() {
                   transition={{ delay: 0.12, duration: 0.35 }}
                   className="mt-1 text-sm text-gray-600"
                 >
-                  {greeting}, {user.firstName}!
+                  {greeting}, {user.displayName || user.email}!
                 </motion.p>
               </div>
             </div>
@@ -293,10 +298,39 @@ export function AdvancedDashboard() {
               className="space-y-6"
             >
               {jobStats && <JobStatsDashboard stats={jobStats} />}
+              {applications && applications.length > 0 && (
+                <UpcomingFollowUps
+                  applications={applications}
+                  onChanged={refetchApplications}
+                />
+              )}
+              {applications && applications.length > 0 && (
+                <SponsorshipQuickCheck applications={applications} />
+              )}
               {userRecord && <ExtensionIntegration userId={userRecord._id} />}
               <Card>
                 <CardHeader>
-                  <CardTitle>Recent Applications</CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle>Recent Applications</CardTitle>
+                    {applications && (
+                      <ExportCsvButton
+                        fileName="applications.csv"
+                        rows={applications.map((a) => ({
+                          id: a._id,
+                          title: a.job?.title,
+                          company: a.job?.company,
+                          location: a.job?.location,
+                          status: a.status,
+                          dateFound: a.job?.dateFound,
+                          appliedDate: a.appliedDate,
+                          source: a.job?.source,
+                          salary: a.job?.salary,
+                          sponsored: a.job?.isSponsored,
+                          agency: a.job?.isRecruitmentAgency,
+                        }))}
+                      />
+                    )}
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <JobList
@@ -304,6 +338,7 @@ export function AdvancedDashboard() {
                     onEditApplication={handleEditApplication}
                     onDeleteApplication={handleDeleteApplication}
                     onViewApplication={handleViewApplication}
+                    onChanged={refetchApplications}
                   />
                 </CardContent>
               </Card>
@@ -395,12 +430,104 @@ export function AdvancedDashboard() {
             className="space-y-6"
           >
             {hasApplications ? (
-              <JobList
-                applications={applications!}
-                onEditApplication={handleEditApplication}
-                onDeleteApplication={handleDeleteApplication}
-                onViewApplication={handleViewApplication}
-              />
+              <>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-sm text-muted-foreground">View</div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant={boardMode === "list" ? "secondary" : "outline"}
+                      onClick={() => setBoardMode("list")}
+                    >
+                      List
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={boardMode === "kanban" ? "secondary" : "outline"}
+                      onClick={() => setBoardMode("kanban")}
+                    >
+                      Kanban
+                    </Button>
+                  </div>
+                  {applications && (
+                    <ExportCsvButton
+                      fileName="applications.csv"
+                      rows={applications.map((a) => ({
+                        id: a._id,
+                        title: a.job?.title,
+                        company: a.job?.company,
+                        location: a.job?.location,
+                        status: a.status,
+                        dateFound: a.job?.dateFound,
+                        appliedDate: a.appliedDate,
+                        source: a.job?.source,
+                        salary: a.job?.salary,
+                      }))}
+                    />
+                  )}
+                </div>
+                {boardMode === "kanban" ? (
+                  <KanbanBoard
+                    applications={applications!}
+                    onChangeStatus={async (id, status) => {
+                      try {
+                        await dashboardApi.updateApplicationStatus(id, status);
+                        toast.success("Status updated");
+                        refetchApplications();
+                      } catch (e: any) {
+                        toast.error(e?.message || "Update failed");
+                      }
+                    }}
+                    onReorder={async (draggedId, targetStatus, beforeId) => {
+                      try {
+                        // Compute an order value: if beforeId provided, take its order and subtract a tiny epsilon;
+                        // else append at the end (use max order + 1)
+                        const col = (applications || []).filter(
+                          (a) => a.status === targetStatus
+                        );
+                        // Find before order
+                        let newOrder: number;
+                        if (beforeId) {
+                          const before = col.find((a) => a._id === beforeId);
+                          const beforeOrder =
+                            typeof before?.order === "number"
+                              ? before!.order!
+                              : 0;
+                          // To avoid collisions, pick slightly smaller than before
+                          newOrder = beforeOrder - 0.001;
+                        } else {
+                          // Place at end
+                          const maxOrder = col.reduce(
+                            (m, a) =>
+                              Math.max(
+                                m,
+                                typeof a.order === "number" ? a.order : 0
+                              ),
+                            0
+                          );
+                          newOrder = maxOrder + 1;
+                        }
+                        await dashboardApi.updateApplication(draggedId, {
+                          status: targetStatus,
+                          order: newOrder,
+                        });
+                        refetchApplications();
+                      } catch (e: any) {
+                        toast.error(e?.message || "Reorder failed");
+                      }
+                    }}
+                    onView={(app) => setSelectedApplication(app as any)}
+                  />
+                ) : (
+                  <JobList
+                    applications={applications!}
+                    onEditApplication={handleEditApplication}
+                    onDeleteApplication={handleDeleteApplication}
+                    onViewApplication={handleViewApplication}
+                    onChanged={refetchApplications}
+                  />
+                )}
+              </>
             ) : (
               <div className="rounded-xl  bg-white p-10 text-center">
                 <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
