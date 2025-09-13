@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Menu } from "lucide-react";
-import { ModeToggle } from "@/components/ModeToggle";
+// Dark mode removed; ModeToggle no longer used
 import {
   Sheet,
   SheetContent,
@@ -146,7 +146,6 @@ export default function Header() {
 
           {/* Desktop Controls */}
           <div className="hidden md:flex items-center space-x-2">
-            <ModeToggle />
             <AuthButtons />
           </div>
 
@@ -188,7 +187,6 @@ export default function Header() {
                     <NavItems />
                   </nav>
                   <div className="pt-4 border-t mt-auto flex justify-center">
-                    <ModeToggle />
                     <AuthButtons />
                   </div>
                   {isSignedIn && (

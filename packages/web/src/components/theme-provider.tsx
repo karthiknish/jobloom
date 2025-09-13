@@ -4,10 +4,12 @@ import * as React from "react";
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
-    const stored = localStorage.getItem("theme");
-    const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const theme = stored || (prefersDark ? "dark" : "light");
-    document.documentElement.classList.toggle("dark", theme === "dark");
+    // Force light theme by removing any dark class and disabling automatic toggles
+    try {
+      document.documentElement.classList.remove("dark");
+      // Optional: persist as light so any client code reading this stays consistent
+      localStorage.setItem("theme", "light");
+    } catch {}
   }, []);
   return <>{children}</>;
 }
