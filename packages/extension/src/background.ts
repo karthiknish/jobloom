@@ -73,6 +73,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       });
     });
     return true;
+  } else if (request.action === "openJobUrl") {
+    // Open job URL in new tab
+    if (request.url) {
+      chrome.tabs.create({ url: request.url });
+    }
   } else if (request.action === "authSuccess") {
     // After web app login, capture Firebase UID and store
     console.log("Authentication successful, capturing Firebase uid");

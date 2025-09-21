@@ -5,6 +5,7 @@ import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { FeatureGate } from "../../components/UpgradePrompt";
 import { CvUploadForm } from "../../components/CvUploadForm";
 import { CvAnalysisHistory } from "../../components/CvAnalysisHistory";
+import { CvImprovementTracker } from "../../components/CvImprovementTracker";
 import { motion } from "framer-motion";
 import { useApiQuery } from "../../hooks/useApi";
 import { cvEvaluatorApi } from "../../utils/api/cvEvaluator";
@@ -16,6 +17,7 @@ import {
   Target,
   Upload,
   History,
+  TrendingUp,
 } from "lucide-react";
 import {
   Card,
@@ -27,7 +29,9 @@ import {
 
 export default function CvEvaluatorPage() {
   const { user } = useFirebaseAuth();
-  const [activeTab, setActiveTab] = useState<"upload" | "history">("upload");
+  const [activeTab, setActiveTab] = useState<"upload" | "history" | "tracking">(
+    "upload"
+  );
 
   const userRecord = useApiQuery(
     () =>
@@ -223,15 +227,22 @@ export default function CvEvaluatorPage() {
           )}
 
           {/* Tab Navigation */}
-          <div className="relative grid grid-cols-2 bg-gray-100 p-1 rounded-lg mb-6 w-[min(360px,100%)]">
+          <div className="relative grid grid-cols-3 bg-gray-100 p-1 rounded-lg mb-6 w-[min(480px,100%)]">
             <motion.div
-              className="absolute top-1 bottom-1 left-1 w-1/2 rounded-md bg-white shadow"
-              animate={{ x: activeTab === "upload" ? "0%" : "100%" }}
+              className="absolute top-1 bottom-1 left-1 w-1/3 rounded-md bg-white shadow"
+              animate={{
+                x:
+                  activeTab === "upload"
+                    ? "0%"
+                    : activeTab === "history"
+                    ? "100%"
+                    : "200%",
+              }}
               transition={{ type: "spring", stiffness: 260, damping: 22 }}
             />
             <button
               onClick={() => setActiveTab("upload")}
-              className={`relative z-10 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+              className={`relative z-10 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                 activeTab === "upload"
                   ? "text-gray-900"
                   : "text-gray-600 hover:text-gray-900"
@@ -243,14 +254,26 @@ export default function CvEvaluatorPage() {
             </button>
             <button
               onClick={() => setActiveTab("history")}
-              className={`relative z-10 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+              className={`relative z-10 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                 activeTab === "history"
                   ? "text-gray-900"
                   : "text-gray-600 hover:text-gray-900"
               }`}
             >
-              <span className="inline-flex w-fit items-center gap-2 whitespace-nowrap">
-                <History className="h-4 w-4" /> Analysis History
+              <span className="inline-flex items-center gap-2 whitespace-nowrap">
+                <History className="h-4 w-4" /> History
+              </span>
+            </button>
+            <button
+              onClick={() => setActiveTab("tracking")}
+              className={`relative z-10 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                activeTab === "tracking"
+                  ? "text-gray-900"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              <span className="inline-flex items-center gap-2 whitespace-nowrap">
+                <TrendingUp className="h-4 w-4" /> Progress
               </span>
             </button>
           </div>
@@ -264,13 +287,21 @@ export default function CvEvaluatorPage() {
             >
               <CvUploadForm userId={userRecord?._id || ""} />
             </motion.div>
-          ) : (
+          ) : activeTab === "history" ? (
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
             >
               <CvAnalysisHistory analyses={cvAnalyses || []} />
+            </motion.div>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <CvImprovementTracker analyses={cvAnalyses || []} />
             </motion.div>
           )}
         </FeatureGate>

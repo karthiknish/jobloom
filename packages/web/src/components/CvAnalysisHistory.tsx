@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { CvAnalysisResults } from "./CvAnalysisResults";
+import { CvComparison } from "./CvComparison";
+import { CvAnalysisFilters } from "./CvAnalysisFilters";
 import { motion } from "framer-motion";
-import { Eye, Trash2, Loader2, ArrowLeft } from "lucide-react";
+import { Eye, Trash2, Loader2, ArrowLeft, BarChart3 } from "lucide-react";
 import { showSuccess, showError } from "@/components/ui/Toast";
 import type { CvAnalysis, Id } from "../types/api";
 import { useApiMutation } from "../hooks/useApi";
@@ -22,6 +24,14 @@ export function CvAnalysisHistory({ analyses }: CvAnalysisHistoryProps) {
     null
   );
   const [showResults, setShowResults] = useState(false);
+  const [showComparison, setShowComparison] = useState(false);
+  const [filteredAnalyses, setFilteredAnalyses] =
+    useState<CvAnalysis[]>(analyses);
+
+  // Update filtered analyses when analyses prop changes
+  useEffect(() => {
+    setFilteredAnalyses(analyses);
+  }, [analyses]);
 
   const { mutate: deleteAnalysis } = useApiMutation(
     (variables: Record<string, unknown>) => {
@@ -85,6 +95,15 @@ export function CvAnalysisHistory({ analyses }: CvAnalysisHistoryProps) {
     return "text-red-600";
   };
 
+  if (showComparison) {
+    return (
+      <CvComparison
+        analyses={analyses}
+        onBack={() => setShowComparison(false)}
+      />
+    );
+  }
+
   if (showResults && selectedAnalysis) {
     return (
       <div>
@@ -103,26 +122,34 @@ export function CvAnalysisHistory({ analyses }: CvAnalysisHistoryProps) {
     );
   }
 
-  if (!analyses || analyses.length === 0) {
+  if (!filteredAnalyses || filteredAnalyses.length === 0) {
+    const hasOriginalAnalyses = analyses && analyses.length > 0;
     return (
       <div className="text-center py-12">
-        <div className="text-muted-foreground text-4xl mb-4">📄</div>
+        <div className="text-muted-foreground text-4xl mb-4">
+          {hasOriginalAnalyses ? "🔍" : "📄"}
+        </div>
         <h3 className="text-lg font-medium text-foreground mb-2">
-          No CV analyses yet
+          {hasOriginalAnalyses
+            ? "No analyses match your filters"
+            : "No CV analyses yet"}
         </h3>
         <p className="text-muted-foreground mb-6">
-          Upload your first CV to get started with AI-powered analysis and
-          feedback.
+          {hasOriginalAnalyses
+            ? "Try adjusting your search criteria or clearing filters to see more results."
+            : "Upload your first CV to get started with AI-powered analysis and feedback."}
         </p>
-        <div className="text-sm text-muted-foreground">
-          <p className="mb-2">✨ Get detailed insights about your CV:</p>
-          <ul className="text-left space-y-1">
-            <li>• ATS compatibility scores</li>
-            <li>• Keyword optimization suggestions</li>
-            <li>• Skills and experience analysis</li>
-            <li>• Professional summary improvements</li>
-          </ul>
-        </div>
+        {!hasOriginalAnalyses && (
+          <div className="text-sm text-muted-foreground">
+            <p className="mb-2">✨ Get detailed insights about your CV:</p>
+            <ul className="text-left space-y-1">
+              <li>• ATS compatibility scores</li>
+              <li>• Keyword optimization suggestions</li>
+              <li>• Skills and experience analysis</li>
+              <li>• Professional summary improvements</li>
+            </ul>
+          </div>
+        )}
       </div>
     );
   }
@@ -138,10 +165,29 @@ export function CvAnalysisHistory({ analyses }: CvAnalysisHistoryProps) {
         <h3 className="text-lg font-medium text-foreground">
           Analysis History
         </h3>
-        <span className="text-sm text-muted-foreground">
-          {analyses.length} total analyses
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-muted-foreground">
+            {filteredAnalyses.length} of {analyses.length} analyses
+          </span>
+          {analyses.length >= 2 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowComparison(true)}
+              className="flex items-center gap-2"
+            >
+              <BarChart3 className="h-4 w-4" />
+              Compare CVs
+            </Button>
+          )}
+        </div>
       </div>
+
+      {/* Filters */}
+      <CvAnalysisFilters
+        analyses={analyses}
+        onFilteredAnalyses={setFilteredAnalyses}
+      />
 
       <motion.div
         initial="hidden"
@@ -155,7 +201,7 @@ export function CvAnalysisHistory({ analyses }: CvAnalysisHistoryProps) {
         }}
         className="space-y-4"
       >
-        {analyses.map((analysis) => (
+        {filteredAnalyses.map((analysis) => (
           <motion.div
             key={analysis._id}
             variants={{
@@ -194,7 +240,9 @@ export function CvAnalysisHistory({ analyses }: CvAnalysisHistoryProps) {
                         <>
                           <span>•</span>
                           <span
-                            className={`font-medium ${getScoreColor(analysis.overallScore)}`}
+                            className={`font-medium ${getScoreColor(
+                              analysis.overallScore
+                            )}`}
                           >
                             Score: {analysis.overallScore}/100
                           </span>
@@ -225,8 +273,8 @@ export function CvAnalysisHistory({ analyses }: CvAnalysisHistoryProps) {
                                   analysis.atsCompatibility.score >= 80
                                     ? "text-green-600"
                                     : analysis.atsCompatibility.score >= 60
-                                      ? "text-yellow-600"
-                                      : "text-red-600"
+                                    ? "text-yellow-600"
+                                    : "text-red-600"
                                 }
                               >
                                 {analysis.atsCompatibility.score}/100
@@ -282,7 +330,7 @@ export function CvAnalysisHistory({ analyses }: CvAnalysisHistoryProps) {
         ))}
       </motion.div>
 
-      {analyses.length > 5 && (
+      {filteredAnalyses.length > 5 && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

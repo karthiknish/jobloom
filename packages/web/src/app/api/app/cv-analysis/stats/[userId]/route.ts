@@ -1,5 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyIdToken } from "@/firebase/admin";
+import { getFirestore } from "firebase-admin/firestore";
+import * as admin from "firebase-admin";
+
+// Initialize Firebase Admin if not already initialized
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+    }),
+  });
+}
+
+const db = getFirestore();
 
 // GET /api/app/cv-analysis/stats/[userId] - Get CV analysis stats for a user
 export async function GET(
@@ -20,13 +35,61 @@ export async function GET(
       return NextResponse.json({ error: "Invalid token" }, { status: 401 });
     }
 
-    // For now, return mock CV analysis stats
-    // In a real implementation, this would fetch from Firestore
+    // Fetch CV analyses from Firestore
+    const analysesRef = db
+      .collection("cvAnalyses")
+      .where("userId", "==", userId);
+    const snapshot = await analysesRef.orderBy("createdAt", "desc").get();
+
+    let total = 0;
+    let completed = 0;
+    let sumScore = 0;
+    let keywordSum = 0;
+    let recent: any = null;
+
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      total += 1;
+
+      const status = data.analysisStatus || "pending";
+      if (status === "completed") completed += 1;
+
+      if (typeof data.overallScore === "number") sumScore += data.overallScore;
+
+      if (data.keywordAnalysis?.presentKeywords) {
+        keywordSum += data.keywordAnalysis.presentKeywords.length;
+      }
+
+      const candidate = {
+        _id: doc.id,
+        userId: data.userId,
+        fileName: data.fileName || "",
+        fileSize: data.fileSize || 0,
+        createdAt: data.createdAt?.toMillis() || Date.now(),
+        analysisStatus: status,
+        overallScore: data.overallScore || undefined,
+        strengths: data.strengths || [],
+        atsCompatibility: data.atsCompatibility || undefined,
+        errorMessage: data.errorMessage || undefined,
+      };
+
+      if (!recent || candidate.createdAt > recent.createdAt) recent = candidate;
+    });
+
+    const averageScore = total ? Math.round((sumScore / total) * 100) / 100 : 0;
+    const averageKeywords = total
+      ? Math.round((keywordSum / total) * 100) / 100
+      : 0;
+    const successRate = total ? Math.round((completed / total) * 100) : 0;
+
     const stats = {
-      totalAnalyses: 0,
-      completedAnalyses: 0,
-      averageScore: 0,
-      recentAnalysis: null
+      total,
+      averageScore,
+      averageKeywords,
+      successRate,
+      totalAnalyses: total,
+      completedAnalyses: completed,
+      recentAnalysis: recent,
     };
 
     return NextResponse.json(stats);

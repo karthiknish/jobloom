@@ -28,55 +28,440 @@ function showToast(
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  // Tab navigation
+  const navTabs = document.querySelectorAll(".nav-tab");
+  const tabContents = document.querySelectorAll(".tab-content");
+
+  // Main action buttons
   const highlightBtn = document.getElementById("highlight-btn");
   const autofillBtn = document.getElementById("autofill-btn");
   const peopleSearchBtn = document.getElementById("people-search-btn");
-  const clearBtn = document.getElementById("clear-btn");
   const openBoardBtn = document.getElementById("open-board-btn");
-  const settingsLink = document.getElementById("settings-link");
+
+  // Settings controls
+  const configureProfileBtn = document.getElementById("configure-profile-btn");
+  const autoDetectToggle = document.getElementById("auto-detect-toggle");
+  const showBadgesToggle = document.getElementById("show-badges-toggle");
+  const autoSaveProfileToggle = document.getElementById(
+    "auto-save-profile-toggle"
+  );
+  const webAppUrlInput = document.getElementById(
+    "web-app-url"
+  ) as HTMLInputElement;
+  const syncFrequencySelect = document.getElementById(
+    "sync-frequency"
+  ) as HTMLSelectElement;
+
+  // Auth buttons
   const signinBtn = document.getElementById("signin-btn");
   const signinGoogleBtn = document.getElementById("signin-google-btn");
   const signupBtn = document.getElementById("signup-btn");
   const signupGoogleBtn = document.getElementById("signup-google-btn");
   const signoutBtn = document.getElementById("signout-btn");
-  const backToMainBtn = document.getElementById("back-to-main");
 
+  // Job management
+  const jobFilters = document.querySelectorAll(".filter-btn");
+
+  // Initialize
   loadStats();
   loadSettings();
+  setupTabNavigation();
+  setupJobFilters();
+  setupSettingsControls();
 
   // Check authentication status
   chrome.storage.sync.get(["firebaseUid", "userId"], (res) => {
     const uid = res.firebaseUid || res.userId;
+    const authStatus = document.getElementById("auth-status")!;
+    const statusDot = authStatus.querySelector(".status-dot")!;
+    const statusText = authStatus.querySelector(".status-text")!;
+
     if (!uid) {
-      // Hide feature buttons and stats
-      const stats = document.querySelector(".stats") as HTMLElement | null;
-      const actions = document.querySelector(".actions") as HTMLElement | null;
-      if (stats) stats.style.display = "none";
-      if (actions) actions.style.display = "none";
+      // User not authenticated
+      authStatus.className = "auth-status unauthenticated";
+      (statusDot as HTMLElement).style.background = "#f59e0b";
+      statusText.textContent = "Not signed in";
 
-      // ensure sign-in/up visible, hide sign-out
-      (signinBtn as HTMLElement | null)?.style.removeProperty("display");
-      (signupBtn as HTMLElement | null)?.style.removeProperty("display");
-      if (signoutBtn) (signoutBtn as HTMLElement).style.display = "none";
-
-      // Show prompt message
-      const prompt = document.createElement("div");
-      prompt.style.cssText =
-        "background: #e0f2fe; color: #0369a1; padding: 12px; border-radius: 6px; text-align: center; margin-bottom: 12px; font-size: 13px;";
-      prompt.textContent = "Please sign up / sign in to use Jobloom features";
-      const popupContent = document.querySelector(".popup-content");
-      popupContent?.insertBefore(
-        prompt,
-        popupContent.firstChild?.nextSibling || null
-      );
+      // Hide main actions, show auth tab
+      document
+        .querySelectorAll(
+          '.nav-tab[data-tab="dashboard"], .nav-tab[data-tab="jobs"], .nav-tab[data-tab="settings"]'
+        )
+        .forEach((tab) => {
+          (tab as HTMLElement).style.display = "none";
+        });
+      const authTab = document.querySelector(
+        '.nav-tab[data-tab="auth"]'
+      ) as HTMLElement;
+      if (authTab) {
+        authTab.style.display = "flex";
+        authTab.click(); // Switch to auth tab
+      }
     } else {
-      // User is authenticated: hide sign-in/up, show sign-out
-      (signinBtn as HTMLElement | null)?.style.setProperty("display", "none");
-      (signupBtn as HTMLElement | null)?.style.setProperty("display", "none");
-      if (signoutBtn)
-        (signoutBtn as HTMLElement).style.removeProperty("display");
+      // User authenticated
+      authStatus.className = "auth-status authenticated";
+      (statusDot as HTMLElement).style.background = "#10b981";
+      statusText.textContent = "Signed in";
+
+      // Show all tabs
+      document.querySelectorAll(".nav-tab").forEach((tab) => {
+        (tab as HTMLElement).style.display = "flex";
+      });
+
+      // Load jobs for the jobs tab
+      loadJobs();
     }
   });
+
+  // Tab navigation setup
+  function setupTabNavigation() {
+    const navTabs = document.querySelectorAll(".nav-tab");
+    const tabContents = document.querySelectorAll(".tab-content");
+
+    navTabs.forEach((tab) => {
+      tab.addEventListener("click", () => {
+        const targetTab = (tab as HTMLElement).dataset.tab;
+
+        // Remove active class from all tabs
+        navTabs.forEach((t) => t.classList.remove("active"));
+        tab.classList.add("active");
+
+        // Hide all tab contents
+        tabContents.forEach((content) => content.classList.remove("active"));
+
+        // Show target tab content
+        const targetContent = document.getElementById(`${targetTab}-content`);
+        if (targetContent) {
+          targetContent.classList.add("active");
+        }
+      });
+    });
+  }
+
+  // Job filters setup
+  function setupJobFilters() {
+    const jobFilters = document.querySelectorAll(".filter-btn");
+
+    jobFilters.forEach((filter) => {
+      filter.addEventListener("click", () => {
+        // Remove active class from all filters
+        jobFilters.forEach((f) => f.classList.remove("active"));
+        filter.classList.add("active");
+
+        const filterType = (filter as HTMLElement).dataset.filter;
+        filterJobs(filterType);
+      });
+    });
+  }
+
+  // Settings controls setup
+  function setupSettingsControls() {
+    // Toggle switches
+    document.querySelectorAll(".toggle-switch").forEach((toggle) => {
+      toggle.addEventListener("click", () => {
+        toggle.classList.toggle("active");
+        saveSettings();
+      });
+    });
+
+    // Input changes
+    const webAppUrlInput = document.getElementById(
+      "web-app-url"
+    ) as HTMLInputElement;
+    const syncFrequencySelect = document.getElementById(
+      "sync-frequency"
+    ) as HTMLSelectElement;
+
+    webAppUrlInput?.addEventListener("change", saveSettings);
+    syncFrequencySelect?.addEventListener("change", saveSettings);
+
+    // Configure profile button
+    const configureProfileBtn = document.getElementById(
+      "configure-profile-btn"
+    );
+    configureProfileBtn?.addEventListener("click", () => {
+      // Open web app settings page
+      chrome.storage.sync.get(["webAppUrl"], (result) => {
+        const url = result.webAppUrl || DEFAULT_WEB_APP_URL;
+        chrome.tabs.create({ url: `${url}/account` });
+      });
+    });
+  }
+
+  // Filter jobs based on status
+  function filterJobs(filterType?: string) {
+    const jobItems = document.querySelectorAll(".job-item");
+
+    jobItems.forEach((item) => {
+      const jobStatus = (item as HTMLElement).dataset.status;
+      const jobSponsored = (item as HTMLElement).dataset.sponsored === "true";
+
+      let show = true;
+
+      switch (filterType) {
+        case "interested":
+          show = jobStatus === "interested";
+          break;
+        case "applied":
+          show = jobStatus === "applied";
+          break;
+        case "interviewing":
+          show = jobStatus === "interviewing";
+          break;
+        case "sponsored":
+          show = jobSponsored;
+          break;
+        case "all":
+        default:
+          show = true;
+          break;
+      }
+
+      (item as HTMLElement).style.display = show ? "block" : "none";
+    });
+  }
+
+  // Load jobs from storage
+  // Load jobs from JobBoardManager (enhanced dashboard integration)
+  async function loadJobs() {
+    const jobList = document.getElementById("job-list")!;
+    const jobCount = document.getElementById("jobs-count")!;
+
+    try {
+      // Show loading state
+      jobList.innerHTML = `
+        <div class="loading">
+          <div class="spinner"></div>
+          <span>Loading jobs...</span>
+        </div>
+      `;
+
+      // Import JobBoardManager and get all jobs
+      const { JobBoardManager } = await import("./addToBoard");
+      const jobs = await JobBoardManager.getAllJobs();
+
+      jobCount.textContent = `${jobs.length} jobs`;
+
+      if (jobs.length === 0) {
+        jobList.innerHTML = `
+          <div style="text-align: center; color: var(--muted); padding: 40px 20px;">
+            <div style="font-size: 48px; margin-bottom: 16px;">📋</div>
+            <h3 style="margin: 0 0 8px 0; color: #374151;">No jobs tracked yet</h3>
+            <p style="margin: 0; font-size: 14px;">Jobs you add to your board will appear here</p>
+            <button class="action-btn" style="margin-top: 16px; padding: 8px 16px; font-size: 12px;" onclick="switchToDashboard()">
+              <div class="action-icon primary">🎯</div>
+              <div class="action-content">
+                <h3 style="font-size: 14px; margin: 0;">Find Jobs Now</h3>
+                <p style="font-size: 12px; margin: 4px 0 0 0;">Browse job sites to get started</p>
+              </div>
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      // Get current filter
+      const activeFilter =
+        document
+          .querySelector(".filter-btn.active")
+          ?.getAttribute("data-filter") || "all";
+
+      // Filter jobs
+      let filteredJobs = jobs;
+      if (activeFilter !== "all") {
+        if (activeFilter === "sponsored") {
+          filteredJobs = jobs.filter((job) => job.sponsorshipInfo?.isSponsored);
+        } else {
+          filteredJobs = jobs.filter((job) => job.status === activeFilter);
+        }
+      }
+
+      // Sort jobs by date (newest first)
+      filteredJobs.sort(
+        (a, b) =>
+          new Date(b.lastUpdated || b.dateAdded).getTime() -
+          new Date(a.lastUpdated || a.dateAdded).getTime()
+      );
+
+      jobList.innerHTML = filteredJobs
+        .map((job) => {
+          const statusColors: Record<string, string> = {
+            interested: "#6b7280",
+            applied: "#3b82f6",
+            interviewing: "#f59e0b",
+            offered: "#10b981",
+            rejected: "#ef4444",
+            withdrawn: "#8b5cf6",
+          };
+
+          const statusColor = statusColors[job.status] || "#6b7280";
+
+          return `
+          <div class="job-item" data-status="${job.status}" data-sponsored="${
+            job.sponsorshipInfo?.isSponsored || false
+          }" data-job-id="${job.id}">
+            <div class="job-item-header">
+              <div style="flex: 1;">
+                <h4 class="job-title">${job.title}</h4>
+                <div class="job-company">${job.company}</div>
+                <div class="job-meta">${job.location} • ${new Date(
+            job.dateAdded
+          ).toLocaleDateString()}</div>
+              </div>
+              <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                ${
+                  job.lastUpdated && job.lastUpdated !== job.dateAdded
+                    ? `<div style="font-size: 10px; color: var(--muted);">Updated ${new Date(
+                        job.lastUpdated
+                      ).toLocaleDateString()}</div>`
+                    : ""
+                }
+                ${
+                  job.status !== "interested"
+                    ? `<div style="font-size: 10px; color: ${statusColor}; font-weight: 600;">${job.status.toUpperCase()}</div>`
+                    : ""
+                }
+              </div>
+            </div>
+
+            <div class="job-badges">
+              <span class="job-badge" style="background: rgba(${statusColor
+                .replace("#", "")
+                .match(/.{2}/g)
+                ?.map((x) => parseInt(x, 16))
+                .join(", ")}, 0.1); color: ${statusColor};">
+                ${
+                  job.status === "interested" ? "⭐" : getStatusIcon(job.status)
+                } ${job.status.charAt(0).toUpperCase() + job.status.slice(1)}
+              </span>
+              ${
+                job.sponsorshipInfo?.isSponsored
+                  ? `<span class="job-badge badge-sponsored">🎯 ${
+                      job.sponsorshipInfo.sponsorshipType || "Sponsored"
+                    }</span>`
+                  : ""
+              }
+              ${
+                job.salary
+                  ? `<span class="job-badge badge-salary">💰 ${job.salary}</span>`
+                  : ""
+              }
+              ${
+                job.remoteWork
+                  ? `<span class="job-badge badge-remote">🏠 Remote</span>`
+                  : ""
+              }
+            </div>
+
+            ${
+              job.notes
+                ? `
+              <div style="margin: 8px 0; padding: 8px 12px; background: #f9fafb; border-radius: 6px; font-size: 12px; color: #374151;">
+                <strong>Notes:</strong> ${job.notes}
+              </div>
+            `
+                : ""
+            }
+
+            <div class="job-actions">
+              ${
+                job.status !== "interested"
+                  ? `<button class="job-action-btn" onclick="changeJobStatus('${job.id}', 'interested')">Mark Interested</button>`
+                  : ""
+              }
+              ${
+                job.status !== "applied"
+                  ? `<button class="job-action-btn primary" onclick="changeJobStatus('${job.id}', 'applied')">Mark Applied</button>`
+                  : ""
+              }
+              ${
+                job.status !== "interviewing"
+                  ? `<button class="job-action-btn" onclick="changeJobStatus('${job.id}', 'interviewing')">Interviewing</button>`
+                  : ""
+              }
+              <button class="job-action-btn" onclick="openJobUrl('${
+                job.url
+              }')">View Job</button>
+            </div>
+          </div>
+        `;
+        })
+        .join("");
+
+      // Update job count display
+      const activeFilterBtn = document.querySelector(".filter-btn.active");
+      if (activeFilterBtn) {
+        const filterText = activeFilterBtn.textContent;
+        jobCount.textContent = `${filteredJobs.length} ${
+          filterText?.toLowerCase() || "jobs"
+        }`;
+      }
+    } catch (error) {
+      console.error("Error loading jobs:", error);
+      jobList.innerHTML = `
+        <div style="text-align: center; color: var(--error); padding: 20px;">
+          <div style="font-size: 32px; margin-bottom: 8px;">❌</div>
+          <p>Failed to load jobs. Please try again.</p>
+        </div>
+      `;
+    }
+  }
+
+  // Helper function for status icons
+  function getStatusIcon(status: string): string {
+    const icons: Record<string, string> = {
+      applied: "📝",
+      interviewing: "🎯",
+      offered: "🎉",
+      rejected: "❌",
+      withdrawn: "🚫",
+    };
+    return icons[status] || "📋";
+  }
+
+  // Enhanced job status update function
+  async function changeJobStatus(jobId: string, newStatus: string) {
+    try {
+      const { JobBoardManager } = await import("./addToBoard");
+      const result = await JobBoardManager.updateJobStatus(
+        jobId,
+        newStatus as any
+      );
+
+      if (result.success) {
+        showToast(`Job status updated to ${newStatus}`, { type: "success" });
+        // Reload jobs to reflect changes
+        setTimeout(() => loadJobs(), 500);
+      } else {
+        showToast(result.message, { type: "error" });
+      }
+    } catch (error) {
+      console.error("Error updating job status:", error);
+      showToast("Failed to update job status", { type: "error" });
+    }
+  }
+
+  // Open job URL function
+  function openJobUrl(url: string) {
+    if (url) {
+      chrome.tabs.create({ url });
+    }
+  }
+
+  // Switch to dashboard tab
+  function switchToDashboard() {
+    const dashboardTab = document.querySelector(
+      '.nav-tab[data-tab="dashboard"]'
+    ) as HTMLElement;
+    if (dashboardTab) {
+      dashboardTab.click();
+    }
+  }
+
+  // Update global functions
+  (window as any).changeJobStatus = changeJobStatus;
+  (window as any).openJobUrl = openJobUrl;
+  (window as any).switchToDashboard = switchToDashboard;
 
   highlightBtn?.addEventListener("click", () => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -125,25 +510,11 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  clearBtn?.addEventListener("click", () => {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs[0]?.id) {
-        chrome.tabs.sendMessage(tabs[0].id, { action: "clearHighlights" });
-        window.close(); // Close popup after clearing
-      }
-    });
-  });
-
   openBoardBtn?.addEventListener("click", () => {
     chrome.storage.sync.get(["webAppUrl"], (result) => {
       const url = result.webAppUrl || DEFAULT_WEB_APP_URL;
       chrome.tabs.create({ url });
     });
-  });
-
-  settingsLink?.addEventListener("click", (e) => {
-    e.preventDefault();
-    showSettings();
   });
 
   // Authentication: open web app sign-in/up pages
@@ -156,22 +527,25 @@ document.addEventListener("DOMContentLoaded", () => {
       ).replace(/\/$/, "");
       const path = mode === "sign-in" ? "/sign-in" : "/sign-up";
       const url = provider
-        ? `${appBase}${path}?provider=${provider}&google=1&redirect_url=${encodeURIComponent("/extension/connect")}`
-        : `${appBase}${path}?redirect_url=${encodeURIComponent("/extension/connect")}`;
+        ? `${appBase}${path}?provider=${provider}&google=1&redirect_url=${encodeURIComponent(
+            "/extension/connect"
+          )}`
+        : `${appBase}${path}?redirect_url=${encodeURIComponent(
+            "/extension/connect"
+          )}`;
       chrome.tabs.create({ url });
       window.close();
     });
   }
 
   signinBtn?.addEventListener("click", () => openAuthPage("sign-in"));
-  signinGoogleBtn?.addEventListener("click", () => openAuthPage("sign-in", "google"));
+  signinGoogleBtn?.addEventListener("click", () =>
+    openAuthPage("sign-in", "google")
+  );
   signupBtn?.addEventListener("click", () => openAuthPage("sign-up"));
-  signupGoogleBtn?.addEventListener("click", () => openAuthPage("sign-up", "google"));
-
-  backToMainBtn?.addEventListener("click", () => {
-    // In API-based flow, just reload the popup to return to main UI
-    window.location.reload();
-  });
+  signupGoogleBtn?.addEventListener("click", () =>
+    openAuthPage("sign-up", "google")
+  );
 
   // Sign out logic
   signoutBtn?.addEventListener("click", () => {
@@ -211,429 +585,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // ensureUserExists is no longer needed with Firebase; web app handles user creation
 });
 
-function showAuthSuccessMessage() {
-  const popup = document.querySelector(".popup-content");
-  if (!popup) return;
-
-  popup.innerHTML = `
-    <div class="header">
-      <div class="logo">✅</div>
-      <h1 class="title">Authentication Complete!</h1>
-      <p class="subtitle">Please click the button below to refresh and access features</p>
-    </div>
-    <div class="actions">
-      <button class="btn btn-primary" id="refresh-btn">
-        🔄 Refresh Extension
-      </button>
-      <button class="btn btn-secondary" id="manual-setup-btn">
-        ⚙️ Manual Setup
-      </button>
-    </div>
-  `;
-
-  document.getElementById("refresh-btn")?.addEventListener("click", () => {
-    window.location.reload();
-  });
-
-  document.getElementById("manual-setup-btn")?.addEventListener("click", () => {
-    showManualSetup();
-  });
-}
-
-function showManualSetup() {
-  const popup = document.querySelector(".popup-content");
-  if (!popup) return;
-
-  popup.innerHTML = `
-    <div class="header">
-      <div class="logo">⚙️</div>
-      <h1 class="title">Manual Setup</h1>
-      <p class="subtitle">Enter your user ID manually</p>
-    </div>
-    <div style="padding: 20px;">
-      <label style="display: block; margin-bottom: 8px; font-weight: 600;">User ID:</label>
-      <input type="text" id="manual-user-id" placeholder="Enter your user ID" 
-             style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px; margin-bottom: 12px;">
-      <p style="font-size: 12px; color: #6b7280; margin-bottom: 16px;">
-        You can find your user ID in your account settings on the web app.
-      </p>
-      <button class="btn btn-primary" id="save-user-id" style="width: 100%; margin-bottom: 8px;">
-        Save User ID
-      </button>
-      <button class="btn btn-secondary" id="back-to-auth" style="width: 100%;">
-        ← Back to Authentication
-      </button>
-    </div>
-  `;
-
-  document.getElementById("save-user-id")?.addEventListener("click", () => {
-    const userIdInput = document.getElementById(
-      "manual-user-id"
-    ) as HTMLInputElement;
-    const userId = userIdInput.value.trim();
-
-    if (userId) {
-      chrome.storage.sync.set({ userId }, () => {
-        window.location.reload();
-      });
-    } else {
-      userIdInput.style.borderColor = "#ef4444";
-      userIdInput.placeholder = "Please enter a valid user ID";
-    }
-  });
-
-  document.getElementById("back-to-auth")?.addEventListener("click", () => {
-    window.location.reload();
-  });
-}
-
-function showSettings() {
-  const popup = document.querySelector(".popup-content");
-  if (!popup) return;
-
-  popup.innerHTML = `
-    <div class="header">
-      <div class="logo">⚙️</div>
-      <h1 class="title">Settings</h1>
-      <button id="back-btn" class="btn btn-secondary" style="position: absolute; top: 10px; left: 10px; padding: 4px 8px;">← Back</button>
-    </div>
-
-    <div style="padding: 20px; max-height: 400px; overflow-y: auto;">
-      <div style="margin-bottom: 16px;">
-        <label style="display: block; margin-bottom: 4px; font-weight: 600;">Web App URL:</label>
-  <input type="text" id="web-app-url" placeholder="${DEFAULT_WEB_APP_URL}" 
-               style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;">
-      </div>
-
-      <hr style="margin: 20px 0; border: none; border-top: 1px solid #e5e7eb;">
-      
-      <h3 style="margin: 0 0 12px 0; font-size: 14px; color: #374151;">📝 Autofill Profile</h3>
-      
-      <div style="margin-bottom: 12px;">
-        <label style="display: block; margin-bottom: 4px; font-weight: 600; font-size: 12px;">First Name:</label>
-        <input type="text" id="first-name" placeholder="John" 
-               style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 12px;">
-      </div>
-      
-      <div style="margin-bottom: 12px;">
-        <label style="display: block; margin-bottom: 4px; font-weight: 600; font-size: 12px;">Last Name:</label>
-        <input type="text" id="last-name" placeholder="Doe" 
-               style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 12px;">
-      </div>
-      
-      <div style="margin-bottom: 12px;">
-        <label style="display: block; margin-bottom: 4px; font-weight: 600; font-size: 12px;">Email:</label>
-        <input type="email" id="email" placeholder="john.doe@email.com" 
-               style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 12px;">
-      </div>
-      
-      <div style="margin-bottom: 12px;">
-        <label style="display: block; margin-bottom: 4px; font-weight: 600; font-size: 12px;">Phone:</label>
-        <input type="tel" id="phone" placeholder="+1 (555) 123-4567" 
-               style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 12px;">
-      </div>
-      
-      <div style="margin-bottom: 12px;">
-        <label style="display: block; margin-bottom: 4px; font-weight: 600; font-size: 12px;">Current Job Title:</label>
-        <input type="text" id="current-title" placeholder="Software Engineer" 
-               style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 12px;">
-      </div>
-      
-      <div style="margin-bottom: 12px;">
-        <label style="display: block; margin-bottom: 4px; font-weight: 600; font-size: 12px;">Years of Experience:</label>
-        <input type="text" id="experience" placeholder="5 years" 
-               style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 12px;">
-      </div>
-      
-      <div style="margin-bottom: 12px;">
-        <label style="display: block; margin-bottom: 4px; font-weight: 600; font-size: 12px;">LinkedIn URL:</label>
-        <input type="url" id="linkedin-url" placeholder="https://linkedin.com/in/johndoe" 
-               style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 12px;">
-      </div>
-      
-      <div style="margin-bottom: 12px;">
-        <label style="display: block; margin-bottom: 4px; font-weight: 600; font-size: 12px;">Salary Expectation:</label>
-        <input type="text" id="salary-expectation" placeholder="$80,000 - $100,000" 
-               style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 12px;">
-      </div>
-      
-      <div style="margin-bottom: 12px;">
-        <label style="display: block; margin-bottom: 4px; font-weight: 600; font-size: 12px;">Work Authorization:</label>
-        <select id="work-authorization" style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 12px;">
-          <option value="">Select...</option>
-          <option value="US Citizen">US Citizen</option>
-          <option value="Green Card Holder">Green Card Holder</option>
-          <option value="H1B Visa">H1B Visa</option>
-          <option value="F1 Visa (OPT)">F1 Visa (OPT)</option>
-          <option value="Requires Sponsorship">Requires Sponsorship</option>
-        </select>
-      </div>
-      
-      <div style="margin-bottom: 16px;">
-        <label style="display: block; margin-bottom: 4px; font-weight: 600; font-size: 12px;">Cover Letter Template:</label>
-        <textarea id="cover-letter" placeholder="Dear Hiring Manager, I am excited to apply for this position..." 
-                  style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 12px; height: 80px; resize: vertical;"></textarea>
-      </div>
-
-      <hr style="margin: 20px 0; border: none; border-top: 1px solid #e5e7eb;">
-      
-      <h3 style="margin: 0 0 12px 0; font-size: 14px; color: #374151;">👥 People Search Settings</h3>
-      
-      <div style="margin-bottom: 12px;">
-        <label style="display: block; margin-bottom: 4px; font-weight: 600; font-size: 12px;">Default Keywords:</label>
-        <input type="text" id="default-keywords" placeholder="software engineer, product manager" 
-               style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 12px;">
-      </div>
-      
-      <div style="margin-bottom: 12px;">
-        <label style="display: block; margin-bottom: 4px; font-weight: 600; font-size: 12px;">Preferred Connection Level:</label>
-        <select id="default-connection-level" style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 12px;">
-          <option value="all">All connections</option>
-          <option value="1st">1st connections</option>
-          <option value="2nd">2nd connections</option>
-          <option value="3rd">3rd+ connections</option>
-        </select>
-      </div>
-      
-      <div style="margin-bottom: 12px;">
-        <label style="display: block; margin-bottom: 4px; font-weight: 600; font-size: 12px;">Auto-Connect Limit:</label>
-        <select id="auto-connect-limit" style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 12px;">
-          <option value="3">3 connections per session</option>
-          <option value="5">5 connections per session</option>
-          <option value="10">10 connections per session</option>
-          <option value="20">20 connections per session</option>
-        </select>
-      </div>
-      
-      <div style="margin-bottom: 16px;">
-        <label style="display: flex; align-items: center; font-size: 12px;">
-          <input type="checkbox" id="auto-message" style="margin-right: 8px;">
-          Send personalized connection message
-        </label>
-      </div>
-      
-      <div style="margin-bottom: 16px;">
-        <label style="display: block; margin-bottom: 4px; font-weight: 600; font-size: 12px;">Connection Message Template:</label>
-        <textarea id="connection-message" placeholder="Hi {name}, I'd love to connect and learn more about your experience at {company}." 
-                  style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 12px; height: 60px; resize: vertical;"></textarea>
-        <div style="font-size: 10px; color: #6b7280; margin-top: 2px;">Use {name} and {company} for personalization</div>
-      </div>
-
-      <button id="save-settings" class="btn btn-primary" style="width: 100%;">Save Settings</button>
-    </div>
-  `;
-
-  // Load current settings
-  chrome.storage.sync.get(
-    [
-      "webAppUrl",
-      "defaultKeywords",
-      "defaultConnectionLevel",
-      "autoConnectLimit",
-      "autoMessage",
-      "connectionMessage",
-      "autofillProfile",
-    ],
-    (result) => {
-      const webAppUrlInput = document.getElementById(
-        "web-app-url"
-      ) as HTMLInputElement;
-      const defaultKeywordsInput = document.getElementById(
-        "default-keywords"
-      ) as HTMLInputElement;
-      const defaultConnectionLevelSelect = document.getElementById(
-        "default-connection-level"
-      ) as HTMLSelectElement;
-      const autoConnectLimitSelect = document.getElementById(
-        "auto-connect-limit"
-      ) as HTMLSelectElement;
-      const autoMessageCheckbox = document.getElementById(
-        "auto-message"
-      ) as HTMLInputElement;
-      const connectionMessageTextarea = document.getElementById(
-        "connection-message"
-      ) as HTMLTextAreaElement;
-
-      // Autofill profile fields
-      const firstNameInput = document.getElementById(
-        "first-name"
-      ) as HTMLInputElement;
-      const lastNameInput = document.getElementById(
-        "last-name"
-      ) as HTMLInputElement;
-      const emailInput = document.getElementById("email") as HTMLInputElement;
-      const phoneInput = document.getElementById("phone") as HTMLInputElement;
-      const currentTitleInput = document.getElementById(
-        "current-title"
-      ) as HTMLInputElement;
-      const experienceInput = document.getElementById(
-        "experience"
-      ) as HTMLInputElement;
-      const linkedinUrlInput = document.getElementById(
-        "linkedin-url"
-      ) as HTMLInputElement;
-      const salaryExpectationInput = document.getElementById(
-        "salary-expectation"
-      ) as HTMLInputElement;
-      const workAuthorizationSelect = document.getElementById(
-        "work-authorization"
-      ) as HTMLSelectElement;
-      const coverLetterTextarea = document.getElementById(
-        "cover-letter"
-      ) as HTMLTextAreaElement;
-      if (webAppUrlInput)
-        webAppUrlInput.value = result.webAppUrl || DEFAULT_WEB_APP_URL;
-      if (defaultKeywordsInput)
-        defaultKeywordsInput.value = result.defaultKeywords || "";
-      if (defaultConnectionLevelSelect)
-        defaultConnectionLevelSelect.value =
-          result.defaultConnectionLevel || "all";
-      if (autoConnectLimitSelect)
-        autoConnectLimitSelect.value = result.autoConnectLimit || "5";
-      if (autoMessageCheckbox)
-        autoMessageCheckbox.checked = result.autoMessage || false;
-      if (connectionMessageTextarea)
-        connectionMessageTextarea.value =
-          result.connectionMessage ||
-          "Hi {name}, I'd love to connect and learn more about your experience at {company}.";
-
-      // Load autofill profile
-      const profile = result.autofillProfile;
-      if (profile) {
-        if (firstNameInput)
-          firstNameInput.value = profile.personalInfo?.firstName || "";
-        if (lastNameInput)
-          lastNameInput.value = profile.personalInfo?.lastName || "";
-        if (emailInput) emailInput.value = profile.personalInfo?.email || "";
-        if (phoneInput) phoneInput.value = profile.personalInfo?.phone || "";
-        if (currentTitleInput)
-          currentTitleInput.value = profile.professional?.currentTitle || "";
-        if (experienceInput)
-          experienceInput.value = profile.professional?.experience || "";
-        if (linkedinUrlInput)
-          linkedinUrlInput.value = profile.professional?.linkedinUrl || "";
-        if (salaryExpectationInput)
-          salaryExpectationInput.value =
-            profile.preferences?.salaryExpectation || "";
-        if (workAuthorizationSelect)
-          workAuthorizationSelect.value =
-            profile.preferences?.workAuthorization || "";
-        if (coverLetterTextarea)
-          coverLetterTextarea.value = profile.preferences?.coverLetter || "";
-      }
-    }
-  );
-
-  // Add event listeners
-  document.getElementById("back-btn")?.addEventListener("click", () => {
-    location.reload();
-  });
-
-  document.getElementById("save-settings")?.addEventListener("click", () => {
-    const webAppUrl = (
-      document.getElementById("web-app-url") as HTMLInputElement
-    ).value;
-    const defaultKeywords = (
-      document.getElementById("default-keywords") as HTMLInputElement
-    ).value;
-    const defaultConnectionLevel = (
-      document.getElementById("default-connection-level") as HTMLSelectElement
-    ).value;
-    const autoConnectLimit = (
-      document.getElementById("auto-connect-limit") as HTMLSelectElement
-    ).value;
-    const autoMessage = (
-      document.getElementById("auto-message") as HTMLInputElement
-    ).checked;
-    const connectionMessage = (
-      document.getElementById("connection-message") as HTMLTextAreaElement
-    ).value;
-
-    // Collect autofill profile data
-    const autofillProfile = {
-      personalInfo: {
-        firstName: (document.getElementById("first-name") as HTMLInputElement)
-          .value,
-        lastName: (document.getElementById("last-name") as HTMLInputElement)
-          .value,
-        email: (document.getElementById("email") as HTMLInputElement).value,
-        phone: (document.getElementById("phone") as HTMLInputElement).value,
-        address: "",
-        city: "",
-        state: "",
-        zipCode: "",
-        country: "",
-      },
-      professional: {
-        currentTitle: (
-          document.getElementById("current-title") as HTMLInputElement
-        ).value,
-        experience: (document.getElementById("experience") as HTMLInputElement)
-          .value,
-        education: "",
-        skills: "",
-        linkedinUrl: (
-          document.getElementById("linkedin-url") as HTMLInputElement
-        ).value,
-        portfolioUrl: "",
-        githubUrl: "",
-      },
-      preferences: {
-        salaryExpectation: (
-          document.getElementById("salary-expectation") as HTMLInputElement
-        ).value,
-        availableStartDate: "",
-        workAuthorization: (
-          document.getElementById("work-authorization") as HTMLSelectElement
-        ).value,
-        relocate: false,
-        coverLetter: (
-          document.getElementById("cover-letter") as HTMLTextAreaElement
-        ).value,
-      },
-    };
-
-  chrome.storage.sync.set(
-      {
-        webAppUrl,
-        defaultKeywords,
-        defaultConnectionLevel,
-        autoConnectLimit,
-        autoMessage,
-        connectionMessage,
-        autofillProfile,
-      },
-      () => {
-    // Attempt to sync settings to web app if we have a user
-    chrome.storage.sync.get(["firebaseUid", "userId"], async (res) => {
-      const uid = res.firebaseUid || res.userId;
-      if (uid) {
-        try {
-          const base = (webAppUrl || DEFAULT_WEB_APP_URL).replace(/\/$/, "");
-          await fetch(`${base}/api/app/users/${encodeURIComponent(uid)}/settings`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              defaultKeywords,
-              defaultConnectionLevel,
-              autoConnectLimit,
-              autoMessage,
-              connectionMessage,
-              autofillProfile,
-            }),
-          });
-        } catch {
-          // ignore network errors; local save still succeeded
-        }
-      }
-      showToast("Settings saved", { type: "success" });
-      setTimeout(() => location.reload(), 800);
-    });
-      }
-    );
-  });
-}
-
 function loadStats() {
   chrome.storage.local.get(
     ["jobsToday", "sponsoredJobs", "applications", "jobBoardData"],
@@ -643,15 +594,96 @@ function loadStats() {
       document.getElementById("sponsored-jobs")!.textContent =
         result.sponsoredJobs || "0";
 
-      // Update job board count
+      // Update applications count
       const jobBoardData = result.jobBoardData || [];
+      const appliedCount = jobBoardData.filter(
+        (job: any) => job.status === "applied"
+      ).length;
       document.getElementById("applications")!.textContent =
         jobBoardData.length.toString();
-    },
+      document.getElementById("applied-count")!.textContent =
+        appliedCount.toString();
+    }
   );
 }
 
 function loadSettings() {
-  // No legacy settings needed anymore
-  return;
+  chrome.storage.sync.get(
+    [
+      "autoDetectJobs",
+      "showJobBadges",
+      "autoSaveProfile",
+      "webAppUrl",
+      "syncFrequency",
+    ],
+    (result) => {
+      // Load toggle states
+      const autoDetectToggle = document.getElementById("auto-detect-toggle");
+      const showBadgesToggle = document.getElementById("show-badges-toggle");
+      const autoSaveProfileToggle = document.getElementById(
+        "auto-save-profile-toggle"
+      );
+
+      if (autoDetectToggle) {
+        autoDetectToggle.classList.toggle(
+          "active",
+          result.autoDetectJobs !== false
+        );
+      }
+      if (showBadgesToggle) {
+        showBadgesToggle.classList.toggle(
+          "active",
+          result.showJobBadges !== false
+        );
+      }
+      if (autoSaveProfileToggle) {
+        autoSaveProfileToggle.classList.toggle(
+          "active",
+          result.autoSaveProfile !== false
+        );
+      }
+
+      // Load input values
+      const webAppUrlInput = document.getElementById(
+        "web-app-url"
+      ) as HTMLInputElement;
+      const syncFrequencySelect = document.getElementById(
+        "sync-frequency"
+      ) as HTMLSelectElement;
+
+      if (webAppUrlInput) {
+        webAppUrlInput.value = result.webAppUrl || DEFAULT_WEB_APP_URL;
+      }
+      if (syncFrequencySelect) {
+        syncFrequencySelect.value = result.syncFrequency || "realtime";
+      }
+    }
+  );
+}
+
+function saveSettings() {
+  const autoDetectToggle = document.getElementById("auto-detect-toggle");
+  const showBadgesToggle = document.getElementById("show-badges-toggle");
+  const autoSaveProfileToggle = document.getElementById(
+    "auto-save-profile-toggle"
+  );
+  const webAppUrlInput = document.getElementById(
+    "web-app-url"
+  ) as HTMLInputElement;
+  const syncFrequencySelect = document.getElementById(
+    "sync-frequency"
+  ) as HTMLSelectElement;
+
+  const settings = {
+    autoDetectJobs: autoDetectToggle?.classList.contains("active") ?? true,
+    showJobBadges: showBadgesToggle?.classList.contains("active") ?? true,
+    autoSaveProfile:
+      autoSaveProfileToggle?.classList.contains("active") ?? true,
+    webAppUrl: webAppUrlInput?.value || DEFAULT_WEB_APP_URL,
+    syncFrequency: syncFrequencySelect?.value || "realtime",
+  };
+
+  chrome.storage.sync.set(settings, () => {
+    showToast("Settings saved", { type: "success" });
+  });
 }

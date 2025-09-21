@@ -32,10 +32,16 @@ export interface CvAnalysis {
   weaknesses?: string[];
   recommendations?: string[];
   missingSkills?: string[];
-  atsCompatibility?: { score: number; issues?: string[]; suggestions?: string[] };
+  atsCompatibility?: {
+    score: number;
+    issues?: string[];
+    suggestions?: string[];
+  };
   summary?: string;
   createdAt: number;
   updatedAt?: number;
+  targetRole?: string;
+  industry?: string;
   keywordAnalysis?: {
     presentKeywords?: string[];
     missingKeywords?: string[];

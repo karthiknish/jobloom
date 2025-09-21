@@ -6,10 +6,27 @@ interface JobData {
   url: string;
   description?: string;
   salary?: string;
+  salaryRange?: {
+    min?: number;
+    max?: number;
+    currency?: string;
+    period?: string;
+  };
+  skills?: string[];
+  requirements?: string[];
+  benefits?: string[];
+  jobType?: string;
+  experienceLevel?: string;
+  remoteWork?: boolean;
+  companySize?: string;
+  industry?: string;
+  postedDate?: string;
+  applicationDeadline?: string;
   isSponsored: boolean;
   isRecruitmentAgency?: boolean;
   sponsorshipType?: string;
   dateFound: string;
+  source: string;
 }
 
 interface PersonData {
@@ -93,7 +110,7 @@ class JobTracker {
 
   constructor() {
     // Default Web App URL - will be updated from storage
-  this.webAppUrl = DEFAULT_WEB_APP_URL;
+    this.webAppUrl = DEFAULT_WEB_APP_URL;
     this.currentJobSite = this.detectJobSite();
     this.init();
   }
@@ -168,7 +185,9 @@ class JobTracker {
         if (!(await this.checkRateLimit())) {
           const timeUntilReset =
             this.rateLimitWindow - (Date.now() - this.lastRequestTime);
-          button.textContent = `⏰ Rate limited (${Math.ceil(timeUntilReset / 1000)}s)`;
+          button.textContent = `⏰ Rate limited (${Math.ceil(
+            timeUntilReset / 1000
+          )}s)`;
           button.style.background = "#f59e0b";
 
           // Reset button after rate limit expires
@@ -637,11 +656,21 @@ class JobTracker {
         <div style="display: flex; justify-content: between; align-items: start; margin-bottom: 8px;">
           <div style="flex: 1;">
             <h4 style="margin: 0 0 4px 0; font-size: 14px; color: #333;">
-              <a href="${person.profileUrl}" target="_blank" style="color: #0a66c2; text-decoration: none;">${person.name}</a>
+              <a href="${
+                person.profileUrl
+              }" target="_blank" style="color: #0a66c2; text-decoration: none;">${
+          person.name
+        }</a>
             </h4>
-            <p style="margin: 0 0 2px 0; font-size: 12px; color: #666;">${person.title}</p>
-            <p style="margin: 0 0 2px 0; font-size: 12px; color: #666;">${person.company}</p>
-            <p style="margin: 0; font-size: 11px; color: #999;">${person.location} • ${person.connectionDegree}</p>
+            <p style="margin: 0 0 2px 0; font-size: 12px; color: #666;">${
+              person.title
+            }</p>
+            <p style="margin: 0 0 2px 0; font-size: 12px; color: #666;">${
+              person.company
+            }</p>
+            <p style="margin: 0; font-size: 11px; color: #999;">${
+              person.location
+            } • ${person.connectionDegree}</p>
           </div>
           <div style="margin-left: 10px;">
             <span style="background: #e3f2fd; color: #1976d2; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600;">
@@ -766,7 +795,9 @@ class JobTracker {
       const timeUntilReset =
         this.rateLimitWindow - (now - this.lastRequestTime);
       console.warn(
-        `Rate limit exceeded. Try again in ${Math.ceil(timeUntilReset / 1000)} seconds.`
+        `Rate limit exceeded. Try again in ${Math.ceil(
+          timeUntilReset / 1000
+        )} seconds.`
       );
       return false;
     }
@@ -812,11 +843,8 @@ class JobTracker {
         );
       }
 
-  const base = (this.webAppUrl || DEFAULT_WEB_APP_URL).replace(
-        /\/$/,
-        ""
-      );
-  const response = await fetch(`${base}/api/app/sponsorship/check`, {
+      const base = (this.webAppUrl || DEFAULT_WEB_APP_URL).replace(/\/$/, "");
+      const response = await fetch(`${base}/api/app/sponsorship/check`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ companies: limitedCompanies }),
@@ -839,7 +867,7 @@ class JobTracker {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-  const results = await response.json();
+      const results = await response.json();
       return results;
     } catch (error) {
       console.error("Failed to check company sponsorship:", error);
@@ -860,31 +888,120 @@ class JobTracker {
         ".job-card-container",
         "[data-job-id]",
         ".reusable-search__result-container",
+        ".jobs-unified-top-card",
+        ".job-card-list",
+        "[data-test-id='job-card']",
       ],
       indeed: [
         ".job_seen_beacon",
         ".slider_container .slider_item",
         "[data-jk]",
         ".jobsearch-SerpJobCard",
+        "[data-testid='job-card']",
+        ".tapItem",
+        ".jobCardItem",
       ],
       glassdoor: [
         ".react-job-listing",
         ".jobContainer",
-        '[data-test=\"job-listing\"]',
+        '[data-test="job-listing"]',
         ".JobCard",
+        "[data-testid='job-card']",
+        ".jl",
+        ".jobListing",
       ],
-      monster: [".job-card", ".job-listing", "[data-jobid]"],
-      ziprecruiter: [".job_content", ".job-listing", "[data-job-id]"],
+      monster: [
+        ".job-card",
+        ".job-listing",
+        "[data-jobid]",
+        ".jobTitle",
+        ".job-card__content",
+        ".card-job",
+      ],
+      ziprecruiter: [
+        ".job_content",
+        ".job-listing",
+        "[data-job-id]",
+        ".job_result",
+        ".job-item",
+        "[data-testid='job-card']",
+      ],
       google_jobs: [
         ".PwjeAc",
         ".gws-plugins-horizon-jobs__li-ed",
         "[data-ved]",
+        ".gws-plugins-horizon-jobs__job",
+        "[data-testid='job-card']",
       ],
-      seek: [".job-card", '[data-automation=\"jobListing\"]', ".JobCard"],
-      totaljobs: [".job", ".job-item", "[data-job-id]"],
-      reed: [".job-result", ".job-card", "[data-id]"],
-      jobsite: [".job", ".job-item", ".job-card"],
-      unknown: [".job-card", ".job-listing", ".job-result", "[data-job-id]"],
+      seek: [
+        ".job-card",
+        '[data-automation="jobListing"]',
+        ".JobCard",
+        "[data-testid='job-card']",
+        ".job-result",
+      ],
+      totaljobs: [
+        ".job",
+        ".job-item",
+        "[data-job-id]",
+        ".jobCard",
+        ".job-listing",
+        "[data-testid='job-card']",
+      ],
+      reed: [
+        ".job-result",
+        ".job-card",
+        "[data-id]",
+        ".job-item",
+        "[data-testid='job-card']",
+        ".jobCard",
+      ],
+      jobsite: [
+        ".job",
+        ".job-item",
+        ".job-card",
+        "[data-job-id]",
+        "[data-testid='job-card']",
+        ".job-result",
+      ],
+      // Additional job sites
+      dice: [
+        ".card-job",
+        ".job-card",
+        "[data-cy='job-card']",
+        ".job",
+        ".job-listing",
+      ],
+      careerbuilder: [
+        ".job-listing",
+        ".job-card",
+        ".job-item",
+        "[data-job-id]",
+        ".job-result",
+      ],
+      snagajob: [
+        ".job-card",
+        ".job-listing",
+        ".job-item",
+        "[data-job-id]",
+        ".job-result",
+      ],
+      snaphire: [
+        ".job-card",
+        ".job-listing",
+        ".job-item",
+        "[data-job-id]",
+        ".job-result",
+      ],
+      unknown: [
+        ".job-card",
+        ".job-listing",
+        ".job-result",
+        ".job-item",
+        "[data-job-id]",
+        "[data-testid='job-card']",
+        "[data-cy='job-card']",
+      ],
     };
 
     const selectors =
@@ -893,12 +1010,20 @@ class JobTracker {
     const elements: Element[] = [];
 
     selectors.forEach((selector) => {
-      elements.push(...Array.from(document.querySelectorAll(selector)));
+      try {
+        const found = document.querySelectorAll(selector);
+        elements.push(...Array.from(found));
+      } catch (error) {
+        console.warn(`Invalid selector: ${selector}`, error);
+      }
     });
 
     // Remove nested duplicates: keep only outermost elements
     const filtered = elements.filter(
-      (el) => !elements.some((other) => other !== el && other.contains(el))
+      (el) =>
+        el &&
+        el.isConnected &&
+        !elements.some((other) => other !== el && other.contains(el))
     );
 
     // Return unique elements (in case of duplicates in selectors)
@@ -908,30 +1033,89 @@ class JobTracker {
   private extractJobData(element: Element): JobData {
     const siteSpecificSelectors = {
       linkedin: {
-        title: ".job-card-list__title, .job-card-container__link",
+        title:
+          ".job-card-list__title, .job-card-container__link, .job-card-container__link strong",
         company:
-          ".job-card-container__primary-description, .job-card-list__company",
+          ".job-card-container__primary-description, .job-card-list__company, .job-card-container__company-name",
         location:
-          ".job-card-container__metadata-item, .job-card-list__metadata",
-        link: 'a[data-control-name="job_card_click"]',
+          ".job-card-container__metadata-item, .job-card-list__metadata, .job-card-container__metadata-wrapper",
+        link: 'a[data-control-name="job_card_click"], .job-card-container__link',
+        description:
+          ".job-card-list__description, .job-card-container__details",
+        salary: ".job-card-container__salary, .salary",
+        skills: ".job-card-list__skills, .job-card-container__skills",
+        postedDate: ".job-card-container__posted-date, .posted-date",
       },
       indeed: {
-        title: '[data-testid="job-title"], .jobTitle',
-        company: '[data-testid="company-name"], .companyName',
-        location: '[data-testid="job-location"], .companyLocation',
+        title: '[data-testid="job-title"], .jobTitle, h2 a',
+        company: '[data-testid="company-name"], .companyName, .company',
+        location: '[data-testid="job-location"], .companyLocation, .location',
         link: "h2 a, .jobTitle a",
+        description: ".job-snippet, .summary",
+        salary: ".salary-snippet, .salary",
+        skills: ".jobsearch-JobMetadataHeader-item",
+        postedDate: ".date",
       },
       glassdoor: {
-        title: '[data-test="job-title"], .jobTitle',
-        company: '[data-test="employer-name"], .employerName',
+        title: '[data-test="job-title"], .jobTitle, .jobLink',
+        company: '[data-test="employer-name"], .employerName, .employer',
         location: '[data-test="job-location"], .location',
-        link: '[data-test="job-link"], .jobTitle a',
+        link: '[data-test="job-link"], .jobTitle a, .jobLink',
+        description: ".jobDescription, .desc",
+        salary: ".salary-estimate, .salary",
+        skills: ".jobTags, .skill",
+        postedDate: ".minor, .date",
+      },
+      monster: {
+        title: ".jobTitle, .title, h2 a",
+        company: ".company, .job-company",
+        location: ".location, .job-location",
+        link: ".jobTitle a, h2 a",
+        description: ".job-description, .summary",
+        salary: ".salary, .compensation",
+        skills: ".job-skills, .skills",
+        postedDate: ".posted-date, .date",
+      },
+      ziprecruiter: {
+        title: ".job_title, .jobTitle, h1",
+        company: ".job_company, .company",
+        location: ".job_location, .location",
+        link: ".job_title a, h1 a",
+        description: ".job_description, .description",
+        salary: ".job_salary, .salary",
+        skills: ".job_skills, .skills",
+        postedDate: ".posted-date, .date",
+      },
+      google_jobs: {
+        title: ".PwjeAc, .BjJfJf, h2",
+        company: ".vNEEBe, .pMhGee, .Qk80Jf",
+        location: ".Qk80Jf, .KKryqe",
+        link: "a[href]",
+        description: ".HBvzbc, .YgLbI",
+        salary: ".KKryqe",
+        skills: ".nZp5Db, .rP6RAd",
+        postedDate: ".KKryqe",
+      },
+      seek: {
+        title: ".job-title, h1, .title",
+        company: ".company, .job-company",
+        location: ".location, .job-location",
+        link: ".job-title a, h1 a",
+        description: ".job-description, .description",
+        salary: ".salary, .compensation",
+        skills: ".job-skills, .skills",
+        postedDate: ".posted-date, .date",
       },
       unknown: {
-        title: 'h3, .job-title, [data-testid="job-title"]',
+        title: 'h3, .job-title, [data-testid="job-title"], .title',
         company: '.company, .job-company, [data-testid="job-company"]',
         location: '.location, .job-location, [data-testid="job-location"]',
         link: "a",
+        description:
+          '.description, .summary, .snippet, [data-testid="job-description"]',
+        salary: '.salary, .compensation, [data-testid="job-salary"]',
+        skills: '.skills, .job-skills, [data-testid="job-skills"]',
+        postedDate: '.date, .posted-date, [data-testid="job-date"]',
       },
     };
 
@@ -944,23 +1128,44 @@ class JobTracker {
     const companyEl = element.querySelector(selectors.company);
     const locationEl = element.querySelector(selectors.location);
     const linkEl = element.querySelector(selectors.link);
+    const descriptionEl = element.querySelector(selectors.description);
+    const salaryEl = element.querySelector(selectors.salary);
+    const skillsEl = element.querySelector(selectors.skills);
+    const postedDateEl = element.querySelector(selectors.postedDate);
 
     const title = titleEl?.textContent?.trim() || "Unknown Title";
     const company = companyEl?.textContent?.trim() || "Unknown Company";
     const location = locationEl?.textContent?.trim() || "Unknown Location";
-    const description = element.textContent?.trim().slice(0, 2000) || undefined;
-    const salaryMatch = (element.textContent || "").match(
-      /\$\s?\d[\d,]*(?:\s?-\s?\$?\d[\d,]*)?|£\s?\d[\d,]*/
+    const url = linkEl?.getAttribute("href") || window.location.href;
+    const description =
+      descriptionEl?.textContent?.trim() ||
+      element.textContent?.trim().slice(0, 2000);
+    const salaryText = salaryEl?.textContent?.trim() || "";
+    const skillsText = skillsEl?.textContent?.trim() || "";
+    const postedDateText = postedDateEl?.textContent?.trim() || "";
+
+    // Parse salary information
+    const salaryRange = this.parseSalary(salaryText);
+
+    // Extract skills
+    const skills = this.extractSkills(skillsText, description);
+
+    // Extract job type and other metadata
+    const jobMetadata = this.extractJobMetadata(
+      description || "",
+      element.textContent || ""
     );
-    const salary = salaryMatch ? salaryMatch[0] : undefined;
 
     return {
       title,
       company,
       location,
-      url: linkEl?.getAttribute("href") || window.location.href,
+      url,
       description,
-      salary,
+      salary: salaryText,
+      salaryRange,
+      skills,
+      ...jobMetadata,
       isSponsored: false,
       isRecruitmentAgency: this.detectRecruitmentAgency(
         title,
@@ -968,7 +1173,242 @@ class JobTracker {
         element
       ),
       dateFound: new Date().toISOString(),
+      source: this.currentJobSite,
     };
+  }
+
+  private parseSalary(salaryText: string): JobData["salaryRange"] {
+    if (!salaryText) return undefined;
+
+    // Match various salary formats
+    const patterns = [
+      // $80,000 - $100,000 per year
+      /(\$|£|€|₹|¥)?\s?(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)\s*(?:-\s*(\$|£|€|₹|¥)?\s?(\d{1,3}(?:,\d{3})*(?:\.\d{2})?))?\s*(?:per\s+)?(year|month|week|day|hour)?/i,
+      // $25 - $35 an hour
+      /(\$|£|€|₹|¥)?\s?(\d{1,3}(?:\.\d{2})?)\s*(?:-\s*(\$|£|€|₹|¥)?\s?(\d{1,3}(?:\.\d{2})?))?\s*(?:an\s+|per\s+|a\s+)?(hour|day|week|month|year)/i,
+      // Up to $100,000
+      /(?:up\s+to\s+)?(\$|£|€|₹|¥)?\s?(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)\s*(?:an\s+|per\s+|a\s+)?(year|month|week|day|hour)?/i,
+    ];
+
+    for (const pattern of patterns) {
+      const match = salaryText.match(pattern);
+      if (match) {
+        const currency = match[1] || match[3] || "$";
+        const min = match[2]
+          ? parseFloat(match[2].replace(/,/g, ""))
+          : undefined;
+        const max = match[4] ? parseFloat(match[4].replace(/,/g, "")) : min;
+        const period = match[5] || match[6] || match[7] || "year";
+
+        return {
+          min,
+          max,
+          currency,
+          period,
+        };
+      }
+    }
+
+    return undefined;
+  }
+
+  private extractSkills(skillsText: string, description?: string): string[] {
+    const skills: string[] = [];
+    const text = `${skillsText} ${description || ""}`.toLowerCase();
+
+    // Common tech skills
+    const commonSkills = [
+      "javascript",
+      "typescript",
+      "python",
+      "java",
+      "c\\+\\+",
+      "c#",
+      "php",
+      "ruby",
+      "go",
+      "rust",
+      "react",
+      "vue",
+      "angular",
+      "svelte",
+      "jquery",
+      "bootstrap",
+      "tailwind",
+      "sass",
+      "css",
+      "html",
+      "node.js",
+      "express",
+      "django",
+      "flask",
+      "spring",
+      "laravel",
+      "rails",
+      "mongodb",
+      "mysql",
+      "postgresql",
+      "redis",
+      "elasticsearch",
+      "aws",
+      "azure",
+      "gcp",
+      "docker",
+      "kubernetes",
+      "jenkins",
+      "git",
+      "linux",
+      "windows",
+      "macos",
+      "agile",
+      "scrum",
+      "kanban",
+      "ci/cd",
+      "tdd",
+      "bdd",
+      "machine learning",
+      "ai",
+      "data science",
+      "analytics",
+      "sql",
+    ];
+
+    // Extract skills from text
+    const sentences = text.split(/[.!?]+/).filter((s) => s.length > 10);
+    sentences.forEach((sentence) => {
+      commonSkills.forEach((skill) => {
+        if (sentence.includes(skill) && !skills.includes(skill)) {
+          skills.push(skill);
+        }
+      });
+    });
+
+    // Also extract from comma-separated lists
+    const commaSeparated = text.split(",").map((s) => s.trim());
+    commaSeparated.forEach((item) => {
+      if (item.length > 2 && item.length < 20) {
+        skills.push(item);
+      }
+    });
+
+    return [...new Set(skills)].slice(0, 10); // Limit to 10 skills
+  }
+
+  private extractJobMetadata(
+    description: string,
+    fullText: string
+  ): Partial<JobData> {
+    const text = `${description} ${fullText}`.toLowerCase();
+
+    // Extract job type
+    let jobType: string | undefined;
+    if (text.includes("full time") || text.includes("full-time"))
+      jobType = "Full-time";
+    else if (text.includes("part time") || text.includes("part-time"))
+      jobType = "Part-time";
+    else if (text.includes("contract")) jobType = "Contract";
+    else if (text.includes("freelance")) jobType = "Freelance";
+    else if (text.includes("internship")) jobType = "Internship";
+
+    // Extract experience level
+    let experienceLevel: string | undefined;
+    if (
+      text.includes("entry level") ||
+      text.includes("junior") ||
+      text.includes("0-2 years")
+    )
+      experienceLevel = "Entry Level";
+    else if (text.includes("mid level") || text.includes("3-5 years"))
+      experienceLevel = "Mid Level";
+    else if (text.includes("senior") || text.includes("5+ years"))
+      experienceLevel = "Senior Level";
+    else if (text.includes("lead") || text.includes("principal"))
+      experienceLevel = "Lead/Principal";
+
+    // Extract remote work
+    const remoteWork =
+      text.includes("remote") ||
+      text.includes("work from home") ||
+      text.includes("wfh");
+
+    // Extract requirements and benefits
+    const requirements = this.extractRequirements(text);
+    const benefits = this.extractBenefits(text);
+
+    // Extract industry (simplified)
+    let industry: string | undefined;
+    if (text.includes("tech") || text.includes("technology"))
+      industry = "Technology";
+    else if (text.includes("finance") || text.includes("banking"))
+      industry = "Finance";
+    else if (text.includes("healthcare") || text.includes("medical"))
+      industry = "Healthcare";
+    else if (text.includes("education")) industry = "Education";
+    else if (text.includes("retail") || text.includes("e-commerce"))
+      industry = "Retail/E-commerce";
+
+    return {
+      jobType,
+      experienceLevel,
+      remoteWork,
+      requirements,
+      benefits,
+      industry,
+    };
+  }
+
+  private extractRequirements(text: string): string[] {
+    const requirements: string[] = [];
+    const lines = text.split(/[.!?]+/).map((line) => line.trim());
+
+    lines.forEach((line) => {
+      // Look for requirement patterns
+      if (
+        line.includes("required") ||
+        line.includes("must have") ||
+        line.includes("experience with") ||
+        line.includes("knowledge of") ||
+        /^\d+\s*\+?\s*years?/.test(line) ||
+        line.includes("bachelor") ||
+        line.includes("master") ||
+        line.includes("degree")
+      ) {
+        if (line.length > 20 && line.length < 200) {
+          requirements.push(line);
+        }
+      }
+    });
+
+    return requirements.slice(0, 5); // Limit to 5 requirements
+  }
+
+  private extractBenefits(text: string): string[] {
+    const benefits: string[] = [];
+    const lines = text.split(/[.!?]+/).map((line) => line.trim());
+
+    lines.forEach((line) => {
+      // Look for benefit patterns
+      if (
+        line.includes("benefit") ||
+        line.includes("offer") ||
+        line.includes("provide") ||
+        line.includes("health") ||
+        line.includes("dental") ||
+        line.includes("vision") ||
+        line.includes("pto") ||
+        line.includes("vacation") ||
+        line.includes("salary") ||
+        line.includes("bonus") ||
+        line.includes("equity") ||
+        line.includes("remote")
+      ) {
+        if (line.length > 20 && line.length < 150) {
+          benefits.push(line);
+        }
+      }
+    });
+
+    return benefits.slice(0, 5); // Limit to 5 benefits
   }
 
   private detectRecruitmentAgency(
@@ -1162,7 +1602,7 @@ class JobTracker {
       ...new Set(jobsToCheck.map((job) => job.data.company)),
     ];
 
-  // Check company sponsorship status via web API
+    // Check company sponsorship status via web API
     const sponsorshipResults = await this.checkCompanySponsorship(companyNames);
 
     // Create a map for quick lookup
@@ -1188,60 +1628,155 @@ class JobTracker {
   }
 
   private addJobBadge(element: Element, sponsorshipData: any) {
-    // Add badge at the top of the job posting (like UK Visa Checker)
-    const badge = document.createElement("div");
-    badge.className = "jobloom-badge";
+    // Enhanced job badge with more information
+    const badgeContainer = document.createElement("div");
+    badgeContainer.className = "jobloom-enhanced-badge";
+    badgeContainer.style.cssText = `
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      z-index: 1002;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      pointer-events: none;
+    `;
+
+    // Main sponsorship badge
+    const mainBadge = document.createElement("div");
+    mainBadge.className = "jobloom-main-badge";
 
     if (sponsorshipData && sponsorshipData.isSponsored) {
       const sponsorshipType = sponsorshipData.sponsorshipType || "sponsored";
       const badgeConfig = this.getBadgeConfig(sponsorshipType);
 
-      badge.innerHTML = `
+      mainBadge.innerHTML = `
         <span style="
           background: ${badgeConfig.background};
           color: ${badgeConfig.color};
-          padding: 4px 8px;
-          border-radius: 12px;
+          padding: 6px 10px;
+          border-radius: 14px;
           font-size: 11px;
           font-weight: 700;
           text-transform: uppercase;
           letter-spacing: 0.5px;
           display: inline-flex;
           align-items: center;
-          gap: 4px;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+          gap: 6px;
+          box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+          border: 1px solid rgba(255,255,255,0.2);
         ">
           ${badgeConfig.icon} ${sponsorshipType}
         </span>
       `;
     } else {
-      // Show "No Sponsorship" badge for clarity
-      badge.innerHTML = `
+      mainBadge.innerHTML = `
         <span style="
-          background: #f3f4f6;
+          background: rgba(255,255,255,0.9);
           color: #6b7280;
           padding: 4px 8px;
           border-radius: 12px;
-          font-size: 11px;
+          font-size: 10px;
           font-weight: 600;
           text-transform: uppercase;
           letter-spacing: 0.5px;
           display: inline-flex;
           align-items: center;
           gap: 4px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+          border: 1px solid rgba(0,0,0,0.1);
         ">
-          ❌ No Sponsorship
+          ℹ️ No Sponsorship Data
         </span>
       `;
     }
 
-    badge.style.cssText = `
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      z-index: 1002;
-      pointer-events: none;
+    badgeContainer.appendChild(mainBadge);
+
+    // Quick info badges
+    const jobData = this.extractJobData(element);
+    const infoBadges = document.createElement("div");
+    infoBadges.className = "jobloom-info-badges";
+    infoBadges.style.cssText = `
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      align-items: flex-end;
     `;
+
+    // Salary badge
+    if (jobData.salaryRange && jobData.salaryRange.min) {
+      const salaryBadge = document.createElement("div");
+      const salary =
+        jobData.salaryRange.currency + jobData.salaryRange.min.toLocaleString();
+      salaryBadge.innerHTML = `
+        <span style="
+          background: linear-gradient(135deg, #10b981, #059669);
+          color: white;
+          padding: 3px 6px;
+          border-radius: 8px;
+          font-size: 9px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        ">
+          💰 ${salary}
+        </span>
+      `;
+      infoBadges.appendChild(salaryBadge);
+    }
+
+    // Remote work badge
+    if (jobData.remoteWork) {
+      const remoteBadge = document.createElement("div");
+      remoteBadge.innerHTML = `
+        <span style="
+          background: linear-gradient(135deg, #3b82f6, #2563eb);
+          color: white;
+          padding: 3px 6px;
+          border-radius: 8px;
+          font-size: 9px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        ">
+          🏠 Remote
+        </span>
+      `;
+      infoBadges.appendChild(remoteBadge);
+    }
+
+    // Experience level badge
+    if (jobData.experienceLevel) {
+      const expBadge = document.createElement("div");
+      const expColor = jobData.experienceLevel.includes("Senior")
+        ? "#f59e0b"
+        : jobData.experienceLevel.includes("Mid")
+        ? "#8b5cf6"
+        : "#10b981";
+      expBadge.innerHTML = `
+        <span style="
+          background: ${expColor};
+          color: white;
+          padding: 3px 6px;
+          border-radius: 8px;
+          font-size: 9px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        ">
+          🎯 ${jobData.experienceLevel}
+        </span>
+      `;
+      infoBadges.appendChild(expBadge);
+    }
+
+    if (infoBadges.children.length > 0) {
+      badgeContainer.appendChild(infoBadges);
+    }
 
     // Make parent element relative if it's not already
     const htmlElement = element as HTMLElement;
@@ -1249,56 +1784,145 @@ class JobTracker {
       htmlElement.style.position = "relative";
     }
 
-    element.appendChild(badge);
+    element.appendChild(badgeContainer);
   }
 
   private addCompanyInfo(element: Element, sponsorshipData: any) {
-    // Add company info under the company name (like UK Visa Checker)
+    // Enhanced company info with skills and key information
     const companyElement = this.findCompanyElement(element);
     if (!companyElement) return;
 
+    const jobData = this.extractJobData(element);
     const infoDiv = document.createElement("div");
     infoDiv.className = "jobloom-company-info";
+    infoDiv.style.cssText = `
+      margin-top: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    `;
 
+    // Sponsorship info
     if (sponsorshipData && sponsorshipData.isSponsored) {
       const sponsorshipType = sponsorshipData.sponsorshipType || "sponsored";
       const badgeConfig = this.getBadgeConfig(sponsorshipType);
 
-      infoDiv.innerHTML = `
-        <div style="
-          margin-top: 4px;
-          padding: 6px 10px;
-          background: ${badgeConfig.background}15;
-          border-left: 3px solid ${badgeConfig.background};
-          border-radius: 4px;
-          font-size: 12px;
-          color: ${badgeConfig.background};
-          font-weight: 600;
-        ">
-          ${badgeConfig.icon} Sponsors ${sponsorshipType} positions
-          ${
-            sponsorshipData.matchedName &&
-            sponsorshipData.matchedName !== sponsorshipData.company
-              ? `<br><span style="font-size: 10px; opacity: 0.8;">Matched as: ${sponsorshipData.matchedName}</span>`
-              : ""
-          }
-        </div>
+      const sponsorshipDiv = document.createElement("div");
+      sponsorshipDiv.style.cssText = `
+        padding: 8px 12px;
+        background: linear-gradient(135deg, ${badgeConfig.background}15, ${badgeConfig.background}08);
+        border-left: 4px solid ${badgeConfig.background};
+        border-radius: 6px;
+        font-size: 12px;
+        color: ${badgeConfig.background};
+        font-weight: 600;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
       `;
-    } else {
-      infoDiv.innerHTML = `
-        <div style="
-          margin-top: 4px;
-          padding: 6px 10px;
-          background: #f9fafb;
-          border-left: 3px solid #d1d5db;
-          border-radius: 4px;
-          font-size: 12px;
-          color: #6b7280;
+      sponsorshipDiv.innerHTML = `
+        ${badgeConfig.icon} Sponsors ${sponsorshipType} positions
+        ${
+          sponsorshipData.matchedName &&
+          sponsorshipData.matchedName !== sponsorshipData.company
+            ? `<br><span style="font-size: 10px; opacity: 0.8; font-weight: 500;">Matched as: ${sponsorshipData.matchedName}</span>`
+            : ""
+        }
+      `;
+      infoDiv.appendChild(sponsorshipDiv);
+    }
+
+    // Job details summary
+    const detailsDiv = document.createElement("div");
+    detailsDiv.style.cssText = `
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      font-size: 11px;
+    `;
+
+    // Job type badge
+    if (jobData.jobType) {
+      const typeBadge = document.createElement("span");
+      typeBadge.style.cssText = `
+        background: #e0f2fe;
+        color: #0369a1;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      `;
+      typeBadge.textContent = jobData.jobType;
+      detailsDiv.appendChild(typeBadge);
+    }
+
+    // Skills preview (show top 3 skills)
+    if (jobData.skills && jobData.skills.length > 0) {
+      const skillsContainer = document.createElement("div");
+      skillsContainer.style.cssText = `
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-top: 4px;
+      `;
+
+      jobData.skills.slice(0, 3).forEach((skill) => {
+        const skillBadge = document.createElement("span");
+        skillBadge.style.cssText = `
+          background: #f3f4f6;
+          color: #374151;
+          padding: 2px 6px;
+          border-radius: 8px;
+          font-size: 10px;
           font-weight: 500;
-        ">
-          ℹ️ No sponsorship data available
-        </div>
+        `;
+        skillBadge.textContent = skill;
+        skillsContainer.appendChild(skillBadge);
+      });
+
+      // Show count if there are more skills
+      if (jobData.skills.length > 3) {
+        const moreBadge = document.createElement("span");
+        moreBadge.style.cssText = `
+          background: #e5e7eb;
+          color: #6b7280;
+          padding: 2px 6px;
+          border-radius: 8px;
+          font-size: 10px;
+          font-weight: 500;
+        `;
+        moreBadge.textContent = `+${jobData.skills.length - 3} more`;
+        skillsContainer.appendChild(moreBadge);
+      }
+
+      detailsDiv.appendChild(skillsContainer);
+    }
+
+    // Key requirements preview
+    if (jobData.requirements && jobData.requirements.length > 0) {
+      const reqDiv = document.createElement("div");
+      reqDiv.style.cssText = `
+        margin-top: 6px;
+        padding: 6px 10px;
+        background: #fefce8;
+        border-left: 3px solid #f59e0b;
+        border-radius: 4px;
+        font-size: 11px;
+        color: #92400e;
+        font-weight: 500;
       `;
+      reqDiv.innerHTML = `
+        <strong>Key Requirements:</strong> ${jobData.requirements[0]}
+        ${
+          jobData.requirements.length > 1
+            ? ` (+${jobData.requirements.length - 1} more)`
+            : ""
+        }
+      `;
+      detailsDiv.appendChild(reqDiv);
+    }
+
+    if (detailsDiv.children.length > 0) {
+      infoDiv.appendChild(detailsDiv);
     }
 
     companyElement.appendChild(infoDiv);
@@ -1310,37 +1934,65 @@ class JobTracker {
     sponsorshipData: any
   ) {
     // Skip if button already exists
-    if (element.querySelector(".jobloom-job-board-btn")) return;
+    if (element.querySelector(".jobloom-quick-actions")) return;
 
-    // Container to hold status select and add button
-    const container = document.createElement("div");
-    container.style.cssText = `
+    // Enhanced quick actions panel
+    const actionsPanel = document.createElement("div");
+    actionsPanel.className = "jobloom-quick-actions";
+    actionsPanel.style.cssText = `
       position: absolute;
-      top: 8px;
+      bottom: 8px;
       left: 8px;
+      right: 8px;
+      z-index: 1003;
       display: flex;
       gap: 6px;
       align-items: center;
-      z-index: 1003;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 8px;
+      padding: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.3s ease;
+      pointer-events: auto;
     `;
 
+    // Show panel on hover
+    element.addEventListener("mouseenter", () => {
+      actionsPanel.style.opacity = "1";
+      actionsPanel.style.transform = "translateY(0)";
+    });
+
+    element.addEventListener("mouseleave", () => {
+      actionsPanel.style.opacity = "0";
+      actionsPanel.style.transform = "translateY(10px)";
+    });
+
+    // Status selector
     const statusSelect = document.createElement("select");
     statusSelect.className = "jobloom-status-select";
     statusSelect.innerHTML = `
-      <option value="interested">Interested</option>
-      <option value="applied">Applied</option>
-      <option value="interviewing">Interviewing</option>
-      <option value="offered">Offered</option>
-      <option value="rejected">Rejected</option>
-      <option value="withdrawn">Withdrawn</option>
+      <option value="">Status</option>
+      <option value="interested">⭐ Interested</option>
+      <option value="applied">📝 Applied</option>
+      <option value="interviewing">🎯 Interviewing</option>
+      <option value="offered">🎉 Offered</option>
+      <option value="rejected">❌ Rejected</option>
+      <option value="withdrawn">🚫 Withdrawn</option>
     `;
     statusSelect.style.cssText = `
-      height: 28px;
-      padding: 2px 6px;
+      flex: 1;
+      height: 32px;
+      padding: 4px 8px;
       border: 1px solid #d1d5db;
       border-radius: 6px;
-      background: #ffffff;
+      background: white;
       font-size: 11px;
+      cursor: pointer;
+      min-width: 100px;
     `;
 
     // Load default status from settings if available
@@ -1350,44 +2002,50 @@ class JobTracker {
       }
     });
 
-    const button = document.createElement("button");
-    button.className = "jobloom-job-board-btn";
-    button.innerHTML = "📋 Add to Board";
-    button.style.cssText = `
+    // Quick action buttons
+    const quickActions = document.createElement("div");
+    quickActions.style.cssText = `
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    `;
+
+    // Add to board button
+    const addButton = document.createElement("button");
+    addButton.className = "jobloom-add-btn";
+    addButton.innerHTML = "📋 Add";
+    addButton.style.cssText = `
       background: #4f46e5;
       color: white;
       border: none;
-      padding: 6px 12px;
+      padding: 6px 10px;
       border-radius: 6px;
       font-size: 11px;
       font-weight: 600;
       cursor: pointer;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       transition: all 0.2s ease;
       display: flex;
       align-items: center;
       gap: 4px;
     `;
 
-    button.addEventListener("mouseenter", () => {
-      button.style.background = "#4338ca";
-      button.style.transform = "translateY(-1px)";
-      button.style.boxShadow = "0 4px 8px rgba(0,0,0,0.15)";
+    addButton.addEventListener("mouseenter", () => {
+      addButton.style.background = "#4338ca";
+      addButton.style.transform = "translateY(-1px)";
     });
 
-    button.addEventListener("mouseleave", () => {
-      button.style.background = "#4f46e5";
-      button.style.transform = "translateY(0)";
-      button.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
+    addButton.addEventListener("mouseleave", () => {
+      addButton.style.background = "#4f46e5";
+      addButton.style.transform = "translateY(0)";
     });
 
-    button.addEventListener("click", async (e) => {
+    addButton.addEventListener("click", async (e) => {
       e.preventDefault();
       e.stopPropagation();
 
-      const originalContent = button.innerHTML;
-      button.innerHTML = "⏳ Adding...";
-      button.disabled = true;
+      const originalContent = addButton.innerHTML;
+      addButton.innerHTML = "⏳ Adding...";
+      addButton.disabled = true;
 
       try {
         // Import the JobBoardManager and use it
@@ -1396,48 +2054,105 @@ class JobTracker {
         // Check if job already exists
         const jobExists = await JobBoardManager.checkIfJobExists(jobData);
         if (jobExists) {
-          button.innerHTML = "📋 Already Added";
-          button.style.background = "#6b7280";
-          button.disabled = true;
+          addButton.innerHTML = "✅ Added";
+          addButton.style.background = "#6b7280";
+          addButton.disabled = true;
+
+          // Show success message
+          this.showInlineToast(element, "Job already on your board!", "info");
           return;
         }
 
         // Add job to board with selected status
-        const selectedStatus = (statusSelect.value as any) || "interested";
+        const selectedStatus = statusSelect.value || "interested";
         const result = await JobBoardManager.addToBoardWithStatus(
           jobData,
-          selectedStatus
+          selectedStatus as any
         );
 
         if (result.success) {
-          button.innerHTML = "✅ Added!";
-          button.style.background = "#10b981";
+          addButton.innerHTML = "✅ Added!";
+          addButton.style.background = "#10b981";
 
           // Show success animation
-          button.style.transform = "scale(1.1)";
+          addButton.style.transform = "scale(1.1)";
           setTimeout(() => {
-            button.style.transform = "scale(1)";
+            addButton.style.transform = "scale(1)";
           }, 150);
 
-          // Revert after 2 seconds
+          // Update stats
+          this.updateJobStats();
+
+          // Show success message
+          this.showInlineToast(
+            element,
+            `Job added as ${selectedStatus}!`,
+            "success"
+          );
+
+          // Revert after 3 seconds
           setTimeout(() => {
-            button.innerHTML = "📋 On Board";
-            button.style.background = "#6b7280";
-            button.disabled = true;
-          }, 2000);
+            addButton.innerHTML = "📋 Added";
+            addButton.style.background = "#6b7280";
+            addButton.disabled = true;
+          }, 3000);
         } else {
           throw new Error(result.message);
         }
       } catch (error) {
         console.error("Error adding to job board:", error);
-        button.innerHTML = "❌ Error";
-        button.style.background = "#ef4444";
+        addButton.innerHTML = "❌ Error";
+        addButton.style.background = "#ef4444";
+
+        this.showInlineToast(element, "Failed to add job", "error");
 
         setTimeout(() => {
-          button.innerHTML = originalContent;
-          button.style.background = "#b86e37";
-          button.disabled = false;
-        }, 2000);
+          addButton.innerHTML = originalContent;
+          addButton.style.background = "#4f46e5";
+          addButton.disabled = false;
+        }, 3000);
+      }
+    });
+
+    // View job button
+    const viewButton = document.createElement("button");
+    viewButton.innerHTML = "👁️";
+    viewButton.title = "View Job Details";
+    viewButton.style.cssText = `
+      background: #f3f4f6;
+      color: #374151;
+      border: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    `;
+
+    viewButton.addEventListener("mouseenter", () => {
+      viewButton.style.background = "#e5e7eb";
+      viewButton.style.transform = "scale(1.1)";
+    });
+
+    viewButton.addEventListener("mouseleave", () => {
+      viewButton.style.background = "#f3f4f6";
+      viewButton.style.transform = "scale(1)";
+    });
+
+    viewButton.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (jobData.url) {
+        // Open in new tab
+        chrome.runtime.sendMessage({
+          action: "openJobUrl",
+          url: jobData.url,
+        });
       }
     });
 
@@ -1447,9 +2162,11 @@ class JobTracker {
       htmlElement.style.position = "relative";
     }
 
-    container.appendChild(statusSelect);
-    container.appendChild(button);
-    element.appendChild(container);
+    quickActions.appendChild(viewButton);
+    actionsPanel.appendChild(statusSelect);
+    actionsPanel.appendChild(addButton);
+    actionsPanel.appendChild(quickActions);
+    element.appendChild(actionsPanel);
   }
 
   private findCompanyElement(jobElement: Element): Element | null {
@@ -1505,6 +2222,72 @@ class JobTracker {
     return (
       configs[sponsorshipType as keyof typeof configs] || configs.sponsored
     );
+  }
+
+  private showInlineToast(
+    element: Element,
+    message: string,
+    type: "success" | "error" | "info" = "info"
+  ) {
+    // Remove existing toasts
+    element
+      .querySelectorAll(".jobloom-inline-toast")
+      .forEach((toast) => toast.remove());
+
+    const toast = document.createElement("div");
+    toast.className = "jobloom-inline-toast";
+    toast.style.cssText = `
+      position: absolute;
+      top: -40px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: ${
+        type === "success"
+          ? "#10b981"
+          : type === "error"
+          ? "#ef4444"
+          : "#3b82f6"
+      };
+      color: white;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      z-index: 1004;
+      white-space: nowrap;
+      animation: slideDown 0.3s ease-out;
+    `;
+
+    toast.textContent = message;
+
+    element.appendChild(toast);
+
+    // Remove after 3 seconds
+    setTimeout(() => {
+      toast.style.animation = "slideUp 0.3s ease-in";
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
+  }
+
+  private updateJobStats() {
+    // Update local storage stats
+    chrome.storage.local.get(["jobBoardData"], (result) => {
+      const jobs = result.jobBoardData || [];
+      const stats = {
+        jobsToday: jobs.filter((job: any) => {
+          const today = new Date();
+          const jobDate = new Date(job.dateAdded);
+          return jobDate.toDateString() === today.toDateString();
+        }).length,
+        sponsoredJobs: jobs.filter(
+          (job: any) => job.sponsorshipInfo?.isSponsored
+        ).length,
+        applications: jobs.length,
+      };
+
+      chrome.storage.local.set(stats);
+    });
   }
 
   private addJobToBoard(jobData: JobData) {
