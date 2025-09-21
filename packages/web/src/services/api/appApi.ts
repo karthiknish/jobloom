@@ -60,7 +60,6 @@ class AppApiClient {
     }>(`/users/${userId}`);
   }
 
-
   async getAllUsers() {
     return this.request<
       Array<{
@@ -201,10 +200,99 @@ class AppApiClient {
   }
 
   // Contact endpoints
-  async createContact(data: { name: string; email: string; message: string }) {
+  async createContact(data: {
+    name: string;
+    email: string;
+    message: string;
+    subject?: string;
+  }) {
     return this.request(`/contacts`, {
       method: "POST",
       body: JSON.stringify(data),
+    });
+  }
+
+  // Admin contact endpoints
+  async getAllContacts(
+    token: string,
+    options?: { status?: string; limit?: number; offset?: number }
+  ) {
+    const params = new URLSearchParams();
+    if (options?.status) params.set("status", options.status);
+    if (options?.limit) params.set("limit", options.limit.toString());
+    if (options?.offset) params.set("offset", options.offset.toString());
+
+    const queryString = params.toString();
+    const endpoint = `/contacts/admin${queryString ? `?${queryString}` : ""}`;
+
+    return this.request<{
+      contacts: Array<{
+        _id: string;
+        name: string;
+        email: string;
+        message: string;
+        subject?: string;
+        status: string;
+        createdAt: number;
+        updatedAt: number;
+        response?: string;
+        respondedAt?: number;
+        respondedBy?: string;
+      }>;
+      pagination: {
+        total: number;
+        limit: number;
+        offset: number;
+        hasMore: boolean;
+      };
+    }>(endpoint, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  }
+
+  async getContact(token: string, contactId: string) {
+    return this.request<{
+      _id: string;
+      name: string;
+      email: string;
+      message: string;
+      subject?: string;
+      status: string;
+      createdAt: number;
+      updatedAt: number;
+      response?: string;
+      respondedAt?: number;
+      respondedBy?: string;
+    }>(`/contacts/admin/${contactId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  }
+
+  async updateContactStatus(
+    token: string,
+    contactId: string,
+    status: string,
+    response?: string
+  ) {
+    return this.request(`/contacts/admin/${contactId}`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ status, response }),
+    });
+  }
+
+  async deleteContact(token: string, contactId: string) {
+    return this.request(`/contacts/admin/${contactId}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     });
   }
 
