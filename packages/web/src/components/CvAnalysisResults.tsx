@@ -1,7 +1,7 @@
 "use client";
 
 import { format } from "date-fns";
-import type { CvAnalysis } from "../types/convex";
+import type { CvAnalysis } from "../types/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 

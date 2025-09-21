@@ -41,7 +41,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { dashboardApi } from "@/utils/api/dashboard";
-import toast from "react-hot-toast";
+import { showSuccess, showError } from "@/components/ui/Toast";
 import {
   Dialog,
   DialogContent,
@@ -159,9 +159,9 @@ export function JobList({
       });
       setSavedViews(await dashboardApi.getSavedViews());
       setNewViewName("");
-      toast.success("View saved");
+      showSuccess("View saved");
     } catch (e: any) {
-      toast.error(e?.message || "Failed to save view");
+      showError(e?.message || "Failed to save view");
     }
   };
 
@@ -175,16 +175,16 @@ export function JobList({
       setShowRecruitmentAgency(f.showRecruitmentAgency);
     if (typeof f.searchQuery === "string") setSearchQuery(f.searchQuery);
     if (typeof f.sortBy === "string") setSortBy(f.sortBy);
-    toast.success(`Applied "${v.name}"`);
+    showSuccess(`Applied "${v.name}"`);
   };
 
   const deleteSavedView = async (id: string) => {
     try {
       await dashboardApi.deleteSavedView(id);
       setSavedViews(await dashboardApi.getSavedViews());
-      toast.success("View deleted");
+      showSuccess("View deleted");
     } catch (e: any) {
-      toast.error(e?.message || "Failed to delete view");
+      showError(e?.message || "Failed to delete view");
     }
   };
 
@@ -209,11 +209,11 @@ export function JobList({
         Array.from(selectedIds),
         bulkStatus
       );
-      toast.success("Status updated");
+      showSuccess("Status updated");
       setSelectedIds(new Set());
       onChanged?.();
     } catch (e: any) {
-      toast.error(e?.message || "Bulk update failed");
+      showError(e?.message || "Bulk update failed");
     }
   };
 
@@ -224,11 +224,11 @@ export function JobList({
         Array.from(selectedIds),
         ts
       );
-      toast.success("Follow-up set");
+      showSuccess("Follow-up set");
       setSelectedIds(new Set());
           onChanged?.();
     } catch (e: any) {
-      toast.error(e?.message || "Bulk update failed");
+      showError(e?.message || "Bulk update failed");
     }
   };
   const statusVariants: Record<
@@ -725,11 +725,11 @@ export function JobList({
                       Array.from(selectedIds),
                       ts
                     );
-                    toast.success("Reminders updated");
+                    showSuccess("Reminders updated");
                     setRemindersOpen(false);
                     setSelectedIds(new Set());
                   } catch (e: any) {
-                    toast.error(e?.message || "Failed to update reminders");
+                    showError(e?.message || "Failed to update reminders");
                   }
                 }}
               >

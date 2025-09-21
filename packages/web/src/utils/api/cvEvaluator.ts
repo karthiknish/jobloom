@@ -1,5 +1,5 @@
 // utils/api/cvEvaluator.ts
-import type { CvAnalysis } from "../../types/convex";
+import type { CvAnalysis } from "../../types/api";
 import {
   collection,
   doc,
@@ -26,7 +26,7 @@ export interface CvStats {
 }
 
 export const cvEvaluatorApi = {
-  // Temporary shim during migration: treat Firebase UID like old Clerk ID
+  // Temporary shim during migration: treat Firebase UID as user identifier
   getUserByFirebaseUid: async (uid: string): Promise<UserRecord> => {
     const db = getDb();
     if (!db) throw new Error("Firestore not initialized");
@@ -52,6 +52,10 @@ export const cvEvaluatorApi = {
   },
 
   // Backward alias removed; use getUserByFirebaseUid
+
+  getCvAnalysesByUser: async (userId: string): Promise<CvAnalysis[]> => {
+    return cvEvaluatorApi.getUserCvAnalyses(userId);
+  },
 
   getUserCvAnalyses: async (userId: string): Promise<CvAnalysis[]> => {
     const db = getDb();

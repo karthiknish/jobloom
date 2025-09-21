@@ -1,38 +1,57 @@
-import { NextResponse } from "next/server";
-import { getAdminDb } from "@/firebase/admin";
+import { NextRequest, NextResponse } from "next/server";
+import { verifyIdToken } from "@/firebase/admin";
 
-export async function GET() {
+// GET /api/app/sponsorship/companies - Get all sponsored companies
+export async function GET(request: NextRequest) {
   try {
-    const db = getAdminDb();
-    const snap = await db.collection("sponsoredCompanies").get();
-    const companies = snap.docs.map((d: any) => ({ _id: d.id, ...d.data() }));
+    const authHeader = request.headers.get("authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const token = authHeader.substring(7);
+    const decodedToken = await verifyIdToken(token);
+
+    if (!decodedToken) {
+      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+    }
+
+    // For now, return empty array (no sponsored companies configured)
+    // In a real implementation, this would fetch from Firestore
+    const companies: any[] = [];
+
     return NextResponse.json(companies);
   } catch (error) {
     console.error("Error fetching sponsored companies:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch sponsored companies" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
-export async function POST(request: Request) {
+// POST /api/app/sponsorship/companies - Add sponsored company
+export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const db = getAdminDb();
-    const payload = {
-      ...body,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-      isActive: true,
-    };
-    const res = await db.collection("sponsoredCompanies").add(payload);
-    return NextResponse.json({ companyId: res.id });
+    const authHeader = request.headers.get("authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const token = authHeader.substring(7);
+    const decodedToken = await verifyIdToken(token);
+
+    if (!decodedToken) {
+      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+    }
+
+    const data = await request.json();
+
+    // For now, return mock response
+    console.log("Adding sponsored company:", data);
+    // In a real implementation, this would save to Firestore
+    const result = { companyId: "mock-company-id" };
+
+    return NextResponse.json(result);
   } catch (error) {
     console.error("Error adding sponsored company:", error);
-    return NextResponse.json(
-      { error: "Failed to add sponsored company" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

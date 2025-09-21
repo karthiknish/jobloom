@@ -13,55 +13,103 @@ export function ExtensionIntegration({ userId }: ExtensionIntegrationProps) {
   const [jobsDetected, setJobsDetected] = useState(0);
   const [lastSync, setLastSync] = useState<Date | null>(null);
 
-  // Check if extension is installed
+  // Check if extension is installed with better detection
   useEffect(() => {
     const checkExtension = () => {
-      // Check for extension-specific global variable
-      if (typeof window !== 'undefined' && (window as unknown as Record<string, unknown>).__jobloom_extension) {
-        setIsExtensionInstalled(true);
-        const extensionData = (window as unknown as Record<string, unknown>).__jobloom_extension as Record<string, unknown>;
-        setJobsDetected((extensionData.jobsDetected as number) || 0);
-        setLastSync(extensionData.lastSync ? new Date(extensionData.lastSync as string | number) : null);
+      try {
+        // Check for extension-specific global variable
+        if (typeof window !== 'undefined' && (window as unknown as Record<string, unknown>).__jobloom_extension) {
+          setIsExtensionInstalled(true);
+          const extensionData = (window as unknown as Record<string, unknown>).__jobloom_extension as Record<string, unknown>;
+          setJobsDetected((extensionData.jobsDetected as number) || 0);
+          setLastSync(extensionData.lastSync ? new Date(extensionData.lastSync as string | number) : null);
+          return;
+        }
+
+        // Alternative check: try to access chrome extension API
+        if (typeof window !== 'undefined' && (window as any).chrome && (window as any).chrome.runtime) {
+          try {
+            (window as any).chrome.runtime.sendMessage('jobloom_extension_id', { type: 'PING' }, (response: any) => {
+              if (response && response.type === 'PONG') {
+                setIsExtensionInstalled(true);
+              }
+            });
+          } catch (error) {
+            // Extension not available
+          }
+        }
+      } catch (error) {
+        console.error('Error checking extension status:', error);
       }
     };
 
     // Check immediately
     checkExtension();
-    
+
     // Check periodically
     const interval = setInterval(checkExtension, 5000);
-    
-    // Also listen for extension messages
+
+    // Also listen for extension messages with better error handling
     const handleMessage = (event: MessageEvent) => {
-      if (event.data.type === 'JOBOOK_EXTENSION_STATUS') {
-        setIsExtensionInstalled(true);
-        setJobsDetected((event.data.jobsDetected as number) || 0);
-        setLastSync(event.data.lastSync ? new Date(event.data.lastSync as string | number) : null);
+      try {
+        // Verify message origin for security
+        if (event.origin !== window.location.origin) return;
+
+        if (event.data.type === 'JOBOOK_EXTENSION_STATUS') {
+          setIsExtensionInstalled(true);
+          setJobsDetected((event.data.jobsDetected as number) || 0);
+          setLastSync(event.data.lastSync ? new Date(event.data.lastSync as string | number) : null);
+        } else if (event.data.type === 'JOBOOK_EXTENSION_ERROR') {
+          console.error('Extension error:', event.data.message);
+        }
+      } catch (error) {
+        console.error('Error handling extension message:', error);
       }
     };
-    
+
     window.addEventListener('message', handleMessage);
-    
+
     return () => {
       clearInterval(interval);
       window.removeEventListener('message', handleMessage);
     };
   }, []);
 
-  // Send user ID to extension
+  // Send user ID to extension with better error handling
   useEffect(() => {
     if (typeof window !== 'undefined' && userId) {
-      // Post message to extension
-      window.postMessage({
-        type: 'JOBOOK_USER_AUTH',
-        userId: userId,
-        timestamp: Date.now()
-      }, '*');
-      
-      // Also set in localStorage for extension access
-      localStorage.setItem('__jobloom_user', JSON.stringify({ userId }));
+      const sendAuthToExtension = () => {
+        try {
+          // Post message to extension
+          window.postMessage({
+            type: 'JOBOOK_USER_AUTH',
+            userId: userId,
+            timestamp: Date.now(),
+            source: 'jobloom_web'
+          }, '*');
+
+          // Also set in localStorage for extension access
+          localStorage.setItem('__jobloom_user', JSON.stringify({
+            userId,
+            timestamp: Date.now(),
+            source: 'jobloom_web'
+          }));
+
+          // Set a timeout to retry if extension doesn't respond
+          setTimeout(() => {
+            if (!isExtensionInstalled) {
+              console.log('Extension not detected, retrying auth sync...');
+              sendAuthToExtension();
+            }
+          }, 2000);
+        } catch (error) {
+          console.error('Failed to send auth to extension:', error);
+        }
+      };
+
+      sendAuthToExtension();
     }
-  }, [userId]);
+  }, [userId, isExtensionInstalled]);
 
   return (
     <Card>

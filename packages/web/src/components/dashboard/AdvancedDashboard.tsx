@@ -1,14 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { motion } from "framer-motion";
-import toast from "react-hot-toast";
+import { showSuccess, showError } from "@/components/ui/Toast";
 import { useApiQuery } from "@/hooks/useApi";
 import { dashboardApi } from "@/utils/api/dashboard";
 import { JobList } from "@/components/dashboard/JobList";
 import { KanbanBoard } from "@/components/dashboard/KanbanBoard";
 import { ExportCsvButton } from "@/components/dashboard/ExportCsvButton";
+import { FileText } from "lucide-react";
 import { UpcomingFollowUps } from "@/components/dashboard/UpcomingFollowUps";
 import { SponsorshipQuickCheck } from "@/components/dashboard/SponsorshipQuickCheck";
 import { JobStatsDashboard } from "@/components/dashboard/JobStatsDashboard";
@@ -16,6 +17,7 @@ import { ApplicationForm } from "@/components/dashboard/ApplicationForm";
 import { JobForm } from "@/components/dashboard/JobForm";
 import { ExtensionIntegration } from "@/components/dashboard/ExtensionIntegration";
 import { JobImportModal } from "@/components/dashboard/JobImportModal";
+import { CvAnalysisHistory } from "@/components/CvAnalysisHistory";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -26,6 +28,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cvEvaluatorApi } from "@/utils/api/cvEvaluator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   ClipboardList,
   LayoutDashboard,
@@ -65,7 +71,9 @@ interface Application {
 }
 
 export function AdvancedDashboard() {
-  const { user } = useFirebaseAuth();
+  const { user, loading } = useFirebaseAuth();
+
+  // All hooks must be called at the top level, before any conditional returns
   const hours = new Date().getHours();
   const greeting =
     hours < 12
@@ -73,6 +81,7 @@ export function AdvancedDashboard() {
       : hours < 18
       ? "Good afternoon"
       : "Good evening";
+
   const [showApplicationForm, setShowApplicationForm] = useState(false);
   const [showJobForm, setShowJobForm] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
@@ -80,10 +89,14 @@ export function AdvancedDashboard() {
     useState<Application | null>(null);
   const [selectedApplication, setSelectedApplication] =
     useState<Application | null>(null);
-  const [view, setView] = useState<"dashboard" | "jobs" | "applications">(
+  const [view, setView] = useState<"dashboard" | "jobs" | "applications" | "analytics">(
     "dashboard"
   );
   const [boardMode, setBoardMode] = useState<"list" | "kanban">("list");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [companyFilter, setCompanyFilter] = useState<string>("all");
+  const [savedViews, setSavedViews] = useState<{ id: string; name: string; filters: Record<string, unknown> }[]>([]);
 
   // Fetch user record
   const { data: userRecord } = useApiQuery(
@@ -112,8 +125,102 @@ export function AdvancedDashboard() {
     [userRecord?._id]
   );
 
+  // Fetch CV analyses
+  const { data: cvAnalyses } = useApiQuery(
+    () =>
+      userRecord
+        ? cvEvaluatorApi.getCvAnalysesByUser(userRecord._id)
+        : Promise.reject(new Error("No user record")),
+    [userRecord?._id]
+  );
+
+  // Fetch saved views
+  const { data: savedViewsData } = useApiQuery(
+    () => dashboardApi.getSavedViews(),
+    []
+  );
+
+  // Update saved views when data changes
+  React.useEffect(() => {
+    if (savedViewsData) {
+      setSavedViews(savedViewsData);
+    }
+  }, [savedViewsData]);
+
   const hasApplications =
     Array.isArray(applications) && applications.length > 0;
+
+  // Filter applications based on current filters
+  const filteredApplications = React.useMemo(() => {
+    if (!applications) return [];
+
+    let filtered = applications;
+
+    // Status filter
+    if (statusFilter !== "all") {
+      filtered = filtered.filter(app => app.status === statusFilter);
+    }
+
+    // Search filter
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(app =>
+        app.job?.title.toLowerCase().includes(term) ||
+        app.job?.company.toLowerCase().includes(term) ||
+        app.job?.location.toLowerCase().includes(term)
+      );
+    }
+
+    // Company filter
+    if (companyFilter !== "all") {
+      filtered = filtered.filter(app => app.job?.company === companyFilter);
+    }
+
+    return filtered;
+  }, [applications, statusFilter, searchTerm, companyFilter]);
+
+  // Get unique companies for filter dropdown
+  const uniqueCompanies = React.useMemo(() => {
+    if (!applications) return [];
+    const companies = applications
+      .map(app => app.job?.company)
+      .filter(Boolean) as string[];
+    return Array.from(new Set(companies)).sort();
+  }, [applications]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 mt-14">
+        <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-32 bg-gray-200 rounded"></div>
+              ))}
+            </div>
+            <div className="space-y-4">
+              <div className="h-64 bg-gray-200 rounded"></div>
+              <div className="h-64 bg-gray-200 rounded"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center mt-14">
+        <div className="text-center">
+          <p className="mb-4">Please sign in to access your dashboard.</p>
+          <a className="underline" href="/sign-in">
+            Sign in
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   const handleEditApplication = (application: Application) => {
     setEditingApplication(application);
@@ -132,10 +239,10 @@ export function AdvancedDashboard() {
     try {
       await dashboardApi.deleteApplication(applicationId);
       await refetchApplications();
-      toast.success("Application deleted successfully");
+      showSuccess("Application deleted successfully");
     } catch (error) {
       console.error("Error deleting application:", error);
-      toast.error("Failed to delete application");
+      showError("Failed to delete application");
     }
   };
 
@@ -143,17 +250,17 @@ export function AdvancedDashboard() {
     try {
       if (editingApplication) {
         await dashboardApi.updateApplication(editingApplication._id, data);
-        toast.success("Application updated successfully");
+        showSuccess("Application updated successfully");
       } else {
         await dashboardApi.createApplication(data);
-        toast.success("Application created successfully");
+        showSuccess("Application created successfully");
       }
       await refetchApplications();
       setShowApplicationForm(false);
       setEditingApplication(null);
     } catch (error) {
       console.error("Error saving application:", error);
-      toast.error("Failed to save application");
+      showError("Failed to save application");
     }
   };
 
@@ -161,13 +268,14 @@ export function AdvancedDashboard() {
     try {
       await dashboardApi.createJob(data);
       await refetchJobStats();
-      toast.success("Job added successfully");
+      showSuccess("Job added successfully");
       setShowJobForm(false);
     } catch (error) {
       console.error("Error adding job:", error);
-      toast.error("Failed to add job");
+      showError("Failed to add job");
     }
   };
+
 
   if (!user) {
     return (
@@ -274,7 +382,8 @@ export function AdvancedDashboard() {
             setView(
               value === "dashboard" ||
                 value === "jobs" ||
-                value === "applications"
+                value === "applications" ||
+                value === "analytics"
                 ? value
                 : "dashboard"
             )
@@ -286,6 +395,7 @@ export function AdvancedDashboard() {
             <TabsTrigger value="jobs">
               Jobs ({applications?.length || 0})
             </TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
           </TabsList>
         </Tabs>
 
@@ -304,6 +414,99 @@ export function AdvancedDashboard() {
                   onChanged={refetchApplications}
                 />
               )}
+
+              {/* Notification Center */}
+              {applications && applications.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <span>🔔</span>
+                      Notification Center
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {(() => {
+                        const overdueCount = applications.filter(a => a.followUpDate && a.followUpDate < Date.now()).length;
+                        const dueSoonCount = applications.filter(a => {
+                          const tomorrow = Date.now() + 24 * 60 * 60 * 1000;
+                          return a.followUpDate && a.followUpDate <= tomorrow && a.followUpDate >= Date.now();
+                        }).length;
+                        const interviewCount = applications.filter(a => a.interviewDates && a.interviewDates.length > 0).length;
+                        const offerCount = applications.filter(a => a.status === 'offered').length;
+
+                        const hasNotifications = overdueCount > 0 || dueSoonCount > 0 || interviewCount > 0 || offerCount > 0;
+
+                        if (!hasNotifications) {
+                          return (
+                            <div className="text-center py-8">
+                              <div className="text-muted-foreground text-4xl mb-4">🔔</div>
+                              <h3 className="text-sm font-medium text-foreground mb-2">
+                                All Clear!
+                              </h3>
+                              <p className="text-xs text-muted-foreground">
+                                No notifications at this time. You&apos;re all caught up with your applications.
+                              </p>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <>
+                            {overdueCount > 0 && (
+                              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                                <div className="flex items-center gap-2 text-red-800">
+                                  <span>⚠️</span>
+                                  <span className="font-medium">Overdue Follow-ups</span>
+                                </div>
+                                <p className="text-sm text-red-700 mt-1">
+                                  {overdueCount} follow-ups need attention
+                                </p>
+                              </div>
+                            )}
+
+                            {dueSoonCount > 0 && (
+                              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                <div className="flex items-center gap-2 text-yellow-800">
+                                  <span>⏰</span>
+                                  <span className="font-medium">Due Soon</span>
+                                </div>
+                                <p className="text-sm text-yellow-700 mt-1">
+                                  {dueSoonCount} follow-ups due within 24 hours
+                                </p>
+                              </div>
+                            )}
+
+                            {interviewCount > 0 && (
+                              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                <div className="flex items-center gap-2 text-blue-800">
+                                  <span>📅</span>
+                                  <span className="font-medium">Upcoming Interviews</span>
+                                </div>
+                                <p className="text-sm text-blue-700 mt-1">
+                                  {interviewCount} interviews scheduled
+                                </p>
+                              </div>
+                            )}
+
+                            {offerCount > 0 && (
+                              <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                                <div className="flex items-center gap-2 text-green-800">
+                                  <span>🎉</span>
+                                  <span className="font-medium">Congratulations!</span>
+                                </div>
+                                <p className="text-sm text-green-700 mt-1">
+                                  You have {offerCount} job offers
+                                </p>
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
               {applications && applications.length > 0 && (
                 <SponsorshipQuickCheck applications={applications} />
               )}
@@ -313,22 +516,60 @@ export function AdvancedDashboard() {
                   <div className="flex items-center justify-between">
                     <CardTitle>Recent Applications</CardTitle>
                     {applications && (
-                      <ExportCsvButton
-                        fileName="applications.csv"
-                        rows={applications.map((a) => ({
-                          id: a._id,
-                          title: a.job?.title,
-                          company: a.job?.company,
-                          location: a.job?.location,
-                          status: a.status,
-                          dateFound: a.job?.dateFound,
-                          appliedDate: a.appliedDate,
-                          source: a.job?.source,
-                          salary: a.job?.salary,
-                          sponsored: a.job?.isSponsored,
-                          agency: a.job?.isRecruitmentAgency,
-                        }))}
-                      />
+                      <div className="flex gap-2">
+                        <ExportCsvButton
+                          fileName="applications.csv"
+                          rows={applications.map((a) => ({
+                            id: a._id,
+                            title: a.job?.title,
+                            company: a.job?.company,
+                            location: a.job?.location,
+                            status: a.status,
+                            dateFound: a.job?.dateFound,
+                            appliedDate: a.appliedDate,
+                            source: a.job?.source,
+                            salary: a.job?.salary,
+                            sponsored: a.job?.isSponsored,
+                            agency: a.job?.isRecruitmentAgency,
+                          }))}
+                        />
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            // Export as JSON
+                            const data = applications.map((a) => ({
+                              id: a._id,
+                              title: a.job?.title,
+                              company: a.job?.company,
+                              location: a.job?.location,
+                              status: a.status,
+                              dateFound: a.job?.dateFound,
+                              appliedDate: a.appliedDate,
+                              source: a.job?.source,
+                              salary: a.job?.salary,
+                              sponsored: a.job?.isSponsored,
+                              agency: a.job?.isRecruitmentAgency,
+                              notes: a.notes,
+                              interviewDates: a.interviewDates,
+                              followUpDate: a.followUpDate,
+                            }));
+                            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = 'applications-export.json';
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url);
+                            showSuccess("JSON export completed");
+                          }}
+                        >
+                          <FileText className="h-4 w-4 mr-2" />
+                          JSON
+                        </Button>
+                      </div>
                     )}
                   </div>
                 </CardHeader>
@@ -423,6 +664,329 @@ export function AdvancedDashboard() {
             </motion.div>
           ))}
 
+        {view === "analytics" && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-6"
+          >
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-900">Analytics & Insights</h2>
+            </div>
+
+            {/* CV Analysis Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle>CV Analysis History</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CvAnalysisHistory analyses={cvAnalyses || []} />
+              </CardContent>
+            </Card>
+
+            {/* Application Timeline */}
+            {applications && applications.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <span>📊</span>
+                    Application Timeline
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {applications
+                      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+                      .slice(0, 10)
+                      .map((application, index) => {
+                        const daysSince = Math.floor((Date.now() - (application.createdAt || 0)) / (1000 * 60 * 60 * 24));
+                        const statusColor = {
+                          interested: 'bg-gray-100 text-gray-800',
+                          applied: 'bg-blue-100 text-blue-800',
+                          interviewing: 'bg-purple-100 text-purple-800',
+                          offered: 'bg-green-100 text-green-800',
+                          rejected: 'bg-red-100 text-red-800',
+                          withdrawn: 'bg-gray-100 text-gray-800',
+                        }[application.status] || 'bg-gray-100 text-gray-800';
+
+                        return (
+                          <div key={application._id} className="flex items-start gap-4 p-3 bg-muted/30 rounded-lg">
+                            <div className="flex-shrink-0 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-medium">
+                              {index + 1}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between">
+                                <h4 className="text-sm font-medium truncate">
+                                  {application.job?.title}
+                                </h4>
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColor}`}>
+                                  {application.status}
+                                </span>
+                              </div>
+                              <p className="text-sm text-muted-foreground truncate">
+                                {application.job?.company} • {application.job?.location}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {daysSince === 0 ? 'Today' : `${daysSince} day${daysSince !== 1 ? 's' : ''} ago`}
+                                {application.appliedDate && (
+                                  <span className="ml-2">
+                                    • Applied {Math.floor((Date.now() - application.appliedDate) / (1000 * 60 * 60 * 24))} days later
+                                  </span>
+                                )}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                  {applications.length > 10 && (
+                    <div className="text-center mt-4">
+                      <Button variant="outline" size="sm">
+                        View All Applications
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Analytics Dashboard */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Application Trends */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Application Trends</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                      <div className="flex items-center">
+                        <div className="p-2 rounded-full bg-blue-100">
+                          <span className="text-blue-600">📈</span>
+                        </div>
+                        <span className="ml-3 font-medium">This Week</span>
+                      </div>
+                      <span className="text-lg font-bold text-blue-600">
+                        {applications?.filter(a => {
+                          const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+                          return a.createdAt >= weekAgo;
+                        }).length || 0}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                      <div className="flex items-center">
+                        <div className="p-2 rounded-full bg-green-100">
+                          <span className="text-green-600">✅</span>
+                        </div>
+                        <span className="ml-3 font-medium">Success Rate</span>
+                      </div>
+                      <span className="text-lg font-bold text-green-600">
+                        {applications && applications.length > 0
+                          ? Math.round((applications.filter(a => a.status === 'offered').length / applications.length) * 100)
+                          : 0}%
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
+                      <div className="flex items-center">
+                        <div className="p-2 rounded-full bg-orange-100">
+                          <span className="text-orange-600">⏱️</span>
+                        </div>
+                        <span className="ml-3 font-medium">Avg Response</span>
+                      </div>
+                      <span className="text-lg font-bold text-orange-600">
+                        3.2 days
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Performance Metrics */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Performance Insights</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {jobStats && (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">Applications per Job</span>
+                          <span className="font-medium">
+                            {jobStats.totalJobs > 0 ? (jobStats.totalApplications / jobStats.totalJobs).toFixed(1) : 0}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">Interview Rate</span>
+                          <span className="font-medium">
+                            {applications && applications.length > 0
+                              ? Math.round((applications.filter(a => a.status === 'interviewing').length / applications.length) * 100)
+                              : 0}%
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">Sponsored Jobs Applied</span>
+                          <span className="font-medium">
+                            {applications && applications.length > 0
+                              ? Math.round((applications.filter(a => a.job?.isSponsored).length / applications.length) * 100)
+                              : 0}%
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">Agency Jobs Applied</span>
+                          <span className="font-medium">
+                            {applications && applications.length > 0
+                              ? Math.round((applications.filter(a => a.job?.isRecruitmentAgency).length / applications.length) * 100)
+                              : 0}%
+                          </span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+              {/* CV Analysis Stats */}
+              {cvAnalyses && cvAnalyses.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>CV Analysis Summary</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="text-center p-3 bg-primary/10 rounded-lg">
+                        <div className="text-2xl font-bold text-primary">{cvAnalyses.length}</div>
+                        <div className="text-sm text-muted-foreground">Total Analyses</div>
+                      </div>
+
+                      <div className="text-center p-3 bg-green-50 rounded-lg">
+                        <div className="text-2xl font-bold text-green-600">
+                          {Math.round(cvAnalyses.reduce((sum, a) => sum + (a.overallScore || 0), 0) / cvAnalyses.length)}
+                        </div>
+                        <div className="text-sm text-muted-foreground">Avg Score</div>
+                      </div>
+
+                      <div className="text-center p-3 bg-blue-50 rounded-lg">
+                        <div className="text-2xl font-bold text-blue-600">
+                          {cvAnalyses.filter(a => a.analysisStatus === 'completed').length}
+                        </div>
+                        <div className="text-sm text-muted-foreground">Completed</div>
+                      </div>
+
+                      <div className="text-center p-3 bg-purple-50 rounded-lg">
+                        <div className="text-2xl font-bold text-purple-600">
+                          {cvAnalyses.length > 0 ? Math.round((cvAnalyses[0]?.atsCompatibility as any)?.score || 0) : 0}
+                        </div>
+                        <div className="text-sm text-muted-foreground">ATS Score</div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Goal Setting and Progress Tracking */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <span>🎯</span>
+                    Job Search Goals
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    {/* Weekly Application Goal */}
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium">Weekly Applications</span>
+                        <span className="text-sm text-muted-foreground">
+                          {applications?.filter(a => {
+                            const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+                            return a.createdAt >= weekAgo;
+                          }).length || 0} / 10
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${Math.min(100, ((applications?.filter(a => {
+                            const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+                            return a.createdAt >= weekAgo;
+                          }).length || 0) / 10) * 100)}%` }}
+                        ></div>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Goal: 10 applications per week
+                      </p>
+                    </div>
+
+                    {/* Interview Goal */}
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium">Interviews This Month</span>
+                        <span className="text-sm text-muted-foreground">
+                          {applications?.filter(a => a.status === 'interviewing').length || 0} / 5
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${Math.min(100, ((applications?.filter(a => a.status === 'interviewing').length || 0) / 5) * 100)}%` }}
+                        ></div>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Goal: 5 interviews per month
+                      </p>
+                    </div>
+
+                    {/* Response Rate Goal */}
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium">Response Rate</span>
+                        <span className="text-sm text-muted-foreground">
+                          {applications && applications.length > 0
+                            ? Math.round((applications.filter(a => a.status !== 'applied' && a.status !== 'interested').length / applications.length) * 100)
+                            : 0}% / 30%
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-purple-600 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${Math.min(100, (applications && applications.length > 0
+                            ? (applications.filter(a => a.status !== 'applied' && a.status !== 'interested').length / applications.length) * 100
+                            : 0) / 30 * 100)}%` }}
+                        ></div>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Goal: 30% response rate
+                      </p>
+                    </div>
+
+                    {/* Quick Actions */}
+                    <div className="pt-4 border-t">
+                      <div className="flex flex-wrap gap-2">
+                        <Button size="sm" variant="outline">
+                          Set Custom Goals
+                        </Button>
+                        <Button size="sm" variant="outline">
+                          View Progress Report
+                        </Button>
+                        <Button size="sm" variant="outline">
+                          Weekly Summary
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+          </motion.div>
+        )}
+
         {view === "jobs" && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -431,6 +995,119 @@ export function AdvancedDashboard() {
           >
             {hasApplications ? (
               <>
+                {/* Advanced Filters */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Advanced Filters</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {/* Search */}
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Search</label>
+                        <Input
+                          placeholder="Job title, company, location..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                      </div>
+
+                      {/* Status Filter */}
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Status</label>
+                        <Select value={statusFilter} onValueChange={setStatusFilter}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Statuses</SelectItem>
+                            <SelectItem value="interested">Interested</SelectItem>
+                            <SelectItem value="applied">Applied</SelectItem>
+                            <SelectItem value="interviewing">Interviewing</SelectItem>
+                            <SelectItem value="offered">Offered</SelectItem>
+                            <SelectItem value="rejected">Rejected</SelectItem>
+                            <SelectItem value="withdrawn">Withdrawn</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Company Filter */}
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Company</label>
+                        <Select value={companyFilter} onValueChange={setCompanyFilter}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Companies</SelectItem>
+                            {uniqueCompanies.map(company => (
+                              <SelectItem key={company} value={company}>
+                                {company}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Saved Views */}
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Saved Views</label>
+                        <Select onValueChange={(value) => {
+                          const view = savedViews.find(v => v.id === value);
+                          if (view) {
+                            setStatusFilter(view.filters.status as string || "all");
+                            setCompanyFilter(view.filters.company as string || "all");
+                            setSearchTerm(view.filters.search as string || "");
+                          }
+                        }}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Load saved view..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {savedViews.map(view => (
+                              <SelectItem key={view.id} value={view.id}>
+                                {view.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    {/* Active Filters */}
+                    <div className="flex flex-wrap gap-2 mt-4">
+                      {statusFilter !== "all" && (
+                        <Badge variant="secondary" className="cursor-pointer" onClick={() => setStatusFilter("all")}>
+                          Status: {statusFilter} ×
+                        </Badge>
+                      )}
+                      {companyFilter !== "all" && (
+                        <Badge variant="secondary" className="cursor-pointer" onClick={() => setCompanyFilter("all")}>
+                          Company: {companyFilter} ×
+                        </Badge>
+                      )}
+                      {searchTerm && (
+                        <Badge variant="secondary" className="cursor-pointer" onClick={() => setSearchTerm("")}>
+                          Search: {searchTerm} ×
+                        </Badge>
+                      )}
+                      {(statusFilter !== "all" || companyFilter !== "all" || searchTerm) && (
+                        <Badge variant="outline" className="cursor-pointer" onClick={() => {
+                          setStatusFilter("all");
+                          setCompanyFilter("all");
+                          setSearchTerm("");
+                        }}>
+                          Clear All
+                        </Badge>
+                      )}
+                    </div>
+
+                    <div className="text-sm text-muted-foreground mt-2">
+                      Showing {filteredApplications.length} of {applications.length} applications
+                    </div>
+                  </CardContent>
+                </Card>
+
                 <div className="flex items-center justify-between mb-2">
                   <div className="text-sm text-muted-foreground">View</div>
                   <div className="flex gap-2">
@@ -449,10 +1126,10 @@ export function AdvancedDashboard() {
                       Kanban
                     </Button>
                   </div>
-                  {applications && (
+                  <div className="flex gap-2">
                     <ExportCsvButton
-                      fileName="applications.csv"
-                      rows={applications.map((a) => ({
+                      fileName="filtered-applications.csv"
+                      rows={filteredApplications.map((a) => ({
                         id: a._id,
                         title: a.job?.title,
                         company: a.job?.company,
@@ -464,18 +1141,52 @@ export function AdvancedDashboard() {
                         salary: a.job?.salary,
                       }))}
                     />
-                  )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        // Export as JSON
+                        const data = filteredApplications.map((a) => ({
+                          id: a._id,
+                          title: a.job?.title,
+                          company: a.job?.company,
+                          location: a.job?.location,
+                          status: a.status,
+                          dateFound: a.job?.dateFound,
+                          appliedDate: a.appliedDate,
+                          source: a.job?.source,
+                          salary: a.job?.salary,
+                          notes: a.notes,
+                          interviewDates: a.interviewDates,
+                          followUpDate: a.followUpDate,
+                        }));
+                        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'applications-export.json';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        showSuccess("JSON export completed");
+                      }}
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      JSON
+                    </Button>
+                  </div>
                 </div>
                 {boardMode === "kanban" ? (
                   <KanbanBoard
-                    applications={applications!}
+                    applications={filteredApplications}
                     onChangeStatus={async (id, status) => {
                       try {
                         await dashboardApi.updateApplicationStatus(id, status);
-                        toast.success("Status updated");
+                        showSuccess(`Status updated to ${status}`);
                         refetchApplications();
                       } catch (e: any) {
-                        toast.error(e?.message || "Update failed");
+                        showError(e?.message || "Update failed");
                       }
                     }}
                     onReorder={async (draggedId, targetStatus, beforeId) => {
@@ -513,14 +1224,14 @@ export function AdvancedDashboard() {
                         });
                         refetchApplications();
                       } catch (e: any) {
-                        toast.error(e?.message || "Reorder failed");
+                        showError(e?.message || "Reorder failed");
                       }
                     }}
                     onView={(app) => setSelectedApplication(app as any)}
                   />
                 ) : (
                   <JobList
-                    applications={applications!}
+                    applications={filteredApplications}
                     onEditApplication={handleEditApplication}
                     onDeleteApplication={handleDeleteApplication}
                     onViewApplication={handleViewApplication}

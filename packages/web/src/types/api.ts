@@ -1,4 +1,4 @@
-// Minimal Firebase-backed types replacing Convex Doc utilities
+// API types for the application
 export type Id<T extends string> = string & { __tableName?: T };
 
 // Define types for the sponsored companies

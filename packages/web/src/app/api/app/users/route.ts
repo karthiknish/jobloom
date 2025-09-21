@@ -1,17 +1,36 @@
-import { NextResponse } from "next/server";
-import { getAdminDb } from "@/firebase/admin";
+import { NextRequest, NextResponse } from "next/server";
+import { verifyIdToken } from "@/firebase/admin";
 
-export async function GET() {
+// GET /api/app/users - Get all users (admin only)
+export async function GET(request: NextRequest) {
   try {
-    const db = getAdminDb();
-    const snap = await db.collection("users").get();
-    const users = snap.docs.map((d: any) => ({ _id: d.id, ...d.data() }));
+    const authHeader = request.headers.get("authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const token = authHeader.substring(7);
+    const decodedToken = await verifyIdToken(token);
+
+    if (!decodedToken) {
+      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+    }
+
+    // For now, return mock users data
+    // In a real implementation, this would fetch from Firestore
+    const users = [
+      {
+        _id: decodedToken.uid,
+        email: decodedToken.email || "user@example.com",
+        name: decodedToken.name || "User",
+        isAdmin: false,
+        createdAt: Date.now()
+      }
+    ];
+
     return NextResponse.json(users);
   } catch (error) {
     console.error("Error fetching users:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch users" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

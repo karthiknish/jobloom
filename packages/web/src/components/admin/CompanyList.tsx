@@ -1,5 +1,5 @@
 // components/admin/CompanyList.tsx
-import type { SponsoredCompany } from "../../types/convex";
+import type { SponsoredCompany } from "../../types/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 

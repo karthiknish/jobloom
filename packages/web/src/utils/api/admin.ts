@@ -1,5 +1,5 @@
 // utils/api/admin.ts
-import type { SponsoredCompany, SponsorshipStats } from "../../types/convex";
+import type { SponsoredCompany, SponsorshipStats } from "../../types/api";
 import {
   collection,
   doc,
@@ -97,7 +97,7 @@ export const adminApi = {
     };
   },
 
-  // Backward alias removed; use getUserByFirebaseUid instead of any Clerk naming
+  // Use getUserByFirebaseUid for user operations
 
   getAllSponsoredCompanies: async (): Promise<SponsoredCompany[]> => {
     const db = getDb();

@@ -4,9 +4,9 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { CvAnalysisResults } from "./CvAnalysisResults";
 import { motion } from "framer-motion";
-import { FileText, Eye, Trash2, Loader2, ArrowLeft } from "lucide-react";
-import toast from "react-hot-toast";
-import type { CvAnalysis, Id } from "../types/convex";
+import { Eye, Trash2, Loader2, ArrowLeft } from "lucide-react";
+import { showSuccess, showError } from "@/components/ui/Toast";
+import type { CvAnalysis, Id } from "../types/api";
 import { useApiMutation } from "../hooks/useApi";
 import { cvEvaluatorApi } from "../utils/api/cvEvaluator";
 import { Button } from "@/components/ui/button";
@@ -42,10 +42,10 @@ export function CvAnalysisHistory({ analyses }: CvAnalysisHistoryProps) {
 
     try {
       await deleteAnalysis({ analysisId: analysisId as Id<"cvAnalyses"> });
-      toast.success("Analysis deleted successfully");
+      showSuccess("Analysis deleted successfully");
     } catch (error) {
       console.error("Error deleting analysis:", error);
-      toast.error("Failed to delete analysis");
+      showError("Failed to delete analysis");
     }
   };
 
@@ -105,38 +105,25 @@ export function CvAnalysisHistory({ analyses }: CvAnalysisHistoryProps) {
 
   if (!analyses || analyses.length === 0) {
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="text-center py-12"
-      >
-        <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: "spring", stiffness: 240, damping: 18 }}
-          className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10"
-        >
-          <FileText className="h-7 w-7 text-primary" />
-        </motion.div>
-        <motion.h3
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05, duration: 0.35 }}
-          className="text-lg font-medium text-foreground mb-2"
-        >
+      <div className="text-center py-12">
+        <div className="text-muted-foreground text-4xl mb-4">📄</div>
+        <h3 className="text-lg font-medium text-foreground mb-2">
           No CV analyses yet
-        </motion.h3>
-        <motion.p
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1, duration: 0.35 }}
-          className="text-muted-foreground mb-6"
-        >
+        </h3>
+        <p className="text-muted-foreground mb-6">
           Upload your first CV to get started with AI-powered analysis and
           feedback.
-        </motion.p>
-      </motion.div>
+        </p>
+        <div className="text-sm text-muted-foreground">
+          <p className="mb-2">✨ Get detailed insights about your CV:</p>
+          <ul className="text-left space-y-1">
+            <li>• ATS compatibility scores</li>
+            <li>• Keyword optimization suggestions</li>
+            <li>• Skills and experience analysis</li>
+            <li>• Professional summary improvements</li>
+          </ul>
+        </div>
+      </div>
     );
   }
 

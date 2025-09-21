@@ -1,5 +1,5 @@
 // components/admin/AdminStats.tsx
-import type { SponsorshipStats } from "../../types/convex";
+import type { SponsorshipStats } from "../../types/api";
 import { Card, CardContent } from "@/components/ui/card";
 
 interface AdminStatsProps {

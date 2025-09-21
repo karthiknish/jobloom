@@ -1,10 +1,11 @@
-// services/api/appApi.ts (neutral naming; backed by Firebase Admin endpoints)
+// services/api/appApi.ts (backed by Firebase Admin endpoints)
 import type {
   CvAnalysis,
   SponsoredCompany,
   SponsorshipStats,
-} from "../../types/convex";
+} from "../../types/api";
 
+// Generic API error class
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -16,8 +17,13 @@ export class ApiError extends Error {
   }
 }
 
+// Base API client
 class AppApiClient {
-  private baseUrl: string = "/api/app";
+  private baseUrl: string;
+
+  constructor() {
+    this.baseUrl = "/api/app";
+  }
 
   async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
@@ -32,7 +38,8 @@ class AppApiClient {
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new ApiError(
-        errorData.message || `API request failed with status ${response.status}`,
+        errorData.message ||
+          `API request failed with status ${response.status}`,
         response.status,
         errorData.code
       );
@@ -41,16 +48,18 @@ class AppApiClient {
     return response.json();
   }
 
-  // Users
+  // User endpoints (Firebase userId)
   async getUserById(userId: string) {
     return this.request<{
       _id: string;
+      userId: string; // Firebase user ID
       isAdmin?: boolean;
-      email?: string;
-      name?: string;
-      createdAt?: number;
+      email: string;
+      name: string;
+      createdAt: number;
     }>(`/users/${userId}`);
   }
+
 
   async getAllUsers() {
     return this.request<
@@ -64,7 +73,7 @@ class AppApiClient {
     >(`/users`);
   }
 
-  // Jobs
+  // Job endpoints
   async getJobStats(userId: string) {
     return this.request<{
       totalJobs: number;
@@ -76,7 +85,7 @@ class AppApiClient {
     }>(`/jobs/stats/${userId}`);
   }
 
-  // Applications
+  // Application endpoints
   async getApplicationsByUser(userId: string) {
     return this.request<
       Array<{
@@ -115,7 +124,7 @@ class AppApiClient {
     });
   }
 
-  // Sponsorship
+  // Sponsorship endpoints
   async getAllSponsoredCompanies() {
     return this.request<SponsoredCompany[]>(`/sponsorship/companies`);
   }
@@ -139,7 +148,7 @@ class AppApiClient {
     });
   }
 
-  // Sponsorship rules
+  // Sponsorship rules endpoints
   async getAllSponsorshipRules() {
     return this.request<
       Array<{
@@ -177,7 +186,7 @@ class AppApiClient {
     });
   }
 
-  // CV Analysis
+  // CV Analysis endpoints
   async getUserCvAnalyses(userId: string) {
     return this.request<CvAnalysis[]>(`/cv-analysis/user/${userId}`);
   }
@@ -191,7 +200,7 @@ class AppApiClient {
     }>(`/cv-analysis/stats/${userId}`);
   }
 
-  // Contacts
+  // Contact endpoints
   async createContact(data: { name: string; email: string; message: string }) {
     return this.request(`/contacts`, {
       method: "POST",
@@ -199,7 +208,7 @@ class AppApiClient {
     });
   }
 
-  // Admin
+  // Admin endpoints
   async isUserAdmin(userId: string) {
     return this.request<boolean>(`/admin/is-admin/${userId}`);
   }
@@ -219,4 +228,5 @@ class AppApiClient {
   }
 }
 
+// Export singleton instance
 export const appApi = new AppApiClient();

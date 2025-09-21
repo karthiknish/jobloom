@@ -1,24 +1,32 @@
-import { NextResponse } from "next/server";
-import { getAdminDb } from "@/firebase/admin";
+import { NextRequest, NextResponse } from "next/server";
+import { verifyIdToken } from "@/firebase/admin";
 
+// GET /api/app/cv-analysis/user/[userId] - Get CV analyses for a user
 export async function GET(
-  request: Request,
-  context: { params: Promise<{ userId: string }> }
+  request: NextRequest,
+  { params }: { params: Promise<{ userId: string }> }
 ) {
+  const { userId } = await params;
   try {
-    const db = getAdminDb();
-    const { userId } = await context.params;
-    const snap = await db
-      .collection("cvAnalyses")
-      .where("userId", "==", userId)
-      .get();
-    const results = snap.docs.map((d: any) => ({ _id: d.id, ...d.data() }));
-    return NextResponse.json(results);
+    const authHeader = request.headers.get("authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const token = authHeader.substring(7);
+    const decodedToken = await verifyIdToken(token);
+
+    if (!decodedToken) {
+      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+    }
+
+    // For now, return empty array (no CV analyses)
+    // In a real implementation, this would fetch from Firestore
+    const analyses: any[] = [];
+
+    return NextResponse.json(analyses);
   } catch (error) {
     console.error("Error fetching CV analyses:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch CV analyses" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

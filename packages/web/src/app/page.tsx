@@ -1,5 +1,5 @@
 import Link from "next/link";
-// Clerk imports removed as part of Firebase migration
+// Authentication handled by Firebase
 import { Button } from "@/components/ui/button";
 import {
   Card,

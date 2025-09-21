@@ -1,0 +1,159 @@
+@import "tailwindcss";
+
+html {
+  scroll-behavior: smooth;
+}
+
+@theme {
+  --radius: 0.5rem;
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  --color-background: #ffffff;
+  --color-foreground: #18181b;
+
+  --color-muted: #f4f4f5;
+  --color-muted-foreground: #71717a;
+
+  --color-popover: #ffffff;
+  --color-popover-foreground: #18181b;
+
+  --color-border: #e4e4e7;
+  --color-input: #e4e4e7;
+
+  --color-card: #ffffff;
+  --color-card-foreground: #18181b;
+
+  --color-primary: #b86e37;
+  --color-primary-foreground: #ffffff;
+
+  --color-secondary: #e6c9a8;
+  --color-secondary-foreground: #18181b;
+
+  --color-accent: #f4f4f5;
+  --color-accent-foreground: #18181b;
+
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #f4f4f5;
+
+  --color-ring: #b86e37;
+}
+
+/* Dark theme tokens */
+.dark {
+  --color-background: #0b0b0e;
+  --color-foreground: #e5e7eb;
+
+  --color-muted: #111217;
+  --color-muted-foreground: #9ca3af;
+
+  --color-popover: #0f1115;
+  --color-popover-foreground: #e5e7eb;
+
+  --color-border: #1f2937;
+  --color-input: #1f2937;
+
+  --color-card: #0f1115;
+  --color-card-foreground: #e5e7eb;
+
+  --color-primary: #d08a55;
+  --color-primary-foreground: #0b0b0e;
+
+  --color-secondary: #1a1b20;
+  --color-secondary-foreground: #e5e7eb;
+
+  --color-accent: #14161b;
+  --color-accent-foreground: #e5e7eb;
+
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #111827;
+
+  --color-ring: #d08a55;
+}
+
+/* Map to shadcn token names so UI components pick these up */
+:root {
+  --background: var(--color-background);
+  --foreground: var(--color-foreground);
+  --muted: var(--color-muted);
+  --muted-foreground: var(--color-muted-foreground);
+  --popover: var(--color-popover);
+  --popover-foreground: var(--color-popover-foreground);
+  --border: var(--color-border);
+  --input: var(--color-input);
+  --card: var(--color-card);
+  --card-foreground: var(--color-card-foreground);
+  --primary: var(--color-primary);
+  --primary-foreground: var(--color-primary-foreground);
+  --secondary: var(--color-secondary);
+  --secondary-foreground: var(--color-secondary-foreground);
+  --accent: var(--color-accent);
+  --accent-foreground: var(--color-accent-foreground);
+  --destructive: var(--color-destructive);
+  --destructive-foreground: var(--color-destructive-foreground);
+  --ring: var(--color-ring);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+/* Animations */
+@keyframes blob {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
+
+@keyframes fade-in-up {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes gradient {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-blob {
+  animation: blob 7s infinite;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.8s ease-out;
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient 3s ease infinite;
+}
