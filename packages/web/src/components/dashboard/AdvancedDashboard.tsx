@@ -20,6 +20,7 @@ import { JobImportModal } from "@/components/dashboard/JobImportModal";
 import { CvAnalysisHistory } from "@/components/CvAnalysisHistory";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { FeatureGate } from "@/components/UpgradePrompt";
 import {
   Dialog,
   DialogContent,
@@ -29,9 +30,17 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cvEvaluatorApi } from "@/utils/api/cvEvaluator";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { useSubscription } from "@/hooks/useSubscription";
+import { PremiumUpgradeBanner } from "@/components/dashboard/PremiumUpgradeBanner";
 import {
   ClipboardList,
   LayoutDashboard,
@@ -72,6 +81,7 @@ interface Application {
 
 export function AdvancedDashboard() {
   const { user, loading } = useFirebaseAuth();
+  const { plan, limits, currentUsage, getRemainingUsage } = useSubscription();
 
   // All hooks must be called at the top level, before any conditional returns
   const hours = new Date().getHours();
@@ -322,14 +332,36 @@ export function AdvancedDashboard() {
                 >
                   Job Dashboard
                 </motion.h1>
-                <motion.p
+                <motion.div
                   initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.12, duration: 0.35 }}
-                  className="mt-1 text-sm text-gray-600"
+                  className="flex items-center gap-2 mt-1"
                 >
-                  {greeting}, {user.displayName || user.email}!
-                </motion.p>
+                  <p className="text-sm text-gray-600">
+                    {greeting}, {user.displayName || user.email}!
+                  </p>
+                  <Badge
+                    variant={plan === "premium" ? "default" : "secondary"}
+                    className={`text-xs ${
+                      plan === "premium"
+                        ? "bg-gradient-to-r from-primary to-secondary text-white"
+                        : "bg-gray-100 text-gray-700"
+                    }`}
+                  >
+                    {plan === "premium" ? "⭐ Premium" : "Free Plan"}
+                  </Badge>
+                  {currentUsage &&
+                    limits.cvAnalysesPerMonth > 0 &&
+                    limits.cvAnalysesPerMonth !== -1 && (
+                      <span className="text-xs text-muted-foreground">
+                        CV: {currentUsage.cvAnalyses}/
+                        {limits.cvAnalysesPerMonth === -1
+                          ? "∞"
+                          : limits.cvAnalysesPerMonth}
+                      </span>
+                    )}
+                </motion.div>
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -375,6 +407,9 @@ export function AdvancedDashboard() {
       </div>
 
       <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        {/* Premium Upgrade Banner for Free Users */}
+        {plan === "free" && <PremiumUpgradeBanner className="mb-6" />}
+
         {/* Navigation Tabs */}
         <Tabs
           value={view}
@@ -427,25 +462,42 @@ export function AdvancedDashboard() {
                   <CardContent>
                     <div className="space-y-3">
                       {(() => {
-                        const overdueCount = applications.filter(a => a.followUpDate && a.followUpDate < Date.now()).length;
-                        const dueSoonCount = applications.filter(a => {
+                        const overdueCount = applications.filter(
+                          (a) => a.followUpDate && a.followUpDate < Date.now()
+                        ).length;
+                        const dueSoonCount = applications.filter((a) => {
                           const tomorrow = Date.now() + 24 * 60 * 60 * 1000;
-                          return a.followUpDate && a.followUpDate <= tomorrow && a.followUpDate >= Date.now();
+                          return (
+                            a.followUpDate &&
+                            a.followUpDate <= tomorrow &&
+                            a.followUpDate >= Date.now()
+                          );
                         }).length;
-                        const interviewCount = applications.filter(a => a.interviewDates && a.interviewDates.length > 0).length;
-                        const offerCount = applications.filter(a => a.status === 'offered').length;
+                        const interviewCount = applications.filter(
+                          (a) => a.interviewDates && a.interviewDates.length > 0
+                        ).length;
+                        const offerCount = applications.filter(
+                          (a) => a.status === "offered"
+                        ).length;
 
-                        const hasNotifications = overdueCount > 0 || dueSoonCount > 0 || interviewCount > 0 || offerCount > 0;
+                        const hasNotifications =
+                          overdueCount > 0 ||
+                          dueSoonCount > 0 ||
+                          interviewCount > 0 ||
+                          offerCount > 0;
 
                         if (!hasNotifications) {
                           return (
                             <div className="text-center py-8">
-                              <div className="text-muted-foreground text-4xl mb-4">🔔</div>
+                              <div className="text-muted-foreground text-4xl mb-4">
+                                🔔
+                              </div>
                               <h3 className="text-sm font-medium text-foreground mb-2">
                                 All Clear!
                               </h3>
                               <p className="text-xs text-muted-foreground">
-                                No notifications at this time. You&apos;re all caught up with your applications.
+                                No notifications at this time. You&apos;re all
+                                caught up with your applications.
                               </p>
                             </div>
                           );
@@ -457,7 +509,9 @@ export function AdvancedDashboard() {
                               <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
                                 <div className="flex items-center gap-2 text-red-800">
                                   <span>⚠️</span>
-                                  <span className="font-medium">Overdue Follow-ups</span>
+                                  <span className="font-medium">
+                                    Overdue Follow-ups
+                                  </span>
                                 </div>
                                 <p className="text-sm text-red-700 mt-1">
                                   {overdueCount} follow-ups need attention
@@ -481,7 +535,9 @@ export function AdvancedDashboard() {
                               <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
                                 <div className="flex items-center gap-2 text-blue-800">
                                   <span>📅</span>
-                                  <span className="font-medium">Upcoming Interviews</span>
+                                  <span className="font-medium">
+                                    Upcoming Interviews
+                                  </span>
                                 </div>
                                 <p className="text-sm text-blue-700 mt-1">
                                   {interviewCount} interviews scheduled
@@ -493,7 +549,9 @@ export function AdvancedDashboard() {
                               <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
                                 <div className="flex items-center gap-2 text-green-800">
                                   <span>🎉</span>
-                                  <span className="font-medium">Congratulations!</span>
+                                  <span className="font-medium">
+                                    Congratulations!
+                                  </span>
                                 </div>
                                 <p className="text-sm text-green-700 mt-1">
                                   You have {offerCount} job offers
@@ -533,42 +591,56 @@ export function AdvancedDashboard() {
                             agency: a.job?.isRecruitmentAgency,
                           }))}
                         />
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            // Export as JSON
-                            const data = applications.map((a) => ({
-                              id: a._id,
-                              title: a.job?.title,
-                              company: a.job?.company,
-                              location: a.job?.location,
-                              status: a.status,
-                              dateFound: a.job?.dateFound,
-                              appliedDate: a.appliedDate,
-                              source: a.job?.source,
-                              salary: a.job?.salary,
-                              sponsored: a.job?.isSponsored,
-                              agency: a.job?.isRecruitmentAgency,
-                              notes: a.notes,
-                              interviewDates: a.interviewDates,
-                              followUpDate: a.followUpDate,
-                            }));
-                            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = 'applications-export.json';
-                            document.body.appendChild(a);
-                            a.click();
-                            document.body.removeChild(a);
-                            URL.revokeObjectURL(url);
-                            showSuccess("JSON export completed");
-                          }}
+                        <FeatureGate
+                          feature="exportFormats"
+                          fallback={
+                            <Button size="sm" variant="outline" disabled>
+                              <FileText className="h-4 w-4 mr-2" />
+                              JSON <span className="ml-1 text-xs">⭐</span>
+                            </Button>
+                          }
                         >
-                          <FileText className="h-4 w-4 mr-2" />
-                          JSON
-                        </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              // Export as JSON
+                              const data = applications.map((a) => ({
+                                id: a._id,
+                                title: a.job?.title,
+                                company: a.job?.company,
+                                location: a.job?.location,
+                                status: a.status,
+                                dateFound: a.job?.dateFound,
+                                appliedDate: a.appliedDate,
+                                source: a.job?.source,
+                                salary: a.job?.salary,
+                                sponsored: a.job?.isSponsored,
+                                agency: a.job?.isRecruitmentAgency,
+                                notes: a.notes,
+                                interviewDates: a.interviewDates,
+                                followUpDate: a.followUpDate,
+                              }));
+                              const blob = new Blob(
+                                [JSON.stringify(data, null, 2)],
+                                { type: "application/json" }
+                              );
+                              const url = URL.createObjectURL(blob);
+                              const a = document.createElement("a");
+                              a.href = url;
+                              a.download = "applications-export.json";
+                              document.body.appendChild(a);
+                              a.click();
+                              document.body.removeChild(a);
+                              URL.revokeObjectURL(url);
+                              showSuccess("JSON export completed");
+                            }}
+                          >
+                            <FileText className="h-4 w-4 mr-2" />
+                            JSON{" "}
+                            <span className="text-xs text-primary">⭐</span>
+                          </Button>
+                        </FeatureGate>
                       </div>
                     )}
                   </div>
@@ -665,192 +737,268 @@ export function AdvancedDashboard() {
           ))}
 
         {view === "analytics" && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-6"
-          >
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-900">Analytics & Insights</h2>
-            </div>
+          <FeatureGate feature="advancedAnalytics">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-6"
+            >
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Analytics & Insights
+                </h2>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">
+                    Premium Feature
+                  </span>
+                  <Badge
+                    variant="secondary"
+                    className="bg-gradient-to-r from-primary/20 to-secondary/20 text-primary border-primary/30"
+                  >
+                    ⭐ Premium
+                  </Badge>
+                </div>
+              </div>
 
-            {/* CV Analysis Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle>CV Analysis History</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CvAnalysisHistory analyses={cvAnalyses || []} />
-              </CardContent>
-            </Card>
-
-            {/* Application Timeline */}
-            {applications && applications.length > 0 && (
+              {/* CV Analysis Section */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <span>📊</span>
-                    Application Timeline
-                  </CardTitle>
+                  <CardTitle>CV Analysis History</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {applications
-                      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
-                      .slice(0, 10)
-                      .map((application, index) => {
-                        const daysSince = Math.floor((Date.now() - (application.createdAt || 0)) / (1000 * 60 * 60 * 24));
-                        const statusColor = {
-                          interested: 'bg-gray-100 text-gray-800',
-                          applied: 'bg-blue-100 text-blue-800',
-                          interviewing: 'bg-purple-100 text-purple-800',
-                          offered: 'bg-green-100 text-green-800',
-                          rejected: 'bg-red-100 text-red-800',
-                          withdrawn: 'bg-gray-100 text-gray-800',
-                        }[application.status] || 'bg-gray-100 text-gray-800';
+                  <CvAnalysisHistory analyses={cvAnalyses || []} />
+                </CardContent>
+              </Card>
 
-                        return (
-                          <div key={application._id} className="flex items-start gap-4 p-3 bg-muted/30 rounded-lg">
-                            <div className="flex-shrink-0 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-medium">
-                              {index + 1}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between">
-                                <h4 className="text-sm font-medium truncate">
-                                  {application.job?.title}
-                                </h4>
-                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColor}`}>
-                                  {application.status}
-                                </span>
+              {/* Application Timeline */}
+              {applications && applications.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <span>📊</span>
+                      Application Timeline
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {applications
+                        .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+                        .slice(0, 10)
+                        .map((application, index) => {
+                          const daysSince = Math.floor(
+                            (Date.now() - (application.createdAt || 0)) /
+                              (1000 * 60 * 60 * 24)
+                          );
+                          const statusColor =
+                            {
+                              interested: "bg-gray-100 text-gray-800",
+                              applied: "bg-blue-100 text-blue-800",
+                              interviewing: "bg-purple-100 text-purple-800",
+                              offered: "bg-green-100 text-green-800",
+                              rejected: "bg-red-100 text-red-800",
+                              withdrawn: "bg-gray-100 text-gray-800",
+                            }[application.status] ||
+                            "bg-gray-100 text-gray-800";
+
+                          return (
+                            <div
+                              key={application._id}
+                              className="flex items-start gap-4 p-3 bg-muted/30 rounded-lg"
+                            >
+                              <div className="flex-shrink-0 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-medium">
+                                {index + 1}
                               </div>
-                              <p className="text-sm text-muted-foreground truncate">
-                                {application.job?.company} • {application.job?.location}
-                              </p>
-                              <p className="text-xs text-muted-foreground mt-1">
-                                {daysSince === 0 ? 'Today' : `${daysSince} day${daysSince !== 1 ? 's' : ''} ago`}
-                                {application.appliedDate && (
-                                  <span className="ml-2">
-                                    • Applied {Math.floor((Date.now() - application.appliedDate) / (1000 * 60 * 60 * 24))} days later
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between">
+                                  <h4 className="text-sm font-medium truncate">
+                                    {application.job?.title}
+                                  </h4>
+                                  <span
+                                    className={`px-2 py-1 rounded-full text-xs font-medium ${statusColor}`}
+                                  >
+                                    {application.status}
                                   </span>
-                                )}
-                              </p>
+                                </div>
+                                <p className="text-sm text-muted-foreground truncate">
+                                  {application.job?.company} •{" "}
+                                  {application.job?.location}
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {daysSince === 0
+                                    ? "Today"
+                                    : `${daysSince} day${
+                                        daysSince !== 1 ? "s" : ""
+                                      } ago`}
+                                  {application.appliedDate && (
+                                    <span className="ml-2">
+                                      • Applied{" "}
+                                      {Math.floor(
+                                        (Date.now() - application.appliedDate) /
+                                          (1000 * 60 * 60 * 24)
+                                      )}{" "}
+                                      days later
+                                    </span>
+                                  )}
+                                </p>
+                              </div>
                             </div>
-                          </div>
-                        );
-                      })}
-                  </div>
-                  {applications.length > 10 && (
-                    <div className="text-center mt-4">
-                      <Button variant="outline" size="sm">
-                        View All Applications
-                      </Button>
+                          );
+                        })}
                     </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Analytics Dashboard */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Application Trends */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Application Trends</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                      <div className="flex items-center">
-                        <div className="p-2 rounded-full bg-blue-100">
-                          <span className="text-blue-600">📈</span>
-                        </div>
-                        <span className="ml-3 font-medium">This Week</span>
+                    {applications.length > 10 && (
+                      <div className="text-center mt-4">
+                        <Button variant="outline" size="sm">
+                          View All Applications
+                        </Button>
                       </div>
-                      <span className="text-lg font-bold text-blue-600">
-                        {applications?.filter(a => {
-                          const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-                          return a.createdAt >= weekAgo;
-                        }).length || 0}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                      <div className="flex items-center">
-                        <div className="p-2 rounded-full bg-green-100">
-                          <span className="text-green-600">✅</span>
-                        </div>
-                        <span className="ml-3 font-medium">Success Rate</span>
-                      </div>
-                      <span className="text-lg font-bold text-green-600">
-                        {applications && applications.length > 0
-                          ? Math.round((applications.filter(a => a.status === 'offered').length / applications.length) * 100)
-                          : 0}%
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
-                      <div className="flex items-center">
-                        <div className="p-2 rounded-full bg-orange-100">
-                          <span className="text-orange-600">⏱️</span>
-                        </div>
-                        <span className="ml-3 font-medium">Avg Response</span>
-                      </div>
-                      <span className="text-lg font-bold text-orange-600">
-                        3.2 days
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Performance Metrics */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Performance Insights</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {jobStats && (
-                      <>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">Applications per Job</span>
-                          <span className="font-medium">
-                            {jobStats.totalJobs > 0 ? (jobStats.totalApplications / jobStats.totalJobs).toFixed(1) : 0}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">Interview Rate</span>
-                          <span className="font-medium">
-                            {applications && applications.length > 0
-                              ? Math.round((applications.filter(a => a.status === 'interviewing').length / applications.length) * 100)
-                              : 0}%
-                          </span>
-                        </div>
-
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">Sponsored Jobs Applied</span>
-                          <span className="font-medium">
-                            {applications && applications.length > 0
-                              ? Math.round((applications.filter(a => a.job?.isSponsored).length / applications.length) * 100)
-                              : 0}%
-                          </span>
-                        </div>
-
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">Agency Jobs Applied</span>
-                          <span className="font-medium">
-                            {applications && applications.length > 0
-                              ? Math.round((applications.filter(a => a.job?.isRecruitmentAgency).length / applications.length) * 100)
-                              : 0}%
-                          </span>
-                        </div>
-                      </>
                     )}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Analytics Dashboard */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Application Trends */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Application Trends</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                        <div className="flex items-center">
+                          <div className="p-2 rounded-full bg-blue-100">
+                            <span className="text-blue-600">📈</span>
+                          </div>
+                          <span className="ml-3 font-medium">This Week</span>
+                        </div>
+                        <span className="text-lg font-bold text-blue-600">
+                          {applications?.filter((a) => {
+                            const weekAgo =
+                              Date.now() - 7 * 24 * 60 * 60 * 1000;
+                            return a.createdAt >= weekAgo;
+                          }).length || 0}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                        <div className="flex items-center">
+                          <div className="p-2 rounded-full bg-green-100">
+                            <span className="text-green-600">✅</span>
+                          </div>
+                          <span className="ml-3 font-medium">Success Rate</span>
+                        </div>
+                        <span className="text-lg font-bold text-green-600">
+                          {applications && applications.length > 0
+                            ? Math.round(
+                                (applications.filter(
+                                  (a) => a.status === "offered"
+                                ).length /
+                                  applications.length) *
+                                  100
+                              )
+                            : 0}
+                          %
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
+                        <div className="flex items-center">
+                          <div className="p-2 rounded-full bg-orange-100">
+                            <span className="text-orange-600">⏱️</span>
+                          </div>
+                          <span className="ml-3 font-medium">Avg Response</span>
+                        </div>
+                        <span className="text-lg font-bold text-orange-600">
+                          3.2 days
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Performance Metrics */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Performance Insights</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {jobStats && (
+                        <>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">
+                              Applications per Job
+                            </span>
+                            <span className="font-medium">
+                              {jobStats.totalJobs > 0
+                                ? (
+                                    jobStats.totalApplications /
+                                    jobStats.totalJobs
+                                  ).toFixed(1)
+                                : 0}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">
+                              Interview Rate
+                            </span>
+                            <span className="font-medium">
+                              {applications && applications.length > 0
+                                ? Math.round(
+                                    (applications.filter(
+                                      (a) => a.status === "interviewing"
+                                    ).length /
+                                      applications.length) *
+                                      100
+                                  )
+                                : 0}
+                              %
+                            </span>
+                          </div>
+
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">
+                              Sponsored Jobs Applied
+                            </span>
+                            <span className="font-medium">
+                              {applications && applications.length > 0
+                                ? Math.round(
+                                    (applications.filter(
+                                      (a) => a.job?.isSponsored
+                                    ).length /
+                                      applications.length) *
+                                      100
+                                  )
+                                : 0}
+                              %
+                            </span>
+                          </div>
+
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">
+                              Agency Jobs Applied
+                            </span>
+                            <span className="font-medium">
+                              {applications && applications.length > 0
+                                ? Math.round(
+                                    (applications.filter(
+                                      (a) => a.job?.isRecruitmentAgency
+                                    ).length /
+                                      applications.length) *
+                                      100
+                                  )
+                                : 0}
+                              %
+                            </span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
 
               {/* CV Analysis Stats */}
               {cvAnalyses && cvAnalyses.length > 0 && (
@@ -861,29 +1009,53 @@ export function AdvancedDashboard() {
                   <CardContent>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div className="text-center p-3 bg-primary/10 rounded-lg">
-                        <div className="text-2xl font-bold text-primary">{cvAnalyses.length}</div>
-                        <div className="text-sm text-muted-foreground">Total Analyses</div>
+                        <div className="text-2xl font-bold text-primary">
+                          {cvAnalyses.length}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          Total Analyses
+                        </div>
                       </div>
 
                       <div className="text-center p-3 bg-green-50 rounded-lg">
                         <div className="text-2xl font-bold text-green-600">
-                          {Math.round(cvAnalyses.reduce((sum, a) => sum + (a.overallScore || 0), 0) / cvAnalyses.length)}
+                          {Math.round(
+                            cvAnalyses.reduce(
+                              (sum, a) => sum + (a.overallScore || 0),
+                              0
+                            ) / cvAnalyses.length
+                          )}
                         </div>
-                        <div className="text-sm text-muted-foreground">Avg Score</div>
+                        <div className="text-sm text-muted-foreground">
+                          Avg Score
+                        </div>
                       </div>
 
                       <div className="text-center p-3 bg-blue-50 rounded-lg">
                         <div className="text-2xl font-bold text-blue-600">
-                          {cvAnalyses.filter(a => a.analysisStatus === 'completed').length}
+                          {
+                            cvAnalyses.filter(
+                              (a) => a.analysisStatus === "completed"
+                            ).length
+                          }
                         </div>
-                        <div className="text-sm text-muted-foreground">Completed</div>
+                        <div className="text-sm text-muted-foreground">
+                          Completed
+                        </div>
                       </div>
 
                       <div className="text-center p-3 bg-purple-50 rounded-lg">
                         <div className="text-2xl font-bold text-purple-600">
-                          {cvAnalyses.length > 0 ? Math.round((cvAnalyses[0]?.atsCompatibility as any)?.score || 0) : 0}
+                          {cvAnalyses.length > 0
+                            ? Math.round(
+                                (cvAnalyses[0]?.atsCompatibility as any)
+                                  ?.score || 0
+                              )
+                            : 0}
                         </div>
-                        <div className="text-sm text-muted-foreground">ATS Score</div>
+                        <div className="text-sm text-muted-foreground">
+                          ATS Score
+                        </div>
                       </div>
                     </div>
                   </CardContent>
@@ -903,21 +1075,33 @@ export function AdvancedDashboard() {
                     {/* Weekly Application Goal */}
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium">Weekly Applications</span>
+                        <span className="text-sm font-medium">
+                          Weekly Applications
+                        </span>
                         <span className="text-sm text-muted-foreground">
-                          {applications?.filter(a => {
-                            const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+                          {applications?.filter((a) => {
+                            const weekAgo =
+                              Date.now() - 7 * 24 * 60 * 60 * 1000;
                             return a.createdAt >= weekAgo;
-                          }).length || 0} / 10
+                          }).length || 0}{" "}
+                          / 10
                         </span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div
                           className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${Math.min(100, ((applications?.filter(a => {
-                            const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-                            return a.createdAt >= weekAgo;
-                          }).length || 0) / 10) * 100)}%` }}
+                          style={{
+                            width: `${Math.min(
+                              100,
+                              ((applications?.filter((a) => {
+                                const weekAgo =
+                                  Date.now() - 7 * 24 * 60 * 60 * 1000;
+                                return a.createdAt >= weekAgo;
+                              }).length || 0) /
+                                10) *
+                                100
+                            )}%`,
+                          }}
                         ></div>
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">
@@ -928,15 +1112,29 @@ export function AdvancedDashboard() {
                     {/* Interview Goal */}
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium">Interviews This Month</span>
+                        <span className="text-sm font-medium">
+                          Interviews This Month
+                        </span>
                         <span className="text-sm text-muted-foreground">
-                          {applications?.filter(a => a.status === 'interviewing').length || 0} / 5
+                          {applications?.filter(
+                            (a) => a.status === "interviewing"
+                          ).length || 0}{" "}
+                          / 5
                         </span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div
                           className="bg-green-600 h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${Math.min(100, ((applications?.filter(a => a.status === 'interviewing').length || 0) / 5) * 100)}%` }}
+                          style={{
+                            width: `${Math.min(
+                              100,
+                              ((applications?.filter(
+                                (a) => a.status === "interviewing"
+                              ).length || 0) /
+                                5) *
+                                100
+                            )}%`,
+                          }}
                         ></div>
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">
@@ -947,19 +1145,43 @@ export function AdvancedDashboard() {
                     {/* Response Rate Goal */}
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium">Response Rate</span>
+                        <span className="text-sm font-medium">
+                          Response Rate
+                        </span>
                         <span className="text-sm text-muted-foreground">
                           {applications && applications.length > 0
-                            ? Math.round((applications.filter(a => a.status !== 'applied' && a.status !== 'interested').length / applications.length) * 100)
-                            : 0}% / 30%
+                            ? Math.round(
+                                (applications.filter(
+                                  (a) =>
+                                    a.status !== "applied" &&
+                                    a.status !== "interested"
+                                ).length /
+                                  applications.length) *
+                                  100
+                              )
+                            : 0}
+                          % / 30%
                         </span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div
                           className="bg-purple-600 h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${Math.min(100, (applications && applications.length > 0
-                            ? (applications.filter(a => a.status !== 'applied' && a.status !== 'interested').length / applications.length) * 100
-                            : 0) / 30 * 100)}%` }}
+                          style={{
+                            width: `${Math.min(
+                              100,
+                              ((applications && applications.length > 0
+                                ? (applications.filter(
+                                    (a) =>
+                                      a.status !== "applied" &&
+                                      a.status !== "interested"
+                                  ).length /
+                                    applications.length) *
+                                  100
+                                : 0) /
+                                30) *
+                                100
+                            )}%`,
+                          }}
                         ></div>
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">
@@ -984,7 +1206,8 @@ export function AdvancedDashboard() {
                   </div>
                 </CardContent>
               </Card>
-          </motion.div>
+            </motion.div>
+          </FeatureGate>
         )}
 
         {view === "jobs" && (
@@ -1015,15 +1238,22 @@ export function AdvancedDashboard() {
                       {/* Status Filter */}
                       <div className="space-y-2">
                         <label className="text-sm font-medium">Status</label>
-                        <Select value={statusFilter} onValueChange={setStatusFilter}>
+                        <Select
+                          value={statusFilter}
+                          onValueChange={setStatusFilter}
+                        >
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="all">All Statuses</SelectItem>
-                            <SelectItem value="interested">Interested</SelectItem>
+                            <SelectItem value="interested">
+                              Interested
+                            </SelectItem>
                             <SelectItem value="applied">Applied</SelectItem>
-                            <SelectItem value="interviewing">Interviewing</SelectItem>
+                            <SelectItem value="interviewing">
+                              Interviewing
+                            </SelectItem>
                             <SelectItem value="offered">Offered</SelectItem>
                             <SelectItem value="rejected">Rejected</SelectItem>
                             <SelectItem value="withdrawn">Withdrawn</SelectItem>
@@ -1034,13 +1264,16 @@ export function AdvancedDashboard() {
                       {/* Company Filter */}
                       <div className="space-y-2">
                         <label className="text-sm font-medium">Company</label>
-                        <Select value={companyFilter} onValueChange={setCompanyFilter}>
+                        <Select
+                          value={companyFilter}
+                          onValueChange={setCompanyFilter}
+                        >
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="all">All Companies</SelectItem>
-                            {uniqueCompanies.map(company => (
+                            {uniqueCompanies.map((company) => (
                               <SelectItem key={company} value={company}>
                                 {company}
                               </SelectItem>
@@ -1051,20 +1284,30 @@ export function AdvancedDashboard() {
 
                       {/* Saved Views */}
                       <div className="space-y-2">
-                        <label className="text-sm font-medium">Saved Views</label>
-                        <Select onValueChange={(value) => {
-                          const view = savedViews.find(v => v.id === value);
-                          if (view) {
-                            setStatusFilter(view.filters.status as string || "all");
-                            setCompanyFilter(view.filters.company as string || "all");
-                            setSearchTerm(view.filters.search as string || "");
-                          }
-                        }}>
+                        <label className="text-sm font-medium">
+                          Saved Views
+                        </label>
+                        <Select
+                          onValueChange={(value) => {
+                            const view = savedViews.find((v) => v.id === value);
+                            if (view) {
+                              setStatusFilter(
+                                (view.filters.status as string) || "all"
+                              );
+                              setCompanyFilter(
+                                (view.filters.company as string) || "all"
+                              );
+                              setSearchTerm(
+                                (view.filters.search as string) || ""
+                              );
+                            }
+                          }}
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Load saved view..." />
                           </SelectTrigger>
                           <SelectContent>
-                            {savedViews.map(view => (
+                            {savedViews.map((view) => (
                               <SelectItem key={view.id} value={view.id}>
                                 {view.name}
                               </SelectItem>
@@ -1077,33 +1320,52 @@ export function AdvancedDashboard() {
                     {/* Active Filters */}
                     <div className="flex flex-wrap gap-2 mt-4">
                       {statusFilter !== "all" && (
-                        <Badge variant="secondary" className="cursor-pointer" onClick={() => setStatusFilter("all")}>
+                        <Badge
+                          variant="secondary"
+                          className="cursor-pointer"
+                          onClick={() => setStatusFilter("all")}
+                        >
                           Status: {statusFilter} ×
                         </Badge>
                       )}
                       {companyFilter !== "all" && (
-                        <Badge variant="secondary" className="cursor-pointer" onClick={() => setCompanyFilter("all")}>
+                        <Badge
+                          variant="secondary"
+                          className="cursor-pointer"
+                          onClick={() => setCompanyFilter("all")}
+                        >
                           Company: {companyFilter} ×
                         </Badge>
                       )}
                       {searchTerm && (
-                        <Badge variant="secondary" className="cursor-pointer" onClick={() => setSearchTerm("")}>
+                        <Badge
+                          variant="secondary"
+                          className="cursor-pointer"
+                          onClick={() => setSearchTerm("")}
+                        >
                           Search: {searchTerm} ×
                         </Badge>
                       )}
-                      {(statusFilter !== "all" || companyFilter !== "all" || searchTerm) && (
-                        <Badge variant="outline" className="cursor-pointer" onClick={() => {
-                          setStatusFilter("all");
-                          setCompanyFilter("all");
-                          setSearchTerm("");
-                        }}>
+                      {(statusFilter !== "all" ||
+                        companyFilter !== "all" ||
+                        searchTerm) && (
+                        <Badge
+                          variant="outline"
+                          className="cursor-pointer"
+                          onClick={() => {
+                            setStatusFilter("all");
+                            setCompanyFilter("all");
+                            setSearchTerm("");
+                          }}
+                        >
                           Clear All
                         </Badge>
                       )}
                     </div>
 
                     <div className="text-sm text-muted-foreground mt-2">
-                      Showing {filteredApplications.length} of {applications.length} applications
+                      Showing {filteredApplications.length} of{" "}
+                      {applications.length} applications
                     </div>
                   </CardContent>
                 </Card>
@@ -1141,40 +1403,53 @@ export function AdvancedDashboard() {
                         salary: a.job?.salary,
                       }))}
                     />
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        // Export as JSON
-                        const data = filteredApplications.map((a) => ({
-                          id: a._id,
-                          title: a.job?.title,
-                          company: a.job?.company,
-                          location: a.job?.location,
-                          status: a.status,
-                          dateFound: a.job?.dateFound,
-                          appliedDate: a.appliedDate,
-                          source: a.job?.source,
-                          salary: a.job?.salary,
-                          notes: a.notes,
-                          interviewDates: a.interviewDates,
-                          followUpDate: a.followUpDate,
-                        }));
-                        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = 'applications-export.json';
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        URL.revokeObjectURL(url);
-                        showSuccess("JSON export completed");
-                      }}
+                    <FeatureGate
+                      feature="exportFormats"
+                      fallback={
+                        <Button size="sm" variant="outline" disabled>
+                          <FileText className="h-4 w-4 mr-2" />
+                          JSON <span className="ml-1 text-xs">⭐</span>
+                        </Button>
+                      }
                     >
-                      <FileText className="h-4 w-4 mr-2" />
-                      JSON
-                    </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          // Export as JSON
+                          const data = filteredApplications.map((a) => ({
+                            id: a._id,
+                            title: a.job?.title,
+                            company: a.job?.company,
+                            location: a.job?.location,
+                            status: a.status,
+                            dateFound: a.job?.dateFound,
+                            appliedDate: a.appliedDate,
+                            source: a.job?.source,
+                            salary: a.job?.salary,
+                            notes: a.notes,
+                            interviewDates: a.interviewDates,
+                            followUpDate: a.followUpDate,
+                          }));
+                          const blob = new Blob(
+                            [JSON.stringify(data, null, 2)],
+                            { type: "application/json" }
+                          );
+                          const url = URL.createObjectURL(blob);
+                          const a = document.createElement("a");
+                          a.href = url;
+                          a.download = "applications-export.json";
+                          document.body.appendChild(a);
+                          a.click();
+                          document.body.removeChild(a);
+                          URL.revokeObjectURL(url);
+                          showSuccess("JSON export completed");
+                        }}
+                      >
+                        <FileText className="h-4 w-4 mr-2" />
+                        JSON <span className="text-xs text-primary">⭐</span>
+                      </Button>
+                    </FeatureGate>
                   </div>
                 </div>
                 {boardMode === "kanban" ? (

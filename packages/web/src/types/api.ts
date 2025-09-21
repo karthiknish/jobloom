@@ -130,3 +130,54 @@ export interface BlogStats {
   totalLikes: number;
   postsByCategory: Record<string, number>;
 }
+
+// Define types for subscription system
+export type SubscriptionPlan = "free" | "premium";
+
+export interface SubscriptionLimits {
+  cvAnalysesPerMonth: number;
+  applicationsPerMonth: number;
+  exportFormats: string[]; // "csv", "json", "pdf"
+  advancedAnalytics: boolean;
+  prioritySupport: boolean;
+  customAlerts: boolean;
+  teamCollaboration: boolean;
+  apiRateLimit: number; // requests per minute
+}
+
+export interface Subscription {
+  _id: string;
+  userId: string;
+  plan: SubscriptionPlan;
+  status: "active" | "inactive" | "cancelled" | "past_due";
+  currentPeriodStart: number;
+  currentPeriodEnd: number;
+  cancelAtPeriodEnd: boolean;
+  createdAt: number;
+  updatedAt: number;
+  stripeSubscriptionId?: string;
+  stripeCustomerId?: string;
+}
+
+export const SUBSCRIPTION_LIMITS: Record<SubscriptionPlan, SubscriptionLimits> = {
+  free: {
+    cvAnalysesPerMonth: 3,
+    applicationsPerMonth: 50,
+    exportFormats: ["csv"],
+    advancedAnalytics: false,
+    prioritySupport: false,
+    customAlerts: false,
+    teamCollaboration: false,
+    apiRateLimit: 10,
+  },
+  premium: {
+    cvAnalysesPerMonth: -1, // unlimited
+    applicationsPerMonth: -1, // unlimited
+    exportFormats: ["csv", "json", "pdf"],
+    advancedAnalytics: true,
+    prioritySupport: true,
+    customAlerts: true,
+    teamCollaboration: true,
+    apiRateLimit: 200,
+  },
+};

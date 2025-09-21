@@ -3,6 +3,7 @@ import { verifyIdToken } from "@/firebase/admin";
 import { getStorage } from "firebase-admin/storage";
 import { getFirestore } from "firebase-admin/firestore";
 import * as admin from "firebase-admin";
+import { SUBSCRIPTION_LIMITS } from "@/types/api";
 
 // Initialize Firebase Admin if not already initialized
 if (!admin.apps.length) {
@@ -22,6 +23,72 @@ if (!admin.apps.length) {
 }
 
 const db = getFirestore();
+
+// Helper function to check subscription limits
+async function checkSubscriptionLimits(
+  userId: string
+): Promise<{
+  allowed: boolean;
+  plan: string;
+  currentUsage: number;
+  limit: number;
+}> {
+  try {
+    // Get user record to find subscription info
+    const userDoc = await db.collection("users").doc(userId).get();
+    const userData = userDoc.data();
+
+    let plan = "free";
+    if (userData?.subscriptionId) {
+      // Check if subscription is active
+      const subscriptionDoc = await db
+        .collection("subscriptions")
+        .doc(userData.subscriptionId)
+        .get();
+      const subscription = subscriptionDoc.data();
+
+      if (subscription?.status === "active" && subscription?.plan) {
+        plan = subscription.plan;
+      }
+    }
+
+    // Count current month's CV analyses
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const cvAnalyses = await db
+      .collection("cvAnalyses")
+      .where("userId", "==", userId)
+      .where(
+        "createdAt",
+        ">=",
+        admin.firestore.Timestamp.fromDate(startOfMonth)
+      )
+      .get();
+
+    const currentUsage = cvAnalyses.size;
+    const limit =
+      SUBSCRIPTION_LIMITS[plan as keyof typeof SUBSCRIPTION_LIMITS]
+        .cvAnalysesPerMonth;
+
+    return {
+      allowed: limit === -1 || currentUsage < limit,
+      plan,
+      currentUsage,
+      limit: limit === -1 ? -1 : limit,
+    };
+  } catch (error) {
+    console.error("Error checking subscription limits:", error);
+    // Default to free plan limits on error
+    return {
+      allowed: false,
+      plan: "free",
+      currentUsage: 0,
+      limit: SUBSCRIPTION_LIMITS.free.cvAnalysesPerMonth,
+    };
+  }
+}
 
 // POST /api/cv/upload - Upload and analyze CV
 export async function POST(request: NextRequest) {
@@ -48,6 +115,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "Missing file or userId" },
         { status: 400 }
+      );
+    }
+
+    // Check subscription limits
+    const limitCheck = await checkSubscriptionLimits(userId);
+    if (!limitCheck.allowed) {
+      return NextResponse.json(
+        {
+          error: `CV analysis limit reached. You've used ${limitCheck.currentUsage} of ${limitCheck.limit} analyses this month.`,
+          plan: limitCheck.plan,
+          currentUsage: limitCheck.currentUsage,
+          limit: limitCheck.limit,
+          upgradeRequired: true,
+        },
+        { status: 429 } // Too Many Requests
       );
     }
 
