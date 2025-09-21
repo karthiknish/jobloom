@@ -1,5 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { motion } from "framer-motion";
+import {
+  Shield,
+  Eye,
+  Lock,
+  Users,
+  Database,
+  Cookie,
+  Mail,
+  Phone,
+} from "lucide-react";
 import {
   Card,
   CardContent,
@@ -7,10 +18,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export const metadata: Metadata = {
   title: "Privacy Policy | Jobloom",
-  description: "Learn how Jobloom collects, uses, and safeguards your data.",
+  description:
+    "Learn how Jobloom collects, uses, and safeguards your data. Your privacy matters to us.",
+  keywords: "privacy policy, data protection, GDPR, CCPA, Jobloom privacy",
 };
 
 export default function PrivacyPolicy() {

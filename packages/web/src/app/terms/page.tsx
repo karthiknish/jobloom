@@ -1,5 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { motion } from "framer-motion";
+import {
+  Scale,
+  FileCheck,
+  Shield,
+  Users,
+  AlertCircle,
+  CheckCircle2,
+} from "lucide-react";
 import {
   Card,
   CardContent,
@@ -7,10 +16,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export const metadata: Metadata = {
   title: "Terms of Service | Jobloom",
-  description: "Review the terms that govern your use of Jobloom.",
+  description:
+    "Review the comprehensive terms that govern your use of Jobloom services.",
+  keywords:
+    "terms of service, terms and conditions, legal agreement, Jobloom terms",
 };
 
 export default function TermsOfService() {

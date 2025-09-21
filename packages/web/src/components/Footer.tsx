@@ -113,6 +113,14 @@ export default function Footer() {
                   Terms of Service
                 </Link>
               </li>
+              <li>
+                <Link
+                  href="/conditions"
+                  className="hover:text-primary-foreground transition-colors"
+                >
+                  Usage Conditions
+                </Link>
+              </li>
             </ul>
           </div>
         </div>

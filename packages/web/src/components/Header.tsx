@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,6 +27,19 @@ export default function Header() {
   const { user } = useFirebaseAuth();
   const isSignedIn = !!user;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    if (user?.uid) {
+      // Check if user is admin
+      fetch("/api/app/admin/is-admin/" + user.uid)
+        .then((res) => res.json())
+        .then((data) => setIsAdmin(data.isAdmin))
+        .catch(() => setIsAdmin(false));
+    } else {
+      setIsAdmin(false);
+    }
+  }, [user?.uid]);
 
   const navLinks = [
     { href: "#how-it-works", label: "How it Works" },
@@ -37,8 +50,11 @@ export default function Header() {
   const userLinks = [
     { href: "/dashboard", label: "Dashboard" },
     { href: "/cv-evaluator", label: "CV Evaluator" },
+    { href: "/blog", label: "Blog" },
     { href: "/account", label: "Account" },
   ];
+
+  const adminLinks = [{ href: "/admin/blog", label: "Blog Admin" }];
 
   const NavItems = () => (
     <>
@@ -56,6 +72,19 @@ export default function Header() {
 
       {isSignedIn &&
         userLinks.map((link) => (
+          <Link
+            key={link.href}
+            href={link.href}
+            className="text-muted-foreground hover:text-foreground transition-colors text-sm font-medium w-fit text-center py-2 flex"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            {link.label}
+          </Link>
+        ))}
+
+      {isSignedIn &&
+        isAdmin &&
+        adminLinks.map((link) => (
           <Link
             key={link.href}
             href={link.href}

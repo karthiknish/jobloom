@@ -57,3 +57,16 @@ export async function verifyIdToken(token: string): Promise<import("firebase-adm
   }
 }
 
+export async function isUserAdmin(userId: string): Promise<boolean> {
+  try {
+    const db = getAdminDb();
+    const userDoc = await db.collection("users").doc(userId).get();
+    if (!userDoc.exists) return false;
+
+    const userData = userDoc.data();
+    return userData?.isAdmin === true;
+  } catch {
+    return false;
+  }
+}
+
