@@ -40,7 +40,8 @@ export async function GET(request: NextRequest) {
     const url = new URL(request.url);
     const status = url.searchParams.get("status"); // draft, published, archived
 
-    let query = db.collection("blogPosts");
+    let query: admin.firestore.Query | admin.firestore.CollectionReference =
+      db.collection("blogPosts");
 
     if (status) {
       query = query.where("status", "==", status);

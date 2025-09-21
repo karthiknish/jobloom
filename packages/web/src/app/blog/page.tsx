@@ -44,7 +44,7 @@ export default function BlogPage() {
   const [currentPage, setCurrentPage] = useState(1);
 
   // Fetch blog posts
-  const { data, isLoading, refetch } = useApiQuery<BlogPostWithPagination>(
+  const { data, loading, refetch } = useApiQuery<BlogPostWithPagination>(
     () =>
       fetch(
         `/api/blog/posts?page=${currentPage}&limit=9&search=${encodeURIComponent(
@@ -107,7 +107,8 @@ export default function BlogPage() {
               transition={{ delay: 0.4, duration: 0.6 }}
               className="mt-6 max-w-2xl mx-auto text-xl text-primary-foreground/90"
             >
-              Insights, tips, and stories to help you navigate your career journey
+              Insights, tips, and stories to help you navigate your career
+              journey
             </motion.p>
           </div>
         </div>
@@ -133,7 +134,10 @@ export default function BlogPage() {
                 />
               </div>
 
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <Select
+                value={selectedCategory}
+                onValueChange={setSelectedCategory}
+              >
                 <SelectTrigger className="w-[200px]">
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
@@ -155,7 +159,7 @@ export default function BlogPage() {
         </motion.div>
 
         {/* Blog Posts Grid */}
-        {isLoading ? (
+        {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[...Array(6)].map((_, i) => (
               <Card key={i} className="animate-pulse">
@@ -262,7 +266,11 @@ export default function BlogPage() {
                       {post.tags.length > 0 && (
                         <div className="flex flex-wrap gap-1 mb-4">
                           {post.tags.slice(0, 3).map((tag) => (
-                            <Badge key={tag} variant="outline" className="text-xs">
+                            <Badge
+                              key={tag}
+                              variant="outline"
+                              className="text-xs"
+                            >
                               <Tag className="h-3 w-3 mr-1" />
                               {tag}
                             </Badge>
@@ -276,7 +284,10 @@ export default function BlogPage() {
                       )}
 
                       <Link href={`/blog/${post.slug}`}>
-                        <Button variant="ghost" className="w-full group-hover:bg-primary group-hover:text-white transition-colors">
+                        <Button
+                          variant="ghost"
+                          className="w-full group-hover:bg-primary group-hover:text-white transition-colors"
+                        >
                           Read More
                           <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
                         </Button>
@@ -316,7 +327,9 @@ export default function BlogPage() {
                     .map((page, index, array) => (
                       <div key={page} className="flex items-center">
                         {index > 0 && array[index - 1] !== page - 1 && (
-                          <span className="px-2 text-muted-foreground">...</span>
+                          <span className="px-2 text-muted-foreground">
+                            ...
+                          </span>
                         )}
                         <Button
                           variant={page === currentPage ? "default" : "outline"}

@@ -6,18 +6,22 @@ import * as admin from "firebase-admin";
 
 // Initialize Firebase Admin if not already initialized
 if (!admin.apps.length) {
-  admin.initializeApp({
+  const config: any = {
     credential: admin.credential.cert({
       projectId: process.env.FIREBASE_PROJECT_ID,
       clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
     }),
-    storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-  });
+  };
+
+  if (process.env.FIREBASE_STORAGE_BUCKET) {
+    config.storageBucket = process.env.FIREBASE_STORAGE_BUCKET;
+  }
+
+  admin.initializeApp(config);
 }
 
 const db = getFirestore();
-const bucket = getStorage().bucket();
 
 // POST /api/cv/upload - Upload and analyze CV
 export async function POST(request: NextRequest) {
@@ -41,25 +45,37 @@ export async function POST(request: NextRequest) {
     const industry = formData.get("industry") as string;
 
     if (!file || !userId) {
-      return NextResponse.json({ error: "Missing file or userId" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Missing file or userId" },
+        { status: 400 }
+      );
     }
 
     // Validate file type and size
     const allowedTypes = ["application/pdf", "text/plain"];
     if (!allowedTypes.includes(file.type)) {
-      return NextResponse.json({ error: "Invalid file type. Only PDF and TXT files are allowed." }, { status: 400 });
+      return NextResponse.json(
+        { error: "Invalid file type. Only PDF and TXT files are allowed." },
+        { status: 400 }
+      );
     }
 
     const maxSize = 5 * 1024 * 1024; // 5MB
     if (file.size > maxSize) {
-      return NextResponse.json({ error: "File too large. Maximum size is 5MB." }, { status: 400 });
+      return NextResponse.json(
+        { error: "File too large. Maximum size is 5MB." },
+        { status: 400 }
+      );
     }
 
     // Generate unique filename
     const fileExtension = file.type === "application/pdf" ? "pdf" : "txt";
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExtension}`;
+    const fileName = `${Date.now()}-${Math.random()
+      .toString(36)
+      .substring(2)}.${fileExtension}`;
 
     // Upload file to Firebase Storage
+    const bucket = getStorage().bucket();
     const fileRef = bucket.file(`cv-uploads/${userId}/${fileName}`);
     const buffer = Buffer.from(await file.arrayBuffer());
 
@@ -103,18 +119,26 @@ export async function POST(request: NextRequest) {
     // Trigger CV analysis (this would typically call an AI service)
     // For now, we'll simulate the analysis
     setTimeout(async () => {
-      await performCvAnalysis(cvAnalysisRef.id, buffer, file.type, targetRole, industry);
+      await performCvAnalysis(
+        cvAnalysisRef.id,
+        buffer,
+        file.type,
+        targetRole,
+        industry
+      );
     }, 1000);
 
     return NextResponse.json({
       success: true,
       analysisId: cvAnalysisRef.id,
-      message: "CV uploaded successfully. Analysis in progress..."
+      message: "CV uploaded successfully. Analysis in progress...",
     });
-
   } catch (error) {
     console.error("Error uploading CV:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }
 

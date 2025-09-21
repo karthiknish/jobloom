@@ -9,7 +9,11 @@ export const contactApi = {
     message: string;
     subject?: string;
   }): Promise<{ success: boolean; message: string; contactId: string }> => {
-    return appApi.createContact(data);
+    return appApi.createContact(data) as Promise<{
+      success: boolean;
+      message: string;
+      contactId: string;
+    }>;
   },
 
   // Admin functions

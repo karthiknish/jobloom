@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   Plus,
@@ -9,10 +9,7 @@ import {
   Eye,
   FileText,
   BarChart3,
-  Users,
   TrendingUp,
-  Calendar,
-  Tag,
   Search,
 } from "lucide-react";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
@@ -56,7 +53,27 @@ import { Textarea } from "@/components/ui/textarea";
 import { TiptapEditor } from "@/components/TiptapEditor";
 import { showSuccess, showError } from "@/components/ui/Toast";
 import { useApiQuery, useApiMutation } from "../../../hooks/useApi";
-import type { BlogPost, BlogStats } from "../../../types/api";
+import type { BlogPost } from "../../../types/api";
+
+type BlogPostCreatePayload = {
+  title: string;
+  excerpt: string;
+  content: string;
+  category: string;
+  tags: string[];
+  status: "draft" | "published" | "archived";
+};
+
+type BlogPostUpdatePayload = Partial<BlogPostCreatePayload>;
+
+type BlogPostPayload = {
+  title: string;
+  excerpt: string;
+  content: string;
+  category: string;
+  tags: string[];
+  status: "draft" | "published" | "archived";
+};
 
 export default function AdminBlogPage() {
   const { user } = useFirebaseAuth();
@@ -64,13 +81,20 @@ export default function AdminBlogPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
-  const [newPost, setNewPost] = useState({
+  const [newPost, setNewPost] = useState<{
+    title: string;
+    excerpt: string;
+    content: string;
+    category: string;
+    tags: string;
+    status: "draft" | "published" | "archived";
+  }>({
     title: "",
     excerpt: "",
     content: "",
     category: "",
     tags: "",
-    status: "draft" as const,
+    status: "draft",
   });
 
   // Fetch blog posts and stats
@@ -86,17 +110,16 @@ export default function AdminBlogPage() {
     { enabled: !!user }
   );
 
-  const createPostMutation = useApiMutation(
-    (data: typeof newPost) =>
-      fetch("/api/blog/admin/posts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      }).then((res) => res.json())
+  const createPostMutation = useApiMutation((data: BlogPostPayload) =>
+    fetch("/api/blog/admin/posts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }).then((res) => res.json())
   );
 
   const updatePostMutation = useApiMutation(
-    ({ postId, data }: { postId: string; data: Partial<typeof newPost> }) =>
+    ({ postId, data }: { postId: string; data: Partial<BlogPostPayload> }) =>
       fetch(`/api/blog/admin/posts/${postId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -104,28 +127,32 @@ export default function AdminBlogPage() {
       }).then((res) => res.json())
   );
 
-  const deletePostMutation = useApiMutation(
-    (postId: string) =>
-      fetch(`/api/blog/admin/posts/${postId}`, {
-        method: "DELETE",
-      }).then((res) => res.json())
+  const deletePostMutation = useApiMutation((postId: string) =>
+    fetch(`/api/blog/admin/posts/${postId}`, {
+      method: "DELETE",
+    }).then((res) => res.json())
   );
 
   // Filter posts based on search and status
-  const filteredPosts = posts?.filter((post: BlogPost) => {
-    const matchesSearch =
-      post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      post.excerpt.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredPosts =
+    posts?.filter((post: BlogPost) => {
+      const matchesSearch =
+        post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        post.excerpt.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesStatus = statusFilter === "all" || post.status === statusFilter;
+      const matchesStatus =
+        statusFilter === "all" || post.status === statusFilter;
 
-    return matchesSearch && matchesStatus;
-  }) || [];
+      return matchesSearch && matchesStatus;
+    }) || [];
 
   const handleCreatePost = async () => {
     try {
-      const tagsArray = newPost.tags.split(",").map(tag => tag.trim()).filter(Boolean);
-      await createPostMutation.mutateAsync({
+      const tagsArray = newPost.tags
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter(Boolean);
+      await createPostMutation.mutate({
         ...newPost,
         tags: tagsArray,
       });
@@ -150,8 +177,11 @@ export default function AdminBlogPage() {
     if (!editingPost) return;
 
     try {
-      const tagsArray = newPost.tags.split(",").map(tag => tag.trim()).filter(Boolean);
-      await updatePostMutation.mutateAsync({
+      const tagsArray = newPost.tags
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter(Boolean);
+      await updatePostMutation.mutate({
         postId: editingPost._id,
         data: {
           ...newPost,
@@ -179,7 +209,7 @@ export default function AdminBlogPage() {
     if (!confirm("Are you sure you want to delete this blog post?")) return;
 
     try {
-      await deletePostMutation.mutateAsync(postId);
+      await deletePostMutation.mutate(postId);
       showSuccess("Blog post deleted successfully");
       refetchPosts();
     } catch (error) {
@@ -253,18 +283,25 @@ export default function AdminBlogPage() {
                   <FileText className="h-6 w-6 text-primary" />
                 </motion.div>
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900">Blog Admin</h1>
-                  <p className="text-gray-600">Manage your blog posts and content</p>
+                  <h1 className="text-3xl font-bold text-gray-900">
+                    Blog Admin
+                  </h1>
+                  <p className="text-gray-600">
+                    Manage your blog posts and content
+                  </p>
                 </div>
               </div>
 
-              <Dialog open={isCreateDialogOpen || !!editingPost} onOpenChange={(open) => {
-                if (!open) {
-                  setIsCreateDialogOpen(false);
-                  setEditingPost(null);
-                  resetForm();
-                }
-              }}>
+              <Dialog
+                open={isCreateDialogOpen || !!editingPost}
+                onOpenChange={(open) => {
+                  if (!open) {
+                    setIsCreateDialogOpen(false);
+                    setEditingPost(null);
+                    resetForm();
+                  }
+                }}
+              >
                 <DialogTrigger asChild>
                   <Button onClick={() => setIsCreateDialogOpen(true)}>
                     <Plus className="h-4 w-4 mr-2" />
@@ -279,8 +316,7 @@ export default function AdminBlogPage() {
                     <DialogDescription>
                       {editingPost
                         ? "Update your blog post details below."
-                        : "Fill in the details to create a new blog post."
-                      }
+                        : "Fill in the details to create a new blog post."}
                     </DialogDescription>
                   </DialogHeader>
 
@@ -290,7 +326,9 @@ export default function AdminBlogPage() {
                       <Input
                         id="title"
                         value={newPost.title}
-                        onChange={(e) => setNewPost({ ...newPost, title: e.target.value })}
+                        onChange={(e) =>
+                          setNewPost({ ...newPost, title: e.target.value })
+                        }
                         placeholder="Enter blog post title"
                       />
                     </div>
@@ -300,7 +338,9 @@ export default function AdminBlogPage() {
                       <Textarea
                         id="excerpt"
                         value={newPost.excerpt}
-                        onChange={(e) => setNewPost({ ...newPost, excerpt: e.target.value })}
+                        onChange={(e) =>
+                          setNewPost({ ...newPost, excerpt: e.target.value })
+                        }
                         placeholder="Brief summary of the post"
                         rows={3}
                       />
@@ -310,7 +350,9 @@ export default function AdminBlogPage() {
                       <Label htmlFor="content">Content</Label>
                       <TiptapEditor
                         content={newPost.content}
-                        onChange={(content) => setNewPost({ ...newPost, content })}
+                        onChange={(content) =>
+                          setNewPost({ ...newPost, content })
+                        }
                         placeholder="Write your blog post content here... Use the AI button above to generate content!"
                       />
                     </div>
@@ -321,7 +363,9 @@ export default function AdminBlogPage() {
                         <Input
                           id="category"
                           value={newPost.category}
-                          onChange={(e) => setNewPost({ ...newPost, category: e.target.value })}
+                          onChange={(e) =>
+                            setNewPost({ ...newPost, category: e.target.value })
+                          }
                           placeholder="e.g., Technology, Career Tips"
                         />
                       </div>
@@ -330,9 +374,9 @@ export default function AdminBlogPage() {
                         <Label htmlFor="status">Status</Label>
                         <Select
                           value={newPost.status}
-                          onValueChange={(value: "draft" | "published" | "archived") =>
-                            setNewPost({ ...newPost, status: value })
-                          }
+                          onValueChange={(
+                            value: "draft" | "published" | "archived"
+                          ) => setNewPost({ ...newPost, status: value })}
                         >
                           <SelectTrigger>
                             <SelectValue />
@@ -351,7 +395,9 @@ export default function AdminBlogPage() {
                       <Input
                         id="tags"
                         value={newPost.tags}
-                        onChange={(e) => setNewPost({ ...newPost, tags: e.target.value })}
+                        onChange={(e) =>
+                          setNewPost({ ...newPost, tags: e.target.value })
+                        }
                         placeholder="Comma-separated tags (e.g., react, javascript, career)"
                       />
                     </div>
@@ -362,8 +408,15 @@ export default function AdminBlogPage() {
                       Cancel
                     </Button>
                     <Button
-                      onClick={editingPost ? handleUpdatePost : handleCreatePost}
-                      disabled={!newPost.title || !newPost.content || !newPost.excerpt || !newPost.category}
+                      onClick={
+                        editingPost ? handleUpdatePost : handleCreatePost
+                      }
+                      disabled={
+                        !newPost.title ||
+                        !newPost.content ||
+                        !newPost.excerpt ||
+                        !newPost.category
+                      }
                     >
                       {editingPost ? "Update Post" : "Create Post"}
                     </Button>
@@ -383,7 +436,9 @@ export default function AdminBlogPage() {
             >
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Posts</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    Total Posts
+                  </CardTitle>
                   <FileText className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -396,7 +451,9 @@ export default function AdminBlogPage() {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Views</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    Total Views
+                  </CardTitle>
                   <Eye className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -409,7 +466,9 @@ export default function AdminBlogPage() {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Likes</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    Total Likes
+                  </CardTitle>
                   <TrendingUp className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -422,7 +481,9 @@ export default function AdminBlogPage() {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Draft Posts</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    Draft Posts
+                  </CardTitle>
                   <BarChart3 className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>

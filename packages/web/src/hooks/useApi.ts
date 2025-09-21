@@ -2,6 +2,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { ApiError } from "../services/api/appApi";
 
+interface UseQueryOptions {
+  enabled?: boolean;
+}
+
 interface UseQueryResult<T> {
   data: T | undefined;
   loading: boolean;
@@ -9,17 +13,18 @@ interface UseQueryResult<T> {
   refetch: () => void;
 }
 
-interface UseMutationResult<T> {
+interface UseMutationResult<T, V = Record<string, unknown>> {
   data: T | undefined;
   loading: boolean;
   error: ApiError | null;
-  mutate: (variables: Record<string, unknown>) => Promise<T | undefined>;
+  mutate: (variables: V) => Promise<T | undefined>;
 }
 
 // Custom hook to replace useQuery
 export function useApiQuery<T>(
   queryFn: () => Promise<T>,
-  deps: unknown[] = []
+  deps: unknown[] = [],
+  options?: UseQueryOptions
 ): UseQueryResult<T> {
   const [data, setData] = useState<T | undefined>(undefined);
   const [loading, setLoading] = useState<boolean>(true);
@@ -39,6 +44,11 @@ export function useApiQuery<T>(
   }, [queryFn]);
 
   useEffect(() => {
+    if (options?.enabled === false) {
+      setLoading(false);
+      return;
+    }
+
     let isMounted = true;
     fetchData().then(() => {
       if (!isMounted) return;
@@ -56,14 +66,14 @@ export function useApiQuery<T>(
 }
 
 // Custom hook to replace useMutation
-export function useApiMutation<T>(
-  mutationFn: (variables: Record<string, unknown>) => Promise<T>
-): UseMutationResult<T> {
+export function useApiMutation<T, V = Record<string, unknown>>(
+  mutationFn: (variables: V) => Promise<T>
+): UseMutationResult<T, V> {
   const [data, setData] = useState<T | undefined>(undefined);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<ApiError | null>(null);
 
-  const mutate = async (variables: Record<string, unknown>) => {
+  const mutate = async (variables: V) => {
     try {
       setLoading(true);
       setError(null);
