@@ -1,28 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyIdToken } from "@/firebase/admin";
+import { verifyIdToken, getAdminDb } from "@/firebase/admin";
 import { getStorage } from "firebase-admin/storage";
-import { getFirestore } from "firebase-admin/firestore";
 import * as admin from "firebase-admin";
 import { SUBSCRIPTION_LIMITS } from "@/types/api";
 
-// Initialize Firebase Admin if not already initialized
+// Initialize Firebase Admin if not already initialized (for storage)
 if (!admin.apps.length) {
-  const config: any = {
-    credential: admin.credential.cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-    }),
-  };
-
-  if (process.env.FIREBASE_STORAGE_BUCKET) {
-    config.storageBucket = process.env.FIREBASE_STORAGE_BUCKET;
-  }
-
-  admin.initializeApp(config);
+  // Use the centralized initialization for storage
+  admin.initializeApp({
+    projectId: process.env.FIREBASE_PROJECT_ID,
+  });
 }
 
-const db = getFirestore();
+// Get Firestore instance using the centralized admin initialization
+const db = getAdminDb();
 
 // Helper function to check subscription limits
 async function checkSubscriptionLimits(
