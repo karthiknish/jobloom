@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { UploadCloud, CheckCircle2, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
+import { UpgradePrompt } from "@/components/UpgradePrompt";
 import {
   Card,
   CardContent,
@@ -33,6 +34,8 @@ export function CvUploadForm({ userId }: CvUploadFormProps) {
   const [industry, setIndustry] = useState("");
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  const [upgradePromptVisible, setUpgradePromptVisible] = useState(false);
+  const [limitInfo, setLimitInfo] = useState<any>(null);
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -94,6 +97,10 @@ export function CvUploadForm({ userId }: CvUploadFormProps) {
           "file-upload"
         ) as HTMLInputElement;
         if (fileInput) fileInput.value = "";
+      } else if (result.upgradeRequired) {
+        // Show upgrade prompt for limit reached
+        setUpgradePromptVisible(true);
+        setLimitInfo(result);
       } else {
         toast.error(result.error || "Failed to upload CV");
       }
@@ -280,6 +287,17 @@ export function CvUploadForm({ userId }: CvUploadFormProps) {
           </motion.div>
         </CardFooter>
       </Card>
+
+      {/* Upgrade Prompt for CV Analysis Limits */}
+      {upgradePromptVisible && limitInfo && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-6"
+        >
+          <UpgradePrompt feature="cvAnalysesPerMonth" />
+        </motion.div>
+      )}
     </motion.div>
   );
 }

@@ -33,11 +33,12 @@ export default function UpgradePage() {
 
     setIsUpgrading(true);
     try {
+      // For now, simulate upgrade - Stripe integration coming soon
       const response = await fetch("/api/subscription/upgrade", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${await user.getIdToken()}`,
+          Authorization: `Bearer ${await user.getIdToken()}`,
         },
         body: JSON.stringify({
           plan: targetPlan,
@@ -47,9 +48,11 @@ export default function UpgradePage() {
 
       if (response.ok) {
         const data = await response.json();
-        showSuccess(`Successfully upgraded to ${targetPlan} plan!`);
+        showSuccess(
+          `Successfully upgraded to ${targetPlan} plan! (Stripe integration coming soon)`
+        );
         await refreshSubscription();
-        router.push("/dashboard");
+        router.push("/upgrade/success");
       } else {
         const error = await response.json();
         showError(error.error || "Failed to upgrade subscription");
@@ -72,15 +75,15 @@ export default function UpgradePage() {
         "50 job applications",
         "CSV export",
         "Basic dashboard",
-        "Chrome extension access"
+        "Chrome extension access",
       ],
       limitations: [
         "Limited analytics",
         "No priority support",
-        "No custom alerts"
+        "No custom alerts",
       ],
       popular: false,
-      current: plan === "free"
+      current: plan === "free",
     },
     {
       name: "Premium",
@@ -95,11 +98,11 @@ export default function UpgradePage() {
         "Priority support",
         "Team collaboration tools",
         "AI-powered recommendations",
-        "Professional templates"
+        "Professional templates",
       ],
       popular: true,
-      current: plan === "premium"
-    }
+      current: plan === "premium",
+    },
   ];
 
   return (
@@ -130,7 +133,8 @@ export default function UpgradePage() {
               transition={{ delay: 0.4, duration: 0.6 }}
               className="mt-6 max-w-2xl mx-auto text-xl text-primary-foreground/90"
             >
-              Unlock unlimited CV analyses, advanced analytics, and priority support to supercharge your job search.
+              Unlock unlimited CV analyses, advanced analytics, and priority
+              support to supercharge your job search.
             </motion.p>
           </div>
         </div>
@@ -161,7 +165,10 @@ export default function UpgradePage() {
                 }`}
               >
                 Yearly
-                <Badge variant="secondary" className="ml-2 bg-green-100 text-green-800 text-xs">
+                <Badge
+                  variant="secondary"
+                  className="ml-2 bg-green-100 text-green-800 text-xs"
+                >
                   Save 17%
                 </Badge>
               </button>
@@ -178,7 +185,13 @@ export default function UpgradePage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1, duration: 0.5 }}
             >
-              <Card className={`relative h-full ${planData.popular ? 'ring-2 ring-primary shadow-xl' : 'shadow-md'}`}>
+              <Card
+                className={`relative h-full ${
+                  planData.popular
+                    ? "ring-2 ring-primary shadow-xl"
+                    : "shadow-md"
+                }`}
+              >
                 {planData.popular && (
                   <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                     <Badge className="bg-gradient-to-r from-primary to-secondary text-white px-4 py-1">
@@ -189,7 +202,9 @@ export default function UpgradePage() {
                 )}
 
                 <CardHeader className="text-center pb-4">
-                  <CardTitle className="text-2xl font-bold">{planData.name}</CardTitle>
+                  <CardTitle className="text-2xl font-bold">
+                    {planData.name}
+                  </CardTitle>
                   <div className="mt-4">
                     <div className="flex items-baseline justify-center">
                       <span className="text-4xl font-bold">
@@ -203,7 +218,12 @@ export default function UpgradePage() {
                     </div>
                     {billingCycle === "yearly" && planData.price.yearly > 0 && (
                       <p className="text-sm text-green-600 mt-1">
-                        Save ${(planData.price.monthly * 12 - planData.price.yearly).toFixed(0)} annually
+                        Save $
+                        {(
+                          planData.price.monthly * 12 -
+                          planData.price.yearly
+                        ).toFixed(0)}{" "}
+                        annually
                       </p>
                     )}
                   </div>
@@ -216,11 +236,14 @@ export default function UpgradePage() {
                     <div>
                       <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
                         <Check className="h-4 w-4 text-green-500 mr-2" />
-                        What's included:
+                        What&apos;s included:
                       </h4>
                       <ul className="space-y-2">
                         {planData.features.map((feature, featureIndex) => (
-                          <li key={featureIndex} className="flex items-center text-sm">
+                          <li
+                            key={featureIndex}
+                            className="flex items-center text-sm"
+                          >
                             <Check className="h-4 w-4 text-green-500 mr-3 flex-shrink-0" />
                             {feature}
                           </li>
@@ -228,19 +251,29 @@ export default function UpgradePage() {
                       </ul>
                     </div>
 
-                    {planData.limitations && planData.limitations.length > 0 && (
-                      <div>
-                        <h4 className="font-semibold text-gray-900 mb-3">Limitations:</h4>
-                        <ul className="space-y-2">
-                          {planData.limitations.map((limitation, limitationIndex) => (
-                            <li key={limitationIndex} className="flex items-center text-sm text-gray-500">
-                              <span className="w-4 h-4 mr-3 flex-shrink-0 text-center">•</span>
-                              {limitation}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                    {planData.limitations &&
+                      planData.limitations.length > 0 && (
+                        <div>
+                          <h4 className="font-semibold text-gray-900 mb-3">
+                            Limitations:
+                          </h4>
+                          <ul className="space-y-2">
+                            {planData.limitations.map(
+                              (limitation, limitationIndex) => (
+                                <li
+                                  key={limitationIndex}
+                                  className="flex items-center text-sm text-gray-500"
+                                >
+                                  <span className="w-4 h-4 mr-3 flex-shrink-0 text-center">
+                                    •
+                                  </span>
+                                  {limitation}
+                                </li>
+                              )
+                            )}
+                          </ul>
+                        </div>
+                      )}
 
                     <Separator className="my-6" />
 
@@ -260,7 +293,9 @@ export default function UpgradePage() {
                           disabled={isUpgrading}
                         >
                           <Crown className="h-4 w-4 mr-2" />
-                          {isUpgrading ? "Upgrading..." : `Upgrade to ${planData.name}`}
+                          {isUpgrading
+                            ? "Upgrading..."
+                            : `Upgrade to ${planData.name}`}
                         </Button>
                       )}
                     </div>
@@ -280,7 +315,9 @@ export default function UpgradePage() {
         >
           <Card>
             <CardHeader>
-              <CardTitle className="text-center text-2xl">Why Choose Premium?</CardTitle>
+              <CardTitle className="text-center text-2xl">
+                Why Choose Premium?
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -290,7 +327,8 @@ export default function UpgradePage() {
                   </div>
                   <h3 className="font-semibold mb-2">Unlimited Usage</h3>
                   <p className="text-sm text-gray-600">
-                    Analyze as many CVs as you need and track unlimited job applications without restrictions.
+                    Analyze as many CVs as you need and track unlimited job
+                    applications without restrictions.
                   </p>
                 </div>
 
@@ -300,7 +338,8 @@ export default function UpgradePage() {
                   </div>
                   <h3 className="font-semibold mb-2">Advanced Analytics</h3>
                   <p className="text-sm text-gray-600">
-                    Get deep insights into your job search performance with detailed analytics and trends.
+                    Get deep insights into your job search performance with
+                    detailed analytics and trends.
                   </p>
                 </div>
 
@@ -310,7 +349,8 @@ export default function UpgradePage() {
                   </div>
                   <h3 className="font-semibold mb-2">Priority Support</h3>
                   <p className="text-sm text-gray-600">
-                    Get faster responses and dedicated support from our career experts.
+                    Get faster responses and dedicated support from our career
+                    experts.
                   </p>
                 </div>
               </div>
@@ -328,15 +368,12 @@ export default function UpgradePage() {
           <div className="bg-gray-50 rounded-lg p-8 max-w-2xl mx-auto">
             <h3 className="text-xl font-semibold mb-4">Questions?</h3>
             <p className="text-gray-600 mb-6">
-              Have questions about our premium features or need help choosing the right plan?
+              Have questions about our premium features or need help choosing
+              the right plan?
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button variant="outline">
-                Contact Support
-              </Button>
-              <Button variant="outline">
-                View Demo
-              </Button>
+              <Button variant="outline">Contact Support</Button>
+              <Button variant="outline">View Demo</Button>
             </div>
           </div>
         </motion.div>

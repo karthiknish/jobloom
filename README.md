@@ -43,6 +43,33 @@ Each package has its own development environment. See individual package READMEs
 
 The Chrome extension calls the web app’s API. Set the base URL via `WEB_APP_URL` at build time. See `packages/extension/README.md`.
 
+## Stripe Payment Integration
+
+Jobloom includes premium features with subscription-based pricing. To enable payments:
+
+### 1. Stripe Account Setup
+1. Create a [Stripe account](https://stripe.com)
+2. Get your API keys from the Stripe dashboard
+
+### 2. Environment Variables
+Add these to your environment configuration:
+
+```bash
+# Stripe Configuration
+STRIPE_SECRET_KEY=sk_test_or_live_your_stripe_secret_key
+STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_or_live_your_stripe_publishable_key
+```
+
+### 3. Webhook Configuration
+1. In Stripe Dashboard → Webhooks, add endpoint: `https://yourdomain.com/api/stripe/webhook`
+2. Select events: `checkout.session.completed`, `customer.subscription.*`, `invoice.payment.*`
+3. Copy the webhook secret to `STRIPE_WEBHOOK_SECRET`
+
+### 4. Pricing Plans
+- **Free**: 3 CV analyses/month, 50 applications, basic features
+- **Premium**: $9.99/month - Unlimited usage, advanced analytics, priority support
+
 ## Deployment
 
 ### Vercel Deployment

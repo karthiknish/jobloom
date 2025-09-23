@@ -1449,6 +1449,29 @@ export function AdvancedDashboard() {
                         <FileText className="h-4 w-4 mr-2" />
                         JSON <span className="text-xs text-primary">⭐</span>
                       </Button>
+
+                      {/* PDF Export - Premium Only */}
+                      <FeatureGate
+                        feature="exportFormats"
+                        fallback={
+                          <Button size="sm" variant="outline" disabled>
+                            <FileText className="h-4 w-4 mr-2" />
+                            PDF <span className="ml-1 text-xs">⭐</span>
+                          </Button>
+                        }
+                      >
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            // Mock PDF export - would integrate with PDF library
+                            showSuccess("PDF export feature coming soon!");
+                          }}
+                        >
+                          <FileText className="h-4 w-4 mr-2" />
+                          PDF <span className="text-xs text-primary">⭐</span>
+                        </Button>
+                      </FeatureGate>
                     </FeatureGate>
                   </div>
                 </div>

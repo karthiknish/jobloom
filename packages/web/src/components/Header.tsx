@@ -50,6 +50,7 @@ export default function Header() {
   const userLinks = [
     { href: "/dashboard", label: "Dashboard" },
     { href: "/cv-evaluator", label: "CV Evaluator" },
+    { href: "/settings", label: "Settings" },
     { href: "/blog", label: "Blog" },
     { href: "/account", label: "Account" },
   ];
