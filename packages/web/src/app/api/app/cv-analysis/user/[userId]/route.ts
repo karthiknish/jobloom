@@ -1,20 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyIdToken } from "@/firebase/admin";
-import { getFirestore } from "firebase-admin/firestore";
-import * as admin from "firebase-admin";
+import { verifyIdToken, getAdminDb } from "@/firebase/admin";
 
-// Initialize Firebase Admin if not already initialized
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-    }),
-  });
-}
-
-const db = getFirestore();
+// Get Firestore instance using the centralized admin initialization
+const db = getAdminDb();
 
 // GET /api/app/cv-analysis/user/[userId] - Get CV analyses for a user
 export async function GET(

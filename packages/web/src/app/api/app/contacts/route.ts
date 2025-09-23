@@ -1,25 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getFirestore } from "firebase-admin/firestore";
-import { cert } from "firebase-admin/app";
-import * as admin from "firebase-admin";
+import { getAdminDb } from "../../../../firebase/admin";
 import type { ContactSubmission } from "../../../../types/api";
 
-// Initialize Firebase Admin with environment variables
-if (!admin.apps.length) {
-  const serviceAccount = {
-    projectId: process.env.FIREBASE_PROJECT_ID!,
-    privateKey: process.env.FIREBASE_PRIVATE_KEY!.replace(/\\n/g, "\n"),
-    clientEmail: process.env.FIREBASE_CLIENT_EMAIL!,
-  };
-
-  admin.initializeApp({
-    credential: cert(serviceAccount),
-    projectId: process.env.FIREBASE_PROJECT_ID!,
-  });
-}
-
-// Initialize Firestore
-const db = getFirestore();
+// Get Firestore instance using the centralized admin initialization
+const db = getAdminDb();
 
 // POST /api/app/contacts - Create contact form submission
 export async function POST(request: NextRequest) {

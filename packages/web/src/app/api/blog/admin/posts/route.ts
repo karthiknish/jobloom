@@ -1,20 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyIdToken, isUserAdmin } from "@/firebase/admin";
-import { getFirestore } from "firebase-admin/firestore";
-import * as admin from "firebase-admin";
+import { verifyIdToken, isUserAdmin, getAdminDb } from "@/firebase/admin";
+import {
+  Query,
+  CollectionReference,
+  FieldValue,
+} from "firebase-admin/firestore";
 
-// Initialize Firebase Admin if not already initialized
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-    }),
-  });
-}
-
-const db = getFirestore();
+// Get Firestore instance using the centralized admin initialization
+const db = getAdminDb();
 
 // GET /api/blog/admin/posts - Get all blog posts for admin (including drafts)
 export async function GET(request: NextRequest) {
@@ -40,8 +33,7 @@ export async function GET(request: NextRequest) {
     const url = new URL(request.url);
     const status = url.searchParams.get("status"); // draft, published, archived
 
-    let query: admin.firestore.Query | admin.firestore.CollectionReference =
-      db.collection("blogPosts");
+    let query: Query | CollectionReference = db.collection("blogPosts");
 
     if (status) {
       query = query.where("status", "==", status);
@@ -139,9 +131,9 @@ export async function POST(request: NextRequest) {
         email: userData?.email || "",
       },
       status: status || "draft",
-      publishedAt: status === "published" ? admin.firestore.FieldValue.serverTimestamp() : null,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      publishedAt: status === "published" ? FieldValue.serverTimestamp() : null,
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
       tags: tags || [],
       category,
       featuredImage,

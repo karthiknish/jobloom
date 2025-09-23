@@ -1,19 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getFirestore } from "firebase-admin/firestore";
-import * as admin from "firebase-admin";
+import { getAdminDb } from "../../../../firebase/admin";
 
-// Initialize Firebase Admin if not already initialized
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-    }),
-  });
-}
-
-const db = getFirestore();
+// Get Firestore instance using the centralized admin initialization
+const db = getAdminDb();
 
 // GET /api/blog/posts - Get published blog posts with pagination and filtering
 export async function GET(request: NextRequest) {

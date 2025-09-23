@@ -1,20 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyIdToken, isUserAdmin } from "@/firebase/admin";
-import { getFirestore } from "firebase-admin/firestore";
-import * as admin from "firebase-admin";
+import { verifyIdToken, isUserAdmin, getAdminDb } from "@/firebase/admin";
+import { FieldPath, FieldValue } from "firebase-admin/firestore";
 
-// Initialize Firebase Admin if not already initialized
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-    }),
-  });
-}
-
-const db = getFirestore();
+// Get Firestore instance using the centralized admin initialization
+const db = getAdminDb();
 
 // PUT /api/blog/admin/posts/[postId] - Update a blog post
 export async function PUT(
@@ -39,19 +28,15 @@ export async function PUT(
     // Check if user is admin
     const isAdmin = await isUserAdmin(decodedToken.uid);
     if (!isAdmin) {
-      return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+      return NextResponse.json(
+        { error: "Admin access required" },
+        { status: 403 }
+      );
     }
 
     const body = await request.json();
-    const {
-      title,
-      content,
-      excerpt,
-      category,
-      tags,
-      status,
-      featuredImage,
-    } = body;
+    const { title, content, excerpt, category, tags, status, featuredImage } =
+      body;
 
     if (!title || !content || !excerpt || !category) {
       return NextResponse.json(
@@ -82,7 +67,7 @@ export async function PUT(
       const existingPost = await db
         .collection("blogPosts")
         .where("slug", "==", slug)
-        .where(admin.firestore.FieldPath.documentId(), "!=", postId)
+        .where(FieldPath.documentId(), "!=", postId)
         .limit(1)
         .get();
 
@@ -107,14 +92,14 @@ export async function PUT(
       tags: tags || [],
       featuredImage,
       readingTime,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     };
 
     // Handle status changes
     if (status !== currentData?.status) {
       updateData.status = status;
       if (status === "published" && !currentData?.publishedAt) {
-        updateData.publishedAt = admin.firestore.FieldValue.serverTimestamp();
+        updateData.publishedAt = FieldValue.serverTimestamp();
       }
     }
 
@@ -126,7 +111,10 @@ export async function PUT(
     });
   } catch (error) {
     console.error("Error updating blog post:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }
 
