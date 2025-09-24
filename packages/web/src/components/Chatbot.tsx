@@ -143,7 +143,7 @@ export default function Chatbot() {
       <motion.div
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
-        className="fixed bottom-6 right-6 z-50"
+        className="fixed bottom-6 right-6 sm:bottom-6 sm:right-6 z-[100]"
       >
         <Button
           onClick={toggleChat}
@@ -187,11 +187,11 @@ export default function Chatbot() {
               opacity: 1,
               scale: 1,
               y: 0,
-              height: isMinimized ? '60px' : '520px'
+              height: isMinimized ? '60px' : 'min(520px, calc(100vh - 120px))'
             }}
             exit={{ opacity: 0, scale: 0.8, y: 20 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="fixed bottom-24 right-6 w-96 bg-background border border-border rounded-xl shadow-2xl z-50 overflow-hidden backdrop-blur-sm"
+            className="fixed bottom-20 right-4 left-4 sm:bottom-24 sm:right-6 sm:left-auto w-auto sm:w-96 max-w-[calc(100vw-2rem)] sm:max-w-[calc(100vw-3rem)] max-h-[calc(100vh-100px)] bg-background border border-border rounded-xl shadow-2xl z-[100] overflow-hidden backdrop-blur-sm"
           >
             {/* Header */}
             <div className="flex items-center justify-between p-4 bg-gradient-to-r from-primary via-primary/90 to-primary/80 text-primary-foreground shadow-sm">
@@ -235,7 +235,7 @@ export default function Chatbot() {
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
                   transition={{ duration: 0.2 }}
-                  className="flex flex-col h-[440px]"
+                  className="flex flex-col h-[calc(100%-80px)]"
                 >
                   {/* Messages */}
                   <ScrollArea ref={scrollAreaRef} className="flex-1 p-4">
