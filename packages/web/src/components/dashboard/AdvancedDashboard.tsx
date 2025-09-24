@@ -200,18 +200,18 @@ export function AdvancedDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 mt-14">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-orange-50/20 to-white dark:from-gray-900 dark:via-orange-950/5 dark:to-gray-900 mt-14">
         <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="space-y-8">
+            <div className="h-8 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 bg-[length:200%_100%] animate-shimmer rounded w-1/4"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-32 bg-gray-200 rounded"></div>
+                <div key={i} className="h-32 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 bg-[length:200%_100%] animate-shimmer rounded-lg shadow-sm"></div>
               ))}
             </div>
-            <div className="space-y-4">
-              <div className="h-64 bg-gray-200 rounded"></div>
-              <div className="h-64 bg-gray-200 rounded"></div>
+            <div className="space-y-6">
+              <div className="h-64 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 bg-[length:200%_100%] animate-shimmer rounded-lg shadow-sm"></div>
+              <div className="h-64 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 bg-[length:200%_100%] animate-shimmer rounded-lg shadow-sm"></div>
             </div>
           </div>
         </div>
@@ -467,7 +467,7 @@ export function AdvancedDashboard() {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                       {(() => {
                         const overdueCount = applications.filter(
                           (a) => a.followUpDate && a.followUpDate < Date.now()
@@ -495,14 +495,16 @@ export function AdvancedDashboard() {
 
                         if (!hasNotifications) {
                           return (
-                            <div className="text-center py-8">
-                              <div className="text-muted-foreground text-4xl mb-4">
-                                🔔
+                            <div className="text-center py-12">
+                              <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 rounded-full flex items-center justify-center">
+                                <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
                               </div>
-                              <h3 className="text-sm font-medium text-foreground mb-2">
+                              <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">
                                 All Clear!
                               </h3>
-                              <p className="text-xs text-muted-foreground">
+                              <p className="text-sm text-gray-600 dark:text-gray-400">
                                 No notifications at this time. You&apos;re all
                                 caught up with your applications.
                               </p>
@@ -513,56 +515,82 @@ export function AdvancedDashboard() {
                         return (
                           <>
                             {overdueCount > 0 && (
-                              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                                <div className="flex items-center gap-2 text-red-800">
-                                  <span>⚠️</span>
-                                  <span className="font-medium">
-                                    Overdue Follow-ups
-                                  </span>
+                              <div className="p-4 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-950/20 dark:to-red-900/30 border border-red-200 dark:border-red-800 rounded-lg shadow-sm">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-8 h-8 rounded-lg bg-red-500 flex items-center justify-center flex-shrink-0">
+                                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                    </svg>
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="font-semibold text-red-800 dark:text-red-200">
+                                      Overdue Follow-ups
+                                    </div>
+                                    <p className="text-sm text-red-700 dark:text-red-300 mt-1">
+                                      {overdueCount} follow-ups need attention
+                                    </p>
+                                  </div>
                                 </div>
-                                <p className="text-sm text-red-700 mt-1">
-                                  {overdueCount} follow-ups need attention
-                                </p>
                               </div>
                             )}
 
                             {dueSoonCount > 0 && (
-                              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                                <div className="flex items-center gap-2 text-yellow-800">
-                                  <span>⏰</span>
-                                  <span className="font-medium">Due Soon</span>
+                              <div className="p-4 bg-gradient-to-r from-amber-50 to-yellow-100 dark:from-amber-950/20 dark:to-yellow-900/30 border border-amber-200 dark:border-amber-800 rounded-lg shadow-sm">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-8 h-8 rounded-lg bg-amber-500 flex items-center justify-center flex-shrink-0">
+                                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="font-semibold text-amber-800 dark:text-amber-200">
+                                      Due Soon
+                                    </div>
+                                    <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                                      {dueSoonCount} follow-ups due within 24 hours
+                                    </p>
+                                  </div>
                                 </div>
-                                <p className="text-sm text-yellow-700 mt-1">
-                                  {dueSoonCount} follow-ups due within 24 hours
-                                </p>
                               </div>
                             )}
 
                             {interviewCount > 0 && (
-                              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                                <div className="flex items-center gap-2 text-blue-800">
-                                  <span>📅</span>
-                                  <span className="font-medium">
-                                    Upcoming Interviews
-                                  </span>
+                              <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-100 dark:from-blue-950/20 dark:to-indigo-900/30 border border-blue-200 dark:border-blue-800 rounded-lg shadow-sm">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center flex-shrink-0">
+                                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3a1 1 0 011-1h6a1 1 0 011 1v4m-6 0h6m-6 0l-2 2m8-2l2 2M9 14h6m-6 4h6" />
+                                    </svg>
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="font-semibold text-blue-800 dark:text-blue-200">
+                                      Upcoming Interviews
+                                    </div>
+                                    <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                                      {interviewCount} interviews scheduled
+                                    </p>
+                                  </div>
                                 </div>
-                                <p className="text-sm text-blue-700 mt-1">
-                                  {interviewCount} interviews scheduled
-                                </p>
                               </div>
                             )}
 
                             {offerCount > 0 && (
-                              <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                                <div className="flex items-center gap-2 text-green-800">
-                                  <span>🎉</span>
-                                  <span className="font-medium">
-                                    Congratulations!
-                                  </span>
+                              <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-100 dark:from-green-950/20 dark:to-emerald-900/30 border border-green-200 dark:border-green-800 rounded-lg shadow-sm">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-8 h-8 rounded-lg bg-green-500 flex items-center justify-center flex-shrink-0">
+                                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="font-semibold text-green-800 dark:text-green-200">
+                                      Congratulations!
+                                    </div>
+                                    <p className="text-sm text-green-700 dark:text-green-300 mt-1">
+                                      You have {offerCount} job offers
+                                    </p>
+                                  </div>
                                 </div>
-                                <p className="text-sm text-green-700 mt-1">
-                                  You have {offerCount} job offers
-                                </p>
                               </div>
                             )}
                           </>

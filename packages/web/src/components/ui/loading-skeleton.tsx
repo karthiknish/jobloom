@@ -2,7 +2,10 @@
 
 import { cn } from "@/lib/utils";
 
-interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {}
+interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
+  // Optional animation duration for skeleton component
+  animationDuration?: number;
+}
 
 function Skeleton({ className, ...props }: SkeletonProps) {
   return (

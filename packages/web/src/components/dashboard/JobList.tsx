@@ -661,7 +661,7 @@ export function JobList({
                                   <AlertDialogDescription>
                                     This action cannot be undone. This will
                                     permanently delete the application for
-                                    &quot;{application.job?.title}&quot; at{" "}
+                                    &ldquo;{application.job?.title}&rdquo; at{" "}
                                     {application.job?.company}.
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
@@ -734,7 +734,7 @@ export function JobList({
                   No saved views yet.
                 </p>
                 <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">
-                  Create your first view by setting filters and clicking "Save view"
+                  Create your first view by setting filters and clicking &ldquo;Save view&rdquo;
                 </p>
               </div>
             )}
