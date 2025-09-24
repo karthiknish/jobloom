@@ -119,7 +119,7 @@ export default function SettingsPage() {
                         <div className="space-y-2">
                           <label className="text-sm font-medium">Companies</label>
                           <p className="text-xs text-gray-500">
-                            Specify companies you're interested in
+                            Specify companies you&apos;re interested in
                           </p>
                           <input
                             type="text"
