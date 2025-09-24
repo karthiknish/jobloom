@@ -47,6 +47,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { FeatureGate } from "@/components/UpgradePrompt";
+import { SkeletonJobCard, SkeletonGrid } from "@/components/ui/loading-skeleton";
 
 // Mock job data - in real app, this would come from APIs
 const mockJobs = [
@@ -106,6 +107,7 @@ export default function JobsPage() {
   const [location, setLocation] = useState("");
   const [jobs, setJobs] = useState(mockJobs);
   const [filteredJobs, setFilteredJobs] = useState(mockJobs);
+  const [isLoading, setIsLoading] = useState(false);
   const [savedJobs, setSavedJobs] = useState<string[]>([]);
   const [filters, setFilters] = useState({
     jobType: "",
@@ -115,6 +117,13 @@ export default function JobsPage() {
     companySize: "",
     industry: "",
   });
+
+  // Simulate loading on initial load and when filters change
+  useEffect(() => {
+    setIsLoading(true);
+    const timer = setTimeout(() => setIsLoading(false), 800); // Simulate API delay
+    return () => clearTimeout(timer);
+  }, [searchQuery, location, filters]);
 
   // Filter jobs based on search and filters
   useEffect(() => {
@@ -396,12 +405,17 @@ export default function JobsPage() {
             </div>
 
             <div className="space-y-4">
-              {filteredJobs.map((job, index) => (
+              {isLoading ? (
+                <SkeletonGrid items={6} />
+              ) : (
+                filteredJobs.map((job, index) => (
                 <motion.div
                   key={job.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1, duration: 0.5 }}
+                  whileHover={{ y: -2 }}
+                  className="transition-shadow duration-200 hover:shadow-lg"
                 >
                   <Card className="hover:shadow-lg transition-shadow">
                     <CardContent className="p-6">
@@ -503,7 +517,8 @@ export default function JobsPage() {
                     </CardContent>
                   </Card>
                 </motion.div>
-              ))}
+              ))
+              )}
             </div>
 
             {filteredJobs.length === 0 && (

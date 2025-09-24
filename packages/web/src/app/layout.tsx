@@ -5,6 +5,7 @@ import { AppToaster } from "@/components/ui/Toast";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Chatbot from "@/components/Chatbot";
+import MobileNavigation from "@/components/MobileNavigation";
 import { inter } from "@/font";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -31,6 +32,7 @@ export default function RootLayout({
             <Header />
             {children}
             <Footer />
+            <MobileNavigation />
             <AppToaster />
             <Chatbot />
           </FirebaseAuthProvider>

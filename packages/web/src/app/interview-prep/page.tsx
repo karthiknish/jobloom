@@ -34,6 +34,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { FeatureGate } from "@/components/UpgradePrompt";
+import { SkeletonInterviewQuestion } from "@/components/ui/loading-skeleton";
 
 // Interview questions will be fetched from API
 interface InterviewQuestion {
@@ -258,10 +259,7 @@ export default function InterviewPrepPage() {
                 {/* Main Practice Area */}
                 <div className="lg:col-span-2 space-y-6">
                   {loading ? (
-                    <div className="text-center py-8">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                      <p>Loading interview questions...</p>
-                    </div>
+                    <SkeletonInterviewQuestion />
                   ) : currentQuestionData ? (
                     <Card>
                       <CardHeader>
@@ -394,8 +392,9 @@ export default function InterviewPrepPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1, duration: 0.5 }}
+                    whileHover={{ y: -4, scale: 1.02 }}
                   >
-                    <Card className="h-full hover:shadow-lg transition-shadow">
+                    <Card className="h-full hover:shadow-xl transition-all duration-300 cursor-pointer">
                       <CardHeader>
                         <div className="text-3xl mb-2">{tip.icon}</div>
                         <CardTitle className="text-lg">{tip.title}</CardTitle>
