@@ -20,7 +20,7 @@ interface Message {
 
 const WELCOME_MESSAGE: Message = {
   id: 'welcome',
-  content: "Hi! I'm Jobloom AI, your career assistant. I can help you with job search strategies, interview preparation, resume optimization, career planning, and professional development. What can I help you with today?",
+  content: "👋 Hi! I'm Jobloom AI, your personal career assistant. I specialize in helping with job search strategies, interview preparation, resume optimization, salary negotiation, and career planning. Ask me anything about your professional journey!",
   role: 'assistant',
   timestamp: new Date()
 };
@@ -148,7 +148,9 @@ export default function Chatbot() {
         <Button
           onClick={toggleChat}
           size="lg"
-          className="rounded-full h-14 w-14 shadow-lg hover:shadow-xl transition-all duration-200 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+          className={`rounded-full h-14 w-14 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 hover:scale-105 ${
+            !isOpen ? 'animate-pulse' : ''
+          }`}
         >
           <AnimatePresence mode="wait">
             {isOpen ? (
@@ -185,23 +187,23 @@ export default function Chatbot() {
               opacity: 1,
               scale: 1,
               y: 0,
-              height: isMinimized ? '60px' : '500px'
+              height: isMinimized ? '60px' : '520px'
             }}
             exit={{ opacity: 0, scale: 0.8, y: 20 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="fixed bottom-24 right-6 w-96 bg-background border border-border rounded-lg shadow-2xl z-50 overflow-hidden"
+            className="fixed bottom-24 right-6 w-96 bg-background border border-border rounded-xl shadow-2xl z-50 overflow-hidden backdrop-blur-sm"
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+            <div className="flex items-center justify-between p-4 bg-gradient-to-r from-primary via-primary/90 to-primary/80 text-primary-foreground shadow-sm">
               <div className="flex items-center gap-3">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback className="bg-white/20">
-                    <Bot className="h-4 w-4" />
+                <Avatar className="h-9 w-9 ring-2 ring-white/20">
+                  <AvatarFallback className="bg-white/30 text-primary-foreground font-bold">
+                    <Bot className="h-5 w-5" />
                   </AvatarFallback>
                 </Avatar>
                 <div>
                   <h3 className="font-semibold text-sm">Jobloom AI</h3>
-                  <p className="text-xs opacity-90">Career Assistant</p>
+                  <p className="text-xs opacity-90">Your Career Assistant</p>
                 </div>
               </div>
               <div className="flex items-center gap-1">
@@ -209,7 +211,8 @@ export default function Chatbot() {
                   variant="ghost"
                   size="sm"
                   onClick={toggleMinimize}
-                  className="h-8 w-8 p-0 text-white hover:bg-white/20"
+                  className="h-8 w-8 p-0 text-white hover:bg-white/20 rounded-full transition-colors duration-200"
+                  title="Minimize chat"
                 >
                   <Minimize2 className="h-4 w-4" />
                 </Button>
@@ -217,7 +220,8 @@ export default function Chatbot() {
                   variant="ghost"
                   size="sm"
                   onClick={toggleChat}
-                  className="h-8 w-8 p-0 text-white hover:bg-white/20"
+                  className="h-8 w-8 p-0 text-white hover:bg-white/20 rounded-full transition-colors duration-200"
+                  title="Close chat"
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -231,7 +235,7 @@ export default function Chatbot() {
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
                   transition={{ duration: 0.2 }}
-                  className="flex flex-col h-96"
+                  className="flex flex-col h-[440px]"
                 >
                   {/* Messages */}
                   <ScrollArea ref={scrollAreaRef} className="flex-1 p-4">
@@ -244,24 +248,24 @@ export default function Chatbot() {
                           className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                         >
                           {message.role === 'assistant' && (
-                            <Avatar className="h-8 w-8 mt-1">
-                              <AvatarFallback className="bg-blue-100 text-blue-600">
+                            <Avatar className="h-8 w-8 mt-1 flex-shrink-0">
+                              <AvatarFallback className="bg-primary/10 text-primary border border-primary/20">
                                 <Bot className="h-4 w-4" />
                               </AvatarFallback>
                             </Avatar>
                           )}
                           <div
-                            className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
+                            className={`max-w-[75%] rounded-2xl px-4 py-3 text-sm shadow-sm ${
                               message.role === 'user'
-                                ? 'bg-blue-600 text-white'
-                                : 'bg-gray-100 text-gray-900'
+                                ? 'bg-primary text-primary-foreground ml-4'
+                                : 'bg-muted/50 text-foreground border border-border/50'
                             }`}
                           >
                             {message.content}
                           </div>
                           {message.role === 'user' && (
-                            <Avatar className="h-8 w-8 mt-1">
-                              <AvatarFallback className="bg-gray-100">
+                            <Avatar className="h-8 w-8 mt-1 flex-shrink-0">
+                              <AvatarFallback className="bg-secondary text-secondary-foreground">
                                 <User className="h-4 w-4" />
                               </AvatarFallback>
                             </Avatar>
@@ -275,16 +279,16 @@ export default function Chatbot() {
                           animate={{ opacity: 1 }}
                           className="flex gap-3 justify-start"
                         >
-                          <Avatar className="h-8 w-8 mt-1">
-                            <AvatarFallback className="bg-blue-100 text-blue-600">
+                          <Avatar className="h-8 w-8 mt-1 flex-shrink-0">
+                            <AvatarFallback className="bg-primary/10 text-primary border border-primary/20">
                               <Bot className="h-4 w-4" />
                             </AvatarFallback>
                           </Avatar>
-                          <div className="bg-gray-100 rounded-lg px-3 py-2">
+                          <div className="bg-muted/50 rounded-2xl px-4 py-3 border border-border/50 shadow-sm">
                             <div className="flex space-x-1">
-                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                              <div className="w-2 h-2 bg-primary/60 rounded-full animate-bounce"></div>
+                              <div className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                              <div className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                             </div>
                           </div>
                         </motion.div>
@@ -297,34 +301,38 @@ export default function Chatbot() {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.5 }}
-                        className="mt-4 space-y-2"
+                        className="mt-4 space-y-3"
                       >
-                        <p className="text-xs text-gray-500 font-medium">Try asking:</p>
-                        <div className="flex flex-wrap gap-1">
-                          {SUGGESTED_QUESTIONS.map((question, index) => (
-                            <Badge
-                              key={index}
-                              variant="outline"
-                              className="text-xs cursor-pointer hover:bg-gray-50 transition-colors"
-                              onClick={() => handleSuggestedQuestion(question)}
-                            >
-                              {question}
-                            </Badge>
-                          ))}
+                        <div className="text-center">
+                          <p className="text-xs text-muted-foreground font-medium mb-2">💡 Quick suggestions</p>
+                          <div className="grid grid-cols-1 gap-2">
+                            {SUGGESTED_QUESTIONS.map((question, index) => (
+                              <motion.button
+                                key={index}
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: 0.6 + index * 0.1 }}
+                                className="text-left p-3 bg-primary/5 hover:bg-primary/10 border border-primary/20 hover:border-primary/30 rounded-lg text-sm text-foreground transition-all duration-200 hover:shadow-sm"
+                                onClick={() => handleSuggestedQuestion(question)}
+                              >
+                                {question}
+                              </motion.button>
+                            ))}
+                          </div>
                         </div>
                       </motion.div>
                     )}
                   </ScrollArea>
 
                   {/* Input */}
-                  <div className="border-t p-4">
-                    <form onSubmit={handleSubmit} className="flex gap-2">
+                  <div className="border-t border-border/50 bg-muted/20 p-4">
+                    <form onSubmit={handleSubmit} className="flex gap-3">
                       <Textarea
                         ref={textareaRef}
                         value={inputMessage}
                         onChange={(e) => setInputMessage(e.target.value)}
                         placeholder="Ask me about your career..."
-                        className="min-h-[44px] max-h-32 resize-none"
+                        className="min-h-[44px] max-h-32 resize-none bg-background border-border/50 focus:border-primary/50 transition-colors"
                         disabled={isLoading}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' && !e.shiftKey) {
@@ -337,14 +345,19 @@ export default function Chatbot() {
                         type="submit"
                         size="sm"
                         disabled={!inputMessage.trim() || isLoading}
-                        className="px-3"
+                        className="px-4 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm hover:shadow-md transition-all duration-200"
                       >
                         <Send className="h-4 w-4" />
                       </Button>
                     </form>
-                    <p className="text-xs text-gray-500 mt-2">
-                      I specialize in career advice, job search, and professional development.
-                    </p>
+                    <div className="flex items-center justify-between mt-3">
+                      <p className="text-xs text-muted-foreground">
+                        💼 Career-focused AI assistant
+                      </p>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <span>Press Enter to send</span>
+                      </div>
+                    </div>
                   </div>
                 </motion.div>
               )}
