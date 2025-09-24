@@ -4,6 +4,7 @@ import { FirebaseAuthProvider } from "@/providers/firebase-auth-provider";
 import { AppToaster } from "@/components/ui/Toast";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import Chatbot from "@/components/Chatbot";
 import { inter } from "@/font";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -31,6 +32,7 @@ export default function RootLayout({
             {children}
             <Footer />
             <AppToaster />
+            <Chatbot />
           </FirebaseAuthProvider>
         </ThemeProvider>
       </body>
