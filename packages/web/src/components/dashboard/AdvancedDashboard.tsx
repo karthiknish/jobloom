@@ -303,32 +303,32 @@ export function AdvancedDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 pt-16">
       {/* Header */}
-      <div className="bg-white shadow">
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-700 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45, ease: "easeOut" }}
-            className="flex flex-col md:flex-row justify-between items-start md:items-center py-6 gap-4"
+            className="flex flex-col md:flex-row justify-between items-start md:items-center py-8 gap-6"
           >
-            <div className="flex items-start md:items-center gap-3">
+            <div className="flex items-start md:items-center gap-4">
               <motion.div
                 initial={{ scale: 0.9, rotate: -4, opacity: 0 }}
                 animate={{ scale: 1, rotate: 0, opacity: 1 }}
                 transition={{ type: "spring", stiffness: 260, damping: 18 }}
                 whileHover={{ scale: 1.05 }}
-                className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center"
+                className="h-12 w-12 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg"
               >
-                <LayoutDashboard className="h-5 w-5 text-primary" />
+                <LayoutDashboard className="h-6 w-6 text-white" />
               </motion.div>
               <div>
                 <motion.h1
                   initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.05, duration: 0.35 }}
-                  className="text-2xl font-bold text-gray-900"
+                  className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent"
                 >
                   Job Dashboard
                 </motion.h1>
@@ -336,17 +336,17 @@ export function AdvancedDashboard() {
                   initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.12, duration: 0.35 }}
-                  className="flex items-center gap-2 mt-1"
+                  className="flex items-center gap-3 mt-2"
                 >
-                  <p className="text-sm text-gray-600">
-                    {greeting}, {user.displayName || user.email}!
+                  <p className="text-base text-gray-600 dark:text-gray-300 font-medium">
+                    {greeting}, <span className="text-gray-900 dark:text-white font-semibold">{user.displayName || user.email}</span>!
                   </p>
                   <Badge
                     variant={plan === "premium" ? "default" : "secondary"}
-                    className={`text-xs ${
+                    className={`text-xs font-semibold px-3 py-1 rounded-full ${
                       plan === "premium"
-                        ? "bg-gradient-to-r from-primary to-secondary text-white"
-                        : "bg-gray-100 text-gray-700"
+                        ? "bg-gradient-to-r from-primary to-secondary text-white shadow-sm"
+                        : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
                     }`}
                   >
                     {plan === "premium" ? "⭐ Premium" : "Free Plan"}
@@ -354,17 +354,17 @@ export function AdvancedDashboard() {
                   {currentUsage &&
                     limits.cvAnalysesPerMonth > 0 &&
                     limits.cvAnalysesPerMonth !== -1 && (
-                      <span className="text-xs text-muted-foreground">
+                      <Badge variant="outline" className="text-xs font-medium">
                         CV: {currentUsage.cvAnalyses}/
                         {limits.cvAnalysesPerMonth === -1
                           ? "∞"
                           : limits.cvAnalysesPerMonth}
-                      </span>
+                      </Badge>
                     )}
                 </motion.div>
               </div>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-3">
               <motion.div
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.98 }}
@@ -373,6 +373,7 @@ export function AdvancedDashboard() {
                   onClick={() => setShowImportModal(true)}
                   variant="default"
                   size="sm"
+                  className="shadow-sm hover:shadow-md transition-shadow"
                 >
                   <UploadCloud className="mr-2 h-4 w-4" /> Import Jobs
                 </Button>
@@ -385,6 +386,7 @@ export function AdvancedDashboard() {
                   onClick={() => setShowJobForm(true)}
                   variant="default"
                   size="sm"
+                  className="shadow-sm hover:shadow-md transition-shadow"
                 >
                   <FilePlus className="mr-2 h-4 w-4" /> Add Job
                 </Button>
@@ -397,6 +399,7 @@ export function AdvancedDashboard() {
                   onClick={() => setShowApplicationForm(true)}
                   variant="outline"
                   size="sm"
+                  className="shadow-sm hover:shadow-md transition-shadow"
                 >
                   <ClipboardList className="mr-2 h-4 w-4" /> Add Application
                 </Button>
@@ -406,7 +409,7 @@ export function AdvancedDashboard() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         {/* Premium Upgrade Banner for Free Users */}
         {plan === "free" && <PremiumUpgradeBanner className="mb-6" />}
 

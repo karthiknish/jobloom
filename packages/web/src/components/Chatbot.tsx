@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, Send, X, Minimize2, Bot, User } from "lucide-react";
+import { MessageCircle, Send, X, Minimize2, Bot, User, History, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -40,8 +40,14 @@ export default function Chatbot() {
   const [messages, setMessages] = useState<Message[]>([WELCOME_MESSAGE]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [chatHistory, setChatHistory] = useState<Message[][]>([]);
+  const [showHistory, setShowHistory] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Message persistence keys
+  const CHAT_HISTORY_KEY = 'jobloom_chat_history';
+  const CHAT_SESSIONS_KEY = 'jobloom_chat_sessions';
 
   // Auto-scroll to bottom when new messages are added
   useEffect(() => {
@@ -59,6 +65,72 @@ export default function Chatbot() {
       setTimeout(() => textareaRef.current?.focus(), 100);
     }
   }, [isOpen, isMinimized]);
+
+  // Load chat history on component mount
+  useEffect(() => {
+    const loadChatHistory = () => {
+      try {
+        const savedHistory = localStorage.getItem(CHAT_SESSIONS_KEY);
+        const savedCurrent = localStorage.getItem(CHAT_HISTORY_KEY);
+
+        if (savedHistory) {
+          const parsedHistory = JSON.parse(savedHistory);
+          // Convert timestamp strings back to Date objects
+          const historyWithDates = parsedHistory.map((session: Message[]) =>
+            session.map(msg => ({
+              ...msg,
+              timestamp: new Date(msg.timestamp)
+            }))
+          );
+          setChatHistory(historyWithDates);
+        }
+
+        if (savedCurrent) {
+          const parsedCurrent = JSON.parse(savedCurrent);
+          // Convert timestamp strings back to Date objects
+          const currentWithDates = parsedCurrent.map((msg: Message) => ({
+            ...msg,
+            timestamp: new Date(msg.timestamp)
+          }));
+          setMessages(currentWithDates);
+        }
+      } catch (error) {
+        console.error('Failed to load chat history:', error);
+        // Reset to default if loading fails
+        setMessages([WELCOME_MESSAGE]);
+      }
+    };
+
+    loadChatHistory();
+  }, []);
+
+  // Save current chat session to localStorage
+  useEffect(() => {
+    const saveCurrentChat = () => {
+      try {
+        if (messages.length > 1) { // Only save if there are actual messages (beyond welcome)
+          localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(messages));
+        }
+      } catch (error) {
+        console.error('Failed to save current chat:', error);
+      }
+    };
+
+    saveCurrentChat();
+  }, [messages]);
+
+  // Save chat history to localStorage when history changes
+  useEffect(() => {
+    const saveChatHistory = () => {
+      try {
+        localStorage.setItem(CHAT_SESSIONS_KEY, JSON.stringify(chatHistory));
+      } catch (error) {
+        console.error('Failed to save chat history:', error);
+      }
+    };
+
+    saveChatHistory();
+  }, [chatHistory]);
 
   const sendMessage = async (message: string) => {
     if (!message.trim() || isLoading) return;
@@ -137,6 +209,39 @@ export default function Chatbot() {
     setIsMinimized(!isMinimized);
   };
 
+  // Chat history management functions
+  const startNewChat = () => {
+    // Save current chat to history if it has messages
+    if (messages.length > 1) {
+      setChatHistory(prev => [messages, ...prev.slice(0, 9)]); // Keep only last 10 sessions
+    }
+
+    // Start new chat
+    setMessages([WELCOME_MESSAGE]);
+    setInputMessage("");
+    setShowHistory(false);
+  };
+
+  const loadChatSession = (sessionIndex: number) => {
+    const session = chatHistory[sessionIndex];
+    if (session) {
+      setMessages(session);
+      setShowHistory(false);
+    }
+  };
+
+  const clearAllHistory = () => {
+    setChatHistory([]);
+    setMessages([WELCOME_MESSAGE]);
+    setShowHistory(false);
+    try {
+      localStorage.removeItem(CHAT_SESSIONS_KEY);
+      localStorage.removeItem(CHAT_HISTORY_KEY);
+    } catch (error) {
+      console.error('Failed to clear chat history:', error);
+    }
+  };
+
   return (
     <>
       {/* Floating Chat Button */}
@@ -210,6 +315,15 @@ export default function Chatbot() {
                 <Button
                   variant="ghost"
                   size="sm"
+                  onClick={() => setShowHistory(!showHistory)}
+                  className="h-8 w-8 p-0 text-white hover:bg-white/20 rounded-full transition-colors duration-200"
+                  title="Chat history"
+                >
+                  <History className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={toggleMinimize}
                   className="h-8 w-8 p-0 text-white hover:bg-white/20 rounded-full transition-colors duration-200"
                   title="Minimize chat"
@@ -237,95 +351,169 @@ export default function Chatbot() {
                   transition={{ duration: 0.2 }}
                   className="flex flex-col h-[calc(100%-80px)]"
                 >
-                  {/* Messages */}
-                  <ScrollArea ref={scrollAreaRef} className="flex-1 p-4">
-                    <div className="space-y-4">
-                      {messages.map((message) => (
-                        <motion.div
-                          key={message.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                        >
-                          {message.role === 'assistant' && (
+                  {/* Chat Content */}
+                  {showHistory ? (
+                    <ScrollArea className="flex-1 p-4">
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-semibold text-sm text-foreground">Chat History</h4>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={startNewChat}
+                            className="h-8 px-3"
+                          >
+                            <Plus className="h-3 w-3 mr-1" />
+                            New Chat
+                          </Button>
+                        </div>
+
+                        {chatHistory.length === 0 ? (
+                          <div className="text-center py-8 text-muted-foreground">
+                            <History className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                            <p className="text-sm">No chat history yet</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            {chatHistory.map((session, index) => {
+                              const firstUserMessage = session.find(msg => msg.role === 'user');
+                              const sessionDate = session[0]?.timestamp;
+                              const messageCount = session.filter(msg => msg.role === 'user').length;
+
+                              return (
+                                <motion.button
+                                  key={index}
+                                  initial={{ opacity: 0, x: -10 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  transition={{ delay: index * 0.05 }}
+                                  onClick={() => loadChatSession(index)}
+                                  className="w-full text-left p-3 bg-muted/50 hover:bg-muted border border-border/50 hover:border-primary/30 rounded-lg transition-all duration-200"
+                                >
+                                  <div className="flex items-start justify-between">
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-medium text-foreground truncate">
+                                        {firstUserMessage?.content || 'New conversation'}
+                                      </p>
+                                      <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                                        <span>{messageCount} messages</span>
+                                        <span>•</span>
+                                        <span>{sessionDate ? new Date(sessionDate).toLocaleDateString() : 'Recent'}</span>
+                                      </div>
+                                    </div>
+                                    <MessageCircle className="h-4 w-4 text-muted-foreground flex-shrink-0 ml-2" />
+                                  </div>
+                                </motion.button>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        {chatHistory.length > 0 && (
+                          <div className="pt-4 border-t border-border/50">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={clearAllHistory}
+                              className="w-full text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-3 w-3 mr-1" />
+                              Clear All History
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </ScrollArea>
+                  ) : (
+                    <ScrollArea ref={scrollAreaRef} className="flex-1 p-4">
+                      <div className="space-y-4">
+                        {messages.map((message) => (
+                          <motion.div
+                            key={message.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                          >
+                            {message.role === 'assistant' && (
+                              <Avatar className="h-8 w-8 mt-1 flex-shrink-0">
+                                <AvatarFallback className="bg-primary/10 text-primary border border-primary/20">
+                                  <Bot className="h-4 w-4" />
+                                </AvatarFallback>
+                              </Avatar>
+                            )}
+                            <div
+                              className={`max-w-[75%] rounded-2xl px-4 py-3 text-sm shadow-sm ${
+                                message.role === 'user'
+                                  ? 'bg-primary text-primary-foreground ml-4'
+                                  : 'bg-muted/50 text-foreground border border-border/50'
+                              }`}
+                            >
+                              {message.content}
+                            </div>
+                            {message.role === 'user' && (
+                              <Avatar className="h-8 w-8 mt-1 flex-shrink-0">
+                                <AvatarFallback className="bg-secondary text-secondary-foreground">
+                                  <User className="h-4 w-4" />
+                                </AvatarFallback>
+                              </Avatar>
+                            )}
+                          </motion.div>
+                        ))}
+
+                        {isLoading && (
+                          <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="flex gap-3 justify-start"
+                          >
                             <Avatar className="h-8 w-8 mt-1 flex-shrink-0">
                               <AvatarFallback className="bg-primary/10 text-primary border border-primary/20">
                                 <Bot className="h-4 w-4" />
                               </AvatarFallback>
                             </Avatar>
-                          )}
-                          <div
-                            className={`max-w-[75%] rounded-2xl px-4 py-3 text-sm shadow-sm ${
-                              message.role === 'user'
-                                ? 'bg-primary text-primary-foreground ml-4'
-                                : 'bg-muted/50 text-foreground border border-border/50'
-                            }`}
-                          >
-                            {message.content}
-                          </div>
-                          {message.role === 'user' && (
-                            <Avatar className="h-8 w-8 mt-1 flex-shrink-0">
-                              <AvatarFallback className="bg-secondary text-secondary-foreground">
-                                <User className="h-4 w-4" />
-                              </AvatarFallback>
-                            </Avatar>
-                          )}
-                        </motion.div>
-                      ))}
-
-                      {isLoading && (
-                        <motion.div
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          className="flex gap-3 justify-start"
-                        >
-                          <Avatar className="h-8 w-8 mt-1 flex-shrink-0">
-                            <AvatarFallback className="bg-primary/10 text-primary border border-primary/20">
-                              <Bot className="h-4 w-4" />
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="bg-muted/50 rounded-2xl px-4 py-3 border border-border/50 shadow-sm">
-                            <div className="flex space-x-1">
-                              <div className="w-2 h-2 bg-primary/60 rounded-full animate-bounce"></div>
-                              <div className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                              <div className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                            <div className="bg-muted/50 rounded-2xl px-4 py-3 border border-border/50 shadow-sm">
+                              <div className="flex space-x-1">
+                                <div className="w-2 h-2 bg-primary/60 rounded-full animate-bounce"></div>
+                                <div className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                                <div className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                              </div>
                             </div>
-                          </div>
-                        </motion.div>
-                      )}
-                    </div>
+                          </motion.div>
+                        )}
 
-                    {/* Suggested Questions */}
-                    {messages.length === 1 && !isLoading && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.5 }}
-                        className="mt-4 space-y-3"
-                      >
-                        <div className="text-center">
-                          <p className="text-xs text-muted-foreground font-medium mb-2">💡 Quick suggestions</p>
-                          <div className="grid grid-cols-1 gap-2">
-                            {SUGGESTED_QUESTIONS.map((question, index) => (
-                              <motion.button
-                                key={index}
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ delay: 0.6 + index * 0.1 }}
-                                className="text-left p-3 bg-primary/5 hover:bg-primary/10 border border-primary/20 hover:border-primary/30 rounded-lg text-sm text-foreground transition-all duration-200 hover:shadow-sm"
-                                onClick={() => handleSuggestedQuestion(question)}
-                              >
-                                {question}
-                              </motion.button>
-                            ))}
-                          </div>
-                        </div>
-                      </motion.div>
-                    )}
-                  </ScrollArea>
+                        {/* Suggested Questions */}
+                        {messages.length === 1 && !isLoading && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.5 }}
+                            className="mt-4 space-y-3"
+                          >
+                            <div className="text-center">
+                              <p className="text-xs text-muted-foreground font-medium mb-2">💡 Quick suggestions</p>
+                              <div className="grid grid-cols-1 gap-2">
+                                {SUGGESTED_QUESTIONS.map((question, index) => (
+                                  <motion.button
+                                    key={index}
+                                    initial={{ opacity: 0, scale: 0.9 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ delay: 0.6 + index * 0.1 }}
+                                    className="text-left p-3 bg-primary/5 hover:bg-primary/10 border border-primary/20 hover:border-primary/30 rounded-lg text-sm text-foreground transition-all duration-200 hover:shadow-sm"
+                                    onClick={() => handleSuggestedQuestion(question)}
+                                  >
+                                    {question}
+                                  </motion.button>
+                                ))}
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </div>
+                    </ScrollArea>
+                  )}
 
-                  {/* Input */}
-                  <div className="border-t border-border/50 bg-muted/20 p-4">
+                  {/* Input - Hide when viewing history */}
+                  {!showHistory && (
+                    <div className="border-t border-border/50 bg-muted/20 p-4">
                     <form onSubmit={handleSubmit} className="flex gap-3">
                       <Textarea
                         ref={textareaRef}
@@ -356,9 +544,10 @@ export default function Chatbot() {
                       </p>
                       <div className="flex items-center gap-1 text-xs text-muted-foreground">
                         <span>Press Enter to send</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
