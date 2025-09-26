@@ -266,13 +266,13 @@ export default function InterviewPrepPage() {
                       </>
                     ) : (
                       <>
-                        <Card className="shadow-sm border-border">
-                          <CardHeader className="pb-3">
-                            <CardTitle className="flex items-center gap-2 text-lg">
-                              <Target className="h-5 w-5 text-primary" />
-                              Question Types
-                            </CardTitle>
-                          </CardHeader>
+                       <Card className="card-depth-2 border-border">
+                         <CardHeader className="pb-3">
+                           <CardTitle className="flex items-center gap-2 text-lg">
+                             <Target className="h-5 w-5 text-primary" />
+                             Question Types
+                           </CardTitle>
+                         </CardHeader>
                           <CardContent className="space-y-3">
                             {Object.entries(interviewQuestions).map(
                               ([category, questions]) => (
@@ -285,10 +285,10 @@ export default function InterviewPrepPage() {
                                   }}
                                   whileHover={{ scale: 1.02 }}
                                   whileTap={{ scale: 0.98 }}
-                                  className={`w-full text-left p-4 rounded-lg border transition-all duration-200 ${
+                                  className={`w-full text-left p-4 rounded-lg border interactive-depth depth-transition ${
                                     selectedCategory === category
-                                      ? "border-primary bg-primary/5 shadow-sm"
-                                      : "border-border hover:border-border/50 hover:shadow-sm"
+                                      ? "border-primary bg-primary/5 card-depth-2 shadow-glow"
+                                      : "border-border hover:border-border/50 card-depth-1 hover-depth"
                                   }`}
                                 >
                                   <div className="font-medium capitalize flex items-center gap-2">
@@ -334,13 +334,13 @@ export default function InterviewPrepPage() {
                         </Card>
 
                         {/* Progress */}
-                        <Card className="shadow-sm border-border">
-                          <CardHeader className="pb-3">
-                            <CardTitle className="flex items-center gap-2 text-lg">
-                              <TrendingUp className="h-5 w-5 text-primary" />
-                              Progress
-                            </CardTitle>
-                          </CardHeader>
+                       <Card className="card-depth-2 border-border">
+                         <CardHeader className="pb-3">
+                           <CardTitle className="flex items-center gap-2 text-lg">
+                             <TrendingUp className="h-5 w-5 text-primary" />
+                             Progress
+                           </CardTitle>
+                         </CardHeader>
                           <CardContent>
                             <div className="space-y-3">
                               <div className="flex justify-between text-sm">
@@ -448,7 +448,7 @@ export default function InterviewPrepPage() {
                         </Card>
                       </div>
                     ) : currentQuestionData ? (
-                      <Card className="shadow-sm border-border">
+                      <Card className="card-depth-3 border-border">
                         <CardHeader className="pb-4">
                           <div className="flex items-center justify-between flex-wrap gap-2">
                             <Badge variant="secondary" className="text-xs">
@@ -633,7 +633,7 @@ export default function InterviewPrepPage() {
                       transition={{ delay: index * 0.1, duration: 0.5 }}
                       whileHover={{ y: -4, scale: 1.02 }}
                     >
-                      <Card className="h-full hover:shadow-lg transition-all duration-300 cursor-pointer border-border shadow-sm">
+                      <Card className="h-full hover-depth interactive-depth depth-transition cursor-pointer card-depth-2 border-border">
                         <CardHeader className="text-center">
                           <motion.div
                             className="mb-3 flex items-center justify-center"
@@ -663,7 +663,7 @@ export default function InterviewPrepPage() {
               </TabsContent>
 
               <TabsContent value="mock" className="space-y-6">
-                <Card className="shadow-sm border-border">
+                <Card className="card-depth-2 border-border">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-lg">
                       <Users className="h-5 w-5 text-primary" />
@@ -756,7 +756,7 @@ export default function InterviewPrepPage() {
               <TabsContent value="progress" className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   <motion.div whileHover={{ scale: 1.05 }}>
-                    <Card className="shadow-sm border-border">
+                    <Card className="card-depth-2 border-border">
                       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">
                           Questions Practiced
@@ -779,7 +779,7 @@ export default function InterviewPrepPage() {
                   </motion.div>
 
                   <motion.div whileHover={{ scale: 1.05 }}>
-                    <Card className="shadow-sm border-border">
+                    <Card className="card-depth-2 border-border">
                       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">
                           Practice Sessions
@@ -798,7 +798,7 @@ export default function InterviewPrepPage() {
                   </motion.div>
 
                   <motion.div whileHover={{ scale: 1.05 }}>
-                    <Card className="shadow-sm border-border">
+                    <Card className="card-depth-2 border-border">
                       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">
                           Average Score
@@ -817,7 +817,7 @@ export default function InterviewPrepPage() {
                   </motion.div>
                 </div>
 
-                <Card className="shadow-sm border-border">
+                <Card className="card-depth-2 border-border">
                   <CardHeader>
                     <CardTitle className="text-lg">
                       Recent Practice Sessions

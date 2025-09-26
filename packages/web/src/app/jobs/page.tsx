@@ -426,10 +426,9 @@ export default function JobsPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1, duration: 0.5 }}
-                    whileHover={{ y: -2 }}
-                    className="transition-shadow duration-200 hover:shadow-lg"
+                    className="interactive-depth"
                   >
-                    <Card className="hover:shadow-lg transition-shadow">
+                    <Card className="card-depth-2 hover-depth depth-transition">
                       <CardContent className="p-6">
                         <div className="flex items-start justify-between">
                           <div className="flex items-start gap-4 flex-1">

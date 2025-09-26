@@ -365,7 +365,7 @@ export default function Chatbot() {
             exit={{ opacity: 0, scale: 0.8, y: 20 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
             style={{ height: isMinimized ? 60 : undefined }}
-            className={`fixed bottom-24 right-4 left-4 sm:right-6 sm:left-auto w-auto sm:w-96 max-w-[calc(100vw-2rem)] sm:max-w-[calc(100vw-3rem)] bg-background border border-border rounded-xl shadow-2xl z-[100] overflow-hidden backdrop-blur-sm flex flex-col ${isMinimized ? '' : 'max-h-[calc(100vh-96px)]'}`}
+            className={`fixed bottom-24 right-4 left-4 sm:right-6 sm:left-auto w-auto sm:w-96 max-w-[calc(100vw-2rem)] sm:max-w-[calc(100vw-3rem)] bg-background border border-border rounded-xl modal-depth layer-5 overflow-hidden glass-depth-strong flex flex-col ${isMinimized ? '' : 'max-h-[calc(100vh-96px)]'}`}
           >
             {/* Header */}
             <div className="flex items-center justify-between p-4 bg-gradient-to-r from-primary via-primary/90 to-primary/80 text-primary-foreground shadow-sm">

@@ -74,24 +74,24 @@ export default async function Home() {
       </section>
 
       {/* Problem Section */}
-      <section className="py-20 bg-gray-50">
+      <section className="py-20 bg-muted/30 section-depth">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2
-              className={`text-3xl font-bold text-gray-900 sm:text-4xl ${playfair.className}`}
+              className={`text-3xl font-bold text-foreground sm:text-4xl floating-subtle ${playfair.className}`}
             >
               The Hidden Job Market Problem
             </h2>
-            <p className="mt-4 text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="mt-4 text-xl text-muted-foreground max-w-3xl mx-auto">
               Companies pay thousands to promote their job postings, but job
               seekers can&apos;t tell which roles are actively sponsored.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Card className="text-center shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <Card className="text-center card-depth-3 hover-depth interactive-depth depth-transition">
               <CardHeader>
-                <div className="bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <div className="bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 shadow-md">
                   <span className="text-2xl">😵‍💫</span>
                 </div>
                 <CardTitle className={playfair.className}>
@@ -99,16 +99,16 @@ export default async function Home() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600">
+                <p className="text-muted-foreground">
                   Sponsored jobs blend in with organic listings, making it
                   impossible to know which companies are actively hiring.
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="text-center shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <Card className="text-center card-depth-3 hover-depth interactive-depth depth-transition">
               <CardHeader>
-                <div className="bg-yellow-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <div className="bg-yellow-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 shadow-md">
                   <span className="text-2xl">📊</span>
                 </div>
                 <CardTitle className={playfair.className}>
@@ -116,16 +116,16 @@ export default async function Home() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600">
+                <p className="text-muted-foreground">
                   Job applications spread across multiple platforms with no
                   central tracking or status management.
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="text-center shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <Card className="text-center card-depth-3 hover-depth interactive-depth depth-transition">
               <CardHeader>
-                <div className="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <div className="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 shadow-md">
                   <span className="text-2xl">⏰</span>
                 </div>
                 <CardTitle className={playfair.className}>
@@ -133,7 +133,7 @@ export default async function Home() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600">
+                <p className="text-muted-foreground">
                   Without knowing which companies are investing in hiring, you
                   might miss the best opportunities.
                 </p>
@@ -144,16 +144,16 @@ export default async function Home() {
       </section>
 
       {/* Solution Section */}
-      <section id="how-it-works" className="py-20 bg-white">
+      <section id="how-it-works" className="py-20 bg-background section-depth-strong">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2
-              className={`text-3xl font-bold text-gray-900 sm:text-4xl font-safe ${playfair.className}`}
+              className={`text-3xl font-bold text-foreground sm:text-4xl floating-subtle ${playfair.className}`}
             >
               How HireAll Works
             </h2>
 
-            <p className="mt-4 text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="mt-4 text-xl text-muted-foreground max-w-3xl mx-auto">
               Our Chrome extension and web platform work together to give you
               unprecedented insight into the job market.
             </p>
@@ -165,15 +165,15 @@ export default async function Home() {
                 <span className="text-xl font-bold text-primary">1</span>
               </div>
               <h3
-                className={`text-2xl font-bold text-gray-900 mb-4 ${playfair.className}`}
+                className={`text-2xl font-bold text-foreground mb-4 floating-subtle ${playfair.className}`}
               >
                 Install the Chrome Extension
               </h3>
-              <p className="text-lg text-gray-600 mb-6">
+              <p className="text-lg text-muted-foreground mb-6">
                 Add our lightweight Chrome extension that works seamlessly with
                 LinkedIn, Indeed, Glassdoor, and other major job sites.
               </p>
-              <ul className="space-y-2 text-gray-600">
+              <ul className="space-y-2 text-muted-foreground">
                 <li className="flex items-center">
                   <span className="text-green-500 mr-2">✓</span>
                   Works on all major job sites
@@ -188,18 +188,18 @@ export default async function Home() {
                 </li>
               </ul>
             </div>
-            <div className="bg-gradient-to-br from-primary/5 to-secondary/5 rounded-2xl p-8">
-              <Card className="shadow-lg">
+            <div className="bg-gradient-to-br from-primary/5 to-secondary/5 rounded-2xl p-8 glass-depth">
+              <Card className="card-depth-4 hover-depth interactive-depth depth-transition">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardDescription className="text-sm font-medium text-gray-500">
+                  <CardDescription className="text-sm font-medium text-muted-foreground">
                     Chrome Extension
                   </CardDescription>
-                  <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+                  <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full shadow-sm">
                     Active
                   </span>
                 </CardHeader>
                 <CardContent>
-                  <Button className="w-full bg-primary hover:bg-primary/90">
+                  <Button className="w-full btn-depth shadow-glow">
                     🎯 Check Sponsored Jobs
                   </Button>
                 </CardContent>
@@ -209,7 +209,7 @@ export default async function Home() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-20">
             <div className="order-2 lg:order-1">
-              <Card className="shadow-lg">
+              <Card className="card-depth-3 hover-depth interactive-depth depth-transition">
                 <CardContent className="p-6">
                   <div className="space-y-4">
                     <div className="border-l-4 border-orange-400 bg-orange-50 p-4 rounded-r-lg">

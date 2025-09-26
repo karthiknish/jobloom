@@ -231,14 +231,271 @@ body {
   animation-delay: 0.5s;
 }
 
-/* Hover effects */
+/* Shadow and Depth System */
+.shadow-xs {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.shadow-sm {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+.shadow-md {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.shadow-lg {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.shadow-xl {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.shadow-2xl {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.shadow-3xl {
+  box-shadow: 0 35px 60px -12px rgba(0, 0, 0, 0.3);
+}
+
+.shadow-inner {
+  box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+}
+
+.shadow-glow {
+  box-shadow: 0 0 20px rgba(76, 175, 80, 0.3);
+}
+
+.shadow-glow-lg {
+  box-shadow: 0 0 30px rgba(76, 175, 80, 0.4), 0 0 60px rgba(76, 175, 80, 0.2);
+}
+
+/* Layered Depth Effects */
+.layer-1 {
+  z-index: 10;
+}
+
+.layer-2 {
+  z-index: 20;
+}
+
+.layer-3 {
+  z-index: 30;
+}
+
+.layer-4 {
+  z-index: 40;
+}
+
+.layer-5 {
+  z-index: 50;
+}
+
+.layer-overlay {
+  z-index: 1000;
+}
+
+/* Floating Elements */
+.floating {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+.floating-subtle {
+  transform: translateY(-1px);
+}
+
+.floating-medium {
+  transform: translateY(-3px);
+}
+
+.floating-strong {
+  transform: translateY(-6px);
+}
+
+/* Depth Transitions */
+.depth-transition {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.depth-transition-fast {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.depth-transition-slow {
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Hover effects with enhanced depth */
 .hover-lift {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.hover-lift-subtle:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.hover-depth:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+}
+
+.hover-glow:hover {
+  box-shadow: 0 0 30px rgba(76, 175, 80, 0.4);
+}
+
+/* Card depth variations */
+.card-depth-1 {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+}
+
+.card-depth-2 {
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+}
+
+.card-depth-3 {
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23);
+}
+
+.card-depth-4 {
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22);
+}
+
+.card-depth-5 {
+  box-shadow: 0 19px 38px rgba(0, 0, 0, 0.3), 0 15px 12px rgba(0, 0, 0, 0.22);
+}
+
+/* Button depth effects */
+.btn-depth {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+}
+
+.btn-depth:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.btn-depth:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Modal and overlay depth */
+.modal-depth {
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+}
+
+.overlay-depth {
+  box-shadow: inset 0 0 200px rgba(0, 0, 0, 0.3);
+}
+
+/* Navigation depth */
+.nav-depth {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.nav-depth-sticky {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Content sections with depth */
+.section-depth {
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.05);
+}
+
+.section-depth-strong {
+  box-shadow: 0 0 60px rgba(0, 0, 0, 0.1);
+}
+
+/* Form depth */
+.form-depth {
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.08);
+}
+
+.input-depth:focus {
+  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1), 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Tooltip and popover depth */
+.tooltip-depth {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.05);
+}
+
+.popover-depth {
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.1);
+}
+
+/* Interactive elements depth */
+.interactive-depth {
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.interactive-depth::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.05));
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.interactive-depth:hover::before {
+  opacity: 1;
+}
+
+.interactive-depth:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Glass morphism effects for modern depth */
+.glass-depth {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.glass-depth-strong {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 16px 64px rgba(0, 0, 0, 0.2);
+}
+
+/* Elevation utilities */
+.elevate-1 {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+}
+
+.elevate-2 {
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+}
+
+.elevate-3 {
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23);
+}
+
+.elevate-4 {
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22);
+}
+
+.elevate-5 {
+  box-shadow: 0 19px 38px rgba(0, 0, 0, 0.30), 0 15px 12px rgba(0, 0, 0, 0.22);
 }
 
 /* Global heading font styles - Use Playfair Display for main headings */
