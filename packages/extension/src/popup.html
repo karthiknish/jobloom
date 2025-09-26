@@ -882,6 +882,20 @@
             <span>🌐</span>
             Sign Up with Google
           </button>
+
+          <!-- OAuth Extension Buttons -->
+          <div style="margin: 16px 0; border-top: 1px solid var(--border); padding-top: 16px;">
+            <p style="font-size: 12px; color: var(--muted); margin: 0 0 12px 0; text-align: center;">Or use extension authentication</p>
+            <button class="auth-btn google" id="oauth-login-btn">
+              <span>🔑</span>
+              Login with Google OAuth
+            </button>
+            <button class="auth-btn" id="oauth-logout-btn" style="display: none; background: #ef4444; color: white; border-color: #ef4444;">
+              <span>🚪</span>
+              OAuth Logout
+            </button>
+          </div>
+
           <button class="auth-btn" id="signout-btn" style="display: none; background: #ef4444; color: white; border-color: #ef4444;">
             <span>🚪</span>
             Sign Out

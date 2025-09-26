@@ -213,7 +213,7 @@ Data Scientist,Microsoft,Seattle, WA,https://microsoft.com/jobs/789,"Analyze lar
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.setAttribute('href', url);
-  link.setAttribute('download', 'jobloom_job_import_template.csv');
+  link.setAttribute('download', 'hireall_job_import_template.csv');
   link.style.visibility = 'hidden';
   document.body.appendChild(link);
   link.click();

@@ -1,4 +1,4 @@
-import { DEFAULT_WEB_APP_URL } from "./constants";
+import { DEFAULT_WEB_APP_URL, OAUTH_CONFIG } from "./constants";
 // Rate limiting configuration
 const RATE_LIMITS = {
   addJob: { maxRequests: 20, windowMs: 60000 }, // 20 requests per minute
@@ -7,6 +7,135 @@ const RATE_LIMITS = {
 
 // Rate limiting state
 const rateLimitState = new Map<string, { count: number; resetTime: number }>();
+
+// OAuth helper functions
+function decodeBase64ClientSecret(): string {
+  try {
+    const base64Secret = OAUTH_CONFIG.clientSecret;
+    if (!base64Secret) {
+      throw new Error("OAuth client secret not configured");
+    }
+    return atob(base64Secret);
+  } catch (error) {
+    console.error("Failed to decode OAuth client secret:", error);
+    return "";
+  }
+}
+
+async function initiateOAuthFlow(): Promise<string | null> {
+  try {
+    const authUrl = new URL(OAUTH_CONFIG.authUrl);
+    authUrl.searchParams.set("client_id", OAUTH_CONFIG.clientId);
+    authUrl.searchParams.set("response_type", "code");
+    authUrl.searchParams.set("redirect_uri", OAUTH_CONFIG.redirectUrl);
+    authUrl.searchParams.set("scope", OAUTH_CONFIG.scopes.join(" "));
+    authUrl.searchParams.set("access_type", "offline");
+    authUrl.searchParams.set("prompt", "consent");
+
+    const redirectUrl = await chrome.identity.launchWebAuthFlow({
+      url: authUrl.toString(),
+      interactive: true,
+    });
+
+    if (redirectUrl) {
+      const url = new URL(redirectUrl);
+      const code = url.searchParams.get("code");
+      if (code) {
+        return code;
+      }
+    }
+
+    return null;
+  } catch (error) {
+    console.error("OAuth flow failed:", error);
+    return null;
+  }
+}
+
+async function exchangeCodeForTokens(code: string): Promise<any> {
+  try {
+    const clientSecret = decodeBase64ClientSecret();
+    if (!clientSecret) {
+      throw new Error("Client secret not available");
+    }
+
+    const response = await fetch(OAUTH_CONFIG.tokenUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        client_id: OAUTH_CONFIG.clientId,
+        client_secret: clientSecret,
+        code: code,
+        grant_type: "authorization_code",
+        redirect_uri: OAUTH_CONFIG.redirectUrl,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Token exchange failed: ${response.status}`);
+    }
+
+    const tokenData = await response.json();
+    return tokenData;
+  } catch (error) {
+    console.error("Token exchange failed:", error);
+    return null;
+  }
+}
+
+async function refreshAccessToken(refreshToken: string): Promise<any> {
+  try {
+    const clientSecret = decodeBase64ClientSecret();
+    if (!clientSecret) {
+      throw new Error("Client secret not available");
+    }
+
+    const response = await fetch(OAUTH_CONFIG.tokenUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        client_id: OAUTH_CONFIG.clientId,
+        client_secret: clientSecret,
+        refresh_token: refreshToken,
+        grant_type: "refresh_token",
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Token refresh failed: ${response.status}`);
+    }
+
+    const tokenData = await response.json();
+    return tokenData;
+  } catch (error) {
+    console.error("Token refresh failed:", error);
+    return null;
+  }
+}
+
+async function getUserProfile(accessToken: string): Promise<any> {
+  try {
+    const response = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Profile fetch failed: ${response.status}`);
+    }
+
+    const profile = await response.json();
+    return profile;
+  } catch (error) {
+    console.error("Profile fetch failed:", error);
+    return null;
+  }
+}
 
 function checkRateLimit(endpoint: string): boolean {
   const config =
@@ -105,6 +234,103 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         console.error("Error requesting userId", e);
       }
     }
+  } else if (request.action === "oauthLogin") {
+    // Handle OAuth login request
+    (async () => {
+      try {
+        console.log("Starting OAuth login flow");
+        const code = await initiateOAuthFlow();
+        if (!code) {
+          sendResponse({ success: false, error: "OAuth flow failed" });
+          return;
+        }
+
+        const tokenData = await exchangeCodeForTokens(code);
+        if (!tokenData) {
+          sendResponse({ success: false, error: "Token exchange failed" });
+          return;
+        }
+
+        const profile = await getUserProfile(tokenData.access_token);
+        if (!profile) {
+          sendResponse({ success: false, error: "Profile fetch failed" });
+          return;
+        }
+
+        // Store OAuth tokens and profile
+        await chrome.storage.sync.set({
+          oauthTokens: tokenData,
+          oauthProfile: profile,
+          lastAuthTime: Date.now(),
+        });
+
+        console.log("OAuth login successful for user:", profile.email);
+        sendResponse({
+          success: true,
+          profile: profile,
+          tokens: tokenData
+        });
+      } catch (error) {
+        console.error("OAuth login failed:", error);
+        sendResponse({ success: false, error: error instanceof Error ? error.message : "Unknown error" });
+      }
+    })();
+    return true; // Keep message channel open for async response
+  } else if (request.action === "oauthLogout") {
+    // Handle OAuth logout
+    chrome.storage.sync.remove(["oauthTokens", "oauthProfile", "lastAuthTime"], () => {
+      console.log("OAuth logout completed");
+      sendResponse({ success: true });
+    });
+    return true;
+  } else if (request.action === "getOAuthProfile") {
+    // Get stored OAuth profile
+    chrome.storage.sync.get(["oauthProfile", "oauthTokens"], (result) => {
+      if (result.oauthTokens && result.oauthProfile) {
+        // Check if token is still valid
+        const now = Date.now();
+        const expiresAt = result.oauthTokens.expires_at || (result.lastAuthTime + (result.oauthTokens.expires_in * 1000));
+        if (now < expiresAt) {
+          sendResponse({
+            success: true,
+            profile: result.oauthProfile,
+            tokens: result.oauthTokens
+          });
+        } else {
+          // Token expired, try to refresh
+          (async () => {
+            try {
+              const refreshToken = result.oauthTokens.refresh_token;
+              if (refreshToken) {
+                const newTokens = await refreshAccessToken(refreshToken);
+                if (newTokens) {
+                  // Update stored tokens
+                  await chrome.storage.sync.set({
+                    oauthTokens: { ...result.oauthTokens, ...newTokens },
+                    lastAuthTime: Date.now(),
+                  });
+                  sendResponse({
+                    success: true,
+                    profile: result.oauthProfile,
+                    tokens: { ...result.oauthTokens, ...newTokens }
+                  });
+                } else {
+                  sendResponse({ success: false, error: "Token refresh failed" });
+                }
+              } else {
+                sendResponse({ success: false, error: "No refresh token available" });
+              }
+            } catch (error) {
+              sendResponse({ success: false, error: "Token refresh error" });
+            }
+          })();
+          return true;
+        }
+      } else {
+        sendResponse({ success: false, error: "Not authenticated" });
+      }
+    });
+    return true;
   }
 });
 

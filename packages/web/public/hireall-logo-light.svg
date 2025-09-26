@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg width="320" height="64" viewBox="0 0 320 64" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="jobloom light" style="isolation:isolate">
+<svg width="320" height="64" viewBox="0 0 320 64" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="hireall light" style="isolation:isolate">
   <defs>
     <!-- Dominant light tone -->
     <linearGradient id="jbLight" x1="0" y1="0" x2="320" y2="64" gradientUnits="userSpaceOnUse">
@@ -31,7 +31,7 @@
 
   <!-- Wordmark (light) -->
   <g transform="translate(90,46)">
-    <text x="0" y="0" font-family="Georgia, 'Times New Roman', serif" font-size="40" font-weight="700" letter-spacing="0.2" fill="url(#jbLight)" stroke="#000" stroke-width="1.1" paint-order="stroke fill">jobloom</text>
+    <text x="0" y="0" font-family="Georgia, 'Times New Roman', serif" font-size="40" font-weight="700" letter-spacing="0.2" fill="url(#jbLight)" stroke="#000" stroke-width="1.1" paint-order="stroke fill">hireall</text>
   </g>
 </svg>
 

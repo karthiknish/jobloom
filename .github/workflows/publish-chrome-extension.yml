@@ -1,0 +1,95 @@
+name: Publish Chrome Extension
+
+on:
+  push:
+    branches:
+      - main
+      - release
+    paths:
+      - 'packages/extension/**'
+      - '.github/workflows/publish-chrome-extension.yml'
+  workflow_dispatch:
+    inputs:
+      publish_target:
+        description: 'Publish target (store or test)'
+        required: true
+        default: 'store'
+        type: choice
+        options:
+          - store
+          - test
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            packages/extension/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          cd packages/extension && npm ci
+
+      - name: Build extension
+        run: |
+          cd packages/extension
+          npm run build:prod
+        env:
+          WEB_APP_URL: https://jobloom.ai
+          OAUTH_CLIENT_ID: ${{ secrets.OAUTH_CLIENT_ID }}
+          OAUTH_CLIENT_SECRET_BASE64: ${{ secrets.OAUTH_CLIENT_SECRET_BASE64 }}
+
+      - name: Package extension
+        run: |
+          cd packages/extension
+          zip -r ../jobloom-extension.zip dist/
+
+      - name: Publish to Chrome Web Store
+        id: publish
+        uses: trmcnvn/chrome-addon@v1
+        with:
+          extension-id: ${{ secrets.CHROME_EXTENSION_ID }}
+          client-id: ${{ secrets.CHROME_CLIENT_ID }}
+          client-secret: ${{ secrets.CHROME_CLIENT_SECRET }}
+          refresh-token: ${{ secrets.CHROME_REFRESH_TOKEN }}
+          zip-file: jobloom-extension.zip
+          publish-target: ${{ github.event.inputs.publish_target || 'store' }}
+
+      - name: Create release
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: extension-v${{ github.run_number }}
+          release_name: Extension Release v${{ github.run_number }}
+          body: |
+            ## Chrome Extension Release
+
+            **Extension ID**: `${{ secrets.CHROME_EXTENSION_ID }}`
+
+            ### Changes
+            - Automated build and publish from commit ${{ github.sha }}
+            - Published to: ${{ github.event.inputs.publish_target || 'store' }}
+
+            ### Files
+            - `jobloom-extension.zip` - Extension package
+          draft: false
+          prerelease: false
+
+      - name: Upload extension artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: jobloom-extension
+          path: jobloom-extension.zip

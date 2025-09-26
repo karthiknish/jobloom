@@ -46,8 +46,8 @@ export default function Chatbot() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Message persistence keys
-  const CHAT_HISTORY_KEY = 'jobloom_chat_history';
-  const CHAT_SESSIONS_KEY = 'jobloom_chat_sessions';
+  const CHAT_HISTORY_KEY = 'hireall_chat_history';
+  const CHAT_SESSIONS_KEY = 'hireall_chat_sessions';
 
   // Auto-scroll to bottom when new messages are added
   useEffect(() => {

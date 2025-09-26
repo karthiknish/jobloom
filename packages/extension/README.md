@@ -1,23 +1,51 @@
-# Jobloom Chrome Extension
+# HireAll Chrome Extension
 
 A Chrome extension for highlighting sponsored job roles and tracking job applications.
 
 ## Environment Variables
 
-The extension primarily needs the web application URL (Firebase-backed) to call APIs:
+The extension needs several environment variables for proper functionality:
+
+### Required Variables
 
 ```env
 WEB_APP_URL=http://localhost:3000
+OAUTH_CLIENT_ID=your_google_oauth_client_id
+OAUTH_CLIENT_SECRET_BASE64=your_base64_encoded_oauth_client_secret
 ```
+
+### OAuth Setup
+
+The extension now supports Google OAuth authentication. To set it up:
+
+1. Go to the [Google Cloud Console](https://console.cloud.google.com/)
+2. Create or select a project
+3. Enable the Google+ API and Google OAuth2 API
+4. Create OAuth 2.0 credentials:
+   - Application type: Chrome Extension
+   - Extension ID: Get this from `chrome://extensions` after loading the unpacked extension
+5. Download the client secret JSON file
+6. Base64 encode the entire client secret JSON content:
+
+```bash
+# On macOS/Linux
+cat client_secret.json | base64
+
+# Or use an online base64 encoder
+```
+
+7. Set the base64 encoded string as `OAUTH_CLIENT_SECRET_BASE64` in your `.env` file
+
+### Additional Variables
 
 You can also set this directly when building:
 
 ```bash
 # For development
-WEB_APP_URL=http://localhost:3000 npm run build
+WEB_APP_URL=http://localhost:3000 OAUTH_CLIENT_ID=your_client_id OAUTH_CLIENT_SECRET_BASE64=your_base64_secret npm run build
 
 # For production
-WEB_APP_URL=https://jobloom.ai npm run build
+WEB_APP_URL=https://hireall.app OAUTH_CLIENT_ID=your_client_id OAUTH_CLIENT_SECRET_BASE64=your_base64_secret npm run build
 ```
 
 If you also load Firebase client SDK in content scripts or future features, you can provide the public Firebase config via `.env` as well (optional):
@@ -33,6 +61,76 @@ NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=G-XXXXXXXXXX
 ```
 
 These values are injected at build-time by `dotenv-webpack` and `DefinePlugin` in `webpack.config.js`.
+
+## Chrome Web Store Publishing
+
+The extension includes automated publishing to the Chrome Web Store via GitHub Actions.
+
+### Setup GitHub Secrets
+
+Add the following secrets to your GitHub repository (Settings > Secrets and variables > Actions):
+
+```bash
+# Chrome Web Store API Credentials
+CHROME_CLIENT_ID=your_chrome_web_store_client_id
+CHROME_CLIENT_SECRET=your_chrome_web_store_client_secret
+CHROME_REFRESH_TOKEN=your_chrome_web_store_refresh_token
+CHROME_EXTENSION_ID=your_extension_id_from_chrome_web_store
+
+# OAuth Configuration (same as .env)
+OAUTH_CLIENT_ID=your_oauth_client_id
+OAUTH_CLIENT_SECRET_BASE64=your_base64_encoded_oauth_client_secret
+```
+
+### How to Get Chrome Web Store API Credentials
+
+Run the setup helper script for step-by-step instructions:
+
+```bash
+npm run setup:chrome-store
+```
+
+Or follow these manual steps:
+
+1. Go to [Chrome Web Store Developer Dashboard](https://chromewebstore.google.com/developer/dashboard)
+2. Create a new project or select existing one
+3. Go to API access and create OAuth 2.0 credentials
+4. Generate a refresh token using the OAuth 2.0 Playground:
+   - Go to [OAuth 2.0 Playground](https://developers.google.com/oauthplayground/)
+   - Select "Chrome Web Store API v1.1"
+   - Click "Authorize APIs"
+   - Exchange authorization code for tokens
+   - Use the refresh token
+
+### Publishing Workflow
+
+The workflow automatically triggers on:
+- Push to `main` or `release` branches when extension files change
+- Manual trigger via GitHub Actions UI
+
+#### Manual Publishing Options
+
+You can manually trigger publishing from the GitHub Actions tab:
+
+1. Go to Actions > "Publish Chrome Extension"
+2. Click "Run workflow"
+3. Choose publish target:
+   - `store`: Publish to production Chrome Web Store
+   - `test`: Publish to trusted testers only
+
+#### Build Scripts
+
+- `npm run build` - Development build with local URLs
+- `npm run build:prod` - Production build for Chrome Web Store
+- `npm run build:test` - Test build with test environment
+- `npm run publish:store` - Build and package for production store
+- `npm run publish:test` - Build and package for test deployment
+- `npm run setup:chrome-store` - Interactive setup guide for Chrome Web Store publishing
+
+The production build automatically:
+- Sets `WEB_APP_URL` to `https://hireall.app`
+- Includes OAuth configuration from environment variables
+- Packages the extension for upload
 
 ## Build Scripts
 

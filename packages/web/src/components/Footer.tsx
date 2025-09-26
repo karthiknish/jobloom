@@ -25,8 +25,8 @@ export default function Footer() {
           <div>
             <div className="flex items-center space-x-2 mb-4">
               <Image
-                src="/jobloom-logo.svg"
-                alt="JobBloom"
+                src="/hireall-logo.svg"
+                alt="HireAll"
                 width={160}
                 height={32}
               />
@@ -51,7 +51,7 @@ export default function Footer() {
 
               <li>
                 <a
-                  href="https://chrome.google.com/webstore/detail/jobloom"
+                  href="https://chrome.google.com/webstore/detail/hireall"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-primary-foreground transition-colors"

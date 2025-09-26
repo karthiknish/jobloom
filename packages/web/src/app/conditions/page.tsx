@@ -506,10 +506,10 @@ export default function ConditionsPage() {
                               <span className="font-medium">Report Abuse</span>
                             </div>
                             <Link
-                              href="mailto:abuse@jobloom.ai"
+                              href="mailto:abuse@hireall.app"
                               className="text-primary hover:underline text-sm"
                             >
-                              abuse@jobloom.ai
+                              abuse@hireall.app
                             </Link>
                             <p className="text-xs text-muted-foreground mt-1">
                               For harassment, threats, or inappropriate content
@@ -526,10 +526,10 @@ export default function ConditionsPage() {
                               </span>
                             </div>
                             <Link
-                              href="mailto:support@jobloom.ai"
+                              href="mailto:support@hireall.app"
                               className="text-primary hover:underline text-sm"
                             >
-                              support@jobloom.ai
+                              support@hireall.app
                             </Link>
                             <p className="text-xs text-muted-foreground mt-1">
                               For technical issues or general questions

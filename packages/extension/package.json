@@ -1,5 +1,5 @@
 {
-  "name": "@jobloom/extension",
+  "name": "@hireall/extension",
   "version": "1.0.0",
   "description": "Chrome extension for highlighting sponsored job roles",
   "main": "dist/background.js",
@@ -7,9 +7,12 @@
     "dev": "webpack --mode development --watch",
     "build": "webpack --mode production",
     "build:dev": "WEB_APP_URL=http://localhost:3000 webpack --mode production",
-    "build:prod": "WEB_APP_URL=https://jobloom.ai webpack --mode production",
+    "build:prod": "WEB_APP_URL=https://hireall.app webpack --mode production",
     "build:test": "cp .env.test .env && webpack --mode production",
-    "lint": "eslint src --ext .ts,.js"
+    "lint": "eslint src --ext .ts,.js",
+    "publish:store": "npm run build:prod && zip -r hireall-extension.zip dist/",
+    "publish:test": "npm run build:test && zip -r hireall-extension-test.zip dist/",
+    "setup:chrome-store": "node scripts/setup-chrome-store.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

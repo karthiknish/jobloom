@@ -59,6 +59,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const signupGoogleBtn = document.getElementById("signup-google-btn");
   const signoutBtn = document.getElementById("signout-btn");
 
+  // OAuth buttons
+  const oauthLoginBtn = document.getElementById("oauth-login-btn") as HTMLButtonElement;
+  const oauthLogoutBtn = document.getElementById("oauth-logout-btn") as HTMLButtonElement;
+
   // Job management
   const jobFilters = document.querySelectorAll(".filter-btn");
 
@@ -70,17 +74,28 @@ document.addEventListener("DOMContentLoaded", () => {
   setupSettingsControls();
 
   // Check authentication status
-  chrome.storage.sync.get(["firebaseUid", "userId"], (res) => {
-    const uid = res.firebaseUid || res.userId;
+  checkAuthStatus();
+
+  async function checkAuthStatus() {
     const authStatus = document.getElementById("auth-status")!;
     const statusDot = authStatus.querySelector(".status-dot")!;
     const statusText = authStatus.querySelector(".status-text")!;
 
-    if (!uid) {
+    // Check both Firebase and OAuth authentication
+    const res = await chrome.storage.sync.get(["firebaseUid", "userId", "oauthProfile", "oauthTokens"]);
+
+    const firebaseUid = res.firebaseUid || res.userId;
+    const hasOAuth = res.oauthProfile && res.oauthTokens;
+
+    if (!firebaseUid && !hasOAuth) {
       // User not authenticated
       authStatus.className = "auth-status unauthenticated";
       (statusDot as HTMLElement).style.background = "#f59e0b";
       statusText.textContent = "Not signed in";
+
+      // Show OAuth login button, hide logout
+      if (oauthLoginBtn) oauthLoginBtn.style.display = "flex";
+      if (oauthLogoutBtn) oauthLogoutBtn.style.display = "none";
 
       // Hide main actions, show auth tab
       document
@@ -98,10 +113,21 @@ document.addEventListener("DOMContentLoaded", () => {
         authTab.click(); // Switch to auth tab
       }
     } else {
-      // User authenticated
+      // User authenticated (either Firebase or OAuth)
       authStatus.className = "auth-status authenticated";
       (statusDot as HTMLElement).style.background = "#10b981";
-      statusText.textContent = "Signed in";
+
+      if (hasOAuth && res.oauthProfile) {
+        statusText.textContent = `OAuth: ${res.oauthProfile.email}`;
+        // Show OAuth logout button, hide login
+        if (oauthLoginBtn) oauthLoginBtn.style.display = "none";
+        if (oauthLogoutBtn) oauthLogoutBtn.style.display = "flex";
+      } else if (firebaseUid) {
+        statusText.textContent = "Firebase: Signed in";
+        // Hide OAuth buttons for Firebase auth
+        if (oauthLoginBtn) oauthLoginBtn.style.display = "none";
+        if (oauthLogoutBtn) oauthLogoutBtn.style.display = "none";
+      }
 
       // Show all tabs
       document.querySelectorAll(".nav-tab").forEach((tab) => {
@@ -111,7 +137,7 @@ document.addEventListener("DOMContentLoaded", () => {
       // Load jobs for the jobs tab
       loadJobs();
     }
-  });
+  }
 
   // Tab navigation setup
   function setupTabNavigation() {
@@ -547,6 +573,45 @@ document.addEventListener("DOMContentLoaded", () => {
     openAuthPage("sign-up", "google")
   );
 
+  // OAuth event listeners
+  oauthLoginBtn?.addEventListener("click", async () => {
+    try {
+      oauthLoginBtn.textContent = "🔄 Logging in...";
+      oauthLoginBtn.disabled = true;
+
+      const response = await chrome.runtime.sendMessage({ action: "oauthLogin" });
+
+      if (response.success) {
+        showToast(`Welcome, ${response.profile.name || response.profile.email}!`, { type: "success" });
+        checkAuthStatus(); // Refresh auth status
+      } else {
+        showToast(`OAuth login failed: ${response.error}`, { type: "error" });
+      }
+    } catch (error) {
+      showToast("OAuth login failed", { type: "error" });
+      console.error("OAuth login error:", error);
+    } finally {
+      oauthLoginBtn.textContent = "🔑 Login with Google OAuth";
+      oauthLoginBtn.disabled = false;
+    }
+  });
+
+  oauthLogoutBtn?.addEventListener("click", async () => {
+    try {
+      const response = await chrome.runtime.sendMessage({ action: "oauthLogout" });
+
+      if (response.success) {
+        showToast("OAuth logout successful", { type: "success" });
+        checkAuthStatus(); // Refresh auth status
+      } else {
+        showToast("OAuth logout failed", { type: "error" });
+      }
+    } catch (error) {
+      showToast("OAuth logout failed", { type: "error" });
+      console.error("OAuth logout error:", error);
+    }
+  });
+
   // Sign out logic
   signoutBtn?.addEventListener("click", () => {
     signOut();
@@ -561,7 +626,7 @@ document.addEventListener("DOMContentLoaded", () => {
         tabs.forEach((tab) => {
           if (
             tab.url &&
-            (tab.url.includes("localhost") || tab.url.includes("jobloom"))
+            (tab.url.includes("localhost") || tab.url.includes("hireall"))
           ) {
             chrome.scripting
               .executeScript({

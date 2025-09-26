@@ -1,29 +1,29 @@
 /* Jobloom Extension Styles - Enhanced UI */
 
 /* Enhanced Job Badges */
-.jobloom-enhanced-badge {
+.hireall-enhanced-badge {
   pointer-events: none;
 }
 
-.jobloom-enhanced-badge * {
+.hireall-enhanced-badge * {
   pointer-events: auto;
 }
 
-.jobloom-main-badge {
+.hireall-main-badge {
   margin-bottom: 4px;
 }
 
 /* Enhanced Company Info */
-.jobloom-company-info {
+.hireall-company-info {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 /* Quick Actions Panel */
-.jobloom-quick-actions {
+.hireall-quick-actions {
   pointer-events: auto;
 }
 
-.jobloom-quick-actions * {
+.hireall-quick-actions * {
   pointer-events: auto;
 }
 
@@ -50,52 +50,52 @@
   }
 }
 
-.jobloom-inline-toast {
+.hireall-inline-toast {
   animation: slideDown 0.3s ease-out;
 }
 
 /* Enhanced Job Highlighting */
-.jobloom-highlighted {
+.hireall-highlighted {
   transition: all 0.3s ease;
 }
 
-.jobloom-highlighted:hover {
+.hireall-highlighted:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(184, 110, 55, 0.3) !important;
 }
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-  .jobloom-enhanced-badge {
+  .hireall-enhanced-badge {
     display: none !important;
   }
 
-  .jobloom-quick-actions {
+  .hireall-quick-actions {
     display: none !important;
   }
 }
 
 /* High contrast mode support */
 @media (prefers-contrast: high) {
-  .jobloom-enhanced-badge span {
+  .hireall-enhanced-badge span {
     border: 2px solid currentColor !important;
   }
 
-  .jobloom-quick-actions {
+  .hireall-quick-actions {
     border: 2px solid #000 !important;
   }
 }
 
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
-  .jobloom-enhanced-badge,
-  .jobloom-quick-actions,
-  .jobloom-inline-toast {
+  .hireall-enhanced-badge,
+  .hireall-quick-actions,
+  .hireall-inline-toast {
     animation: none !important;
     transition: none !important;
   }
 
-  .jobloom-highlighted {
+  .hireall-highlighted {
     transform: none !important;
   }
 } 

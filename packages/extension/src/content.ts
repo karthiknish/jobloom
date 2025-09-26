@@ -156,7 +156,7 @@ class JobTracker {
 
   private createToggleButton() {
     const button = document.createElement("button");
-    button.id = "jobloom-toggle";
+    button.id = "hireall-toggle";
     button.textContent = "🎯 Check Sponsored Jobs";
     button.style.cssText = `
       position: fixed;
@@ -227,7 +227,7 @@ class JobTracker {
 
   private createAutofillButton() {
     const button = document.createElement("button");
-    button.id = "jobloom-autofill";
+    button.id = "hireall-autofill";
     button.textContent = "📝 Autofill Application";
     button.style.cssText = `
       position: fixed;
@@ -281,7 +281,7 @@ class JobTracker {
 
   private createPeopleSearchButton() {
     const button = document.createElement("button");
-    button.id = "jobloom-people-search";
+    button.id = "hireall-people-search";
     button.textContent = "👥 Find Relevant People";
     button.style.cssText = `
       position: fixed;
@@ -323,7 +323,7 @@ class JobTracker {
     }
 
     const panel = document.createElement("div");
-    panel.id = "jobloom-people-panel";
+    panel.id = "hireall-people-panel";
     panel.style.cssText = `
       position: fixed;
       top: 140px;
@@ -807,11 +807,11 @@ class JobTracker {
 
   private generateClientId(): string {
     // Generate a session-based client ID for rate limiting
-    let clientId = localStorage.getItem("jobloom-client-id");
+    let clientId = localStorage.getItem("hireall-client-id");
     if (!clientId) {
       clientId =
         "ext-" + Math.random().toString(36).substr(2, 9) + "-" + Date.now();
-      localStorage.setItem("jobloom-client-id", clientId);
+      localStorage.setItem("hireall-client-id", clientId);
     }
     return clientId;
   }
@@ -1457,7 +1457,7 @@ class JobTracker {
     sponsorshipType: string = "sponsored"
   ) {
     const htmlElement = element as HTMLElement;
-    htmlElement.classList.add("jobloom-highlighted");
+    htmlElement.classList.add("hireall-highlighted");
 
     const colors = {
       sponsored: {
@@ -1496,9 +1496,9 @@ class JobTracker {
       position: relative !important;
     `;
 
-    if (!element.querySelector(".jobloom-badge")) {
+    if (!element.querySelector(".hireall-badge")) {
       const badge = document.createElement("div");
-      badge.className = "jobloom-badge";
+      badge.className = "hireall-badge";
       const badgeIcon = sponsorshipType === "recruitment_agency" ? "🏢" : "🎯";
       const badgeText =
         sponsorshipType === "recruitment_agency"
@@ -1522,17 +1522,17 @@ class JobTracker {
   }
 
   public clearHighlights() {
-    document.querySelectorAll(".jobloom-highlighted").forEach((element) => {
-      element.classList.remove("jobloom-highlighted");
+    document.querySelectorAll(".hireall-highlighted").forEach((element) => {
+      element.classList.remove("hireall-highlighted");
       (element as HTMLElement).style.border = "";
       (element as HTMLElement).style.background = "";
     });
 
-    document.querySelectorAll(".jobloom-badge").forEach((badge) => {
+    document.querySelectorAll(".hireall-badge").forEach((badge) => {
       badge.remove();
     });
 
-    document.querySelectorAll(".jobloom-company-info").forEach((info) => {
+    document.querySelectorAll(".hireall-company-info").forEach((info) => {
       info.remove();
     });
   }
@@ -1585,8 +1585,8 @@ class JobTracker {
     jobElements.forEach((element) => {
       // Skip if already processed
       if (
-        element.querySelector(".jobloom-badge") ||
-        element.querySelector(".jobloom-company-info")
+        element.querySelector(".hireall-badge") ||
+        element.querySelector(".hireall-company-info")
       ) {
         return;
       }
@@ -1630,7 +1630,7 @@ class JobTracker {
   private addJobBadge(element: Element, sponsorshipData: any) {
     // Enhanced job badge with more information
     const badgeContainer = document.createElement("div");
-    badgeContainer.className = "jobloom-enhanced-badge";
+    badgeContainer.className = "hireall-enhanced-badge";
     badgeContainer.style.cssText = `
       position: absolute;
       top: 8px;
@@ -1644,7 +1644,7 @@ class JobTracker {
 
     // Main sponsorship badge
     const mainBadge = document.createElement("div");
-    mainBadge.className = "jobloom-main-badge";
+    mainBadge.className = "hireall-main-badge";
 
     if (sponsorshipData && sponsorshipData.isSponsored) {
       const sponsorshipType = sponsorshipData.sponsorshipType || "sponsored";
@@ -1696,7 +1696,7 @@ class JobTracker {
     // Quick info badges
     const jobData = this.extractJobData(element);
     const infoBadges = document.createElement("div");
-    infoBadges.className = "jobloom-info-badges";
+    infoBadges.className = "hireall-info-badges";
     infoBadges.style.cssText = `
       display: flex;
       flex-direction: column;
@@ -1794,7 +1794,7 @@ class JobTracker {
 
     const jobData = this.extractJobData(element);
     const infoDiv = document.createElement("div");
-    infoDiv.className = "jobloom-company-info";
+    infoDiv.className = "hireall-company-info";
     infoDiv.style.cssText = `
       margin-top: 8px;
       display: flex;
@@ -1934,11 +1934,11 @@ class JobTracker {
     sponsorshipData: any
   ) {
     // Skip if button already exists
-    if (element.querySelector(".jobloom-quick-actions")) return;
+    if (element.querySelector(".hireall-quick-actions")) return;
 
     // Enhanced quick actions panel
     const actionsPanel = document.createElement("div");
-    actionsPanel.className = "jobloom-quick-actions";
+    actionsPanel.className = "hireall-quick-actions";
     actionsPanel.style.cssText = `
       position: absolute;
       bottom: 8px;
@@ -1973,7 +1973,7 @@ class JobTracker {
 
     // Status selector
     const statusSelect = document.createElement("select");
-    statusSelect.className = "jobloom-status-select";
+    statusSelect.className = "hireall-status-select";
     statusSelect.innerHTML = `
       <option value="">Status</option>
       <option value="interested">⭐ Interested</option>
@@ -2012,7 +2012,7 @@ class JobTracker {
 
     // Add to board button
     const addButton = document.createElement("button");
-    addButton.className = "jobloom-add-btn";
+    addButton.className = "hireall-add-btn";
     addButton.innerHTML = "📋 Add";
     addButton.style.cssText = `
       background: #4f46e5;
@@ -2231,11 +2231,11 @@ class JobTracker {
   ) {
     // Remove existing toasts
     element
-      .querySelectorAll(".jobloom-inline-toast")
+      .querySelectorAll(".hireall-inline-toast")
       .forEach((toast) => toast.remove());
 
     const toast = document.createElement("div");
-    toast.className = "jobloom-inline-toast";
+    toast.className = "hireall-inline-toast";
     toast.style.cssText = `
       position: absolute;
       top: -40px;
@@ -2330,7 +2330,7 @@ class JobTracker {
         (selector) => document.querySelectorAll(selector).length >= 2
       );
 
-    const autofillButton = document.getElementById("jobloom-autofill");
+    const autofillButton = document.getElementById("hireall-autofill");
     if (autofillButton) {
       autofillButton.style.display = hasApplicationForm ? "block" : "none";
     }
@@ -2594,7 +2594,7 @@ class JobTracker {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "togglePeopleSearch") {
     const peopleSearchBtn = document.getElementById(
-      "jobloom-people-search"
+      "hireall-people-search"
     ) as HTMLButtonElement;
     if (peopleSearchBtn) {
       peopleSearchBtn.click();
@@ -2604,7 +2604,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   if (request.action === "triggerAutofill") {
     const autofillBtn = document.getElementById(
-      "jobloom-autofill"
+      "hireall-autofill"
     ) as HTMLButtonElement;
     if (autofillBtn && autofillBtn.style.display !== "none") {
       autofillBtn.click();
@@ -2614,7 +2614,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   if (request.action === "toggleHighlight") {
     const highlightBtn = document.getElementById(
-      "jobloom-toggle"
+      "hireall-toggle"
     ) as HTMLButtonElement;
     if (highlightBtn) {
       highlightBtn.click();

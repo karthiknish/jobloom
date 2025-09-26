@@ -18,9 +18,9 @@ export function ExtensionIntegration({ userId }: ExtensionIntegrationProps) {
     const checkExtension = () => {
       try {
         // Check for extension-specific global variable
-        if (typeof window !== 'undefined' && (window as unknown as Record<string, unknown>).__jobloom_extension) {
+        if (typeof window !== 'undefined' && (window as unknown as Record<string, unknown>).__hireall_extension) {
           setIsExtensionInstalled(true);
-          const extensionData = (window as unknown as Record<string, unknown>).__jobloom_extension as Record<string, unknown>;
+          const extensionData = (window as unknown as Record<string, unknown>).__hireall_extension as Record<string, unknown>;
           setJobsDetected((extensionData.jobsDetected as number) || 0);
           setLastSync(extensionData.lastSync ? new Date(extensionData.lastSync as string | number) : null);
           return;
@@ -29,7 +29,7 @@ export function ExtensionIntegration({ userId }: ExtensionIntegrationProps) {
         // Alternative check: try to access chrome extension API
         if (typeof window !== 'undefined' && (window as any).chrome && (window as any).chrome.runtime) {
           try {
-            (window as any).chrome.runtime.sendMessage('jobloom_extension_id', { type: 'PING' }, (response: any) => {
+            (window as any).chrome.runtime.sendMessage('hireall_extension_id', { type: 'PING' }, (response: any) => {
               if (response && response.type === 'PONG') {
                 setIsExtensionInstalled(true);
               }
@@ -85,14 +85,14 @@ export function ExtensionIntegration({ userId }: ExtensionIntegrationProps) {
             type: 'JOBOOK_USER_AUTH',
             userId: userId,
             timestamp: Date.now(),
-            source: 'jobloom_web'
+            source: 'hireall_web'
           }, '*');
 
           // Also set in localStorage for extension access
-          localStorage.setItem('__jobloom_user', JSON.stringify({
+          localStorage.setItem('__hireall_user', JSON.stringify({
             userId,
             timestamp: Date.now(),
-            source: 'jobloom_web'
+            source: 'hireall_web'
           }));
 
           // Set a timeout to retry if extension doesn't respond
@@ -199,7 +199,7 @@ export function ExtensionIntegration({ userId }: ExtensionIntegrationProps) {
             <div className="pt-2">
               <Button className="w-full" asChild>
                 <a
-                  href="https://chrome.google.com/webstore/detail/jobloom-extension"
+                  href="https://chrome.google.com/webstore/detail/hireall-extension"
                   target="_blank"
                   rel="noopener noreferrer"
                 >

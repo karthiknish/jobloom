@@ -109,9 +109,9 @@ export default function TermsOfService() {
             <h2 className="text-xl font-semibold">10. Contact Information</h2>
             <p>
               For questions about these Terms, email us at
-              <Link href="mailto:legal@jobloom.ai" className="text-primary">
+              <Link href="mailto:legal@hireall.app" className="text-primary">
                 {" "}
-                legal@jobloom.ai
+                legal@hireall.app
               </Link>
               .
             </p>

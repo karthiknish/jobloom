@@ -1,7 +1,7 @@
 {
-  "name": "jobloom",
+  "name": "hireall",
   "version": "1.0.0",
-  "description": "A monorepo for JobloomMonorepo - Chrome extension and job board for tracking sponsored roles",
+  "description": "A monorepo for HireAll - Chrome extension and job board for tracking sponsored roles",
   "private": true,
   "workspaces": [
     "packages/web",

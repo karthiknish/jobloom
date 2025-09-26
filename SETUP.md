@@ -10,7 +10,7 @@
 
 1. **Install dependencies**
    ```bash
-   cd jobloom
+   cd hireall
    npm install
    ```
 

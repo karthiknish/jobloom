@@ -2,11 +2,11 @@
 const admin = require('firebase-admin');
 
 // Initialize Firebase Admin SDK
-const serviceAccount = require('../packages/web/jobloom-6a4cd-firebase-adminsdk-fbsvc-aed875c457.json');
+const serviceAccount = require('../packages/web/hireall-4f106-firebase-adminsdk-fbsvc-2e91c28cd6.json');
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  projectId: 'jobloom-6a4cd'
+  projectId: 'hireall-4f106'
 });
 
 const db = admin.firestore();

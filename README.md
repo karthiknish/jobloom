@@ -1,4 +1,4 @@
-# JobloomMonorepo (Firebase)
+# HireAll Monorepo (Firebase)
 
 A comprehensive job tracking solution consisting of:
 
@@ -45,7 +45,7 @@ The Chrome extension calls the web app’s API. Set the base URL via `WEB_APP_UR
 
 ## Stripe Payment Integration
 
-Jobloom includes premium features with subscription-based pricing. To enable payments:
+HireAll includes premium features with subscription-based pricing. To enable payments:
 
 ### 1. Stripe Account Setup
 1. Create a [Stripe account](https://stripe.com)

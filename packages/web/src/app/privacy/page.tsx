@@ -79,11 +79,11 @@ export default function PrivacyPolicy() {
             <p>
               If you have questions about this policy, email us at
               <Link
-                href="mailto:privacy@jobloom.ai"
+                href="mailto:privacy@hireall.app"
                 className="text-primary hover:underline"
               >
                 {" "}
-                privacy@jobloom.ai
+                privacy@hireall.app
               </Link>
               .
             </p>

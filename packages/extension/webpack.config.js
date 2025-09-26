@@ -46,7 +46,16 @@ module.exports = {
     }),
     new CopyPlugin({
       patterns: [
-        { from: "manifest.json", to: "manifest.json" },
+        {
+          from: "manifest.json",
+          to: "manifest.json",
+          transform(content) {
+            return content.toString().replace(
+              /"OAUTH_CLIENT_ID_PLACEHOLDER"/g,
+              JSON.stringify(process.env.OAUTH_CLIENT_ID || "575119663017-s0bf9hfbc4suitbnp12kuvne4gsnkedr.apps.googleusercontent.com")
+            );
+          },
+        },
         { from: "src/popup.html", to: "popup.html" },
         { from: "public", to: ".", noErrorOnMissing: true },
         { from: "src/styles.css", to: "styles.css", noErrorOnMissing: true },
