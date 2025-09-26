@@ -303,9 +303,9 @@ export function AdvancedDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50    pt-16">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-indigo-50    pt-16">
       {/* Header */}
-      <div className="bg-white/80  backdrop-blur-xl border-b border-gray-200  shadow-sm">
+      <div className="bg-white/90  backdrop-blur-2xl border-b border-gray-200/50  shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
@@ -318,17 +318,17 @@ export function AdvancedDashboard() {
                 initial={{ scale: 0.9, rotate: -4, opacity: 0 }}
                 animate={{ scale: 1, rotate: 0, opacity: 1 }}
                 transition={{ type: "spring", stiffness: 260, damping: 18 }}
-                whileHover={{ scale: 1.05 }}
-                className="h-12 w-12 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg"
+                whileHover={{ scale: 1.05, rotate: 2 }}
+                className="h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-600 flex items-center justify-center shadow-xl"
               >
-                <LayoutDashboard className="h-6 w-6 text-white" />
+                <LayoutDashboard className="h-7 w-7 text-white" />
               </motion.div>
               <div>
                 <motion.h1
                   initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.05, duration: 0.35 }}
-                  className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600   bg-clip-text text-transparent"
+                  className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900   bg-clip-text text-transparent"
                 >
                   Job Dashboard
                 </motion.h1>
@@ -336,26 +336,26 @@ export function AdvancedDashboard() {
                   initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.12, duration: 0.35 }}
-                  className="flex items-center gap-3 mt-2"
+                  className="flex items-center gap-3 mt-3"
                 >
-                  <p className="text-base text-gray-600  font-medium">
+                  <p className="text-base text-gray-700  font-medium">
                     {greeting}, <span className="text-gray-900  font-semibold">{user.displayName || user.email}</span>!
                   </p>
                   <Badge
                     variant={plan === "premium" ? "default" : "secondary"}
-                    className={`text-xs font-semibold px-3 py-1 rounded-full ${
+                    className={`text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm transition-all duration-300 ${
                       plan === "premium"
-                        ? "bg-gradient-to-r from-primary to-secondary text-white shadow-sm"
-                        : "bg-gray-100 text-gray-700"
+                        ? "bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-lg hover:shadow-xl"
+                        : "bg-gradient-to-r from-gray-200 to-gray-300 text-gray-700 hover:from-gray-300 hover:to-gray-400"
                     }`}
                   >
-                    {plan === "premium" ? "⭐ Premium" : "Free Plan"}
+                    {plan === "premium" ? "✨ Premium" : "🚀 Free Plan"}
                   </Badge>
                   {currentUsage &&
                     limits.cvAnalysesPerMonth > 0 &&
                     limits.cvAnalysesPerMonth !== -1 && (
-                      <Badge variant="outline" className="text-xs font-medium">
-                        CV: {currentUsage.cvAnalyses}/
+                      <Badge variant="outline" className="text-xs font-medium border-blue-200 text-blue-700 bg-blue-50/50">
+                        📊 CV: {currentUsage.cvAnalyses}/
                         {limits.cvAnalysesPerMonth === -1
                           ? "∞"
                           : limits.cvAnalysesPerMonth}
@@ -366,40 +366,40 @@ export function AdvancedDashboard() {
             </div>
             <div className="flex flex-wrap gap-3">
               <motion.div
-                whileHover={{ scale: 1.03 }}
+                whileHover={{ scale: 1.03, y: -1 }}
                 whileTap={{ scale: 0.98 }}
               >
                 <Button
                   onClick={() => setShowImportModal(true)}
                   variant="default"
                   size="sm"
-                  className="shadow-sm hover:shadow-md transition-shadow"
+                  className="shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white border-0"
                 >
                   <UploadCloud className="mr-2 h-4 w-4" /> Import Jobs
                 </Button>
               </motion.div>
               <motion.div
-                whileHover={{ scale: 1.03 }}
+                whileHover={{ scale: 1.03, y: -1 }}
                 whileTap={{ scale: 0.98 }}
               >
                 <Button
                   onClick={() => setShowJobForm(true)}
                   variant="default"
                   size="sm"
-                  className="shadow-sm hover:shadow-md transition-shadow"
+                  className="shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white border-0"
                 >
                   <FilePlus className="mr-2 h-4 w-4" /> Add Job
                 </Button>
               </motion.div>
               <motion.div
-                whileHover={{ scale: 1.03 }}
+                whileHover={{ scale: 1.03, y: -1 }}
                 whileTap={{ scale: 0.98 }}
               >
                 <Button
                   onClick={() => setShowApplicationForm(true)}
                   variant="outline"
                   size="sm"
-                  className="shadow-sm hover:shadow-md transition-shadow"
+                  className="shadow-lg hover:shadow-xl transition-all duration-300 border-gray-300 hover:border-gray-400 hover:bg-gray-50"
                 >
                   <ClipboardList className="mr-2 h-4 w-4" /> Add Application
                 </Button>
@@ -414,28 +414,53 @@ export function AdvancedDashboard() {
         {plan === "free" && <PremiumUpgradeBanner className="mb-6" />}
 
         {/* Navigation Tabs */}
-        <Tabs
-          value={view}
-          onValueChange={(value) =>
-            setView(
-              value === "dashboard" ||
-                value === "jobs" ||
-                value === "applications" ||
-                value === "analytics"
-                ? value
-                : "dashboard"
-            )
-          }
-          className="mb-6"
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.4 }}
         >
-          <TabsList>
-            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-            <TabsTrigger value="jobs">
-              Jobs ({applications?.length || 0})
-            </TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          </TabsList>
-        </Tabs>
+          <Tabs
+            value={view}
+            onValueChange={(value) =>
+              setView(
+                value === "dashboard" ||
+                  value === "jobs" ||
+                  value === "applications" ||
+                  value === "analytics"
+                  ? value
+                  : "dashboard"
+              )
+            }
+            className="mb-8"
+          >
+            <TabsList className="bg-white/80 backdrop-blur-xl border border-gray-200/50 p-1 shadow-lg">
+              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                <TabsTrigger 
+                  value="dashboard" 
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300"
+                >
+                  Dashboard
+                </TabsTrigger>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                <TabsTrigger 
+                  value="jobs" 
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300"
+                >
+                  Jobs ({applications?.length || 0})
+                </TabsTrigger>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                <TabsTrigger 
+                  value="analytics" 
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300"
+                >
+                  Analytics
+                </TabsTrigger>
+              </motion.div>
+            </TabsList>
+          </Tabs>
+        </motion.div>
 
         {/* Main Content */}
         {view === "dashboard" &&
@@ -443,89 +468,122 @@ export function AdvancedDashboard() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="space-y-6"
+              transition={{ duration: 0.5, ease: "easeOut" }}
+              className="space-y-8"
             >
-              {jobStats && <JobStatsDashboard stats={jobStats} />}
-              {applications && applications.length > 0 && (
-                <UpcomingFollowUps
-                  applications={applications}
-                  onChanged={refetchApplications}
-                />
-              )}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1, duration: 0.4 }}
+              >
+                {jobStats && <JobStatsDashboard stats={jobStats} />}
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15, duration: 0.4 }}
+              >
+                {applications && applications.length > 0 && (
+                  <UpcomingFollowUps
+                    applications={applications}
+                    onChanged={refetchApplications}
+                  />
+                )}
+              </motion.div>
 
               {/* Notification Center */}
               {applications && applications.length > 0 && (
-                <Card className="border-0 bg-gradient-to-br from-white via-orange-50/30 to-white    shadow-lg">
-                  <CardHeader className="pb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center">
-                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                        </svg>
-                      </div>
-                      <CardTitle className="text-xl bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">Notification Center</CardTitle>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="text-center py-12">
-                        <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-green-100 to-emerald-100 rounded-full flex items-center justify-center">
-                          <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                        </div>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                          All caught up! 🎉
-                        </h3>
-                        <p className="text-gray-600">
-                          No pending notifications or follow-ups at this time.
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-              {applications && applications.length > 0 && (
-                <SponsorshipQuickCheck applications={applications} />
-              )}
-              {userRecord && <ExtensionIntegration userId={userRecord._id} />}
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>Recent Applications</CardTitle>
-                    {applications && (
-                      <div className="flex gap-2">
-                        <ExportCsvButton
-                          fileName="applications.csv"
-                          rows={applications.map((a) => ({
-                            id: a._id,
-                            title: a.job?.title,
-                            company: a.job?.company,
-                            location: a.job?.location,
-                            status: a.status,
-                            dateFound: a.job?.dateFound,
-                            appliedDate: a.appliedDate,
-                            source: a.job?.source,
-                            salary: a.job?.salary,
-                            sponsored: a.job?.isSponsored,
-                            agency: a.job?.isRecruitmentAgency,
-                          }))}
-                        />
-                        <FeatureGate
-                          feature="exportFormats"
-                          fallback={
-                            <Button size="sm" variant="outline" disabled>
-                              <FileText className="h-4 w-4 mr-2" />
-                              JSON <span className="ml-1 text-xs">⭐</span>
-                            </Button>
-                          }
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2, duration: 0.4 }}
+                >
+                  <Card className="border-0 bg-gradient-to-br from-white via-orange-50/30 to-white shadow-xl backdrop-blur-sm">
+                    <CardHeader className="pb-4">
+                      <div className="flex items-center gap-3">
+                        <motion.div
+                          initial={{ scale: 0.8, rotate: -8 }}
+                          animate={{ scale: 1, rotate: 0 }}
+                          transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                          className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center shadow-lg"
                         >
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              // Export as JSON
-                              const data = applications.map((a) => ({
+                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                          </svg>
+                        </motion.div>
+                        <CardTitle className="text-xl bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">Notification Center</CardTitle>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="text-center py-12">
+                          <motion.div
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ delay: 0.3, type: "spring", stiffness: 180, damping: 12 }}
+                            className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-green-100 to-emerald-100 rounded-full flex items-center justify-center shadow-lg"
+                          >
+                            <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          </motion.div>
+                          <motion.h3
+                            initial={{ opacity: 0, y: 6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.35, duration: 0.3 }}
+                            className="text-lg font-semibold text-gray-900 mb-2"
+                          >
+                            All caught up! 🎉
+                          </motion.h3>
+                          <motion.p
+                            initial={{ opacity: 0, y: 6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.4, duration: 0.3 }}
+                            className="text-gray-600"
+                          >
+                            No pending notifications or follow-ups at this time.
+                          </motion.p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              )}
+
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25, duration: 0.4 }}
+              >
+                {applications && applications.length > 0 && (
+                  <SponsorshipQuickCheck applications={applications} />
+                )}
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.4 }}
+              >
+                {userRecord && <ExtensionIntegration userId={userRecord._id} />}
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.35, duration: 0.4 }}
+              >
+                <Card className="border-0 bg-white/80 backdrop-blur-sm shadow-xl">
+                  <CardHeader className="pb-4">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-xl bg-gradient-to-r from-gray-900 to-blue-900 bg-clip-text text-transparent">Recent Applications</CardTitle>
+                      {applications && (
+                        <div className="flex gap-2">
+                          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                            <ExportCsvButton
+                              fileName="applications.csv"
+                              rows={applications.map((a) => ({
                                 id: a._id,
                                 title: a.job?.title,
                                 company: a.job?.company,
@@ -537,118 +595,162 @@ export function AdvancedDashboard() {
                                 salary: a.job?.salary,
                                 sponsored: a.job?.isSponsored,
                                 agency: a.job?.isRecruitmentAgency,
-                                notes: a.notes,
-                                interviewDates: a.interviewDates,
-                                followUpDate: a.followUpDate,
-                              }));
-                              const blob = new Blob(
-                                [JSON.stringify(data, null, 2)],
-                                { type: "application/json" }
-                              );
-                              const url = URL.createObjectURL(blob);
-                              const a = document.createElement("a");
-                              a.href = url;
-                              a.download = "applications-export.json";
-                              document.body.appendChild(a);
-                              a.click();
-                              document.body.removeChild(a);
-                              URL.revokeObjectURL(url);
-                              showSuccess("JSON export completed");
-                            }}
+                              }))}
+                            />
+                          </motion.div>
+                          <FeatureGate
+                            feature="exportFormats"
+                            fallback={
+                              <Button size="sm" variant="outline" disabled>
+                                <FileText className="h-4 w-4 mr-2" />
+                                JSON <span className="ml-1 text-xs">⭐</span>
+                              </Button>
+                            }
                           >
-                            <FileText className="h-4 w-4 mr-2" />
-                            JSON{" "}
-                            <span className="text-xs text-primary">⭐</span>
-                          </Button>
-                        </FeatureGate>
-                      </div>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <JobList
-                    applications={applications!.slice(0, 5)}
-                    onEditApplication={handleEditApplication}
-                    onDeleteApplication={handleDeleteApplication}
-                    onViewApplication={handleViewApplication}
-                    onChanged={refetchApplications}
-                  />
-                </CardContent>
-              </Card>
+                            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  // Export as JSON
+                                  const data = applications.map((a) => ({
+                                    id: a._id,
+                                    title: a.job?.title,
+                                    company: a.job?.company,
+                                    location: a.job?.location,
+                                    status: a.status,
+                                    dateFound: a.job?.dateFound,
+                                    appliedDate: a.appliedDate,
+                                    source: a.job?.source,
+                                    salary: a.job?.salary,
+                                    sponsored: a.job?.isSponsored,
+                                    agency: a.job?.isRecruitmentAgency,
+                                    notes: a.notes,
+                                    interviewDates: a.interviewDates,
+                                    followUpDate: a.followUpDate,
+                                  }));
+                                  const blob = new Blob(
+                                    [JSON.stringify(data, null, 2)],
+                                    { type: "application/json" }
+                                  );
+                                  const url = URL.createObjectURL(blob);
+                                  const a = document.createElement("a");
+                                  a.href = url;
+                                  a.download = "applications-export.json";
+                                  document.body.appendChild(a);
+                                  a.click();
+                                  document.body.removeChild(a);
+                                  URL.revokeObjectURL(url);
+                                  showSuccess("JSON export completed");
+                                }}
+                              >
+                                <FileText className="h-4 w-4 mr-2" />
+                                JSON{" "}
+                                <span className="text-xs text-primary">⭐</span>
+                              </Button>
+                            </motion.div>
+                          </FeatureGate>
+                        </div>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <JobList
+                      applications={applications!.slice(0, 5)}
+                      onEditApplication={handleEditApplication}
+                      onDeleteApplication={handleDeleteApplication}
+                      onViewApplication={handleViewApplication}
+                      onChanged={refetchApplications}
+                    />
+                  </CardContent>
+                </Card>
+              </motion.div>
             </motion.div>
           ) : (
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.45, ease: "easeOut" }}
-              className="space-y-6"
+              className="space-y-8"
             >
-              <div className="rounded-xl  bg-white p-10 text-center">
-                <motion.div
-                  initial={{ scale: 0.9, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ type: "spring", stiffness: 240, damping: 18 }}
-                  className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10"
-                >
-                  <Inbox className="h-7 w-7 text-primary" />
-                </motion.div>
-                <motion.h3
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.05, duration: 0.35 }}
-                  className="mt-4 text-lg font-semibold text-foreground"
-                >
-                  No applications yet
-                </motion.h3>
-                <motion.p
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1, duration: 0.35 }}
-                  className="mt-1 text-sm text-muted-foreground"
-                >
-                  Get started by importing your jobs or adding a new one.
-                </motion.p>
-                <div className="mt-6 flex items-center justify-center gap-2">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1, duration: 0.4 }}
+              >
+                <div className="rounded-xl bg-gradient-to-br from-white via-blue-50/20 to-indigo-50 p-12 text-center shadow-xl border border-gray-100/50">
                   <motion.div
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.98 }}
+                    initial={{ scale: 0.8, opacity: 0, rotate: -8 }}
+                    animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                    transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.2 }}
+                    className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg"
                   >
-                    <Button onClick={() => setShowImportModal(true)} size="sm">
-                      <UploadCloud className="mr-2 h-4 w-4" /> Import Jobs
-                    </Button>
+                    <Inbox className="h-8 w-8 text-white" />
                   </motion.div>
-                  <motion.div
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.98 }}
+                  <motion.h3
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.25, duration: 0.35 }}
+                    className="mt-6 text-2xl font-bold bg-gradient-to-r from-gray-900 to-blue-900 bg-clip-text text-transparent"
                   >
-                    <Button
-                      onClick={() => setShowJobForm(true)}
-                      variant="secondary"
-                      size="sm"
+                    No applications yet
+                  </motion.h3>
+                  <motion.p
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3, duration: 0.35 }}
+                    className="mt-3 text-base text-gray-600 max-w-md mx-auto"
+                  >
+                    Get started by importing your jobs or adding a new one to begin tracking your job search journey.
+                  </motion.p>
+                  <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+                    <motion.div
+                      whileHover={{ scale: 1.05, y: -2 }}
+                      whileTap={{ scale: 0.95 }}
                     >
-                      <FilePlus className="mr-2 h-4 w-4" /> Add Job
-                    </Button>
-                  </motion.div>
-                  <motion.div
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <Button
-                      onClick={() => setShowApplicationForm(true)}
-                      variant="ghost"
-                      size="sm"
+                      <Button 
+                        onClick={() => setShowImportModal(true)} 
+                        size="lg"
+                        className="shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white border-0"
+                      >
+                        <UploadCloud className="mr-2 h-5 w-5" /> Import Jobs
+                      </Button>
+                    </motion.div>
+                    <motion.div
+                      whileHover={{ scale: 1.05, y: -2 }}
+                      whileTap={{ scale: 0.95 }}
                     >
-                      Add Application <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </motion.div>
+                      <Button
+                        onClick={() => setShowJobForm(true)}
+                        variant="secondary"
+                        size="lg"
+                        className="shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-purple-100 to-purple-200 hover:from-purple-200 hover:to-purple-300 text-purple-800 border-0"
+                      >
+                        <FilePlus className="mr-2 h-5 w-5" /> Add Job
+                      </Button>
+                    </motion.div>
+                    <motion.div
+                      whileHover={{ scale: 1.05, y: -2 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <Button
+                        onClick={() => setShowApplicationForm(true)}
+                        variant="outline"
+                        size="lg"
+                        className="shadow-lg hover:shadow-xl transition-all duration-300 border-gray-300 hover:border-gray-400 hover:bg-gray-50"
+                      >
+                        Add Application <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    </motion.div>
+                  </div>
                 </div>
-              </div>
+              </motion.div>
 
               {userRecord && (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.15, duration: 0.35 }}
+                  transition={{ delay: 0.35, duration: 0.4 }}
                 >
                   <ExtensionIntegration userId={userRecord._id} />
                 </motion.div>
