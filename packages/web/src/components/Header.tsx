@@ -166,17 +166,18 @@ export default function Header() {
       initial={{ y: -60, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: "spring", stiffness: 120, damping: 14 }}
-      className="fixed top-0 w-full bg-background/80 backdrop-blur-md z-50 border-b border"
+      className="fixed top-0 w-full bg-background/80 backdrop-blur-md z-50 border-b border safe-area-inset-top"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 safe-area-inset-left safe-area-inset-right">
+        <div className="flex justify-between items-center h-16 md:h-20">
           <Link href="/" className="flex items-center space-x-2 group">
             <Image
               src="/hireall-logo.svg"
               alt="HireAll"
-              width={140}
-              height={32}
+              width={120}
+              height={28}
               priority
+              className="w-20 h-auto md:w-[140px] md:h-auto"
             />
           </Link>
 
@@ -205,7 +206,7 @@ export default function Header() {
               </SheetTrigger>
               <SheetContent
                 side="right"
-                className="w-full sm:w-full bg-background"
+                className="w-full sm:w-full bg-background safe-area-inset-top safe-area-inset-bottom safe-area-inset-left safe-area-inset-right"
               >
                 <SheetHeader>
                   <SheetTitle>

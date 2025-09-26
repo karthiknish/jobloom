@@ -21,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.className} antialiased`} style={{ '--font-playfair-display': playfair.style.fontFamily } as React.CSSProperties}>
+      <body className={`${inter.className} antialiased safe-area-inset-top safe-area-inset-bottom safe-area-inset-left safe-area-inset-right`} style={{ '--font-playfair-display': playfair.style.fontFamily } as React.CSSProperties}>
         <FirebaseInitializer />
         <FirebaseAuthProvider>
           <Header />

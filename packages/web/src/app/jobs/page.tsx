@@ -62,7 +62,8 @@ const mockJobs = [
     type: "Full-time",
     level: "Senior",
     posted: "2 days ago",
-    description: "We are looking for a Senior Frontend Developer to join our growing team...",
+    description:
+      "We are looking for a Senior Frontend Developer to join our growing team...",
     skills: ["React", "TypeScript", "Node.js"],
     logo: "🏢",
     isRemote: true,
@@ -80,7 +81,7 @@ const mockJobs = [
     posted: "1 day ago",
     description: "Join our product team to drive innovative solutions...",
     skills: ["Product Strategy", "Analytics", "Agile"],
-    logo: "🚀",
+    logo: "rocket",
     isRemote: false,
     companySize: "50-200",
     industry: "Technology",
@@ -96,20 +97,20 @@ const mockJobs = [
     posted: "3 days ago",
     description: "Create beautiful and intuitive user experiences...",
     skills: ["Figma", "User Research", "Prototyping"],
-    logo: "🎨",
+    logo: "palette",
     isRemote: true,
     companySize: "10-50",
     industry: "Design",
   },
 ];
 
-// Helper to get icon component by emoji
-const getJobIcon = (emoji: string) => {
+// Helper to get icon component by name
+const getJobIcon = (iconName: string) => {
   const icons: Record<string, any> = {
-    "🚀": Rocket,
-    "🎨": Palette,
+    rocket: Rocket,
+    palette: Palette,
   };
-  return icons[emoji] || Building;
+  return icons[iconName] || Building;
 };
 
 export default function JobsPage() {

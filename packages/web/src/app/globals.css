@@ -87,6 +87,138 @@ body {
   overflow-x: hidden;
 }
 
+/* Mobile safe area support */
+@supports (padding: max(0px)) {
+  .safe-area-top {
+    padding-top: max(1rem, env(safe-area-inset-top));
+  }
+  
+  .safe-area-bottom {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+  
+  .safe-area-left {
+    padding-left: max(1rem, env(safe-area-inset-left));
+  }
+  
+  .safe-area-right {
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+  
+  .safe-area-inset-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .safe-area-inset-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .safe-area-inset-left {
+    padding-left: env(safe-area-inset-left);
+  }
+  
+  .safe-area-inset-right {
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
+/* Mobile-specific optimizations */
+@media (max-width: 768px) {
+  /* Ensure text is readable on mobile */
+  h1 {
+    font-size: clamp(1.5rem, 5vw, 2.5rem);
+  }
+  
+  h2 {
+    font-size: clamp(1.25rem, 4vw, 2rem);
+  }
+  
+  h3 {
+    font-size: clamp(1.125rem, 3.5vw, 1.5rem);
+  }
+  
+  p {
+    font-size: clamp(0.875rem, 2.5vw, 1rem);
+    line-height: 1.6;
+  }
+  
+  /* Improve touch targets */
+  button, .btn, .clickable, .clickable * {
+    min-height: 44px;
+    min-width: 44px;
+    touch-action: manipulation;
+  }
+  
+  /* Better mobile button spacing */
+  .btn-mobile {
+    min-height: 48px;
+    min-width: 48px;
+    padding: 12px 16px;
+  }
+  
+  /* Mobile-friendly form inputs */
+  input, select, textarea {
+    min-height: 44px;
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+  
+  /* Mobile-friendly links */
+  a {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  a:not([class]) {
+    min-height: auto;
+    display: inline;
+  }
+  
+  /* Optimize spacing for mobile */
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  /* Prevent text overflow */
+  .text-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  .text-break {
+    word-wrap: break-word;
+    word-break: break-word;
+    hyphens: auto;
+  }
+}
+
+/* Mobile-first responsive utilities */
+.mobile-full-width {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.mobile-stack {
+  flex-direction: column !important;
+}
+
+.mobile-center {
+  text-align: center !important;
+}
+
+.mobile-hidden {
+  display: none !important;
+}
+
+@media (min-width: 769px) {
+  .desktop-hidden {
+    display: none !important;
+  }
+}
+
 /* Animations */
 @keyframes blob {
   0% {
@@ -502,6 +634,16 @@ body {
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-playfair-display), serif;
 }
+
+/*
+ * EMOJI USAGE POLICY
+ * ==================
+ * Emojis are NOT allowed in this codebase. Use proper text, symbols, or Lucide React icons instead.
+ * - Replace emojis with descriptive text or appropriate Unicode symbols (⚠, ✓, etc.)
+ * - Use Lucide React icons for UI elements and visual indicators
+ * - Keep the codebase professional and accessible
+ * - Emojis can cause rendering issues across different platforms and devices
+ */
 
 /* Specific overrides for components that might conflict */
 .card-title, .card-title * {

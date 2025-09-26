@@ -1,15 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
   Home,
   Briefcase,
   MessageSquare,
   FileText,
-  User,
-  Settings
+  User
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -51,7 +49,6 @@ const navigationItems = [
 export default function MobileNavigation() {
   const { user } = useFirebaseAuth();
   const pathname = usePathname();
-  const router = useRouter();
 
   // Only show authenticated navigation items if user is logged in
   const visibleItems = navigationItems.filter(item =>
@@ -69,9 +66,9 @@ export default function MobileNavigation() {
       initial={{ y: 100 }}
       animate={{ y: 0 }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-background/95 backdrop-blur-sm border-t border-border"
+      className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-background/95 backdrop-blur-sm border-t border-border safe-area-inset-bottom"
     >
-      <div className="flex items-center justify-around py-2 px-2">
+      <div className="flex items-center justify-around py-2 px-2 safe-area-inset-left safe-area-inset-right">
         {visibleItems.map((item) => {
           const isActive = pathname === item.href ||
             (item.href !== "/" && pathname.startsWith(item.href));
@@ -81,7 +78,7 @@ export default function MobileNavigation() {
               key={item.name}
               href={item.href}
               className={cn(
-                "flex flex-col items-center justify-center py-2 px-3 rounded-lg transition-all duration-200 min-w-0 flex-1",
+                "flex flex-col items-center justify-center py-3 px-2 rounded-lg transition-all duration-200 min-w-0 flex-1 mobile-full-width",
                 isActive
                   ? "bg-primary/10 text-primary"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
@@ -93,12 +90,12 @@ export default function MobileNavigation() {
               >
                 <item.icon
                   className={cn(
-                    "h-5 w-5 mb-1",
+                    "h-6 w-6 mb-1",
                     isActive ? "text-primary" : "text-current"
                   )}
                 />
                 <span className={cn(
-                  "text-xs font-medium truncate",
+                  "text-xs font-medium truncate max-w-full",
                   isActive ? "text-primary" : "text-current"
                 )}>
                   {item.name}
@@ -108,9 +105,6 @@ export default function MobileNavigation() {
           );
         })}
       </div>
-
-      {/* Safe area padding for devices with home indicator */}
-      <div className="h-safe-area-inset-bottom" />
     </motion.div>
   );
 }

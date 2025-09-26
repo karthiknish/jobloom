@@ -105,12 +105,13 @@ export default function BlogPostPage() {
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
         <Card className="max-w-md w-full">
           <CardContent className="p-8 text-center">
-            <div className="text-6xl mb-4">📝</div>
+            <div className="text-6xl mb-4">📄</div>
             <h3 className="text-2xl font-semibold text-gray-900 mb-2">
               Post Not Found
             </h3>
             <p className="text-gray-600 mb-6">
-              The blog post you&apos;re looking for doesn&apos;t exist or has been removed.
+              The blog post you&apos;re looking for doesn&apos;t exist or has
+              been removed.
             </p>
             <Link href="/blog">
               <Button>Back to Blog</Button>

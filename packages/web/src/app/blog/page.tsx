@@ -168,7 +168,7 @@ export default function BlogPage() {
             animate={{ opacity: 1 }}
             className="text-center py-16"
           >
-            <div className="text-6xl mb-4">📝</div>
+            <div className="text-6xl mb-4">📄</div>
             <h3 className="text-2xl font-semibold text-gray-900 mb-2">
               No articles found
             </h3>

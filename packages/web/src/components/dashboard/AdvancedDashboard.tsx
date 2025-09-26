@@ -339,7 +339,11 @@ export function AdvancedDashboard() {
                   className="flex items-center gap-3 mt-3"
                 >
                   <p className="text-base text-gray-700  font-medium">
-                    {greeting}, <span className="text-gray-900  font-semibold">{user.displayName || user.email}</span>!
+                    {greeting},{" "}
+                    <span className="text-gray-900  font-semibold">
+                      {user.displayName || user.email}
+                    </span>
+                    !
                   </p>
                   <Badge
                     variant={plan === "premium" ? "default" : "secondary"}
@@ -364,8 +368,11 @@ export function AdvancedDashboard() {
                   {currentUsage &&
                     limits.cvAnalysesPerMonth > 0 &&
                     limits.cvAnalysesPerMonth !== -1 && (
-                      <Badge variant="outline" className="text-xs font-medium border-blue-200 text-blue-700 bg-blue-50/50">
-                        📊 CV: {currentUsage.cvAnalyses}/
+                      <Badge
+                        variant="outline"
+                        className="text-xs font-medium border-blue-200 text-blue-700 bg-blue-50/50"
+                      >
+                        CV Analyses: {currentUsage.cvAnalyses}/
                         {limits.cvAnalysesPerMonth === -1
                           ? "∞"
                           : limits.cvAnalysesPerMonth}
@@ -444,25 +451,34 @@ export function AdvancedDashboard() {
             className="mb-8"
           >
             <TabsList>
-              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                <TabsTrigger 
-                  value="dashboard" 
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <TabsTrigger
+                  value="dashboard"
                   className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300"
                 >
                   Dashboard
                 </TabsTrigger>
               </motion.div>
-              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                <TabsTrigger 
-                  value="jobs" 
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <TabsTrigger
+                  value="jobs"
                   className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300"
                 >
                   Jobs ({applications?.length || 0})
                 </TabsTrigger>
               </motion.div>
-              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                <TabsTrigger 
-                  value="analytics" 
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <TabsTrigger
+                  value="analytics"
                   className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300"
                 >
                   Analytics
@@ -515,14 +531,30 @@ export function AdvancedDashboard() {
                         <motion.div
                           initial={{ scale: 0.8, rotate: -8 }}
                           animate={{ scale: 1, rotate: 0 }}
-                          transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                          transition={{
+                            type: "spring",
+                            stiffness: 200,
+                            damping: 15,
+                          }}
                           className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center shadow-lg"
                         >
-                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                          <svg
+                            className="w-4 h-4 text-white"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                            />
                           </svg>
                         </motion.div>
-                        <CardTitle className="text-xl bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">Notification Center</CardTitle>
+                        <CardTitle className="text-xl bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
+                          Notification Center
+                        </CardTitle>
                       </div>
                     </CardHeader>
                     <CardContent>
@@ -531,11 +563,26 @@ export function AdvancedDashboard() {
                           <motion.div
                             initial={{ scale: 0.8, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
-                            transition={{ delay: 0.3, type: "spring", stiffness: 180, damping: 12 }}
+                            transition={{
+                              delay: 0.3,
+                              type: "spring",
+                              stiffness: 180,
+                              damping: 12,
+                            }}
                             className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-green-100 to-emerald-100 rounded-full flex items-center justify-center shadow-lg"
                           >
-                            <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            <svg
+                              className="w-8 h-8 text-green-500"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                              />
                             </svg>
                           </motion.div>
                           <motion.h3
@@ -587,10 +634,15 @@ export function AdvancedDashboard() {
                 <Card className="border-0 bg-white/80 backdrop-blur-sm shadow-xl">
                   <CardHeader className="pb-4">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-xl bg-gradient-to-r from-gray-900 to-blue-900 bg-clip-text text-transparent">Recent Applications</CardTitle>
+                      <CardTitle className="text-xl bg-gradient-to-r from-gray-900 to-blue-900 bg-clip-text text-transparent">
+                        Recent Applications
+                      </CardTitle>
                       {applications && (
                         <div className="flex gap-2">
-                          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                          <motion.div
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                          >
                             <ExportCsvButton
                               fileName="applications.csv"
                               rows={applications.map((a) => ({
@@ -617,7 +669,10 @@ export function AdvancedDashboard() {
                               </Button>
                             }
                           >
-                            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                            <motion.div
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                            >
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -692,7 +747,12 @@ export function AdvancedDashboard() {
                   <motion.div
                     initial={{ scale: 0.8, opacity: 0, rotate: -8 }}
                     animate={{ scale: 1, opacity: 1, rotate: 0 }}
-                    transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.2 }}
+                    transition={{
+                      type: "spring",
+                      stiffness: 200,
+                      damping: 15,
+                      delay: 0.2,
+                    }}
                     className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg"
                   >
                     <Inbox className="h-8 w-8 text-white" />
@@ -711,15 +771,16 @@ export function AdvancedDashboard() {
                     transition={{ delay: 0.3, duration: 0.35 }}
                     className="mt-3 text-base text-gray-600 max-w-md mx-auto"
                   >
-                    Get started by importing your jobs or adding a new one to begin tracking your job search journey.
+                    Get started by importing your jobs or adding a new one to
+                    begin tracking your job search journey.
                   </motion.p>
                   <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
                     <motion.div
                       whileHover={{ scale: 1.05, y: -2 }}
                       whileTap={{ scale: 0.95 }}
                     >
-                      <Button 
-                        onClick={() => setShowImportModal(true)} 
+                      <Button
+                        onClick={() => setShowImportModal(true)}
                         size="lg"
                         className="shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white border-0"
                       >
@@ -807,7 +868,7 @@ export function AdvancedDashboard() {
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <span>📊</span>
+                      <span>📈</span>
                       Application Timeline
                     </CardTitle>
                   </CardHeader>
@@ -900,7 +961,7 @@ export function AdvancedDashboard() {
                       <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
                         <div className="flex items-center">
                           <div className="p-2 rounded-full bg-blue-100">
-                            <span className="text-blue-600">📈</span>
+                            <span className="text-blue-600">📊</span>
                           </div>
                           <span className="ml-3 font-medium">This Week</span>
                         </div>
@@ -937,7 +998,7 @@ export function AdvancedDashboard() {
                       <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
                         <div className="flex items-center">
                           <div className="p-2 rounded-full bg-orange-100">
-                            <span className="text-orange-600">⏱️</span>
+                            <span className="text-orange-600">⏱</span>
                           </div>
                           <span className="ml-3 font-medium">Avg Response</span>
                         </div>
@@ -1098,7 +1159,7 @@ export function AdvancedDashboard() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <span>🎯</span>
+                    <span>📍</span>
                     Job Search Goals
                   </CardTitle>
                 </CardHeader>

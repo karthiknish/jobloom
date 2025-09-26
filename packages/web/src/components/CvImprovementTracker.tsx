@@ -89,7 +89,7 @@ export function CvImprovementTracker({ analyses }: CvImprovementTrackerProps) {
     return (
       <Card>
         <CardContent className="p-6 text-center">
-          <div className="text-muted-foreground text-4xl mb-4">📈</div>
+          <div className="text-muted-foreground text-4xl mb-4">📊</div>
           <h3 className="text-lg font-medium mb-2">Improvement Tracking</h3>
           <p className="text-muted-foreground">
             Upload at least 2 CV analyses to track your improvement over time.
@@ -127,13 +127,22 @@ export function CvImprovementTracker({ analyses }: CvImprovementTrackerProps) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div className="text-center p-4 bg-muted/50 rounded-lg">
               <div className="text-2xl font-bold text-foreground mb-1">
-                {overallImprovement > 0 ? '+' : ''}{overallImprovement}
+                {overallImprovement > 0 ? "+" : ""}
+                {overallImprovement}
               </div>
-              <div className="text-sm text-muted-foreground">Point Improvement</div>
+              <div className="text-sm text-muted-foreground">
+                Point Improvement
+              </div>
               <div className="flex items-center justify-center mt-2">
-                {overallImprovement > 0 && <TrendingUp className="h-4 w-4 text-green-500" />}
-                {overallImprovement < 0 && <TrendingDown className="h-4 w-4 text-red-500" />}
-                {overallImprovement === 0 && <div className="h-4 w-4 rounded-full bg-gray-400" />}
+                {overallImprovement > 0 && (
+                  <TrendingUp className="h-4 w-4 text-green-500" />
+                )}
+                {overallImprovement < 0 && (
+                  <TrendingDown className="h-4 w-4 text-red-500" />
+                )}
+                {overallImprovement === 0 && (
+                  <div className="h-4 w-4 rounded-full bg-gray-400" />
+                )}
               </div>
             </div>
 
@@ -147,7 +156,8 @@ export function CvImprovementTracker({ analyses }: CvImprovementTrackerProps) {
 
             <div className="text-center p-4 bg-muted/50 rounded-lg">
               <div className="text-2xl font-bold text-foreground mb-1">
-                {avgImprovementPerDay > 0 ? '+' : ''}{avgImprovementPerDay.toFixed(1)}
+                {avgImprovementPerDay > 0 ? "+" : ""}
+                {avgImprovementPerDay.toFixed(1)}
               </div>
               <div className="text-sm text-muted-foreground">Points/Day</div>
               <Zap className="h-4 w-4 mx-auto mt-2 text-muted-foreground" />
@@ -164,10 +174,17 @@ export function CvImprovementTracker({ analyses }: CvImprovementTrackerProps) {
               {sortedAnalyses.map((analysis, index) => (
                 <div key={analysis._id} className="flex items-center gap-3">
                   <div className="text-sm text-muted-foreground w-16">
-                    {index === 0 ? 'Start' : index === sortedAnalyses.length - 1 ? 'Latest' : `CV ${index + 1}`}
+                    {index === 0
+                      ? "Start"
+                      : index === sortedAnalyses.length - 1
+                      ? "Latest"
+                      : `CV ${index + 1}`}
                   </div>
                   <div className="flex-1">
-                    <Progress value={analysis.overallScore || 0} className="h-2" />
+                    <Progress
+                      value={analysis.overallScore || 0}
+                      className="h-2"
+                    />
                   </div>
                   <div className="text-sm font-medium w-12 text-right">
                     {analysis.overallScore}
@@ -193,10 +210,15 @@ export function CvImprovementTracker({ analyses }: CvImprovementTrackerProps) {
               <span className="text-sm">ATS Compatibility</span>
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium">
-                  {atsImprovement > 0 ? '+' : ''}{atsImprovement}
+                  {atsImprovement > 0 ? "+" : ""}
+                  {atsImprovement}
                 </span>
-                {atsImprovement > 0 && <TrendingUp className="h-4 w-4 text-green-500" />}
-                {atsImprovement < 0 && <TrendingDown className="h-4 w-4 text-red-500" />}
+                {atsImprovement > 0 && (
+                  <TrendingUp className="h-4 w-4 text-green-500" />
+                )}
+                {atsImprovement < 0 && (
+                  <TrendingDown className="h-4 w-4 text-red-500" />
+                )}
               </div>
             </div>
 
@@ -204,10 +226,15 @@ export function CvImprovementTracker({ analyses }: CvImprovementTrackerProps) {
               <span className="text-sm">Keywords Found</span>
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium">
-                  {keywordImprovement > 0 ? '+' : ''}{keywordImprovement}
+                  {keywordImprovement > 0 ? "+" : ""}
+                  {keywordImprovement}
                 </span>
-                {keywordImprovement > 0 && <TrendingUp className="h-4 w-4 text-green-500" />}
-                {keywordImprovement < 0 && <TrendingDown className="h-4 w-4 text-red-500" />}
+                {keywordImprovement > 0 && (
+                  <TrendingUp className="h-4 w-4 text-green-500" />
+                )}
+                {keywordImprovement < 0 && (
+                  <TrendingDown className="h-4 w-4 text-red-500" />
+                )}
               </div>
             </div>
 
@@ -232,24 +259,32 @@ export function CvImprovementTracker({ analyses }: CvImprovementTrackerProps) {
                   key={index}
                   className={`flex items-center justify-between p-3 rounded-lg border ${
                     milestone.achieved
-                      ? 'bg-green-50 border-green-200'
-                      : 'bg-gray-50 border-gray-200'
+                      ? "bg-green-50 border-green-200"
+                      : "bg-gray-50 border-gray-200"
                   }`}
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.1 }}
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                      milestone.achieved
-                        ? 'bg-green-500 text-white'
-                        : 'bg-gray-300 text-gray-600'
-                    }`}>
-                      {milestone.achieved ? <Award className="h-3 w-3" /> : index + 1}
+                    <div
+                      className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                        milestone.achieved
+                          ? "bg-green-500 text-white"
+                          : "bg-gray-300 text-gray-600"
+                      }`}
+                    >
+                      {milestone.achieved ? (
+                        <Award className="h-3 w-3" />
+                      ) : (
+                        index + 1
+                      )}
                     </div>
-                    <span className={`text-sm font-medium ${
-                      milestone.achieved ? 'text-green-800' : 'text-gray-700'
-                    }`}>
+                    <span
+                      className={`text-sm font-medium ${
+                        milestone.achieved ? "text-green-800" : "text-gray-700"
+                      }`}
+                    >
                       {milestone.label}
                     </span>
                   </div>
@@ -274,12 +309,18 @@ export function CvImprovementTracker({ analyses }: CvImprovementTrackerProps) {
         <CardContent>
           <div className="flex items-center justify-between p-4 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg border border-yellow-200">
             <div>
-              <h4 className="font-medium text-yellow-900">{bestAnalysis.fileName}</h4>
+              <h4 className="font-medium text-yellow-900">
+                {bestAnalysis.fileName}
+              </h4>
               <p className="text-sm text-yellow-700">
-                Scored {bestAnalysis.overallScore}/100 on {new Date(bestAnalysis.createdAt).toLocaleDateString()}
+                Scored {bestAnalysis.overallScore}/100 on{" "}
+                {new Date(bestAnalysis.createdAt).toLocaleDateString()}
               </p>
             </div>
-            <Badge variant="default" className="bg-yellow-500 hover:bg-yellow-600">
+            <Badge
+              variant="default"
+              className="bg-yellow-500 hover:bg-yellow-600"
+            >
               Best Score
             </Badge>
           </div>
@@ -299,7 +340,8 @@ export function CvImprovementTracker({ analyses }: CvImprovementTrackerProps) {
             {overallImprovement > 5 && (
               <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
                 <p className="text-sm text-green-800">
-                  🎉 Excellent progress! Your CV has improved significantly. Keep up the great work!
+                  🎉 Excellent progress! Your CV has improved significantly.
+                  Keep up the great work!
                 </p>
               </div>
             )}
@@ -307,7 +349,9 @@ export function CvImprovementTracker({ analyses }: CvImprovementTrackerProps) {
             {overallImprovement > 0 && overallImprovement <= 5 && (
               <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <p className="text-sm text-blue-800">
-                  <TrendingUp className="h-4 w-4 inline mr-1" /> Steady improvement! Small consistent changes are leading to better results.
+                  <TrendingUp className="h-4 w-4 inline mr-1" /> Steady
+                  improvement! Small consistent changes are leading to better
+                  results.
                 </p>
               </div>
             )}
@@ -315,7 +359,8 @@ export function CvImprovementTracker({ analyses }: CvImprovementTrackerProps) {
             {overallImprovement <= 0 && (
               <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
                 <p className="text-sm text-orange-800">
-                  🔄 Consider reviewing your recent changes. Sometimes a different approach can yield better results.
+                  Consider reviewing your recent changes. Sometimes a different
+                  approach can yield better results.
                 </p>
               </div>
             )}
@@ -323,7 +368,8 @@ export function CvImprovementTracker({ analyses }: CvImprovementTrackerProps) {
             {consistency > 80 && (
               <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg">
                 <p className="text-sm text-purple-800">
-                  🎯 High consistency in your scores indicates you&apos;re building on solid foundations.
+                  High consistency in your scores indicates you're building on
+                  solid foundations.
                 </p>
               </div>
             )}

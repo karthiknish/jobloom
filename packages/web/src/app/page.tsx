@@ -29,30 +29,30 @@ export default async function Home() {
           <div className="absolute top-40 left-40 w-80 h-80 bg-primary/30 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
         </div>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32 ">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-32 safe-area-inset-left safe-area-inset-right">
           <div className="text-center">
             <h1
-              className={`text-4xl font-extrabold text-gray-900 sm:text-5xl lg:text-6xl animate-fade-in-up ${playfair.className}`}
+              className={`text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-foreground animate-fade-in-up ${playfair.className}`}
             >
               Stop Missing
               <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary animate-gradient z-10 leading-normal">
                 Sponsored Job Opportunities
               </span>
             </h1>
-            <p className="mt-6 max-w-3xl mx-auto text-xl text-gray-600 leading-relaxed">
+            <p className="mt-6 max-w-3xl mx-auto text-lg sm:text-xl text-muted-foreground leading-relaxed">
               HireAll reveals which companies are paying to promote their jobs,
               giving you the inside track on who&apos;s actively hiring. Track
               your applications and never lose sight of your job search
               progress.
             </p>
-            <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
               {userId ? (
-                <Button asChild size="lg" className="text-lg px-8 py-6">
+                <Button asChild size="lg" className="text-base sm:text-lg px-6 sm:px-8 py-4 sm:py-6">
                   <Link href="/dashboard">Go to Dashboard</Link>
                 </Button>
               ) : (
                 <>
-                  <Button asChild size="lg" className="text-lg px-8 py-6">
+                  <Button asChild size="lg" className="text-base sm:text-lg px-6 sm:px-8 py-4 sm:py-6">
                     <Link href="/sign-up">Start Free Today</Link>
                   </Button>
                   <Button
@@ -66,7 +66,7 @@ export default async function Home() {
                 </>
               )}
             </div>
-            <p className="mt-4 text-sm text-gray-500">
+            <p className="mt-3 text-sm text-muted-foreground">
               Free forever • No credit card required • Chrome extension included
             </p>
           </div>
@@ -74,9 +74,9 @@ export default async function Home() {
       </section>
 
       {/* Problem Section */}
-      <section className="py-20 bg-muted/30 section-depth">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+      <section className="py-16 sm:py-20 bg-muted/30 section-depth">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 safe-area-inset-left safe-area-inset-right">
+          <div className="text-center mb-12 sm:mb-16">
             <h2
               className={`text-3xl font-bold text-foreground sm:text-4xl floating-subtle ${playfair.className}`}
             >
@@ -91,8 +91,8 @@ export default async function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <Card className="text-center card-depth-3 hover-depth interactive-depth depth-transition">
               <CardHeader>
-                <div className="bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 shadow-md">
-                  <span className="text-2xl">😵‍💫</span>
+                <div className="bg-destructive/10 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 shadow-md">
+                  <span className="text-2xl font-bold text-destructive">⚠</span>
                 </div>
                 <CardTitle className={playfair.className}>
                   Invisible Sponsorships
@@ -108,8 +108,8 @@ export default async function Home() {
 
             <Card className="text-center card-depth-3 hover-depth interactive-depth depth-transition">
               <CardHeader>
-                <div className="bg-yellow-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 shadow-md">
-                  <span className="text-2xl">📊</span>
+                <div className="bg-amber-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 shadow-md">
+                  <span className="text-2xl font-bold text-amber-600">📈</span>
                 </div>
                 <CardTitle className={playfair.className}>
                   Scattered Applications
@@ -125,8 +125,8 @@ export default async function Home() {
 
             <Card className="text-center card-depth-3 hover-depth interactive-depth depth-transition">
               <CardHeader>
-                <div className="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 shadow-md">
-                  <span className="text-2xl">⏰</span>
+                <div className="bg-primary/10 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 shadow-md">
+                  <span className="text-2xl font-bold text-primary">⏰</span>
                 </div>
                 <CardTitle className={playfair.className}>
                   Missed Opportunities
@@ -144,8 +144,11 @@ export default async function Home() {
       </section>
 
       {/* Solution Section */}
-      <section id="how-it-works" className="py-20 bg-background section-depth-strong">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section
+        id="how-it-works"
+        className="py-20 bg-background section-depth-strong"
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 safe-area-inset-left safe-area-inset-right">
           <div className="text-center mb-16">
             <h2
               className={`text-3xl font-bold text-foreground sm:text-4xl floating-subtle ${playfair.className}`}
@@ -200,7 +203,7 @@ export default async function Home() {
                 </CardHeader>
                 <CardContent>
                   <Button className="w-full btn-depth shadow-glow">
-                    🎯 Check Sponsored Jobs
+                    Check Sponsored Jobs
                   </Button>
                 </CardContent>
               </Card>
@@ -214,28 +217,28 @@ export default async function Home() {
                   <div className="space-y-4">
                     <div className="border-l-4 border-orange-400 bg-orange-50 p-4 rounded-r-lg">
                       <div className="flex items-center">
-                        <span className="text-orange-600 mr-2">🎯</span>
-                        <span className="font-medium text-gray-900">
+                        <span className="text-orange-600 mr-2">✓</span>
+                        <span className="font-medium text-foreground">
                           SPONSORED
                         </span>
                       </div>
-                      <p className="text-sm text-gray-600 mt-1">
+                      <p className="text-sm text-muted-foreground mt-1">
                         Senior Software Engineer at Google
                       </p>
                     </div>
                     <div className="border-l-4 border-secondary bg-secondary/10 p-4 rounded-r-lg">
                       <div className="flex items-center">
-                        <span className="text-secondary mr-2">🎯</span>
-                        <span className="font-medium text-gray-900">
+                        <span className="text-secondary mr-2">✓</span>
+                        <span className="font-medium text-foreground">
                           PROMOTED
                         </span>
                       </div>
-                      <p className="text-sm text-gray-600 mt-1">
+                      <p className="text-sm text-muted-foreground mt-1">
                         Product Manager at Microsoft
                       </p>
                     </div>
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <p className="text-sm text-gray-600">
+                    <div className="bg-muted/30 p-4 rounded-lg">
+                      <p className="text-sm text-muted-foreground">
                         Data Scientist at StartupCorp
                       </p>
                     </div>
@@ -244,20 +247,20 @@ export default async function Home() {
               </Card>
             </div>
             <div className="order-1 lg:order-2">
-              <div className="bg-orange-100 rounded-full w-12 h-12 flex items-center justify-center mb-4">
-                <span className="text-xl font-bold text-orange-600">2</span>
+              <div className="bg-amber-100 rounded-full w-12 h-12 flex items-center justify-center mb-4">
+                <span className="text-xl font-bold text-amber-600">2</span>
               </div>
               <h3
-                className={`text-2xl font-bold text-gray-900 mb-4 ${playfair.className}`}
+                className={`text-2xl font-bold text-foreground mb-4 ${playfair.className}`}
               >
                 Reveal Sponsored Jobs
               </h3>
-              <p className="text-lg text-gray-600 mb-6">
+              <p className="text-lg text-muted-foreground mb-6">
                 Click one button to instantly highlight which companies are
                 paying to promote their jobs. See sponsored, promoted, and
                 featured listings at a glance.
               </p>
-              <ul className="space-y-2 text-gray-600">
+              <ul className="space-y-2 text-muted-foreground">
                 <li className="flex items-center">
                   <span className="text-green-500 mr-2">✓</span>
                   Color-coded sponsorship types
@@ -276,20 +279,20 @@ export default async function Home() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
-              <div className="bg-green-100 rounded-full w-12 h-12 flex items-center justify-center mb-4">
-                <span className="text-xl font-bold text-green-600">3</span>
+              <div className="bg-emerald-100 rounded-full w-12 h-12 flex items-center justify-center mb-4">
+                <span className="text-xl font-bold text-emerald-600">3</span>
               </div>
               <h3
-                className={`text-2xl font-bold text-gray-900 mb-4 ${playfair.className}`}
+                className={`text-2xl font-bold text-foreground mb-4 ${playfair.className}`}
               >
                 Track Your Applications
               </h3>
-              <p className="text-lg text-gray-600 mb-6">
+              <p className="text-lg text-muted-foreground mb-6">
                 Automatically sync discovered jobs to your personal dashboard.
                 Track application status, interview dates, and follow-ups all in
                 one place.
               </p>
-              <ul className="space-y-2 text-gray-600">
+              <ul className="space-y-2 text-muted-foreground">
                 <li className="flex items-center">
                   <span className="text-green-500 mr-2">✓</span>
                   Automatic job syncing
@@ -314,19 +317,19 @@ export default async function Home() {
                 <CardContent>
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Interested</span>
+                      <span className="text-sm text-muted-foreground">Interested</span>
                       <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
                         12
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Applied</span>
+                      <span className="text-sm text-muted-foreground">Applied</span>
                       <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">
                         8
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">
+                      <span className="text-sm text-muted-foreground">
                         Interviewing
                       </span>
                       <span className="bg-secondary/20 text-secondary text-xs px-2 py-1 rounded-full">
@@ -334,7 +337,7 @@ export default async function Home() {
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Offered</span>
+                      <span className="text-sm text-muted-foreground">Offered</span>
                       <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
                         1
                       </span>
@@ -348,11 +351,11 @@ export default async function Home() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section id="features" className="py-20 bg-muted/30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 safe-area-inset-left safe-area-inset-right">
           <div className="text-center mb-16">
             <h2
-              className={`text-3xl font-bold text-gray-900 sm:text-4xl ${playfair.className}`}
+              className={`text-3xl font-bold text-foreground sm:text-4xl ${playfair.className}`}
             >
               Everything You Need to Land Your Dream Job
             </h2>
@@ -362,7 +365,7 @@ export default async function Home() {
             <Card className="group hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
               <CardHeader>
                 <div className="bg-primary/10 rounded-lg w-12 h-12 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <span className="text-2xl">🎯</span>
+                  <span className="text-2xl font-bold text-primary">📍</span>
                 </div>
                 <CardTitle
                   className={`group-hover:text-primary transition-colors ${playfair.className}`}
@@ -371,7 +374,7 @@ export default async function Home() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600">
+                <p className="text-muted-foreground">
                   Our algorithm identifies sponsored companies across all major
                   job sites with fuzzy matching and alias support.
                 </p>
@@ -380,17 +383,17 @@ export default async function Home() {
 
             <Card className="group hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
               <CardHeader>
-                <div className="bg-green-100 rounded-lg w-12 h-12 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <span className="text-2xl">📊</span>
+                <div className="bg-emerald-100 rounded-lg w-12 h-12 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <span className="text-2xl font-bold text-amber-500">📈</span>
                 </div>
                 <CardTitle
-                  className={`group-hover:text-green-600 transition-colors ${playfair.className}`}
+                  className={`group-hover:text-emerald-600 transition-colors ${playfair.className}`}
                 >
                   Application Analytics
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600">
+                <p className="text-muted-foreground">
                   Track your job search progress with detailed analytics and
                   insights into your application success rates.
                 </p>
@@ -400,7 +403,7 @@ export default async function Home() {
             <Card className="group hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
               <CardHeader>
                 <div className="bg-secondary/20 rounded-lg w-12 h-12 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <span className="text-2xl">🔄</span>
+                  <span className="text-2xl font-bold text-violet-500">🔄</span>
                 </div>
                 <CardTitle
                   className={`group-hover:text-secondary transition-colors ${playfair.className}`}
@@ -409,7 +412,7 @@ export default async function Home() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600">
+                <p className="text-muted-foreground">
                   Your data syncs instantly across all devices. Access your job
                   search from anywhere, anytime.
                 </p>
@@ -418,17 +421,17 @@ export default async function Home() {
 
             <Card className="group hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
               <CardHeader>
-                <div className="bg-orange-100 rounded-lg w-12 h-12 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <div className="bg-amber-100 rounded-lg w-12 h-12 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                   <span className="text-2xl">🏢</span>
                 </div>
                 <CardTitle
-                  className={`group-hover:text-orange-600 transition-colors ${playfair.className}`}
+                  className={`group-hover:text-amber-600 transition-colors ${playfair.className}`}
                 >
                   Company Insights
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600">
+                <p className="text-muted-foreground">
                   Learn which companies are actively investing in hiring and
                   prioritize your applications accordingly.
                 </p>
@@ -437,17 +440,17 @@ export default async function Home() {
 
             <Card className="group hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
               <CardHeader>
-                <div className="bg-blue-100 rounded-lg w-12 h-12 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <span className="text-2xl">🔒</span>
+                <div className="bg-sky-100 rounded-lg w-12 h-12 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <span className="text-2xl font-bold text-emerald-500">🔒</span>
                 </div>
                 <CardTitle
-                  className={`group-hover:text-blue-600 transition-colors ${playfair.className}`}
+                  className={`group-hover:text-sky-600 transition-colors ${playfair.className}`}
                 >
                   Privacy First
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600">
+                <p className="text-muted-foreground">
                   Your job search data is private and secure. We never share
                   your information with employers or third parties.
                 </p>
@@ -456,17 +459,17 @@ export default async function Home() {
 
             <Card className="group hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
               <CardHeader>
-                <div className="bg-yellow-100 rounded-lg w-12 h-12 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <div className="bg-amber-100 rounded-lg w-12 h-12 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                   <span className="text-2xl">⚡</span>
                 </div>
                 <CardTitle
-                  className={`group-hover:text-yellow-600 transition-colors ${playfair.className}`}
+                  className={`group-hover:text-amber-600 transition-colors ${playfair.className}`}
                 >
                   Lightning Fast
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600">
+                <p className="text-muted-foreground">
                   Lightweight extension that doesn&apos;t slow down your
                   browsing. Get insights instantly with one click.
                 </p>
@@ -486,13 +489,13 @@ export default async function Home() {
 
       {/* CTA Section */}
       <section className="py-20 bg-secondary">
-        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8 safe-area-inset-left safe-area-inset-right">
           <h2
-            className={`text-3xl font-bold text-gray-800 sm:text-4xl ${playfair.className}`}
+            className={`text-3xl font-bold text-foreground sm:text-4xl ${playfair.className}`}
           >
             Ready to Supercharge Your Job Search?
           </h2>
-          <p className="mt-4 text-xl text-gray-800">
+          <p className="mt-4 text-xl text-foreground">
             Join thousands of job seekers who are already using HireAll to land
             better opportunities faster.
           </p>
@@ -501,7 +504,7 @@ export default async function Home() {
               <Button
                 asChild
                 size="lg"
-                className="text-lg px-8 py-6 bg-white text-primary hover:bg-gray-100"
+                className="text-lg px-8 py-6 bg-white text-primary hover:bg-muted/50"
               >
                 <Link href="/dashboard">Go to Dashboard</Link>
               </Button>
@@ -509,13 +512,13 @@ export default async function Home() {
               <Button
                 asChild
                 size="lg"
-                className="text-lg px-8 py-6 bg-white text-primary hover:bg-gray-100"
+                className="text-lg px-8 py-6 bg-white text-primary hover:bg-muted/50"
               >
                 <Link href="/sign-up">Start Free Today</Link>
               </Button>
             )}
           </div>
-          <p className="mt-4 text-sm text-gray-500  ">
+          <p className="mt-4 text-sm text-muted-foreground">
             No credit card required • Free forever • 2-minute setup
           </p>
         </div>

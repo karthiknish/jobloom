@@ -132,12 +132,12 @@ export default async function PublicPortfolioPage({ params }: Props) {
               {Object.entries(portfolioData.socialLinks).map(([key, value]) => {
                 if (!value) return null;
                 const icons: Record<string, string> = {
-                  linkedin: '💼',
-                  github: '🐙',
-                  twitter: '🐦',
-                  instagram: '📷',
-                  youtube: '📺',
-                  website: '🌐'
+                  linkedin: "linkedin",
+                  github: "github",
+                  twitter: "twitter",
+                  instagram: "instagram",
+                  youtube: "youtube",
+                  website: "website",
                 };
                 return (
                   <a

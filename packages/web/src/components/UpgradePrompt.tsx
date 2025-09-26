@@ -21,23 +21,23 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { SUBSCRIPTION_LIMITS } from "@/types/api";
 import Link from "next/link";
 
-// Helper to get icon component by emoji
-const getIcon = (emoji: string) => {
+// Helper to get icon component by name
+const getIcon = (iconName: string) => {
   const icons: Record<string, any> = {
-    "📊": BarChart3,
-    "🤖": Bot,
-    "⚡": Zap,
-    "🔔": Bell,
-    "📄": FileText,
-    "🎯": Target,
-    "📈": TrendingUp,
-    "💡": Lightbulb,
-    "💾": Save,
-    "✨": Sparkles,
-    "👥": Users,
-    "📝": FileCheck,
+    "bar-chart": BarChart3,
+    bot: Bot,
+    zap: Zap,
+    bell: Bell,
+    "file-text": FileText,
+    target: Target,
+    "trending-up": TrendingUp,
+    lightbulb: Lightbulb,
+    save: Save,
+    sparkles: Sparkles,
+    users: Users,
+    "file-check": FileCheck,
   };
-  return icons[emoji] || FileText;
+  return icons[iconName] || FileText;
 };
 
 const FEATURES = [
@@ -45,7 +45,7 @@ const FEATURES = [
     title: "Advanced Analytics",
     description:
       "Get detailed insights into your job search progress and success rates",
-    icon: "📊",
+    icon: "bar-chart",
   },
   {
     title: "AI-Powered Recommendations",
@@ -92,7 +92,7 @@ export function UpgradePrompt({ feature }: UpgradePromptProps) {
             {
               title: "Industry-Specific Advice",
               description: "Tailored recommendations for your target industry",
-              icon: "🎯",
+              icon: "target",
             },
           ],
         };
@@ -106,13 +106,13 @@ export function UpgradePrompt({ feature }: UpgradePromptProps) {
               title: "Detailed Analytics Dashboard",
               description:
                 "Track application success rates, response times, and trends",
-              icon: "📊",
+              icon: "bar-chart",
             },
             {
               title: "Custom Reports",
               description:
                 "Generate personalized reports on your job search progress",
-              icon: "📈",
+              icon: "trending-up",
             },
             {
               title: "Performance Insights",
@@ -168,7 +168,7 @@ export function UpgradePrompt({ feature }: UpgradePromptProps) {
               title: "Resume Reviews",
               description:
                 "Professional resume reviews and optimization advice",
-              icon: "📝",
+              icon: "file-check",
             },
           ],
         };
@@ -188,7 +188,7 @@ export function UpgradePrompt({ feature }: UpgradePromptProps) {
               title: "Smart Filtering",
               description:
                 "AI-powered filtering to surface the best opportunities",
-              icon: "🎯",
+              icon: "target",
             },
             {
               title: "Real-time Notifications",
@@ -262,7 +262,7 @@ export function UpgradePrompt({ feature }: UpgradePromptProps) {
                     className="bg-gradient-to-r from-primary to-secondary text-white font-semibold py-6 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 text-lg"
                     size="lg"
                   >
-                    {isHovered ? "🚀 Upgrade Now" : "🌟 Upgrade to Premium"}
+                    {isHovered ? "Upgrade Now" : "Upgrade to Premium"}
                   </Button>
                 </Link>
               </motion.div>

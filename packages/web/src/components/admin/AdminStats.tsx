@@ -13,7 +13,7 @@ export function AdminStats({ stats }: AdminStatsProps) {
         <CardContent className="p-5">
           <div className="flex items-center">
             <div className="flex-shrink-0 bg-blue-100 rounded-lg p-3">
-              <span className="text-2xl">🎯</span>
+              <span className="text-2xl">📍</span>
             </div>
             <div className="ml-5 w-0 flex-1">
               <dl>
@@ -33,7 +33,7 @@ export function AdminStats({ stats }: AdminStatsProps) {
         <CardContent className="p-5">
           <div className="flex items-center">
             <div className="flex-shrink-0 bg-primary/10 rounded-lg p-3">
-              <span className="text-2xl">🌐</span>
+              <span className="text-2xl">🔗</span>
             </div>
             <div className="ml-5 w-0 flex-1">
               <dl>
@@ -53,7 +53,7 @@ export function AdminStats({ stats }: AdminStatsProps) {
         <CardContent className="p-5">
           <div className="flex items-center">
             <div className="flex-shrink-0 bg-secondary/20 rounded-lg p-3">
-              <span className="text-2xl">📊</span>
+              <span className="text-2xl">📈</span>
             </div>
             <div className="ml-5 w-0 flex-1">
               <dl>

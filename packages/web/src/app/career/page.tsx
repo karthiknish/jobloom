@@ -46,7 +46,8 @@ const careerStats = {
     {
       id: "1",
       title: "Land a Senior Developer Role",
-      description: "Achieve senior-level position with leadership responsibilities",
+      description:
+        "Achieve senior-level position with leadership responsibilities",
       progress: 75,
       deadline: "2024-12-31",
       status: "in-progress",
@@ -87,7 +88,7 @@ const careerStats = {
       title: "First Interview",
       description: "Scheduled your first technical interview",
       date: "2024-01-15",
-      icon: "🎯",
+      icon: "target",
     },
     {
       id: "2",
@@ -101,19 +102,19 @@ const careerStats = {
       title: "Skill Milestone",
       description: "Reached 80% proficiency in React",
       date: "2024-03-10",
-      icon: "🚀",
+      icon: "rocket",
     },
   ],
 };
 
-// Helper to get icon component by emoji
-const getAchievementIcon = (emoji: string) => {
+// Helper to get icon component by name
+const getAchievementIcon = (iconName: string) => {
   const icons: Record<string, any> = {
-    "🎯": Target,
-    "🎉": PartyPopper,
-    "🚀": Rocket,
+    target: Target,
+    "party-popper": PartyPopper,
+    rocket: Rocket,
   };
-  return icons[emoji] || Award;
+  return icons[iconName] || Award;
 };
 
 const motivationalQuotes = [

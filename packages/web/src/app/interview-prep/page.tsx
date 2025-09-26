@@ -60,42 +60,47 @@ const defaultQuestions: Record<string, InterviewQuestion[]> = {
 const interviewTips = [
   {
     title: "Research the Company",
-    description: "Spend time learning about the company's culture, values, recent news, and products.",
+    description:
+      "Spend time learning about the company's culture, values, recent news, and products.",
     icon: "🏢",
   },
   {
     title: "Prepare Your Stories",
-    description: "Have 3-5 stories ready that demonstrate your skills and experiences using the STAR method.",
-    icon: "📚",
+    description:
+      "Have 3-5 stories ready that demonstrate your skills and experiences using the STAR method.",
+    icon: "book-open",
   },
   {
     title: "Practice Common Questions",
-    description: "Prepare answers for behavioral, situational, and technical questions relevant to your role.",
-    icon: "🎯",
+    description:
+      "Prepare answers for behavioral, situational, and technical questions relevant to your role.",
+    icon: "target",
   },
   {
     title: "Prepare Questions for Interviewer",
-    description: "Have thoughtful questions ready that show your interest in the role and company.",
-    icon: "❓",
+    description:
+      "Have thoughtful questions ready that show your interest in the role and company.",
+    icon: "help-circle",
   },
   {
     title: "Follow Up",
-    description: "Send a thank-you email within 24 hours, reiterating your interest and key points.",
-    icon: "📧",
+    description:
+      "Send a thank-you email within 24 hours, reiterating your interest and key points.",
+    icon: "mail",
   },
 ];
 
-// Helper to get icon component by emoji
-const getInterviewTipIcon = (emoji: string) => {
+// Helper to get icon component by name
+const getInterviewTipIcon = (iconName: string) => {
   const icons: Record<string, any> = {
-    "💼": Briefcase,
-    "🎯": Target,
-    "📝": BookOpen,
-    "⏰": Clock,
-    "📧": Mail,
-    "❓": HelpCircle,
+    briefcase: Briefcase,
+    target: Target,
+    "book-open": BookOpen,
+    clock: Clock,
+    mail: Mail,
+    "help-circle": HelpCircle,
   };
-  return icons[emoji] || MessageSquare;
+  return icons[iconName] || MessageSquare;
 };
 
 export default function InterviewPrepPage() {

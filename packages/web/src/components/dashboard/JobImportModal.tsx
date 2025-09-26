@@ -291,7 +291,7 @@ export function JobImportModal({
             <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
               <div className="flex">
                 <div className="flex-shrink-0">
-                  <span className="text-yellow-500">⚠️</span>
+                  <span className="text-yellow-500">⚠</span>
                 </div>
                 <div className="ml-3">
                   <h3 className="text-sm font-medium text-yellow-800">
