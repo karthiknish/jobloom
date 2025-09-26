@@ -19,111 +19,56 @@ export default async function Home() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-primary/5 via-white to-secondary/5 overflow-hidden pt-20">
-        {/* Enhanced animated background elements */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-primary/60 to-primary/20 rounded-full mix-blend-multiply filter blur-3xl animate-blob opacity-70"></div>
-          <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-tr from-secondary/40 to-primary/30 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000 opacity-60"></div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-gradient-to-r from-primary/20 to-secondary/30 rounded-full mix-blend-multiply filter blur-2xl animate-blob animation-delay-4000 opacity-50"></div>
+      <section className="relative bg-gradient-to-br from-primary/5 via-white to-secondary/5 overflow-hidden pt-16">
+        {/* Animated background elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none z-10">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/80 rounded-full mix-blend-multiply filter blur-xl animate-blob"></div>
 
-          {/* Additional floating elements */}
-          <div className="absolute top-20 left-20 w-4 h-4 bg-primary/40 rounded-full animate-pulse"></div>
-          <div className="absolute bottom-32 right-32 w-6 h-6 bg-secondary/50 rounded-full animate-pulse animation-delay-1000"></div>
-          <div className="absolute top-1/3 right-20 w-3 h-3 bg-primary/30 rounded-full animate-pulse animation-delay-2000"></div>
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/50 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
+
+          <div className="absolute top-40 left-40 w-80 h-80 bg-primary/30 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
         </div>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32 ">
           <div className="text-center">
-            {/* Social Proof Badge */}
-            <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm border border-primary/20 rounded-full px-4 py-2 mb-8 shadow-sm hover-lift animate-slide-up">
-              <div className="flex -space-x-2">
-                <div className="w-6 h-6 bg-gradient-to-r from-primary to-secondary rounded-full flex items-center justify-center text-xs font-bold text-white animate-float">J</div>
-                <div className="w-6 h-6 bg-gradient-to-r from-secondary to-primary rounded-full flex items-center justify-center text-xs font-bold text-white animate-float animation-delay-200">B</div>
-                <div className="w-6 h-6 bg-gradient-to-r from-primary/80 to-secondary/80 rounded-full flex items-center justify-center text-xs font-bold text-white animate-float animation-delay-400">L</div>
-              </div>
-              <span className="text-sm text-gray-700 font-medium">Trusted by 10,000+ job seekers</span>
-              <div className="flex text-yellow-400 ml-1">
-                {'★'.repeat(5)}
-              </div>
-            </div>
-
             <h1
-              className={`text-5xl font-bold text-gray-900 sm:text-6xl lg:text-7xl animate-fade-in-up leading-tight ${playfair.className}`}
+              className={`text-4xl font-extrabold text-gray-900 sm:text-5xl lg:text-6xl animate-fade-in-up ${playfair.className}`}
             >
               Stop Missing
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary via-secondary to-primary animate-gradient leading-normal">
+              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary animate-gradient z-10 leading-normal">
                 Sponsored Job Opportunities
               </span>
             </h1>
-
-            <p className="mt-8 max-w-4xl mx-auto text-xl text-gray-600 leading-relaxed sm:text-2xl">
-              Jobloom reveals which companies are paying to promote their jobs,
+            <p className="mt-6 max-w-3xl mx-auto text-xl text-gray-600 leading-relaxed">
+              HireAll reveals which companies are paying to promote their jobs,
               giving you the inside track on who&apos;s actively hiring. Track
               your applications and never lose sight of your job search
               progress.
             </p>
-
-            {/* Key Statistics */}
-            <div className="mt-12 grid grid-cols-3 gap-8 max-w-2xl mx-auto">
-              <div className="text-center hover-lift animate-bounce-in animation-delay-100">
-                <div className="text-3xl font-bold text-primary mb-1 animate-float">50K+</div>
-                <div className="text-sm text-gray-600">Jobs Analyzed</div>
-              </div>
-              <div className="text-center hover-lift animate-bounce-in animation-delay-200">
-                <div className="text-3xl font-bold text-primary mb-1 animate-float animation-delay-200">500+</div>
-                <div className="text-sm text-gray-600">Companies Tracked</div>
-              </div>
-              <div className="text-center hover-lift animate-bounce-in animation-delay-300">
-                <div className="text-3xl font-bold text-primary mb-1 animate-float animation-delay-400">95%</div>
-                <div className="text-sm text-gray-600">Accuracy Rate</div>
-              </div>
-            </div>
-
-            <div className="mt-12 flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
               {userId ? (
-                <Button asChild size="lg" className="text-lg px-10 py-6 h-auto bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200">
-                  <Link href="/dashboard" className="flex items-center gap-2">
-                    <span>Go to Dashboard</span>
-                    <span className="text-xl">→</span>
-                  </Link>
+                <Button asChild size="lg" className="text-lg px-8 py-6">
+                  <Link href="/dashboard">Go to Dashboard</Link>
                 </Button>
               ) : (
                 <>
-                  <Button asChild size="lg" className="text-lg px-10 py-6 h-auto bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200">
-                    <Link href="/sign-up" className="flex items-center gap-2">
-                      <span>Start Free Today</span>
-                      <span className="text-xl">⚡</span>
-                    </Link>
+                  <Button asChild size="lg" className="text-lg px-8 py-6">
+                    <Link href="/sign-up">Start Free Today</Link>
                   </Button>
                   <Button
                     asChild
                     size="lg"
                     variant="outline"
-                    className="text-lg px-10 py-6 h-auto border-2 border-primary/30 hover:border-primary/60 hover:bg-primary/5 shadow-sm hover:shadow-md transform hover:scale-105 transition-all duration-200"
+                    className="text-lg px-8 py-6"
                   >
-                    <a href="#how-it-works" className="flex items-center gap-2">
-                      <span>See How It Works</span>
-                      <span className="text-xl">👀</span>
-                    </a>
+                    <a href="#how-it-works">See How It Works</a>
                   </Button>
                 </>
               )}
             </div>
-
-            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-6 text-sm text-gray-500">
-              <div className="flex items-center gap-2 animate-slide-up animation-delay-100">
-                <span className="text-green-500 animate-bounce-in animation-delay-200">✓</span>
-                <span>Free forever</span>
-              </div>
-              <div className="flex items-center gap-2 animate-slide-up animation-delay-200">
-                <span className="text-green-500 animate-bounce-in animation-delay-300">✓</span>
-                <span>No credit card required</span>
-              </div>
-              <div className="flex items-center gap-2 animate-slide-up animation-delay-300">
-                <span className="text-green-500 animate-bounce-in animation-delay-400">✓</span>
-                <span>Chrome extension included</span>
-              </div>
-            </div>
+            <p className="mt-4 text-sm text-gray-500">
+              Free forever • No credit card required • Chrome extension included
+            </p>
           </div>
         </div>
       </section>
@@ -144,7 +89,7 @@ export default async function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Card className="text-center">
+            <Card className="text-center shadow-lg hover:shadow-xl transition-shadow duration-300">
               <CardHeader>
                 <div className="bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                   <span className="text-2xl">😵‍💫</span>
@@ -161,7 +106,7 @@ export default async function Home() {
               </CardContent>
             </Card>
 
-            <Card className="text-center">
+            <Card className="text-center shadow-lg hover:shadow-xl transition-shadow duration-300">
               <CardHeader>
                 <div className="bg-yellow-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                   <span className="text-2xl">📊</span>
@@ -178,7 +123,7 @@ export default async function Home() {
               </CardContent>
             </Card>
 
-            <Card className="text-center">
+            <Card className="text-center shadow-lg hover:shadow-xl transition-shadow duration-300">
               <CardHeader>
                 <div className="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                   <span className="text-2xl">⏰</span>
@@ -205,7 +150,7 @@ export default async function Home() {
             <h2
               className={`text-3xl font-bold text-gray-900 sm:text-4xl font-safe ${playfair.className}`}
             >
-              How Jobloom Works
+              How HireAll Works
             </h2>
 
             <p className="mt-4 text-xl text-gray-600 max-w-3xl mx-auto">
@@ -244,7 +189,7 @@ export default async function Home() {
               </ul>
             </div>
             <div className="bg-gradient-to-br from-primary/5 to-secondary/5 rounded-2xl p-8">
-              <Card>
+              <Card className="shadow-lg">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardDescription className="text-sm font-medium text-gray-500">
                     Chrome Extension
@@ -264,7 +209,7 @@ export default async function Home() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-20">
             <div className="order-2 lg:order-1">
-              <Card>
+              <Card className="shadow-lg">
                 <CardContent className="p-6">
                   <div className="space-y-4">
                     <div className="border-l-4 border-orange-400 bg-orange-50 p-4 rounded-r-lg">
@@ -360,7 +305,7 @@ export default async function Home() {
               </ul>
             </div>
             <div className="bg-gradient-to-br from-green-50 to-blue-50 rounded-2xl p-8">
-              <Card>
+              <Card className="shadow-lg">
                 <CardHeader>
                   <CardTitle className={playfair.className}>
                     Application Pipeline
@@ -548,7 +493,7 @@ export default async function Home() {
             Ready to Supercharge Your Job Search?
           </h2>
           <p className="mt-4 text-xl text-gray-800">
-            Join thousands of job seekers who are already using Jobloom to land
+            Join thousands of job seekers who are already using HireAll to land
             better opportunities faster.
           </p>
           <div className="mt-8">

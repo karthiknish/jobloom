@@ -1,0 +1,2126 @@
+[
+  {
+    "code": "1111",
+    "jobType": "Chief executives and senior officials",
+    "relatedTitles": ["Chairpersons", "Chief executives", "Diplomats and foreign office officials", "Senior public service officials"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "1112",
+    "jobType": "Elected officers and representatives",
+    "relatedTitles": ["Assembly members and Members of Parliament", "Councillors"],
+    "eligibility": "Ineligible"
+  },
+  {
+    "code": "1121",
+    "jobType": "Production managers and directors in manufacturing",
+    "relatedTitles": ["Production managers and directors in manufacturing"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "1131",
+    "jobType": "Financial managers and directors",
+    "relatedTitles": ["Bank, building society and post office managers", "Company secretaries and finance managers and directors"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "1136",
+    "jobType": "Human resource managers and directors",
+    "relatedTitles": ["Employee relations managers", "Equality, diversity and inclusion managers", "Learning and development managers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "1137",
+    "jobType": "Information technology directors",
+    "relatedTitles": ["Information security directors", "Information technology operations directors", "Information technology programme managers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "1162",
+    "jobType": "Senior police officers",
+    "relatedTitles": ["Chief, deputy chief and assistant chief constables", "Chief inspectors", "Chief superintendents"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2111",
+    "jobType": "Chemical scientists",
+    "relatedTitles": ["Analytical chemists", "Industrial chemists", "Organic chemists"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2112",
+    "jobType": "Biological scientists and biochemists",
+    "relatedTitles": ["Biochemists", "Biologists", "Microbiologists"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2113",
+    "jobType": "Physical scientists",
+    "relatedTitles": ["Astronomers", "Geologists", "Meteorologists"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2114",
+    "jobType": "Social and humanities scientists",
+    "relatedTitles": ["Anthropologists", "Economists", "Geographers", "Psychologists"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2119",
+    "jobType": "Natural and social science professionals not elsewhere classified",
+    "relatedTitles": ["Actuaries", "Statisticians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2121",
+    "jobType": "Civil engineers",
+    "relatedTitles": ["Civil engineers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2122",
+    "jobType": "Mechanical engineers",
+    "relatedTitles": ["Aeronautical engineers", "Automotive engineers", "Mechanical engineers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2123",
+    "jobType": "Electrical engineers",
+    "relatedTitles": ["Electrical engineers", "Electronics engineers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2124",
+    "jobType": "Electronics engineers",
+    "relatedTitles": ["Broadcast engineers", "Communications engineers", "Electronics engineers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2126",
+    "jobType": "Design and development engineers",
+    "relatedTitles": ["Design engineers", "Product development engineers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2127",
+    "jobType": "Production and process engineers",
+    "relatedTitles": ["Process engineers", "Production engineers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2129",
+    "jobType": "Engineering professionals not elsewhere classified",
+    "relatedTitles": ["Acoustics engineers", "Aerospace engineers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2133",
+    "jobType": "IT specialist managers",
+    "relatedTitles": ["IT project managers", "IT security managers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2134",
+    "jobType": "IT project managers",
+    "relatedTitles": ["IT project managers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2135",
+    "jobType": "IT business analysts, architects and systems designers",
+    "relatedTitles": ["Business analysts", "Systems analysts", "Systems architects"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2136",
+    "jobType": "Programmers and software development professionals",
+    "relatedTitles": ["Application developers", "Programmers", "Software developers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2137",
+    "jobType": "Web design and development professionals",
+    "relatedTitles": ["Web designers", "Web developers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2139",
+    "jobType": "Information technology and telecommunications professionals not elsewhere classified",
+    "relatedTitles": ["Database administrators", "IT consultants"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2141",
+    "jobType": "Quality control and planning engineers",
+    "relatedTitles": ["Quality assurance engineers", "Quality control engineers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2142",
+    "jobType": "Quality assurance and regulatory professionals",
+    "relatedTitles": ["Quality assurance managers", "Regulatory affairs specialists"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2150",
+    "jobType": "Research and development (R&D) managers",
+    "relatedTitles": ["R&D directors", "R&D managers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2211",
+    "jobType": "Medical practitioners",
+    "relatedTitles": ["Doctors", "General practitioners", "Medical practitioners"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2212",
+    "jobType": "Psychologists",
+    "relatedTitles": ["Clinical psychologists", "Counselling psychologists", "Educational psychologists"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2213",
+    "jobType": "Pharmacists",
+    "relatedTitles": ["Pharmacists"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2214",
+    "jobType": "Ophthalmic opticians",
+    "relatedTitles": ["Ophthalmic opticians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2215",
+    "jobType": "Dental practitioners",
+    "relatedTitles": ["Dentists", "Dental practitioners"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2216",
+    "jobType": "Veterinarians",
+    "relatedTitles": ["Veterinarians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2217",
+    "jobType": "Medical radiographers",
+    "relatedTitles": ["Medical radiographers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2218",
+    "jobType": "Podiatrists",
+    "relatedTitles": ["Podiatrists"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2219",
+    "jobType": "Health professionals not elsewhere classified",
+    "relatedTitles": ["Audiologists", "Dietitians", "Physiotherapists"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2221",
+    "jobType": "Nurses",
+    "relatedTitles": ["Nurses"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2222",
+    "jobType": "Midwives",
+    "relatedTitles": ["Midwives"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2223",
+    "jobType": "Nursing and midwifery associate professionals",
+    "relatedTitles": ["Nursing associates", "Healthcare assistants"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "2229",
+    "jobType": "Nursing and midwifery professionals not elsewhere classified",
+    "relatedTitles": ["Advanced nurse practitioners", "Clinical nurse specialists"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2231",
+    "jobType": "Higher education teaching professionals",
+    "relatedTitles": ["University lecturers", "Professors"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2311",
+    "jobType": "Higher education teaching professionals",
+    "relatedTitles": ["Further education lecturers", "Higher education lecturers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2312",
+    "jobType": "Further education teaching professionals",
+    "relatedTitles": ["Further education lecturers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2314",
+    "jobType": "Secondary education teaching professionals",
+    "relatedTitles": ["Secondary school teachers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2315",
+    "jobType": "Primary and nursery education teaching professionals",
+    "relatedTitles": ["Primary school teachers", "Nursery teachers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2316",
+    "jobType": "Special needs education teaching professionals",
+    "relatedTitles": ["Special educational needs teachers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2317",
+    "jobType": "Senior professionals of educational establishments",
+    "relatedTitles": ["Headteachers", "Principals"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2318",
+    "jobType": "Education advisers and school inspectors",
+    "relatedTitles": ["Education advisers", "School inspectors"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2319",
+    "jobType": "Teaching and other educational professionals not elsewhere classified",
+    "relatedTitles": ["Education consultants", "Teaching professionals"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2413",
+    "jobType": "Financial accounts managers",
+    "relatedTitles": ["Financial accounts managers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2419",
+    "jobType": "Business services and administration managers not elsewhere classified",
+    "relatedTitles": ["Business services managers", "Office managers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2423",
+    "jobType": "Marketing associate professionals",
+    "relatedTitles": ["Marketing executives", "Marketing specialists"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2424",
+    "jobType": "Business and financial project management professionals",
+    "relatedTitles": ["Project managers", "Business analysts"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2425",
+    "jobType": "Business and financial project management professionals",
+    "relatedTitles": ["Quantity surveyors", "Business analysts"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2426",
+    "jobType": "Business and financial project management professionals",
+    "relatedTitles": ["Management consultants", "Business consultants"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2431",
+    "jobType": "Advertising and marketing associate professionals",
+    "relatedTitles": ["Advertising account executives", "Marketing executives"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2432",
+    "jobType": "Sales accounts and business development managers",
+    "relatedTitles": ["Sales managers", "Business development managers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2433",
+    "jobType": "Conference and exhibition managers and organisers",
+    "relatedTitles": ["Conference managers", "Event managers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2434",
+    "jobType": "Public relations professionals",
+    "relatedTitles": ["Public relations officers", "Communications specialists"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2435",
+    "jobType": "Technical and wholesale sales representatives",
+    "relatedTitles": ["Technical sales representatives", "Wholesale sales representatives"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2442",
+    "jobType": "Librarians",
+    "relatedTitles": ["Librarians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2443",
+    "jobType": "Quality assurance and regulatory professionals",
+    "relatedTitles": ["Quality assurance managers", "Regulatory affairs officers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2444",
+    "jobType": "Barristers and judges",
+    "relatedTitles": ["Barristers", "Judges"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "2449",
+    "jobType": "Business, research and administrative professionals not elsewhere classified",
+    "relatedTitles": ["Business analysts", "Research officers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3111",
+    "jobType": "Laboratory technicians",
+    "relatedTitles": ["Laboratory technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3112",
+    "jobType": "Electrical and electronics technicians",
+    "relatedTitles": ["Electrical technicians", "Electronics technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3113",
+    "jobType": "Engineering technicians",
+    "relatedTitles": ["Engineering technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3114",
+    "jobType": "Building and civil engineering technicians",
+    "relatedTitles": ["Building technicians", "Civil engineering technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3119",
+    "jobType": "Science, engineering and production technicians not elsewhere classified",
+    "relatedTitles": ["Science technicians", "Production technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3121",
+    "jobType": "Architectural technologists and town planning officers",
+    "relatedTitles": ["Architectural technologists", "Town planning officers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3122",
+    "jobType": "Draughtspersons and building inspectors",
+    "relatedTitles": ["Draughtspersons", "Building inspectors"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3131",
+    "jobType": "IT operations technicians",
+    "relatedTitles": ["IT support technicians", "IT operations technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3132",
+    "jobType": "IT user support technicians",
+    "relatedTitles": ["IT support technicians", "Help desk technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3213",
+    "jobType": "Paramedics",
+    "relatedTitles": ["Paramedics"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3216",
+    "jobType": "Dispensing opticians",
+    "relatedTitles": ["Dispensing opticians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3217",
+    "jobType": "Pharmaceutical technicians",
+    "relatedTitles": ["Pharmaceutical technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3218",
+    "jobType": "Medical and dental technicians",
+    "relatedTitles": ["Medical laboratory technicians", "Dental technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3219",
+    "jobType": "Health associate professionals not elsewhere classified",
+    "relatedTitles": ["Medical technicians", "Health associate professionals"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3311",
+    "jobType": "Nurses",
+    "relatedTitles": ["Nurses"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3312",
+    "jobType": "Midwives",
+    "relatedTitles": ["Midwives"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3313",
+    "jobType": "Paramedics",
+    "relatedTitles": ["Paramedics"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3314",
+    "jobType": "Houseparents and residential wardens",
+    "relatedTitles": ["Houseparents", "Residential wardens"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3319",
+    "jobType": "Welfare and housing associate professionals not elsewhere classified",
+    "relatedTitles": ["Welfare officers", "Housing officers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3411",
+    "jobType": "Artists",
+    "relatedTitles": ["Artists"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3412",
+    "jobType": "Authors, writers and translators",
+    "relatedTitles": ["Authors", "Writers", "Translators"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3413",
+    "jobType": "Actors, entertainers and presenters",
+    "relatedTitles": ["Actors", "Entertainers", "Presenters"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3414",
+    "jobType": "Dancers and choreographers",
+    "relatedTitles": ["Dancers", "Choreographers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3415",
+    "jobType": "Musicians",
+    "relatedTitles": ["Musicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3416",
+    "jobType": "Arts officers, producers and directors",
+    "relatedTitles": ["Arts officers", "Producers", "Directors"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3421",
+    "jobType": "Graphic designers",
+    "relatedTitles": ["Graphic designers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3422",
+    "jobType": "Product, clothing and related designers",
+    "relatedTitles": ["Product designers", "Fashion designers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3431",
+    "jobType": "Sports players",
+    "relatedTitles": ["Sports players"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3432",
+    "jobType": "Sports coaches, instructors and officials",
+    "relatedTitles": ["Sports coaches", "Sports instructors"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3433",
+    "jobType": "Fitness instructors",
+    "relatedTitles": ["Fitness instructors"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3434",
+    "jobType": "Sports and fitness occupations",
+    "relatedTitles": ["Sports administrators", "Fitness centre managers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3511",
+    "jobType": "Air traffic controllers",
+    "relatedTitles": ["Air traffic controllers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3512",
+    "jobType": "Aircraft pilots and flight engineers",
+    "relatedTitles": ["Aircraft pilots", "Flight engineers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3520",
+    "jobType": "Shipping officers",
+    "relatedTitles": ["Shipping officers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3531",
+    "jobType": "Broadcasting and audio-visual technicians",
+    "relatedTitles": ["Broadcasting technicians", "Audio-visual technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3532",
+    "jobType": "Broadcasting and audio-visual technicians",
+    "relatedTitles": ["Broadcasting technicians", "Audio-visual technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3533",
+    "jobType": "Telecommunications and broadcasting technicians",
+    "relatedTitles": ["Telecommunications technicians", "Broadcasting technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3534",
+    "jobType": "Telecommunications and broadcasting technicians",
+    "relatedTitles": ["Telecommunications technicians", "Broadcasting technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3535",
+    "jobType": "Telecommunications and broadcasting technicians",
+    "relatedTitles": ["Telecommunications technicians", "Broadcasting technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3536",
+    "jobType": "Telecommunications and broadcasting technicians",
+    "relatedTitles": ["Telecommunications technicians", "Broadcasting technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3537",
+    "jobType": "Telecommunications and broadcasting technicians",
+    "relatedTitles": ["Telecommunications technicians", "Broadcasting technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3538",
+    "jobType": "Telecommunications and broadcasting technicians",
+    "relatedTitles": ["Telecommunications technicians", "Broadcasting technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3539",
+    "jobType": "Telecommunications and broadcasting technicians",
+    "relatedTitles": ["Telecommunications technicians", "Broadcasting technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3541",
+    "jobType": "Broadcasting and audio-visual technicians",
+    "relatedTitles": ["Broadcasting technicians", "Audio-visual technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3542",
+    "jobType": "Broadcasting and audio-visual technicians",
+    "relatedTitles": ["Broadcasting technicians", "Audio-visual technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3543",
+    "jobType": "Telecommunications and broadcasting technicians",
+    "relatedTitles": ["Telecommunications technicians", "Broadcasting technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3544",
+    "jobType": "Telecommunications and broadcasting technicians",
+    "relatedTitles": ["Telecommunications technicians", "Broadcasting technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3545",
+    "jobType": "Telecommunications and broadcasting technicians",
+    "relatedTitles": ["Telecommunications technicians", "Broadcasting technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3546",
+    "jobType": "Telecommunications and broadcasting technicians",
+    "relatedTitles": ["Telecommunications technicians", "Broadcasting technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3547",
+    "jobType": "Telecommunications and broadcasting technicians",
+    "relatedTitles": ["Telecommunications technicians", "Broadcasting technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3548",
+    "jobType": "Telecommunications and broadcasting technicians",
+    "relatedTitles": ["Telecommunications technicians", "Broadcasting technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3549",
+    "jobType": "Telecommunications and broadcasting technicians",
+    "relatedTitles": ["Telecommunications technicians", "Broadcasting technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3550",
+    "jobType": "Telecommunications and broadcasting technicians",
+    "relatedTitles": ["Telecommunications technicians", "Broadcasting technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3561",
+    "jobType": "Broadcasting and audio-visual technicians",
+    "relatedTitles": ["Broadcasting technicians", "Audio-visual technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3562",
+    "jobType": "Broadcasting and audio-visual technicians",
+    "relatedTitles": ["Broadcasting technicians", "Audio-visual technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3563",
+    "jobType": "Telecommunications and broadcasting technicians",
+    "relatedTitles": ["Telecommunications technicians", "Broadcasting technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3564",
+    "jobType": "Telecommunications and broadcasting technicians",
+    "relatedTitles": ["Telecommunications technicians", "Broadcasting technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3565",
+    "jobType": "Telecommunications and broadcasting technicians",
+    "relatedTitles": ["Telecommunications technicians", "Broadcasting technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3566",
+    "jobType": "Telecommunications and broadcasting technicians",
+    "relatedTitles": ["Telecommunications technicians", "Broadcasting technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3567",
+    "jobType": "Telecommunications and broadcasting technicians",
+    "relatedTitles": ["Telecommunications technicians", "Broadcasting technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3568",
+    "jobType": "Telecommunications and broadcasting technicians",
+    "relatedTitles": ["Telecommunications technicians", "Broadcasting technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3569",
+    "jobType": "Telecommunications and broadcasting technicians",
+    "relatedTitles": ["Telecommunications technicians", "Broadcasting technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3570",
+    "jobType": "Telecommunications and broadcasting technicians",
+    "relatedTitles": ["Telecommunications technicians", "Broadcasting technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3581",
+    "jobType": "Broadcasting and audio-visual technicians",
+    "relatedTitles": ["Broadcasting technicians", "Audio-visual technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3582",
+    "jobType": "Broadcasting and audio-visual technicians",
+    "relatedTitles": ["Broadcasting technicians", "Audio-visual technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3583",
+    "jobType": "Telecommunications and broadcasting technicians",
+    "relatedTitles": ["Telecommunications technicians", "Broadcasting technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3584",
+    "jobType": "Telecommunications and broadcasting technicians",
+    "relatedTitles": ["Telecommunications technicians", "Broadcasting technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3585",
+    "jobType": "Telecommunications and broadcasting technicians",
+    "relatedTitles": ["Telecommunications technicians", "Broadcasting technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3586",
+    "jobType": "Telecommunications and broadcasting technicians",
+    "relatedTitles": ["Telecommunications technicians", "Broadcasting technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3587",
+    "jobType": "Telecommunications and broadcasting technicians",
+    "relatedTitles": ["Telecommunications technicians", "Broadcasting technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3588",
+    "jobType": "Telecommunications and broadcasting technicians",
+    "relatedTitles": ["Telecommunications technicians", "Broadcasting technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3589",
+    "jobType": "Telecommunications and broadcasting technicians",
+    "relatedTitles": ["Telecommunications technicians", "Broadcasting technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "3590",
+    "jobType": "Telecommunications and broadcasting technicians",
+    "relatedTitles": ["Telecommunications technicians", "Broadcasting technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "4111",
+    "jobType": "General office assistants/clerical",
+    "relatedTitles": ["Office assistants", "Clerical workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "4121",
+    "jobType": "Credit controllers",
+    "relatedTitles": ["Credit controllers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "4122",
+    "jobType": "Book-keepers, payroll managers and wages clerks",
+    "relatedTitles": ["Book-keepers", "Payroll managers", "Wages clerks"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "4123",
+    "jobType": "Bank and post office clerks",
+    "relatedTitles": ["Bank clerks", "Post office clerks"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "4124",
+    "jobType": "Finance officers and clerical",
+    "relatedTitles": ["Finance officers", "Finance clerks"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "4131",
+    "jobType": "Records clerks and assistants",
+    "relatedTitles": ["Records clerks", "Filing clerks"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "4132",
+    "jobType": "Pensions and insurance clerks and assistants",
+    "relatedTitles": ["Pensions clerks", "Insurance clerks"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "4133",
+    "jobType": "Stock control clerks and assistants",
+    "relatedTitles": ["Stock control clerks", "Inventory clerks"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "4134",
+    "jobType": "Transport and distribution clerks and assistants",
+    "relatedTitles": ["Transport clerks", "Distribution clerks"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "4135",
+    "jobType": "Library assistants/clerical",
+    "relatedTitles": ["Library assistants"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "4141",
+    "jobType": "General office assistants/clerical",
+    "relatedTitles": ["Office assistants", "Clerical workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "4151",
+    "jobType": "Sales administrators",
+    "relatedTitles": ["Sales administrators"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "4161",
+    "jobType": "Office managers and supervisors",
+    "relatedTitles": ["Office managers", "Office supervisors"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "4162",
+    "jobType": "Office managers and supervisors",
+    "relatedTitles": ["Office managers", "Office supervisors"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "4211",
+    "jobType": "Medical secretaries",
+    "relatedTitles": ["Medical secretaries"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "4212",
+    "jobType": "Legal secretaries",
+    "relatedTitles": ["Legal secretaries"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "4213",
+    "jobType": "School secretaries",
+    "relatedTitles": ["School secretaries"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "4214",
+    "jobType": "Company secretaries",
+    "relatedTitles": ["Company secretaries"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "4215",
+    "jobType": "Personal assistants and other secretaries",
+    "relatedTitles": ["Personal assistants", "Secretaries"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "4216",
+    "jobType": "Receptionists",
+    "relatedTitles": ["Receptionists"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "4217",
+    "jobType": "Typists and related keyboard occupations",
+    "relatedTitles": ["Typists", "Word processors"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "5111",
+    "jobType": "Farmers",
+    "relatedTitles": ["Farmers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "5112",
+    "jobType": "Horticultural trades",
+    "relatedTitles": ["Horticultural workers", "Gardeners"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "5113",
+    "jobType": "Gardeners and landscape gardeners",
+    "relatedTitles": ["Gardeners", "Landscape gardeners"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "5119",
+    "jobType": "Agricultural and related trades not elsewhere classified",
+    "relatedTitles": ["Agricultural workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "5211",
+    "jobType": "Smiths and forge workers",
+    "relatedTitles": ["Smiths", "Forge workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "5212",
+    "jobType": "Moulders, core makers and die casters",
+    "relatedTitles": ["Moulders", "Core makers", "Die casters"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "5213",
+    "jobType": "Sheet metal workers",
+    "relatedTitles": ["Sheet metal workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "5214",
+    "jobType": "Metal plate workers, and riveters",
+    "relatedTitles": ["Metal plate workers", "Riveters"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "5215",
+    "jobType": "Welding trades",
+    "relatedTitles": ["Welders"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "5216",
+    "jobType": "Pipe fitters",
+    "relatedTitles": ["Pipe fitters"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "5221",
+    "jobType": "Metal machining setters and setter-operators",
+    "relatedTitles": ["Metal machining setters", "CNC operators"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "5222",
+    "jobType": "Tool makers, tool fitters and markers-out",
+    "relatedTitles": ["Tool makers", "Tool fitters"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "5223",
+    "jobType": "Metal working production and maintenance fitters",
+    "relatedTitles": ["Metal working fitters", "Maintenance fitters"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "5224",
+    "jobType": "Precision instrument makers and repairers",
+    "relatedTitles": ["Precision instrument makers", "Instrument repairers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "5225",
+    "jobType": "Air-conditioning and refrigeration engineers",
+    "relatedTitles": ["Air-conditioning engineers", "Refrigeration engineers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "5226",
+    "jobType": "Electricians and electrical fitters",
+    "relatedTitles": ["Electricians", "Electrical fitters"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "5227",
+    "jobType": "Electronic engineers and technicians",
+    "relatedTitles": ["Electronic engineers", "Electronic technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "5231",
+    "jobType": "Vehicle technicians, mechanics and electricians",
+    "relatedTitles": ["Vehicle technicians", "Mechanics", "Auto electricians"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "5232",
+    "jobType": "Vehicle body builders and repairers",
+    "relatedTitles": ["Vehicle body builders", "Panel beaters"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "5233",
+    "jobType": "Vehicle paint technicians",
+    "relatedTitles": ["Vehicle paint technicians"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "5234",
+    "jobType": "Aircraft maintenance and related trades",
+    "relatedTitles": ["Aircraft maintenance engineers", "Avionics technicians"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "5235",
+    "jobType": "Rail and rolling stock builders and repairers",
+    "relatedTitles": ["Railway engineers", "Rolling stock repairers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "5236",
+    "jobType": "Marine and ship builders and repairers",
+    "relatedTitles": ["Shipbuilders", "Ship repairers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "5241",
+    "jobType": "Textile process operatives",
+    "relatedTitles": ["Textile process operatives"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "5242",
+    "jobType": "Textile, leather and related process operatives",
+    "relatedTitles": ["Textile operatives", "Leather process operatives"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "5243",
+    "jobType": "Footwear and leather working trades",
+    "relatedTitles": ["Shoemakers", "Leather workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "5244",
+    "jobType": "Upholsterers",
+    "relatedTitles": ["Upholsterers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "5245",
+    "jobType": "Pre-press technicians",
+    "relatedTitles": ["Pre-press technicians"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "5246",
+    "jobType": "Printers",
+    "relatedTitles": ["Printers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "5249",
+    "jobType": "Printing trades not elsewhere classified",
+    "relatedTitles": ["Printing technicians"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "5250",
+    "jobType": "Weavers and knitters",
+    "relatedTitles": ["Weavers", "Knitters"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "5311",
+    "jobType": "Glass and ceramics process operatives",
+    "relatedTitles": ["Glass process operatives", "Ceramics operatives"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "5312",
+    "jobType": "Glass and ceramics makers, decorators and finishers",
+    "relatedTitles": ["Glass makers", "Ceramics decorators"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "5313",
+    "jobType": "Furniture makers and other craft wood workers",
+    "relatedTitles": ["Furniture makers", "Wood workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "5314",
+    "jobType": "Other skilled trades not elsewhere classified",
+    "relatedTitles": ["Skilled trades workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "5315",
+    "jobType": "Food, drink and tobacco process operatives",
+    "relatedTitles": ["Food process operatives", "Drink process operatives"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "5316",
+    "jobType": "Food, drink and tobacco process operatives",
+    "relatedTitles": ["Food process operatives", "Drink process operatives"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "5319",
+    "jobType": "Other skilled trades not elsewhere classified",
+    "relatedTitles": ["Skilled trades workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "5321",
+    "jobType": "Assemblers and routine operatives",
+    "relatedTitles": ["Assemblers", "Routine operatives"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "5322",
+    "jobType": "Assemblers and routine operatives",
+    "relatedTitles": ["Assemblers", "Routine operatives"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "5323",
+    "jobType": "Assemblers and routine operatives",
+    "relatedTitles": ["Assemblers", "Routine operatives"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "5411",
+    "jobType": "Weighers, graders and sorters",
+    "relatedTitles": ["Weighers", "Graders", "Sorters"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "5412",
+    "jobType": "Weighers, graders and sorters",
+    "relatedTitles": ["Weighers", "Graders", "Sorters"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "5413",
+    "jobType": "Weighers, graders and sorters",
+    "relatedTitles": ["Weighers", "Graders", "Sorters"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "5414",
+    "jobType": "Weighers, graders and sorters",
+    "relatedTitles": ["Weighers", "Graders", "Sorters"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "5419",
+    "jobType": "Other elementary services occupations",
+    "relatedTitles": ["Elementary service workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "6111",
+    "jobType": "Farmers",
+    "relatedTitles": ["Farmers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "6112",
+    "jobType": "Horticultural trades",
+    "relatedTitles": ["Horticultural workers", "Gardeners"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "6113",
+    "jobType": "Gardeners and landscape gardeners",
+    "relatedTitles": ["Gardeners", "Landscape gardeners"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "6114",
+    "jobType": "Groundsmen and greenkeepers",
+    "relatedTitles": ["Groundsmen", "Greenkeepers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "6115",
+    "jobType": "Agricultural and related trades not elsewhere classified",
+    "relatedTitles": ["Agricultural workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "6116",
+    "jobType": "Agricultural and related trades not elsewhere classified",
+    "relatedTitles": ["Agricultural workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "6119",
+    "jobType": "Agricultural and related trades not elsewhere classified",
+    "relatedTitles": ["Agricultural workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "6121",
+    "jobType": "Nursery nurses and assistants",
+    "relatedTitles": ["Nursery nurses", "Nursery assistants"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "6122",
+    "jobType": "Childminders and related occupations",
+    "relatedTitles": ["Childminders", "Nannies"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "6123",
+    "jobType": "Playworkers",
+    "relatedTitles": ["Playworkers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "6124",
+    "jobType": "Sports and leisure assistants",
+    "relatedTitles": ["Sports assistants", "Leisure assistants"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "6125",
+    "jobType": "Teaching assistants",
+    "relatedTitles": ["Teaching assistants"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "6126",
+    "jobType": "Educational support assistants",
+    "relatedTitles": ["Educational support assistants"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "6129",
+    "jobType": "Child and early years officers not elsewhere classified",
+    "relatedTitles": ["Child care officers", "Early years officers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "6131",
+    "jobType": "Nurses",
+    "relatedTitles": ["Nurses"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "6132",
+    "jobType": "Health associate professionals",
+    "relatedTitles": ["Health associate professionals"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "6133",
+    "jobType": "Senior care workers",
+    "relatedTitles": ["Senior care workers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "6134",
+    "jobType": "Care workers and home carers",
+    "relatedTitles": ["Care workers", "Home carers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "6135",
+    "jobType": "Welfare and housing associate professionals",
+    "relatedTitles": ["Welfare officers", "Housing officers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "6136",
+    "jobType": "Counsellors",
+    "relatedTitles": ["Counsellors"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "6137",
+    "jobType": "Welfare and housing associate professionals",
+    "relatedTitles": ["Welfare officers", "Housing officers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "6139",
+    "jobType": "Welfare and housing associate professionals not elsewhere classified",
+    "relatedTitles": ["Welfare officers", "Housing officers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "6141",
+    "jobType": "Nursing auxiliaries and assistants",
+    "relatedTitles": ["Nursing auxiliaries", "Nursing assistants"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "6142",
+    "jobType": "Ambulance staff (excluding paramedics)",
+    "relatedTitles": ["Ambulance staff"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "6143",
+    "jobType": "Dental nurses",
+    "relatedTitles": ["Dental nurses"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "6144",
+    "jobType": "Houseparents and residential wardens",
+    "relatedTitles": ["Houseparents", "Residential wardens"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "6145",
+    "jobType": "Care escorts",
+    "relatedTitles": ["Care escorts"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "6146",
+    "jobType": "Youth and community workers",
+    "relatedTitles": ["Youth workers", "Community workers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "6147",
+    "jobType": "Child and early years officers",
+    "relatedTitles": ["Child care officers", "Early years officers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "6148",
+    "jobType": "Leisure and travel service occupations",
+    "relatedTitles": ["Leisure service workers", "Travel service workers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "6149",
+    "jobType": "Protective service occupations",
+    "relatedTitles": ["Protective service workers"],
+    "eligibility": "Higher Skilled"
+  },
+  {
+    "code": "6211",
+    "jobType": "Sports and leisure assistants",
+    "relatedTitles": ["Sports assistants", "Leisure assistants"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "6212",
+    "jobType": "Sports and leisure assistants",
+    "relatedTitles": ["Sports assistants", "Leisure assistants"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "6213",
+    "jobType": "Sports and leisure assistants",
+    "relatedTitles": ["Sports assistants", "Leisure assistants"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "6214",
+    "jobType": "Sports and leisure assistants",
+    "relatedTitles": ["Sports assistants", "Leisure assistants"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "6215",
+    "jobType": "Sports and leisure assistants",
+    "relatedTitles": ["Sports assistants", "Leisure assistants"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "6219",
+    "jobType": "Sports and leisure assistants",
+    "relatedTitles": ["Sports assistants", "Leisure assistants"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "6221",
+    "jobType": "Hospital porters",
+    "relatedTitles": ["Hospital porters"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "6222",
+    "jobType": "Kitchen and catering assistants",
+    "relatedTitles": ["Kitchen assistants", "Catering assistants"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "7111",
+    "jobType": "Sales and retail assistants",
+    "relatedTitles": ["Sales assistants", "Retail assistants"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "7112",
+    "jobType": "Sales and retail assistants",
+    "relatedTitles": ["Sales assistants", "Retail assistants"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "7113",
+    "jobType": "Sales and retail assistants",
+    "relatedTitles": ["Sales assistants", "Retail assistants"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "7114",
+    "jobType": "Sales and retail assistants",
+    "relatedTitles": ["Sales assistants", "Retail assistants"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "7115",
+    "jobType": "Sales and retail assistants",
+    "relatedTitles": ["Sales assistants", "Retail assistants"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "7119",
+    "jobType": "Sales and retail assistants",
+    "relatedTitles": ["Sales assistants", "Retail assistants"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "7121",
+    "jobType": "Sales and retail assistants",
+    "relatedTitles": ["Sales assistants", "Retail assistants"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "7122",
+    "jobType": "Sales and retail assistants",
+    "relatedTitles": ["Sales assistants", "Retail assistants"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "7123",
+    "jobType": "Sales and retail assistants",
+    "relatedTitles": ["Sales assistants", "Retail assistants"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "7124",
+    "jobType": "Sales and retail assistants",
+    "relatedTitles": ["Sales assistants", "Retail assistants"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "7125",
+    "jobType": "Sales and retail assistants",
+    "relatedTitles": ["Sales assistants", "Retail assistants"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "7129",
+    "jobType": "Sales and retail assistants",
+    "relatedTitles": ["Sales assistants", "Retail assistants"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "7211",
+    "jobType": "Bar staff",
+    "relatedTitles": ["Bar staff"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "7212",
+    "jobType": "Bar staff",
+    "relatedTitles": ["Bar staff"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "7213",
+    "jobType": "Bar staff",
+    "relatedTitles": ["Bar staff"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "7214",
+    "jobType": "Bar staff",
+    "relatedTitles": ["Bar staff"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "7215",
+    "jobType": "Bar staff",
+    "relatedTitles": ["Bar staff"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "7219",
+    "jobType": "Bar staff",
+    "relatedTitles": ["Bar staff"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "7221",
+    "jobType": "Waiters and waitresses",
+    "relatedTitles": ["Waiters", "Waitresses"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "7222",
+    "jobType": "Waiters and waitresses",
+    "relatedTitles": ["Waiters", "Waitresses"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "7223",
+    "jobType": "Waiters and waitresses",
+    "relatedTitles": ["Waiters", "Waitresses"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "7224",
+    "jobType": "Waiters and waitresses",
+    "relatedTitles": ["Waiters", "Waitresses"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "7229",
+    "jobType": "Waiters and waitresses",
+    "relatedTitles": ["Waiters", "Waitresses"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "8111",
+    "jobType": "Food, drink and tobacco process operatives",
+    "relatedTitles": ["Food process operatives", "Drink process operatives"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "8112",
+    "jobType": "Food, drink and tobacco process operatives",
+    "relatedTitles": ["Food process operatives", "Drink process operatives"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "8113",
+    "jobType": "Food, drink and tobacco process operatives",
+    "relatedTitles": ["Food process operatives", "Drink process operatives"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "8114",
+    "jobType": "Food, drink and tobacco process operatives",
+    "relatedTitles": ["Food process operatives", "Drink process operatives"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "8115",
+    "jobType": "Food, drink and tobacco process operatives",
+    "relatedTitles": ["Food process operatives", "Drink process operatives"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "8116",
+    "jobType": "Food, drink and tobacco process operatives",
+    "relatedTitles": ["Food process operatives", "Drink process operatives"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "8117",
+    "jobType": "Food, drink and tobacco process operatives",
+    "relatedTitles": ["Food process operatives", "Drink process operatives"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "8118",
+    "jobType": "Food, drink and tobacco process operatives",
+    "relatedTitles": ["Food process operatives", "Drink process operatives"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "8119",
+    "jobType": "Food, drink and tobacco process operatives",
+    "relatedTitles": ["Food process operatives", "Drink process operatives"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "8121",
+    "jobType": "Glass and ceramics process operatives",
+    "relatedTitles": ["Glass process operatives", "Ceramics operatives"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "8122",
+    "jobType": "Glass and ceramics process operatives",
+    "relatedTitles": ["Glass process operatives", "Ceramics operatives"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "8123",
+    "jobType": "Glass and ceramics process operatives",
+    "relatedTitles": ["Glass process operatives", "Ceramics operatives"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "8124",
+    "jobType": "Textile process operatives",
+    "relatedTitles": ["Textile process operatives"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "8125",
+    "jobType": "Textile process operatives",
+    "relatedTitles": ["Textile process operatives"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "8126",
+    "jobType": "Textile process operatives",
+    "relatedTitles": ["Textile process operatives"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "8127",
+    "jobType": "Upholsterers",
+    "relatedTitles": ["Upholsterers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "8128",
+    "jobType": "Upholsterers",
+    "relatedTitles": ["Upholsterers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "8129",
+    "jobType": "Upholsterers",
+    "relatedTitles": ["Upholsterers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "8131",
+    "jobType": "Launderers, dry cleaners and pressers",
+    "relatedTitles": ["Launderers", "Dry cleaners", "Pressers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "8132",
+    "jobType": "Launderers, dry cleaners and pressers",
+    "relatedTitles": ["Launderers", "Dry cleaners", "Pressers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "8133",
+    "jobType": "Launderers, dry cleaners and pressers",
+    "relatedTitles": ["Launderers", "Dry cleaners", "Pressers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "8134",
+    "jobType": "Launderers, dry cleaners and pressers",
+    "relatedTitles": ["Launderers", "Dry cleaners", "Pressers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "8135",
+    "jobType": "Launderers, dry cleaners and pressers",
+    "relatedTitles": ["Launderers", "Dry cleaners", "Pressers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "8136",
+    "jobType": "Launderers, dry cleaners and pressers",
+    "relatedTitles": ["Launderers", "Dry cleaners", "Pressers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "8137",
+    "jobType": "Launderers, dry cleaners and pressers",
+    "relatedTitles": ["Launderers", "Dry cleaners", "Pressers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "8138",
+    "jobType": "Launderers, dry cleaners and pressers",
+    "relatedTitles": ["Launderers", "Dry cleaners", "Pressers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "8139",
+    "jobType": "Launderers, dry cleaners and pressers",
+    "relatedTitles": ["Launderers", "Dry cleaners", "Pressers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "8211",
+    "jobType": "Assemblers and routine operatives",
+    "relatedTitles": ["Assemblers", "Routine operatives"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "8212",
+    "jobType": "Assemblers and routine operatives",
+    "relatedTitles": ["Assemblers", "Routine operatives"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "8213",
+    "jobType": "Assemblers and routine operatives",
+    "relatedTitles": ["Assemblers", "Routine operatives"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "8214",
+    "jobType": "Assemblers and routine operatives",
+    "relatedTitles": ["Assemblers", "Routine operatives"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "8215",
+    "jobType": "Assemblers and routine operatives",
+    "relatedTitles": ["Assemblers", "Routine operatives"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "8216",
+    "jobType": "Assemblers and routine operatives",
+    "relatedTitles": ["Assemblers", "Routine operatives"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "8217",
+    "jobType": "Assemblers and routine operatives",
+    "relatedTitles": ["Assemblers", "Routine operatives"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "8218",
+    "jobType": "Assemblers and routine operatives",
+    "relatedTitles": ["Assemblers", "Routine operatives"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "8219",
+    "jobType": "Assemblers and routine operatives",
+    "relatedTitles": ["Assemblers", "Routine operatives"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9111",
+    "jobType": "Farm workers",
+    "relatedTitles": ["Farm workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9112",
+    "jobType": "Farm workers",
+    "relatedTitles": ["Farm workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9119",
+    "jobType": "Agricultural and related trades not elsewhere classified",
+    "relatedTitles": ["Agricultural workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9121",
+    "jobType": "Other skilled trades not elsewhere classified",
+    "relatedTitles": ["Skilled trades workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9122",
+    "jobType": "Other skilled trades not elsewhere classified",
+    "relatedTitles": ["Skilled trades workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9123",
+    "jobType": "Other skilled trades not elsewhere classified",
+    "relatedTitles": ["Skilled trades workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9124",
+    "jobType": "Other skilled trades not elsewhere classified",
+    "relatedTitles": ["Skilled trades workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9129",
+    "jobType": "Other skilled trades not elsewhere classified",
+    "relatedTitles": ["Skilled trades workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9131",
+    "jobType": "Other skilled trades not elsewhere classified",
+    "relatedTitles": ["Skilled trades workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9132",
+    "jobType": "Other skilled trades not elsewhere classified",
+    "relatedTitles": ["Skilled trades workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9133",
+    "jobType": "Other skilled trades not elsewhere classified",
+    "relatedTitles": ["Skilled trades workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9134",
+    "jobType": "Other skilled trades not elsewhere classified",
+    "relatedTitles": ["Skilled trades workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9139",
+    "jobType": "Other skilled trades not elsewhere classified",
+    "relatedTitles": ["Skilled trades workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9211",
+    "jobType": "Other elementary services occupations",
+    "relatedTitles": ["Elementary service workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9212",
+    "jobType": "Other elementary services occupations",
+    "relatedTitles": ["Elementary service workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9213",
+    "jobType": "Other elementary services occupations",
+    "relatedTitles": ["Elementary service workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9214",
+    "jobType": "Other elementary services occupations",
+    "relatedTitles": ["Elementary service workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9219",
+    "jobType": "Other elementary services occupations",
+    "relatedTitles": ["Elementary service workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9221",
+    "jobType": "Elementary cleaning occupations",
+    "relatedTitles": ["Cleaners", "Domestic workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9222",
+    "jobType": "Elementary cleaning occupations",
+    "relatedTitles": ["Cleaners", "Domestic workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9223",
+    "jobType": "Elementary cleaning occupations",
+    "relatedTitles": ["Cleaners", "Domestic workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9224",
+    "jobType": "Elementary cleaning occupations",
+    "relatedTitles": ["Cleaners", "Domestic workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9225",
+    "jobType": "Elementary cleaning occupations",
+    "relatedTitles": ["Cleaners", "Domestic workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9226",
+    "jobType": "Elementary cleaning occupations",
+    "relatedTitles": ["Cleaners", "Domestic workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9229",
+    "jobType": "Elementary cleaning occupations",
+    "relatedTitles": ["Cleaners", "Domestic workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9231",
+    "jobType": "Elementary administration occupations",
+    "relatedTitles": ["Elementary administration workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9232",
+    "jobType": "Elementary administration occupations",
+    "relatedTitles": ["Elementary administration workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9233",
+    "jobType": "Elementary administration occupations",
+    "relatedTitles": ["Elementary administration workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9234",
+    "jobType": "Elementary administration occupations",
+    "relatedTitles": ["Elementary administration workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9235",
+    "jobType": "Elementary administration occupations",
+    "relatedTitles": ["Elementary administration workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9236",
+    "jobType": "Elementary administration occupations",
+    "relatedTitles": ["Elementary administration workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9239",
+    "jobType": "Elementary administration occupations",
+    "relatedTitles": ["Elementary administration workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9241",
+    "jobType": "Other elementary services occupations",
+    "relatedTitles": ["Elementary service workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9242",
+    "jobType": "Other elementary services occupations",
+    "relatedTitles": ["Elementary service workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9243",
+    "jobType": "Other elementary services occupations",
+    "relatedTitles": ["Elementary service workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9244",
+    "jobType": "Other elementary services occupations",
+    "relatedTitles": ["Elementary service workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9245",
+    "jobType": "Other elementary services occupations",
+    "relatedTitles": ["Elementary service workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9249",
+    "jobType": "Other elementary services occupations",
+    "relatedTitles": ["Elementary service workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9251",
+    "jobType": "Other elementary services occupations",
+    "relatedTitles": ["Elementary service workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9252",
+    "jobType": "Other elementary services occupations",
+    "relatedTitles": ["Elementary service workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9253",
+    "jobType": "Other elementary services occupations",
+    "relatedTitles": ["Elementary service workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9254",
+    "jobType": "Other elementary services occupations",
+    "relatedTitles": ["Elementary service workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9259",
+    "jobType": "Other elementary services occupations",
+    "relatedTitles": ["Elementary service workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9261",
+    "jobType": "Other elementary services occupations",
+    "relatedTitles": ["Elementary service workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9262",
+    "jobType": "Other elementary services occupations",
+    "relatedTitles": ["Elementary service workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9263",
+    "jobType": "Other elementary services occupations",
+    "relatedTitles": ["Elementary service workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9264",
+    "jobType": "Other elementary services occupations",
+    "relatedTitles": ["Elementary service workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9265",
+    "jobType": "Other elementary services occupations",
+    "relatedTitles": ["Elementary service workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9266",
+    "jobType": "Other elementary services occupations",
+    "relatedTitles": ["Elementary service workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9267",
+    "jobType": "Other elementary services occupations",
+    "relatedTitles": ["Elementary service workers"],
+    "eligibility": "Medium Skilled"
+  },
+  {
+    "code": "9269",
+    "jobType": "Other elementary services occupations",
+    "relatedTitles": ["Elementary service workers"],
+    "eligibility": "Medium Skilled"
+  }
+]

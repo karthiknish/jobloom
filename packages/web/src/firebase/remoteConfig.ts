@@ -61,7 +61,6 @@ class FirebaseRemoteConfigService {
       'feature_analytics_tracking': true,
       'feature_performance_monitoring': true,
       'feature_notifications': true,
-      'feature_dark_mode': false,
       'feature_beta_features': false,
 
       // Configuration values
@@ -268,7 +267,7 @@ export const remoteConfig = {
   },
 
   get isDarkModeEnabled(): boolean {
-    return isFeatureEnabled('dark_mode');
+    return false;
   },
 
   get isBetaFeaturesEnabled(): boolean {

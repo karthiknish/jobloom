@@ -20,7 +20,7 @@ interface Message {
 
 const WELCOME_MESSAGE: Message = {
   id: 'welcome',
-  content: "👋 Hi! I'm Jobloom AI, your personal career assistant. I specialize in helping with job search strategies, interview preparation, resume optimization, salary negotiation, and career planning. Ask me anything about your professional journey!",
+  content: "👋 Hi! I'm Hireall AI, your personal career assistant. I specialize in helping with job search strategies, interview preparation, resume optimization, salary negotiation, and career planning. Ask me anything about your professional journey!",
   role: 'assistant',
   timestamp: new Date()
 };
@@ -307,7 +307,7 @@ export default function Chatbot() {
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <h3 className="font-semibold text-sm">Jobloom AI</h3>
+                  <h3 className="font-semibold text-sm">Hireall AI</h3>
                   <p className="text-xs opacity-90">Your Career Assistant</p>
                 </div>
               </div>

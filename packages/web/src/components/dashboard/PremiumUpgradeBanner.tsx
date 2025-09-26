@@ -78,7 +78,7 @@ export function PremiumUpgradeBanner({ className = "", compact = false }: Premiu
 
             <div className="flex items-center gap-3">
               <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
-                $9.99/month
+                £9.99/month
               </Badge>
               <Link href="/upgrade">
                 <Button className="bg-gradient-to-r from-primary to-secondary text-white">

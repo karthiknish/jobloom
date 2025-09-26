@@ -5,11 +5,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { useEffect } from "react";
 import { motion } from "framer-motion";
-import { Eye, EyeOff, Loader2, Mail, Lock, Chrome, User } from "lucide-react";
+import { Eye, EyeOff, Loader2, Mail, Lock, Chrome, User, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import Link from "next/link";
 
 function SignUpInner() {
   const router = useRouter();
@@ -25,6 +26,7 @@ function SignUpInner() {
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [nameError, setNameError] = useState<string | null>(null);
+  const [passwordStrength, setPasswordStrength] = useState<number>(0);
 
   const redirectUrlComplete = search.get("redirect_url") || "/dashboard";
 
@@ -49,6 +51,22 @@ function SignUpInner() {
     return null;
   };
 
+  const calculatePasswordStrength = (password: string): number => {
+    let strength = 0;
+    
+    // Length check
+    if (password.length >= 8) strength += 1;
+    if (password.length >= 12) strength += 1;
+    
+    // Character variety
+    if (/[a-z]/.test(password)) strength += 1; // lowercase
+    if (/[A-Z]/.test(password)) strength += 1; // uppercase
+    if (/[0-9]/.test(password)) strength += 1; // numbers
+    if (/[^A-Za-z0-9]/.test(password)) strength += 1; // special characters
+    
+    return Math.min(strength, 5);
+  };
+
   // Real-time validation
   const handleNameChange = (value: string) => {
     setName(value);
@@ -63,6 +81,7 @@ function SignUpInner() {
   const handlePasswordChange = (value: string) => {
     setPassword(value);
     setPasswordError(validatePassword(value));
+    setPasswordStrength(calculatePasswordStrength(value));
   };
 
   // Auto-trigger Google sign-up if requested via query
@@ -135,26 +154,37 @@ function SignUpInner() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-4 bg-gradient-to-br from-primary/5 via-background to-secondary/5">
+    <main className="flex min-h-screen items-center justify-center p-4 sm:p-6 lg:p-8 pt-16 sm:pt-20 lg:pt-24 bg-gradient-to-br from-primary/5 via-background to-secondary/5">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-md"
+        className="w-full max-w-md sm:max-w-lg space-y-6"
       >
-        <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-          <CardHeader className="space-y-1 text-center pb-8">
-            <motion.div
-              initial={{ scale: 0.8 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-              className="mx-auto h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4"
-            >
-              <User className="h-6 w-6 text-primary" />
-            </motion.div>
-            <CardTitle className="text-2xl font-bold">Create your account</CardTitle>
-            <CardDescription className="text-muted-foreground">
-              Join Jobloom and start tracking your job applications
+        {/* Logo and Branding */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.1, duration: 0.5 }}
+          className="text-center"
+        >
+          <Link href="/" className="inline-block">
+            <div className="relative w-16 h-16 mx-auto mb-4">
+              <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl"></div>
+              <div className="relative w-full h-full bg-primary rounded-full flex items-center justify-center">
+                <span className="text-white font-bold text-xl">H</span>
+              </div>
+            </div>
+          </Link>
+          <h1 className="text-3xl font-bold text-gray-900">Hireall</h1>
+          <p className="text-gray-600 mt-2">Your smart job search companion</p>
+        </motion.div>
+
+        <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-sm">
+          <CardHeader className="space-y-1 text-center pb-6">
+            <CardTitle className="text-2xl font-bold text-gray-900">Create your account</CardTitle>
+            <CardDescription className="text-gray-600">
+              Join Hireall and start tracking your job applications
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -163,110 +193,181 @@ function SignUpInner() {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.3 }}
-                className="rounded-md border border-red-200 bg-red-50 p-3"
+                className="rounded-lg border border-red-200 bg-red-50 p-4 flex items-start gap-3"
               >
-                <p className="text-sm text-red-700">{error}</p>
+                <div className="flex-shrink-0 w-5 h-5 bg-red-100 rounded-full flex items-center justify-center mt-0.5">
+                  <X className="h-3 w-3 text-red-600" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-red-800">Sign Up Error</p>
+                  <p className="text-sm text-red-700 mt-1">{error}</p>
+                </div>
               </motion.div>
             )}
 
-            <form onSubmit={handleStartSignUp} className="space-y-4">
+            <form onSubmit={handleStartSignUp} className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="name">Name (optional)</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Label htmlFor="name" className="text-sm font-medium text-gray-700">Name (optional)</Label>
+                <div className="relative group">
+                  <User className="absolute left-3 top-3 h-4 w-4 text-gray-400 group-focus-within:text-primary transition-colors" />
                   <Input
                     id="name"
                     type="text"
                     value={name}
                     onChange={(e) => handleNameChange(e.target.value)}
-                    className={`pl-10 ${nameError ? 'border-red-500 focus:ring-red-500' : ''}`}
+                    className={`pl-10 h-11 bg-gray-50 border-gray-200 hover:bg-gray-100 focus:bg-white focus:border-primary focus:ring-primary/20 transition-all duration-200 ${nameError ? 'border-red-500 focus:ring-red-500/20' : ''}`}
                     placeholder="Your name"
                     disabled={loading}
                   />
                 </div>
                 {nameError && (
-                  <p className="text-sm text-red-600">{nameError}</p>
+                  <p className="text-sm text-red-600 mt-1">{nameError}</p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Label htmlFor="email" className="text-sm font-medium text-gray-700">Email</Label>
+                <div className="relative group">
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400 group-focus-within:text-primary transition-colors" />
                   <Input
                     id="email"
                     type="email"
                     value={email}
                     onChange={(e) => handleEmailChange(e.target.value)}
                     required
-                    className={`pl-10 ${emailError ? 'border-red-500 focus:ring-red-500' : ''}`}
+                    className={`pl-10 h-11 bg-gray-50 border-gray-200 hover:bg-gray-100 focus:bg-white focus:border-primary focus:ring-primary/20 transition-all duration-200 ${emailError ? 'border-red-500 focus:ring-red-500/20' : ''}`}
                     placeholder="you@example.com"
                     disabled={loading}
                   />
                 </div>
                 {emailError && (
-                  <p className="text-sm text-red-600">{emailError}</p>
+                  <p className="text-sm text-red-600 mt-1">{emailError}</p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Label htmlFor="password" className="text-sm font-medium text-gray-700">Password</Label>
+                <div className="relative group">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400 group-focus-within:text-primary transition-colors" />
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => handlePasswordChange(e.target.value)}
                     required
-                    className={`pl-10 pr-10 ${passwordError ? 'border-red-500 focus:ring-red-500' : ''}`}
+                    className={`pl-10 pr-10 h-11 bg-gray-50 border-gray-200 hover:bg-gray-100 focus:bg-white focus:border-primary focus:ring-primary/20 transition-all duration-200 ${passwordError ? 'border-red-500 focus:ring-red-500/20' : ''}`}
                     placeholder="••••••••"
                     disabled={loading}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-3 h-4 w-4 text-muted-foreground hover:text-foreground"
+                    className="absolute right-3 top-3 h-4 w-4 text-gray-400 hover:text-gray-600 active:scale-95 transition-all duration-200"
                     disabled={loading}
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
+                
+                {/* Password Strength Indicator */}
+                {password && (
+                  <div className="space-y-2">
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map((level) => (
+                        <div
+                          key={level}
+                          className={`h-1 flex-1 rounded-full transition-all duration-300 ${
+                            level <= passwordStrength
+                              ? passwordStrength <= 2
+                                ? 'bg-red-500'
+                                : passwordStrength <= 3
+                                ? 'bg-yellow-500'
+                                : 'bg-green-500'
+                              : 'bg-gray-200'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className={`font-medium ${
+                        passwordStrength <= 2 ? 'text-red-600' : 
+                        passwordStrength <= 3 ? 'text-yellow-600' : 
+                        'text-green-600'
+                      }`}>
+                        {passwordStrength === 0 && 'Very weak'}
+                        {passwordStrength === 1 && 'Weak'}
+                        {passwordStrength === 2 && 'Fair'}
+                        {passwordStrength === 3 && 'Good'}
+                        {passwordStrength === 4 && 'Strong'}
+                        {passwordStrength === 5 && 'Very strong'}
+                      </span>
+                      <div className="flex gap-3 text-gray-500">
+                        <div className="flex items-center gap-1">
+                          {password.length >= 8 ? (
+                            <Check className="h-3 w-3 text-green-500" />
+                          ) : (
+                            <X className="h-3 w-3 text-gray-400" />
+                          )}
+                          <span className="text-xs">8+ chars</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          {/[^A-Za-z0-9]/.test(password) ? (
+                            <Check className="h-3 w-3 text-green-500" />
+                          ) : (
+                            <X className="h-3 w-3 text-gray-400" />
+                          )}
+                          <span className="text-xs">Special</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
                 {passwordError && (
-                  <p className="text-sm text-red-600">{passwordError}</p>
+                  <p className="text-sm text-red-600 mt-1">{passwordError}</p>
                 )}
               </div>
 
               <Button
                 type="submit"
-                className="w-full"
+                className="w-full h-11 font-medium shadow-lg hover:shadow-xl transition-all duration-200 relative overflow-hidden"
                 disabled={loading}
                 size="lg"
               >
                 {loading ? (
-                  <>
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex items-center justify-center"
+                  >
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating account...
-                  </>
+                    <span>Creating account...</span>
+                  </motion.div>
                 ) : (
-                  "Create account"
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex items-center justify-center"
+                  >
+                    <span>Create account</span>
+                  </motion.div>
                 )}
               </Button>
             </form>
 
-            <div className="relative">
+            <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
+                <span className="w-full border-t border-gray-200" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+                <span className="bg-white px-3 text-gray-500 font-medium">Or continue with</span>
               </div>
             </div>
 
             <Button
               variant="outline"
               onClick={handleGoogle}
-              className="w-full"
+              className="w-full h-11 bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300 font-medium shadow-sm transition-all duration-200"
               disabled={loading}
               size="lg"
             >
@@ -274,11 +375,11 @@ function SignUpInner() {
               Continue with Google
             </Button>
 
-            <div className="text-center text-sm">
-              <span className="text-muted-foreground">Already have an account? </span>
+            <div className="text-center text-sm pt-4 border-t border-gray-200">
+              <span className="text-gray-600">Already have an account? </span>
               <a
                 href={`/sign-in?redirect_url=${encodeURIComponent(redirectUrlComplete)}`}
-                className="font-medium text-primary hover:underline"
+                className="font-medium text-primary hover:underline transition-colors"
               >
                 Sign in
               </a>

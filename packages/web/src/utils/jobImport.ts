@@ -205,9 +205,9 @@ export async function importJobsFromAPI(
  */
 export function downloadSampleCSV(): void {
   const csvContent = `title,company,location,url,description,salary,isSponsored,isRecruitmentAgency,source
-Software Engineer,Google,Mountain View, CA,https://google.com/jobs/123,"Exciting opportunity for a software engineer", "$120,000 - $150,000",true,false,manual
-Product Manager,Apple,Cupertino, CA,https://apple.com/jobs/456,"Lead product development for our flagship product", "$130,000 - $160,000",false,false,manual
-Data Scientist,Microsoft,Seattle, WA,https://microsoft.com/jobs/789,"Analyze large datasets to drive business insights", "$110,000 - $140,000",true,true,manual`;
+Software Engineer,Google,Mountain View, CA,https://google.com/jobs/123,"Exciting opportunity for a software engineer", "£120,000 - £150,000",true,false,manual
+Product Manager,Apple,Cupertino, CA,https://apple.com/jobs/456,"Lead product development for our flagship product", "£130,000 - £160,000",false,false,manual
+Data Scientist,Microsoft,Seattle, WA,https://microsoft.com/jobs/789,"Analyze large datasets to drive business insights", "£110,000 - £140,000",true,true,manual`;
 
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);

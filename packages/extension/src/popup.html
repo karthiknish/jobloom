@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Jobloom - Job Tracker</title>
+  <title>Hireall - Job Tracker</title>
   <style>
     :root {
       --primary: #b86e37;
@@ -382,7 +382,22 @@
       display: flex;
       gap: 8px;
       margin-top: 12px;
+      align-items: center;
     }
+
+    .sponsor-status {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      flex-shrink: 0;
+    }
+
+    .sponsor-status.checking { background: rgba(59, 130, 246, 0.1); color: var(--info); }
+    .sponsor-status.licensed { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+    .sponsor-status.not-licensed { background: rgba(239, 68, 68, 0.1); color: var(--error); }
 
     .job-action-btn {
       padding: 6px 12px;
@@ -664,6 +679,7 @@
     .gap-2 { gap: 8px !important; }
     .text-sm { font-size: 12px !important; }
     .text-muted { color: var(--muted) !important; }
+
   </style>
 </head>
 <body>
@@ -672,9 +688,14 @@
     <header class="header">
       <div class="header-content">
         <div class="logo-section">
-          <div class="logo">🎯</div>
+          <div class="logo">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+        </svg>
+      </div>
           <div class="brand-info">
-            <h1>Jobloom</h1>
+            <h1>Hireall</h1>
             <p>Smart Job Tracker</p>
           </div>
         </div>
@@ -688,19 +709,42 @@
     <!-- Navigation Tabs -->
     <nav class="nav-tabs">
       <button class="nav-tab active" data-tab="dashboard">
-        <span class="icon">🏠</span>
+        <span class="icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+        </span>
         <span>Dashboard</span>
       </button>
       <button class="nav-tab" data-tab="jobs">
-        <span class="icon">💼</span>
+        <span class="icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 7h-9"></path>
+            <path d="M14 17H5"></path>
+            <circle cx="17" cy="17" r="3"></circle>
+            <circle cx="7" cy="7" r="3"></circle>
+          </svg>
+        </span>
         <span>Jobs</span>
       </button>
       <button class="nav-tab" data-tab="settings">
-        <span class="icon">⚙️</span>
+        <span class="icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"></path>
+            <path d="M20.5 7.5 16 12m0 0-4.5 4.5M16 12l4.5-4.5M16 12l-4.5 4.5"></path>
+          </svg>
+        </span>
         <span>Settings</span>
       </button>
       <button class="nav-tab" data-tab="auth">
-        <span class="icon">🔐</span>
+        <span class="icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+        </span>
         <span>Account</span>
       </button>
     </nav>
@@ -732,7 +776,12 @@
         <!-- Quick Actions -->
         <div class="quick-actions">
           <button class="action-btn" id="highlight-btn">
-            <div class="action-icon primary">🎯</div>
+            <div class="action-icon primary">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+              </svg>
+            </div>
             <div class="action-content">
               <h3>Check Sponsored Jobs</h3>
               <p>Scan current page for sponsored listings</p>
@@ -740,7 +789,15 @@
           </button>
 
           <button class="action-btn" id="autofill-btn">
-            <div class="action-icon success">📝</div>
+            <div class="action-icon success">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
+            </div>
             <div class="action-content">
               <h3>Autofill Application</h3>
               <p>Automatically fill job application forms</p>
@@ -748,7 +805,14 @@
           </button>
 
           <button class="action-btn" id="people-search-btn">
-            <div class="action-icon info">👥</div>
+            <div class="action-icon info">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+            </div>
             <div class="action-content">
               <h3>Find Relevant People</h3>
               <p>Search LinkedIn for hiring managers</p>
@@ -756,7 +820,13 @@
           </button>
 
           <a class="action-btn" id="open-board-btn">
-            <div class="action-icon primary">📊</div>
+            <div class="action-icon primary">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="20" x2="18" y2="10"></line>
+                <line x1="12" y1="20" x2="12" y2="4"></line>
+                <line x1="6" y1="20" x2="6" y2="14"></line>
+              </svg>
+            </div>
             <div class="action-content">
               <h3>Open Job Dashboard</h3>
               <p>View and manage all tracked jobs</p>
@@ -788,10 +858,16 @@
         </div>
       </div>
 
+
       <!-- Settings Tab -->
       <div class="settings-tab tab-content" id="settings-content">
         <div class="settings-section">
-          <h3><span class="icon">🎯</span> Job Detection</h3>
+          <h3><span class="icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+            </svg>
+          </span> Job Detection</h3>
           <div class="setting-item">
             <div>
               <div class="setting-label">Auto-Detect Jobs</div>
@@ -813,7 +889,15 @@
         </div>
 
         <div class="settings-section">
-          <h3><span class="icon">📝</span> Autofill</h3>
+          <h3><span class="icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+          </span> Autofill</h3>
           <div class="setting-item">
             <div>
               <div class="setting-label">Auto-Save Profile</div>
@@ -831,11 +915,16 @@
         </div>
 
         <div class="settings-section">
-          <h3><span class="icon">🔗</span> Integration</h3>
+          <h3><span class="icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+            </svg>
+          </span> Integration</h3>
           <div class="setting-item">
             <div>
               <div class="setting-label">Web App URL</div>
-              <div class="setting-description">Your Jobloom dashboard URL</div>
+              <div class="setting-description">Your Hireall dashboard URL</div>
             </div>
             <div class="setting-control">
               <input type="text" id="web-app-url" style="padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 12px; width: 120px;">
@@ -861,43 +950,40 @@
       <!-- Auth Tab -->
       <div class="auth-tab tab-content" id="auth-content">
         <div class="auth-message">
-          <h2>Welcome to Jobloom</h2>
+          <h2>Welcome to Hireall</h2>
           <p>Sign in to sync your jobs across devices and access advanced features</p>
         </div>
 
         <div class="auth-buttons">
           <button class="auth-btn" id="signin-btn">
-            <span>🔐</span>
+            <span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+            </span>
             Sign In
           </button>
-          <button class="auth-btn google" id="signin-google-btn">
-            <span>🌐</span>
-            Sign In with Google
-          </button>
           <button class="auth-btn" id="signup-btn">
-            <span>🆕</span>
+            <span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="8.5" cy="7" r="4"></circle>
+                <line x1="20" y1="8" x2="20" y2="14"></line>
+                <line x1="23" y1="11" x2="17" y2="11"></line>
+              </svg>
+            </span>
             Create Account
           </button>
-          <button class="auth-btn google" id="signup-google-btn">
-            <span>🌐</span>
-            Sign Up with Google
-          </button>
-
-          <!-- OAuth Extension Buttons -->
-          <div style="margin: 16px 0; border-top: 1px solid var(--border); padding-top: 16px;">
-            <p style="font-size: 12px; color: var(--muted); margin: 0 0 12px 0; text-align: center;">Or use extension authentication</p>
-            <button class="auth-btn google" id="oauth-login-btn">
-              <span>🔑</span>
-              Login with Google OAuth
-            </button>
-            <button class="auth-btn" id="oauth-logout-btn" style="display: none; background: #ef4444; color: white; border-color: #ef4444;">
-              <span>🚪</span>
-              OAuth Logout
-            </button>
-          </div>
 
           <button class="auth-btn" id="signout-btn" style="display: none; background: #ef4444; color: white; border-color: #ef4444;">
-            <span>🚪</span>
+            <span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+              </svg>
+            </span>
             Sign Out
           </button>
         </div>

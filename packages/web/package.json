@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "build:ignore-types": "next build --no-lint",
-    "vercel-build": "next build"
+    "vercel-build": "next build",
+    "migrate-data": "node migrate-to-firestore.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
@@ -52,15 +53,13 @@
     "firebase-admin": "^12.0.0",
     "framer-motion": "^11.18.2",
     "lucide-react": "^0.539.0",
-    "motion": "^12.23.12",
     "next": "15.3.4",
     "pdf-parse": "^1.1.1",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
     "react-hot-toast": "^2.4.1",
     "stripe": "^18.5.0",
-    "tailwind-merge": "^2.6.0",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwind-merge": "^2.6.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -74,7 +73,6 @@
     "eslint": "^9",
     "eslint-config-next": "15.3.4",
     "tailwindcss": "^4",
-    "tailwindcss-animate": "^1.0.7",
     "typescript": "^5"
   }
 }

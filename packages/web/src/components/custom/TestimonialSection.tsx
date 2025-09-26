@@ -8,7 +8,7 @@ const testimonials = [
   {
     name: "Aarav Sharma",
     role: "Software Engineer",
-    text: "Jobloom saved me weeks of searching. I landed interviews within days using their Chrome extension.",
+    text: "Hireall saved me weeks of searching. I landed interviews within days using their Chrome extension.",
     image: "aarav.svg",
   },
   {
@@ -37,7 +37,7 @@ export default function TestimonialSection() {
             What Our Users Say
           </h2>
           <p className="mt-4 text-xl text-gray-600">
-            Real stories from people who landed their dream jobs with Jobloom
+            Real stories from people who landed their dream jobs with Hireall
           </p>
         </div>
 

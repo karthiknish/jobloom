@@ -49,7 +49,7 @@ export default function ConditionsPage() {
               transition={{ delay: 0.5, duration: 0.6 }}
               className="mt-6 max-w-2xl mx-auto text-xl text-primary-foreground/90"
             >
-              Guidelines for responsible and respectful use of Jobloom services.
+              Guidelines for responsible and respectful use of Hireall services.
             </motion.p>
             <motion.div
               initial={{ opacity: 0 }}
@@ -127,7 +127,7 @@ export default function ConditionsPage() {
               <div>
                 <p className="text-blue-800">
                   These conditions ensure a safe, respectful, and productive
-                  environment for all Jobloom users. Violation of these
+                  environment for all Hireall users. Violation of these
                   conditions may result in account suspension or termination.
                 </p>
               </div>

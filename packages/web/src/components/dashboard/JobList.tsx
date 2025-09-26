@@ -3,7 +3,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
-import { EyeIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -35,49 +34,20 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { dashboardApi } from "@/utils/api/dashboard";
-import { showSuccess, showError } from "@/components/ui/Toast";
-import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-
-interface Job {
-  _id: string;
-  title: string;
-  company: string;
-  location: string;
-  url?: string;
-  description?: string;
-  salary?: string;
-  isSponsored: boolean;
-  isRecruitmentAgency?: boolean;
-  source: string;
-  dateFound: number;
-  userId: string;
-}
-
-interface Application {
-  _id: string;
-  jobId: string;
-  userId: string;
-  status: string;
-  appliedDate?: number;
-  notes?: string;
-  interviewDates?: number[];
-  followUpDate?: number;
-  createdAt: number;
-  updatedAt: number;
-  job?: Job;
-}
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { dashboardApi, Job, Application } from "@/utils/api/dashboard";
+import { showSuccess, showError } from "@/components/ui/Toast";
 
 interface JobListProps {
   applications: Application[];
@@ -94,11 +64,17 @@ export function JobList({
   onViewApplication,
   onChanged,
 }: JobListProps) {
-  const [selectedStatus, setSelectedStatus] = useState<string>("all");
-  const [showRecruitmentAgency, setShowRecruitmentAgency] =
-    useState<boolean>(true);
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [sortBy, setSortBy] = useState<string>("dateFound");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("all");
+  const [showRecruitmentAgency, setShowRecruitmentAgency] = useState(true);
+  const [sortBy, setSortBy] = useState("dateFound");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [viewsOpen, setViewsOpen] = useState(false);
+  const [remindersOpen, setRemindersOpen] = useState(false);
+  const [reminderEnable, setReminderEnable] = useState(false);
+  const [reminderDate, setReminderDate] = useState("");
+  const [savedViews, setSavedViews] = useState<{ [key: string]: any }>({});
+
   // Restore filters from localStorage
   useEffect(() => {
     try {
@@ -111,12 +87,15 @@ export function JobList({
           setShowRecruitmentAgency(parsed.showRecruitmentAgency);
         if (typeof parsed.searchQuery === "string")
           setSearchQuery(parsed.searchQuery);
-        if (typeof parsed.sortBy === "string") setSortBy(parsed.sortBy);
+        if (typeof parsed.sortBy === "string")
+          setSortBy(parsed.sortBy);
       }
-    } catch {}
+    } catch (error) {
+      console.error("Failed to restore filters from localStorage:", error);
+    }
   }, []);
 
-  // Persist filters
+  // Save filters to localStorage
   useEffect(() => {
     try {
       localStorage.setItem(
@@ -128,187 +107,85 @@ export function JobList({
           sortBy,
         })
       );
-    } catch {}
+    } catch (error) {
+      console.error("Failed to save filters to localStorage:", error);
+    }
   }, [selectedStatus, showRecruitmentAgency, searchQuery, sortBy]);
-  const [applicationToDelete, setApplicationToDelete] =
-    useState<Application | null>(null);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [bulkStatus, setBulkStatus] = useState<string>("applied");
-  const [bulkFollowUp, setBulkFollowUp] = useState<string>("");
-  const [savedViews, setSavedViews] = useState<
-    { id: string; name: string; filters: any }[]
-  >([]);
-  const [newViewName, setNewViewName] = useState("");
-  const [viewsOpen, setViewsOpen] = useState(false);
-  const [remindersOpen, setRemindersOpen] = useState(false);
-  const [reminderDate, setReminderDate] = useState("");
-  const [reminderEnable, setReminderEnable] = useState(true);
-  // ...existing code...
-  useEffect(() => {
-    dashboardApi
-      .getSavedViews()
-      .then(setSavedViews)
-      .catch(() => {});
-  }, []);
 
-  const saveCurrentView = async () => {
-    try {
-      await dashboardApi.saveSavedView({
-        name: newViewName || `View ${savedViews.length + 1}`,
-        filters: { selectedStatus, showRecruitmentAgency, searchQuery, sortBy },
-      });
-      setSavedViews(await dashboardApi.getSavedViews());
-      setNewViewName("");
-      showSuccess("View saved");
-    } catch (e: any) {
-      showError(e?.message || "Failed to save view");
-    }
-  };
-
-  const applySavedView = (id: string) => {
-    const v = savedViews.find((x) => x.id === id);
-    if (!v) return;
-    const f = v.filters || {};
-    if (typeof f.selectedStatus === "string")
-      setSelectedStatus(f.selectedStatus);
-    if (typeof f.showRecruitmentAgency === "boolean")
-      setShowRecruitmentAgency(f.showRecruitmentAgency);
-    if (typeof f.searchQuery === "string") setSearchQuery(f.searchQuery);
-    if (typeof f.sortBy === "string") setSortBy(f.sortBy);
-    showSuccess(`Applied "${v.name}"`);
-  };
-
-  const deleteSavedView = async (id: string) => {
-    try {
-      await dashboardApi.deleteSavedView(id);
-      setSavedViews(await dashboardApi.getSavedViews());
-      showSuccess("View deleted");
-    } catch (e: any) {
-      showError(e?.message || "Failed to delete view");
-    }
-  };
-
-  const toggleSelect = (id: string, checked: boolean) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (checked) next.add(id);
-      else next.delete(id);
-      return next;
-    });
-  };
-
-  const toggleSelectAll = (checked: boolean) => {
-    if (checked)
-      setSelectedIds(new Set(filteredAndSortedApplications.map((a) => a._id)));
-    else setSelectedIds(new Set());
-  };
-
-  const doBulkStatus = async () => {
-    try {
-      await dashboardApi.bulkUpdateApplicationsStatus(
-        Array.from(selectedIds),
-        bulkStatus
-      );
-      showSuccess("Status updated");
-      setSelectedIds(new Set());
-      onChanged?.();
-    } catch (e: any) {
-      showError(e?.message || "Bulk update failed");
-    }
-  };
-
-  const doBulkFollowUp = async () => {
-    try {
-      const ts = bulkFollowUp ? new Date(bulkFollowUp).getTime() : undefined;
-      await dashboardApi.bulkUpdateApplicationsFollowUp(
-        Array.from(selectedIds),
-        ts
-      );
-      showSuccess("Follow-up set");
-      setSelectedIds(new Set());
-          onChanged?.();
-    } catch (e: any) {
-      showError(e?.message || "Bulk update failed");
-    }
-  };
-  const statusVariants: Record<
-    | "interested"
-    | "applied"
-    | "interviewing"
-    | "offered"
-    | "rejected"
-    | "withdrawn",
-    "yellow" | "purple" | "green" | "destructive" | "secondary" | "default"
-  > = {
-    interested: "default",
-    applied: "yellow",
-    interviewing: "purple",
-    offered: "green",
-    rejected: "destructive",
-    withdrawn: "secondary",
-  };
-
-  const filteredAndSortedApplications = useMemo(() => {
-    const filtered = applications.filter((app) => {
-      const matchesStatus =
-        selectedStatus === "all" || app.status === selectedStatus;
-      const matchesAgency =
-        showRecruitmentAgency || !app.job?.isRecruitmentAgency;
+  // Filter and sort applications
+  const filteredApplications = useMemo(() => {
+    const filtered = applications.filter((application) => {
       const matchesSearch =
         searchQuery === "" ||
-        app.job?.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        app.job?.company?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        app.job?.location?.toLowerCase().includes(searchQuery.toLowerCase());
+        application.job?.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        application.job?.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        application.job?.location.toLowerCase().includes(searchQuery.toLowerCase());
 
-      return matchesStatus && matchesAgency && matchesSearch;
+      const matchesStatus =
+        selectedStatus === "all" || application.status === selectedStatus;
+
+      const matchesRecruitmentAgency =
+        showRecruitmentAgency || !application.job?.isRecruitmentAgency;
+
+      return matchesSearch && matchesStatus && matchesRecruitmentAgency;
     });
 
     // Sort applications
     filtered.sort((a, b) => {
       switch (sortBy) {
-        case "title":
-          return (a.job?.title || "").localeCompare(b.job?.title || "");
+        case "dateFound":
+          return (b.job?.dateFound || 0) - (a.job?.dateFound || 0);
         case "company":
           return (a.job?.company || "").localeCompare(b.job?.company || "");
-        case "dateFound":
+        case "title":
+          return (a.job?.title || "").localeCompare(b.job?.title || "");
+        case "status":
+          return a.status.localeCompare(b.status);
         default:
-          return (b.job?.dateFound || 0) - (a.job?.dateFound || 0);
+          return 0;
       }
     });
 
     return filtered;
-  }, [
-    applications,
-    selectedStatus,
-    showRecruitmentAgency,
-    searchQuery,
-    sortBy,
-  ]);
+  }, [applications, searchQuery, selectedStatus, showRecruitmentAgency, sortBy]);
 
-  const handleDeleteClick = (application: Application) => {
-    setApplicationToDelete(application);
+  const handleDeleteClick = async (applicationId: string) => {
+    try {
+      await dashboardApi.deleteApplication(applicationId);
+      showSuccess("Application deleted successfully");
+      onChanged?.();
+    } catch (error) {
+      showError("Failed to delete application");
+      console.error("Delete application error:", error);
+    }
   };
 
-  const confirmDelete = () => {
-    if (applicationToDelete) {
-      onDeleteApplication(applicationToDelete._id);
-      setApplicationToDelete(null);
+  const handleBulkDelete = async () => {
+    try {
+      await Promise.all(
+        Array.from(selectedIds).map((id) =>
+          dashboardApi.deleteApplication(id)
+        )
+      );
+      showSuccess(`${selectedIds.size} applications deleted successfully`);
+      setSelectedIds(new Set());
+      onChanged?.();
+    } catch (error) {
+      showError("Failed to delete applications");
+      console.error("Bulk delete error:", error);
     }
   };
 
   return (
     <div className="space-y-6">
       {/* Filters and Search */}
-      <Card className="border-0 bg-gradient-to-br from-white via-orange-50/30 to-white dark:from-gray-900 dark:via-orange-950/10 dark:to-gray-900 shadow-lg">
+      <Card className="border-0 bg-gradient-to-br from-white via-orange-50/30 to-white shadow-lg">
         <CardHeader className="pb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center">
-              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-              </svg>
-            </div>
+          <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-xl bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">Job Filters</CardTitle>
+              <CardTitle className="text-xl bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
+                Job Filters
+              </CardTitle>
               <CardDescription className="text-base">
                 Filter and sort your job applications
               </CardDescription>
@@ -316,535 +193,336 @@ export function JobList({
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="lg:col-span-2 space-y-2">
-              <Label htmlFor="search" className="text-sm font-medium text-gray-700 dark:text-gray-300">Search</Label>
-              <div className="relative">
-                <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                <Input
-                  id="search"
-                  placeholder="Search jobs by title, company, or location..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 border-gray-200 dark:border-gray-700 focus:border-orange-500 focus:ring-orange-500 dark:focus:border-orange-400 dark:focus:ring-orange-400"
-                />
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="search" className="text-sm font-medium text-gray-700">
+                Search Jobs
+              </Label>
+              <Input
+                id="search"
+                placeholder="Search jobs by title, company, or location..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="border-gray-200 focus:border-orange-500 focus:ring-orange-500"
+              />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="status" className="text-sm font-medium text-gray-700 dark:text-gray-300">Status</Label>
+              <Label htmlFor="status" className="text-sm font-medium text-gray-700">
+                Filter by Status
+              </Label>
               <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                <SelectTrigger id="status" className="border-gray-200 dark:border-gray-700 focus:border-orange-500 focus:ring-orange-500 dark:focus:border-orange-400 dark:focus:ring-orange-400">
+                <SelectTrigger id="status" className="border-gray-200 focus:border-orange-500 focus:ring-orange-500">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="interested">Interested</SelectItem>
                   <SelectItem value="applied">Applied</SelectItem>
-                  <SelectItem value="interviewing">Interviewing</SelectItem>
+                  <SelectItem value="interview">Interview</SelectItem>
                   <SelectItem value="offered">Offered</SelectItem>
                   <SelectItem value="rejected">Rejected</SelectItem>
                   <SelectItem value="withdrawn">Withdrawn</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="sort" className="text-sm font-medium text-gray-700 dark:text-gray-300">Sort By</Label>
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger id="sort" className="border-gray-200 dark:border-gray-700 focus:border-orange-500 focus:ring-orange-500 dark:focus:border-orange-400 dark:focus:ring-orange-400">
-                  <SelectValue placeholder="Sort by" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="dateFound">Date Found</SelectItem>
-                  <SelectItem value="title">Title</SelectItem>
-                  <SelectItem value="company">Company</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
           </div>
-
-          <div className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-            <Checkbox
-              id="show-agency"
-              checked={showRecruitmentAgency}
-              onCheckedChange={(checked) =>
-                setShowRecruitmentAgency(checked === true)
-              }
-              className="data-[state=checked]:bg-orange-500 data-[state=checked]:border-orange-500"
-            />
-            <Label htmlFor="show-agency" className="text-sm font-medium text-gray-700 dark:text-gray-300">Show Recruitment Agency Jobs</Label>
-          </div>
-          
           <div className="flex flex-wrap items-center gap-3 pt-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setViewsOpen(true)}
-              className="border-gray-200 dark:border-gray-700 hover:bg-orange-50 dark:hover:bg-orange-950/20 hover:border-orange-300 dark:hover:border-orange-600"
-            >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-              Saved Views
-            </Button>
-            <div className="flex-1 min-w-[200px]">
-              <Input
-                placeholder="New view name"
-                value={newViewName}
-                onChange={(e) => setNewViewName(e.target.value)}
-                className="border-gray-200 dark:border-gray-700 focus:border-orange-500 focus:ring-orange-500 dark:focus:border-orange-400 dark:focus:ring-orange-400"
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="recruitment-agency"
+                checked={showRecruitmentAgency}
+                onCheckedChange={(checked) => setShowRecruitmentAgency(checked === true)}
               />
+              <Label htmlFor="recruitment-agency" className="text-sm text-gray-600">
+                Show recruitment agency jobs
+              </Label>
             </div>
-            <Button size="sm" onClick={saveCurrentView} className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-md">
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-              </svg>
-              Save view
-            </Button>
+          </div>
+          <div className="flex items-center gap-4">
+            <Label className="text-sm font-medium text-gray-700">Sort by:</Label>
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-40 border-gray-200">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="dateFound">Date Found</SelectItem>
+                <SelectItem value="company">Company</SelectItem>
+                <SelectItem value="title">Job Title</SelectItem>
+                <SelectItem value="status">Status</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>
 
-      {/* Job List */}
-      {filteredAndSortedApplications.length > 0 ? (
-        <Card className="border-0 bg-gradient-to-br from-white via-orange-50/30 to-white dark:from-gray-900 dark:via-orange-950/10 dark:to-gray-900 shadow-lg">
-          <CardContent className="p-0">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-orange-50/50 to-amber-50/50 dark:from-orange-950/20 dark:to-amber-950/20">
-              <div className="flex items-center gap-3">
-                <Checkbox
-                  id="select-all"
-                  checked={
-                    selectedIds.size > 0 &&
-                    selectedIds.size === filteredAndSortedApplications.length
-                  }
-                  onCheckedChange={(checked) =>
-                    toggleSelectAll(checked === true)
-                  }
-                  className="data-[state=checked]:bg-orange-500 data-[state=checked]:border-orange-500"
-                />
-                <Label htmlFor="select-all" className="text-sm font-medium text-gray-700 dark:text-gray-300">Select all</Label>
-                <span className="text-sm text-gray-600 dark:text-gray-400 bg-orange-100 dark:bg-orange-900/30 px-2 py-1 rounded-full">
-                  {selectedIds.size} selected
-                </span>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <Select value={bulkStatus} onValueChange={setBulkStatus}>
-                  <SelectTrigger className="w-[160px] border-gray-200 dark:border-gray-700 focus:border-orange-500 focus:ring-orange-500 dark:focus:border-orange-400 dark:focus:ring-orange-400">
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="interested">Interested</SelectItem>
-                    <SelectItem value="applied">Applied</SelectItem>
-                    <SelectItem value="interviewing">Interviewing</SelectItem>
-                    <SelectItem value="offered">Offered</SelectItem>
-                    <SelectItem value="rejected">Rejected</SelectItem>
-                    <SelectItem value="withdrawn">Withdrawn</SelectItem>
-                  </SelectContent>
-                </Select>
+      {/* Bulk Actions */}
+      {selectedIds.size > 0 && (
+        <Card className="border-0 bg-gradient-to-br from-blue-50 to-indigo-50 shadow-lg">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-blue-700">
+                {selectedIds.size} application{selectedIds.size !== 1 ? "s" : ""} selected
+              </span>
+              <div className="flex gap-2">
                 <Button
-                  size="sm"
                   variant="outline"
-                  onClick={doBulkStatus}
-                  disabled={!selectedIds.size}
-                  className="border-gray-200 dark:border-gray-700 hover:bg-orange-50 dark:hover:bg-orange-950/20 hover:border-orange-300 dark:hover:border-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Set status
-                </Button>
-                <Input
-                  type="date"
-                  value={bulkFollowUp}
-                  onChange={(e) => setBulkFollowUp(e.target.value)}
-                  className="border-gray-200 dark:border-gray-700 focus:border-orange-500 focus:ring-orange-500 dark:focus:border-orange-400 dark:focus:ring-orange-400"
-                />
-                <Button
                   size="sm"
-                  variant="outline"
-                  onClick={doBulkFollowUp}
-                  disabled={!selectedIds.size}
-                  className="border-gray-200 dark:border-gray-700 hover:bg-orange-50 dark:hover:bg-orange-950/20 hover:border-orange-300 dark:hover:border-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => setSelectedIds(new Set())}
+                  className="text-blue-600 border-blue-200 hover:bg-blue-50"
                 >
-                  Set follow-up
+                  Clear Selection
                 </Button>
                 <Button
+                  variant="destructive"
                   size="sm"
-                  variant="ghost"
-                  onClick={() => setRemindersOpen(true)}
-                  disabled={!selectedIds.size}
-                  className="hover:bg-orange-50 dark:hover:bg-orange-950/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={handleBulkDelete}
+                  className="bg-red-600 hover:bg-red-700"
                 >
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                  </svg>
-                  Reminders…
+                  Delete Selected
                 </Button>
               </div>
             </div>
-            <ul className="divide-y divide-gray-200 dark:divide-gray-700">
-              {filteredAndSortedApplications.map((application) => (
-                <motion.li
-                  key={application._id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="p-6 hover:bg-gradient-to-r hover:from-orange-50/30 hover:to-amber-50/30 dark:hover:from-orange-950/10 dark:hover:to-amber-950/10 transition-all duration-200 border-l-4 border-transparent hover:border-orange-400 dark:hover:border-orange-600"
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3 mb-3">
-                        <Checkbox
-                          id={`sel-${application._id}`}
-                          checked={selectedIds.has(application._id)}
-                          onCheckedChange={(checked) =>
-                            toggleSelect(application._id, checked === true)
-                          }
-                          className="data-[state=checked]:bg-orange-500 data-[state=checked]:border-orange-500"
-                        />
-                        <Label
-                          htmlFor={`sel-${application._id}`}
-                          className="sr-only"
-                        >
-                          Select
-                        </Label>
-                        <div className="flex-1">
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                            <div className="flex-1">
-                              <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 truncate mb-1">
-                                {application.job?.title}
-                              </h3>
-                              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                                </svg>
-                                <span className="font-medium">{application.job?.company}</span>
-                                <span className="text-gray-400">•</span>
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                </svg>
-                                <span>{application.job?.location}</span>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {application.job?.isSponsored && (
-                                <TooltipProvider>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <Badge className="bg-gradient-to-r from-orange-500 to-amber-500 text-white border-0 shadow-sm">
-                                        <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                        </svg>
-                                        Sponsored
-                                      </Badge>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <p>This job is sponsored by the company</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
-                              )}
-                              <Badge
-                                variant={
-                                  statusVariants[
-                                    application.status as keyof typeof statusVariants
-                                  ] || "secondary"
-                                }
-                                className="capitalize"
-                              >
-                                {application.status}
-                              </Badge>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-3">
-                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                          <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          <span className="font-medium">Found:</span>
-                          <span>{format(new Date(application.job?.dateFound || 0), "MMM d, yyyy")}</span>
-                        </div>
-                        {application.appliedDate && (
-                          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                            <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <span className="font-medium">Applied:</span>
-                            <span>{format(new Date(application.appliedDate), "MMM d, yyyy")}</span>
-                          </div>
-                        )}
-                        {application.job?.salary && (
-                          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                            <svg className="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <span className="font-medium">Salary:</span>
-                            <span>{application.job.salary}</span>
-                          </div>
-                        )}
-                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                          <svg className="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                          </svg>
-                          <span className="font-medium">Source:</span>
-                          <span className="capitalize">{application.job?.source}</span>
-                        </div>
-                      </div>
-
-                      {application.notes && (
-                        <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                          <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2">
-                            {application.notes}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex space-x-2">
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => onViewApplication(application)}
-                              className="border-gray-200 dark:border-gray-700 hover:bg-orange-50 dark:hover:bg-orange-950/20 hover:border-orange-300 dark:hover:border-orange-600"
-                            >
-                              <EyeIcon className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>View Details</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => onEditApplication(application)}
-                              className="border-gray-200 dark:border-gray-700 hover:bg-orange-50 dark:hover:bg-orange-950/20 hover:border-orange-300 dark:hover:border-orange-600"
-                            >
-                              <PencilIcon className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Edit Application</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleDeleteClick(application)}
-                                  className="border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-950/20 hover:border-red-300 dark:hover:border-red-600 text-red-600 dark:text-red-400"
-                                >
-                                  <TrashIcon className="h-4 w-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>
-                                    Are you sure?
-                                  </AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    This action cannot be undone. This will
-                                    permanently delete the application for
-                                    &ldquo;{application.job?.title}&rdquo; at{" "}
-                                    {application.job?.company}.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={confirmDelete}
-                                    className="bg-red-600 hover:bg-red-700"
-                                  >
-                                    Delete
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Delete Application</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                  </div>
-                </motion.li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card className="border-0 bg-gradient-to-br from-white via-orange-50/30 to-white dark:from-gray-900 dark:via-orange-950/10 dark:to-gray-900 shadow-lg">
-          <CardContent className="p-12 text-center">
-            <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-orange-100 to-amber-100 dark:from-orange-900/30 dark:to-amber-900/30 rounded-full flex items-center justify-center">
-              <svg className="w-10 h-10 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </div>
-            <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-3">
-              No jobs found
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-md mx-auto">
-              {searchQuery || selectedStatus !== "all"
-                ? "Try adjusting your filters or search terms to find more opportunities"
-                : "Start by installing the Chrome extension to track jobs automatically and build your application pipeline"}
-            </p>
-            {(!searchQuery && selectedStatus === "all") && (
-              <Button className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-lg">
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                Download Extension
-              </Button>
-            )}
           </CardContent>
         </Card>
       )}
 
-      <Dialog open={viewsOpen} onOpenChange={setViewsOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">Saved Views</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3 max-h-96 overflow-y-auto">
-            {savedViews.length === 0 && (
-              <div className="text-center py-8">
-                <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-orange-100 to-amber-100 dark:from-orange-900/30 dark:to-amber-900/30 rounded-full flex items-center justify-center">
-                  <svg className="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                  </svg>
-                </div>
-                <p className="text-gray-600 dark:text-gray-400">
-                  No saved views yet.
-                </p>
-                <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">
-                  Create your first view by setting filters and clicking &ldquo;Save view&rdquo;
-                </p>
-              </div>
-            )}
-            {savedViews.map((v) => (
-              <div
-                key={v.id}
-                className="flex items-center justify-between gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
-              >
-                <div className="flex-1">
-                  <div className="font-medium text-gray-900 dark:text-gray-100">{v.name}</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    {Object.entries(v.filters || {})
-                      .map(([k, val]) => `${k}:${String(val)}`)
-                      .join(" • ")}
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => applySavedView(v.id)}
-                    className="border-gray-200 dark:border-gray-700 hover:bg-orange-50 dark:hover:bg-orange-950/20 hover:border-orange-300 dark:hover:border-orange-600"
-                  >
-                    Apply
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => deleteSavedView(v.id)}
-                    className="bg-red-600 hover:bg-red-700 text-white"
-                  >
-                    Delete
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Applications List */}
+      <div className="space-y-4">
+        {filteredApplications.map((application) => (
+          <motion.div
+            key={application._id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Card className="border border-gray-200 hover:border-orange-300 transition-colors">
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                  <Checkbox
+                    checked={selectedIds.has(application._id)}
+                    onCheckedChange={(checked) => {
+                      const newSelectedIds = new Set(selectedIds);
+                      if (checked) {
+                        newSelectedIds.add(application._id);
+                      } else {
+                        newSelectedIds.delete(application._id);
+                      }
+                      setSelectedIds(newSelectedIds);
+                    }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                          {application.job?.title || "Untitled Job"}
+                        </h3>
+                        <p className="text-gray-600 mb-2">{application.job?.company || "Unknown Company"}</p>
+                        
+                        {/* Basic Info */}
+                        <div className="flex items-center gap-4 text-sm text-gray-500 mb-3">
+                          <span className="flex items-center gap-1">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            {application.job?.location || "Unknown Location"}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            {format(new Date(application.job?.dateFound || 0), "MMM d, yyyy")}
+                          </span>
+                          {application.job?.jobType && (
+                            <span className="flex items-center gap-1">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                              </svg>
+                              {application.job.jobType}
+                            </span>
+                          )}
+                        </div>
+                        
+                        {/* Additional Details */}
+                        {(application.job?.salary || application.job?.experienceLevel || application.job?.industry) && (
+                          <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
+                            {application.job?.salary && (
+                              <span className="flex items-center gap-1">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                                </svg>
+                                {application.job.salary}
+                              </span>
+                            )}
+                            {application.job?.experienceLevel && (
+                              <span className="flex items-center gap-1">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                                </svg>
+                                {application.job.experienceLevel}
+                              </span>
+                            )}
+                            {application.job?.industry && (
+                              <span className="flex items-center gap-1">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                </svg>
+                                {application.job.industry}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                        
+                        {/* Skills */}
+                        {application.job?.skills && application.job.skills.length > 0 && (
+                          <div className="mb-3">
+                            <div className="flex flex-wrap gap-1">
+                              {application.job.skills.slice(0, 5).map((skill, index) => (
+                                <Badge key={index} variant="outline" className="text-xs">
+                                  {skill}
+                                </Badge>
+                              ))}
+                              {application.job.skills.length > 5 && (
+                                <Badge variant="outline" className="text-xs">
+                                  +{application.job.skills.length - 5}
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Status and Badges */}
+                        <div className="flex items-center gap-2 mb-3">
+                          <Badge variant={application.status === "applied" ? "default" : "secondary"}>
+                            {application.status}
+                          </Badge>
+                          {application.job?.isSponsored && (
+                            <Badge variant="outline" className="border-green-500 text-green-700">
+                              🇬🇧 Sponsored
+                            </Badge>
+                          )}
+                          {application.job?.isRecruitmentAgency && (
+                            <Badge variant="outline" className="border-blue-500 text-blue-700">
+                              Agency
+                            </Badge>
+                          )}
+                          {application.job?.remoteWork && (
+                            <Badge variant="outline" className="border-purple-500 text-purple-700">
+                              Remote
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 ml-4">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => onViewApplication(application)}
+                                className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>View Application</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
 
-      <Dialog open={remindersOpen} onOpenChange={setRemindersOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">Quick Reminders</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-6">
-            <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center">
-                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                  </svg>
-                </div>
-                <div>
-                  <div className="font-medium text-gray-900 dark:text-gray-100">Enable reminders</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                    Toggle follow-up reminders for selected items
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => onEditApplication(application)}
+                                className="text-amber-600 border-amber-200 hover:bg-amber-50"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Edit Application</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="text-red-600 border-red-200 hover:bg-red-50"
+                                  >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Delete Application</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Are you sure you want to delete the application for &quot;{application.job?.title || "this job"}&quot; at {application.job?.company || "this company"}?
+                                      This action cannot be undone.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => handleDeleteClick(application._id)}
+                                      className="bg-red-600 hover:bg-red-700"
+                                    >
+                                      Delete
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Delete Application</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <Switch
-                checked={reminderEnable}
-                onCheckedChange={(v) => setReminderEnable(v === true)}
-                className="data-[state=checked]:bg-orange-500"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="reminder-date" className="text-sm font-medium text-gray-700 dark:text-gray-300">Remind on</Label>
-              <Input
-                id="reminder-date"
-                type="datetime-local"
-                value={reminderDate}
-                onChange={(e) => setReminderDate(e.target.value)}
-                className="border-gray-200 dark:border-gray-700 focus:border-orange-500 focus:ring-orange-500 dark:focus:border-orange-400 dark:focus:ring-orange-400"
-                disabled={!reminderEnable}
-              />
-            </div>
-            <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <Button variant="ghost" onClick={() => setRemindersOpen(false)} className="hover:bg-gray-100 dark:hover:bg-gray-800">
-                Cancel
-              </Button>
-              <Button
-                onClick={async () => {
-                  try {
-                    const ts =
-                      reminderEnable && reminderDate
-                        ? new Date(reminderDate).getTime()
-                        : undefined;
-                    await dashboardApi.bulkUpdateApplicationsFollowUp(
-                      Array.from(selectedIds),
-                      ts
-                    );
-                    showSuccess("Reminders updated");
-                    setRemindersOpen(false);
-                    setSelectedIds(new Set());
-                  } catch (e: any) {
-                    showError(e?.message || "Failed to update reminders");
-                  }
-                }}
-                className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-md"
-              >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </CardContent>
+            </Card>
+          </motion.div>
+        ))}
+
+        {filteredApplications.length === 0 && (
+          <Card className="border-0 bg-gradient-to-br from-gray-50 to-gray-100 shadow-lg">
+            <CardContent className="p-12 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center">
+                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                Save
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                No applications found
+              </h3>
+              <p className="text-gray-600">
+                {applications.length === 0
+                  ? "You haven't added any job applications yet."
+                  : "Try adjusting your search or filter criteria."}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   );
 }

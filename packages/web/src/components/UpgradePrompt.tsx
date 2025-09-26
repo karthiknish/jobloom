@@ -169,7 +169,7 @@ export function UpgradePrompt({ feature }: UpgradePromptProps) {
         return {
           title: "Unlock Premium Features",
           description:
-            "Upgrade to Jobloom Premium and access all advanced features to accelerate your job search.",
+            "Upgrade to Hireall Premium and access all advanced features to accelerate your job search.",
           highlightFeatures: FEATURES,
         };
     }

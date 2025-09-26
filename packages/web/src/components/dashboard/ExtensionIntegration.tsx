@@ -177,12 +177,12 @@ export function ExtensionIntegration({ userId }: ExtensionIntegrationProps) {
             
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                The Jobloom Chrome extension automatically detects job postings on popular job sites and syncs them to your dashboard.
+                The Hireall Chrome extension automatically detects job postings on popular job sites and syncs them to your dashboard.
               </p>
               
               <div className="flex items-center space-x-3 text-sm text-muted-foreground">
                 <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary">1</span>
-                <span>Install the Jobloom Chrome Extension</span>
+                <span>Install the Hireall Chrome Extension</span>
               </div>
               
               <div className="flex items-center space-x-3 text-sm text-muted-foreground">

@@ -30,7 +30,8 @@ export async function POST(request: NextRequest) {
 
     const userId = decodedToken.uid;
     const body = await request.json();
-    const { plan, billingCycle = "monthly" } = body;
+    const { plan } = body;
+    const billingCycle = "monthly"; // Only monthly billing is supported
 
     if (!plan || !["premium"].includes(plan)) {
       return NextResponse.json(
@@ -56,7 +57,7 @@ export async function POST(request: NextRequest) {
       status: "active",
       currentPeriodStart: admin.firestore.Timestamp.now(),
       currentPeriodEnd: admin.firestore.Timestamp.fromDate(
-        new Date(Date.now() + (billingCycle === "yearly" ? 365 : 30) * 24 * 60 * 60 * 1000)
+        new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days for monthly billing
       ),
       cancelAtPeriodEnd: false,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -65,7 +66,7 @@ export async function POST(request: NextRequest) {
       stripeSubscriptionId: `mock_stripe_${subscriptionId}`,
       stripeCustomerId: `mock_customer_${userId}`,
       billingCycle,
-      price: billingCycle === "yearly" ? 99.99 : 9.99,
+      price: 9.99, // Monthly premium price
     };
 
     // Save subscription

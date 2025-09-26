@@ -1,6 +1,22 @@
 /// <reference types="chrome" />
 import { DEFAULT_WEB_APP_URL } from "./constants";
 
+// Helper function to create SVG strings from Lucide icons
+function createSVGString(iconName: string, size: number = 16): string {
+  const svgIcons: Record<string, string> = {
+    checkCircle: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`,
+    alertTriangle: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`,
+    xCircle: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>`,
+    bell: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>`,
+    clipboardPlus: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="m4 16c-1.1 0-2-.9-2-2v-10c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path><line x1="12" y1="12" x2="12" y2="16"></line><line x1="10" y1="14" x2="14" y2="14"></line></svg>`,
+    target: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>`,
+    home: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>`,
+    fileText: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`,
+  };
+  
+  return svgIcons[iconName] || "";
+}
+
 // Toast helper (top-level so all functions can use it)
 function showToast(
   message: string,
@@ -12,7 +28,7 @@ function showToast(
   const el = document.createElement("div");
   el.className = `toast ${type}`;
   const icon =
-    type === "success" ? "✅" : type === "warning" ? "⚠️" : type === "error" ? "❌" : "🔔";
+    type === "success" ? createSVGString("checkCircle") : type === "warning" ? createSVGString("alertTriangle") : type === "error" ? createSVGString("xCircle") : createSVGString("bell");
   el.innerHTML = `
     <span class="icon">${icon}</span>
     <div class="message">${message}</div>
@@ -54,14 +70,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Auth buttons
   const signinBtn = document.getElementById("signin-btn");
-  const signinGoogleBtn = document.getElementById("signin-google-btn");
   const signupBtn = document.getElementById("signup-btn");
-  const signupGoogleBtn = document.getElementById("signup-google-btn");
   const signoutBtn = document.getElementById("signout-btn");
-
-  // OAuth buttons
-  const oauthLoginBtn = document.getElementById("oauth-login-btn") as HTMLButtonElement;
-  const oauthLogoutBtn = document.getElementById("oauth-logout-btn") as HTMLButtonElement;
 
   // Job management
   const jobFilters = document.querySelectorAll(".filter-btn");
@@ -73,69 +83,89 @@ document.addEventListener("DOMContentLoaded", () => {
   setupJobFilters();
   setupSettingsControls();
 
-  // Check authentication status
-  checkAuthStatus();
+  // Check authentication status (throttled to prevent flickering)
+  let authCheckInProgress = false;
+  let lastAuthState: string | null = null;
+  const throttledCheckAuth = () => {
+    if (authCheckInProgress) return;
+    authCheckInProgress = true;
+    checkAuthStatus().finally(() => {
+      authCheckInProgress = false;
+    });
+  };
+  throttledCheckAuth();
 
   async function checkAuthStatus() {
     const authStatus = document.getElementById("auth-status")!;
     const statusDot = authStatus.querySelector(".status-dot")!;
     const statusText = authStatus.querySelector(".status-text")!;
 
-    // Check both Firebase and OAuth authentication
-    const res = await chrome.storage.sync.get(["firebaseUid", "userId", "oauthProfile", "oauthTokens"]);
+    // Check Firebase authentication
+    const res = await chrome.storage.sync.get(["firebaseUid", "userId"]);
 
     const firebaseUid = res.firebaseUid || res.userId;
-    const hasOAuth = res.oauthProfile && res.oauthTokens;
+    const currentAuthState = firebaseUid ? "authenticated" : "unauthenticated";
 
-    if (!firebaseUid && !hasOAuth) {
+    // Prevent unnecessary DOM updates if state hasn't changed
+    if (lastAuthState === currentAuthState) {
+      return;
+    }
+    lastAuthState = currentAuthState;
+
+    if (!firebaseUid) {
       // User not authenticated
       authStatus.className = "auth-status unauthenticated";
       (statusDot as HTMLElement).style.background = "#f59e0b";
       statusText.textContent = "Not signed in";
 
-      // Show OAuth login button, hide logout
-      if (oauthLoginBtn) oauthLoginBtn.style.display = "flex";
-      if (oauthLogoutBtn) oauthLogoutBtn.style.display = "none";
-
-      // Hide main actions, show auth tab
-      document
-        .querySelectorAll(
-          '.nav-tab[data-tab="dashboard"], .nav-tab[data-tab="jobs"], .nav-tab[data-tab="settings"]'
-        )
-        .forEach((tab) => {
-          (tab as HTMLElement).style.display = "none";
-        });
-      const authTab = document.querySelector(
-        '.nav-tab[data-tab="auth"]'
-      ) as HTMLElement;
-      if (authTab) {
-        authTab.style.display = "flex";
-        authTab.click(); // Switch to auth tab
-      }
-    } else {
-      // User authenticated (either Firebase or OAuth)
-      authStatus.className = "auth-status authenticated";
-      (statusDot as HTMLElement).style.background = "#10b981";
-
-      if (hasOAuth && res.oauthProfile) {
-        statusText.textContent = `OAuth: ${res.oauthProfile.email}`;
-        // Show OAuth logout button, hide login
-        if (oauthLoginBtn) oauthLoginBtn.style.display = "none";
-        if (oauthLogoutBtn) oauthLogoutBtn.style.display = "flex";
-      } else if (firebaseUid) {
-        statusText.textContent = "Firebase: Signed in";
-        // Hide OAuth buttons for Firebase auth
-        if (oauthLoginBtn) oauthLoginBtn.style.display = "none";
-        if (oauthLogoutBtn) oauthLogoutBtn.style.display = "none";
-      }
-
-      // Show all tabs
-      document.querySelectorAll(".nav-tab").forEach((tab) => {
-        (tab as HTMLElement).style.display = "flex";
+      // Only update tabs if they're not already hidden/shown correctly
+      const mainTabs = document.querySelectorAll(
+        '.nav-tab[data-tab="dashboard"], .nav-tab[data-tab="jobs"], .nav-tab[data-tab="settings"]'
+      );
+      let needsUpdate = false;
+      mainTabs.forEach((tab) => {
+        if ((tab as HTMLElement).style.display !== "none") {
+          needsUpdate = true;
+        }
       });
 
-      // Load jobs for the jobs tab
-      loadJobs();
+      if (needsUpdate) {
+        mainTabs.forEach((tab) => {
+          (tab as HTMLElement).style.display = "none";
+        });
+        const authTab = document.querySelector(
+          '.nav-tab[data-tab="auth"]'
+        ) as HTMLElement;
+        if (authTab) {
+          authTab.style.display = "flex";
+          // Only switch to auth tab if not already active
+          if (!authTab.classList.contains("active")) {
+            authTab.click();
+          }
+        }
+      }
+    } else {
+      // User authenticated with Firebase
+      authStatus.className = "auth-status authenticated";
+      (statusDot as HTMLElement).style.background = "#10b981";
+      statusText.textContent = "Firebase: Signed in";
+
+      // Only update tabs if they're not already shown
+      const allTabs = document.querySelectorAll(".nav-tab");
+      let needsUpdate = false;
+      allTabs.forEach((tab) => {
+        if ((tab as HTMLElement).style.display !== "flex") {
+          needsUpdate = true;
+        }
+      });
+
+      if (needsUpdate) {
+        allTabs.forEach((tab) => {
+          (tab as HTMLElement).style.display = "flex";
+        });
+        // Load jobs for the jobs tab
+        loadJobs();
+      }
     }
   }
 
@@ -271,11 +301,11 @@ document.addEventListener("DOMContentLoaded", () => {
       if (jobs.length === 0) {
         jobList.innerHTML = `
           <div style="text-align: center; color: var(--muted); padding: 40px 20px;">
-            <div style="font-size: 48px; margin-bottom: 16px;">📋</div>
+            <div style="font-size: 48px; margin-bottom: 16px;">${createSVGString("clipboardPlus", 48)}</div>
             <h3 style="margin: 0 0 8px 0; color: #374151;">No jobs tracked yet</h3>
             <p style="margin: 0; font-size: 14px;">Jobs you add to your board will appear here</p>
             <button class="action-btn" style="margin-top: 16px; padding: 8px 16px; font-size: 12px;" onclick="switchToDashboard()">
-              <div class="action-icon primary">🎯</div>
+              <div class="action-icon primary">${createSVGString("target", 20)}</div>
               <div class="action-content">
                 <h3 style="font-size: 14px; margin: 0;">Find Jobs Now</h3>
                 <p style="font-size: 12px; margin: 4px 0 0 0;">Browse job sites to get started</p>
@@ -362,19 +392,19 @@ document.addEventListener("DOMContentLoaded", () => {
               </span>
               ${
                 job.sponsorshipInfo?.isSponsored
-                  ? `<span class="job-badge badge-sponsored">🎯 ${
+                  ? `<span class="job-badge badge-sponsored">${createSVGString("target", 12)} ${
                       job.sponsorshipInfo.sponsorshipType || "Sponsored"
                     }</span>`
                   : ""
               }
               ${
                 job.salary
-                  ? `<span class="job-badge badge-salary">💰 ${job.salary}</span>`
+                  ? `<span class="job-badge badge-salary">$ ${job.salary}</span>`
                   : ""
               }
               ${
                 job.remoteWork
-                  ? `<span class="job-badge badge-remote">🏠 Remote</span>`
+                  ? `<span class="job-badge badge-remote">${createSVGString("home", 12)} Remote</span>`
                   : ""
               }
             </div>
@@ -390,6 +420,10 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             <div class="job-actions">
+              <div class="sponsor-status" id="sponsor-status-${job.id}" style="display: none;">Checking...</div>
+              <button class="job-action-btn" onclick="checkJobSponsor('${job.id}', '${job.company.replace(/'/g, "\\'")}')" id="sponsor-btn-${job.id}">
+                🇬🇧 Check Sponsor
+              </button>
               ${
                 job.status !== "interested"
                   ? `<button class="job-action-btn" onclick="changeJobStatus('${job.id}', 'interested')">Mark Interested</button>`
@@ -426,7 +460,7 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("Error loading jobs:", error);
       jobList.innerHTML = `
         <div style="text-align: center; color: var(--error); padding: 20px;">
-          <div style="font-size: 32px; margin-bottom: 8px;">❌</div>
+          <div style="font-size: 32px; margin-bottom: 8px;">${createSVGString("xCircle", 32)}</div>
           <p>Failed to load jobs. Please try again.</p>
         </div>
       `;
@@ -436,13 +470,13 @@ document.addEventListener("DOMContentLoaded", () => {
   // Helper function for status icons
   function getStatusIcon(status: string): string {
     const icons: Record<string, string> = {
-      applied: "📝",
-      interviewing: "🎯",
-      offered: "🎉",
-      rejected: "❌",
-      withdrawn: "🚫",
+      applied: createSVGString("fileText", 12),
+      interviewing: createSVGString("target", 12),
+      offered: "⭐",
+      rejected: createSVGString("xCircle", 12),
+      withdrawn: "❌",
     };
-    return icons[status] || "📋";
+    return icons[status] || createSVGString("clipboardPlus", 12);
   }
 
   // Enhanced job status update function
@@ -565,52 +599,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   signinBtn?.addEventListener("click", () => openAuthPage("sign-in"));
-  signinGoogleBtn?.addEventListener("click", () =>
-    openAuthPage("sign-in", "google")
-  );
   signupBtn?.addEventListener("click", () => openAuthPage("sign-up"));
-  signupGoogleBtn?.addEventListener("click", () =>
-    openAuthPage("sign-up", "google")
-  );
-
-  // OAuth event listeners
-  oauthLoginBtn?.addEventListener("click", async () => {
-    try {
-      oauthLoginBtn.textContent = "🔄 Logging in...";
-      oauthLoginBtn.disabled = true;
-
-      const response = await chrome.runtime.sendMessage({ action: "oauthLogin" });
-
-      if (response.success) {
-        showToast(`Welcome, ${response.profile.name || response.profile.email}!`, { type: "success" });
-        checkAuthStatus(); // Refresh auth status
-      } else {
-        showToast(`OAuth login failed: ${response.error}`, { type: "error" });
-      }
-    } catch (error) {
-      showToast("OAuth login failed", { type: "error" });
-      console.error("OAuth login error:", error);
-    } finally {
-      oauthLoginBtn.textContent = "🔑 Login with Google OAuth";
-      oauthLoginBtn.disabled = false;
-    }
-  });
-
-  oauthLogoutBtn?.addEventListener("click", async () => {
-    try {
-      const response = await chrome.runtime.sendMessage({ action: "oauthLogout" });
-
-      if (response.success) {
-        showToast("OAuth logout successful", { type: "success" });
-        checkAuthStatus(); // Refresh auth status
-      } else {
-        showToast("OAuth logout failed", { type: "error" });
-      }
-    } catch (error) {
-      showToast("OAuth logout failed", { type: "error" });
-      console.error("OAuth logout error:", error);
-    }
-  });
 
   // Sign out logic
   signoutBtn?.addEventListener("click", () => {
@@ -752,3 +741,66 @@ function saveSettings() {
     showToast("Settings saved", { type: "success" });
   });
 }
+
+
+function showResult(element: HTMLElement, message: string, type: "success" | "error" | "warning" | "info") {
+  element.textContent = message;
+  element.className = `result-box ${type}`;
+  element.style.display = "block";
+}
+
+// Global function for checking job sponsors (called from HTML onclick)
+async function checkJobSponsor(jobId: string, companyName: string) {
+  const sponsorBtn = document.getElementById(`sponsor-btn-${jobId}`) as HTMLButtonElement;
+  const sponsorStatus = document.getElementById(`sponsor-status-${jobId}`) as HTMLDivElement;
+
+  if (!sponsorBtn || !sponsorStatus) return;
+
+  // Show checking state
+  sponsorBtn.disabled = true;
+  sponsorBtn.textContent = "Checking...";
+  sponsorStatus.style.display = "block";
+  sponsorStatus.textContent = "Checking...";
+  sponsorStatus.className = "sponsor-status checking";
+
+  try {
+    // Get the web app URL from storage or use default
+    const webAppUrl = await new Promise<string>((resolve) => {
+      chrome.storage.sync.get(["webAppUrl"], (result) => {
+        resolve(result.webAppUrl || DEFAULT_WEB_APP_URL);
+      });
+    });
+
+    const response = await fetch(`${webAppUrl}/api/sponsors?q=${encodeURIComponent(companyName)}&limit=1`);
+    const data = await response.json();
+
+    if (data.success && data.results.length > 0) {
+      const result = data.results[0];
+      const isSkilledWorker = result.isSkilledWorker;
+
+      if (isSkilledWorker) {
+        sponsorStatus.textContent = "Licensed";
+        sponsorStatus.className = "sponsor-status licensed";
+        showToast(`${createSVGString("checkCircle")} ${result.name} is a licensed sponsor!`, { type: "success" });
+      } else {
+        sponsorStatus.textContent = "Not SW";
+        sponsorStatus.className = "sponsor-status not-licensed";
+        showToast(`${createSVGString("alertTriangle")} ${result.name} is licensed but not for Skilled Worker visas`, { type: "warning" });
+      }
+    } else {
+      sponsorStatus.textContent = "Not Found";
+      sponsorStatus.className = "sponsor-status not-licensed";
+      showToast(`${createSVGString("xCircle")} ${companyName} not found in sponsor register`, { type: "error" });
+    }
+  } catch (error) {
+    sponsorStatus.textContent = "Error";
+    sponsorStatus.className = "sponsor-status not-licensed";
+    showToast(`${createSVGString("xCircle")} Error checking sponsor status`, { type: "error" });
+  } finally {
+    sponsorBtn.disabled = false;
+    sponsorBtn.textContent = "🇬🇧 Check Sponsor";
+  }
+}
+
+// Make function globally available
+(window as any).checkJobSponsor = checkJobSponsor;

@@ -24,8 +24,24 @@ export interface Job {
   url?: string;
   description?: string;
   salary?: string;
+  salaryRange?: {
+    min?: number;
+    max?: number;
+    currency?: string;
+  } | null;
+  skills?: string[];
+  requirements?: string[];
+  benefits?: string[];
+  jobType?: string;
+  experienceLevel?: string;
+  remoteWork?: boolean;
+  companySize?: string;
+  industry?: string;
+  postedDate?: string;
+  applicationDeadline?: string;
   isSponsored: boolean;
   isRecruitmentAgency?: boolean;
+  sponsorshipType?: string;
   source: string;
   dateFound: number;
   userId: string;
@@ -165,8 +181,24 @@ export const dashboardApi = {
               url?: string;
               description?: string;
               salary?: string;
+              salaryRange?: {
+                min?: number;
+                max?: number;
+                currency?: string;
+              } | null;
+              skills?: string[];
+              requirements?: string[];
+              benefits?: string[];
+              jobType?: string;
+              experienceLevel?: string;
+              remoteWork?: boolean;
+              companySize?: string;
+              industry?: string;
+              postedDate?: string;
+              applicationDeadline?: string;
               isSponsored?: boolean;
               isRecruitmentAgency?: boolean;
+              sponsorshipType?: string;
               source?: string;
               dateFound?: number;
               createdAt?: number;
@@ -181,8 +213,20 @@ export const dashboardApi = {
               url: j.url,
               description: j.description,
               salary: j.salary,
+              salaryRange: j.salaryRange,
+              skills: j.skills,
+              requirements: j.requirements,
+              benefits: j.benefits,
+              jobType: j.jobType,
+              experienceLevel: j.experienceLevel,
+              remoteWork: j.remoteWork,
+              companySize: j.companySize,
+              industry: j.industry,
+              postedDate: j.postedDate,
+              applicationDeadline: j.applicationDeadline,
               isSponsored: !!j.isSponsored,
               isRecruitmentAgency: j.isRecruitmentAgency ?? undefined,
+              sponsorshipType: j.sponsorshipType,
               source: j.source ?? "manual",
               dateFound: j.dateFound ?? j.createdAt ?? Date.now(),
               userId: j.userId,
@@ -276,8 +320,20 @@ export const dashboardApi = {
       url: data.url ?? "",
       description: data.description ?? "",
       salary: data.salary ?? "",
+      salaryRange: data.salaryRange ?? null,
+      skills: data.skills ?? [],
+      requirements: data.requirements ?? [],
+      benefits: data.benefits ?? [],
+      jobType: data.jobType ?? "",
+      experienceLevel: data.experienceLevel ?? "",
+      remoteWork: data.remoteWork ?? false,
+      companySize: data.companySize ?? "",
+      industry: data.industry ?? "",
+      postedDate: data.postedDate ?? "",
+      applicationDeadline: data.applicationDeadline ?? "",
       isSponsored: !!data.isSponsored,
       isRecruitmentAgency: !!data.isRecruitmentAgency,
+      sponsorshipType: data.sponsorshipType ?? "",
       source: data.source ?? "manual",
       dateFound: data.dateFound ?? Date.now(),
       userId: user._id,

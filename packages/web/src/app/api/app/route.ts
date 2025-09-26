@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 // Main API route handler for /api/app
 export async function GET() {
   return NextResponse.json({
-    message: "Jobloom API is running",
+    message: "Hireall API is running",
     version: "1.0.0",
     endpoints: [
       "/api/app/users",

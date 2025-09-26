@@ -8,10 +8,27 @@ interface JobData {
   url: string;
   description?: string;
   salary?: string;
+  salaryRange?: {
+    min?: number;
+    max?: number;
+    currency?: string;
+    period?: string;
+  };
+  skills?: string[];
+  requirements?: string[];
+  benefits?: string[];
+  jobType?: string;
+  experienceLevel?: string;
+  remoteWork?: boolean;
+  companySize?: string;
+  industry?: string;
+  postedDate?: string;
+  applicationDeadline?: string;
   isSponsored: boolean;
   isRecruitmentAgency?: boolean;
   sponsorshipType?: string;
   dateFound: string;
+  source: string;
 }
 
 interface JobBoardEntry {
@@ -138,7 +155,7 @@ export class JobBoardManager {
       if (!userId) {
         return {
           success: false,
-          message: "User not authenticated. Please sign in to Jobloom.",
+          message: "User not authenticated. Please sign in to Hireall.",
         };
       }
 
@@ -148,7 +165,7 @@ export class JobBoardManager {
       // Generate client ID for rate limiting
       const clientId = await this.getOrCreateClientId();
 
-      // Create job via web API
+      // Create job via web API with comprehensive LinkedIn data
       const response = await fetch(`${webAppUrl}/api/app/jobs`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -159,9 +176,21 @@ export class JobBoardManager {
           url: jobData.url,
           description: jobData.description || undefined,
           salary: jobData.salary || undefined,
+          salaryRange: jobData.salaryRange || undefined,
+          skills: jobData.skills || [],
+          requirements: jobData.requirements || [],
+          benefits: jobData.benefits || [],
+          jobType: jobData.jobType || undefined,
+          experienceLevel: jobData.experienceLevel || undefined,
+          remoteWork: jobData.remoteWork || false,
+          companySize: jobData.companySize || undefined,
+          industry: jobData.industry || undefined,
+          postedDate: jobData.postedDate || undefined,
+          applicationDeadline: jobData.applicationDeadline || undefined,
           isSponsored: jobData.isSponsored,
           isRecruitmentAgency: jobData.isRecruitmentAgency || false,
-          source: "extension",
+          sponsorshipType: jobData.sponsorshipType || undefined,
+          source: jobData.source || "extension",
           userId: userId,
         }),
       });
@@ -343,7 +372,7 @@ export class JobBoardManager {
       if (!userId) {
         return {
           success: false,
-          message: "User not authenticated. Please sign in to Jobloom.",
+          message: "User not authenticated. Please sign in to Hireall.",
         };
       }
 

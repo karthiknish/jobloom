@@ -63,9 +63,9 @@ export function AppToaster() {
                 {icon}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium leading-relaxed">
+                <div className="text-sm font-medium leading-relaxed">
                   {message}
-                </p>
+                </div>
               </div>
               <button
                 onClick={() => toast.dismiss(t.id)}

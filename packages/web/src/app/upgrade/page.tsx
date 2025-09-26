@@ -13,7 +13,6 @@ import { useRouter } from "next/navigation";
 import { showSuccess, showError } from "@/components/ui/Toast";
 
 export default function UpgradePage() {
-  const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
   const [isUpgrading, setIsUpgrading] = useState(false);
   const { plan, refreshSubscription } = useSubscription();
   const { user } = useFirebaseAuth();
@@ -42,7 +41,7 @@ export default function UpgradePage() {
         },
         body: JSON.stringify({
           plan: targetPlan,
-          billingCycle,
+          billingCycle: "monthly",
         }),
       });
 
@@ -68,7 +67,7 @@ export default function UpgradePage() {
   const plans = [
     {
       name: "Free",
-      price: { monthly: 0, yearly: 0 },
+      price: 0,
       description: "Perfect for getting started",
       features: [
         "3 CV analyses per month",
@@ -87,7 +86,7 @@ export default function UpgradePage() {
     },
     {
       name: "Premium",
-      price: { monthly: 9.99, yearly: 99.99 },
+      price: 9.99,
       description: "Everything you need to accelerate your job search",
       features: [
         "Unlimited CV analyses",
@@ -142,39 +141,6 @@ export default function UpgradePage() {
 
       {/* Pricing Section */}
       <div className="max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
-        {/* Billing Toggle */}
-        <div className="flex justify-center mb-12">
-          <div className="bg-white rounded-lg p-1 shadow-sm border">
-            <div className="flex">
-              <button
-                onClick={() => setBillingCycle("monthly")}
-                className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${
-                  billingCycle === "monthly"
-                    ? "bg-primary text-white shadow-sm"
-                    : "text-gray-700 hover:text-gray-900"
-                }`}
-              >
-                Monthly
-              </button>
-              <button
-                onClick={() => setBillingCycle("yearly")}
-                className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${
-                  billingCycle === "yearly"
-                    ? "bg-primary text-white shadow-sm"
-                    : "text-gray-700 hover:text-gray-900"
-                }`}
-              >
-                Yearly
-                <Badge
-                  variant="secondary"
-                  className="ml-2 bg-green-100 text-green-800 text-xs"
-                >
-                  Save 17%
-                </Badge>
-              </button>
-            </div>
-          </div>
-        </div>
 
         {/* Plans */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
@@ -208,24 +174,14 @@ export default function UpgradePage() {
                   <div className="mt-4">
                     <div className="flex items-baseline justify-center">
                       <span className="text-4xl font-bold">
-                        ${planData.price[billingCycle]}
+                        £{planData.price}
                       </span>
-                      {planData.price[billingCycle] > 0 && (
+                      {planData.price > 0 && (
                         <span className="text-gray-500 ml-1">
-                          /{billingCycle === "monthly" ? "month" : "year"}
+                          /month
                         </span>
                       )}
                     </div>
-                    {billingCycle === "yearly" && planData.price.yearly > 0 && (
-                      <p className="text-sm text-green-600 mt-1">
-                        Save $
-                        {(
-                          planData.price.monthly * 12 -
-                          planData.price.yearly
-                        ).toFixed(0)}{" "}
-                        annually
-                      </p>
-                    )}
                   </div>
                   <p className="text-gray-600 mt-2">{planData.description}</p>
                 </CardHeader>

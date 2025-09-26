@@ -20,8 +20,24 @@ interface Job {
   url?: string;
   description?: string;
   salary?: string;
+  salaryRange?: {
+    min?: number;
+    max?: number;
+    currency?: string;
+  } | null;
+  skills?: string[];
+  requirements?: string[];
+  benefits?: string[];
+  jobType?: string;
+  experienceLevel?: string;
+  remoteWork?: boolean;
+  companySize?: string;
+  industry?: string;
+  postedDate?: string;
+  applicationDeadline?: string;
   isSponsored: boolean;
   isRecruitmentAgency?: boolean;
+  sponsorshipType?: string;
   source: string;
   dateFound: number;
   userId: string;
@@ -162,8 +178,10 @@ export function ApplicationForm({
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Job Information (if editing existing application) */}
           {application?.job && (
-            <div className="bg-muted rounded-lg p-4 space-y-3">
+            <div className="bg-muted rounded-lg p-4 space-y-4">
               <h3 className="font-medium text-foreground">Job Details</h3>
+              
+              {/* Basic Info */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
                 <div>
                   <span className="font-medium">Title:</span> {application.job.title}
@@ -175,14 +193,119 @@ export function ApplicationForm({
                   <span className="font-medium">Location:</span> {application.job.location}
                 </div>
               </div>
+              
+              {/* Additional Details */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                {application.job.salary && (
+                  <div>
+                    <span className="font-medium">Salary:</span> {application.job.salary}
+                  </div>
+                )}
+                {application.job.jobType && (
+                  <div>
+                    <span className="font-medium">Job Type:</span> {application.job.jobType}
+                  </div>
+                )}
+                {application.job.experienceLevel && (
+                  <div>
+                    <span className="font-medium">Experience:</span> {application.job.experienceLevel}
+                  </div>
+                )}
+                {application.job.industry && (
+                  <div>
+                    <span className="font-medium">Industry:</span> {application.job.industry}
+                  </div>
+                )}
+                {application.job.companySize && (
+                  <div>
+                    <span className="font-medium">Company Size:</span> {application.job.companySize}
+                  </div>
+                )}
+                {application.job.remoteWork && (
+                  <div>
+                    <span className="font-medium">Remote:</span> Yes
+                  </div>
+                )}
+              </div>
+              
+              {/* Skills */}
+              {application.job.skills && application.job.skills.length > 0 && (
+                <div>
+                  <span className="font-medium text-sm">Skills:</span>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {application.job.skills.map((skill, index) => (
+                      <Badge key={index} variant="outline" className="text-xs">
+                        {skill}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Requirements */}
+              {application.job.requirements && application.job.requirements.length > 0 && (
+                <div>
+                  <span className="font-medium text-sm">Requirements:</span>
+                  <ul className="text-sm mt-1 space-y-1">
+                    {application.job.requirements.slice(0, 3).map((req, index) => (
+                      <li key={index} className="flex items-start gap-1">
+                        <span className="text-gray-400">•</span>
+                        {req}
+                      </li>
+                    ))}
+                    {application.job.requirements.length > 3 && (
+                      <li className="text-gray-500 text-xs">
+                        +{application.job.requirements.length - 3} more requirements
+                      </li>
+                    )}
+                  </ul>
+                </div>
+              )}
+              
+              {/* Benefits */}
+              {application.job.benefits && application.job.benefits.length > 0 && (
+                <div>
+                  <span className="font-medium text-sm">Benefits:</span>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {application.job.benefits.slice(0, 5).map((benefit, index) => (
+                      <Badge key={index} variant="secondary" className="text-xs">
+                        {benefit}
+                      </Badge>
+                    ))}
+                    {application.job.benefits.length > 5 && (
+                      <Badge variant="secondary" className="text-xs">
+                        +{application.job.benefits.length - 5}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              )}
+              
+              {/* Status and Badges */}
               <div className="flex items-center gap-2">
                 <span className="font-medium">Status:</span>
                 <Badge variant={statusBadges[formData.status as keyof typeof statusBadges] || "secondary"}>
                   {statusOptions.find(opt => opt.value === formData.status)?.label || formData.status}
                 </Badge>
                 {application.job.isSponsored && (
-                  <Badge variant="orange">Sponsored</Badge>
+                  <Badge variant="orange">🇬🇧 Sponsored</Badge>
                 )}
+                {application.job.isRecruitmentAgency && (
+                  <Badge variant="outline">Agency</Badge>
+                )}
+                {application.job.remoteWork && (
+                  <Badge variant="outline">Remote</Badge>
+                )}
+              </div>
+              
+              {/* Dates */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
+                <div>
+                  <span className="font-medium">Posted:</span> {application.job.postedDate || "N/A"}
+                </div>
+                <div>
+                  <span className="font-medium">Deadline:</span> {application.job.applicationDeadline || "N/A"}
+                </div>
               </div>
             </div>
           )}

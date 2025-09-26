@@ -44,7 +44,7 @@ function isJobRelated(message: string): boolean {
 
 // Generate guardrail response for off-topic questions
 function getGuardrailResponse(): string {
-  return `I'm Jobloom's AI career assistant, specialized in helping with job search, career development, interview preparation, and professional growth. 
+  return `I'm Hireall's AI career assistant, specialized in helping with job search, career development, interview preparation, and professional growth. 
 
 I can help you with:
 • Resume and CV optimization
@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Create system prompt with context about being a career assistant
-    const systemPrompt = `You are Jobloom AI, a specialized career and job search assistant. You help users with:
+    const systemPrompt = `You are Hireall AI, a specialized career and job search assistant. You help users with:
 
 - Job search strategies and applications
 - Resume/CV writing and optimization
@@ -133,7 +133,7 @@ User question: ${message}
 
 ${context ? `Additional context: ${context}` : ''}
 
-Respond as Jobloom AI:`;
+Respond as Hireall AI:`;
 
     // Generate response
     const result = await model.generateContent(systemPrompt);

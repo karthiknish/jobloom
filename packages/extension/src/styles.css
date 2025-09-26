@@ -1,4 +1,4 @@
-/* Jobloom Extension Styles - Enhanced UI */
+/* Hireall Extension Styles - Enhanced UI */
 
 /* Enhanced Job Badges */
 .hireall-enhanced-badge {
@@ -71,7 +71,14 @@
   }
 
   .hireall-quick-actions {
-    display: none !important;
+    flex-wrap: wrap !important;
+    padding: 4px !important;
+    gap: 4px !important;
+  }
+  
+  .hireall-quick-actions button {
+    font-size: 10px !important;
+    padding: 4px 8px !important;
   }
 }
 

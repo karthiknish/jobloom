@@ -41,7 +41,7 @@ module.exports = {
     // replacements always produce a string in the bundle
     new webpack.DefinePlugin({
       "process.env.WEB_APP_URL": JSON.stringify(
-        process.env.WEB_APP_URL || "http://localhost:3000"
+        process.env.WEB_APP_URL || "https://hireall.app"
       ),
     }),
     new CopyPlugin({

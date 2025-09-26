@@ -200,18 +200,18 @@ export function AdvancedDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-orange-50/20 to-white dark:from-gray-900 dark:via-orange-950/5 dark:to-gray-900 mt-14">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-orange-50/20 to-white    mt-14">
         <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
           <div className="space-y-8">
-            <div className="h-8 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 bg-[length:200%_100%] animate-shimmer rounded w-1/4"></div>
+            <div className="h-8 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200    bg-[length:200%_100%] animate-shimmer rounded w-1/4"></div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-32 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 bg-[length:200%_100%] animate-shimmer rounded-lg shadow-sm"></div>
+                <div key={i} className="h-32 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200    bg-[length:200%_100%] animate-shimmer rounded-lg shadow-sm"></div>
               ))}
             </div>
             <div className="space-y-6">
-              <div className="h-64 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 bg-[length:200%_100%] animate-shimmer rounded-lg shadow-sm"></div>
-              <div className="h-64 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 bg-[length:200%_100%] animate-shimmer rounded-lg shadow-sm"></div>
+              <div className="h-64 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200    bg-[length:200%_100%] animate-shimmer rounded-lg shadow-sm"></div>
+              <div className="h-64 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200    bg-[length:200%_100%] animate-shimmer rounded-lg shadow-sm"></div>
             </div>
           </div>
         </div>
@@ -303,9 +303,9 @@ export function AdvancedDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 pt-16">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50    pt-16">
       {/* Header */}
-      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-700 shadow-sm">
+      <div className="bg-white/80  backdrop-blur-xl border-b border-gray-200  shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
@@ -328,7 +328,7 @@ export function AdvancedDashboard() {
                   initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.05, duration: 0.35 }}
-                  className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent"
+                  className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600   bg-clip-text text-transparent"
                 >
                   Job Dashboard
                 </motion.h1>
@@ -338,15 +338,15 @@ export function AdvancedDashboard() {
                   transition={{ delay: 0.12, duration: 0.35 }}
                   className="flex items-center gap-3 mt-2"
                 >
-                  <p className="text-base text-gray-600 dark:text-gray-300 font-medium">
-                    {greeting}, <span className="text-gray-900 dark:text-white font-semibold">{user.displayName || user.email}</span>!
+                  <p className="text-base text-gray-600  font-medium">
+                    {greeting}, <span className="text-gray-900  font-semibold">{user.displayName || user.email}</span>!
                   </p>
                   <Badge
                     variant={plan === "premium" ? "default" : "secondary"}
                     className={`text-xs font-semibold px-3 py-1 rounded-full ${
                       plan === "premium"
                         ? "bg-gradient-to-r from-primary to-secondary text-white shadow-sm"
-                        : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                        : "bg-gray-100 text-gray-700"
                     }`}
                   >
                     {plan === "premium" ? "⭐ Premium" : "Free Plan"}
@@ -455,7 +455,7 @@ export function AdvancedDashboard() {
 
               {/* Notification Center */}
               {applications && applications.length > 0 && (
-                <Card className="border-0 bg-gradient-to-br from-white via-orange-50/30 to-white dark:from-gray-900 dark:via-orange-950/10 dark:to-gray-900 shadow-lg">
+                <Card className="border-0 bg-gradient-to-br from-white via-orange-50/30 to-white    shadow-lg">
                   <CardHeader className="pb-4">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center">
@@ -468,134 +468,19 @@ export function AdvancedDashboard() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {(() => {
-                        const overdueCount = applications.filter(
-                          (a) => a.followUpDate && a.followUpDate < Date.now()
-                        ).length;
-                        const dueSoonCount = applications.filter((a) => {
-                          const tomorrow = Date.now() + 24 * 60 * 60 * 1000;
-                          return (
-                            a.followUpDate &&
-                            a.followUpDate <= tomorrow &&
-                            a.followUpDate >= Date.now()
-                          );
-                        }).length;
-                        const interviewCount = applications.filter(
-                          (a) => a.interviewDates && a.interviewDates.length > 0
-                        ).length;
-                        const offerCount = applications.filter(
-                          (a) => a.status === "offered"
-                        ).length;
-
-                        const hasNotifications =
-                          overdueCount > 0 ||
-                          dueSoonCount > 0 ||
-                          interviewCount > 0 ||
-                          offerCount > 0;
-
-                        if (!hasNotifications) {
-                          return (
-                            <div className="text-center py-12">
-                              <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 rounded-full flex items-center justify-center">
-                                <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                              </div>
-                              <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">
-                                All Clear!
-                              </h3>
-                              <p className="text-sm text-gray-600 dark:text-gray-400">
-                                No notifications at this time. You&apos;re all
-                                caught up with your applications.
-                              </p>
-                            </div>
-                          );
-                        }
-
-                        return (
-                          <>
-                            {overdueCount > 0 && (
-                              <div className="p-4 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-950/20 dark:to-red-900/30 border border-red-200 dark:border-red-800 rounded-lg shadow-sm">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-8 h-8 rounded-lg bg-red-500 flex items-center justify-center flex-shrink-0">
-                                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                                    </svg>
-                                  </div>
-                                  <div className="flex-1">
-                                    <div className="font-semibold text-red-800 dark:text-red-200">
-                                      Overdue Follow-ups
-                                    </div>
-                                    <p className="text-sm text-red-700 dark:text-red-300 mt-1">
-                                      {overdueCount} follow-ups need attention
-                                    </p>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-
-                            {dueSoonCount > 0 && (
-                              <div className="p-4 bg-gradient-to-r from-amber-50 to-yellow-100 dark:from-amber-950/20 dark:to-yellow-900/30 border border-amber-200 dark:border-amber-800 rounded-lg shadow-sm">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-8 h-8 rounded-lg bg-amber-500 flex items-center justify-center flex-shrink-0">
-                                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                  </div>
-                                  <div className="flex-1">
-                                    <div className="font-semibold text-amber-800 dark:text-amber-200">
-                                      Due Soon
-                                    </div>
-                                    <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
-                                      {dueSoonCount} follow-ups due within 24 hours
-                                    </p>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-
-                            {interviewCount > 0 && (
-                              <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-100 dark:from-blue-950/20 dark:to-indigo-900/30 border border-blue-200 dark:border-blue-800 rounded-lg shadow-sm">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center flex-shrink-0">
-                                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3a1 1 0 011-1h6a1 1 0 011 1v4m-6 0h6m-6 0l-2 2m8-2l2 2M9 14h6m-6 4h6" />
-                                    </svg>
-                                  </div>
-                                  <div className="flex-1">
-                                    <div className="font-semibold text-blue-800 dark:text-blue-200">
-                                      Upcoming Interviews
-                                    </div>
-                                    <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                                      {interviewCount} interviews scheduled
-                                    </p>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-
-                            {offerCount > 0 && (
-                              <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-100 dark:from-green-950/20 dark:to-emerald-900/30 border border-green-200 dark:border-green-800 rounded-lg shadow-sm">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-8 h-8 rounded-lg bg-green-500 flex items-center justify-center flex-shrink-0">
-                                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                  </div>
-                                  <div className="flex-1">
-                                    <div className="font-semibold text-green-800 dark:text-green-200">
-                                      Congratulations!
-                                    </div>
-                                    <p className="text-sm text-green-700 dark:text-green-300 mt-1">
-                                      You have {offerCount} job offers
-                                    </p>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </>
-                        );
-                      })()}
+                      <div className="text-center py-12">
+                        <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-green-100 to-emerald-100 rounded-full flex items-center justify-center">
+                          <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                          All caught up! 🎉
+                        </h3>
+                        <p className="text-gray-600">
+                          No pending notifications or follow-ups at this time.
+                        </p>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>

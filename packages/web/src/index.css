@@ -24,52 +24,21 @@ html {
   --color-card: #ffffff;
   --color-card-foreground: #18181b;
 
-  --color-primary: #b86e37;
+  --color-primary: #4CAF50;
   --color-primary-foreground: #ffffff;
 
-  --color-secondary: #e6c9a8;
-  --color-secondary-foreground: #18181b;
+  --color-secondary: #388E3C;
+  --color-secondary-foreground: #ffffff;
 
-  --color-accent: #f4f4f5;
-  --color-accent-foreground: #18181b;
+  --color-accent: #C8E6C9;
+  --color-accent-foreground: #1B5E20;
 
   --color-destructive: #ef4444;
   --color-destructive-foreground: #f4f4f5;
 
-  --color-ring: #b86e37;
+  --color-ring: #9FE2BF;
 }
 
-/* Dark theme tokens */
-.dark {
-  --color-background: #0b0b0e;
-  --color-foreground: #e5e7eb;
-
-  --color-muted: #111217;
-  --color-muted-foreground: #9ca3af;
-
-  --color-popover: #0f1115;
-  --color-popover-foreground: #e5e7eb;
-
-  --color-border: #1f2937;
-  --color-input: #1f2937;
-
-  --color-card: #0f1115;
-  --color-card-foreground: #e5e7eb;
-
-  --color-primary: #d08a55;
-  --color-primary-foreground: #0b0b0e;
-
-  --color-secondary: #1a1b20;
-  --color-secondary-foreground: #e5e7eb;
-
-  --color-accent: #14161b;
-  --color-accent-foreground: #e5e7eb;
-
-  --color-destructive: #ef4444;
-  --color-destructive-foreground: #111827;
-
-  --color-ring: #d08a55;
-}
 
 /* Map to shadcn token names so UI components pick these up */
 :root {
@@ -98,6 +67,25 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+}
+
+/* Prevent horizontal scrolling globally */
+* {
+  box-sizing: border-box;
+}
+
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Disable horizontal scroll bar */
+html {
+  overflow-x: hidden;
+}
+
+body {
+  overflow-x: hidden;
 }
 
 /* Animations */

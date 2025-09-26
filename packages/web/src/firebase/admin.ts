@@ -28,10 +28,29 @@ function initAdminApp(): App {
           parsed.project_id || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
       });
     } else {
-      adminApp = initializeApp({
-        credential: applicationDefault(),
-        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-      });
+      // Try to load from temp-key.json if GOOGLE_APPLICATION_CREDENTIALS is not set
+      try {
+        const fs = require('fs');
+        const path = require('path');
+        const keyPath = path.join(process.cwd(), 'temp-key.json');
+        if (fs.existsSync(keyPath)) {
+          const serviceAccount = JSON.parse(fs.readFileSync(keyPath, 'utf8'));
+          adminApp = initializeApp({
+            credential: cert(serviceAccount),
+            projectId: serviceAccount.project_id || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+          });
+        } else {
+          adminApp = initializeApp({
+            credential: applicationDefault(),
+            projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+          });
+        }
+      } catch (fileError) {
+        adminApp = initializeApp({
+          credential: applicationDefault(),
+          projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+        });
+      }
     }
   } catch {
     // As a last resort, try initialize with no options (useful in some hosting envs)

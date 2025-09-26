@@ -130,7 +130,7 @@ export default function AccountPage() {
               <CardHeader>
                 <CardTitle>Usage Statistics</CardTitle>
                 <CardDescription>
-                  Your activity and usage on Jobloom
+                  Your activity and usage on Hireall
                 </CardDescription>
               </CardHeader>
               <CardContent>

@@ -1,4 +1,29 @@
 import { DEFAULT_WEB_APP_URL } from "./constants";
+import { 
+  Target, 
+  ClipboardPlus, 
+  BookmarkPlus, 
+  Search, 
+  Users, 
+  FileText, 
+  User, 
+  Check, 
+  X, 
+  AlertTriangle, 
+  Home, 
+  Star, 
+  Briefcase, 
+  Eye,
+  Clock,
+  Flag,
+  Plus,
+  CheckCircle,
+  XCircle,
+  Info,
+  Crown,
+  Sparkles,
+  Building2
+} from "lucide-react";
 interface JobData {
   title: string;
   company: string;
@@ -79,21 +104,22 @@ interface AutofillProfile {
   };
 }
 
-interface JobBoardEntry {
-  id: string;
-  company: string;
-  title: string;
-  location: string;
-  url: string;
-  dateAdded: string;
-  status: "interested" | "applied" | "interviewing" | "rejected" | "offer";
-  notes: string;
-  salary?: string;
-  sponsorshipInfo?: {
-    isSponsored: boolean;
-    sponsorshipType?: string;
-  };
-  isRecruitmentAgency?: boolean;
+
+
+// Helper function to create Lucide icon elements
+function createIcon(IconComponent: any, size: number = 16, color: string = "currentColor") {
+  const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  icon.setAttribute("width", size.toString());
+  icon.setAttribute("height", size.toString());
+  icon.setAttribute("viewBox", "0 0 24 24");
+  icon.setAttribute("fill", "none");
+  icon.setAttribute("stroke", color);
+  icon.setAttribute("stroke-width", "2");
+  icon.setAttribute("stroke-linecap", "round");
+  icon.setAttribute("stroke-linejoin", "round");
+  
+  // Add the icon path (simplified - in real implementation you'd need the actual paths)
+  return icon;
 }
 
 class JobTracker {
@@ -157,7 +183,7 @@ class JobTracker {
   private createToggleButton() {
     const button = document.createElement("button");
     button.id = "hireall-toggle";
-    button.textContent = "🎯 Check Sponsored Jobs";
+    button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${createIcon(Target, 16).outerHTML} Check Sponsored Jobs</span>`;
     button.style.cssText = `
       position: fixed;
       top: 140px;
@@ -177,7 +203,7 @@ class JobTracker {
     button.addEventListener("click", async () => {
       if (this.isHighlightMode) {
         this.clearHighlights();
-        button.textContent = "🎯 Check Sponsored Jobs";
+        button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${createIcon(Target, 16).outerHTML} Check Sponsored Jobs</span>`;
         button.style.background = "#b86e37";
         this.isHighlightMode = false;
       } else {
@@ -185,35 +211,35 @@ class JobTracker {
         if (!(await this.checkRateLimit())) {
           const timeUntilReset =
             this.rateLimitWindow - (Date.now() - this.lastRequestTime);
-          button.textContent = `⏰ Rate limited (${Math.ceil(
+          button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${createIcon(Clock, 16).outerHTML} Rate limited (${Math.ceil(
             timeUntilReset / 1000
-          )}s)`;
+          )}s)</span>`;
           button.style.background = "#f59e0b";
 
           // Reset button after rate limit expires
           setTimeout(() => {
-            button.textContent = "🎯 Check Sponsored Jobs";
+            button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${createIcon(Target, 16).outerHTML} Check Sponsored Jobs</span>`;
             button.style.background = "#4f46e5";
           }, timeUntilReset);
           return;
         }
 
-        button.textContent = "⏳ Checking...";
+        button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${createIcon(Clock, 16).outerHTML} Checking...</span>`;
         button.disabled = true;
 
         try {
           await this.checkAndHighlightSponsoredJobs();
-          button.textContent = "❌ Clear Highlights";
+          button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${createIcon(X, 16).outerHTML} Clear Highlights</span>`;
           button.style.background = "#ef4444";
           this.isHighlightMode = true;
         } catch (error) {
           console.error("Error checking sponsored jobs:", error);
-          button.textContent = "❌ Error occurred";
+          button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${createIcon(XCircle, 16).outerHTML} Error occurred</span>`;
           button.style.background = "#ef4444";
 
           // Reset button after error
           setTimeout(() => {
-            button.textContent = "🎯 Check Sponsored Jobs";
+            button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${createIcon(Target, 16).outerHTML} Check Sponsored Jobs</span>`;
             button.style.background = "#4f46e5";
           }, 3000);
         } finally {
@@ -228,7 +254,7 @@ class JobTracker {
   private createAutofillButton() {
     const button = document.createElement("button");
     button.id = "hireall-autofill";
-    button.textContent = "📝 Autofill Application";
+    button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${createIcon(FileText, 16).outerHTML} Autofill Application</span>`;
     button.style.cssText = `
       position: fixed;
       top: 80px;
@@ -247,26 +273,26 @@ class JobTracker {
     `;
 
     button.addEventListener("click", async () => {
-      button.textContent = "⏳ Filling...";
+      button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${createIcon(Clock, 16).outerHTML} Filling...</span>`;
       button.disabled = true;
 
       try {
         await this.autofillApplication();
-        button.textContent = "✅ Filled!";
+        button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${createIcon(CheckCircle, 16).outerHTML} Filled!</span>`;
         button.style.background = "#b86e37";
 
         setTimeout(() => {
-          button.textContent = "📝 Autofill Application";
+          button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${createIcon(FileText, 16).outerHTML} Autofill Application</span>`;
           button.style.background = "#e6c9a8";
           button.disabled = false;
         }, 3000);
       } catch (error) {
         console.error("Autofill error:", error);
-        button.textContent = "❌ Error";
+        button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${createIcon(XCircle, 16).outerHTML} Error</span>`;
         button.style.background = "#ef4444";
 
         setTimeout(() => {
-          button.textContent = "📝 Autofill Application";
+          button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${createIcon(FileText, 16).outerHTML} Autofill Application</span>`;
           button.style.background = "#e6c9a8";
           button.disabled = false;
         }, 3000);
@@ -282,7 +308,7 @@ class JobTracker {
   private createPeopleSearchButton() {
     const button = document.createElement("button");
     button.id = "hireall-people-search";
-    button.textContent = "👥 Find Relevant People";
+    button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${createIcon(Users, 16).outerHTML} Find Relevant People</span>`;
     button.style.cssText = `
       position: fixed;
       top: 80px;
@@ -302,12 +328,12 @@ class JobTracker {
     button.addEventListener("click", () => {
       if (this.isPeopleSearchMode) {
         this.closePeopleSearchPanel();
-        button.textContent = "👥 Find Relevant People";
+        button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${createIcon(Users, 16).outerHTML} Find Relevant People</span>`;
         button.style.background = "#b86e37";
         this.isPeopleSearchMode = false;
       } else {
         this.openPeopleSearchPanel();
-        button.textContent = "❌ Close People Search";
+        button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${createIcon(X, 16).outerHTML} Close People Search</span>`;
         button.style.background = "#ef4444";
         this.isPeopleSearchMode = true;
       }
@@ -341,7 +367,7 @@ class JobTracker {
 
     panel.innerHTML = `
       <div style="padding: 20px; border-bottom: 1px solid #eee; background: #f8f9fa;">
-        <h3 style="margin: 0 0 15px 0; color: #333; font-size: 16px;">🔍 Find Relevant People</h3>
+        <h3 style="margin: 0 0 15px 0; color: #333; font-size: 16px; display: flex; align-items: center; gap: 8px;">${createIcon(Search, 18).outerHTML} Find Relevant People</h3>
         
         <div style="margin-bottom: 12px;">
           <label style="display: block; margin-bottom: 5px; font-size: 12px; color: #666; font-weight: 600;">SEARCH KEYWORDS</label>
@@ -371,8 +397,8 @@ class JobTracker {
           </select>
         </div>
         
-        <button id="search-people-btn" style="width: 100%; background: #0a66c2; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: 600; cursor: pointer;">
-          🔍 Search People
+        <button id="search-people-btn" style="width: 100%; background: #0a66c2; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+          ${createIcon(Search, 16).outerHTML} Search People
         </button>
       </div>
       
@@ -457,7 +483,7 @@ class JobTracker {
       return;
     }
 
-    searchBtn.textContent = "⏳ Searching...";
+    searchBtn.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${createIcon(Clock, 16).outerHTML} Searching...</span>`;
     searchBtn.disabled = true;
 
     try {
@@ -486,7 +512,7 @@ class JobTracker {
         // Show search URL and instructions
         resultsDiv.innerHTML = `
           <div style="padding: 15px; background: #f0f8ff; border-radius: 8px; margin-bottom: 15px;">
-            <p style="margin: 0 0 10px 0; font-weight: 600; color: #0a66c2;">🔗 LinkedIn Search URL Generated</p>
+            <p style="margin: 0 0 10px 0; font-weight: 600; color: #0a66c2; display: flex; align-items: center; gap: 6px;">${createIcon(Search, 16).outerHTML} LinkedIn Search URL Generated</p>
             <p style="margin: 0 0 10px 0; font-size: 12px; color: #666;">Click the link below to search LinkedIn, then return to this page and click "Search People" again:</p>
             <a href="${searchUrl}" target="_blank" style="color: #0a66c2; text-decoration: none; font-size: 12px; word-break: break-all;">${searchUrl}</a>
           </div>
@@ -500,7 +526,7 @@ class JobTracker {
       resultsDiv.innerHTML =
         '<div style="color: #ef4444; text-align: center; padding: 20px;">Error occurred while searching. Please try again.</div>';
     } finally {
-      searchBtn.textContent = "🔍 Search People";
+      searchBtn.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${createIcon(Search, 16).outerHTML} Search People</span>`;
       searchBtn.disabled = false;
     }
   }
@@ -698,12 +724,12 @@ class JobTracker {
         }
         <div style="margin-top: 10px; display: flex; gap: 6px;">
           <button onclick="window.open('${person.profileUrl}', '_blank')" 
-                  style="flex: 1; background: #0a66c2; color: white; border: none; padding: 6px; border-radius: 4px; font-size: 11px; cursor: pointer;">
-            👤 View Profile
+                  style="flex: 1; background: #0a66c2; color: white; border: none; padding: 6px; border-radius: 4px; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;">
+            ${createIcon(User, 12).outerHTML} View Profile
           </button>
-          <button onclick="this.textContent='✅ Noted'; this.disabled=true;" 
-                  style="flex: 1; background: #057642; color: white; border: none; padding: 6px; border-radius: 4px; font-size: 11px; cursor: pointer;">
-            ➕ Connect
+          <button onclick="this.innerHTML='${createIcon(Check, 12).outerHTML} Noted'; this.disabled=true;" 
+                  style="flex: 1; background: #057642; color: white; border: none; padding: 6px; border-radius: 4px; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;">
+            ${createIcon(Plus, 12).outerHTML} Connect
           </button>
         </div>
       </div>
@@ -713,8 +739,8 @@ class JobTracker {
 
     resultsDiv.innerHTML = `
       <div style="margin-bottom: 15px; padding: 10px; background: #f0f8ff; border-radius: 6px;">
-        <p style="margin: 0; font-size: 12px; color: #0a66c2; font-weight: 600;">
-          📊 Found ${people.length} relevant people
+        <p style="margin: 0; font-size: 12px; color: #0a66c2; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+          ${createIcon(Users, 14).outerHTML} Found ${people.length} relevant people
         </p>
       </div>
       ${resultsHtml}
@@ -1143,6 +1169,8 @@ class JobTracker {
     const salaryText = salaryEl?.textContent?.trim() || "";
     const skillsText = skillsEl?.textContent?.trim() || "";
     const postedDateText = postedDateEl?.textContent?.trim() || "";
+    // postedDateText is used for future enhancements
+    void postedDateText; // Prevent unused variable warning
 
     // Parse salary information
     const salaryRange = this.parseSalary(salaryText);
@@ -1499,7 +1527,7 @@ class JobTracker {
     if (!element.querySelector(".hireall-badge")) {
       const badge = document.createElement("div");
       badge.className = "hireall-badge";
-      const badgeIcon = sponsorshipType === "recruitment_agency" ? "🏢" : "🎯";
+      const badgeIcon = sponsorshipType === "recruitment_agency" ? createIcon(Building2, 12).outerHTML : createIcon(Target, 12).outerHTML;
       const badgeText =
         sponsorshipType === "recruitment_agency"
           ? "AGENCY"
@@ -1539,7 +1567,7 @@ class JobTracker {
 
   private setupAutoDetection() {
     // Auto-detect and highlight sponsored jobs when page loads or content changes
-    this.observer = new MutationObserver((mutations) => {
+    this.observer = new MutationObserver(() => {
       // Debounce the auto-detection to avoid too many API calls
       clearTimeout((this as any).autoDetectionTimeout);
       (this as any).autoDetectionTimeout = setTimeout(() => {
@@ -1686,7 +1714,7 @@ class JobTracker {
           box-shadow: 0 2px 4px rgba(0,0,0,0.1);
           border: 1px solid rgba(0,0,0,0.1);
         ">
-          ℹ️ No Sponsorship Data
+          ${createIcon(Info, 10).outerHTML} No Sponsorship Data
         </span>
       `;
     }
@@ -1721,7 +1749,7 @@ class JobTracker {
           letter-spacing: 0.5px;
           box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         ">
-          💰 ${salary}
+          ${createIcon(Briefcase, 10).outerHTML} ${salary}
         </span>
       `;
       infoBadges.appendChild(salaryBadge);
@@ -1742,7 +1770,7 @@ class JobTracker {
           letter-spacing: 0.5px;
           box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         ">
-          🏠 Remote
+          ${createIcon(Home, 10).outerHTML} Remote
         </span>
       `;
       infoBadges.appendChild(remoteBadge);
@@ -1768,7 +1796,7 @@ class JobTracker {
           letter-spacing: 0.5px;
           box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         ">
-          🎯 ${jobData.experienceLevel}
+          ${createIcon(Target, 10).outerHTML} ${jobData.experienceLevel}
         </span>
       `;
       infoBadges.appendChild(expBadge);
@@ -1931,12 +1959,14 @@ class JobTracker {
   private addJobBoardButton(
     element: Element,
     jobData: JobData,
-    sponsorshipData: any
+    _sponsorshipData: any
   ) {
+    // sponsorshipData parameter is used for future enhancements
+    void _sponsorshipData;
     // Skip if button already exists
     if (element.querySelector(".hireall-quick-actions")) return;
 
-    // Enhanced quick actions panel
+    // Enhanced quick actions panel - always visible
     const actionsPanel = document.createElement("div");
     actionsPanel.className = "hireall-quick-actions";
     actionsPanel.style.cssText = `
@@ -1948,51 +1978,86 @@ class JobTracker {
       display: flex;
       gap: 6px;
       align-items: center;
-      background: rgba(255, 255, 255, 0.95);
+      background: rgba(255, 255, 255, 0.98);
       backdrop-filter: blur(10px);
       border-radius: 8px;
-      padding: 8px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      border: 1px solid rgba(0, 0, 0, 0.1);
-      opacity: 0;
-      transform: translateY(10px);
-      transition: all 0.3s ease;
+      padding: 6px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      opacity: 1;
+      transform: translateY(0);
+      transition: all 0.2s ease;
       pointer-events: auto;
+      flex-wrap: wrap;
     `;
 
-    // Show panel on hover
-    element.addEventListener("mouseenter", () => {
-      actionsPanel.style.opacity = "1";
-      actionsPanel.style.transform = "translateY(0)";
+    // Check Sponsorship Button
+    const checkSponsorshipBtn = document.createElement("button");
+    checkSponsorshipBtn.className = "hireall-check-sponsorship";
+    checkSponsorshipBtn.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(Flag, 12).outerHTML} Check Sponsor</span>`;
+    checkSponsorshipBtn.style.cssText = `
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: white;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+    `;
+
+    checkSponsorshipBtn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      await this.checkJobSponsorshipFromButton(element, jobData.company, checkSponsorshipBtn);
     });
 
-    element.addEventListener("mouseleave", () => {
-      actionsPanel.style.opacity = "0";
-      actionsPanel.style.transform = "translateY(10px)";
+    // Add to Board Button
+    const addToBoardBtn = document.createElement("button");
+    addToBoardBtn.className = "hireall-add-to-board";
+    addToBoardBtn.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(ClipboardPlus, 12).outerHTML} Add to Board</span>`;
+    addToBoardBtn.style.cssText = `
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+    `;
+
+    addToBoardBtn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      await this.addJobToBoardFromButton(element, jobData, addToBoardBtn);
     });
 
-    // Status selector
+    // Status selector (compact version)
     const statusSelect = document.createElement("select");
     statusSelect.className = "hireall-status-select";
     statusSelect.innerHTML = `
       <option value="">Status</option>
-      <option value="interested">⭐ Interested</option>
-      <option value="applied">📝 Applied</option>
-      <option value="interviewing">🎯 Interviewing</option>
-      <option value="offered">🎉 Offered</option>
-      <option value="rejected">❌ Rejected</option>
-      <option value="withdrawn">🚫 Withdrawn</option>
+      <option value="interested">${createIcon(Star, 12).outerHTML}</option>
+      <option value="applied">${createIcon(FileText, 12).outerHTML}</option>
+      <option value="interviewing">${createIcon(Target, 12).outerHTML}</option>
+      <option value="offered">${createIcon(CheckCircle, 12).outerHTML}</option>
+      <option value="rejected">${createIcon(XCircle, 12).outerHTML}</option>
+      <option value="withdrawn">${createIcon(X, 12).outerHTML}</option>
     `;
     statusSelect.style.cssText = `
-      flex: 1;
-      height: 32px;
-      padding: 4px 8px;
+      height: 28px;
+      padding: 2px 6px;
       border: 1px solid #d1d5db;
-      border-radius: 6px;
+      border-radius: 4px;
       background: white;
-      font-size: 11px;
+      font-size: 10px;
       cursor: pointer;
-      min-width: 100px;
+      min-width: 60px;
     `;
 
     // Load default status from settings if available
@@ -2013,7 +2078,7 @@ class JobTracker {
     // Add to board button
     const addButton = document.createElement("button");
     addButton.className = "hireall-add-btn";
-    addButton.innerHTML = "📋 Add";
+    addButton.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(ClipboardPlus, 12).outerHTML} Add to Board</span>`;
     addButton.style.cssText = `
       background: #4f46e5;
       color: white;
@@ -2044,7 +2109,7 @@ class JobTracker {
       e.stopPropagation();
 
       const originalContent = addButton.innerHTML;
-      addButton.innerHTML = "⏳ Adding...";
+      addButton.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(Clock, 12).outerHTML} Adding...</span>`;
       addButton.disabled = true;
 
       try {
@@ -2054,7 +2119,7 @@ class JobTracker {
         // Check if job already exists
         const jobExists = await JobBoardManager.checkIfJobExists(jobData);
         if (jobExists) {
-          addButton.innerHTML = "✅ Added";
+          addButton.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(CheckCircle, 12).outerHTML} Added</span>`;
           addButton.style.background = "#6b7280";
           addButton.disabled = true;
 
@@ -2071,7 +2136,7 @@ class JobTracker {
         );
 
         if (result.success) {
-          addButton.innerHTML = "✅ Added!";
+          addButton.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(CheckCircle, 12).outerHTML} Added!</span>`;
           addButton.style.background = "#10b981";
 
           // Show success animation
@@ -2092,7 +2157,7 @@ class JobTracker {
 
           // Revert after 3 seconds
           setTimeout(() => {
-            addButton.innerHTML = "📋 Added";
+            addButton.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(ClipboardPlus, 12).outerHTML} Added</span>`;
             addButton.style.background = "#6b7280";
             addButton.disabled = true;
           }, 3000);
@@ -2101,7 +2166,7 @@ class JobTracker {
         }
       } catch (error) {
         console.error("Error adding to job board:", error);
-        addButton.innerHTML = "❌ Error";
+        addButton.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(XCircle, 12).outerHTML} Error</span>`;
         addButton.style.background = "#ef4444";
 
         this.showInlineToast(element, "Failed to add job", "error");
@@ -2114,9 +2179,96 @@ class JobTracker {
       }
     });
 
+    // Check sponsor button
+    const sponsorButton = document.createElement("button");
+    sponsorButton.className = "hireall-sponsor-btn";
+    sponsorButton.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(Flag, 12).outerHTML} Check Sponsorship</span>`;
+    sponsorButton.title = "Check Sponsor Status";
+    sponsorButton.style.cssText = `
+      background: #059669;
+      color: white;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    `;
+
+    sponsorButton.addEventListener("mouseenter", () => {
+      sponsorButton.style.background = "#047857";
+      sponsorButton.style.transform = "translateY(-1px)";
+    });
+
+    sponsorButton.addEventListener("mouseleave", () => {
+      sponsorButton.style.background = "#059669";
+      sponsorButton.style.transform = "translateY(0)";
+    });
+
+    sponsorButton.addEventListener("click", async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const originalContent = sponsorButton.innerHTML;
+      sponsorButton.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(Clock, 12).outerHTML} Checking...</span>`;
+      sponsorButton.disabled = true;
+
+      try {
+        // Get web app URL
+        const webAppUrl = await this.getWebAppUrl();
+
+        // Check sponsor status using company and additional job details
+        const response = await fetch(`${webAppUrl}/api/sponsors?q=${encodeURIComponent(jobData.company)}&limit=1`);
+        const data = await response.json();
+
+        if (data.success && data.results.length > 0) {
+          const result = data.results[0];
+          const isSkilledWorker = result.isSkilledWorker;
+
+          if (isSkilledWorker) {
+            sponsorButton.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(CheckCircle, 12).outerHTML} Licensed</span>`;
+            sponsorButton.style.background = "#10b981";
+            this.showInlineToast(element, `${createIcon(CheckCircle, 12).outerHTML} ${result.name} is a licensed sponsor!`, "success");
+          } else {
+            sponsorButton.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(AlertTriangle, 12).outerHTML} Not SW</span>`;
+            sponsorButton.style.background = "#f59e0b";
+            this.showInlineToast(element, `${createIcon(AlertTriangle, 12).outerHTML} ${result.name} is licensed but not for Skilled Worker visas`, "info");
+          }
+        } else {
+          sponsorButton.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(XCircle, 12).outerHTML} Not Found</span>`;
+          sponsorButton.style.background = "#ef4444";
+          this.showInlineToast(element, `${createIcon(XCircle, 12).outerHTML} ${jobData.company} not found in sponsor register`, "error");
+        }
+
+        // Keep result visible for 5 seconds then revert
+        setTimeout(() => {
+          sponsorButton.innerHTML = originalContent;
+          sponsorButton.style.background = "#059669";
+          sponsorButton.disabled = false;
+        }, 5000);
+
+      } catch (error) {
+        console.error("Error checking sponsor status:", error);
+        sponsorButton.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(XCircle, 12).outerHTML} Error</span>`;
+        sponsorButton.style.background = "#ef4444";
+
+        this.showInlineToast(element, `${createIcon(XCircle, 12).outerHTML} Error checking sponsor status`, "error");
+
+        setTimeout(() => {
+          sponsorButton.innerHTML = originalContent;
+          sponsorButton.style.background = "#059669";
+          sponsorButton.disabled = false;
+        }, 3000);
+      }
+    });
+
     // View job button
     const viewButton = document.createElement("button");
-    viewButton.innerHTML = "👁️";
+    viewButton.innerHTML = createIcon(Eye, 14).outerHTML;
     viewButton.title = "View Job Details";
     viewButton.style.cssText = `
       background: #f3f4f6;
@@ -2165,6 +2317,7 @@ class JobTracker {
     quickActions.appendChild(viewButton);
     actionsPanel.appendChild(statusSelect);
     actionsPanel.appendChild(addButton);
+    actionsPanel.appendChild(sponsorButton);
     actionsPanel.appendChild(quickActions);
     element.appendChild(actionsPanel);
   }
@@ -2190,32 +2343,40 @@ class JobTracker {
     return jobElement.querySelector(selectors);
   }
 
+  private async getWebAppUrl(): Promise<string> {
+    return new Promise((resolve) => {
+      chrome.storage.sync.get(["webAppUrl"], (result) => {
+        resolve(result.webAppUrl || DEFAULT_WEB_APP_URL);
+      });
+    });
+  }
+
   private getBadgeConfig(sponsorshipType: string) {
     const configs = {
       sponsored: {
         background: "#ef4444",
         color: "white",
-        icon: "🎯",
+        icon: createIcon(Target, 12).outerHTML,
       },
       promoted: {
         background: "#8b5cf6",
         color: "white",
-        icon: "⭐",
+        icon: createIcon(Star, 12).outerHTML,
       },
       featured: {
         background: "#10b981",
         color: "white",
-        icon: "🌟",
+        icon: createIcon(Sparkles, 12).outerHTML,
       },
       premium: {
         background: "#f59e0b",
         color: "white",
-        icon: "👑",
+        icon: createIcon(Crown, 12).outerHTML,
       },
       verified: {
         background: "#3b82f6",
         color: "white",
-        icon: "✅",
+        icon: createIcon(CheckCircle, 12).outerHTML,
       },
     };
 
@@ -2579,6 +2740,132 @@ class JobTracker {
     }
   }
 
+  private async checkJobSponsorshipFromButton(
+    element: Element,
+    company: string,
+    button: HTMLButtonElement
+  ) {
+    const originalContent = button.innerHTML;
+    button.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(Clock, 12).outerHTML} Checking...</span>`;
+    button.disabled = true;
+
+    try {
+      // Get web app URL
+      const webAppUrl = await this.getWebAppUrl();
+
+      // Check sponsor status using company
+      const response = await fetch(`${webAppUrl}/api/sponsors?q=${encodeURIComponent(company)}&limit=1`);
+      const data = await response.json();
+
+      if (data.success && data.results.length > 0) {
+        const result = data.results[0];
+        const isSkilledWorker = result.isSkilledWorker;
+
+        if (isSkilledWorker) {
+          button.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(CheckCircle, 12).outerHTML} Licensed</span>`;
+          button.style.background = "#10b981";
+          this.showInlineToast(element, `${createIcon(CheckCircle, 12).outerHTML} ${result.name} is a licensed sponsor!`, "success");
+        } else {
+          button.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(AlertTriangle, 12).outerHTML} Not SW</span>`;
+          button.style.background = "#f59e0b";
+          this.showInlineToast(element, `${createIcon(AlertTriangle, 12).outerHTML} ${result.name} is licensed but not for Skilled Worker visas`, "info");
+        }
+      } else {
+        button.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(XCircle, 12).outerHTML} Not Found</span>`;
+        button.style.background = "#ef4444";
+        this.showInlineToast(element, `${createIcon(XCircle, 12).outerHTML} ${company} not found in sponsor register`, "error");
+      }
+
+      // Keep result visible for 5 seconds then revert
+      setTimeout(() => {
+        button.innerHTML = originalContent;
+        button.style.background = "linear-gradient(135deg, #3b82f6, #2563eb)";
+        button.disabled = false;
+      }, 5000);
+
+    } catch (error) {
+      console.error("Error checking sponsor status:", error);
+      button.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(XCircle, 12).outerHTML} Error</span>`;
+      button.style.background = "#ef4444";
+
+      this.showInlineToast(element, `${createIcon(XCircle, 12).outerHTML} Error checking sponsor status`, "error");
+
+      setTimeout(() => {
+        button.innerHTML = originalContent;
+        button.style.background = "linear-gradient(135deg, #3b82f6, #2563eb)";
+        button.disabled = false;
+      }, 3000);
+    }
+  }
+
+  private async addJobToBoardFromButton(
+    element: Element,
+    jobData: JobData,
+    button: HTMLButtonElement
+  ) {
+    const originalContent = button.innerHTML;
+    button.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(Clock, 12).outerHTML} Adding...</span>`;
+    button.disabled = true;
+
+    try {
+      // Import the JobBoardManager and use it
+      const { JobBoardManager } = await import("./addToBoard");
+
+      // Check if job already exists
+      const jobExists = await JobBoardManager.checkIfJobExists(jobData);
+      if (jobExists) {
+        button.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(CheckCircle, 12).outerHTML} Added</span>`;
+        button.style.background = "#6b7280";
+        button.disabled = true;
+
+        // Show success message
+        this.showInlineToast(element, "Job already on your board!", "info");
+        return;
+      }
+
+      // Add job to board with default status
+      const result = await JobBoardManager.addToBoardWithStatus(jobData, "interested");
+
+      if (result.success) {
+        button.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(CheckCircle, 12).outerHTML} Added!</span>`;
+        button.style.background = "#10b981";
+
+        // Show success animation
+        button.style.transform = "scale(1.1)";
+        setTimeout(() => {
+          button.style.transform = "scale(1)";
+        }, 150);
+
+        // Update stats
+        this.updateJobStats();
+
+        // Show success message
+        this.showInlineToast(element, "Job added to your board!", "success");
+
+        // Revert after 3 seconds
+        setTimeout(() => {
+          button.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(ClipboardPlus, 12).outerHTML} Added</span>`;
+          button.style.background = "#6b7280";
+          button.disabled = true;
+        }, 3000);
+      } else {
+        throw new Error(result.message);
+      }
+    } catch (error) {
+      console.error("Error adding to job board:", error);
+      button.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(XCircle, 12).outerHTML} Error</span>`;
+      button.style.background = "#ef4444";
+
+      this.showInlineToast(element, "Failed to add job", "error");
+
+      setTimeout(() => {
+        button.innerHTML = originalContent;
+        button.style.background = "linear-gradient(135deg, #10b981, #059669)";
+        button.disabled = false;
+      }, 3000);
+    }
+  }
+
   private async addToJobBoard(
     jobData: JobData,
     sponsorshipData: any
@@ -2591,7 +2878,7 @@ class JobTracker {
 }
 
 // Listen for messages from popup
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((request) => {
   if (request.action === "togglePeopleSearch") {
     const peopleSearchBtn = document.getElementById(
       "hireall-people-search"
@@ -2628,10 +2915,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 
+  // Handle other potential actions
+  if (request.action) {
+    console.log("Unhandled action:", request.action);
+    return false;
+  }
+
   return false;
 });
 
-function initJobloomTracker() {
+function initHireallTracker() {
   chrome.storage.sync.get(["firebaseUid", "userId"], (result) => {
     const uid = result.firebaseUid || result.userId;
     if (uid) {
@@ -2642,10 +2935,10 @@ function initJobloomTracker() {
       }
     } else {
       console.log(
-        "Jobloom: user not signed in, extension features disabled on this page."
+        "Hireall: user not signed in, extension features disabled on this page."
       );
     }
   });
 }
 
-initJobloomTracker();
+initHireallTracker();

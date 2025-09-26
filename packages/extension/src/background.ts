@@ -164,7 +164,7 @@ function checkRateLimit(endpoint: string): boolean {
 }
 
 chrome.runtime.onInstalled.addListener(() => {
-  console.log("JobloomMonorepo extension installed");
+  console.log("HireallMonorepo extension installed");
 
   // Ensure web app URL exists for API calls
   chrome.storage.sync.get(["webAppUrl"], (result) => {

@@ -106,7 +106,7 @@ export function JobForm({ onSubmit, onCancel }: JobFormProps) {
                 name="salary"
                 value={formData.salary}
                 onChange={handleChange}
-                placeholder="e.g., $120,000 - $150,000"
+                placeholder="e.g., £120,000 - £150,000"
               />
             </div>
             

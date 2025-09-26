@@ -11,7 +11,7 @@ function Skeleton({ className, ...props }: SkeletonProps) {
   return (
     <div
       className={cn(
-        "animate-pulse rounded-md bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 bg-[length:200%_100%] animate-shimmer",
+        "animate-pulse rounded-md bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 bg-[length:200%_100%] animate-shimmer",
         className
       )}
       {...props}
@@ -22,7 +22,7 @@ function Skeleton({ className, ...props }: SkeletonProps) {
 // Pre-built skeleton components for common use cases
 function SkeletonCard({ className, ...props }: SkeletonProps) {
   return (
-    <div className={cn("p-6 space-y-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 shadow-sm", className)} {...props}>
+    <div className={cn("p-6 space-y-4 border border-gray-200 rounded-lg bg-white shadow-sm", className)} {...props}>
       <Skeleton className="h-4 w-3/4" />
       <Skeleton className="h-4 w-1/2" />
       <div className="flex space-x-2">
@@ -136,7 +136,7 @@ function SkeletonGrid({ items = 6, className, ...props }: SkeletonProps & { item
 // Job-specific skeleton components
 function SkeletonJobCard({ className, ...props }: SkeletonProps) {
   return (
-    <div className={cn("p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 shadow-sm space-y-4", className)} {...props}>
+    <div className={cn("p-6 border border-gray-200 dark: rounded-lg bg-white dark: shadow-sm space-y-4", className)} {...props}>
       <div className="flex items-start justify-between">
         <div className="flex items-center space-x-3 flex-1">
           <Skeleton className="h-12 w-12 rounded-lg" />
@@ -162,7 +162,7 @@ function SkeletonJobCard({ className, ...props }: SkeletonProps) {
 
 function SkeletonInterviewQuestion({ className, ...props }: SkeletonProps) {
   return (
-    <div className={cn("p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 shadow-sm space-y-4", className)} {...props}>
+    <div className={cn("p-6 border border-gray-200 dark: rounded-lg bg-white dark: shadow-sm space-y-4", className)} {...props}>
       <div className="flex items-center justify-between">
         <Skeleton className="h-6 w-32 rounded-full" />
         <Skeleton className="h-6 w-16 rounded-full" />

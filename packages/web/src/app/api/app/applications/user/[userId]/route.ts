@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyIdToken } from "@/firebase/admin";
+import { createFirestoreCollection } from "@/firebase/firestore";
+import { getFirestore } from "firebase-admin/firestore";
+import { where } from "firebase/firestore";
 
-// GET /api/app/applications/user/[userId] - Get applications for a user
+// GET /api/app/applications/user/[userId] - Get applications for a specific user
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ userId: string }> }
@@ -20,13 +23,18 @@ export async function GET(
       return NextResponse.json({ error: "Invalid token" }, { status: 401 });
     }
 
+    // Verify userId matches token
+    if (userId !== decodedToken.uid) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
+    // Initialize Firestore
+    const applicationsCollection = createFirestoreCollection<any>('applications');
 
-    // For now, return mock applications data
-    // In a real implementation, this would fetch from Firestore
-    const applications: any[] = [];
+    // Get applications for the specific user
+    const userApplications = await applicationsCollection.query([where('userId', '==', userId)]);
 
-    return NextResponse.json(applications);
+    return NextResponse.json(userApplications);
   } catch (error) {
     console.error("Error fetching applications:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

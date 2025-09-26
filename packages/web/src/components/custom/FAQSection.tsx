@@ -7,16 +7,16 @@ import { playfair } from "@/font";
 
 const faqs = [
   {
-    q: "How does Jobloom detect sponsored jobs?",
+    q: "How does Hireall detect sponsored jobs?",
     a: "Our Chrome extension uses advanced algorithms to identify when companies are paying to promote their job listings across LinkedIn, Indeed, Glassdoor, and other major job sites. We analyze various signals including placement, labels, and company patterns.",
   },
   {
-    q: "Is Jobloom free to use?",
-    a: "Yes! Jobloom offers a generous free tier that includes sponsored job detection, basic application tracking, and the Chrome extension. Premium features like advanced analytics and unlimited CV evaluations are available in our paid plans.",
+    q: "Is Hireall free to use?",
+    a: "Yes! Hireall offers a generous free tier that includes sponsored job detection, basic application tracking, and the Chrome extension. Premium features like advanced analytics and unlimited CV evaluations are available in our paid plans.",
   },
   {
-    q: "Which job sites does Jobloom work with?",
-    a: "Jobloom currently supports LinkedIn, Indeed, Glassdoor, ZipRecruiter, and Monster. We're constantly adding support for more job sites based on user feedback. The extension automatically activates when you visit supported sites.",
+    q: "Which job sites does Hireall work with?",
+    a: "Hireall currently supports LinkedIn, Indeed, Glassdoor, ZipRecruiter, and Monster. We're constantly adding support for more job sites based on user feedback. The extension automatically activates when you visit supported sites.",
   },
   {
     q: "Is my job search data private?",
@@ -45,7 +45,7 @@ export default function FAQSection() {
             Frequently Asked Questions
           </h2>
           <p className="mt-4 text-xl text-gray-600">
-            Everything you need to know about Jobloom
+            Everything you need to know about Hireall
           </p>
         </div>
 

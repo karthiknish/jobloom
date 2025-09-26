@@ -21,11 +21,11 @@ import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export const metadata: Metadata = {
-  title: "Terms of Service | Jobloom",
+  title: "Terms of Service | Hireall",
   description:
-    "Review the comprehensive terms that govern your use of Jobloom services.",
+    "Review the comprehensive terms that govern your use of Hireall services.",
   keywords:
-    "terms of service, terms and conditions, legal agreement, Jobloom terms",
+    "terms of service, terms and conditions, legal agreement, Hireall terms",
 };
 
 export default function TermsOfService() {
@@ -40,7 +40,7 @@ export default function TermsOfService() {
           <section className="space-y-6">
             <h2 className="text-xl font-semibold">1. Acceptance of Terms</h2>
             <p>
-              By creating an account or using the Jobloom service (the
+              By creating an account or using the Hireall service (the
               &quot;Service&quot;), you agree to be bound by these Terms of Service
               (&quot;Terms&quot;). If you do not agree to these Terms, do not use
               the Service.
@@ -77,7 +77,7 @@ export default function TermsOfService() {
             <h2 className="text-xl font-semibold">6. Intellectual Property</h2>
             <p>
               The Service and its entire contents, features, and functionality are
-              owned by Jobloom and are protected by international copyright,
+              owned by Hireall and are protected by international copyright,
               trademark, patent, trade secret, and other intellectual property or
               proprietary rights laws.
             </p>
@@ -92,7 +92,7 @@ export default function TermsOfService() {
 
             <h2 className="text-xl font-semibold">8. Limitation of Liability</h2>
             <p>
-              In no event shall Jobloom be liable for any indirect, incidental,
+              In no event shall Hireall be liable for any indirect, incidental,
               special, consequential, or punitive damages, including without
               limitation, loss of profits, data, use, goodwill, or other intangible
               losses, resulting from your access to or use of or inability to

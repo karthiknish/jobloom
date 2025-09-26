@@ -128,7 +128,7 @@ export default function Footer() {
         {/* Bottom bar */}
         <Separator className="h-px" />
         <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col items-center justify-between text-sm bg-secondary text-secondary-foreground gap-2">
-          <p>© {currentYear} Jobloom. All rights reserved.</p>
+          <p>© {currentYear} Hireall. All rights reserved.</p>
 
           <div className="flex space-x-6 mt-4 md:mt-0">
             {/* GitHub */}

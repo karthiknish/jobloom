@@ -96,7 +96,7 @@ function VerifyEmailInner() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="text-center text-sm text-muted-foreground">
-                <p>You can now access all features of Jobloom.</p>
+                <p>You can now access all features of Hireall.</p>
               </div>
 
               <Button onClick={handleContinue} className="w-full" size="lg">

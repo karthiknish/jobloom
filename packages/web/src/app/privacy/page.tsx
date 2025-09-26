@@ -23,10 +23,10 @@ import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy | Jobloom",
+  title: "Privacy Policy | Hireall",
   description:
-    "Learn how Jobloom collects, uses, and safeguards your data. Your privacy matters to us.",
-  keywords: "privacy policy, data protection, GDPR, CCPA, Jobloom privacy",
+    "Learn how Hireall collects, uses, and safeguards your data. Your privacy matters to us.",
+  keywords: "privacy policy, data protection, GDPR, CCPA, Hireall privacy",
 };
 
 export default function PrivacyPolicy() {
@@ -41,7 +41,7 @@ export default function PrivacyPolicy() {
           <section className="space-y-6">
             <p>
               Your privacy is important to us. This Privacy Policy explains how
-              Jobloom (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;)
+              Hireall (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;)
               collects, uses, and protects your personal information when you
               use our website, Chrome extension, and related services
               (collectively, the &quot;Service&quot;).

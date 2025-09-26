@@ -1,4 +1,4 @@
-# JobloomMonorepo Setup Guide
+# HireallMonorepo Setup Guide
 
 ## Prerequisites
 
