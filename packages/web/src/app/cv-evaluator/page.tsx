@@ -104,8 +104,8 @@ export default function CvEvaluatorPage() {
         <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
           <div className="text-center py-12">
             <FileText className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-            <h2 className="text-2xl font-semibold text-gray-900 mb-2">Sign In Required</h2>
-            <p className="text-gray-600 mb-6">Please sign in to access CV evaluation features.</p>
+            <h2 className="text-2xl font-semibold text-foreground mb-2">Sign In Required</h2>
+            <p className="text-muted-foreground mb-6">Please sign in to access CV evaluation features.</p>
             <a
               href="/sign-in"
               className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-primary hover:bg-primary/90 transition-colors"
@@ -131,7 +131,7 @@ export default function CvEvaluatorPage() {
         <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
             {[1, 2, 3, 4].map((index) => (
-              <Card key={index} className="shadow-sm border-gray-200">
+              <Card key={index} className="shadow-sm border-input">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <Skeleton className="h-4 w-20" />
                   <Skeleton className="h-10 w-10 rounded-lg" />
@@ -143,7 +143,7 @@ export default function CvEvaluatorPage() {
               </Card>
             ))}
           </div>
-          <div className="relative grid grid-cols-3 bg-gray-100 p-1 rounded-lg mb-6 w-[min(480px,100%)]">
+          <div className="relative grid grid-cols-3 bg-muted/50 p-1 rounded-lg mb-6 w-[min(480px,100%)]">
             <Skeleton className="h-10 w-full" />
           </div>
           <Card>
@@ -342,7 +342,7 @@ export default function CvEvaluatorPage() {
               // Loading skeleton for stats cards
               <>
                 {[1, 2, 3, 4].map((index) => (
-                  <Card key={index} className="shadow-sm border-gray-200">
+                  <Card key={index} className="shadow-sm border-input">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <Skeleton className="h-4 w-20" />
                       <Skeleton className="h-10 w-10 rounded-lg" />
@@ -442,7 +442,7 @@ export default function CvEvaluatorPage() {
           </motion.div>
 
           {/* Tab Navigation */}
-          <div className="relative grid grid-cols-3 bg-gray-100 p-1 rounded-lg mb-6 w-[min(480px,100%)]">
+          <div className="relative grid grid-cols-3 bg-muted/50 p-1 rounded-lg mb-6 w-[min(480px,100%)]">
             <motion.div
               className="absolute top-1 bottom-1 left-1 w-1/3 rounded-md bg-white shadow"
               animate={{
@@ -459,8 +459,8 @@ export default function CvEvaluatorPage() {
               onClick={() => setActiveTab("upload")}
               className={`relative z-10 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                 activeTab === "upload"
-                  ? "text-gray-900"
-                  : "text-gray-600 hover:text-gray-900"
+                  ? "text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               <span className="inline-flex items-center gap-2 whitespace-nowrap">
@@ -471,8 +471,8 @@ export default function CvEvaluatorPage() {
               onClick={() => setActiveTab("history")}
               className={`relative z-10 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                 activeTab === "history"
-                  ? "text-gray-900"
-                  : "text-gray-600 hover:text-gray-900"
+                  ? "text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               <span className="inline-flex items-center gap-2 whitespace-nowrap">
@@ -483,8 +483,8 @@ export default function CvEvaluatorPage() {
               onClick={() => setActiveTab("tracking")}
               className={`relative z-10 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                 activeTab === "tracking"
-                  ? "text-gray-900"
-                  : "text-gray-600 hover:text-gray-900"
+                  ? "text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               <span className="inline-flex items-center gap-2 whitespace-nowrap">

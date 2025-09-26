@@ -179,11 +179,11 @@ export function JobList({
   return (
     <div className="space-y-6">
       {/* Filters and Search */}
-      <Card className="border-0 bg-gradient-to-br from-white via-orange-50/30 to-white shadow-lg">
+      <Card className="border-0 bg-gradient-to-br from-background via-amber-50/30 to-background shadow-lg">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-xl bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
+              <CardTitle className="text-xl bg-gradient-to-r from-amber-600 to-amber-600 bg-clip-text text-transparent">
                 Job Filters
               </CardTitle>
               <CardDescription className="text-base">
@@ -195,7 +195,7 @@ export function JobList({
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="search" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="search" className="text-sm font-medium text-foreground">
                 Search Jobs
               </Label>
               <Input
@@ -203,15 +203,15 @@ export function JobList({
                 placeholder="Search jobs by title, company, or location..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="border-gray-200 focus:border-orange-500 focus:ring-orange-500"
+className="border-border focus:border-amber-500 focus:ring-amber-500"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="status" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="status" className="text-sm font-medium text-foreground">
                 Filter by Status
               </Label>
               <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                <SelectTrigger id="status" className="border-gray-200 focus:border-orange-500 focus:ring-orange-500">
+                <SelectTrigger id="status" className="border-border focus:border-amber-500 focus:ring-amber-500">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>

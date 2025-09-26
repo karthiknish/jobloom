@@ -248,7 +248,7 @@ function SignUpInner() {
                     type="text"
                     value={name}
                     onChange={(e) => handleNameChange(e.target.value)}
-                    className={`pl-10 h-11 bg-muted/50 border-input hover:bg-gray-100 focus:bg-white focus:border-primary focus:ring-primary/20 transition-all duration-200 ${nameError ? 'border-red-500 focus:ring-red-500/20' : ''}`}
+                    className={`pl-10 h-11 bg-muted/50 border-input hover:bg-muted/50 focus:bg-white focus:border-primary focus:ring-primary/20 transition-all duration-200 ${nameError ? 'border-red-500 focus:ring-red-500/20' : ''}`}
                     placeholder="Your name"
                     disabled={loading}
                   />
@@ -268,7 +268,7 @@ function SignUpInner() {
                     value={email}
                     onChange={(e) => handleEmailChange(e.target.value)}
                     required
-                    className={`pl-10 h-11 bg-muted/50 border-input hover:bg-gray-100 focus:bg-white focus:border-primary focus:ring-primary/20 transition-all duration-200 ${emailError ? 'border-red-500 focus:ring-red-500/20' : ''}`}
+                    className={`pl-10 h-11 bg-muted/50 border-input hover:bg-muted/50 focus:bg-white focus:border-primary focus:ring-primary/20 transition-all duration-200 ${emailError ? 'border-red-500 focus:ring-red-500/20' : ''}`}
                     placeholder="you@example.com"
                     disabled={loading}
                   />
@@ -288,7 +288,7 @@ function SignUpInner() {
                     value={password}
                     onChange={(e) => handlePasswordChange(e.target.value)}
                     required
-                    className={`pl-10 pr-10 h-11 bg-muted/50 border-input hover:bg-gray-100 focus:bg-white focus:border-primary focus:ring-primary/20 transition-all duration-200 ${passwordError ? 'border-red-500 focus:ring-red-500/20' : ''}`}
+                    className={`pl-10 pr-10 h-11 bg-muted/50 border-input hover:bg-muted/50 focus:bg-white focus:border-primary focus:ring-primary/20 transition-all duration-200 ${passwordError ? 'border-red-500 focus:ring-red-500/20' : ''}`}
                     placeholder="••••••••"
                     disabled={loading}
                   />

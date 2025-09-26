@@ -200,18 +200,18 @@ export function AdvancedDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-orange-50/20 to-white    mt-14">
+      <div className="min-h-screen bg-gradient-to-br from-muted via-amber-50/20 to-background    mt-14">
         <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
           <div className="space-y-8">
-            <div className="h-8 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200    bg-[length:200%_100%] animate-shimmer rounded w-1/4"></div>
+            <div className="h-8 bg-gradient-to-r from-muted-foreground/20 via-muted-foreground/30 to-muted-foreground/20    bg-[length:200%_100%] animate-shimmer rounded w-1/4"></div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-32 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200    bg-[length:200%_100%] animate-shimmer rounded-lg shadow-sm"></div>
+                <div key={i} className="h-32 bg-gradient-to-r from-muted-foreground/20 via-muted-foreground/30 to-muted-foreground/20    bg-[length:200%_100%] animate-shimmer rounded-lg shadow-sm"></div>
               ))}
             </div>
             <div className="space-y-6">
-              <div className="h-64 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200    bg-[length:200%_100%] animate-shimmer rounded-lg shadow-sm"></div>
-              <div className="h-64 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200    bg-[length:200%_100%] animate-shimmer rounded-lg shadow-sm"></div>
+              <div className="h-64 bg-gradient-to-r from-muted-foreground/20 via-muted-foreground/30 to-muted-foreground/20    bg-[length:200%_100%] animate-shimmer rounded-lg shadow-sm"></div>
+              <div className="h-64 bg-gradient-to-r from-muted-foreground/20 via-muted-foreground/30 to-muted-foreground/20    bg-[length:200%_100%] animate-shimmer rounded-lg shadow-sm"></div>
             </div>
           </div>
         </div>
@@ -289,12 +289,12 @@ export function AdvancedDashboard() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-muted">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          <h2 className="text-2xl font-bold text-foreground mb-2">
             Please sign in to access your dashboard
           </h2>
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             Track your job applications and discover new opportunities
           </p>
         </div>
@@ -303,9 +303,9 @@ export function AdvancedDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-indigo-50    pt-16">
+    <div className="min-h-screen bg-gradient-to-br from-background via-sky-50/20 to-violet-50    pt-16">
       {/* Header */}
-      <div className="bg-white/90  backdrop-blur-2xl border-b border-gray-200/50  shadow-lg">
+      <div className="bg-background/90  backdrop-blur-2xl border-b border-border/50  shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
@@ -328,7 +328,7 @@ export function AdvancedDashboard() {
                   initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.05, duration: 0.35 }}
-                  className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900   bg-clip-text text-transparent"
+                  className="text-4xl font-bold bg-gradient-to-r from-foreground via-sky-900 to-violet-900   bg-clip-text text-transparent"
                 >
                   Job Dashboard
                 </motion.h1>
@@ -338,9 +338,9 @@ export function AdvancedDashboard() {
                   transition={{ delay: 0.12, duration: 0.35 }}
                   className="flex items-center gap-3 mt-3"
                 >
-                  <p className="text-base text-gray-700  font-medium">
+                  <p className="text-base text-muted-foreground  font-medium">
                     {greeting},{" "}
-                    <span className="text-gray-900  font-semibold">
+                    <span className="text-foreground  font-semibold">
                       {user.displayName || user.email}
                     </span>
                     !
@@ -390,7 +390,7 @@ export function AdvancedDashboard() {
                   onClick={() => setShowImportModal(true)}
                   variant="default"
                   size="sm"
-                  className="shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white border-0"
+                  className="shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-700 hover:to-sky-800 text-primary-foreground border-0"
                 >
                   <UploadCloud className="mr-2 h-4 w-4" /> Import Jobs
                 </Button>
@@ -403,7 +403,7 @@ export function AdvancedDashboard() {
                   onClick={() => setShowJobForm(true)}
                   variant="default"
                   size="sm"
-                  className="shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white border-0"
+                  className="shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-violet-600 to-violet-700 hover:from-violet-700 hover:to-violet-800 text-primary-foreground border-0"
                 >
                   <FilePlus className="mr-2 h-4 w-4" /> Add Job
                 </Button>
@@ -416,7 +416,7 @@ export function AdvancedDashboard() {
                   onClick={() => setShowApplicationForm(true)}
                   variant="outline"
                   size="sm"
-                  className="shadow-lg hover:shadow-xl transition-all duration-300 border-gray-300 hover:border-gray-400 hover:bg-gray-50"
+                  className="shadow-lg hover:shadow-xl transition-all duration-300 border-border hover:border-border hover:bg-muted/50"
                 >
                   <ClipboardList className="mr-2 h-4 w-4" /> Add Application
                 </Button>
@@ -457,7 +457,7 @@ export function AdvancedDashboard() {
               >
                 <TabsTrigger
                   value="dashboard"
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-sky-600 data-[state=active]:to-violet-600 data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-300"
                 >
                   Dashboard
                 </TabsTrigger>
@@ -468,7 +468,7 @@ export function AdvancedDashboard() {
               >
                 <TabsTrigger
                   value="jobs"
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-sky-600 data-[state=active]:to-violet-600 data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-300"
                 >
                   Jobs ({applications?.length || 0})
                 </TabsTrigger>
@@ -479,7 +479,7 @@ export function AdvancedDashboard() {
               >
                 <TabsTrigger
                   value="analytics"
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-sky-600 data-[state=active]:to-violet-600 data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-300"
                 >
                   Analytics
                 </TabsTrigger>
@@ -525,7 +525,7 @@ export function AdvancedDashboard() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2, duration: 0.4 }}
                 >
-                  <Card className="border-0 bg-gradient-to-br from-white via-orange-50/30 to-white shadow-xl backdrop-blur-sm">
+                  <Card className="border-0 bg-gradient-to-br from-background via-amber-50/30 to-background shadow-xl backdrop-blur-sm">
                     <CardHeader className="pb-4">
                       <div className="flex items-center gap-3">
                         <motion.div
@@ -536,7 +536,7 @@ export function AdvancedDashboard() {
                             stiffness: 200,
                             damping: 15,
                           }}
-                          className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center shadow-lg"
+                          className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-lg"
                         >
                           <svg
                             className="w-4 h-4 text-white"
@@ -552,7 +552,7 @@ export function AdvancedDashboard() {
                             />
                           </svg>
                         </motion.div>
-                        <CardTitle className="text-xl bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
+                        <CardTitle className="text-xl bg-gradient-to-r from-amber-600 to-amber-600 bg-clip-text text-transparent">
                           Notification Center
                         </CardTitle>
                       </div>
@@ -569,10 +569,10 @@ export function AdvancedDashboard() {
                               stiffness: 180,
                               damping: 12,
                             }}
-                            className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-green-100 to-emerald-100 rounded-full flex items-center justify-center shadow-lg"
+                            className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-emerald-100 to-emerald-100 rounded-full flex items-center justify-center shadow-lg"
                           >
                             <svg
-                              className="w-8 h-8 text-green-500"
+                              className="w-8 h-8 text-emerald-500"
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
@@ -589,7 +589,7 @@ export function AdvancedDashboard() {
                             initial={{ opacity: 0, y: 6 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.35, duration: 0.3 }}
-                            className="text-lg font-semibold text-gray-900 mb-2"
+                            className="text-lg font-semibold text-foreground mb-2"
                           >
                             All caught up! 🎉
                           </motion.h3>
@@ -597,7 +597,7 @@ export function AdvancedDashboard() {
                             initial={{ opacity: 0, y: 6 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.4, duration: 0.3 }}
-                            className="text-gray-600"
+                            className="text-muted-foreground"
                           >
                             No pending notifications or follow-ups at this time.
                           </motion.p>
@@ -631,10 +631,10 @@ export function AdvancedDashboard() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.35, duration: 0.4 }}
               >
-                <Card className="border-0 bg-white/80 backdrop-blur-sm shadow-xl">
+                <Card className="border-0 bg-background/80 backdrop-blur-sm shadow-xl">
                   <CardHeader className="pb-4">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-xl bg-gradient-to-r from-gray-900 to-blue-900 bg-clip-text text-transparent">
+                      <CardTitle className="text-xl bg-gradient-to-r from-foreground to-sky-900 bg-clip-text text-transparent">
                         Recent Applications
                       </CardTitle>
                       {applications && (
@@ -743,7 +743,7 @@ export function AdvancedDashboard() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1, duration: 0.4 }}
               >
-                <div className="rounded-xl bg-gradient-to-br from-white via-blue-50/20 to-indigo-50 p-12 text-center shadow-xl border border-gray-100/50">
+                <div className="rounded-xl bg-gradient-to-br from-background via-sky-50/20 to-violet-50 p-12 text-center shadow-xl border border-border/50">
                   <motion.div
                     initial={{ scale: 0.8, opacity: 0, rotate: -8 }}
                     animate={{ scale: 1, opacity: 1, rotate: 0 }}
@@ -753,7 +753,7 @@ export function AdvancedDashboard() {
                       damping: 15,
                       delay: 0.2,
                     }}
-                    className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg"
+                    className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-sky-500 to-violet-600 shadow-lg"
                   >
                     <Inbox className="h-8 w-8 text-white" />
                   </motion.div>
@@ -761,7 +761,7 @@ export function AdvancedDashboard() {
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.25, duration: 0.35 }}
-                    className="mt-6 text-2xl font-bold bg-gradient-to-r from-gray-900 to-blue-900 bg-clip-text text-transparent"
+                    className="mt-6 text-2xl font-bold bg-gradient-to-r from-foreground to-sky-900 bg-clip-text text-transparent"
                   >
                     No applications yet
                   </motion.h3>
@@ -769,7 +769,7 @@ export function AdvancedDashboard() {
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3, duration: 0.35 }}
-                    className="mt-3 text-base text-gray-600 max-w-md mx-auto"
+                    className="mt-3 text-base text-muted-foreground max-w-md mx-auto"
                   >
                     Get started by importing your jobs or adding a new one to
                     begin tracking your job search journey.
@@ -782,7 +782,7 @@ export function AdvancedDashboard() {
                       <Button
                         onClick={() => setShowImportModal(true)}
                         size="lg"
-                        className="shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white border-0"
+className="shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-700 hover:to-sky-800 text-primary-foreground border-0"
                       >
                         <UploadCloud className="mr-2 h-5 w-5" /> Import Jobs
                       </Button>
@@ -795,7 +795,7 @@ export function AdvancedDashboard() {
                         onClick={() => setShowJobForm(true)}
                         variant="secondary"
                         size="lg"
-                        className="shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-purple-100 to-purple-200 hover:from-purple-200 hover:to-purple-300 text-purple-800 border-0"
+                        className="shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-violet-100 to-violet-200 hover:from-violet-200 hover:to-violet-300 text-violet-800 border-0"
                       >
                         <FilePlus className="mr-2 h-5 w-5" /> Add Job
                       </Button>
@@ -808,7 +808,7 @@ export function AdvancedDashboard() {
                         onClick={() => setShowApplicationForm(true)}
                         variant="outline"
                         size="lg"
-                        className="shadow-lg hover:shadow-xl transition-all duration-300 border-gray-300 hover:border-gray-400 hover:bg-gray-50"
+className="shadow-lg hover:shadow-xl transition-all duration-300 border-border hover:border-border hover:bg-muted/50"
                       >
                         Add Application <ArrowRight className="ml-2 h-4 w-4" />
                       </Button>
@@ -837,7 +837,7 @@ export function AdvancedDashboard() {
               className="space-y-6"
             >
               <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-gray-900">
+                <h2 className="text-2xl font-bold text-foreground">
                   Analytics & Insights
                 </h2>
                 <div className="flex items-center gap-2">
@@ -884,14 +884,14 @@ export function AdvancedDashboard() {
                           );
                           const statusColor =
                             {
-                              interested: "bg-gray-100 text-gray-800",
-                              applied: "bg-blue-100 text-blue-800",
-                              interviewing: "bg-purple-100 text-purple-800",
-                              offered: "bg-green-100 text-green-800",
+                              interested: "bg-muted text-muted-foreground",
+                              applied: "bg-sky-100 text-sky-800",
+                              interviewing: "bg-violet-100 text-violet-800",
+                              offered: "bg-emerald-100 text-emerald-800",
                               rejected: "bg-red-100 text-red-800",
-                              withdrawn: "bg-gray-100 text-gray-800",
+                              withdrawn: "bg-muted text-muted-foreground",
                             }[application.status] ||
-                            "bg-gray-100 text-gray-800";
+                            "bg-muted text-muted-foreground";
 
                           return (
                             <div
@@ -958,14 +958,14 @@ export function AdvancedDashboard() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                      <div className="flex items-center justify-between p-3 bg-sky-50 rounded-lg">
                         <div className="flex items-center">
-                          <div className="p-2 rounded-full bg-blue-100">
-                            <span className="text-blue-600">📊</span>
+                          <div className="p-2 rounded-full bg-sky-100">
+                            <span className="text-sky-600">📊</span>
                           </div>
                           <span className="ml-3 font-medium">This Week</span>
                         </div>
-                        <span className="text-lg font-bold text-blue-600">
+                        <span className="text-lg font-bold text-sky-600">
                           {applications?.filter((a) => {
                             const weekAgo =
                               Date.now() - 7 * 24 * 60 * 60 * 1000;
@@ -974,14 +974,14 @@ export function AdvancedDashboard() {
                         </span>
                       </div>
 
-                      <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                      <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-lg">
                         <div className="flex items-center">
-                          <div className="p-2 rounded-full bg-green-100">
-                            <span className="text-green-600">✅</span>
+                          <div className="p-2 rounded-full bg-emerald-100">
+                            <span className="text-emerald-600">✅</span>
                           </div>
                           <span className="ml-3 font-medium">Success Rate</span>
                         </div>
-                        <span className="text-lg font-bold text-green-600">
+                        <span className="text-lg font-bold text-emerald-600">
                           {applications && applications.length > 0
                             ? Math.round(
                                 (applications.filter(
@@ -995,14 +995,14 @@ export function AdvancedDashboard() {
                         </span>
                       </div>
 
-                      <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
+                      <div className="flex items-center justify-between p-3 bg-amber-50 rounded-lg">
                         <div className="flex items-center">
-                          <div className="p-2 rounded-full bg-orange-100">
-                            <span className="text-orange-600">⏱</span>
+                          <div className="p-2 rounded-full bg-amber-100">
+                            <span className="text-amber-600">⏱</span>
                           </div>
                           <span className="ml-3 font-medium">Avg Response</span>
                         </div>
-                        <span className="text-lg font-bold text-orange-600">
+                        <span className="text-lg font-bold text-amber-600">
                           3.2 days
                         </span>
                       </div>
@@ -1110,8 +1110,8 @@ export function AdvancedDashboard() {
                         </div>
                       </div>
 
-                      <div className="text-center p-3 bg-green-50 rounded-lg">
-                        <div className="text-2xl font-bold text-green-600">
+                      <div className="text-center p-3 bg-emerald-50 rounded-lg">
+                        <div className="text-2xl font-bold text-emerald-600">
                           {Math.round(
                             cvAnalyses.reduce(
                               (sum, a) => sum + (a.overallScore || 0),
@@ -1124,8 +1124,8 @@ export function AdvancedDashboard() {
                         </div>
                       </div>
 
-                      <div className="text-center p-3 bg-blue-50 rounded-lg">
-                        <div className="text-2xl font-bold text-blue-600">
+                      <div className="text-center p-3 bg-sky-50 rounded-lg">
+                        <div className="text-2xl font-bold text-sky-600">
                           {
                             cvAnalyses.filter(
                               (a) => a.analysisStatus === "completed"
@@ -1137,8 +1137,8 @@ export function AdvancedDashboard() {
                         </div>
                       </div>
 
-                      <div className="text-center p-3 bg-purple-50 rounded-lg">
-                        <div className="text-2xl font-bold text-purple-600">
+                      <div className="text-center p-3 bg-violet-50 rounded-lg">
+                        <div className="text-2xl font-bold text-violet-600">
                           {cvAnalyses.length > 0
                             ? Math.round(
                                 (cvAnalyses[0]?.atsCompatibility as any)
@@ -1180,9 +1180,9 @@ export function AdvancedDashboard() {
                           / 10
                         </span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="w-full bg-muted rounded-full h-2">
                         <div
-                          className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                          className="bg-sky-600 h-2 rounded-full transition-all duration-300"
                           style={{
                             width: `${Math.min(
                               100,
@@ -1215,9 +1215,9 @@ export function AdvancedDashboard() {
                           / 5
                         </span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="w-full bg-muted rounded-full h-2">
                         <div
-                          className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                          className="bg-emerald-600 h-2 rounded-full transition-all duration-300"
                           style={{
                             width: `${Math.min(
                               100,
@@ -1256,9 +1256,9 @@ export function AdvancedDashboard() {
                           % / 30%
                         </span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="w-full bg-muted rounded-full h-2">
                         <div
-                          className="bg-purple-600 h-2 rounded-full transition-all duration-300"
+                          className="bg-violet-600 h-2 rounded-full transition-all duration-300"
                           style={{
                             width: `${Math.min(
                               100,
