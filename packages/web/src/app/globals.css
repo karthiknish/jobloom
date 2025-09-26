@@ -26,7 +26,7 @@ html {
   --color-primary: #4CAF50;
   --color-primary-foreground: #ffffff;
 
-  --color-secondary: #388E3C;
+  --color-secondary: #20B2AA;
   --color-secondary-foreground: #ffffff;
 
   --color-accent: #C8E6C9;
@@ -252,4 +252,18 @@ body {
 .hover-lift:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Global heading font styles - Use Playfair Display for main headings */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-playfair-display), serif;
+}
+
+/* Specific overrides for components that might conflict */
+.card-title, .card-title * {
+  font-family: var(--font-sans);
+}
+
+.text-sm, .text-xs, .text-muted-foreground {
+  font-family: var(--font-sans);
 }

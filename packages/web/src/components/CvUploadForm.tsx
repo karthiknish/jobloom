@@ -6,6 +6,7 @@ import { UploadCloud, CheckCircle2, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
+import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import {
   Card,
   CardContent,
@@ -29,6 +30,7 @@ interface CvUploadFormProps {
 }
 
 export function CvUploadForm({ userId }: CvUploadFormProps) {
+  const { user } = useFirebaseAuth();
   const [file, setFile] = useState<File | null>(null);
   const [targetRole, setTargetRole] = useState("");
   const [industry, setIndustry] = useState("");
@@ -80,8 +82,17 @@ export function CvUploadForm({ userId }: CvUploadFormProps) {
       formData.append("targetRole", targetRole);
       formData.append("industry", industry);
 
+      if (!user) {
+        throw new Error("You must be signed in to upload a CV");
+      }
+
+      const idToken = await user.getIdToken();
+
       const response = await fetch("/api/cv/upload", {
         method: "POST",
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+        },
         body: formData,
       });
 
@@ -127,10 +138,10 @@ export function CvUploadForm({ userId }: CvUploadFormProps) {
       transition={{ duration: 0.4 }}
       className="w-full max-w-2xl mx-auto"
     >
-      <Card>
-        <CardHeader>
-          <CardTitle>Upload Your CV for Analysis</CardTitle>
-          <CardDescription>
+      <Card className="shadow-sm border-gray-200">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg">Upload Your CV for Analysis</CardTitle>
+          <CardDescription className="text-base">
             Get AI-powered insights to improve your CV. Supported formats: PDF,
             TXT (max 5MB)
           </CardDescription>
@@ -139,25 +150,29 @@ export function CvUploadForm({ userId }: CvUploadFormProps) {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* File Upload Area */}
             <motion.div
-              className={`relative border-2 border-dashed rounded-lg p-6 transition-colors ${
+              className={`relative border-2 border-dashed rounded-lg p-8 transition-all duration-300 ${
                 dragActive
-                  ? "border-primary bg-primary/5"
-                  : "border-muted-foreground/25 hover:border-muted-foreground/50"
+                  ? "border-primary bg-primary/5 shadow-lg"
+                  : "border-muted-foreground/25 hover:border-muted-foreground/50 hover:shadow-md"
               }`}
               onDragEnter={handleDrag}
               onDragLeave={handleDrag}
               onDragOver={handleDrag}
               onDrop={handleDrop}
-              animate={{ scale: dragActive ? 1.01 : 1 }}
+              animate={{ scale: dragActive ? 1.02 : 1 }}
               transition={{ type: "spring", stiffness: 260, damping: 20 }}
             >
               <div className="text-center">
-                <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-muted">
-                  <UploadCloud className="h-6 w-6 text-muted-foreground" />
-                </div>
-                <div className="mt-4">
+                <motion.div 
+                  className="mx-auto h-16 w-16 flex items-center justify-center rounded-full bg-primary/10"
+                  whileHover={{ scale: 1.1, rotate: 5 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                >
+                  <UploadCloud className="h-8 w-8 text-primary" />
+                </motion.div>
+                <div className="mt-6">
                   <Label htmlFor="file-upload" className="cursor-pointer">
-                    <span className="mt-2 block text-sm font-medium text-foreground">
+                    <span className="mt-2 block text-base font-medium text-foreground">
                       {file
                         ? file.name
                         : "Drop your CV here or click to browse"}
@@ -172,11 +187,15 @@ export function CvUploadForm({ userId }: CvUploadFormProps) {
                     />
                   </Label>
                   {file && (
-                    <p className="mt-1 text-xs text-muted-foreground">
+                    <motion.p 
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mt-2 text-sm text-muted-foreground"
+                    >
                       {formatFileSize(file.size)} • {file.type}
-                    </p>
+                    </motion.p>
                   )}
-                  <p className="mt-1 text-xs text-muted-foreground">
+                  <p className="mt-2 text-sm text-muted-foreground">
                     PDF or TXT up to 5MB
                   </p>
                 </div>
@@ -186,12 +205,13 @@ export function CvUploadForm({ userId }: CvUploadFormProps) {
             {/* Optional Context Fields */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="target-role">Target Role (Optional)</Label>
+                <Label htmlFor="target-role" className="text-sm font-medium">Target Role (Optional)</Label>
                 <Input
                   id="target-role"
                   value={targetRole}
                   onChange={(e) => setTargetRole(e.target.value)}
                   placeholder="e.g., Software Engineer, Marketing Manager"
+                  className="focus:ring-2 focus:ring-primary/20"
                 />
                 <p className="text-xs text-muted-foreground">
                   Helps provide more targeted feedback
@@ -199,9 +219,9 @@ export function CvUploadForm({ userId }: CvUploadFormProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="industry">Industry (Optional)</Label>
+                <Label htmlFor="industry" className="text-sm font-medium">Industry (Optional)</Label>
                 <Select value={industry} onValueChange={setIndustry}>
-                  <SelectTrigger id="industry">
+                  <SelectTrigger id="industry" className="focus:ring-2 focus:ring-primary/20">
                     <SelectValue placeholder="Select industry" />
                   </SelectTrigger>
                   <SelectContent>
@@ -224,42 +244,42 @@ export function CvUploadForm({ userId }: CvUploadFormProps) {
             </div>
 
             {/* Tips */}
-            <div className="rounded-lg border bg-blue-50 border-blue-200 p-4">
-              <h4 className="flex items-center gap-2 text-sm font-medium text-blue-900 mb-2">
+            <div className="rounded-lg border bg-primary/5 border-primary/20 p-4">
+              <h4 className="flex items-center gap-2 text-sm font-medium text-primary mb-3">
                 💡 Tips for better analysis:
               </h4>
-              <ul className="text-sm text-blue-800 space-y-1">
+              <ul className="text-sm text-foreground/80 space-y-2">
                 <li className="flex items-start gap-2">
-                  <CheckCircle2 className="h-4 w-4 mt-0.5" />
+                  <CheckCircle2 className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
                   <span>
                     Use a clean, well-formatted CV without complex layouts
                   </span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <CheckCircle2 className="h-4 w-4 mt-0.5" />
+                  <CheckCircle2 className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
                   <span>
                     Include specific role and industry for targeted feedback
                   </span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <CheckCircle2 className="h-4 w-4 mt-0.5" />
+                  <CheckCircle2 className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
                   <span>
                     Ensure your CV has clear sections (Experience, Skills,
                     Education)
                   </span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <CheckCircle2 className="h-4 w-4 mt-0.5" />
+                  <CheckCircle2 className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
                   <span>
                     Remove any sensitive personal information before uploading
                   </span>
                 </li>
               </ul>
-              <div className="mt-3 p-3 bg-yellow-50 rounded border border-yellow-200">
-                <h5 className="flex items-center gap-2 text-xs font-medium text-yellow-900 mb-1">
+              <div className="mt-4 p-3 bg-yellow-50 rounded border border-yellow-200">
+                <h5 className="flex items-center gap-2 text-xs font-medium text-yellow-900 mb-2">
                   🤖 ATS Optimization Tip:
                 </h5>
-                <p className="text-xs text-yellow-800">
+                <p className="text-xs text-yellow-800 leading-relaxed">
                   For best results with Applicant Tracking Systems, use standard
                   section headings (Work Experience, Skills, Education) and
                   avoid graphics, tables, or columns.
@@ -268,12 +288,13 @@ export function CvUploadForm({ userId }: CvUploadFormProps) {
             </div>
           </form>
         </CardContent>
-        <CardFooter className="flex justify-end">
+        <CardFooter className="flex justify-end pt-4">
           <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
             <Button
               type="submit"
               disabled={!file || uploading}
               onClick={handleSubmit}
+              className="px-6"
             >
               {uploading ? (
                 <>

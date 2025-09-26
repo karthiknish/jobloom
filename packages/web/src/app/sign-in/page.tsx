@@ -5,11 +5,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { useEffect } from "react";
 import { motion } from "framer-motion";
-import { Eye, EyeOff, Loader2, Mail, Lock, Chrome, X } from "lucide-react";
+import { Eye, EyeOff, Loader2, Mail, Lock, Chrome, X as XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import Image from "next/image";
 import Link from "next/link";
 
 function SignInInner() {
@@ -154,7 +155,7 @@ function SignInInner() {
                 className="rounded-lg border border-red-200 bg-red-50 p-4 flex items-start gap-3"
               >
                 <div className="flex-shrink-0 w-5 h-5 bg-red-100 rounded-full flex items-center justify-center mt-0.5">
-                  <X className="h-3 w-3 text-red-600" />
+                  <XIcon className="h-3 w-3 text-red-600" />
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-medium text-red-800">Authentication Error</p>
@@ -174,7 +175,7 @@ function SignInInner() {
                     value={email}
                     onChange={(e) => handleEmailChange(e.target.value)}
                     required
-                    className={`pl-10 h-11 bg-gray-50 border-gray-200 hover:bg-gray-100 focus:bg-white focus:border-primary focus:ring-primary/20 transition-all duration-200 ${emailError ? 'border-red-500 focus:ring-red-500/20' : ''}`}
+                    className={`pl-10 h-11 bg-gray-50 border-gray-200 focus:bg-white focus:border-primary focus:ring-primary transition-all ${emailError ? 'border-red-500 focus:ring-red-500' : ''}`}
                     placeholder="you@example.com"
                     disabled={loading}
                   />
@@ -194,14 +195,14 @@ function SignInInner() {
                     value={password}
                     onChange={(e) => handlePasswordChange(e.target.value)}
                     required
-                    className={`pl-10 pr-10 h-11 bg-gray-50 border-gray-200 hover:bg-gray-100 focus:bg-white focus:border-primary focus:ring-primary/20 transition-all duration-200 ${passwordError ? 'border-red-500 focus:ring-red-500/20' : ''}`}
+                    className={`pl-10 pr-10 h-11 bg-gray-50 border-gray-200 focus:bg-white focus:border-primary focus:ring-primary transition-all ${passwordError ? 'border-red-500 focus:ring-red-500' : ''}`}
                     placeholder="••••••••"
                     disabled={loading}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-3 h-4 w-4 text-gray-400 hover:text-gray-600 active:scale-95 transition-all duration-200"
+                    className="absolute right-3 top-3 h-4 w-4 text-gray-400 hover:text-gray-600 transition-colors"
                     disabled={loading}
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}

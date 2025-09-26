@@ -34,7 +34,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { FeatureGate } from "@/components/UpgradePrompt";
-import { SkeletonInterviewQuestion } from "@/components/ui/loading-skeleton";
+import { Skeleton } from "@/components/ui/loading-skeleton";
 
 // Interview questions will be fetched from API
 interface InterviewQuestion {
@@ -158,7 +158,7 @@ export default function InterviewPrepPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg"
+        className="bg-gradient-to-r from-primary to-secondary shadow-lg"
       >
         <div className="relative max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
           <motion.div
@@ -170,7 +170,7 @@ export default function InterviewPrepPage() {
             <h1 className="text-4xl font-bold text-white sm:text-5xl lg:text-6xl">
               Ace Your Next Interview
             </h1>
-            <p className="mt-6 max-w-2xl mx-auto text-xl text-blue-100">
+            <p className="mt-6 max-w-2xl mx-auto text-xl text-primary-foreground/90">
               Practice with AI-powered interview questions, get personalized feedback, and build confidence for your dream job.
             </p>
           </motion.div>
@@ -178,99 +178,226 @@ export default function InterviewPrepPage() {
       </motion.div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
         <FeatureGate>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="practice">Practice Questions</TabsTrigger>
-              <TabsTrigger value="tips">Interview Tips</TabsTrigger>
-              <TabsTrigger value="mock">Mock Interviews</TabsTrigger>
-              <TabsTrigger value="progress">My Progress</TabsTrigger>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
+            <TabsList className="grid w-full grid-cols-4 bg-gray-100 p-1 rounded-lg">
+              <TabsTrigger value="practice" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">Practice Questions</TabsTrigger>
+              <TabsTrigger value="tips" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">Interview Tips</TabsTrigger>
+              <TabsTrigger value="mock" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">Mock Interviews</TabsTrigger>
+              <TabsTrigger value="progress" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">My Progress</TabsTrigger>
             </TabsList>
 
             <TabsContent value="practice" className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Question Categories */}
                 <div className="space-y-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Target className="h-5 w-5" />
-                        Question Types
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      {Object.entries(interviewQuestions).map(([category, questions]) => (
-                        <button
-                          key={category}
-                          onClick={() => {
-                            setSelectedCategory(category);
-                            setCurrentQuestion(0);
-                            setUserAnswer("");
-                          }}
-                          className={`w-full text-left p-4 rounded-lg border transition-colors ${
-                            selectedCategory === category
-                              ? "border-primary bg-primary/5"
-                              : "border-gray-200 hover:border-gray-300"
-                          }`}
-                        >
-                          <div className="font-medium capitalize flex items-center gap-2">
-                            {category === "behavioral" && <MessageSquare className="h-4 w-4" />}
-                            {category === "technical" && <Lightbulb className="h-4 w-4" />}
-                            {category === "situational" && <Users className="h-4 w-4" />}
-                            {category === "leadership" && <Target className="h-4 w-4" />}
-                            {category === "systemDesign" && <Briefcase className="h-4 w-4" />}
-                            {category === "productSense" && <Star className="h-4 w-4" />}
-                            {category.replace(/([A-Z])/g, ' $1').trim()} ({questions.length})
+                  {loading ? (
+                    <>
+                      {/* Question Types Skeleton */}
+                      <Card className="shadow-sm border-gray-200">
+                        <CardHeader className="pb-3">
+                          <div className="flex items-center gap-2">
+                            <Skeleton className="h-5 w-5 rounded" />
+                            <Skeleton className="h-6 w-32" />
                           </div>
-                          <div className="text-sm text-muted-foreground mt-1">
-                            {category === "behavioral" && "Past experiences and examples"}
-                            {category === "technical" && "Coding and technical knowledge"}
-                            {category === "situational" && "How you would handle scenarios"}
-                            {category === "leadership" && "Management and team leadership"}
-                            {category === "systemDesign" && "Architecture and scalability"}
-                            {category === "productSense" && "Product thinking and strategy"}
-                          </div>
-                        </button>
-                      ))}
-                    </CardContent>
-                  </Card>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          {[1, 2, 3, 4, 5, 6].map((index) => (
+                            <div key={index} className="p-4 rounded-lg border border-gray-200">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Skeleton className="h-4 w-4 rounded" />
+                                <Skeleton className="h-5 w-24" />
+                                <Skeleton className="h-5 w-8 rounded-full" />
+                              </div>
+                              <Skeleton className="h-3 w-40" />
+                            </div>
+                          ))}
+                        </CardContent>
+                      </Card>
 
-                  {/* Progress */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <TrendingUp className="h-5 w-5" />
-                        Progress
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        <div className="flex justify-between text-sm">
-                          <span>Questions Completed</span>
-                          <span>{completedQuestions.length}/{getCurrentQuestions().length}</span>
-                        </div>
-                        <Progress value={(completedQuestions.length / getCurrentQuestions().length) * 100} />
-                      </div>
-                    </CardContent>
-                  </Card>
+                      {/* Progress Skeleton */}
+                      <Card className="shadow-sm border-gray-200">
+                        <CardHeader className="pb-3">
+                          <div className="flex items-center gap-2">
+                            <Skeleton className="h-5 w-5 rounded" />
+                            <Skeleton className="h-6 w-24" />
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            <div className="flex justify-between">
+                              <Skeleton className="h-4 w-32" />
+                              <Skeleton className="h-4 w-16" />
+                            </div>
+                            <Skeleton className="h-2 w-full" />
+                            <Skeleton className="h-3 w-16" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </>
+                  ) : (
+                    <>
+                      <Card className="shadow-sm border-gray-200">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="flex items-center gap-2 text-lg">
+                            <Target className="h-5 w-5 text-primary" />
+                            Question Types
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          {Object.entries(interviewQuestions).map(([category, questions]) => (
+                            <motion.button
+                              key={category}
+                              onClick={() => {
+                                setSelectedCategory(category);
+                                setCurrentQuestion(0);
+                                setUserAnswer("");
+                              }}
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                              className={`w-full text-left p-4 rounded-lg border transition-all duration-200 ${
+                                selectedCategory === category
+                                  ? "border-primary bg-primary/5 shadow-sm"
+                                  : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
+                              }`}
+                            >
+                              <div className="font-medium capitalize flex items-center gap-2">
+                                {category === "behavioral" && <MessageSquare className="h-4 w-4" />}
+                                {category === "technical" && <Lightbulb className="h-4 w-4" />}
+                                {category === "situational" && <Users className="h-4 w-4" />}
+                                {category === "leadership" && <Target className="h-4 w-4" />}
+                                {category === "systemDesign" && <Briefcase className="h-4 w-4" />}
+                                {category === "productSense" && <Star className="h-4 w-4" />}
+                                {category.replace(/([A-Z])/g, ' $1').trim()} ({questions.length})
+                              </div>
+                              <div className="text-sm text-muted-foreground mt-1">
+                                {category === "behavioral" && "Past experiences and examples"}
+                                {category === "technical" && "Coding and technical knowledge"}
+                                {category === "situational" && "How you would handle scenarios"}
+                                {category === "leadership" && "Management and team leadership"}
+                                {category === "systemDesign" && "Architecture and scalability"}
+                                {category === "productSense" && "Product thinking and strategy"}
+                              </div>
+                            </motion.button>
+                          ))}
+                        </CardContent>
+                      </Card>
+
+                      {/* Progress */}
+                      <Card className="shadow-sm border-gray-200">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="flex items-center gap-2 text-lg">
+                            <TrendingUp className="h-5 w-5 text-primary" />
+                            Progress
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            <div className="flex justify-between text-sm">
+                              <span className="font-medium">Questions Completed</span>
+                              <span className="font-semibold">{completedQuestions.length}/{getCurrentQuestions().length}</span>
+                            </div>
+                            <Progress value={(completedQuestions.length / getCurrentQuestions().length) * 100} className="h-2" />
+                            <div className="text-xs text-muted-foreground">
+                              {Math.round((completedQuestions.length / getCurrentQuestions().length) * 100)}% complete
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </>
+                  )}
                 </div>
 
                 {/* Main Practice Area */}
                 <div className="lg:col-span-2 space-y-6">
                   {loading ? (
-                    <SkeletonInterviewQuestion />
+                    <div className="space-y-6">
+                      {/* Main Question Area Skeleton */}
+                      <Card className="shadow-sm border-gray-200">
+                        <CardHeader className="pb-4">
+                          <div className="flex items-center justify-between flex-wrap gap-2">
+                            <Skeleton className="h-6 w-24 rounded-full" />
+                            <div className="flex items-center gap-2">
+                              <Skeleton className="h-6 w-16 rounded-full" />
+                              <Skeleton className="h-4 w-32" />
+                            </div>
+                          </div>
+                          <div className="space-y-3 mt-4">
+                            <Skeleton className="h-6 w-full" />
+                            <Skeleton className="h-4 w-4/5" />
+                            <Skeleton className="h-4 w-3/5" />
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                          {/* Answer Input Skeleton */}
+                          <div className="space-y-2">
+                            <Skeleton className="h-4 w-24" />
+                            <div className="space-y-2">
+                              <Skeleton className="h-32 w-full" />
+                              <Skeleton className="h-32 w-full" />
+                            </div>
+                          </div>
+
+                          {/* Recording Controls Skeleton */}
+                          <div className="flex items-center gap-4">
+                            <Skeleton className="h-10 w-32" />
+                            <Skeleton className="h-4 w-48" />
+                          </div>
+
+                          {/* Tips Skeleton */}
+                          <div className="bg-primary/5 border border-primary/20 p-4 rounded-lg">
+                            <div className="flex items-center gap-2 mb-3">
+                              <Skeleton className="h-4 w-4" />
+                              <Skeleton className="h-4 w-32" />
+                            </div>
+                            <div className="space-y-2">
+                              <div className="flex items-start gap-2">
+                                <Skeleton className="h-3 w-3 mt-0.5" />
+                                <Skeleton className="h-3 w-full" />
+                              </div>
+                              <div className="flex items-start gap-2">
+                                <Skeleton className="h-3 w-3 mt-0.5" />
+                                <Skeleton className="h-3 w-4/5" />
+                              </div>
+                              <div className="flex items-start gap-2">
+                                <Skeleton className="h-3 w-3 mt-0.5" />
+                                <Skeleton className="h-3 w-3/5" />
+                              </div>
+                            </div>
+                            <div className="mt-3 flex flex-wrap gap-1">
+                              <Skeleton className="h-6 w-16 rounded-full" />
+                              <Skeleton className="h-6 w-20 rounded-full" />
+                              <Skeleton className="h-6 w-14 rounded-full" />
+                            </div>
+                          </div>
+                        </CardContent>
+                        <CardFooter className="flex justify-between pt-4">
+                          <Skeleton className="h-10 w-20" />
+                          <div className="flex gap-2">
+                            <Skeleton className="h-10 w-24" />
+                            <Skeleton className="h-10 w-28" />
+                          </div>
+                        </CardFooter>
+                      </Card>
+                    </div>
                   ) : currentQuestionData ? (
-                    <Card>
-                      <CardHeader>
-                        <div className="flex items-center justify-between">
-                          <Badge variant="secondary">{currentQuestionData.category}</Badge>
+                    <Card className="shadow-sm border-gray-200">
+                      <CardHeader className="pb-4">
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <Badge variant="secondary" className="text-xs">{currentQuestionData.category}</Badge>
                           <div className="flex items-center gap-2">
                             <Badge
                               variant={
                                 currentQuestionData.difficulty === "Easy" ? "secondary" :
                                 currentQuestionData.difficulty === "Medium" ? "default" : "destructive"
                               }
+                              className="text-xs"
                             >
                               {currentQuestionData.difficulty}
                             </Badge>
@@ -279,58 +406,60 @@ export default function InterviewPrepPage() {
                             </span>
                           </div>
                         </div>
-                        <CardTitle className="text-xl mt-4">
+                        <CardTitle className="text-xl mt-4 leading-relaxed">
                           {currentQuestionData.question}
                         </CardTitle>
                       </CardHeader>
                     <CardContent className="space-y-6">
                       {/* Answer Input */}
                       <div className="space-y-2">
-                        <Label htmlFor="answer">Your Answer</Label>
+                        <Label htmlFor="answer" className="text-sm font-medium">Your Answer</Label>
                         <Textarea
                           id="answer"
                           placeholder="Type your answer here... Use the STAR method: Situation, Task, Action, Result"
                           value={userAnswer}
                           onChange={(e) => setUserAnswer(e.target.value)}
                           rows={6}
-                          className="resize-none"
+                          className="resize-none focus:ring-2 focus:ring-primary/20"
                         />
                       </div>
 
                       {/* Recording Controls */}
                       <div className="flex items-center gap-4">
-                        <Button
-                          variant={isRecording ? "destructive" : "outline"}
-                          onClick={toggleRecording}
-                          className="flex items-center gap-2"
-                        >
-                          {isRecording ? (
-                            <>
-                              <Pause className="h-4 w-4" />
-                              Stop Recording
-                            </>
-                          ) : (
-                            <>
-                              <Play className="h-4 w-4" />
-                              Start Recording
-                            </>
-                          )}
-                        </Button>
+                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                          <Button
+                            variant={isRecording ? "destructive" : "outline"}
+                            onClick={toggleRecording}
+                            className="flex items-center gap-2"
+                          >
+                            {isRecording ? (
+                              <>
+                                <Pause className="h-4 w-4" />
+                                Stop Recording
+                              </>
+                            ) : (
+                              <>
+                                <Play className="h-4 w-4" />
+                                Start Recording
+                              </>
+                            )}
+                          </Button>
+                        </motion.div>
                         <span className="text-sm text-muted-foreground">
                           Practice speaking your answer out loud
                         </span>
                       </div>
 
                           {/* Tips */}
-                          <div className="bg-blue-50 p-4 rounded-lg">
-                            <h4 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
+                          <div className="bg-primary/5 border border-primary/20 p-4 rounded-lg">
+                            <h4 className="font-semibold text-primary mb-2 flex items-center gap-2">
                               <Lightbulb className="h-4 w-4" />
                               Tips for this question:
                             </h4>
-                            <ul className="space-y-1 text-sm text-blue-800">
+                            <ul className="space-y-1 text-sm text-foreground/80">
                               {currentQuestionData.tips.map((tip, index) => (
                                 <li key={index} className="flex items-start gap-2">
-                                  <CheckCircle className="h-3 w-3 mt-0.5 text-blue-600 flex-shrink-0" />
+                                  <CheckCircle className="h-3 w-3 mt-0.5 text-primary flex-shrink-0" />
                                   {tip}
                                 </li>
                               ))}
@@ -338,7 +467,7 @@ export default function InterviewPrepPage() {
                             {currentQuestionData.tags && (
                               <div className="mt-3 flex flex-wrap gap-1">
                                 {currentQuestionData.tags.map((tag, index) => (
-                                  <Badge key={index} variant="outline" className="text-xs">
+                                  <Badge key={index} variant="outline" className="text-xs border-primary/30">
                                     {tag}
                                   </Badge>
                                 ))}
@@ -346,19 +475,24 @@ export default function InterviewPrepPage() {
                             )}
                           </div>
                     </CardContent>
-                    <CardFooter className="flex justify-between">
-                      <Button variant="outline" onClick={() => setUserAnswer("")}>
-                        <RotateCcw className="h-4 w-4 mr-2" />
-                        Reset
-                      </Button>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          onClick={handleCompleteQuestion}
-                          disabled={!userAnswer.trim()}
-                        >
-                          Mark Complete
+                    <CardFooter className="flex justify-between pt-4">
+                      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                        <Button variant="outline" onClick={() => setUserAnswer("")}>
+                          <RotateCcw className="h-4 w-4 mr-2" />
+                          Reset
                         </Button>
+                      </motion.div>
+                      <div className="flex gap-2">
+                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                          <Button
+                            variant="outline"
+                            onClick={handleCompleteQuestion}
+                            disabled={!userAnswer.trim()}
+                          >
+                            Mark Complete
+                          </Button>
+                        </motion.div>
+                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                             <Button
                               onClick={handleNextQuestion}
                               disabled={currentQuestion >= getCurrentQuestions().length - 1}
@@ -366,11 +500,16 @@ export default function InterviewPrepPage() {
                               Next Question
                               <ChevronRight className="h-4 w-4 ml-2" />
                             </Button>
+                        </motion.div>
                       </div>
                     </CardFooter>
                   </Card>
                   ) : (
-                    <div className="text-center py-12">
+                    <motion.div 
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="text-center py-12"
+                    >
                       <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                       <h3 className="text-lg font-medium text-gray-900 mb-2">
                         No questions available
@@ -378,7 +517,7 @@ export default function InterviewPrepPage() {
                       <p className="text-gray-600">
                         Please select a question category to start practicing.
                       </p>
-                    </div>
+                    </motion.div>
                   )}
                 </div>
               </div>
@@ -394,13 +533,19 @@ export default function InterviewPrepPage() {
                     transition={{ delay: index * 0.1, duration: 0.5 }}
                     whileHover={{ y: -4, scale: 1.02 }}
                   >
-                    <Card className="h-full hover:shadow-xl transition-all duration-300 cursor-pointer">
-                      <CardHeader>
-                        <div className="text-3xl mb-2">{tip.icon}</div>
+                    <Card className="h-full hover:shadow-lg transition-all duration-300 cursor-pointer border-gray-200 shadow-sm">
+                      <CardHeader className="text-center">
+                        <motion.div 
+                          className="text-4xl mb-3"
+                          whileHover={{ scale: 1.1 }}
+                          transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                        >
+                          {tip.icon}
+                        </motion.div>
                         <CardTitle className="text-lg">{tip.title}</CardTitle>
                       </CardHeader>
-                      <CardContent>
-                        <CardDescription className="text-sm">
+                      <CardContent className="text-center">
+                        <CardDescription className="text-sm leading-relaxed">
                           {tip.description}
                         </CardDescription>
                       </CardContent>
@@ -411,54 +556,72 @@ export default function InterviewPrepPage() {
             </TabsContent>
 
             <TabsContent value="mock" className="space-y-6">
-              <Card>
+              <Card className="shadow-sm border-gray-200">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Users className="h-5 w-5" />
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Users className="h-5 w-5 text-primary" />
                     Mock Interview Sessions
                   </CardTitle>
-                  <CardDescription>
+                  <CardDescription className="text-base">
                     Practice with AI-powered mock interviews tailored to your target role.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-4">
-                      <h3 className="font-semibold">Available Mock Interviews</h3>
+                      <h3 className="font-semibold text-lg">Available Mock Interviews</h3>
                       <div className="space-y-3">
-                        <div className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                        <motion.div 
+                          whileHover={{ scale: 1.02, y: -2 }}
+                          className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200"
+                        >
                           <h4 className="font-medium">Software Engineer Interview</h4>
                           <p className="text-sm text-muted-foreground">45 minutes • Technical + Behavioral</p>
-                        </div>
-                        <div className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                        </motion.div>
+                        <motion.div 
+                          whileHover={{ scale: 1.02, y: -2 }}
+                          className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200"
+                        >
                           <h4 className="font-medium">Product Manager Interview</h4>
                           <p className="text-sm text-muted-foreground">30 minutes • Strategy + Leadership</p>
-                        </div>
-                        <div className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                        </motion.div>
+                        <motion.div 
+                          whileHover={{ scale: 1.02, y: -2 }}
+                          className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200"
+                        >
                           <h4 className="font-medium">UX Designer Interview</h4>
                           <p className="text-sm text-muted-foreground">35 minutes • Design + Problem Solving</p>
-                        </div>
+                        </motion.div>
                       </div>
                     </div>
                     <div className="space-y-4">
-                      <h3 className="font-semibold">How it works</h3>
+                      <h3 className="font-semibold text-lg">How it works</h3>
                       <div className="space-y-3 text-sm">
                         <div className="flex items-start gap-3">
-                          <div className="w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-xs font-bold">
+                          <motion.div 
+                            whileHover={{ scale: 1.1 }}
+                            className="w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-xs font-bold"
+                          >
                             1
-                          </div>
+                          </motion.div>
                           <p>Select your target role and experience level</p>
                         </div>
                         <div className="flex items-start gap-3">
-                          <div className="w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-xs font-bold">
+                          <motion.div 
+                            whileHover={{ scale: 1.1 }}
+                            className="w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-xs font-bold"
+                          >
                             2
-                          </div>
+                          </motion.div>
                           <p>AI interviewer asks relevant questions</p>
                         </div>
                         <div className="flex items-start gap-3">
-                          <div className="w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-xs font-bold">
+                          <motion.div 
+                            whileHover={{ scale: 1.1 }}
+                            className="w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-xs font-bold"
+                          >
                             3
-                          </div>
+                          </motion.div>
                           <p>Get detailed feedback and improvement tips</p>
                         </div>
                       </div>
@@ -470,77 +633,96 @@ export default function InterviewPrepPage() {
 
             <TabsContent value="progress" className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
-                      Questions Practiced
-                    </CardTitle>
-                    <BookOpen className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{completedQuestions.length}</div>
-                    <p className="text-xs text-muted-foreground">
-                      Out of {Object.values(interviewQuestions).flat().length} available
-                    </p>
-                  </CardContent>
-                </Card>
+                <motion.div whileHover={{ scale: 1.05 }}>
+                  <Card className="shadow-sm border-gray-200">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">
+                        Questions Practiced
+                      </CardTitle>
+                      <div className="bg-primary/10 rounded-lg w-8 h-8 flex items-center justify-center">
+                        <BookOpen className="h-4 w-4 text-primary" />
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{completedQuestions.length}</div>
+                      <p className="text-xs text-muted-foreground">
+                        Out of {Object.values(interviewQuestions).flat().length} available
+                      </p>
+                    </CardContent>
+                  </Card>
+                </motion.div>
 
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
-                      Practice Sessions
-                    </CardTitle>
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">3</div>
-                    <p className="text-xs text-muted-foreground">
-                      This week
-                    </p>
-                  </CardContent>
-                </Card>
+                <motion.div whileHover={{ scale: 1.05 }}>
+                  <Card className="shadow-sm border-gray-200">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">
+                        Practice Sessions
+                      </CardTitle>
+                      <div className="bg-secondary/20 rounded-lg w-8 h-8 flex items-center justify-center">
+                        <Clock className="h-4 w-4 text-secondary" />
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">3</div>
+                      <p className="text-xs text-muted-foreground">
+                        This week
+                      </p>
+                    </CardContent>
+                  </Card>
+                </motion.div>
 
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
-                      Average Score
-                    </CardTitle>
-                    <Star className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">8.5</div>
-                    <p className="text-xs text-muted-foreground">
-                      Out of 10
-                    </p>
-                  </CardContent>
-                </Card>
+                <motion.div whileHover={{ scale: 1.05 }}>
+                  <Card className="shadow-sm border-gray-200">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">
+                        Average Score
+                      </CardTitle>
+                      <div className="bg-yellow-100 rounded-lg w-8 h-8 flex items-center justify-center">
+                        <Star className="h-4 w-4 text-yellow-600" />
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">8.5</div>
+                      <p className="text-xs text-muted-foreground">
+                        Out of 10
+                      </p>
+                    </CardContent>
+                  </Card>
+                </motion.div>
               </div>
 
-              <Card>
+              <Card className="shadow-sm border-gray-200">
                 <CardHeader>
-                  <CardTitle>Recent Practice Sessions</CardTitle>
+                  <CardTitle className="text-lg">Recent Practice Sessions</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                    <motion.div 
+                      whileHover={{ scale: 1.02, y: -2 }}
+                      className="flex items-center justify-between p-4 border border-gray-200 rounded-lg"
+                    >
                       <div>
                         <h4 className="font-medium">Behavioral Interview Practice</h4>
                         <p className="text-sm text-muted-foreground">2 days ago • 45 minutes</p>
                       </div>
-                      <Badge variant="secondary">Score: 8.7/10</Badge>
-                    </div>
-                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                      <Badge variant="secondary" className="text-xs">Score: 8.7/10</Badge>
+                    </motion.div>
+                    <motion.div 
+                      whileHover={{ scale: 1.02, y: -2 }}
+                      className="flex items-center justify-between p-4 border border-gray-200 rounded-lg"
+                    >
                       <div>
                         <h4 className="font-medium">Technical Interview Practice</h4>
                         <p className="text-sm text-muted-foreground">5 days ago • 30 minutes</p>
                       </div>
-                      <Badge variant="secondary">Score: 8.2/10</Badge>
-                    </div>
+                      <Badge variant="secondary" className="text-xs">Score: 8.2/10</Badge>
+                    </motion.div>
                   </div>
                 </CardContent>
               </Card>
             </TabsContent>
           </Tabs>
+          </motion.div>
         </FeatureGate>
       </div>
     </div>

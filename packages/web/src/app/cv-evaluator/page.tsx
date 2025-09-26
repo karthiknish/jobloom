@@ -26,6 +26,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/loading-skeleton";
 
 export default function CvEvaluatorPage() {
   const { user } = useFirebaseAuth();
@@ -33,29 +34,32 @@ export default function CvEvaluatorPage() {
     "upload"
   );
 
-  const userRecord = useApiQuery(
+  const userRecordQuery = useApiQuery(
     () =>
       user && user.uid
         ? cvEvaluatorApi.getUserByFirebaseUid(user.uid)
         : Promise.reject(new Error("No user")),
     [user?.uid]
-  ).data;
+  );
+  const userRecord = userRecordQuery.data;
 
-  const cvAnalyses = useApiQuery(
+  const cvAnalysesQuery = useApiQuery(
     () =>
       userRecord
         ? cvEvaluatorApi.getUserCvAnalyses(userRecord._id)
         : Promise.reject(new Error("No user record")),
     [userRecord?._id]
-  ).data;
+  );
+  const cvAnalyses = cvAnalysesQuery.data;
 
-  const cvStats = useApiQuery(
+  const cvStatsQuery = useApiQuery(
     () =>
       userRecord
         ? cvEvaluatorApi.getCvAnalysisStats(userRecord._id)
         : Promise.reject(new Error("No user record")),
     [userRecord?._id]
-  ).data;
+  );
+  const cvStats = cvStatsQuery.data;
 
   if (!user) {
     return (
@@ -135,13 +139,30 @@ export default function CvEvaluatorPage() {
       <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <FeatureGate>
           {/* Stats Cards */}
-          {cvStats && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8"
-            >
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8"
+          >
+            {cvStatsQuery.loading ? (
+              // Loading skeleton for stats cards
+              <>
+                {[1, 2, 3, 4].map((index) => (
+                  <Card key={index} className="shadow-sm border-gray-200">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <Skeleton className="h-4 w-20" />
+                      <Skeleton className="h-10 w-10 rounded-lg" />
+                    </CardHeader>
+                    <CardContent>
+                      <Skeleton className="h-8 w-12 mb-2" />
+                      <Skeleton className="h-3 w-24" />
+                    </CardContent>
+                  </Card>
+                ))}
+              </>
+            ) : cvStats ? (
+              <>
               <motion.div whileHover={{ scale: 1.05 }}>
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -223,8 +244,9 @@ export default function CvEvaluatorPage() {
                   </CardContent>
                 </Card>
               </motion.div>
-            </motion.div>
-          )}
+              </>
+            ) : null}
+          </motion.div>
 
           {/* Tab Navigation */}
           <div className="relative grid grid-cols-3 bg-gray-100 p-1 rounded-lg mb-6 w-[min(480px,100%)]">
@@ -293,7 +315,26 @@ export default function CvEvaluatorPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
             >
-              <CvAnalysisHistory analyses={cvAnalyses || []} />
+              {cvAnalysesQuery.loading ? (
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="space-y-4">
+                      {[1, 2, 3, 4].map((index) => (
+                        <div key={index} className="flex items-center space-x-4">
+                          <Skeleton className="h-12 w-12 rounded-lg" />
+                          <div className="space-y-2 flex-1">
+                            <Skeleton className="h-4 w-48" />
+                            <Skeleton className="h-3 w-32" />
+                          </div>
+                          <Skeleton className="h-8 w-20 rounded" />
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <CvAnalysisHistory analyses={cvAnalyses || []} />
+              )}
             </motion.div>
           ) : (
             <motion.div
@@ -301,7 +342,36 @@ export default function CvEvaluatorPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
             >
-              <CvImprovementTracker analyses={cvAnalyses || []} />
+              {cvAnalysesQuery.loading ? (
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {[1, 2, 3].map((index) => (
+                          <div key={index} className="text-center">
+                            <Skeleton className="h-16 w-16 rounded-full mx-auto mb-2" />
+                            <Skeleton className="h-4 w-20 mx-auto mb-1" />
+                            <Skeleton className="h-3 w-16 mx-auto" />
+                          </div>
+                        ))}
+                      </div>
+                      <div className="space-y-3">
+                        <Skeleton className="h-4 w-32" />
+                        <div className="space-y-2">
+                          {[1, 2, 3].map((index) => (
+                            <div key={index} className="flex justify-between items-center">
+                              <Skeleton className="h-3 w-24" />
+                              <Skeleton className="h-2 w-32 rounded" />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <CvImprovementTracker analyses={cvAnalyses || []} />
+              )}
             </motion.div>
           )}
         </FeatureGate>

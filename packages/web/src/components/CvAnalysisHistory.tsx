@@ -159,26 +159,28 @@ export function CvAnalysisHistory({ analyses }: CvAnalysisHistoryProps) {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="space-y-4"
+      className="space-y-6"
     >
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium text-foreground">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <h3 className="text-xl font-semibold text-foreground">
           Analysis History
         </h3>
         <div className="flex items-center gap-3">
-          <span className="text-sm text-muted-foreground">
+          <span className="text-sm text-muted-foreground bg-gray-100 px-3 py-1 rounded-full">
             {filteredAnalyses.length} of {analyses.length} analyses
           </span>
           {analyses.length >= 2 && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowComparison(true)}
-              className="flex items-center gap-2"
-            >
-              <BarChart3 className="h-4 w-4" />
-              Compare CVs
-            </Button>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowComparison(true)}
+                className="flex items-center gap-2"
+              >
+                <BarChart3 className="h-4 w-4" />
+                Compare CVs
+              </Button>
+            </motion.div>
           )}
         </div>
       </div>
@@ -208,9 +210,9 @@ export function CvAnalysisHistory({ analyses }: CvAnalysisHistoryProps) {
               hidden: { opacity: 0, y: 8 },
               visible: { opacity: 1, y: 0 },
             }}
-            whileHover={{ y: -2 }}
+            whileHover={{ y: -2, scale: 1.01 }}
           >
-            <Card>
+            <Card className="shadow-sm border-gray-200 hover:shadow-md transition-all duration-200">
               <CardContent className="p-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex-1 min-w-0">
@@ -220,6 +222,7 @@ export function CvAnalysisHistory({ analyses }: CvAnalysisHistoryProps) {
                       </h4>
                       <Badge
                         variant={getStatusVariant(analysis.analysisStatus)}
+                        className="text-xs"
                       >
                         {getStatusLabel(analysis.analysisStatus)}
                       </Badge>
@@ -252,29 +255,29 @@ export function CvAnalysisHistory({ analyses }: CvAnalysisHistoryProps) {
 
                     {analysis.analysisStatus === "failed" &&
                       analysis.errorMessage && (
-                        <div className="mt-2 text-sm text-destructive">
+                        <div className="mt-2 text-sm text-destructive bg-destructive/5 p-2 rounded">
                           Error: {analysis.errorMessage}
                         </div>
                       )}
 
                     {analysis.analysisStatus === "completed" &&
                       analysis.strengths && (
-                        <div className="mt-3">
+                        <div className="mt-3 space-y-2">
                           <p className="text-sm text-muted-foreground line-clamp-2">
                             <span className="font-medium">Key strengths:</span>{" "}
                             {analysis.strengths.slice(0, 2).join(", ")}
                             {analysis.strengths.length > 2 && "..."}
                           </p>
                           {analysis.atsCompatibility && (
-                            <p className="text-sm text-muted-foreground mt-1">
+                            <p className="text-sm text-muted-foreground">
                               <span className="font-medium">ATS Score:</span>{" "}
                               <span
                                 className={
                                   analysis.atsCompatibility.score >= 80
-                                    ? "text-green-600"
+                                    ? "text-green-600 font-medium"
                                     : analysis.atsCompatibility.score >= 60
-                                    ? "text-yellow-600"
-                                    : "text-red-600"
+                                    ? "text-yellow-600 font-medium"
+                                    : "text-red-600 font-medium"
                                 }
                               >
                                 {analysis.atsCompatibility.score}/100
@@ -287,24 +290,28 @@ export function CvAnalysisHistory({ analyses }: CvAnalysisHistoryProps) {
 
                   <div className="flex items-center space-x-2">
                     {analysis.analysisStatus === "completed" && (
+                      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleViewAnalysis(analysis)}
+                          title="View Analysis"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </motion.div>
+                    )}
+
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleViewAnalysis(analysis)}
-                        title="View Analysis"
+                        onClick={() => handleDeleteAnalysis(analysis._id)}
+                        title="Delete Analysis"
                       >
-                        <Eye className="h-4 w-4" />
+                        <Trash2 className="h-4 w-4" />
                       </Button>
-                    )}
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDeleteAnalysis(analysis._id)}
-                      title="Delete Analysis"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    </motion.div>
                   </div>
                 </div>
 
@@ -335,12 +342,14 @@ export function CvAnalysisHistory({ analyses }: CvAnalysisHistoryProps) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.15, duration: 0.3 }}
-          className="text-center pt-4"
+          className="text-center pt-6"
         >
-          <p className="text-sm text-muted-foreground">
-            Showing {analyses.length} analyses. Older analyses are automatically
-            archived after 90 days.
-          </p>
+          <div className="bg-gray-50 rounded-lg p-4 inline-block">
+            <p className="text-sm text-muted-foreground">
+              Showing {analyses.length} analyses. Older analyses are automatically
+              archived after 90 days.
+            </p>
+          </div>
         </motion.div>
       )}
     </motion.div>

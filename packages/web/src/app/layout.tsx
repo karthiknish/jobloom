@@ -7,7 +7,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Chatbot from "@/components/Chatbot";
 import MobileNavigation from "@/components/MobileNavigation";
-import { inter } from "@/font";
+import { inter, playfair } from "@/font";
 
 export const metadata: Metadata = {
   title: "HireAll - Job Tracker",
@@ -21,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.className} antialiased`}>
+      <body className={`${inter.className} antialiased`} style={{ '--font-playfair-display': playfair.style.fontFamily } as React.CSSProperties}>
         <FirebaseInitializer />
         <FirebaseAuthProvider>
           <Header />
