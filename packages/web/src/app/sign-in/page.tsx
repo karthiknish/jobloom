@@ -167,14 +167,14 @@ function SignInInner() {
               </div>
             </div>
           </Link>
-          <h1 className="text-3xl font-bold text-gray-900">Hireall</h1>
-          <p className="text-gray-600 mt-2">Your smart job search companion</p>
+          <h1 className="text-3xl font-bold text-foreground">Hireall</h1>
+          <p className="text-muted-foreground mt-2">Your smart job search companion</p>
         </motion.div>
 
         <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-sm">
           <CardHeader className="space-y-1 text-center pb-6">
-            <CardTitle className="text-2xl font-bold text-gray-900">Welcome back</CardTitle>
-            <CardDescription className="text-gray-600">
+            <CardTitle className="text-2xl font-bold text-foreground">Welcome back</CardTitle>
+            <CardDescription className="text-muted-foreground">
               Sign in to your Hireall account
             </CardDescription>
           </CardHeader>
@@ -198,16 +198,16 @@ function SignInInner() {
 
             <form onSubmit={handlePasswordSignIn} className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium text-gray-700">Email</Label>
+                <Label htmlFor="email" className="text-sm font-medium text-foreground">Email</Label>
                 <div className="relative group">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400 group-focus-within:text-primary transition-colors" />
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                   <Input
                     id="email"
                     type="email"
                     value={email}
                     onChange={(e) => handleEmailChange(e.target.value)}
                     required
-                    className={`pl-10 h-11 bg-gray-50 border-gray-200 focus:bg-white focus:border-primary focus:ring-primary transition-all ${emailError ? 'border-red-500 focus:ring-red-500' : ''}`}
+                    className={`pl-10 h-11 bg-muted/50 border-input focus:bg-background focus:border-primary focus:ring-primary transition-all ${emailError ? 'border-destructive focus:ring-destructive' : ''}`}
                     placeholder="you@example.com"
                     disabled={loading}
                   />
@@ -218,7 +218,7 @@ function SignInInner() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium text-gray-700">Password</Label>
+                <Label htmlFor="password" className="text-sm font-medium text-foreground">Password</Label>
                 <div className="relative group">
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400 group-focus-within:text-primary transition-colors" />
                   <Input

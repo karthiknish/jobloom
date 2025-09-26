@@ -213,11 +213,11 @@ export const adminApi = {
   },
 
   // User management
-  getAllUsers: async (): Promise<UserRecord[]> => {
+  getAllUsers: async (): Promise<{ users: UserRecord[]; total: number }> => {
     const db = getDb();
     if (!db) throw new Error("Firestore not initialized");
     const snap = await getDocs(collection(db, "users"));
-    return snap.docs.map((d) => {
+    const users = snap.docs.map((d) => {
       const data = d.data() as FireUser;
       return {
         _id: d.id,
@@ -227,6 +227,49 @@ export const adminApi = {
         createdAt: data.createdAt ?? Date.now(),
       } as UserRecord;
     });
+    return { users, total: users.length };
+  },
+
+  getUserStats: async (): Promise<{
+    totalUsers: number;
+    activeUsers: number;
+    adminUsers: number;
+    newUsersThisMonth: number;
+    usersByPlan: Record<string, number>;
+    recentLogins: number;
+  }> => {
+    const db = getDb();
+    if (!db) throw new Error("Firestore not initialized");
+
+    const snap = await getDocs(collection(db, "users"));
+    const users = snap.docs.map((d) => d.data() as FireUser);
+
+    const now = Date.now();
+    const oneMonthAgo = now - (30 * 24 * 60 * 60 * 1000);
+    const oneWeekAgo = now - (7 * 24 * 60 * 60 * 1000);
+
+    const stats = {
+      totalUsers: users.length,
+      activeUsers: users.filter(u => u.updatedAt && u.updatedAt > oneWeekAgo).length,
+      adminUsers: users.filter(u => u.isAdmin === true).length,
+      newUsersThisMonth: users.filter(u => u.createdAt && u.createdAt > oneMonthAgo).length,
+      usersByPlan: {
+        free: users.filter(u => !u.subscriptionPlan || u.subscriptionPlan === 'free').length,
+        premium: users.filter(u => u.subscriptionPlan === 'premium').length,
+        enterprise: users.filter(u => u.subscriptionPlan === 'enterprise').length,
+      },
+      recentLogins: users.filter(u => u.updatedAt && u.updatedAt > oneWeekAgo).length,
+    };
+
+    return stats;
+  },
+
+  deleteUser: async (userId: string, _requesterId: string): Promise<void> => {
+    const db = getDb();
+    if (!db) throw new Error("Firestore not initialized");
+
+    const { deleteDoc } = await import("firebase/firestore");
+    await deleteDoc(doc(db, "users", userId));
   },
 
   // Sponsorship rules

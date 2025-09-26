@@ -81,7 +81,7 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
                     </p>
                   </div>
                 </div>
-                <div className="text-blue-500 opacity-20 group-hover:opacity-30 transition-opacity">
+                <div className="text-sky-500 opacity-20 group-hover:opacity-30 transition-opacity">
                   <svg
                     className="w-8 h-8"
                     fill="currentColor"
@@ -116,7 +116,7 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
                     </p>
                   </div>
                 </div>
-                <div className="text-orange-500 opacity-20 group-hover:opacity-30 transition-opacity">
+                <div className="text-amber-500 opacity-20 group-hover:opacity-30 transition-opacity">
                   <svg
                     className="w-8 h-8"
                     fill="currentColor"
@@ -151,7 +151,7 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
                     </p>
                   </div>
                 </div>
-                <div className="text-green-500 opacity-20 group-hover:opacity-30 transition-opacity">
+                <div className="text-emerald-500 opacity-20 group-hover:opacity-30 transition-opacity">
                   <svg
                     className="w-8 h-8"
                     fill="currentColor"
@@ -186,7 +186,7 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
                     </p>
                   </div>
                 </div>
-                <div className="text-purple-500 opacity-20 group-hover:opacity-30 transition-opacity">
+                <div className="text-violet-500 opacity-20 group-hover:opacity-30 transition-opacity">
                   <svg
                     className="w-8 h-8"
                     fill="currentColor"

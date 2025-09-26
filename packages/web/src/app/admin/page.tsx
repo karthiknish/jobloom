@@ -57,7 +57,7 @@ export default function AdminPage() {
   );
 
   const { data: allUsers, refetch: refetchUsers } = useApiQuery(
-    () => adminApi.getAllUsers(),
+    () => adminApi.getAllUsers().then(result => result.users),
     []
   );
 
@@ -186,6 +186,19 @@ export default function AdminPage() {
               Sponsorship Rules
             </button>
           </nav>
+        </div>
+
+        {/* Quick Access to User Dashboard */}
+        <div className="mt-4 flex items-center justify-between">
+          <p className="text-sm text-gray-600">
+            For comprehensive user analytics and management, visit the{" "}
+            <a
+              href="/admin/users"
+              className="text-primary hover:text-primary/80 font-medium"
+            >
+              dedicated User Dashboard →
+            </a>
+          </p>
         </div>
       </div>
 

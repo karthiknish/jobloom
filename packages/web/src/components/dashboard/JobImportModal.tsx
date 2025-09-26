@@ -205,13 +205,13 @@ export function JobImportModal({
               </div>
             </div>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+            <div className="bg-sky-50 border border-sky-200 rounded-md p-4">
               <div className="flex justify-between items-center">
                 <div>
-                  <h4 className="text-sm font-medium text-blue-900">
+                  <h4 className="text-sm font-medium text-sky-900">
                     Need a template?
                   </h4>
-                  <p className="text-sm text-blue-800 mt-1">
+                  <p className="text-sm text-sky-800 mt-1">
                     Download our sample CSV template to get started
                   </p>
                 </div>
@@ -288,16 +288,16 @@ export function JobImportModal({
               />
             </div>
 
-            <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
+            <div className="bg-amber-50 border border-amber-200 rounded-md p-4">
               <div className="flex">
                 <div className="flex-shrink-0">
-                  <span className="text-yellow-500">⚠</span>
+                  <span className="text-amber-500">⚠</span>
                 </div>
                 <div className="ml-3">
-                  <h3 className="text-sm font-medium text-yellow-800">
+                  <h3 className="text-sm font-medium text-amber-800">
                     API Integration Note
                   </h3>
-                  <div className="mt-2 text-sm text-yellow-700">
+                  <div className="mt-2 text-sm text-amber-700">
                     <p>
                       Job board API integrations require proper authentication
                       and may have rate limits. This is a demonstration feature
