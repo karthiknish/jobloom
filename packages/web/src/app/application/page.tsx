@@ -340,7 +340,7 @@ export default function ApplicationPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-muted">
         <div className="text-center">
           <p className="mb-4">Please sign in to access the application workspace.</p>
           <a className="underline" href="/sign-in">Sign in</a>
@@ -350,7 +350,7 @@ export default function ApplicationPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pt-16">
+    <div className="min-h-screen bg-gradient-to-br from-muted to-muted/80 pt-16">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -438,8 +438,8 @@ export default function ApplicationPage() {
                         key={t.id}
                         onClick={() => setResume(r => ({ ...r, templateId: t.id }))}
                         className={cn(
-                          "relative p-4 rounded-lg border text-left transition-all hover:shadow-sm bg-white",
-                          resume.templateId === t.id ? "border-primary ring-2 ring-primary/30" : "border-gray-200"
+                          "relative p-4 rounded-lg border text-left transition-all hover:shadow-sm bg-background",
+                          resume.templateId === t.id ? "border-primary ring-2 ring-primary/30" : "border-border"
                         )}
                       >
                         <div className="flex items-start justify-between">
@@ -478,7 +478,7 @@ export default function ApplicationPage() {
                   <CardDescription>Live preview of your resume using the selected template.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="bg-white p-6 border rounded-lg shadow-sm prose max-w-none">
+                  <div className="bg-background p-6 border rounded-lg shadow-sm prose max-w-none">
                     <h1 className="text-2xl font-bold mb-1">{resume.resumeData.personalInfo.fullName || "Your Name"}</h1>
                     <p className="text-sm text-muted-foreground mb-4">
                       {[resume.resumeData.personalInfo.email, resume.resumeData.personalInfo.location]

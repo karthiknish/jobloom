@@ -172,7 +172,7 @@ export default function InterviewPrepPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pt-16">
+    <div className="min-h-screen bg-gradient-to-br from-muted to-muted/80 pt-16">
       {/* Hero Section */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}

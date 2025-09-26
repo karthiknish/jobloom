@@ -21,6 +21,12 @@ import { CvAnalysisHistory } from "@/components/CvAnalysisHistory";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FeatureGate } from "@/components/UpgradePrompt";
+import { DraggableDashboard } from "@/components/dashboard/DraggableDashboard";
+import { DashboardFilters } from "@/components/dashboard/DashboardFilters";
+import { useDashboardLayout } from "@/hooks/useDashboardLayout";
+import { useApplicationManagement } from "@/hooks/useApplicationManagement";
+import { useJobManagement } from "@/hooks/useJobManagement";
+import { useDashboardWidgets } from "@/components/dashboard/DashboardWidgets";
 import {
   Dialog,
   DialogContent,
@@ -92,21 +98,21 @@ export function AdvancedDashboard() {
       ? "Good afternoon"
       : "Good evening";
 
-  const [showApplicationForm, setShowApplicationForm] = useState(false);
-  const [showJobForm, setShowJobForm] = useState(false);
-  const [showImportModal, setShowImportModal] = useState(false);
-  const [editingApplication, setEditingApplication] =
-    useState<Application | null>(null);
-  const [selectedApplication, setSelectedApplication] =
-    useState<Application | null>(null);
-  const [view, setView] = useState<"dashboard" | "jobs" | "applications" | "analytics">(
-    "dashboard"
-  );
+  const [view, setView] = useState<
+    "dashboard" | "jobs" | "applications" | "analytics"
+  >("dashboard");
   const [boardMode, setBoardMode] = useState<"list" | "kanban">("list");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [companyFilter, setCompanyFilter] = useState<string>("all");
-  const [savedViews, setSavedViews] = useState<{ id: string; name: string; filters: Record<string, unknown> }[]>([]);
+  const [savedViews, setSavedViews] = useState<
+    { id: string; name: string; filters: Record<string, unknown> }[]
+  >([]);
+
+  // Use the new hooks
+  const { dashboardLayout, handleLayoutChange } = useDashboardLayout();
+  const applicationManagement = useApplicationManagement(refetchApplications);
+  const jobManagement = useJobManagement(refetchJobStats);
 
   // Fetch user record
   const { data: userRecord } = useApiQuery(
@@ -168,22 +174,23 @@ export function AdvancedDashboard() {
 
     // Status filter
     if (statusFilter !== "all") {
-      filtered = filtered.filter(app => app.status === statusFilter);
+      filtered = filtered.filter((app) => app.status === statusFilter);
     }
 
     // Search filter
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(app =>
-        app.job?.title.toLowerCase().includes(term) ||
-        app.job?.company.toLowerCase().includes(term) ||
-        app.job?.location.toLowerCase().includes(term)
+      filtered = filtered.filter(
+        (app) =>
+          app.job?.title.toLowerCase().includes(term) ||
+          app.job?.company.toLowerCase().includes(term) ||
+          app.job?.location.toLowerCase().includes(term)
       );
     }
 
     // Company filter
     if (companyFilter !== "all") {
-      filtered = filtered.filter(app => app.job?.company === companyFilter);
+      filtered = filtered.filter((app) => app.job?.company === companyFilter);
     }
 
     return filtered;
@@ -193,10 +200,22 @@ export function AdvancedDashboard() {
   const uniqueCompanies = React.useMemo(() => {
     if (!applications) return [];
     const companies = applications
-      .map(app => app.job?.company)
+      .map((app) => app.job?.company)
       .filter(Boolean) as string[];
     return Array.from(new Set(companies)).sort();
   }, [applications]);
+
+  // Define dashboard widgets using the hook
+  const dashboardWidgets = useDashboardWidgets({
+    jobStats,
+    applications,
+    hasApplications,
+    userRecord,
+    onEditApplication: applicationManagement.handleEditApplication,
+    onDeleteApplication: applicationManagement.handleDeleteApplication,
+    onViewApplication: applicationManagement.handleViewApplication,
+    onRefetchApplications: refetchApplications,
+  });
 
   if (loading) {
     return (
@@ -206,7 +225,10 @@ export function AdvancedDashboard() {
             <div className="h-8 bg-gradient-to-r from-muted-foreground/20 via-muted-foreground/30 to-muted-foreground/20    bg-[length:200%_100%] animate-shimmer rounded w-1/4"></div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-32 bg-gradient-to-r from-muted-foreground/20 via-muted-foreground/30 to-muted-foreground/20    bg-[length:200%_100%] animate-shimmer rounded-lg shadow-sm"></div>
+                <div
+                  key={i}
+                  className="h-32 bg-gradient-to-r from-muted-foreground/20 via-muted-foreground/30 to-muted-foreground/20    bg-[length:200%_100%] animate-shimmer rounded-lg shadow-sm"
+                ></div>
               ))}
             </div>
             <div className="space-y-6">
@@ -232,60 +254,27 @@ export function AdvancedDashboard() {
     );
   }
 
-  const handleEditApplication = (application: Application) => {
-    setEditingApplication(application);
-    setShowApplicationForm(true);
-  };
+  // Use the new hook functions
+  const {
+    showApplicationForm,
+    setShowApplicationForm,
+    editingApplication,
+    setEditingApplication,
+    selectedApplication,
+    setSelectedApplication,
+    handleEditApplication,
+    handleViewApplication,
+    handleDeleteApplication,
+    handleApplicationSubmit,
+  } = applicationManagement;
 
-  const handleViewApplication = (application: Application) => {
-    setSelectedApplication(application);
-  };
-
-  const handleDeleteApplication = async (applicationId: string) => {
-    if (!confirm("Are you sure you want to delete this application?")) {
-      return;
-    }
-
-    try {
-      await dashboardApi.deleteApplication(applicationId);
-      await refetchApplications();
-      showSuccess("Application deleted successfully");
-    } catch (error) {
-      console.error("Error deleting application:", error);
-      showError("Failed to delete application");
-    }
-  };
-
-  const handleApplicationSubmit = async (data: Record<string, unknown>) => {
-    try {
-      if (editingApplication) {
-        await dashboardApi.updateApplication(editingApplication._id, data);
-        showSuccess("Application updated successfully");
-      } else {
-        await dashboardApi.createApplication(data);
-        showSuccess("Application created successfully");
-      }
-      await refetchApplications();
-      setShowApplicationForm(false);
-      setEditingApplication(null);
-    } catch (error) {
-      console.error("Error saving application:", error);
-      showError("Failed to save application");
-    }
-  };
-
-  const handleJobSubmit = async (data: Record<string, unknown>) => {
-    try {
-      await dashboardApi.createJob(data);
-      await refetchJobStats();
-      showSuccess("Job added successfully");
-      setShowJobForm(false);
-    } catch (error) {
-      console.error("Error adding job:", error);
-      showError("Failed to add job");
-    }
-  };
-
+  const {
+    showJobForm,
+    setShowJobForm,
+    showImportModal,
+    setShowImportModal,
+    handleJobSubmit,
+  } = jobManagement;
 
   if (!user) {
     return (
@@ -350,7 +339,7 @@ export function AdvancedDashboard() {
                     className={`text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm transition-all duration-300 ${
                       plan === "premium"
                         ? "bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-lg hover:shadow-xl"
-                        : "bg-gradient-to-r from-gray-200 to-gray-300 text-gray-700 hover:from-gray-300 hover:to-gray-400"
+                        : "bg-gradient-to-r from-muted to-muted/80 text-foreground hover:from-muted/80 hover:to-muted/60"
                     }`}
                   >
                     {plan === "premium" ? (
@@ -491,246 +480,13 @@ export function AdvancedDashboard() {
         {/* Main Content */}
         {view === "dashboard" &&
           (hasApplications ? (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
-              className="space-y-8"
-            >
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1, duration: 0.4 }}
-              >
-                {jobStats && <JobStatsDashboard stats={jobStats} />}
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.15, duration: 0.4 }}
-              >
-                {applications && applications.length > 0 && (
-                  <UpcomingFollowUps
-                    applications={applications}
-                    onChanged={refetchApplications}
-                  />
-                )}
-              </motion.div>
-
-              {/* Notification Center */}
-              {applications && applications.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2, duration: 0.4 }}
-                >
-                  <Card className="border-0 bg-gradient-to-br from-background via-amber-50/30 to-background shadow-xl backdrop-blur-sm">
-                    <CardHeader className="pb-4">
-                      <div className="flex items-center gap-3">
-                        <motion.div
-                          initial={{ scale: 0.8, rotate: -8 }}
-                          animate={{ scale: 1, rotate: 0 }}
-                          transition={{
-                            type: "spring",
-                            stiffness: 200,
-                            damping: 15,
-                          }}
-                          className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-lg"
-                        >
-                          <svg
-                            className="w-4 h-4 text-white"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                            />
-                          </svg>
-                        </motion.div>
-                        <CardTitle className="text-xl bg-gradient-to-r from-amber-600 to-amber-600 bg-clip-text text-transparent">
-                          Notification Center
-                        </CardTitle>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div className="text-center py-12">
-                          <motion.div
-                            initial={{ scale: 0.8, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            transition={{
-                              delay: 0.3,
-                              type: "spring",
-                              stiffness: 180,
-                              damping: 12,
-                            }}
-                            className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-emerald-100 to-emerald-100 rounded-full flex items-center justify-center shadow-lg"
-                          >
-                            <svg
-                              className="w-8 h-8 text-emerald-500"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                              />
-                            </svg>
-                          </motion.div>
-                          <motion.h3
-                            initial={{ opacity: 0, y: 6 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.35, duration: 0.3 }}
-                            className="text-lg font-semibold text-foreground mb-2"
-                          >
-                            All caught up! 🎉
-                          </motion.h3>
-                          <motion.p
-                            initial={{ opacity: 0, y: 6 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.4, duration: 0.3 }}
-                            className="text-muted-foreground"
-                          >
-                            No pending notifications or follow-ups at this time.
-                          </motion.p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              )}
-
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.25, duration: 0.4 }}
-              >
-                {applications && applications.length > 0 && (
-                  <SponsorshipQuickCheck applications={applications} />
-                )}
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3, duration: 0.4 }}
-              >
-                {userRecord && <ExtensionIntegration userId={userRecord._id} />}
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.35, duration: 0.4 }}
-              >
-                <Card className="border-0 bg-background/80 backdrop-blur-sm shadow-xl">
-                  <CardHeader className="pb-4">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-xl bg-gradient-to-r from-foreground to-sky-900 bg-clip-text text-transparent">
-                        Recent Applications
-                      </CardTitle>
-                      {applications && (
-                        <div className="flex gap-2">
-                          <motion.div
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                          >
-                            <ExportCsvButton
-                              fileName="applications.csv"
-                              rows={applications.map((a) => ({
-                                id: a._id,
-                                title: a.job?.title,
-                                company: a.job?.company,
-                                location: a.job?.location,
-                                status: a.status,
-                                dateFound: a.job?.dateFound,
-                                appliedDate: a.appliedDate,
-                                source: a.job?.source,
-                                salary: a.job?.salary,
-                                sponsored: a.job?.isSponsored,
-                                agency: a.job?.isRecruitmentAgency,
-                              }))}
-                            />
-                          </motion.div>
-                          <FeatureGate
-                            feature="exportFormats"
-                            fallback={
-                              <Button size="sm" variant="outline" disabled>
-                                <FileText className="h-4 w-4 mr-2" />
-                                JSON <span className="ml-1 text-xs">⭐</span>
-                              </Button>
-                            }
-                          >
-                            <motion.div
-                              whileHover={{ scale: 1.05 }}
-                              whileTap={{ scale: 0.95 }}
-                            >
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  // Export as JSON
-                                  const data = applications.map((a) => ({
-                                    id: a._id,
-                                    title: a.job?.title,
-                                    company: a.job?.company,
-                                    location: a.job?.location,
-                                    status: a.status,
-                                    dateFound: a.job?.dateFound,
-                                    appliedDate: a.appliedDate,
-                                    source: a.job?.source,
-                                    salary: a.job?.salary,
-                                    sponsored: a.job?.isSponsored,
-                                    agency: a.job?.isRecruitmentAgency,
-                                    notes: a.notes,
-                                    interviewDates: a.interviewDates,
-                                    followUpDate: a.followUpDate,
-                                  }));
-                                  const blob = new Blob(
-                                    [JSON.stringify(data, null, 2)],
-                                    { type: "application/json" }
-                                  );
-                                  const url = URL.createObjectURL(blob);
-                                  const a = document.createElement("a");
-                                  a.href = url;
-                                  a.download = "applications-export.json";
-                                  document.body.appendChild(a);
-                                  a.click();
-                                  document.body.removeChild(a);
-                                  URL.revokeObjectURL(url);
-                                  showSuccess("JSON export completed");
-                                }}
-                              >
-                                <FileText className="h-4 w-4 mr-2" />
-                                JSON{" "}
-                                <span className="text-xs text-primary">⭐</span>
-                              </Button>
-                            </motion.div>
-                          </FeatureGate>
-                        </div>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <JobList
-                      applications={applications!.slice(0, 5)}
-                      onEditApplication={handleEditApplication}
-                      onDeleteApplication={handleDeleteApplication}
-                      onViewApplication={handleViewApplication}
-                      onChanged={refetchApplications}
-                    />
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </motion.div>
+            <DraggableDashboard
+              widgets={dashboardWidgets}
+              onLayoutChange={handleLayoutChange}
+              savedLayout={
+                dashboardLayout.length > 0 ? dashboardLayout : undefined
+              }
+            />
           ) : (
             <motion.div
               initial={{ opacity: 0, y: 16 }}
@@ -782,7 +538,7 @@ export function AdvancedDashboard() {
                       <Button
                         onClick={() => setShowImportModal(true)}
                         size="lg"
-className="shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-700 hover:to-sky-800 text-primary-foreground border-0"
+                        className="shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-700 hover:to-sky-800 text-primary-foreground border-0"
                       >
                         <UploadCloud className="mr-2 h-5 w-5" /> Import Jobs
                       </Button>
@@ -808,7 +564,7 @@ className="shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-
                         onClick={() => setShowApplicationForm(true)}
                         variant="outline"
                         size="lg"
-className="shadow-lg hover:shadow-xl transition-all duration-300 border-border hover:border-border hover:bg-muted/50"
+                        className="shadow-lg hover:shadow-xl transition-all duration-300 border-border hover:border-border hover:bg-muted/50"
                       >
                         Add Application <ArrowRight className="ml-2 h-4 w-4" />
                       </Button>
@@ -1312,156 +1068,17 @@ className="shadow-lg hover:shadow-xl transition-all duration-300 border-border h
             {hasApplications ? (
               <>
                 {/* Advanced Filters */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Advanced Filters</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                      {/* Search */}
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Search</label>
-                        <Input
-                          placeholder="Job title, company, location..."
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                      </div>
-
-                      {/* Status Filter */}
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Status</label>
-                        <Select
-                          value={statusFilter}
-                          onValueChange={setStatusFilter}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All Statuses</SelectItem>
-                            <SelectItem value="interested">
-                              Interested
-                            </SelectItem>
-                            <SelectItem value="applied">Applied</SelectItem>
-                            <SelectItem value="interviewing">
-                              Interviewing
-                            </SelectItem>
-                            <SelectItem value="offered">Offered</SelectItem>
-                            <SelectItem value="rejected">Rejected</SelectItem>
-                            <SelectItem value="withdrawn">Withdrawn</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* Company Filter */}
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Company</label>
-                        <Select
-                          value={companyFilter}
-                          onValueChange={setCompanyFilter}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All Companies</SelectItem>
-                            {uniqueCompanies.map((company) => (
-                              <SelectItem key={company} value={company}>
-                                {company}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* Saved Views */}
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">
-                          Saved Views
-                        </label>
-                        <Select
-                          onValueChange={(value) => {
-                            const view = savedViews.find((v) => v.id === value);
-                            if (view) {
-                              setStatusFilter(
-                                (view.filters.status as string) || "all"
-                              );
-                              setCompanyFilter(
-                                (view.filters.company as string) || "all"
-                              );
-                              setSearchTerm(
-                                (view.filters.search as string) || ""
-                              );
-                            }
-                          }}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Load saved view..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {savedViews.map((view) => (
-                              <SelectItem key={view.id} value={view.id}>
-                                {view.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    {/* Active Filters */}
-                    <div className="flex flex-wrap gap-2 mt-4">
-                      {statusFilter !== "all" && (
-                        <Badge
-                          variant="secondary"
-                          className="cursor-pointer"
-                          onClick={() => setStatusFilter("all")}
-                        >
-                          Status: {statusFilter} ×
-                        </Badge>
-                      )}
-                      {companyFilter !== "all" && (
-                        <Badge
-                          variant="secondary"
-                          className="cursor-pointer"
-                          onClick={() => setCompanyFilter("all")}
-                        >
-                          Company: {companyFilter} ×
-                        </Badge>
-                      )}
-                      {searchTerm && (
-                        <Badge
-                          variant="secondary"
-                          className="cursor-pointer"
-                          onClick={() => setSearchTerm("")}
-                        >
-                          Search: {searchTerm} ×
-                        </Badge>
-                      )}
-                      {(statusFilter !== "all" ||
-                        companyFilter !== "all" ||
-                        searchTerm) && (
-                        <Badge
-                          variant="outline"
-                          className="cursor-pointer"
-                          onClick={() => {
-                            setStatusFilter("all");
-                            setCompanyFilter("all");
-                            setSearchTerm("");
-                          }}
-                        >
-                          Clear All
-                        </Badge>
-                      )}
-                    </div>
-
-                    <div className="text-sm text-muted-foreground mt-2">
-                      Showing {filteredApplications.length} of{" "}
-                      {applications.length} applications
-                    </div>
-                  </CardContent>
-                </Card>
+                <DashboardFilters
+                  searchTerm={searchTerm}
+                  setSearchTerm={setSearchTerm}
+                  statusFilter={statusFilter}
+                  setStatusFilter={setStatusFilter}
+                  companyFilter={companyFilter}
+                  setCompanyFilter={setCompanyFilter}
+                  uniqueCompanies={uniqueCompanies}
+                  filteredApplicationsCount={filteredApplications.length}
+                  totalApplicationsCount={applications.length}
+                />
 
                 <div className="flex items-center justify-between mb-2">
                   <div className="text-sm text-muted-foreground">View</div>

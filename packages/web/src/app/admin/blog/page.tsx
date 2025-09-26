@@ -257,7 +257,7 @@ export default function AdminBlogPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pt-16">
+    <div className="min-h-screen bg-gradient-to-br from-muted to-muted/80 pt-16">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -283,10 +283,10 @@ export default function AdminBlogPage() {
                   <FileText className="h-6 w-6 text-primary" />
                 </motion.div>
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900">
+                  <h1 className="text-3xl font-bold text-foreground">
                     Blog Admin
                   </h1>
-                  <p className="text-gray-600">
+                  <p className="text-muted-foreground">
                     Manage your blog posts and content
                   </p>
                 </div>

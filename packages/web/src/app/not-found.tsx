@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 
 export default function NotFound() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-8 p-4 text-center bg-gradient-to-br from-gray-50 to-gray-100">
+    <main className="flex min-h-screen flex-col items-center justify-center gap-8 p-4 text-center bg-gradient-to-br from-muted to-muted/80">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -26,7 +26,7 @@ export default function NotFound() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
-          className="text-3xl font-bold text-gray-900 mb-4"
+          className="text-3xl font-bold text-foreground mb-4"
         >
           Oops! Page Not Found
         </motion.h1>
@@ -35,7 +35,7 @@ export default function NotFound() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
-          className="text-lg text-gray-600 mb-8 max-w-md mx-auto"
+          className="text-lg text-muted-foreground mb-8 max-w-md mx-auto"
         >
           It looks like you&apos;ve wandered off the job search path. The page you&apos;re
           looking for doesn&apos;t exist or has been moved.
@@ -67,7 +67,7 @@ export default function NotFound() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
-          className="mt-12 text-gray-500 text-sm"
+          className="mt-12 text-muted-foreground text-sm"
         >
           <p>
             Need help?{" "}
@@ -83,8 +83,8 @@ export default function NotFound() {
 
       {/* Decorative elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-yellow-300 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-2000"></div>
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-violet-300 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-amber-300 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-2000"></div>
         <div className="absolute top-40 left-1/2 transform -translate-x-1/2 w-80 h-80 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-4000"></div>
       </div>
     </main>

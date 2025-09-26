@@ -99,7 +99,7 @@ export default function SalaryPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pt-16">
+      <div className="min-h-screen bg-gradient-to-br from-muted to-muted/80 pt-16">
         <div className="max-w-4xl mx-auto py-8 px-4">
           <Skeleton className="h-8 w-64 mb-8" />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -153,7 +153,7 @@ export default function SalaryPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pt-16">
+    <div className="min-h-screen bg-gradient-to-br from-muted to-muted/80 pt-16">
       <div>Salary Tools Coming Soon</div>
     </div>
   );

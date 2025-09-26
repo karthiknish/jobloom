@@ -10,6 +10,7 @@ export interface SponsoredCompany {
   description?: string;
   website?: string;
   industry?: string;
+  isActive?: boolean;
   createdBy: string;
   createdAt: number;
   updatedAt?: number;

@@ -347,9 +347,9 @@ export default function AdminUserDashboard() {
                     <div key={plan} className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className={`w-3 h-3 rounded-full ${
-                          plan === 'free' ? 'bg-gray-400' :
-                          plan === 'premium' ? 'bg-blue-500' :
-                          plan === 'enterprise' ? 'bg-purple-500' : 'bg-green-500'
+                          plan === 'free' ? 'bg-muted-foreground' :
+                          plan === 'premium' ? 'bg-sky-500' :
+                          plan === 'enterprise' ? 'bg-violet-500' : 'bg-emerald-500'
                         }`} />
                         <span className="capitalize">{plan}</span>
                       </div>
@@ -358,9 +358,9 @@ export default function AdminUserDashboard() {
                         <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
                           <div
                             className={`h-full ${
-                              plan === 'free' ? 'bg-gray-400' :
-                              plan === 'premium' ? 'bg-blue-500' :
-                              plan === 'enterprise' ? 'bg-purple-500' : 'bg-green-500'
+                              plan === 'free' ? 'bg-muted-foreground' :
+                              plan === 'premium' ? 'bg-sky-500' :
+                              plan === 'enterprise' ? 'bg-violet-500' : 'bg-emerald-500'
                             }`}
                             style={{ width: `${(count / userStats.totalUsers) * 100}%` }}
                           />
@@ -533,7 +533,7 @@ export default function AdminUserDashboard() {
                                 ) : (
                                   <DropdownMenuItem
                                     onClick={() => handleSetAdmin(user._id)}
-                                    className="text-blue-600"
+                                    className="text-sky-600"
                                   >
                                     <Crown className="h-4 w-4 mr-2" />
                                     Make Admin

@@ -79,9 +79,10 @@ interface SponsoredCompany {
   description?: string;
   website?: string;
   industry?: string;
-  isActive: boolean;
+  isActive?: boolean;
+  createdBy: string;
   createdAt: number;
-  updatedAt: number;
+  updatedAt?: number;
 }
 
 interface SponsorStats {
@@ -97,7 +98,8 @@ export default function AdminSponsorsDashboard() {
   const [industryFilter, setIndustryFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [selectedSponsor, setSelectedSponsor] = useState<SponsoredCompany | null>(null);
+  const [selectedSponsor, setSelectedSponsor] =
+    useState<SponsoredCompany | null>(null);
   const [showSponsorDetails, setShowSponsorDetails] = useState(false);
   const [showAddSponsor, setShowAddSponsor] = useState(false);
 
@@ -134,28 +136,34 @@ export default function AdminSponsorsDashboard() {
   );
 
   // Filter sponsors based on search and filters
-  const filteredSponsors = sponsoredCompanies?.filter((sponsor: SponsoredCompany) => {
-    const matchesSearch =
-      sponsor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      sponsor.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      sponsor.aliases.some(alias => alias.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredSponsors =
+    sponsoredCompanies?.filter((sponsor: SponsoredCompany) => {
+      const matchesSearch =
+        sponsor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        sponsor.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        sponsor.aliases.some((alias) =>
+          alias.toLowerCase().includes(searchTerm.toLowerCase())
+        );
 
-    const matchesIndustry =
-      industryFilter === "all" || sponsor.industry === industryFilter;
+      const matchesIndustry =
+        industryFilter === "all" || sponsor.industry === industryFilter;
 
-    const matchesType =
-      typeFilter === "all" || sponsor.sponsorshipType === typeFilter;
+      const matchesType =
+        typeFilter === "all" || sponsor.sponsorshipType === typeFilter;
 
-    const matchesStatus =
-      statusFilter === "all" ||
-      (statusFilter === "active" && sponsor.isActive) ||
-      (statusFilter === "inactive" && !sponsor.isActive);
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "active" && sponsor.isActive !== false) ||
+        (statusFilter === "inactive" && sponsor.isActive === false);
 
-    return matchesSearch && matchesIndustry && matchesType && matchesStatus;
-  }) || [];
+      return matchesSearch && matchesIndustry && matchesType && matchesStatus;
+    }) || [];
 
   const getSponsorshipTypeBadge = (type: string) => {
-    const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+    const variants: Record<
+      string,
+      "default" | "secondary" | "destructive" | "outline"
+    > = {
       sponsored: "default",
       promoted: "secondary",
       featured: "outline",
@@ -165,11 +173,24 @@ export default function AdminSponsorsDashboard() {
   };
 
   const getCompanyInitials = (name: string) => {
-    return name.split(' ').map(word => word[0]).join('').toUpperCase().slice(0, 2);
+    return name
+      .split(" ")
+      .map((word) => word[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
   };
 
-  const handleDeleteSponsor = async (companyId: string, companyName: string) => {
-    if (!confirm(`Are you sure you want to remove ${companyName} from the sponsored companies list?`)) return;
+  const handleDeleteSponsor = async (
+    companyId: string,
+    companyName: string
+  ) => {
+    if (
+      !confirm(
+        `Are you sure you want to remove ${companyName} from the sponsored companies list?`
+      )
+    )
+      return;
 
     try {
       await deleteSponsorMutation.mutate(companyId);
@@ -215,8 +236,12 @@ export default function AdminSponsorsDashboard() {
               <Building2 className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Sponsors Dashboard</h1>
-              <p className="text-muted-foreground">Manage sponsored companies and sponsorship analytics</p>
+              <h1 className="text-3xl font-bold text-foreground">
+                Sponsors Dashboard
+              </h1>
+              <p className="text-muted-foreground">
+                Manage sponsored companies and sponsorship analytics
+              </p>
             </div>
           </div>
 
@@ -236,11 +261,15 @@ export default function AdminSponsorsDashboard() {
           >
             <Card className="card-depth-2">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Sponsors</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Total Sponsors
+                </CardTitle>
                 <Building2 className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{sponsorStats.totalSponsoredCompanies}</div>
+                <div className="text-2xl font-bold">
+                  {sponsorStats.totalSponsoredCompanies}
+                </div>
                 <p className="text-xs text-muted-foreground">
                   Active sponsored companies
                 </p>
@@ -249,15 +278,18 @@ export default function AdminSponsorsDashboard() {
 
             <Card className="card-depth-2">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Top Industry</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Top Industry
+                </CardTitle>
                 <BarChart3 className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
                   {Object.entries(sponsorStats.industryStats).length > 0
-                    ? Object.entries(sponsorStats.industryStats).sort(([,a], [,b]) => b - a)[0][0]
-                    : "None"
-                  }
+                    ? Object.entries(sponsorStats.industryStats).sort(
+                        ([, a], [, b]) => b - a
+                      )[0][0]
+                    : "None"}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Most represented industry
@@ -267,7 +299,9 @@ export default function AdminSponsorsDashboard() {
 
             <Card className="card-depth-2">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Sponsorship Types</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Sponsorship Types
+                </CardTitle>
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -282,12 +316,15 @@ export default function AdminSponsorsDashboard() {
 
             <Card className="card-depth-2">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Active Sponsors</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Active Sponsors
+                </CardTitle>
                 <Activity className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {sponsoredCompanies?.filter(c => c.isActive).length || 0}
+                  {sponsoredCompanies?.filter((c) => c.isActive !== false)
+                    .length || 0}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Currently active
@@ -315,29 +352,49 @@ export default function AdminSponsorsDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {Object.entries(sponsorStats.sponsorshipTypeStats).map(([type, count]) => (
-                    <div key={type} className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Badge variant={getSponsorshipTypeBadge(type)} className="capitalize">
-                          {type}
-                        </Badge>
-                        <span className="text-sm font-medium capitalize">{type} Sponsors</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="text-sm font-medium">{count}</div>
-                        <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
-                          <div
-                            className={`h-full ${
-                              type === 'sponsored' ? 'bg-blue-500' :
-                              type === 'promoted' ? 'bg-purple-500' :
-                              type === 'featured' ? 'bg-green-500' : 'bg-orange-500'
-                            }`}
-                            style={{ width: `${(count / sponsorStats.totalSponsoredCompanies) * 100}%` }}
-                          />
+                  {Object.entries(sponsorStats.sponsorshipTypeStats).map(
+                    ([type, count]) => (
+                      <div
+                        key={type}
+                        className="flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Badge
+                            variant={getSponsorshipTypeBadge(type)}
+                            className="capitalize"
+                          >
+                            {type}
+                          </Badge>
+                          <span className="text-sm font-medium capitalize">
+                            {type} Sponsors
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="text-sm font-medium">{count}</div>
+                          <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
+                            <div
+                              className={`h-full ${
+                                type === "sponsored"
+                                  ? "bg-blue-500"
+                                  : type === "promoted"
+                                  ? "bg-purple-500"
+                                  : type === "featured"
+                                  ? "bg-green-500"
+                                  : "bg-orange-500"
+                              }`}
+                              style={{
+                                width: `${
+                                  (count /
+                                    sponsorStats.totalSponsoredCompanies) *
+                                  100
+                                }%`,
+                              }}
+                            />
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -350,17 +407,28 @@ export default function AdminSponsorsDashboard() {
               <CardContent>
                 <div className="space-y-3">
                   {Object.entries(sponsorStats.industryStats)
-                    .sort(([,a], [,b]) => b - a)
+                    .sort(([, a], [, b]) => b - a)
                     .slice(0, 5)
                     .map(([industry, count]) => (
-                      <div key={industry} className="flex items-center justify-between">
-                        <span className="text-sm truncate">{industry || 'Unknown'}</span>
+                      <div
+                        key={industry}
+                        className="flex items-center justify-between"
+                      >
+                        <span className="text-sm truncate">
+                          {industry || "Unknown"}
+                        </span>
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-medium">{count}</span>
                           <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
                             <div
                               className="h-full bg-primary"
-                              style={{ width: `${(count / sponsorStats.totalSponsoredCompanies) * 100}%` }}
+                              style={{
+                                width: `${
+                                  (count /
+                                    sponsorStats.totalSponsoredCompanies) *
+                                  100
+                                }%`,
+                              }}
                             />
                           </div>
                         </div>
@@ -382,7 +450,8 @@ export default function AdminSponsorsDashboard() {
           <CardHeader>
             <CardTitle>Sponsor Management</CardTitle>
             <CardDescription>
-              Search and manage all sponsored companies ({filteredSponsors.length} sponsors)
+              Search and manage all sponsored companies (
+              {filteredSponsors.length} sponsors)
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -403,9 +472,12 @@ export default function AdminSponsorsDashboard() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Industries</SelectItem>
-                  {sponsorStats?.industryStats && Object.keys(sponsorStats.industryStats).map(industry => (
-                    <SelectItem key={industry} value={industry}>{industry}</SelectItem>
-                  ))}
+                  {sponsorStats?.industryStats &&
+                    Object.keys(sponsorStats.industryStats).map((industry) => (
+                      <SelectItem key={industry} value={industry}>
+                        {industry}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
 
@@ -415,9 +487,18 @@ export default function AdminSponsorsDashboard() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Types</SelectItem>
-                  {sponsorStats?.sponsorshipTypeStats && Object.keys(sponsorStats.sponsorshipTypeStats).map(type => (
-                    <SelectItem key={type} value={type} className="capitalize">{type}</SelectItem>
-                  ))}
+                  {sponsorStats?.sponsorshipTypeStats &&
+                    Object.keys(sponsorStats.sponsorshipTypeStats).map(
+                      (type) => (
+                        <SelectItem
+                          key={type}
+                          value={type}
+                          className="capitalize"
+                        >
+                          {type}
+                        </SelectItem>
+                      )
+                    )}
                 </SelectContent>
               </Select>
 
@@ -469,21 +550,34 @@ export default function AdminSponsorsDashboard() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={getSponsorshipTypeBadge(sponsor.sponsorshipType)} className="capitalize">
+                        <Badge
+                          variant={getSponsorshipTypeBadge(
+                            sponsor.sponsorshipType
+                          )}
+                          className="capitalize"
+                        >
                           {sponsor.sponsorshipType}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <span className="text-sm">{sponsor.industry || 'Unknown'}</span>
+                        <span className="text-sm">
+                          {sponsor.industry || "Unknown"}
+                        </span>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={sponsor.isActive ? "default" : "secondary"}>
-                          {sponsor.isActive ? "Active" : "Inactive"}
+                        <Badge
+                          variant={
+                            sponsor.isActive !== false ? "default" : "secondary"
+                          }
+                        >
+                          {sponsor.isActive !== false ? "Active" : "Inactive"}
                         </Badge>
                       </TableCell>
                       <TableCell>
                         <div className="text-sm text-muted-foreground max-w-32 truncate">
-                          {sponsor.aliases.length > 0 ? sponsor.aliases.join(", ") : "None"}
+                          {sponsor.aliases.length > 0
+                            ? sponsor.aliases.join(", ")
+                            : "None"}
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
@@ -510,7 +604,9 @@ export default function AdminSponsorsDashboard() {
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
-                              onClick={() => handleDeleteSponsor(sponsor._id, sponsor.name)}
+                              onClick={() =>
+                                handleDeleteSponsor(sponsor._id, sponsor.name)
+                              }
                               className="text-red-600"
                             >
                               <Trash2 className="h-4 w-4 mr-2" />
@@ -526,7 +622,10 @@ export default function AdminSponsorsDashboard() {
 
               {filteredSponsors.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
-                  {searchTerm || industryFilter !== "all" || typeFilter !== "all" || statusFilter !== "all"
+                  {searchTerm ||
+                  industryFilter !== "all" ||
+                  typeFilter !== "all" ||
+                  statusFilter !== "all"
                     ? "No sponsors match your filters"
                     : "No sponsored companies found"}
                 </div>
@@ -558,14 +657,24 @@ export default function AdminSponsorsDashboard() {
                       {selectedSponsor.name}
                     </h3>
                     <p className="text-muted-foreground capitalize">
-                      {selectedSponsor.sponsorshipType} • {selectedSponsor.industry || 'Unknown Industry'}
+                      {selectedSponsor.sponsorshipType} •{" "}
+                      {selectedSponsor.industry || "Unknown Industry"}
                     </p>
                     <div className="flex gap-2 mt-2">
-                      <Badge variant={getSponsorshipTypeBadge(selectedSponsor.sponsorshipType)} className="capitalize">
+                      <Badge
+                        variant={getSponsorshipTypeBadge(
+                          selectedSponsor.sponsorshipType
+                        )}
+                        className="capitalize"
+                      >
                         {selectedSponsor.sponsorshipType}
                       </Badge>
-                      <Badge variant={selectedSponsor.isActive ? "default" : "secondary"}>
-                        {selectedSponsor.isActive ? "Active" : "Inactive"}
+                      <Badge
+                        variant={
+                          selectedSponsor.isActive !== false ? "default" : "secondary"
+                        }
+                      >
+                        {selectedSponsor.isActive !== false ? "Active" : "Inactive"}
                       </Badge>
                     </div>
                   </div>
@@ -603,8 +712,7 @@ export default function AdminSponsorsDashboard() {
                     <p className="text-sm text-muted-foreground">
                       {selectedSponsor.aliases.length > 0
                         ? selectedSponsor.aliases.join(", ")
-                        : "No aliases"
-                      }
+                        : "No aliases"}
                     </p>
                   </div>
                   <div>
@@ -624,7 +732,10 @@ export default function AdminSponsorsDashboard() {
             )}
 
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowSponsorDetails(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setShowSponsorDetails(false)}
+              >
                 Close
               </Button>
             </DialogFooter>
@@ -643,19 +754,20 @@ export default function AdminSponsorsDashboard() {
 
             <div className="space-y-4 py-4">
               <p className="text-sm text-muted-foreground">
-                Sponsor management form would be implemented here.
-                This would include fields for company name, aliases, sponsorship type,
+                Sponsor management form would be implemented here. This would
+                include fields for company name, aliases, sponsorship type,
                 description, website, and industry.
               </p>
             </div>
 
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowAddSponsor(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setShowAddSponsor(false)}
+              >
                 Cancel
               </Button>
-              <Button disabled>
-                Add Sponsor (Coming Soon)
-              </Button>
+              <Button disabled>Add Sponsor (Coming Soon)</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

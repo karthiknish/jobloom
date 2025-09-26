@@ -72,7 +72,7 @@ export default function CvEvaluatorPage() {
   // Show loading while authentication is being checked
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pt-16">
+      <div className="min-h-screen bg-gradient-to-br from-muted to-muted/80 pt-16">
         <div className="bg-gradient-to-r from-primary to-secondary shadow-lg">
           <div className="relative max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
             <Skeleton className="h-12 w-48" />
@@ -92,7 +92,7 @@ export default function CvEvaluatorPage() {
   // Show login prompt if user is not authenticated
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pt-16">
+      <div className="min-h-screen bg-gradient-to-br from-muted to-muted/80 pt-16">
         <div className="bg-gradient-to-r from-primary to-secondary shadow-lg">
           <div className="relative max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
             <h1 className="text-3xl font-bold text-white">CV Evaluator</h1>
@@ -121,7 +121,7 @@ export default function CvEvaluatorPage() {
   // Show loading while fetching user record
   if (userRecordQuery.loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pt-16">
+      <div className="min-h-screen bg-gradient-to-br from-muted to-muted/80 pt-16">
         <div className="bg-gradient-to-r from-primary to-secondary shadow-lg">
           <div className="relative max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
             <Skeleton className="h-12 w-48" />
@@ -178,7 +178,7 @@ export default function CvEvaluatorPage() {
           ? 'An unexpected issue occurred while contacting Firestore.'
           : rawMessage);
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pt-16">
+      <div className="min-h-screen bg-gradient-to-br from-muted to-muted/80 pt-16">
         <div className="bg-gradient-to-r from-primary to-secondary shadow-lg">
           <div className="relative max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
             <h1 className="text-3xl font-bold text-white">CV Evaluator</h1>
@@ -270,7 +270,7 @@ export default function CvEvaluatorPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pt-16">
+    <div className="min-h-screen bg-gradient-to-br from-muted to-muted/80 pt-16">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

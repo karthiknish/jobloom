@@ -400,7 +400,7 @@ function SignUpInner() {
             <Button
               variant="outline"
               onClick={handleGoogle}
-              className="w-full h-11 bg-white border-input hover:bg-muted/50 hover:border-gray-300 font-medium shadow-sm transition-all duration-200"
+              className="w-full h-11 bg-background border-input hover:bg-muted/50 hover:border-border/80 font-medium shadow-sm transition-all duration-200"
               disabled={loading}
               size="lg"
             >

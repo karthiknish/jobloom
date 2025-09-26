@@ -22,13 +22,13 @@ export default function AccountPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 mt-14">
+      <div className="min-h-screen bg-muted mt-14">
         <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
           <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
+            <div className="h-8 bg-muted-foreground/20 rounded w-1/4 mb-6"></div>
             <div className="space-y-4">
-              <div className="h-32 bg-gray-200 rounded"></div>
-              <div className="h-32 bg-gray-200 rounded"></div>
+              <div className="h-32 bg-muted-foreground/20 rounded"></div>
+              <div className="h-32 bg-muted-foreground/20 rounded"></div>
             </div>
           </div>
         </div>
@@ -50,7 +50,7 @@ export default function AccountPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 mt-14">
+    <div className="min-h-screen bg-muted mt-14">
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -93,20 +93,20 @@ export default function AccountPage() {
               <CardContent>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
-                    <p className="text-sm font-medium text-gray-700">Name</p>
-                    <p className="mt-1 text-sm text-gray-900">
+                    <p className="text-sm font-medium text-foreground">Name</p>
+                    <p className="mt-1 text-sm text-foreground">
                       {user.displayName || user.email}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-700">Email</p>
-                    <p className="mt-1 text-sm text-gray-900">{user.email}</p>
+                    <p className="text-sm font-medium text-foreground">Email</p>
+                    <p className="mt-1 text-sm text-foreground">{user.email}</p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-700">
+                    <p className="text-sm font-medium text-foreground">
                       Member Since
                     </p>
-                    <p className="mt-1 text-sm text-gray-900">
+                    <p className="mt-1 text-sm text-foreground">
                       {user.metadata?.creationTime
                         ? format(
                             new Date(user.metadata.creationTime),
@@ -148,7 +148,7 @@ export default function AccountPage() {
                     <div className="mt-2 text-2xl font-bold text-primary">
                       0
                     </div>
-                    <div className="text-sm text-gray-500">Jobs Tracked</div>
+                    <div className="text-sm text-muted-foreground">Jobs Tracked</div>
                   </motion.div>
                   <motion.div
                     initial={{ opacity: 0, y: 8 }}
@@ -157,13 +157,13 @@ export default function AccountPage() {
                     whileHover={{ y: -2 }}
                     className="text-center"
                   >
-                    <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-green-50">
-                      <ClipboardList className="h-5 w-5 text-green-600" />
+                    <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50">
+                      <ClipboardList className="h-5 w-5 text-emerald-600" />
                     </div>
-                    <div className="mt-2 text-2xl font-bold text-green-600">
+                    <div className="mt-2 text-2xl font-bold text-emerald-600">
                       0
                     </div>
-                    <div className="text-sm text-gray-500">Applications</div>
+                    <div className="text-sm text-muted-foreground">Applications</div>
                   </motion.div>
                   <motion.div
                     initial={{ opacity: 0, y: 8 }}
@@ -178,7 +178,7 @@ export default function AccountPage() {
                     <div className="mt-2 text-2xl font-bold text-secondary">
                       0
                     </div>
-                    <div className="text-sm text-gray-500">Interviews</div>
+                    <div className="text-sm text-muted-foreground">Interviews</div>
                   </motion.div>
                 </div>
               </CardContent>

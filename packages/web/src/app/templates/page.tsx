@@ -188,7 +188,7 @@ export default function TemplatesPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-muted">
         <div className="text-center">
           <p className="mb-4">Please sign in to access application templates.</p>
           <a className="underline" href="/sign-in">
@@ -200,13 +200,13 @@ export default function TemplatesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pt-16">
+    <div className="min-h-screen bg-gradient-to-br from-muted to-muted/80 pt-16">
       {/* Hero Section */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="bg-gradient-to-r from-purple-600 to-pink-600 shadow-lg"
+        className="bg-gradient-to-r from-violet-600 to-pink-600 shadow-lg"
       >
         <div className="relative max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
           <motion.div
@@ -218,7 +218,7 @@ export default function TemplatesPage() {
             <h1 className="text-4xl font-bold text-white sm:text-5xl lg:text-6xl">
               Application Templates
             </h1>
-            <p className="mt-6 max-w-2xl mx-auto text-xl text-purple-100">
+            <p className="mt-6 max-w-2xl mx-auto text-xl text-violet-100">
               Professional templates for cover letters, emails, and resume optimization to help you stand out from the competition.
             </p>
           </motion.div>
@@ -259,7 +259,7 @@ export default function TemplatesPage() {
                             className={`w-full text-left p-4 rounded-lg border transition-colors ${
                               selectedTemplate === key
                                 ? "border-primary bg-primary/5"
-                                : "border-gray-200 hover:border-gray-300"
+                                : "border-border hover:border-border/80"
                             }`}
                           >
                             <div className="font-medium">{template.title}</div>
@@ -313,11 +313,11 @@ export default function TemplatesPage() {
                     </Card>
                   ) : (
                     <div className="text-center py-12">
-                      <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-foreground mb-2">
                         Select a template
                       </h3>
-                      <p className="text-gray-600">
+                      <p className="text-muted-foreground">
                         Choose a cover letter template from the sidebar to get started.
                       </p>
                     </div>
@@ -339,7 +339,7 @@ export default function TemplatesPage() {
                     <CardContent className="space-y-4">
                       <div>
                         <Label className="text-sm font-medium">Subject:</Label>
-                        <p className="text-sm bg-gray-50 p-2 rounded border mt-1">
+                        <p className="text-sm bg-muted p-2 rounded border mt-1">
                           {template.subject}
                         </p>
                       </div>

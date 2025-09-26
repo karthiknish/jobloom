@@ -182,7 +182,7 @@ export default function CompaniesPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-muted">
         <div className="text-center">
           <p className="mb-4">Please sign in to access company research.</p>
           <a className="underline" href="/sign-in">
@@ -194,13 +194,13 @@ export default function CompaniesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pt-16">
+    <div className="min-h-screen bg-gradient-to-br from-muted to-muted/80 pt-16">
       {/* Hero Section */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg"
+        className="bg-gradient-to-r from-sky-600 to-indigo-600 shadow-lg"
       >
         <div className="relative max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
           <motion.div
@@ -212,7 +212,7 @@ export default function CompaniesPage() {
             <h1 className="text-4xl font-bold text-white sm:text-5xl lg:text-6xl">
               Research Companies
             </h1>
-            <p className="mt-6 max-w-2xl mx-auto text-xl text-blue-100">
+            <p className="mt-6 max-w-2xl mx-auto text-xl text-sky-100">
               Get detailed insights about companies before you apply. Read reviews, check salaries, and make informed decisions.
             </p>
           </motion.div>
@@ -236,7 +236,7 @@ export default function CompaniesPage() {
                   <div className="space-y-4">
                     {/* Search */}
                     <div className="relative">
-                      <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
                         placeholder="Search companies..."
                         value={searchQuery}
@@ -254,7 +254,7 @@ export default function CompaniesPage() {
                           className={`w-full text-left p-3 rounded-lg border transition-colors ${
                             selectedCompany === company
                               ? "border-primary bg-primary/5"
-                              : "border-gray-200 hover:border-gray-300"
+                              : "border-border hover:border-border/80"
                           }`}
                         >
                           <div className="font-medium text-sm">{company}</div>
@@ -281,8 +281,8 @@ export default function CompaniesPage() {
                           <div className="text-4xl">🏢</div>
                           <div>
                             <h1 className="text-3xl font-bold">{selectedCompany}</h1>
-                            <p className="text-gray-600 mt-1">{currentCompany.overview.description}</p>
-                            <div className="flex items-center gap-4 mt-3 text-sm text-gray-500">
+                            <p className="text-muted-foreground mt-1">{currentCompany.overview.description}</p>
+                            <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
                               <div className="flex items-center gap-1">
                                 <MapPin className="h-4 w-4" />
                                 {currentCompany.overview.headquarters}
@@ -333,7 +333,7 @@ export default function CompaniesPage() {
                               <div className="flex items-center justify-between">
                                 <span>Overall Rating</span>
                                 <div className="flex items-center gap-1">
-                                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                                  <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
                                   <span className="font-semibold">{currentCompany.culture.rating}</span>
                                   <span className="text-sm text-muted-foreground">
                                     ({currentCompany.culture.reviews} reviews)
@@ -413,7 +413,7 @@ export default function CompaniesPage() {
                                           className={`h-4 w-4 ${
                                             i < review.rating
                                               ? "fill-yellow-400 text-yellow-400"
-                                              : "text-gray-300"
+                                              : "text-muted-foreground/30"
                                           }`}
                                         />
                                       ))}
@@ -428,11 +428,11 @@ export default function CompaniesPage() {
                                 </span>
                               </div>
 
-                              <p className="text-gray-700 mb-4">{review.content}</p>
+                              <p className="text-foreground mb-4">{review.content}</p>
 
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                  <h4 className="font-medium text-green-700 mb-2">Pros</h4>
+                                  <h4 className="font-medium text-emerald-700 mb-2">Pros</h4>
                                   <ul className="space-y-1">
                                     {review.pros.map((pro, index) => (
                                       <li key={index} className="flex items-center gap-2 text-sm">
@@ -476,15 +476,15 @@ export default function CompaniesPage() {
                                   {role.replace(/([A-Z])/g, ' $1').trim()}
                                 </h3>
                                 <div className="grid grid-cols-3 gap-4">
-                                  <div className="text-center p-4 bg-gray-50 rounded-lg">
+                                  <div className="text-center p-4 bg-muted rounded-lg">
                                     <p className="text-sm text-muted-foreground">Entry Level</p>
                                     <p className="text-2xl font-bold">${salaries.entry.toLocaleString()}</p>
                                   </div>
-                                  <div className="text-center p-4 bg-gray-50 rounded-lg">
+                                  <div className="text-center p-4 bg-muted rounded-lg">
                                     <p className="text-sm text-muted-foreground">Mid Level</p>
                                     <p className="text-2xl font-bold">${salaries.mid.toLocaleString()}</p>
                                   </div>
-                                  <div className="text-center p-4 bg-gray-50 rounded-lg">
+                                  <div className="text-center p-4 bg-muted rounded-lg">
                                     <p className="text-sm text-muted-foreground">Senior Level</p>
                                     <p className="text-2xl font-bold">${salaries.senior.toLocaleString()}</p>
                                   </div>
@@ -544,11 +544,11 @@ export default function CompaniesPage() {
                 </div>
               ) : (
                 <div className="text-center py-12">
-                  <Building className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  <Building className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-foreground mb-2">
                     Select a company to research
                   </h3>
-                  <p className="text-gray-600">
+                  <p className="text-muted-foreground">
                     Choose a company from the sidebar to view detailed information, reviews, and insights.
                   </p>
                 </div>
