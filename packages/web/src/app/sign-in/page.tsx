@@ -220,21 +220,21 @@ function SignInInner() {
               <div className="space-y-2">
                 <Label htmlFor="password" className="text-sm font-medium text-foreground">Password</Label>
                 <div className="relative group">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400 group-focus-within:text-primary transition-colors" />
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => handlePasswordChange(e.target.value)}
                     required
-                    className={`pl-10 pr-10 h-11 bg-gray-50 border-gray-200 focus:bg-white focus:border-primary focus:ring-primary transition-all ${passwordError ? 'border-red-500 focus:ring-red-500' : ''}`}
+                    className={`pl-10 pr-10 h-11 bg-muted/50 border-input focus:bg-white focus:border-primary focus:ring-primary transition-all ${passwordError ? 'border-red-500 focus:ring-red-500' : ''}`}
                     placeholder="••••••••"
                     disabled={loading}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-3 h-4 w-4 text-gray-400 hover:text-gray-600 transition-colors"
+                    className="absolute right-3 top-3 h-4 w-4 text-muted-foreground hover:text-muted-foreground transition-colors"
                     disabled={loading}
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -274,17 +274,17 @@ function SignInInner() {
 
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-gray-200" />
+                <span className="w-full border-t border-input" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-3 text-gray-500 font-medium">Or continue with</span>
+                <span className="bg-white px-3 text-muted-foreground font-medium">Or continue with</span>
               </div>
             </div>
 
             <Button
               variant="outline"
               onClick={handleGoogle}
-              className="w-full h-11 bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300 font-medium shadow-sm transition-all duration-200"
+              className="w-full h-11 bg-white border-input hover:bg-muted/50 hover:border-gray-300 font-medium shadow-sm transition-all duration-200"
               disabled={loading}
               size="lg"
             >
@@ -292,9 +292,9 @@ function SignInInner() {
               Continue with Google
             </Button>
 
-            <div className="text-center text-sm space-y-3 pt-4 border-t border-gray-200">
+            <div className="text-center text-sm space-y-3 pt-4 border-t border-input">
               <div>
-                <span className="text-gray-600">Don&apos;t have an account? </span>
+                <span className="text-muted-foreground">Don&apos;t have an account? </span>
                 <a
                   href={`/sign-up?redirect_url=${encodeURIComponent(redirectUrlComplete)}`}
                   className="font-medium text-primary hover:underline transition-colors"
@@ -305,7 +305,7 @@ function SignInInner() {
               <div>
                 <a
                   href={`/reset-password?redirect_url=${encodeURIComponent(redirectUrlComplete)}`}
-                  className="text-gray-600 hover:text-primary hover:underline transition-colors"
+                  className="text-muted-foreground hover:text-primary hover:underline transition-colors"
                 >
                   Forgot your password?
                 </a>

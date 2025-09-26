@@ -103,7 +103,7 @@ export default function CvEvaluatorPage() {
         </div>
         <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
           <div className="text-center py-12">
-            <FileText className="h-16 w-16 mx-auto text-gray-400 mb-4" />
+            <FileText className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
             <h2 className="text-2xl font-semibold text-gray-900 mb-2">Sign In Required</h2>
             <p className="text-gray-600 mb-6">Please sign in to access CV evaluation features.</p>
             <a

@@ -36,7 +36,7 @@ function UpgradeSuccessContent() {
         <Card className="max-w-md w-full">
           <CardContent className="p-8 text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-gray-600">Processing your subscription...</p>
+            <p className="text-muted-foreground">Processing your subscription...</p>
           </CardContent>
         </Card>
       </div>
@@ -172,7 +172,7 @@ export default function UpgradeSuccessPage() {
         <Card className="max-w-md w-full">
           <CardContent className="p-8 text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading...</p>
+            <p className="text-muted-foreground">Loading...</p>
           </CardContent>
         </Card>
       </div>

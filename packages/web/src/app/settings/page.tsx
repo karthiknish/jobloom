@@ -14,7 +14,7 @@ export default function SettingsPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-muted/30">
         <div className="text-center">
           <p className="mb-4">Please sign in to access settings.</p>
           <a className="underline" href="/sign-in">
@@ -44,8 +44,8 @@ export default function SettingsPage() {
                 <Settings className="h-5 w-5 text-primary" />
               </motion.div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-                <p className="text-gray-600">Manage your account and preferences</p>
+                <h1 className="text-2xl font-bold text-foreground">Settings</h1>
+                <p className="text-muted-foreground">Manage your account and preferences</p>
               </div>
             </div>
           </div>
@@ -78,13 +78,13 @@ export default function SettingsPage() {
                   <div className="space-y-4">
                     <div>
                       <label className="text-sm font-medium">Name</label>
-                      <p className="text-sm text-gray-600 mt-1">
+                      <p className="text-sm text-muted-foreground mt-1">
                         {user.displayName || "Not set"}
                       </p>
                     </div>
                     <div>
                       <label className="text-sm font-medium">Email</label>
-                      <p className="text-sm text-gray-600 mt-1">{user.email}</p>
+                      <p className="text-sm text-muted-foreground mt-1">{user.email}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -106,49 +106,49 @@ export default function SettingsPage() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
                           <label className="text-sm font-medium">Job Keywords</label>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-muted-foreground">
                             Enter keywords to match in job titles and descriptions
                           </p>
                           <input
                             type="text"
                             placeholder="e.g., React, Node.js, Senior"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                            className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                           />
                         </div>
 
                         <div className="space-y-2">
                           <label className="text-sm font-medium">Companies</label>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-muted-foreground">
                             Specify companies you&apos;re interested in
                           </p>
                           <input
                             type="text"
                             placeholder="e.g., Google, Microsoft, Apple"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                            className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                           />
                         </div>
 
                         <div className="space-y-2">
                           <label className="text-sm font-medium">Location</label>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-muted-foreground">
                             Preferred work location
                           </p>
                           <input
                             type="text"
                             placeholder="e.g., San Francisco, Remote"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                            className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                           />
                         </div>
 
                         <div className="space-y-2">
                           <label className="text-sm font-medium">Salary Range</label>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-muted-foreground">
                             Minimum salary expectation
                           </p>
                           <input
                             type="number"
                             placeholder="80000"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                            className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                           />
                         </div>
                       </div>
@@ -183,7 +183,7 @@ export default function SettingsPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="font-medium">Two-Factor Authentication</p>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-muted-foreground">
                           Add an extra layer of security to your account
                         </p>
                       </div>
@@ -195,7 +195,7 @@ export default function SettingsPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="font-medium">Password</p>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-muted-foreground">
                           Last changed 30 days ago
                         </p>
                       </div>

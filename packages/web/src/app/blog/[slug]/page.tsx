@@ -106,10 +106,10 @@ export default function BlogPostPage() {
         <Card className="max-w-md w-full">
           <CardContent className="p-8 text-center">
             <div className="text-6xl mb-4">📄</div>
-            <h3 className="text-2xl font-semibold text-gray-900 mb-2">
+            <h3 className="text-2xl font-semibold text-foreground mb-2">
               Post Not Found
             </h3>
-            <p className="text-gray-600 mb-6">
+            <p className="text-muted-foreground mb-6">
               The blog post you&apos;re looking for doesn&apos;t exist or has
               been removed.
             </p>
@@ -151,11 +151,11 @@ export default function BlogPostPage() {
             </div>
           </div>
 
-          <h1 className="text-4xl font-bold text-gray-900 mb-4 leading-tight">
+          <h1 className="text-4xl font-bold text-foreground mb-4 leading-tight">
             {post.title}
           </h1>
 
-          <p className="text-xl text-gray-600 mb-6 leading-relaxed">
+          <p className="text-xl text-muted-foreground mb-6 leading-relaxed">
             {post.excerpt}
           </p>
 
@@ -254,8 +254,8 @@ export default function BlogPostPage() {
                   <User className="h-6 w-6 text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900">{post.author.name}</h3>
-                  <p className="text-sm text-gray-600">
+                  <h3 className="font-semibold text-foreground">{post.author.name}</h3>
+                  <p className="text-sm text-muted-foreground">
                     Content creator sharing insights about career development and professional growth.
                   </p>
                 </div>

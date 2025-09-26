@@ -188,17 +188,28 @@ export default function AdminPage() {
           </nav>
         </div>
 
-        {/* Quick Access to User Dashboard */}
+        {/* Quick Access Links */}
         <div className="mt-4 flex items-center justify-between">
-          <p className="text-sm text-gray-600">
-            For comprehensive user analytics and management, visit the{" "}
-            <a
-              href="/admin/users"
-              className="text-primary hover:text-primary/80 font-medium"
-            >
-              dedicated User Dashboard →
-            </a>
-          </p>
+          <div className="flex gap-6">
+            <p className="text-sm text-gray-600">
+              For comprehensive user analytics and management, visit the{" "}
+              <a
+                href="/admin/users"
+                className="text-primary hover:text-primary/80 font-medium"
+              >
+                User Dashboard →
+              </a>
+            </p>
+            <p className="text-sm text-gray-600">
+              For detailed sponsor analytics and management, visit the{" "}
+              <a
+                href="/admin/sponsors"
+                className="text-primary hover:text-primary/80 font-medium"
+              >
+                Sponsor Dashboard →
+              </a>
+            </p>
+          </div>
         </div>
       </div>
 

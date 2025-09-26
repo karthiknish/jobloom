@@ -166,6 +166,37 @@ export const adminApi = {
     return { companyId: res.id };
   },
 
+  deleteSponsoredCompany: async (companyId: string, _requesterId: string): Promise<void> => {
+    const db = getDb();
+    if (!db) throw new Error("Firestore not initialized");
+
+    const { deleteDoc } = await import("firebase/firestore");
+    await deleteDoc(doc(db, "sponsoredCompanies", companyId));
+  },
+
+  updateSponsoredCompany: async (
+    companyId: string,
+    updates: Partial<{
+      name: string;
+      aliases: string[];
+      sponsorshipType: string;
+      description: string;
+      website: string;
+      industry: string;
+      isActive: boolean;
+    }>
+  ): Promise<void> => {
+    const db = getDb();
+    if (!db) throw new Error("Firestore not initialized");
+
+    const updatePayload = {
+      ...updates,
+      updatedAt: Date.now(),
+    };
+
+    await updateDoc(doc(db, "sponsoredCompanies", companyId), updatePayload);
+  },
+
   isUserAdmin: async (userId: string): Promise<boolean> => {
     const db = getDb();
     if (!db) throw new Error("Firestore not initialized");

@@ -177,20 +177,20 @@ export default function UpgradePage() {
                         £{planData.price}
                       </span>
                       {planData.price > 0 && (
-                        <span className="text-gray-500 ml-1">
+                        <span className="text-muted-foreground ml-1">
                           /month
                         </span>
                       )}
                     </div>
                   </div>
-                  <p className="text-gray-600 mt-2">{planData.description}</p>
+                  <p className="text-muted-foreground mt-2">{planData.description}</p>
                 </CardHeader>
 
                 <CardContent className="flex-1">
                   <div className="space-y-4">
                     {/* Features */}
                     <div>
-                      <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
+                      <h4 className="font-semibold text-foreground mb-3 flex items-center">
                         <Check className="h-4 w-4 text-green-500 mr-2" />
                         What&apos;s included:
                       </h4>
@@ -210,7 +210,7 @@ export default function UpgradePage() {
                     {planData.limitations &&
                       planData.limitations.length > 0 && (
                         <div>
-                          <h4 className="font-semibold text-gray-900 mb-3">
+                          <h4 className="font-semibold text-foreground mb-3">
                             Limitations:
                           </h4>
                           <ul className="space-y-2">
@@ -218,7 +218,7 @@ export default function UpgradePage() {
                               (limitation, limitationIndex) => (
                                 <li
                                   key={limitationIndex}
-                                  className="flex items-center text-sm text-gray-500"
+                                  className="flex items-center text-sm text-muted-foreground"
                                 >
                                   <span className="w-4 h-4 mr-3 flex-shrink-0 text-center">
                                     •
@@ -282,7 +282,7 @@ export default function UpgradePage() {
                     <Zap className="h-6 w-6 text-primary" />
                   </div>
                   <h3 className="font-semibold mb-2">Unlimited Usage</h3>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-muted-foreground">
                     Analyze as many CVs as you need and track unlimited job
                     applications without restrictions.
                   </p>
@@ -293,7 +293,7 @@ export default function UpgradePage() {
                     <Shield className="h-6 w-6 text-primary" />
                   </div>
                   <h3 className="font-semibold mb-2">Advanced Analytics</h3>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-muted-foreground">
                     Get deep insights into your job search performance with
                     detailed analytics and trends.
                   </p>
@@ -304,7 +304,7 @@ export default function UpgradePage() {
                     <Users className="h-6 w-6 text-primary" />
                   </div>
                   <h3 className="font-semibold mb-2">Priority Support</h3>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-muted-foreground">
                     Get faster responses and dedicated support from our career
                     experts.
                   </p>
@@ -321,9 +321,9 @@ export default function UpgradePage() {
           transition={{ delay: 0.8, duration: 0.5 }}
           className="mt-16 text-center"
         >
-          <div className="bg-gray-50 rounded-lg p-8 max-w-2xl mx-auto">
+          <div className="bg-muted/30 rounded-lg p-8 max-w-2xl mx-auto">
             <h3 className="text-xl font-semibold mb-4">Questions?</h3>
-            <p className="text-gray-600 mb-6">
+            <p className="text-muted-foreground mb-6">
               Have questions about our premium features or need help choosing
               the right plan?
             </p>

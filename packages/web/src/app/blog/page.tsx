@@ -169,10 +169,10 @@ export default function BlogPage() {
             className="text-center py-16"
           >
             <div className="text-6xl mb-4">📄</div>
-            <h3 className="text-2xl font-semibold text-gray-900 mb-2">
+            <h3 className="text-2xl font-semibold text-foreground mb-2">
               No articles found
             </h3>
-            <p className="text-gray-600 mb-6">
+            <p className="text-muted-foreground mb-6">
               {searchTerm || selectedCategory
                 ? "Try adjusting your search or filters"
                 : "Check back later for new content"}
@@ -223,12 +223,12 @@ export default function BlogPage() {
                       </div>
 
                       <Link href={`/blog/${post.slug}`}>
-                        <h3 className="text-xl font-semibold text-gray-900 group-hover:text-primary transition-colors line-clamp-2 cursor-pointer">
+                        <h3 className="text-xl font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2 cursor-pointer">
                           {post.title}
                         </h3>
                       </Link>
 
-                      <p className="text-gray-600 text-sm line-clamp-3">
+                      <p className="text-muted-foreground text-sm line-clamp-3">
                         {post.excerpt}
                       </p>
                     </CardHeader>

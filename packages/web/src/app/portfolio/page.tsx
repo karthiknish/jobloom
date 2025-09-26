@@ -38,7 +38,7 @@ export default function PortfolioPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-muted/30">
         <div className="text-center">
           <p className="mb-4">Please sign in to access portfolio builder.</p>
           <a className="underline" href="/sign-in">

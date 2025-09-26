@@ -141,7 +141,7 @@ export default function SalaryPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-muted/30">
         <div className="text-center">
           <p className="mb-4">Please sign in to access salary tools.</p>
           <a className="underline" href="/sign-in">

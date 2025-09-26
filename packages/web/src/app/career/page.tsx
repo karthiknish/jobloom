@@ -140,7 +140,7 @@ export default function CareerPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-muted/30">
         <div className="text-center">
           <p className="mb-4">Please sign in to access career overview.</p>
           <a className="underline" href="/sign-in">
@@ -369,7 +369,7 @@ export default function CareerPage() {
                         <input
                           type="text"
                           placeholder="e.g., Get promoted to Senior Developer"
-                          className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                          className="w-full mt-1 px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                         />
                       </div>
                       <div>
@@ -377,14 +377,14 @@ export default function CareerPage() {
                         <textarea
                           placeholder="Describe what you want to achieve..."
                           rows={3}
-                          className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                          className="w-full mt-1 px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary resize-none"
                         />
                       </div>
                       <div>
                         <label className="text-sm font-medium">Target Date</label>
                         <input
                           type="date"
-                          className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                          className="w-full mt-1 px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                         />
                       </div>
                       <Button className="w-full">
@@ -473,23 +473,23 @@ export default function CareerPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      <div className="flex justify-between items-center p-3 bg-gray-50 rounded">
+                      <div className="flex justify-between items-center p-3 bg-muted/30 rounded">
                         <span>Total Applications</span>
                         <span className="font-bold">{careerStats.applicationsSent}</span>
                       </div>
-                      <div className="flex justify-between items-center p-3 bg-gray-50 rounded">
+                      <div className="flex justify-between items-center p-3 bg-muted/30 rounded">
                         <span>Interview Rate</span>
                         <span className="font-bold">
                           {Math.round((careerStats.interviewsScheduled / careerStats.applicationsSent) * 100)}%
                         </span>
                       </div>
-                      <div className="flex justify-between items-center p-3 bg-gray-50 rounded">
+                      <div className="flex justify-between items-center p-3 bg-muted/30 rounded">
                         <span>Offer Rate</span>
                         <span className="font-bold">
                           {Math.round((careerStats.offersReceived / careerStats.applicationsSent) * 100)}%
                         </span>
                       </div>
-                      <div className="flex justify-between items-center p-3 bg-gray-50 rounded">
+                      <div className="flex justify-between items-center p-3 bg-muted/30 rounded">
                         <span>Average Response Time</span>
                         <span className="font-bold">7 days</span>
                       </div>

@@ -209,14 +209,14 @@ function SignUpInner() {
               </div>
             </div>
           </Link>
-          <h1 className="text-3xl font-bold text-gray-900">Hireall</h1>
-          <p className="text-gray-600 mt-2">Your smart job search companion</p>
+          <h1 className="text-3xl font-bold text-foreground">Hireall</h1>
+          <p className="text-muted-foreground mt-2">Your smart job search companion</p>
         </motion.div>
 
         <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-sm">
           <CardHeader className="space-y-1 text-center pb-6">
-            <CardTitle className="text-2xl font-bold text-gray-900">Create your account</CardTitle>
-            <CardDescription className="text-gray-600">
+            <CardTitle className="text-2xl font-bold text-foreground">Create your account</CardTitle>
+            <CardDescription className="text-muted-foreground">
               Join Hireall and start tracking your job applications
             </CardDescription>
           </CardHeader>
@@ -240,15 +240,15 @@ function SignUpInner() {
 
             <form onSubmit={handleStartSignUp} className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="name" className="text-sm font-medium text-gray-700">Name (optional)</Label>
+                <Label htmlFor="name" className="text-sm font-medium text-foreground">Name (optional)</Label>
                 <div className="relative group">
-                  <User className="absolute left-3 top-3 h-4 w-4 text-gray-400 group-focus-within:text-primary transition-colors" />
+                  <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                   <Input
                     id="name"
                     type="text"
                     value={name}
                     onChange={(e) => handleNameChange(e.target.value)}
-                    className={`pl-10 h-11 bg-gray-50 border-gray-200 hover:bg-gray-100 focus:bg-white focus:border-primary focus:ring-primary/20 transition-all duration-200 ${nameError ? 'border-red-500 focus:ring-red-500/20' : ''}`}
+                    className={`pl-10 h-11 bg-muted/50 border-input hover:bg-gray-100 focus:bg-white focus:border-primary focus:ring-primary/20 transition-all duration-200 ${nameError ? 'border-red-500 focus:ring-red-500/20' : ''}`}
                     placeholder="Your name"
                     disabled={loading}
                   />
@@ -259,16 +259,16 @@ function SignUpInner() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium text-gray-700">Email</Label>
+                <Label htmlFor="email" className="text-sm font-medium text-foreground">Email</Label>
                 <div className="relative group">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400 group-focus-within:text-primary transition-colors" />
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                   <Input
                     id="email"
                     type="email"
                     value={email}
                     onChange={(e) => handleEmailChange(e.target.value)}
                     required
-                    className={`pl-10 h-11 bg-gray-50 border-gray-200 hover:bg-gray-100 focus:bg-white focus:border-primary focus:ring-primary/20 transition-all duration-200 ${emailError ? 'border-red-500 focus:ring-red-500/20' : ''}`}
+                    className={`pl-10 h-11 bg-muted/50 border-input hover:bg-gray-100 focus:bg-white focus:border-primary focus:ring-primary/20 transition-all duration-200 ${emailError ? 'border-red-500 focus:ring-red-500/20' : ''}`}
                     placeholder="you@example.com"
                     disabled={loading}
                   />
@@ -279,23 +279,23 @@ function SignUpInner() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium text-gray-700">Password</Label>
+                <Label htmlFor="password" className="text-sm font-medium text-foreground">Password</Label>
                 <div className="relative group">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400 group-focus-within:text-primary transition-colors" />
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => handlePasswordChange(e.target.value)}
                     required
-                    className={`pl-10 pr-10 h-11 bg-gray-50 border-gray-200 hover:bg-gray-100 focus:bg-white focus:border-primary focus:ring-primary/20 transition-all duration-200 ${passwordError ? 'border-red-500 focus:ring-red-500/20' : ''}`}
+                    className={`pl-10 pr-10 h-11 bg-muted/50 border-input hover:bg-gray-100 focus:bg-white focus:border-primary focus:ring-primary/20 transition-all duration-200 ${passwordError ? 'border-red-500 focus:ring-red-500/20' : ''}`}
                     placeholder="••••••••"
                     disabled={loading}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-3 h-4 w-4 text-gray-400 hover:text-gray-600 active:scale-95 transition-all duration-200"
+                    className="absolute right-3 top-3 h-4 w-4 text-muted-foreground hover:text-muted-foreground active:scale-95 transition-all duration-200"
                     disabled={loading}
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -316,7 +316,7 @@ function SignUpInner() {
                                 : passwordStrength <= 3
                                 ? 'bg-yellow-500'
                                 : 'bg-green-500'
-                              : 'bg-gray-200'
+                              : 'bg-muted'
                           }`}
                         />
                       ))}
@@ -334,12 +334,12 @@ function SignUpInner() {
                         {passwordStrength === 4 && 'Strong'}
                         {passwordStrength === 5 && 'Very strong'}
                       </span>
-                      <div className="flex gap-3 text-gray-500">
+                      <div className="flex gap-3 text-muted-foreground">
                         <div className="flex items-center gap-1">
                           {password.length >= 8 ? (
                             <Check className="h-3 w-3 text-green-500" />
                           ) : (
-                            <X className="h-3 w-3 text-gray-400" />
+                            <X className="h-3 w-3 text-muted-foreground" />
                           )}
                           <span className="text-xs">8+ chars</span>
                         </div>
@@ -347,7 +347,7 @@ function SignUpInner() {
                           {/[^A-Za-z0-9]/.test(password) ? (
                             <Check className="h-3 w-3 text-green-500" />
                           ) : (
-                            <X className="h-3 w-3 text-gray-400" />
+                            <X className="h-3 w-3 text-muted-foreground" />
                           )}
                           <span className="text-xs">Special</span>
                         </div>
@@ -390,17 +390,17 @@ function SignUpInner() {
 
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-gray-200" />
+                <span className="w-full border-t border-input" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-3 text-gray-500 font-medium">Or continue with</span>
+                <span className="bg-white px-3 text-muted-foreground font-medium">Or continue with</span>
               </div>
             </div>
 
             <Button
               variant="outline"
               onClick={handleGoogle}
-              className="w-full h-11 bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300 font-medium shadow-sm transition-all duration-200"
+              className="w-full h-11 bg-white border-input hover:bg-muted/50 hover:border-gray-300 font-medium shadow-sm transition-all duration-200"
               disabled={loading}
               size="lg"
             >
@@ -408,8 +408,8 @@ function SignUpInner() {
               Continue with Google
             </Button>
 
-            <div className="text-center text-sm pt-4 border-t border-gray-200">
-              <span className="text-gray-600">Already have an account? </span>
+            <div className="text-center text-sm pt-4 border-t border-input">
+              <span className="text-muted-foreground">Already have an account? </span>
               <a
                 href={`/sign-in?redirect_url=${encodeURIComponent(redirectUrlComplete)}`}
                 className="font-medium text-primary hover:underline transition-colors"
