@@ -293,7 +293,7 @@ export default function JobsPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pt-16">
+    <div className="min-h-screen bg-gradient-to-br from-muted/30 to-muted/50 pt-16">
       {/* Hero Section */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -312,7 +312,8 @@ export default function JobsPage() {
               Find Your Dream Job
             </h1>
             <p className="mt-6 max-w-2xl mx-auto text-xl text-primary-foreground/90">
-              Search thousands of jobs from top companies. Get personalized recommendations and track your applications.
+              Search thousands of jobs from top companies. Get personalized
+              recommendations and track your applications.
             </p>
 
             {/* Search Bar */}
@@ -324,7 +325,7 @@ export default function JobsPage() {
             >
               <div className="bg-white rounded-lg shadow-lg p-2 flex flex-col sm:flex-row gap-2">
                 <div className="flex-1 flex items-center gap-2 px-4 py-3">
-                  <Search className="h-5 w-5 text-gray-400" />
+                  <Search className="h-5 w-5 text-muted-foreground" />
                   <Input
                     placeholder="Job title, keywords, or company"
                     value={searchQuery}
@@ -332,8 +333,8 @@ export default function JobsPage() {
                     className="border-0 focus:ring-0 text-lg"
                   />
                 </div>
-                <div className="flex items-center gap-2 px-4 py-3 border-t sm:border-t-0 sm:border-l border-gray-200">
-                  <MapPin className="h-5 w-5 text-gray-400" />
+                <div className="flex items-center gap-2 px-4 py-3 border-t sm:border-t-0 sm:border-l border-border">
+                  <MapPin className="h-5 w-5 text-muted-foreground" />
                   <Input
                     placeholder="Location"
                     value={location}
@@ -399,7 +400,7 @@ export default function JobsPage() {
           {/* Job Listings */}
           <div className="flex-1">
             <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-900">
+              <h2 className="text-2xl font-bold text-foreground">
                 {filteredJobs.length} Jobs Found
               </h2>
               <Select defaultValue="relevance">
@@ -420,130 +421,147 @@ export default function JobsPage() {
                 <SkeletonGrid items={6} />
               ) : (
                 filteredJobs.map((job, index) => (
-                <motion.div
-                  key={job.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1, duration: 0.5 }}
-                  whileHover={{ y: -2 }}
-                  className="transition-shadow duration-200 hover:shadow-lg"
-                >
-                  <Card className="hover:shadow-lg transition-shadow">
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start gap-4 flex-1">
-                          <div className="flex items-center justify-center">
-                            {(() => {
-                              const Icon = getJobIcon(job.logo);
-                              return <Icon className="h-8 w-8" />;
-                            })()}
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-start justify-between mb-2">
-                              <div>
-                                <h3 className="text-xl font-semibold text-gray-900">
-                                  {job.title}
-                                </h3>
-                                <p className="text-lg text-gray-600">{job.company}</p>
-                              </div>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleSaveJob(job.id)}
-                                className={`${
-                                  savedJobs.includes(job.id)
-                                    ? "text-primary"
-                                    : "text-gray-400"
-                                }`}
-                              >
-                                <Bookmark
-                                  className={`h-5 w-5 ${
-                                    savedJobs.includes(job.id) ? "fill-current" : ""
+                  <motion.div
+                    key={job.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1, duration: 0.5 }}
+                    whileHover={{ y: -2 }}
+                    className="transition-shadow duration-200 hover:shadow-lg"
+                  >
+                    <Card className="hover:shadow-lg transition-shadow">
+                      <CardContent className="p-6">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start gap-4 flex-1">
+                            <div className="flex items-center justify-center">
+                              {(() => {
+                                const Icon = getJobIcon(job.logo);
+                                return <Icon className="h-8 w-8" />;
+                              })()}
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-start justify-between mb-2">
+                                <div>
+                                  <h3 className="text-xl font-semibold text-foreground">
+                                    {job.title}
+                                  </h3>
+                                  <p className="text-lg text-muted-foreground">
+                                    {job.company}
+                                  </p>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleSaveJob(job.id)}
+                                  className={`${
+                                    savedJobs.includes(job.id)
+                                      ? "text-primary"
+                                      : "text-muted-foreground"
                                   }`}
-                                />
-                              </Button>
-                            </div>
-
-                            <div className="flex items-center gap-4 text-sm text-gray-500 mb-3">
-                              <div className="flex items-center gap-1">
-                                <MapPin className="h-4 w-4" />
-                                {job.location}
+                                >
+                                  <Bookmark
+                                    className={`h-5 w-5 ${
+                                      savedJobs.includes(job.id)
+                                        ? "fill-current"
+                                        : ""
+                                    }`}
+                                  />
+                                </Button>
                               </div>
-                              <div className="flex items-center gap-1">
-                                <DollarSign className="h-4 w-4" />
-                                {job.salary}
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Clock className="h-4 w-4" />
-                                {job.posted}
-                              </div>
-                            </div>
 
-                            <div className="flex items-center gap-2 mb-3">
-                              <Badge variant="secondary">{job.type}</Badge>
-                              <Badge variant="outline">{job.level}</Badge>
-                              {job.isRemote && (
-                                <Badge variant="outline" className="text-green-700 border-green-300">
-                                  Remote
-                                </Badge>
-                              )}
-                            </div>
-
-                            <p className="text-gray-600 mb-4 line-clamp-2">
-                              {job.description}
-                            </p>
-
-                            <div className="flex flex-wrap gap-2 mb-4">
-                              {job.skills.map((skill) => (
-                                <Badge key={skill} variant="secondary" className="text-xs">
-                                  {skill}
-                                </Badge>
-                              ))}
-                            </div>
-
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-4 text-sm text-gray-500">
+                              <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
                                 <div className="flex items-center gap-1">
-                                  <Building className="h-4 w-4" />
-                                  {job.companySize} employees
+                                  <MapPin className="h-4 w-4" />
+                                  {job.location}
                                 </div>
                                 <div className="flex items-center gap-1">
-                                  <Users className="h-4 w-4" />
-                                  {job.industry}
+                                  <DollarSign className="h-4 w-4" />
+                                  {job.salary}
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Clock className="h-4 w-4" />
+                                  {job.posted}
                                 </div>
                               </div>
 
-                              <div className="flex gap-2">
-                                <FeatureGate fallback={
-                                  <Button variant="outline" size="sm" disabled>
-                                    <ExternalLink className="h-4 w-4 mr-2" />
-                                    Apply (Premium)
-                                  </Button>
-                                }>
-                                  <Button size="sm">
-                                    <ExternalLink className="h-4 w-4 mr-2" />
-                                    Apply Now
-                                  </Button>
-                                </FeatureGate>
+                              <div className="flex items-center gap-2 mb-3">
+                                <Badge variant="secondary">{job.type}</Badge>
+                                <Badge variant="outline">{job.level}</Badge>
+                                {job.isRemote && (
+                                  <Badge
+                                    variant="outline"
+                                    className="text-green-700 border-green-300"
+                                  >
+                                    Remote
+                                  </Badge>
+                                )}
+                              </div>
+
+                              <p className="text-muted-foreground mb-4 line-clamp-2">
+                                {job.description}
+                              </p>
+
+                              <div className="flex flex-wrap gap-2 mb-4">
+                                {job.skills.map((skill) => (
+                                  <Badge
+                                    key={skill}
+                                    variant="secondary"
+                                    className="text-xs"
+                                  >
+                                    {skill}
+                                  </Badge>
+                                ))}
+                              </div>
+
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                  <div className="flex items-center gap-1">
+                                    <Building className="h-4 w-4" />
+                                    {job.companySize} employees
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <Users className="h-4 w-4" />
+                                    {job.industry}
+                                  </div>
+                                </div>
+
+                                <div className="flex gap-2">
+                                  <FeatureGate
+                                    fallback={
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        disabled
+                                      >
+                                        <ExternalLink className="h-4 w-4 mr-2" />
+                                        Apply (Premium)
+                                      </Button>
+                                    }
+                                  >
+                                    <Button size="sm">
+                                      <ExternalLink className="h-4 w-4 mr-2" />
+                                      Apply Now
+                                    </Button>
+                                  </FeatureGate>
+                                </div>
                               </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))
               )}
             </div>
 
             {filteredJobs.length === 0 && (
               <div className="text-center py-12">
-                <Search className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                <Search className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-foreground mb-2">
                   No jobs found
                 </h3>
-                <p className="text-gray-600">
+                <p className="text-muted-foreground">
                   Try adjusting your search criteria or filters.
                 </p>
               </div>
