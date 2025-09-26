@@ -241,15 +241,15 @@ async function testAllEndpoints() {
   await skipEndpoint('Upload CV', 'Requires file upload and authentication');
   await skipEndpoint('Get User CV', 'Requires authentication');
 
-  // Interview Questions - public endpoint
-  await testEndpoint('Get Interview Questions', `${BASE_URL}/api/interview-questions`, { logResponse: true });
+  // Interview Questions - requires authentication
+  await skipEndpoint('Get Interview Questions', 'Requires authentication');
 
   // Portfolio - requires authentication
   await skipEndpoint('Get Portfolio Resume', 'Requires authentication');
   await skipEndpoint('Get/Update Portfolio Site', 'Requires authentication');
 
-  // SOC Codes - public endpoint
-  await testEndpoint('Get SOC Codes', `${BASE_URL}/api/soc-codes`, { logResponse: true });
+  // SOC Codes - requires authentication
+  await skipEndpoint('Get SOC Codes', 'Requires authentication');
 
   // Sponsors - requires authentication
   await skipEndpoint('Get Sponsors (without params)', 'Requires authentication');

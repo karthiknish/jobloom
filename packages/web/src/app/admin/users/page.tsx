@@ -19,6 +19,7 @@ import {
   BarChart3,
   TrendingUp,
   UserX,
+  Eye,
 } from "lucide-react";
 
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
@@ -209,10 +210,10 @@ export default function AdminUserDashboard() {
 
   const getStatusBadge = (user: User) => {
     if (user.isAdmin) {
-      return <Badge variant="default" className="bg-purple-100 text-purple-800">Admin</Badge>;
+      return <Badge variant="default" className="bg-violet-100 text-violet-800">Admin</Badge>;
     }
     if (user.emailVerified) {
-      return <Badge variant="default" className="bg-green-100 text-green-800">Verified</Badge>;
+      return <Badge variant="default" className="bg-emerald-100 text-emerald-800">Verified</Badge>;
     }
     return <Badge variant="secondary">Unverified</Badge>;
   };
