@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   DollarSign,
@@ -22,6 +22,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton, SkeletonCard, SkeletonGrid } from "@/components/ui/loading-skeleton";
 import {
   Select,
   SelectContent,
@@ -86,6 +87,31 @@ const costOfLivingData = {
 };
 
 export default function SalaryPage() {
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pt-16">
+        <div className="max-w-4xl mx-auto py-8 px-4">
+          <Skeleton className="h-8 w-64 mb-8" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
+          </div>
+          <SkeletonGrid items={4} className="mt-8" />
+        </div>
+      </div>
+    );
+  }
   const { user } = useFirebaseAuth();
   const [activeTab, setActiveTab] = useState("calculator");
   const [jobTitle, setJobTitle] = useState("");

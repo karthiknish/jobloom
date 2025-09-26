@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { SkeletonGrid } from "@/components/ui/loading-skeleton";
 import { motion } from "framer-motion";
 import {
   Calendar,
@@ -160,20 +161,7 @@ export default function BlogPage() {
 
         {/* Blog Posts Grid */}
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[...Array(6)].map((_, i) => (
-              <Card key={i} className="animate-pulse">
-                <CardHeader>
-                  <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
-                  <div className="h-4 bg-muted rounded w-1/2"></div>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-3 bg-muted rounded w-full mb-2"></div>
-                  <div className="h-3 bg-muted rounded w-4/5"></div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <SkeletonGrid items={6} />
         ) : posts.length === 0 ? (
           <motion.div
             initial={{ opacity: 0 }}

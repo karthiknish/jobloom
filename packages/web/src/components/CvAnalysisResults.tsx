@@ -1,6 +1,7 @@
 "use client";
 
 import { format } from "date-fns";
+import { AlertTriangle, Rocket, Lightbulb } from "lucide-react";
 import type { CvAnalysis } from "../types/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -52,7 +53,7 @@ export function CvAnalysisResults({ analysis }: CvAnalysisResultsProps) {
           {analysis.atsCompatibility && analysis.atsCompatibility.score < 80 && (
             <div className="mt-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
               <h4 className="text-sm font-medium text-yellow-900 mb-2 flex items-center">
-                <span className="mr-2">⚠️</span>
+                <AlertTriangle className="h-4 w-4 mr-2 text-yellow-500" />
                 ATS Optimization Needed
               </h4>
               <p className="text-sm text-yellow-800">
@@ -96,7 +97,7 @@ export function CvAnalysisResults({ analysis }: CvAnalysisResultsProps) {
            analysis.atsCompatibility.suggestions.length > 0 && (
             <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
               <h5 className="text-sm font-medium text-blue-900 mb-2">
-                🚀 Top 3 ATS Improvements to Implement:
+                <Rocket className="h-4 w-4 mr-2" /> Top 3 ATS Improvements to Implement:
               </h5>
               <ul className="text-sm text-blue-800 space-y-1">
                 {analysis.atsCompatibility.suggestions.slice(0, 3).map(
@@ -140,7 +141,7 @@ export function CvAnalysisResults({ analysis }: CvAnalysisResultsProps) {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
-              <span className="text-red-500 mr-2">⚠️</span>
+              <AlertTriangle className="h-4 w-4 mr-2 text-red-500" />
               Areas for Improvement
             </CardTitle>
           </CardHeader>
@@ -183,7 +184,7 @@ export function CvAnalysisResults({ analysis }: CvAnalysisResultsProps) {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
-              <span className="text-secondary mr-2">💡</span>
+              <Lightbulb className="h-4 w-4 mr-2 text-secondary" />
               Actionable Recommendations
             </CardTitle>
           </CardHeader>
@@ -200,7 +201,7 @@ export function CvAnalysisResults({ analysis }: CvAnalysisResultsProps) {
             </ul>
             <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
               <h5 className="text-sm font-medium text-blue-900 mb-2">
-                🚀 Pro Tip for ATS Optimization:
+                <Rocket className="h-4 w-4 mr-2" /> Pro Tip for ATS Optimization:
               </h5>
               <p className="text-sm text-blue-800">
                 Focus on incorporating the missing keywords identified above throughout your CV, 

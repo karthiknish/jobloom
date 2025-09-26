@@ -1,0 +1,40 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // User profile docs
+    match /users/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId; // private profile (adjust if you want public fields)
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update, delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Nested resumes (single primary for now)
+    match /users/{userId}/resumes/{resumeId} {
+      allow read: if resource.data.visibility == 'public' || (request.auth != null && request.auth.uid == userId);
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update, delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // CV Analyses documents (top-level or adjust path if nested differently)
+    match /cvAnalyses/{analysisId} {
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+
+    // Subdomain claims - public readable, immutable once created
+    match /subdomains/{sub} {
+      allow read: if true;
+      allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid
+        && !resource.exists();
+      allow update, delete: if false; // locked (change policy later if needed)
+    }
+
+    // Default deny for everything else
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, Send, X, Minimize2, Bot, User, History, Plus, Trash2 } from "lucide-react";
+import { MessageCircle, Send, X, Minimize2, Bot, User, History, Plus, Trash2, Lightbulb, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -43,21 +43,88 @@ export default function Chatbot() {
   const [chatHistory, setChatHistory] = useState<Message[][]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const [autoScroll, setAutoScroll] = useState(true);
+  const [showScrollButton, setShowScrollButton] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Message persistence keys
   const CHAT_HISTORY_KEY = 'hireall_chat_history';
   const CHAT_SESSIONS_KEY = 'hireall_chat_sessions';
 
-  // Auto-scroll to bottom when new messages are added
-  useEffect(() => {
-    if (scrollAreaRef.current) {
-      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
-      if (scrollContainer) {
-        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+  // Helper to scroll to bottom with retry logic
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth', retries = 3) => {
+    if (!scrollAreaRef.current) return;
+
+    const attemptScroll = () => {
+      const viewport = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement | null;
+      if (!viewport) return false;
+
+      const scrollHeight = viewport.scrollHeight;
+      const clientHeight = viewport.clientHeight;
+      const scrollTop = viewport.scrollTop;
+      const isAtBottom = scrollHeight - scrollTop - clientHeight < 10;
+
+      if (!isAtBottom || behavior === 'instant') {
+        viewport.scrollTo({ top: scrollHeight, behavior });
+        // Verify scroll worked
+        setTimeout(() => {
+          const newScrollTop = viewport.scrollTop;
+          const newIsAtBottom = scrollHeight - newScrollTop - clientHeight < 10;
+          if (!newIsAtBottom && retries > 0) {
+            // Try again if scroll didn't work
+            setTimeout(() => scrollToBottom(behavior, retries - 1), 10);
+          }
+        }, 50);
       }
+      return true;
+    };
+
+    // Initial attempt
+    if (!attemptScroll() && retries > 0) {
+      // Retry after a short delay if viewport wasn't found
+      setTimeout(() => scrollToBottom(behavior, retries - 1), 10);
     }
-  }, [messages]);
+  }, []);
+
+  // Detect user scroll position to toggle auto-scroll & button
+  useEffect(() => {
+    const viewport = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement | null;
+    if (!viewport) return;
+
+    const handleScroll = () => {
+      const distanceFromBottom = viewport.scrollHeight - (viewport.scrollTop + viewport.clientHeight);
+      const isAtBottom = distanceFromBottom < 20; // More sensitive threshold (20px from bottom)
+      if (!isAtBottom && autoScroll) {
+        setAutoScroll(false);
+      }
+      setShowScrollButton(!isAtBottom);
+    };
+
+    // Check initial position
+    handleScroll();
+
+    viewport.addEventListener('scroll', handleScroll, { passive: true });
+    return () => viewport.removeEventListener('scroll', handleScroll);
+  }, [autoScroll]);
+
+  // Auto-scroll only if user hasn't scrolled up
+  useEffect(() => {
+    if (autoScroll) {
+      // Use multiple attempts with delays to ensure DOM is updated
+      const scrollAttempts = [0, 10, 25, 50, 100];
+      scrollAttempts.forEach(delay => {
+        setTimeout(() => scrollToBottom('instant'), delay);
+      });
+    }
+  }, [messages, autoScroll, scrollToBottom]);
+
+  // Re-enable auto-scroll when new chat session starts
+  useEffect(() => {
+    if (messages.length === 1) {
+      setAutoScroll(true);
+      setTimeout(() => scrollToBottom('instant'), 50);
+    }
+  }, [messages.length, scrollToBottom]);
 
   // Focus textarea when chat opens
   useEffect(() => {
@@ -142,9 +209,11 @@ export default function Chatbot() {
       timestamp: new Date()
     };
 
-    setMessages(prev => [...prev, userMessage]);
-    setInputMessage("");
-    setIsLoading(true);
+  setMessages(prev => [...prev, userMessage]);
+  // If user sends a message we assume they want to follow conversation
+  setAutoScroll(true);
+  setInputMessage("");
+  setIsLoading(true);
 
     try {
       const response = await fetch('/api/chatbot', {
@@ -171,7 +240,7 @@ export default function Chatbot() {
         timestamp: new Date()
       };
 
-      setMessages(prev => [...prev, assistantMessage]);
+  setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       console.error('Chatbot error:', error);
       showError('Sorry, I\'m having trouble connecting. Please try again.');
@@ -183,7 +252,7 @@ export default function Chatbot() {
         role: 'assistant',
         timestamp: new Date()
       };
-      setMessages(prev => [...prev, errorMessage]);
+  setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
@@ -291,12 +360,12 @@ export default function Chatbot() {
             animate={{
               opacity: 1,
               scale: 1,
-              y: 0,
-              height: isMinimized ? '60px' : 'min(520px, calc(100vh - 140px))'
+              y: 0
             }}
             exit={{ opacity: 0, scale: 0.8, y: 20 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="fixed bottom-32 right-4 left-4 sm:bottom-24 sm:right-6 sm:left-auto w-auto sm:w-96 max-w-[calc(100vw-2rem)] sm:max-w-[calc(100vw-3rem)] max-h-[calc(100vh-140px)] sm:max-h-[calc(100vh-120px)] bg-background border border-border rounded-xl shadow-2xl z-[100] overflow-hidden backdrop-blur-sm"
+            style={{ height: isMinimized ? 60 : undefined }}
+            className={`fixed bottom-24 right-4 left-4 sm:right-6 sm:left-auto w-auto sm:w-96 max-w-[calc(100vw-2rem)] sm:max-w-[calc(100vw-3rem)] bg-background border border-border rounded-xl shadow-2xl z-[100] overflow-hidden backdrop-blur-sm flex flex-col ${isMinimized ? '' : 'max-h-[calc(100vh-96px)]'}`}
           >
             {/* Header */}
             <div className="flex items-center justify-between p-4 bg-gradient-to-r from-primary via-primary/90 to-primary/80 text-primary-foreground shadow-sm">
@@ -349,7 +418,7 @@ export default function Chatbot() {
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
                   transition={{ duration: 0.2 }}
-                  className="flex flex-col h-[calc(100%-80px)]"
+                  className="flex flex-col flex-1 min-h-0"
                 >
                   {/* Chat Content */}
                   {showHistory ? (
@@ -426,6 +495,26 @@ export default function Chatbot() {
                   ) : (
                     <ScrollArea ref={scrollAreaRef} className="flex-1 p-4">
                       <div className="space-y-4">
+                        {showScrollButton && (
+                          <div className="flex justify-center sticky top-0 z-10">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="text-xs h-7 px-3 shadow-sm bg-background/80 backdrop-blur border-border/50 hover:bg-background"
+                              onClick={() => {
+                                setAutoScroll(true);
+                                // Use multiple smooth scroll attempts
+                                const scrollAttempts = [0, 25, 50];
+                                scrollAttempts.forEach(delay => {
+                                  setTimeout(() => scrollToBottom('smooth'), delay);
+                                });
+                              }}
+                            >
+                              Scroll to latest ↓
+                            </Button>
+                          </div>
+                        )}
                         {messages.map((message) => (
                           <motion.div
                             key={message.id}
@@ -489,7 +578,10 @@ export default function Chatbot() {
                             className="mt-4 space-y-3"
                           >
                             <div className="text-center">
-                              <p className="text-xs text-muted-foreground font-medium mb-2">💡 Quick suggestions</p>
+                              <p className="text-xs text-muted-foreground font-medium mb-2 flex items-center gap-2">
+                                <Lightbulb className="h-3 w-3" />
+                                Quick suggestions
+                              </p>
                               <div className="grid grid-cols-1 gap-2">
                                 {SUGGESTED_QUESTIONS.map((question, index) => (
                                   <motion.button
@@ -514,36 +606,36 @@ export default function Chatbot() {
                   {/* Input - Hide when viewing history */}
                   {!showHistory && (
                     <div className="border-t border-border/50 bg-muted/20 p-4">
-                    <form onSubmit={handleSubmit} className="flex gap-3">
-                      <Textarea
-                        ref={textareaRef}
-                        value={inputMessage}
-                        onChange={(e) => setInputMessage(e.target.value)}
-                        placeholder="Ask me about your career..."
-                        className="min-h-[44px] max-h-32 resize-none bg-background border-border/50 focus:border-primary/50 transition-colors"
-                        disabled={isLoading}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault();
-                            handleSubmit(e);
-                          }
-                        }}
-                      />
-                      <Button
-                        type="submit"
-                        size="sm"
-                        disabled={!inputMessage.trim() || isLoading}
-                        className="px-4 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm hover:shadow-md transition-all duration-200"
-                      >
-                        <Send className="h-4 w-4" />
-                      </Button>
-                    </form>
-                    <div className="flex items-center justify-between mt-3">
-                      <p className="text-xs text-muted-foreground">
-                        💼 Career-focused AI assistant
-                      </p>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <span>Press Enter to send</span>
+                      <form onSubmit={handleSubmit} className="flex gap-3">
+                        <Textarea
+                          ref={textareaRef}
+                          value={inputMessage}
+                          onChange={(e) => setInputMessage(e.target.value)}
+                          placeholder="Ask me about your career..."
+                          className="min-h-[44px] max-h-32 resize-none bg-background border-border/50 focus:border-primary/50 transition-colors"
+                          disabled={isLoading}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              handleSubmit(e);
+                            }
+                          }}
+                        />
+                        <Button
+                          type="submit"
+                          size="sm"
+                          disabled={!inputMessage.trim() || isLoading}
+                          className="px-4 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm hover:shadow-md transition-all duration-200"
+                        >
+                          <Send className="h-4 w-4" />
+                        </Button>
+                      </form>
+                      <div className="flex items-center justify-between mt-3">
+                        <p className="text-xs text-muted-foreground">
+                          <Briefcase className="h-3 w-3 inline mr-1" /> Career-focused AI assistant
+                        </p>
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <span>Press Enter to send</span>
                         </div>
                       </div>
                     </div>

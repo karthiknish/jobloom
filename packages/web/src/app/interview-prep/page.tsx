@@ -17,6 +17,8 @@ import {
   Users,
   TrendingUp,
   Briefcase,
+  Mail,
+  HelpCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -82,6 +84,19 @@ const interviewTips = [
     icon: "📧",
   },
 ];
+
+// Helper to get icon component by emoji
+const getInterviewTipIcon = (emoji: string) => {
+  const icons: Record<string, any> = {
+    "💼": Briefcase,
+    "🎯": Target,
+    "📝": BookOpen,
+    "⏰": Clock,
+    "📧": Mail,
+    "❓": HelpCircle,
+  };
+  return icons[emoji] || MessageSquare;
+};
 
 export default function InterviewPrepPage() {
   const { user } = useFirebaseAuth();
@@ -186,11 +201,11 @@ export default function InterviewPrepPage() {
             transition={{ duration: 0.5, delay: 0.2 }}
           >
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-            <TabsList className="grid w-full grid-cols-4 bg-gray-100 p-1 rounded-lg">
-              <TabsTrigger value="practice" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">Practice Questions</TabsTrigger>
-              <TabsTrigger value="tips" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">Interview Tips</TabsTrigger>
-              <TabsTrigger value="mock" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">Mock Interviews</TabsTrigger>
-              <TabsTrigger value="progress" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">My Progress</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="practice">Practice Questions</TabsTrigger>
+              <TabsTrigger value="tips">Interview Tips</TabsTrigger>
+              <TabsTrigger value="mock">Mock Interviews</TabsTrigger>
+              <TabsTrigger value="progress">My Progress</TabsTrigger>
             </TabsList>
 
             <TabsContent value="practice" className="space-y-6">
@@ -535,12 +550,15 @@ export default function InterviewPrepPage() {
                   >
                     <Card className="h-full hover:shadow-lg transition-all duration-300 cursor-pointer border-gray-200 shadow-sm">
                       <CardHeader className="text-center">
-                        <motion.div 
-                          className="text-4xl mb-3"
+                        <motion.div
+                          className="mb-3 flex items-center justify-center"
                           whileHover={{ scale: 1.1 }}
                           transition={{ type: "spring", stiffness: 400, damping: 10 }}
                         >
-                          {tip.icon}
+                          {(() => {
+                            const Icon = getInterviewTipIcon(tip.icon);
+                            return <Icon className="h-12 w-12" />;
+                          })()}
                         </motion.div>
                         <CardTitle className="text-lg">{tip.title}</CardTitle>
                       </CardHeader>

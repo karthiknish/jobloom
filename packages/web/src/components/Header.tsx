@@ -32,10 +32,16 @@ export default function Header() {
   useEffect(() => {
     if (user?.uid) {
       // Check if user is admin
-      fetch("/api/app/admin/is-admin/" + user.uid)
-        .then((res) => res.json())
-        .then((data) => setIsAdmin(data.isAdmin))
-        .catch(() => setIsAdmin(false));
+      user.getIdToken().then((token) => {
+        fetch("/api/app/admin/is-admin/" + user.uid, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+          .then((res) => res.json())
+          .then((data) => setIsAdmin(data))
+          .catch(() => setIsAdmin(false));
+      });
     } else {
       setIsAdmin(false);
     }
@@ -54,11 +60,9 @@ export default function Header() {
     { href: "/jobs", label: "Job Search" },
     { href: "/templates", label: "Application Templates" },
     { href: "/companies", label: "Company Research" },
-    { href: "/salary", label: "Salary Tools" },
     { href: "/interview-prep", label: "Interview Prep" },
     { href: "/cv-evaluator", label: "CV Evaluator" },
     { href: "/settings", label: "Settings" },
-    { href: "/blog", label: "Blog" },
     { href: "/account", label: "Account" },
   ];
 

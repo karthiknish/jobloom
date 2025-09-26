@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { Briefcase } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -69,7 +70,7 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
                   <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg group-hover:shadow-xl transition-shadow">
-                    <span className="text-white text-2xl">💼</span>
+                    <Briefcase className="h-6 w-6 text-white" />
                   </div>
                   <div className="ml-4">
                     <p className="text-sm font-medium text-muted-foreground">Total Jobs</p>

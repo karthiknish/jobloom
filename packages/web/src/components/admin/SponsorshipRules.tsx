@@ -1,5 +1,6 @@
 // components/admin/SponsorshipRules.tsx
 import { useState } from "react";
+import { ClipboardList } from "lucide-react";
 import { useApiMutation, useApiQuery } from "../../hooks/useApi";
 import { adminApi } from "../../utils/api/admin";
 import toast from "react-hot-toast";
@@ -314,7 +315,7 @@ export function SponsorshipRules() {
           </div>
         ) : (
           <div className="text-center py-12">
-            <span className="text-4xl">📋</span>
+            <ClipboardList className="h-12 w-12" />
             <h3 className="mt-2 text-sm font-medium text-foreground">No sponsorship rules yet</h3>
             <p className="mt-1 text-sm text-muted-foreground">
               Get started by adding a new rule.

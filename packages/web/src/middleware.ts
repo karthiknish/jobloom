@@ -65,6 +65,23 @@ function applySecurityHeaders(response: NextResponse): NextResponse {
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const clientIP = getClientIP(request);
+  const host = request.headers.get('host') || '';
+
+  // Subdomain routing: {sub}.hireall.app -> /p/[sub]
+  // In development localhost:3000 treat pattern {sub}.localhost:3000
+  const isLocal = host.includes('localhost');
+  const rootDomain = isLocal ? 'localhost:3000' : 'hireall.app';
+  if (host.endsWith(rootDomain)) {
+    const sub = host.replace('.' + rootDomain, '');
+    if (sub && sub !== 'www' && sub !== rootDomain) {
+      // Avoid rewriting API/static/image paths
+      if (!pathname.startsWith('/api') && !pathname.startsWith('/_next') && pathname === '/') {
+        const url = request.nextUrl.clone();
+        url.pathname = `/p/${sub}`; // dynamic public portfolio route
+        return applySecurityHeaders(NextResponse.rewrite(url));
+      }
+    }
+  }
 
   // Apply rate limiting to API routes
   if (pathname.startsWith('/api/')) {
@@ -83,7 +100,6 @@ export function middleware(request: NextRequest) {
   const protectedRoutes = [
     "/dashboard",
     "/account",
-    "/cv-evaluator",
     "/admin"
   ];
 

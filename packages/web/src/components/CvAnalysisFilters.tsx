@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Search, Filter, X, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -96,8 +96,8 @@ export function CvAnalysisFilters({ analyses, onFilteredAnalyses }: CvAnalysisFi
     return filtered;
   }, [analyses, filters]);
 
-  // Update parent component when filters change
-  useMemo(() => {
+  // Update parent component when filters change (useEffect, not useMemo)
+  useEffect(() => {
     onFilteredAnalyses(filteredAndSortedAnalyses);
   }, [filteredAndSortedAnalyses, onFilteredAnalyses]);
 

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { UploadCloud, CheckCircle2, Loader2 } from "lucide-react";
+import { UploadCloud, CheckCircle2, Loader2, Lightbulb } from "lucide-react";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
@@ -27,9 +27,11 @@ import {
 
 interface CvUploadFormProps {
   userId: string;
+  onUploadSuccess?: (analysisId: string) => void;
+  onUploadStarted?: () => void;
 }
 
-export function CvUploadForm({ userId }: CvUploadFormProps) {
+export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted }: CvUploadFormProps) {
   const { user } = useFirebaseAuth();
   const [file, setFile] = useState<File | null>(null);
   const [targetRole, setTargetRole] = useState("");
@@ -73,9 +75,16 @@ export function CvUploadForm({ userId }: CvUploadFormProps) {
       return;
     }
 
-    setUploading(true);
+  setUploading(true);
+  onUploadStarted?.();
 
     try {
+      console.log("CV Upload Form - Starting upload:");
+      console.log("- userId prop:", userId);
+      console.log("- file:", file ? `${file.name} (${file.size} bytes)` : "null");
+      console.log("- targetRole:", targetRole);
+      console.log("- industry:", industry);
+
       const formData = new FormData();
       formData.append("file", file);
       formData.append("userId", userId);
@@ -87,6 +96,8 @@ export function CvUploadForm({ userId }: CvUploadFormProps) {
       }
 
       const idToken = await user.getIdToken();
+      console.log("- user authenticated:", !!user);
+      console.log("- idToken obtained:", !!idToken);
 
       const response = await fetch("/api/cv/upload", {
         method: "POST",
@@ -108,6 +119,10 @@ export function CvUploadForm({ userId }: CvUploadFormProps) {
           "file-upload"
         ) as HTMLInputElement;
         if (fileInput) fileInput.value = "";
+        if (result.analysisId) {
+          // Notify parent so it can refetch & switch tabs
+            onUploadSuccess?.(result.analysisId);
+        }
       } else if (result.upgradeRequired) {
         // Show upgrade prompt for limit reached
         setUpgradePromptVisible(true);
@@ -246,7 +261,7 @@ export function CvUploadForm({ userId }: CvUploadFormProps) {
             {/* Tips */}
             <div className="rounded-lg border bg-primary/5 border-primary/20 p-4">
               <h4 className="flex items-center gap-2 text-sm font-medium text-primary mb-3">
-                💡 Tips for better analysis:
+                <Lightbulb className="h-4 w-4 mr-2" /> Tips for better analysis:
               </h4>
               <ul className="text-sm text-foreground/80 space-y-2">
                 <li className="flex items-start gap-2">

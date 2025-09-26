@@ -1,16 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyIdToken, getAdminDb } from "@/firebase/admin";
+import { verifyIdToken, getAdminDb, getAdminStorage } from "@/firebase/admin";
 import { getStorage } from "firebase-admin/storage";
 import * as admin from "firebase-admin";
 import { SUBSCRIPTION_LIMITS } from "@/types/api";
 
 // Initialize Firebase Admin if not already initialized (for storage)
-if (!admin.apps.length) {
-  // Use the centralized initialization for storage
-  admin.initializeApp({
-    projectId: process.env.FIREBASE_PROJECT_ID,
-  });
-}
+// Centralized admin initialization already handled in firebase/admin.ts
 
 // Get Firestore instance using the centralized admin initialization
 const db = getAdminDb();
@@ -84,6 +79,7 @@ async function checkSubscriptionLimits(
 // POST /api/cv/upload - Upload and analyze CV
 export async function POST(request: NextRequest) {
   try {
+    const debug: Record<string, any> = { step: 'start' };
     const authHeader = request.headers.get("authorization");
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -96,21 +92,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 });
     }
 
-    const formData = await request.formData();
+  debug.step = 'reading-form-data';
+  const formData = await request.formData();
     const file = formData.get("file") as File;
     const userId = formData.get("userId") as string;
     const targetRole = formData.get("targetRole") as string;
     const industry = formData.get("industry") as string;
 
+    console.log("CV Upload request received:");
+    console.log("- file:", file ? `${file.name} (${file.size} bytes)` : "null");
+    console.log("- userId:", userId || "null");
+    console.log("- targetRole:", targetRole || "null");
+    console.log("- industry:", industry || "null");
+
     if (!file || !userId) {
+      console.error("Missing required fields:", { file: !!file, userId: !!userId });
       return NextResponse.json(
-        { error: "Missing file or userId" },
+        { error: "Missing file or userId", received: { file: !!file, userId: !!userId } },
         { status: 400 }
       );
     }
 
     // Check subscription limits
-    const limitCheck = await checkSubscriptionLimits(userId);
+  debug.step = 'check-subscription';
+  const limitCheck = await checkSubscriptionLimits(userId);
     if (!limitCheck.allowed) {
       return NextResponse.json(
         {
@@ -147,11 +152,20 @@ export async function POST(request: NextRequest) {
       .toString(36)
       .substring(2)}.${fileExtension}`;
 
-    // Upload file to Firebase Storage
-    const bucket = getStorage().bucket();
+    // Resolve bucket name explicitly (prefer server-side env var)
+    const bucketName = process.env.FIREBASE_STORAGE_BUCKET || process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
+    if (!bucketName) {
+      console.error("CV Upload: Missing FIREBASE_STORAGE_BUCKET env variable");
+      return NextResponse.json({ error: "Storage not configured" }, { status: 500 });
+    }
+
+  debug.step = 'get-bucket';
+  const bucket = getAdminStorage().bucket(bucketName);
     const fileRef = bucket.file(`cv-uploads/${userId}/${fileName}`);
+  debug.step = 'read-file-buffer';
     const buffer = Buffer.from(await file.arrayBuffer());
 
+    debug.step = 'save-file';
     await fileRef.save(buffer, {
       metadata: {
         contentType: file.type,
@@ -187,7 +201,8 @@ export async function POST(request: NextRequest) {
       errorMessage: null,
     };
 
-    await cvAnalysisRef.set(cvAnalysisData);
+  debug.step = 'write-firestore-pending';
+  await cvAnalysisRef.set(cvAnalysisData);
 
     // Trigger CV analysis (this would typically call an AI service)
     // For now, we'll simulate the analysis
@@ -206,10 +221,16 @@ export async function POST(request: NextRequest) {
       analysisId: cvAnalysisRef.id,
       message: "CV uploaded successfully. Analysis in progress...",
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error uploading CV:", error);
+    const isProd = process.env.NODE_ENV === 'production';
     return NextResponse.json(
-      { error: "Internal server error" },
+      {
+        error: "Internal server error",
+        ...(isProd
+          ? {}
+          : { debug: { message: error?.message, stack: error?.stack, cause: error?.cause } }),
+      },
       { status: 500 }
     );
   }

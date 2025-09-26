@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { motion } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
-import { CheckCircle, Crown, ArrowRight } from "lucide-react";
+import { CheckCircle, Crown, ArrowRight, Rocket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -120,7 +120,10 @@ function UpgradeSuccessContent() {
                 </div>
 
                 <div className="space-y-4">
-                  <h3 className="font-semibold text-lg text-blue-700">🚀 What&apos;s Next</h3>
+                  <h3 className="font-semibold text-lg text-blue-700 flex items-center gap-2">
+                    <Rocket className="h-5 w-5" />
+                    What&apos;s Next
+                  </h3>
                   <ul className="space-y-2">
                     <li className="flex items-start gap-2">
                       <ArrowRight className="h-4 w-4 text-blue-500 mt-0.5" />

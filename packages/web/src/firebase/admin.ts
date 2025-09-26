@@ -2,6 +2,7 @@
 import { initializeApp, getApps, cert, applicationDefault, type App } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore, type Firestore } from "firebase-admin/firestore";
+import { getStorage, type Storage } from "firebase-admin/storage";
 
 let adminApp: App | undefined;
 
@@ -24,8 +25,8 @@ function initAdminApp(): App {
       );
       adminApp = initializeApp({
         credential: cert(parsed),
-        projectId:
-          parsed.project_id || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+        projectId: parsed.project_id || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+        storageBucket: process.env.FIREBASE_STORAGE_BUCKET || process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
       });
     } else {
       // Try to load from temp-key.json if GOOGLE_APPLICATION_CREDENTIALS is not set
@@ -38,17 +39,20 @@ function initAdminApp(): App {
           adminApp = initializeApp({
             credential: cert(serviceAccount),
             projectId: serviceAccount.project_id || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+            storageBucket: process.env.FIREBASE_STORAGE_BUCKET || process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
           });
         } else {
           adminApp = initializeApp({
             credential: applicationDefault(),
             projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+            storageBucket: process.env.FIREBASE_STORAGE_BUCKET || process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
           });
         }
       } catch (fileError) {
         adminApp = initializeApp({
           credential: applicationDefault(),
           projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+          storageBucket: process.env.FIREBASE_STORAGE_BUCKET || process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
         });
       }
     }
@@ -65,6 +69,10 @@ export function getAdminApp(): App {
 
 export function getAdminDb(): Firestore {
   return getFirestore(getAdminApp());
+}
+
+export function getAdminStorage(): Storage {
+  return getStorage(getAdminApp());
 }
 
 export async function verifyIdToken(token: string): Promise<import("firebase-admin/auth").DecodedIdToken | null> {

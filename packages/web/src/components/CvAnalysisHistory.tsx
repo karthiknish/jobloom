@@ -6,7 +6,7 @@ import { CvAnalysisResults } from "./CvAnalysisResults";
 import { CvComparison } from "./CvComparison";
 import { CvAnalysisFilters } from "./CvAnalysisFilters";
 import { motion } from "framer-motion";
-import { Eye, Trash2, Loader2, ArrowLeft, BarChart3 } from "lucide-react";
+import { Eye, Trash2, Loader2, ArrowLeft, BarChart3, Search, FileText, Sparkles } from "lucide-react";
 import { showSuccess, showError } from "@/components/ui/Toast";
 import type { CvAnalysis, Id } from "../types/api";
 import { useApiMutation } from "../hooks/useApi";
@@ -17,21 +17,34 @@ import { Badge } from "@/components/ui/badge";
 
 interface CvAnalysisHistoryProps {
   analyses: CvAnalysis[];
+  optimistic?: CvAnalysis | null; // show while waiting for server
 }
 
-export function CvAnalysisHistory({ analyses }: CvAnalysisHistoryProps) {
+export function CvAnalysisHistory({ analyses, optimistic }: CvAnalysisHistoryProps) {
   const [selectedAnalysis, setSelectedAnalysis] = useState<CvAnalysis | null>(
     null
   );
   const [showResults, setShowResults] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
   const [filteredAnalyses, setFilteredAnalyses] =
-    useState<CvAnalysis[]>(analyses);
+    useState<CvAnalysis[]>(analyses || []);
 
   // Update filtered analyses when analyses prop changes
+  // Update when real analyses change
   useEffect(() => {
-    setFilteredAnalyses(analyses);
+    setFilteredAnalyses(analyses || []);
   }, [analyses]);
+
+  // Overlay optimistic placeholder only while there are no real analyses
+  useEffect(() => {
+    const realAnalyses = analyses || [];
+    if (realAnalyses.length === 0 && optimistic) {
+      setFilteredAnalyses([optimistic]);
+    } else if (realAnalyses.length > 0 && optimistic && filteredAnalyses.some(a => a._id === optimistic._id)) {
+      // Remove optimistic placeholder when real analyses arrive
+      setFilteredAnalyses(realAnalyses);
+    }
+  }, [optimistic, analyses, filteredAnalyses]);
 
   const { mutate: deleteAnalysis } = useApiMutation(
     (variables: Record<string, unknown>) => {
@@ -123,25 +136,34 @@ export function CvAnalysisHistory({ analyses }: CvAnalysisHistoryProps) {
   }
 
   if (!filteredAnalyses || filteredAnalyses.length === 0) {
-    const hasOriginalAnalyses = analyses && analyses.length > 0;
+    const realAnalyses = analyses || [];
+    const hasOriginalAnalyses = (realAnalyses && realAnalyses.length > 0) || !!optimistic;
+    const hasOptimisticOnly = !realAnalyses.length && !!optimistic;
     return (
-      <div className="text-center py-12">
-        <div className="text-muted-foreground text-4xl mb-4">
-          {hasOriginalAnalyses ? "🔍" : "📄"}
+        <div className="text-center py-12">
+        <div className="text-muted-foreground mb-4">
+          {hasOriginalAnalyses ? <Search className="h-12 w-12 mx-auto" /> : <FileText className="h-12 w-12 mx-auto" />}
         </div>
         <h3 className="text-lg font-medium text-foreground mb-2">
           {hasOriginalAnalyses
-            ? "No analyses match your filters"
+            ? hasOptimisticOnly
+              ? "Preparing first analysis..."
+              : "No analyses match your filters"
             : "No CV analyses yet"}
         </h3>
         <p className="text-muted-foreground mb-6">
           {hasOriginalAnalyses
-            ? "Try adjusting your search criteria or clearing filters to see more results."
+            ? hasOptimisticOnly
+              ? "Your CV is being processed. This will update automatically."
+              : "Try adjusting your search criteria or clearing filters to see more results."
             : "Upload your first CV to get started with AI-powered analysis and feedback."}
         </p>
         {!hasOriginalAnalyses && (
           <div className="text-sm text-muted-foreground">
-            <p className="mb-2">✨ Get detailed insights about your CV:</p>
+            <p className="mb-2 flex items-center gap-2">
+              <Sparkles className="h-3 w-3" />
+              Get detailed insights about your CV:
+            </p>
             <ul className="text-left space-y-1">
               <li>• ATS compatibility scores</li>
               <li>• Keyword optimization suggestions</li>
@@ -167,9 +189,9 @@ export function CvAnalysisHistory({ analyses }: CvAnalysisHistoryProps) {
         </h3>
         <div className="flex items-center gap-3">
           <span className="text-sm text-muted-foreground bg-gray-100 px-3 py-1 rounded-full">
-            {filteredAnalyses.length} of {analyses.length} analyses
+            {filteredAnalyses.length} of {(analyses || []).length} analyses
           </span>
-          {analyses.length >= 2 && (
+          {(analyses || []).length >= 2 && !optimistic && (
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Button
                 variant="outline"
@@ -187,7 +209,7 @@ export function CvAnalysisHistory({ analyses }: CvAnalysisHistoryProps) {
 
       {/* Filters */}
       <CvAnalysisFilters
-        analyses={analyses}
+        analyses={analyses || []}
         onFilteredAnalyses={setFilteredAnalyses}
       />
 

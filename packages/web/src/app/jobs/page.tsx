@@ -13,6 +13,8 @@ import {
   Clock,
   Users,
   Star,
+  Rocket,
+  Palette,
   ChevronDown,
   X,
 } from "lucide-react";
@@ -100,6 +102,15 @@ const mockJobs = [
     industry: "Design",
   },
 ];
+
+// Helper to get icon component by emoji
+const getJobIcon = (emoji: string) => {
+  const icons: Record<string, any> = {
+    "🚀": Rocket,
+    "🎨": Palette,
+  };
+  return icons[emoji] || Building;
+};
 
 export default function JobsPage() {
   const { user } = useFirebaseAuth();
@@ -421,7 +432,12 @@ export default function JobsPage() {
                     <CardContent className="p-6">
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-4 flex-1">
-                          <div className="text-3xl">{job.logo}</div>
+                          <div className="flex items-center justify-center">
+                            {(() => {
+                              const Icon = getJobIcon(job.logo);
+                              return <Icon className="h-8 w-8" />;
+                            })()}
+                          </div>
                           <div className="flex-1">
                             <div className="flex items-start justify-between mb-2">
                               <div>

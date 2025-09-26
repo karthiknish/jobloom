@@ -10,7 +10,8 @@ import {
   Award,
   BarChart3,
   LineChart,
-  Zap
+  Zap,
+  Lightbulb
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -288,7 +289,10 @@ export function CvImprovementTracker({ analyses }: CvImprovementTrackerProps) {
       {/* Improvement Tips */}
       <Card>
         <CardHeader>
-          <CardTitle>💡 Improvement Insights</CardTitle>
+          <CardTitle>
+            <Lightbulb className="h-5 w-5 inline mr-2" />
+            Improvement Insights
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
@@ -303,7 +307,7 @@ export function CvImprovementTracker({ analyses }: CvImprovementTrackerProps) {
             {overallImprovement > 0 && overallImprovement <= 5 && (
               <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <p className="text-sm text-blue-800">
-                  📈 Steady improvement! Small consistent changes are leading to better results.
+                  <TrendingUp className="h-4 w-4 inline mr-1" /> Steady improvement! Small consistent changes are leading to better results.
                 </p>
               </div>
             )}

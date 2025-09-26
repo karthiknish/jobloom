@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ChevronLeft, ChevronRight, BarChart3, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { ChevronLeft, ChevronRight, BarChart3, TrendingUp, TrendingDown, Minus, AlertTriangle, Search } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -209,7 +209,10 @@ export function CvComparison({ analyses, onBack }: CvComparisonProps) {
               {/* Weaknesses */}
               {analysis.weaknesses && analysis.weaknesses.length > 0 && (
                 <div>
-                  <h4 className="font-medium text-red-700 mb-2">⚠️ Areas for Improvement</h4>
+                  <h4 className="font-medium text-red-700 mb-2 flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4" />
+                    Areas for Improvement
+                  </h4>
                   <ul className="text-sm space-y-1">
                     {analysis.weaknesses.slice(0, 3).map((weakness, i) => (
                       <li key={i} className="flex items-start">
@@ -240,7 +243,10 @@ export function CvComparison({ analyses, onBack }: CvComparisonProps) {
               {/* Keyword Analysis */}
               {analysis.keywordAnalysis && (
                 <div>
-                  <h4 className="font-medium text-purple-700 mb-2">🔍 Keywords</h4>
+                  <h4 className="font-medium text-purple-700 mb-2 flex items-center gap-2">
+                    <Search className="h-4 w-4" />
+                    Keywords
+                  </h4>
                   <div className="flex gap-1 flex-wrap">
                     {analysis.keywordAnalysis.presentKeywords?.slice(0, 5).map((keyword, i) => (
                       <Badge key={i} variant="secondary" className="text-xs">

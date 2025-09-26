@@ -1,11 +1,44 @@
 // components/UpgradePrompt.tsx
 import { useState } from "react";
 import { motion } from "framer-motion";
+import {
+  BarChart3,
+  Bot,
+  Zap,
+  Bell,
+  FileText,
+  Target,
+  TrendingUp,
+  Lightbulb,
+  Save,
+  Sparkles,
+  Users,
+  FileCheck,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useSubscription } from "@/hooks/useSubscription";
 import { SUBSCRIPTION_LIMITS } from "@/types/api";
 import Link from "next/link";
+
+// Helper to get icon component by emoji
+const getIcon = (emoji: string) => {
+  const icons: Record<string, any> = {
+    "📊": BarChart3,
+    "🤖": Bot,
+    "⚡": Zap,
+    "🔔": Bell,
+    "📄": FileText,
+    "🎯": Target,
+    "📈": TrendingUp,
+    "💡": Lightbulb,
+    "💾": Save,
+    "✨": Sparkles,
+    "👥": Users,
+    "📝": FileCheck,
+  };
+  return icons[emoji] || FileText;
+};
 
 const FEATURES = [
   {
@@ -199,7 +232,12 @@ export function UpgradePrompt({ feature }: UpgradePromptProps) {
                 <motion.div key={index} whileHover={{ y: -5 }}>
                   <Card className="bg-white border-gray-100 h-full">
                     <CardContent className="p-6 text-center">
-                      <div className="text-3xl mb-4">{feature.icon}</div>
+                      <div className="mb-4">
+                        {(() => {
+                          const Icon = getIcon(feature.icon);
+                          return <Icon className="h-8 w-8 text-primary" />;
+                        })()}
+                      </div>
                       <h3 className="text-lg font-semibold text-foreground mb-2">
                         {feature.title}
                       </h3>

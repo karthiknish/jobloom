@@ -9,7 +9,7 @@ import { dashboardApi } from "@/utils/api/dashboard";
 import { JobList } from "@/components/dashboard/JobList";
 import { KanbanBoard } from "@/components/dashboard/KanbanBoard";
 import { ExportCsvButton } from "@/components/dashboard/ExportCsvButton";
-import { FileText } from "lucide-react";
+import { FileText, Sparkles, Rocket } from "lucide-react";
 import { UpcomingFollowUps } from "@/components/dashboard/UpcomingFollowUps";
 import { SponsorshipQuickCheck } from "@/components/dashboard/SponsorshipQuickCheck";
 import { JobStatsDashboard } from "@/components/dashboard/JobStatsDashboard";
@@ -349,7 +349,17 @@ export function AdvancedDashboard() {
                         : "bg-gradient-to-r from-gray-200 to-gray-300 text-gray-700 hover:from-gray-300 hover:to-gray-400"
                     }`}
                   >
-                    {plan === "premium" ? "✨ Premium" : "🚀 Free Plan"}
+                    {plan === "premium" ? (
+                      <>
+                        <Sparkles className="h-3 w-3 inline mr-1" />
+                        Premium
+                      </>
+                    ) : (
+                      <>
+                        <Rocket className="h-3 w-3 inline mr-1" />
+                        Free Plan
+                      </>
+                    )}
                   </Badge>
                   {currentUsage &&
                     limits.cvAnalysesPerMonth > 0 &&
@@ -433,7 +443,7 @@ export function AdvancedDashboard() {
             }
             className="mb-8"
           >
-            <TabsList className="bg-white/80 backdrop-blur-xl border border-gray-200/50 p-1 shadow-lg">
+            <TabsList>
               <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                 <TabsTrigger 
                   value="dashboard" 

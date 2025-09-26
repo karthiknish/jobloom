@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from "@google/generative-ai";
 
-// Initialize Gemini AI
-const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY || "");
+// IMPORTANT: Use a server-side (non-public) key. Rename env var to avoid exposing public key usage pattern.
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY || ""; // fallback for current setup
+const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
 // Job/Career related keywords for guardrails
 const ALLOWED_TOPICS = [
@@ -77,13 +78,20 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Create the model with appropriate configuration
+    if (!GEMINI_API_KEY) {
+      return NextResponse.json(
+        { error: "AI service not configured. Missing GEMINI_API_KEY." },
+        { status: 503 }
+      );
+    }
+
+    // Use the faster flash model for lower latency
     const model = genAI.getGenerativeModel({
-      model: "gemini-pro",
+      model: "gemini-1.5-flash",
       generationConfig: {
-        temperature: 0.7,
+        temperature: 0.6,
         topK: 40,
-        topP: 0.95,
+        topP: 0.9,
         maxOutputTokens: 1024,
       },
       safetySettings: [
@@ -135,37 +143,42 @@ ${context ? `Additional context: ${context}` : ''}
 
 Respond as Hireall AI:`;
 
-    // Generate response
-    const result = await model.generateContent(systemPrompt);
+    // Generate response (prefer message array format for future extensibility)
+    const result = await model.generateContent([systemPrompt]);
     const response = await result.response;
-    const generatedText = response.text();
+    const generatedText = response.text().trim();
 
     return NextResponse.json({
       response: generatedText,
       isJobRelated: true
     });
 
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Chatbot API error:", error);
 
-    // Handle specific Gemini API errors
-    if (error instanceof Error) {
-      if (error.message.includes("API_KEY")) {
-        return NextResponse.json(
-          { error: "AI service temporarily unavailable. Please try again later." },
-          { status: 503 }
-        );
-      }
-      if (error.message.includes("SAFETY")) {
-        return NextResponse.json(
-          { error: "I apologize, but I can't assist with that type of request." },
-          { status: 400 }
-        );
-      }
+    const message = error instanceof Error ? error.message : String(error);
+
+    if (message.includes("403") || message.includes("unregistered") || message.includes("Forbidden")) {
+      return NextResponse.json(
+        { error: "Access to AI model forbidden. Verify billing & API key permissions for Gemini." },
+        { status: 502 }
+      );
+    }
+    if (message.includes("API_KEY") || message.includes("Missing API key")) {
+      return NextResponse.json(
+        { error: "AI service not configured. Please add GEMINI_API_KEY on the server." },
+        { status: 503 }
+      );
+    }
+    if (message.toLowerCase().includes("safety")) {
+      return NextResponse.json(
+        { error: "I can't provide a response for that request due to content guidelines." },
+        { status: 400 }
+      );
     }
 
     return NextResponse.json(
-      { error: "Sorry, I'm having trouble processing your request. Please try again." },
+      { error: "Unexpected AI error. Please retry in a moment." },
       { status: 500 }
     );
   }

@@ -17,6 +17,8 @@ import {
   Star,
   Zap,
   Trophy,
+  Rocket,
+  PartyPopper,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -102,6 +104,16 @@ const careerStats = {
       icon: "🚀",
     },
   ],
+};
+
+// Helper to get icon component by emoji
+const getAchievementIcon = (emoji: string) => {
+  const icons: Record<string, any> = {
+    "🎯": Target,
+    "🎉": PartyPopper,
+    "🚀": Rocket,
+  };
+  return icons[emoji] || Award;
 };
 
 const motivationalQuotes = [
@@ -536,7 +548,12 @@ export default function CareerPage() {
                         animate={{ opacity: 1, scale: 1 }}
                         className="p-4 bg-gradient-to-br from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg text-center"
                       >
-                        <div className="text-3xl mb-2">{achievement.icon}</div>
+                        <div className="mb-2 flex items-center justify-center">
+                          {(() => {
+                            const Icon = getAchievementIcon(achievement.icon);
+                            return <Icon className="h-8 w-8" />;
+                          })()}
+                        </div>
                         <h4 className="font-semibold text-yellow-900 mb-1">
                           {achievement.title}
                         </h4>

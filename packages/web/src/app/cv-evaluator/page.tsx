@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { FeatureGate } from "../../components/UpgradePrompt";
 import { CvUploadForm } from "../../components/CvUploadForm";
@@ -9,6 +9,7 @@ import { CvImprovementTracker } from "../../components/CvImprovementTracker";
 import { motion } from "framer-motion";
 import { useApiQuery } from "../../hooks/useApi";
 import { cvEvaluatorApi } from "../../utils/api/cvEvaluator";
+import { ensureFirebaseApp } from "@/firebase/client";
 import {
   FileText,
   BarChart3,
@@ -29,7 +30,10 @@ import {
 import { Skeleton } from "@/components/ui/loading-skeleton";
 
 export default function CvEvaluatorPage() {
-  const { user } = useFirebaseAuth();
+  // Ensure Firebase initialized (prevents transient 'Firestore not initialized' errors)
+  ensureFirebaseApp();
+
+  const { user, loading: authLoading } = useFirebaseAuth();
   const [activeTab, setActiveTab] = useState<"upload" | "history" | "tracking">(
     "upload"
   );
@@ -39,7 +43,8 @@ export default function CvEvaluatorPage() {
       user && user.uid
         ? cvEvaluatorApi.getUserByFirebaseUid(user.uid)
         : Promise.reject(new Error("No user")),
-    [user?.uid]
+    [user?.uid],
+    { enabled: !!user?.uid }
   );
   const userRecord = userRecordQuery.data;
 
@@ -48,33 +53,221 @@ export default function CvEvaluatorPage() {
       userRecord
         ? cvEvaluatorApi.getUserCvAnalyses(userRecord._id)
         : Promise.reject(new Error("No user record")),
-    [userRecord?._id]
+    [userRecord?._id],
+    { enabled: !!userRecord }
   );
   const cvAnalyses = cvAnalysesQuery.data;
+  const [optimisticPending, setOptimisticPending] = useState<any | null>(null);
 
   const cvStatsQuery = useApiQuery(
     () =>
       userRecord
         ? cvEvaluatorApi.getCvAnalysisStats(userRecord._id)
         : Promise.reject(new Error("No user record")),
-    [userRecord?._id]
+    [userRecord?._id],
+    { enabled: !!userRecord }
   );
   const cvStats = cvStatsQuery.data;
 
-  if (!user) {
+  // Show loading while authentication is being checked
+  if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Card className="max-w-md w-full">
-          <CardHeader>
-            <CardTitle>Please sign in to access the CV evaluator</CardTitle>
-            <CardDescription>
-              Get AI-powered insights to improve your CV
-            </CardDescription>
-          </CardHeader>
-        </Card>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pt-16">
+        <div className="bg-gradient-to-r from-primary to-secondary shadow-lg">
+          <div className="relative max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+            <Skeleton className="h-12 w-48" />
+            <Skeleton className="h-4 w-96 mt-2" />
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+          <div className="text-center py-12">
+            <Skeleton className="h-8 w-64 mx-auto mb-4" />
+            <Skeleton className="h-4 w-96 mx-auto" />
+          </div>
+        </div>
       </div>
     );
   }
+
+  // Show login prompt if user is not authenticated
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pt-16">
+        <div className="bg-gradient-to-r from-primary to-secondary shadow-lg">
+          <div className="relative max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+            <h1 className="text-3xl font-bold text-white">CV Evaluator</h1>
+            <p className="mt-2 text-primary-foreground/80">
+              Get AI-powered insights to improve your CV and increase your chances of landing interviews
+            </p>
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+          <div className="text-center py-12">
+            <FileText className="h-16 w-16 mx-auto text-gray-400 mb-4" />
+            <h2 className="text-2xl font-semibold text-gray-900 mb-2">Sign In Required</h2>
+            <p className="text-gray-600 mb-6">Please sign in to access CV evaluation features.</p>
+            <a
+              href="/sign-in"
+              className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-primary hover:bg-primary/90 transition-colors"
+            >
+              Sign In
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading while fetching user record
+  if (userRecordQuery.loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pt-16">
+        <div className="bg-gradient-to-r from-primary to-secondary shadow-lg">
+          <div className="relative max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+            <Skeleton className="h-12 w-48" />
+            <Skeleton className="h-4 w-96 mt-2" />
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+            {[1, 2, 3, 4].map((index) => (
+              <Card key={index} className="shadow-sm border-gray-200">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-10 w-10 rounded-lg" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-8 w-12 mb-2" />
+                  <Skeleton className="h-3 w-24" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          <div className="relative grid grid-cols-3 bg-gray-100 p-1 rounded-lg mb-6 w-[min(480px,100%)]">
+            <Skeleton className="h-10 w-full" />
+          </div>
+          <Card>
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                {[1, 2, 3, 4].map((index) => (
+                  <div key={index} className="flex items-center space-x-4">
+                    <Skeleton className="h-12 w-12 rounded-lg" />
+                    <div className="space-y-2 flex-1">
+                      <Skeleton className="h-4 w-48" />
+                      <Skeleton className="h-3 w-32" />
+                    </div>
+                    <Skeleton className="h-8 w-20 rounded" />
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // Handle error fetching user record (was previously treated as perpetual loading)
+  if (userRecordQuery.error) {
+    const rawMessage = userRecordQuery.error.message;
+    const isProd = process.env.NODE_ENV === 'production';
+    // Only show generic message in production; expose detail in dev for debugging
+    const friendlyMessage = isProd
+      ? 'We could not load your profile right now. Please retry shortly.'
+      : (rawMessage === 'Unknown error'
+          ? 'An unexpected issue occurred while contacting Firestore.'
+          : rawMessage);
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pt-16">
+        <div className="bg-gradient-to-r from-primary to-secondary shadow-lg">
+          <div className="relative max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+            <h1 className="text-3xl font-bold text-white">CV Evaluator</h1>
+            <p className="mt-2 text-primary-foreground/80">
+              Get AI-powered insights to improve your CV and increase your chances of landing interviews
+            </p>
+          </div>
+        </div>
+        <div className="max-w-2xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
+          <Card className="border-red-200">
+            <CardHeader>
+              <CardTitle className="text-red-600">Unable to load your profile</CardTitle>
+              <CardDescription className="whitespace-pre-line">
+                {friendlyMessage}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">
+                This can happen if your network is offline or your session expired. Please try again.
+              </p>
+              {!isProd && (
+                <div className="mb-4 space-y-2 text-xs text-muted-foreground">
+                  <p className="font-medium">Debug details (dev only):</p>
+                  <ul className="list-disc list-inside space-y-1">
+                    <li>Raw error: {rawMessage}</li>
+                    <li>Firebase user: {user?.uid || 'none'}</li>
+                    <li>Check Firestore rules for path users/{user?.uid}</li>
+                    <li>Verify env vars NEXT_PUBLIC_FIREBASE_* present.</li>
+                    <li>Look for blocked network requests (ad/script blockers).</li>
+                  </ul>
+                </div>
+              )}
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={() => userRecordQuery.refetch()}
+                  className="inline-flex items-center px-4 py-2 rounded-md bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors"
+                >
+                  Retry
+                </button>
+                <a
+                  href="/dashboard"
+                  className="inline-flex items-center px-4 py-2 rounded-md border text-sm font-medium text-foreground hover:bg-muted transition-colors"
+                >
+                  Go to Dashboard
+                </a>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  const handleUploadStarted = () => {
+    // Optionally could set a transient state/spinner; kick off refetch soon after
+    setActiveTab('history');
+    // Create an optimistic placeholder so user sees immediate feedback
+    setOptimisticPending({
+      _id: 'optimistic-' + Date.now(),
+      userId: user?.uid || '',
+      fileName: 'Processing CV...',
+      fileSize: undefined,
+      createdAt: Date.now(),
+      analysisStatus: 'pending'
+    });
+    // slight delay to allow server to create pending record
+    setTimeout(() => {
+      cvAnalysesQuery.refetch();
+      cvStatsQuery.refetch();
+    }, 800);
+  };
+
+  const handleUploadSuccess = (analysisId: string) => {
+    // Aggressively refetch list & stats; keep user on history to observe status change
+    cvAnalysesQuery.refetch();
+    cvStatsQuery.refetch();
+    // Remove optimistic once real fetch likely contains entry
+    setTimeout(() => setOptimisticPending(null), 2500);
+    // Poll a couple times for completion (simple lightweight client polling)
+    let attempts = 0;
+    const poll = () => {
+      attempts += 1;
+      cvAnalysesQuery.refetch();
+      if (attempts < 5) {
+        setTimeout(poll, 2000);
+      }
+    };
+    setTimeout(poll, 2000);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pt-16">
@@ -307,7 +500,11 @@ export default function CvEvaluatorPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
             >
-              <CvUploadForm userId={userRecord?._id || ""} />
+              <CvUploadForm
+                userId={user?.uid || ""}
+                onUploadStarted={handleUploadStarted}
+                onUploadSuccess={handleUploadSuccess}
+              />
             </motion.div>
           ) : activeTab === "history" ? (
             <motion.div
@@ -333,7 +530,7 @@ export default function CvEvaluatorPage() {
                   </CardContent>
                 </Card>
               ) : (
-                <CvAnalysisHistory analyses={cvAnalyses || []} />
+                <CvAnalysisHistory analyses={cvAnalyses || []} optimistic={optimisticPending} />
               )}
             </motion.div>
           ) : (

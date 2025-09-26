@@ -29,26 +29,47 @@ export const cvEvaluatorApi = {
   // Temporary shim during migration: treat Firebase UID as user identifier
   getUserByFirebaseUid: async (uid: string): Promise<UserRecord> => {
     const db = getDb();
-    if (!db) throw new Error("Firestore not initialized");
-    const ref = doc(db, "users", uid);
-    const snap = await getDoc(ref);
-    if (snap.exists()) {
-      return { _id: snap.id };
+    try {
+      if (!db) throw new Error("Firestore not initialized");
+      const ref = doc(db, "users", uid);
+      const snap = await getDoc(ref);
+      if (snap.exists()) {
+        return { _id: snap.id };
+      }
+      const { setDoc } = await import("firebase/firestore");
+      const auth = getAuthClient();
+      const u = auth?.currentUser;
+      await setDoc(
+        ref,
+        {
+          email: u?.email ?? "",
+          name: u?.displayName ?? "",
+          createdAt: Date.now(),
+          isAdmin: false,
+        },
+        { merge: true }
+      );
+      return { _id: uid };
+    } catch (err: any) {
+      // Permission denied fallback: call server route to create/fetch user with admin credentials
+      const msg = typeof err?.message === 'string' ? err.message.toLowerCase() : '';
+      if (msg.includes('permission') || msg.includes('missing or insufficient permissions')) {
+        const auth = getAuthClient();
+        const current = auth?.currentUser;
+        if (!current) throw err;
+        const token = await current.getIdToken();
+        const resp = await fetch('/api/cv/user', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!resp.ok) {
+          throw err; // propagate original error if fallback fails
+        }
+        const data = await resp.json();
+        return { _id: data._id || uid };
+      }
+      throw err;
     }
-    const { setDoc } = await import("firebase/firestore");
-    const auth = getAuthClient();
-    const u = auth?.currentUser;
-    await setDoc(
-      ref,
-      {
-        email: u?.email ?? "",
-        name: u?.displayName ?? "",
-        createdAt: Date.now(),
-        isAdmin: false,
-      },
-      { merge: true }
-    );
-    return { _id: uid };
   },
 
   // Backward alias removed; use getUserByFirebaseUid
@@ -77,14 +98,24 @@ export const cvEvaluatorApi = {
       errorMessage?: string;
     };
     return snap.docs.map((d) => {
-      const x = d.data() as FireCv;
+      const x = d.data() as FireCv & { createdAt?: any };
+      // Handle Firestore Timestamp objects
+      let createdAtNum: number;
+      const raw = x.createdAt as any;
+      if (raw && typeof raw === 'object' && typeof raw.toDate === 'function') {
+        createdAtNum = raw.toDate().getTime();
+      } else if (typeof raw === 'number') {
+        createdAtNum = raw;
+      } else {
+        createdAtNum = Date.now();
+      }
       return {
         _id: d.id,
         userId: x.userId,
         fileName: x.fileName ?? "",
         fileSize: x.fileSize ?? 0,
-        createdAt: x.createdAt ?? Date.now(),
-        analysisStatus: x.analysisStatus ?? "completed",
+        createdAt: createdAtNum,
+        analysisStatus: x.analysisStatus ?? "pending",
         overallScore: x.overallScore ?? undefined,
         strengths: Array.isArray(x.strengths) ? x.strengths : [],
         atsCompatibility: x.atsCompatibility ?? undefined,
@@ -119,18 +150,28 @@ export const cvEvaluatorApi = {
     let keywordSum = 0;
     let recent: CvAnalysis | undefined;
     snap.forEach((d) => {
-      const x = d.data() as FireCv;
+      const x = d.data() as FireCv & { createdAt?: any };
       total += 1;
-      const status = x.analysisStatus ?? "completed";
+      const status = x.analysisStatus ?? "pending";
       if (status === "completed") completed += 1;
       if (typeof x.overallScore === "number") sumScore += x.overallScore;
       if (Array.isArray(x.keywords)) keywordSum += x.keywords.length;
+      // Normalize timestamp
+      let createdAtNum: number;
+      const raw = x.createdAt as any;
+      if (raw && typeof raw === 'object' && typeof raw.toDate === 'function') {
+        createdAtNum = raw.toDate().getTime();
+      } else if (typeof raw === 'number') {
+        createdAtNum = raw;
+      } else {
+        createdAtNum = Date.now();
+      }
       const candidate: CvAnalysis = {
         _id: d.id,
         userId: x.userId,
         fileName: x.fileName ?? "",
         fileSize: x.fileSize ?? 0,
-        createdAt: x.createdAt ?? Date.now(),
+        createdAt: createdAtNum,
         analysisStatus: status,
         overallScore: x.overallScore ?? undefined,
         strengths: Array.isArray(x.strengths) ? x.strengths : [],

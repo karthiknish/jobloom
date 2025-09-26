@@ -36,8 +36,14 @@ export function useApiQuery<T>(
       setError(null);
       const result = await queryFn();
       setData(result);
-    } catch (err) {
-      setError(err instanceof ApiError ? err : new ApiError("Unknown error", 500));
+    } catch (err: any) {
+      if (err instanceof ApiError) {
+        setError(err);
+      } else {
+        // Preserve original message if available for easier debugging
+        const message = typeof err?.message === 'string' ? err.message : 'Unknown error';
+        setError(new ApiError(message, 500));
+      }
     } finally {
       setLoading(false);
     }

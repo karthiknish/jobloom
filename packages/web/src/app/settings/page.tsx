@@ -52,16 +52,16 @@ export default function SettingsPage() {
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="profile" className="flex items-center gap-2">
-                <User className="h-4 w-4" />
+              <TabsTrigger value="profile">
+                <User className="h-4 w-4 mr-2" />
                 Profile
               </TabsTrigger>
-              <TabsTrigger value="alerts" className="flex items-center gap-2">
-                <Bell className="h-4 w-4" />
+              <TabsTrigger value="alerts">
+                <Bell className="h-4 w-4 mr-2" />
                 Alerts
               </TabsTrigger>
-              <TabsTrigger value="security" className="flex items-center gap-2">
-                <Shield className="h-4 w-4" />
+              <TabsTrigger value="security">
+                <Shield className="h-4 w-4 mr-2" />
                 Security
               </TabsTrigger>
             </TabsList>
