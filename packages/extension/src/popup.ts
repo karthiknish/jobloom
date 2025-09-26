@@ -1,5 +1,14 @@
 /// <reference types="chrome" />
 import { DEFAULT_WEB_APP_URL } from "./constants";
+import { getAuthInstance, getGoogleProvider } from "./firebase";
+import { get } from "./apiClient";
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signInWithPopup,
+  onAuthStateChanged,
+  signOut as firebaseSignOut,
+} from "firebase/auth";
 
 // Helper function to create SVG strings from Lucide icons
 function createSVGString(iconName: string, size: number = 16): string {
@@ -13,14 +22,17 @@ function createSVGString(iconName: string, size: number = 16): string {
     home: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>`,
     fileText: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`,
   };
-  
+
   return svgIcons[iconName] || "";
 }
 
 // Toast helper (top-level so all functions can use it)
 function showToast(
   message: string,
-  opts: { type?: "success" | "info" | "warning" | "error"; duration?: number } = {}
+  opts: {
+    type?: "success" | "info" | "warning" | "error";
+    duration?: number;
+  } = {}
 ) {
   const { type = "info", duration = 2500 } = opts;
   const root = document.getElementById("toast-root");
@@ -28,7 +40,13 @@ function showToast(
   const el = document.createElement("div");
   el.className = `toast ${type}`;
   const icon =
-    type === "success" ? createSVGString("checkCircle") : type === "warning" ? createSVGString("alertTriangle") : type === "error" ? createSVGString("xCircle") : createSVGString("bell");
+    type === "success"
+      ? createSVGString("checkCircle")
+      : type === "warning"
+      ? createSVGString("alertTriangle")
+      : type === "error"
+      ? createSVGString("xCircle")
+      : createSVGString("bell");
   el.innerHTML = `
     <span class="icon">${icon}</span>
     <div class="message">${message}</div>
@@ -49,9 +67,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const tabContents = document.querySelectorAll(".tab-content");
 
   // Main action buttons
-  const highlightBtn = document.getElementById("highlight-btn");
   const autofillBtn = document.getElementById("autofill-btn");
-  const peopleSearchBtn = document.getElementById("people-search-btn");
+  // const peopleSearchBtn removed (feature deprecated)
   const openBoardBtn = document.getElementById("open-board-btn");
 
   // Settings controls
@@ -69,9 +86,21 @@ document.addEventListener("DOMContentLoaded", () => {
   ) as HTMLSelectElement;
 
   // Auth buttons
-  const signinBtn = document.getElementById("signin-btn");
-  const signupBtn = document.getElementById("signup-btn");
   const signoutBtn = document.getElementById("signout-btn");
+  const emailForm = document.getElementById(
+    "email-auth-form"
+  ) as HTMLFormElement | null;
+  const emailInput = document.getElementById(
+    "auth-email"
+  ) as HTMLInputElement | null;
+  const passwordInput = document.getElementById(
+    "auth-password"
+  ) as HTMLInputElement | null;
+  const googleBtn = document.getElementById(
+    "google-auth-btn"
+  ) as HTMLButtonElement | null;
+  const authError = document.getElementById("auth-error");
+  const authSuccess = document.getElementById("auth-success");
 
   // Job management
   const jobFilters = document.querySelectorAll(".filter-btn");
@@ -84,88 +113,55 @@ document.addEventListener("DOMContentLoaded", () => {
   setupSettingsControls();
 
   // Check authentication status (throttled to prevent flickering)
-  let authCheckInProgress = false;
-  let lastAuthState: string | null = null;
-  const throttledCheckAuth = () => {
-    if (authCheckInProgress) return;
-    authCheckInProgress = true;
-    checkAuthStatus().finally(() => {
-      authCheckInProgress = false;
-    });
-  };
-  throttledCheckAuth();
-
-  async function checkAuthStatus() {
-    const authStatus = document.getElementById("auth-status")!;
-    const statusDot = authStatus.querySelector(".status-dot")!;
-    const statusText = authStatus.querySelector(".status-text")!;
-
-    // Check Firebase authentication
-    const res = await chrome.storage.sync.get(["firebaseUid", "userId"]);
-
-    const firebaseUid = res.firebaseUid || res.userId;
-    const currentAuthState = firebaseUid ? "authenticated" : "unauthenticated";
-
-    // Prevent unnecessary DOM updates if state hasn't changed
-    if (lastAuthState === currentAuthState) {
-      return;
-    }
-    lastAuthState = currentAuthState;
-
-    if (!firebaseUid) {
-      // User not authenticated
-      authStatus.className = "auth-status unauthenticated";
-      (statusDot as HTMLElement).style.background = "#f59e0b";
-      statusText.textContent = "Not signed in";
-
-      // Only update tabs if they're not already hidden/shown correctly
-      const mainTabs = document.querySelectorAll(
-        '.nav-tab[data-tab="dashboard"], .nav-tab[data-tab="jobs"], .nav-tab[data-tab="settings"]'
-      );
-      let needsUpdate = false;
-      mainTabs.forEach((tab) => {
-        if ((tab as HTMLElement).style.display !== "none") {
-          needsUpdate = true;
-        }
-      });
-
-      if (needsUpdate) {
-        mainTabs.forEach((tab) => {
-          (tab as HTMLElement).style.display = "none";
-        });
-        const authTab = document.querySelector(
-          '.nav-tab[data-tab="auth"]'
-        ) as HTMLElement;
-        if (authTab) {
-          authTab.style.display = "flex";
-          // Only switch to auth tab if not already active
-          if (!authTab.classList.contains("active")) {
-            authTab.click();
-          }
-        }
-      }
+  // Firebase auth state observer
+  const auth = getAuthInstance();
+  onAuthStateChanged(auth, (user) => {
+    updateAuthUI(!!user, user?.uid || null);
+    if (user?.uid) {
+      // Persist uid to chrome storage for content scripts/background
+      chrome.storage.sync.set({ firebaseUid: user.uid });
     } else {
-      // User authenticated with Firebase
+      chrome.storage.sync.remove(["firebaseUid"]);
+    }
+  });
+
+  function updateAuthUI(isAuthed: boolean, uid: string | null) {
+    const authStatus = document.getElementById("auth-status")!;
+    const statusDot = authStatus.querySelector(".status-dot") as HTMLElement;
+    const statusText = authStatus.querySelector(".status-text") as HTMLElement;
+    const authTab = document.querySelector(
+      '.nav-tab[data-tab="auth"]'
+    ) as HTMLElement | null;
+    const mainTabs = document.querySelectorAll(
+      '.nav-tab[data-tab="dashboard"], .nav-tab[data-tab="jobs"], .nav-tab[data-tab="settings"]'
+    );
+    const signoutBtnEl = signoutBtn as HTMLElement | null;
+    const formContainer = document.getElementById(
+      "auth-form-container"
+    ) as HTMLElement | null;
+
+    if (!isAuthed) {
+      authStatus.className = "auth-status unauthenticated";
+      statusDot.style.background = "#f59e0b";
+      statusText.textContent = "Not signed in";
+      mainTabs.forEach((t) => ((t as HTMLElement).style.display = "none"));
+      if (authTab) authTab.style.display = "flex";
+      if (authTab && !authTab.classList.contains("active")) authTab.click();
+      if (signoutBtnEl) signoutBtnEl.style.display = "none";
+      if (formContainer) formContainer.style.display = "flex";
+    } else {
       authStatus.className = "auth-status authenticated";
-      (statusDot as HTMLElement).style.background = "#10b981";
-      statusText.textContent = "Firebase: Signed in";
-
-      // Only update tabs if they're not already shown
+      statusDot.style.background = "#10b981";
+      statusText.textContent = "Signed in";
       const allTabs = document.querySelectorAll(".nav-tab");
-      let needsUpdate = false;
-      allTabs.forEach((tab) => {
-        if ((tab as HTMLElement).style.display !== "flex") {
-          needsUpdate = true;
-        }
-      });
-
-      if (needsUpdate) {
-        allTabs.forEach((tab) => {
-          (tab as HTMLElement).style.display = "flex";
-        });
-        // Load jobs for the jobs tab
-        loadJobs();
-      }
+      allTabs.forEach((t) => ((t as HTMLElement).style.display = "flex"));
+      if (signoutBtnEl) signoutBtnEl.style.display = "flex";
+      if (formContainer) formContainer.style.display = "none";
+      loadJobs();
+    }
+    if (authSuccess) {
+      authSuccess.style.display = isAuthed ? "block" : "none";
+      authSuccess.textContent = isAuthed ? "Authenticated" : "";
     }
   }
 
@@ -301,11 +297,17 @@ document.addEventListener("DOMContentLoaded", () => {
       if (jobs.length === 0) {
         jobList.innerHTML = `
           <div style="text-align: center; color: var(--muted); padding: 40px 20px;">
-            <div style="font-size: 48px; margin-bottom: 16px;">${createSVGString("clipboardPlus", 48)}</div>
+            <div style="font-size: 48px; margin-bottom: 16px;">${createSVGString(
+              "clipboardPlus",
+              48
+            )}</div>
             <h3 style="margin: 0 0 8px 0; color: #374151;">No jobs tracked yet</h3>
             <p style="margin: 0; font-size: 14px;">Jobs you add to your board will appear here</p>
             <button class="action-btn" style="margin-top: 16px; padding: 8px 16px; font-size: 12px;" onclick="switchToDashboard()">
-              <div class="action-icon primary">${createSVGString("target", 20)}</div>
+              <div class="action-icon primary">${createSVGString(
+                "target",
+                20
+              )}</div>
               <div class="action-content">
                 <h3 style="font-size: 14px; margin: 0;">Find Jobs Now</h3>
                 <p style="font-size: 12px; margin: 4px 0 0 0;">Browse job sites to get started</p>
@@ -392,7 +394,10 @@ document.addEventListener("DOMContentLoaded", () => {
               </span>
               ${
                 job.sponsorshipInfo?.isSponsored
-                  ? `<span class="job-badge badge-sponsored">${createSVGString("target", 12)} ${
+                  ? `<span class="job-badge badge-sponsored">${createSVGString(
+                      "target",
+                      12
+                    )} ${
                       job.sponsorshipInfo.sponsorshipType || "Sponsored"
                     }</span>`
                   : ""
@@ -404,7 +409,10 @@ document.addEventListener("DOMContentLoaded", () => {
               }
               ${
                 job.remoteWork
-                  ? `<span class="job-badge badge-remote">${createSVGString("home", 12)} Remote</span>`
+                  ? `<span class="job-badge badge-remote">${createSVGString(
+                      "home",
+                      12
+                    )} Remote</span>`
                   : ""
               }
             </div>
@@ -420,8 +428,14 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             <div class="job-actions">
-              <div class="sponsor-status" id="sponsor-status-${job.id}" style="display: none;">Checking...</div>
-              <button class="job-action-btn" onclick="checkJobSponsor('${job.id}', '${job.company.replace(/'/g, "\\'")}')" id="sponsor-btn-${job.id}">
+              <div class="sponsor-status" id="sponsor-status-${
+                job.id
+              }" style="display: none;">Checking...</div>
+              <button class="job-action-btn" onclick="checkJobSponsor('${
+                job.id
+              }', '${job.company.replace(/'/g, "\\'")}')" id="sponsor-btn-${
+            job.id
+          }">
                 🇬🇧 Check Sponsor
               </button>
               ${
@@ -460,7 +474,10 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("Error loading jobs:", error);
       jobList.innerHTML = `
         <div style="text-align: center; color: var(--error); padding: 20px;">
-          <div style="font-size: 32px; margin-bottom: 8px;">${createSVGString("xCircle", 32)}</div>
+          <div style="font-size: 32px; margin-bottom: 8px;">${createSVGString(
+            "xCircle",
+            32
+          )}</div>
           <p>Failed to load jobs. Please try again.</p>
         </div>
       `;
@@ -523,16 +540,6 @@ document.addEventListener("DOMContentLoaded", () => {
   (window as any).openJobUrl = openJobUrl;
   (window as any).switchToDashboard = switchToDashboard;
 
-  highlightBtn?.addEventListener("click", () => {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs[0]?.id) {
-        // The content script handles the highlighting now
-        chrome.tabs.sendMessage(tabs[0].id, { action: "toggleHighlight" });
-        window.close(); // Close popup after triggering
-      }
-    });
-  });
-
   autofillBtn?.addEventListener("click", () => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs[0]?.id) {
@@ -553,22 +560,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  peopleSearchBtn?.addEventListener("click", () => {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs[0]?.id) {
-        // Check if we're on LinkedIn Jobs page
-        if (tabs[0].url?.includes("linkedin.com/jobs")) {
-          chrome.tabs.sendMessage(tabs[0].id, { action: "togglePeopleSearch" });
-          window.close(); // Close popup after triggering
-        } else {
-          // Toast: navigate to LinkedIn
-          showToast("Open a LinkedIn Job page to use People Search.", {
-            type: "warning",
-          });
-        }
-      }
-    });
-  });
+  // People search button removed
 
   openBoardBtn?.addEventListener("click", () => {
     chrome.storage.sync.get(["webAppUrl"], (result) => {
@@ -578,28 +570,80 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // Authentication: open web app sign-in/up pages
-  function openAuthPage(mode: "sign-in" | "sign-up", provider?: "google") {
-    chrome.storage.sync.get(["webAppUrl"], (result) => {
-      const appBase = (
-        result.webAppUrl ||
-        process.env.WEB_APP_URL ||
-        DEFAULT_WEB_APP_URL
-      ).replace(/\/$/, "");
-      const path = mode === "sign-in" ? "/sign-in" : "/sign-up";
-      const url = provider
-        ? `${appBase}${path}?provider=${provider}&google=1&redirect_url=${encodeURIComponent(
-            "/extension/connect"
-          )}`
-        : `${appBase}${path}?redirect_url=${encodeURIComponent(
-            "/extension/connect"
-          )}`;
-      chrome.tabs.create({ url });
-      window.close();
-    });
-  }
+  // Email/password auth form
+  emailForm?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!emailInput?.value || !passwordInput?.value) return;
+    clearAuthMessages();
+    const btn = document.getElementById(
+      "email-auth-submit"
+    ) as HTMLButtonElement;
+    const original = btn.textContent;
+    btn.textContent = "Processing...";
+    btn.disabled = true;
+    try {
+      try {
+        await signInWithEmailAndPassword(
+          auth,
+          emailInput.value.trim(),
+          passwordInput.value.trim()
+        );
+        showAuthSuccess("Signed in");
+      } catch (err: any) {
+        if (err.code && err.code.includes("user-not-found")) {
+          await createUserWithEmailAndPassword(
+            auth,
+            emailInput.value.trim(),
+            passwordInput.value.trim()
+          );
+          showAuthSuccess("Account created");
+        } else {
+          throw err;
+        }
+      }
+    } catch (err: any) {
+      showAuthError(err.message || "Authentication failed");
+    } finally {
+      btn.textContent = original;
+      btn.disabled = false;
+    }
+  });
 
-  signinBtn?.addEventListener("click", () => openAuthPage("sign-in"));
-  signupBtn?.addEventListener("click", () => openAuthPage("sign-up"));
+  googleBtn?.addEventListener("click", async () => {
+    clearAuthMessages();
+    googleBtn.disabled = true;
+    googleBtn.textContent = "Opening Google...";
+    try {
+      await signInWithPopup(auth, getGoogleProvider());
+      showAuthSuccess("Signed in with Google");
+    } catch (err: any) {
+      showAuthError(err.message || "Google sign-in failed");
+    } finally {
+      googleBtn.textContent = "Continue with Google";
+      googleBtn.disabled = false;
+    }
+  });
+
+  function showAuthError(msg: string) {
+    if (authError) {
+      authError.textContent = msg;
+      authError.style.display = "block";
+    } else {
+      showToast(msg, { type: "error" });
+    }
+  }
+  function showAuthSuccess(msg: string) {
+    if (authSuccess) {
+      authSuccess.textContent = msg;
+      authSuccess.style.display = "block";
+    } else {
+      showToast(msg, { type: "success" });
+    }
+  }
+  function clearAuthMessages() {
+    if (authError) authError.style.display = "none";
+    if (authSuccess) authSuccess.style.display = "none";
+  }
 
   // Sign out logic
   signoutBtn?.addEventListener("click", () => {
@@ -609,31 +653,14 @@ document.addEventListener("DOMContentLoaded", () => {
   // Authentication flows are handled in the web app using Firebase.
 
   async function signOut() {
-    chrome.storage.sync.remove(["firebaseUid", "userId"], () => {
-      // Attempt to clear any web-app session artifacts (optional)
-      chrome.tabs.query({}, (tabs) => {
-        tabs.forEach((tab) => {
-          if (
-            tab.url &&
-            (tab.url.includes("localhost") || tab.url.includes("hireall"))
-          ) {
-            chrome.scripting
-              .executeScript({
-                target: { tabId: tab.id! },
-                func: () => {
-                  localStorage.removeItem("__firebase_user");
-                },
-              })
-              .catch(() => {
-                // Ignore errors
-              });
-          }
-        });
-      });
-
-      // Reload the popup; UI will revert to signed-out state
-      window.location.reload();
-    });
+    try {
+      await firebaseSignOut(auth);
+      chrome.storage.sync.remove(["firebaseUid", "userId"], () => {});
+      updateAuthUI(false, null);
+      showToast("Signed out", { type: "info" });
+    } catch (e) {
+      showToast("Sign out failed", { type: "error" });
+    }
   }
 
   // ensureUserExists is no longer needed with Firebase; web app handles user creation
@@ -742,8 +769,11 @@ function saveSettings() {
   });
 }
 
-
-function showResult(element: HTMLElement, message: string, type: "success" | "error" | "warning" | "info") {
+function showResult(
+  element: HTMLElement,
+  message: string,
+  type: "success" | "error" | "warning" | "info"
+) {
   element.textContent = message;
   element.className = `result-box ${type}`;
   element.style.display = "block";
@@ -751,8 +781,12 @@ function showResult(element: HTMLElement, message: string, type: "success" | "er
 
 // Global function for checking job sponsors (called from HTML onclick)
 async function checkJobSponsor(jobId: string, companyName: string) {
-  const sponsorBtn = document.getElementById(`sponsor-btn-${jobId}`) as HTMLButtonElement;
-  const sponsorStatus = document.getElementById(`sponsor-status-${jobId}`) as HTMLDivElement;
+  const sponsorBtn = document.getElementById(
+    `sponsor-btn-${jobId}`
+  ) as HTMLButtonElement;
+  const sponsorStatus = document.getElementById(
+    `sponsor-status-${jobId}`
+  ) as HTMLDivElement;
 
   if (!sponsorBtn || !sponsorStatus) return;
 
@@ -764,38 +798,57 @@ async function checkJobSponsor(jobId: string, companyName: string) {
   sponsorStatus.className = "sponsor-status checking";
 
   try {
-    // Get the web app URL from storage or use default
-    const webAppUrl = await new Promise<string>((resolve) => {
-      chrome.storage.sync.get(["webAppUrl"], (result) => {
-        resolve(result.webAppUrl || DEFAULT_WEB_APP_URL);
+    let result: any | null = null;
+    try {
+      const data = await get<any>("/api/app/sponsorship/companies", {
+        q: companyName,
+        limit: 1,
       });
-    });
+      if (data && data.results && data.results.length > 0) {
+        result = data.results[0];
+      }
+    } catch (e) {
+      console.warn("Sponsor lookup error", e);
+    }
 
-    const response = await fetch(`${webAppUrl}/api/sponsors?q=${encodeURIComponent(companyName)}&limit=1`);
-    const data = await response.json();
-
-    if (data.success && data.results.length > 0) {
-      const result = data.results[0];
+    if (result) {
       const isSkilledWorker = result.isSkilledWorker;
 
       if (isSkilledWorker) {
         sponsorStatus.textContent = "Licensed";
         sponsorStatus.className = "sponsor-status licensed";
-        showToast(`${createSVGString("checkCircle")} ${result.name} is a licensed sponsor!`, { type: "success" });
+        showToast(
+          `${createSVGString("checkCircle")} ${
+            result.name
+          } is a licensed sponsor!`,
+          { type: "success" }
+        );
       } else {
         sponsorStatus.textContent = "Not SW";
         sponsorStatus.className = "sponsor-status not-licensed";
-        showToast(`${createSVGString("alertTriangle")} ${result.name} is licensed but not for Skilled Worker visas`, { type: "warning" });
+        showToast(
+          `${createSVGString("alertTriangle")} ${
+            result.name
+          } is licensed but not for Skilled Worker visas`,
+          { type: "warning" }
+        );
       }
     } else {
       sponsorStatus.textContent = "Not Found";
       sponsorStatus.className = "sponsor-status not-licensed";
-      showToast(`${createSVGString("xCircle")} ${companyName} not found in sponsor register`, { type: "error" });
+      showToast(
+        `${createSVGString(
+          "xCircle"
+        )} ${companyName} not found in sponsor register`,
+        { type: "error" }
+      );
     }
   } catch (error) {
     sponsorStatus.textContent = "Error";
     sponsorStatus.className = "sponsor-status not-licensed";
-    showToast(`${createSVGString("xCircle")} Error checking sponsor status`, { type: "error" });
+    showToast(`${createSVGString("xCircle")} Error checking sponsor status`, {
+      type: "error",
+    });
   } finally {
     sponsorBtn.disabled = false;
     sponsorBtn.textContent = "🇬🇧 Check Sponsor";

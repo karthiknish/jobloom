@@ -1,4 +1,6 @@
 import { DEFAULT_WEB_APP_URL } from "./constants";
+import { getAuthInstance } from "./firebase";
+import { get, post, put } from "./apiClient";
 // addToBoard.ts - Utility functions for adding jobs to the user's board
 
 interface JobData {
@@ -159,17 +161,10 @@ export class JobBoardManager {
         };
       }
 
-      // Get Web App URL
-      const webAppUrl = (await this.getWebAppUrl()).replace(/\/$/, "");
-
-      // Generate client ID for rate limiting
-      const clientId = await this.getOrCreateClientId();
-
-      // Create job via web API with comprehensive LinkedIn data
-      const response = await fetch(`${webAppUrl}/api/app/jobs`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      // Create job via API client
+      let createdJobId: string | null = null;
+      try {
+        createdJobId = await post<string>("/api/app/jobs", {
           title: jobData.title,
           company: jobData.company,
           location: jobData.location,
@@ -192,80 +187,58 @@ export class JobBoardManager {
           sponsorshipType: jobData.sponsorshipType || undefined,
           source: jobData.source || "extension",
           userId: userId,
-        }),
-      });
-
-      if (response.status === 429) {
+        });
+      } catch (e: any) {
+        const msg = (e?.message || "").toLowerCase();
+        if (msg.includes("429")) {
+          return {
+            success: false,
+            message: "Rate limit exceeded. Please try again later.",
+          };
+        }
         return {
           success: false,
-          message: "Rate limit exceeded. Please try again later.",
+          message: "Failed to add job to board. Please try again.",
         };
       }
 
-      if (response.ok) {
-        let createdJobId: string | null = null;
+      if (createdJobId) {
         try {
-          const created = await response.json();
-          createdJobId = created || null;
-        } catch {}
-
-        // Create application with selected status if we have a job id
-        if (createdJobId) {
-          try {
-            await fetch(`${webAppUrl}/api/app/applications`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                jobId: createdJobId,
-                userId: userId,
-                status: status,
-                appliedDate: status === "applied" ? Date.now() : undefined,
-              }),
-            });
-          } catch (e) {
-            console.warn("Failed to create application with status", e);
-          }
-        }
-
-        // Update local stats
-        chrome.storage.local.get(["jobBoardStats"], (result) => {
-          const stats = result.jobBoardStats || {
-            totalAdded: 0,
-            addedToday: 0,
-            lastResetDate: new Date().toDateString(),
-          };
-
-          // Reset daily count if it's a new day
-          const today = new Date().toDateString();
-          if (stats.lastResetDate !== today) {
-            stats.addedToday = 0;
-            stats.lastResetDate = today;
-          }
-
-          stats.totalAdded++;
-          stats.addedToday++;
-
-          chrome.storage.local.set({ jobBoardStats: stats });
-        });
-
-        return {
-          success: true,
-          message: `Job added and status set to "${status}"`,
-        };
-      } else {
-        const errorText = await response.text();
-        if (errorText.includes("Rate limit exceeded")) {
-          return {
-            success: false,
-            message: "Server rate limit exceeded. Please try again later.",
-          };
-        } else {
-          return {
-            success: false,
-            message: "Failed to add job to board. Please try again.",
-          };
+          await post("/api/app/applications", {
+            jobId: createdJobId,
+            userId: userId,
+            status: status,
+            appliedDate: status === "applied" ? Date.now() : undefined,
+          });
+        } catch (e) {
+          console.warn("Failed to create application with status", e);
         }
       }
+
+      // Update local stats
+      chrome.storage.local.get(["jobBoardStats"], (result) => {
+        const stats = result.jobBoardStats || {
+          totalAdded: 0,
+          addedToday: 0,
+          lastResetDate: new Date().toDateString(),
+        };
+
+        const today = new Date().toDateString();
+        if (stats.lastResetDate !== today) {
+          stats.addedToday = 0;
+          stats.lastResetDate = today;
+        }
+
+        stats.totalAdded++;
+        stats.addedToday++;
+
+        chrome.storage.local.set({ jobBoardStats: stats });
+      });
+
+      return {
+        success: true,
+        message: `Job added and status set to "${status}"`,
+      };
     } catch (error) {
       console.error("Error adding job to board:", error);
       return {
@@ -376,21 +349,15 @@ export class JobBoardManager {
         };
       }
 
-      const webAppUrl = (await this.getWebAppUrl()).replace(/\/$/, "");
-
-      // First, get the application for this job
-      const applicationsResponse = await fetch(
-        `${webAppUrl}/api/app/applications/user/${encodeURIComponent(userId)}`
-      );
-
-      if (!applicationsResponse.ok) {
-        return {
-          success: false,
-          message: "Failed to fetch applications.",
-        };
+      // Get all user applications via api client
+      let applications: any[] = [];
+      try {
+        applications = await get<any[]>(
+          `/api/app/applications/user/${encodeURIComponent(userId)}`
+        );
+      } catch {
+        return { success: false, message: "Failed to fetch applications." };
       }
-
-      const applications = await applicationsResponse.json();
       const application = applications.find((app: any) => app.jobId === jobId);
 
       if (!application) {
@@ -422,24 +389,15 @@ export class JobBoardManager {
         }
       }
 
-      const updateResponse = await fetch(
-        `${webAppUrl}/api/app/applications/${application.id}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(updateData),
-        }
-      );
-
-      if (updateResponse.ok) {
+      try {
+        await put(`/api/app/applications/${application.id}`, updateData);
         // Update local storage
         this.updateLocalJobStatus(jobId, newStatus, notes);
-
         return {
           success: true,
           message: `Job status updated to "${newStatus}"`,
         };
-      } else {
+      } catch {
         return {
           success: false,
           message: "Failed to update job status. Please try again.",
@@ -461,37 +419,32 @@ export class JobBoardManager {
       const userId = await this.getUserId();
       if (!userId) return null;
 
-      const webAppUrl = (await this.getWebAppUrl()).replace(/\/$/, "");
+      let jobData: any = null;
+      try {
+        jobData = await get(`/api/app/jobs/${encodeURIComponent(jobId)}`);
+      } catch {
+        return null;
+      }
 
-      const response = await fetch(
-        `${webAppUrl}/api/app/jobs/${encodeURIComponent(jobId)}`
+      let applications: any[] = [];
+      try {
+        applications = await get<any[]>(
+          `/api/app/applications/user/${encodeURIComponent(userId)}`
+        );
+      } catch {}
+
+      const applicationData = applications.find(
+        (app: any) => app.jobId === jobId
       );
 
-      if (response.ok) {
-        const jobData = await response.json();
-
-        // Get associated application data
-        const applicationsResponse = await fetch(
-          `${webAppUrl}/api/app/applications/user/${encodeURIComponent(userId)}`
-        );
-
-        let applicationData = null;
-        if (applicationsResponse.ok) {
-          const applications = await applicationsResponse.json();
-          applicationData = applications.find(
-            (app: any) => app.jobId === jobId
-          );
-        }
-
-        return {
-          ...jobData,
-          applicationId: applicationData?.id,
-          appliedDate: applicationData?.appliedDate,
-          lastUpdated: applicationData?.updatedAt,
-          interviewDate: applicationData?.interviewDate,
-          status: applicationData?.status || "interested",
-        };
-      }
+      return {
+        ...jobData,
+        applicationId: applicationData?.id,
+        appliedDate: applicationData?.appliedDate,
+        lastUpdated: applicationData?.updatedAt,
+        interviewDate: applicationData?.interviewDate,
+        status: applicationData?.status || "interested",
+      };
 
       return null;
     } catch (error) {
@@ -505,26 +458,20 @@ export class JobBoardManager {
       const userId = await this.getUserId();
       if (!userId) return [];
 
-      const webAppUrl = (await this.getWebAppUrl()).replace(/\/$/, "");
-
-      // Get jobs
-      const jobsResponse = await fetch(
-        `${webAppUrl}/api/app/jobs/user/${encodeURIComponent(userId)}`
-      );
-
-      if (!jobsResponse.ok) return [];
-
-      const jobs = await jobsResponse.json();
-
-      // Get applications
-      const applicationsResponse = await fetch(
-        `${webAppUrl}/api/app/applications/user/${encodeURIComponent(userId)}`
-      );
-
-      let applications: any[] = [];
-      if (applicationsResponse.ok) {
-        applications = await applicationsResponse.json();
+      let jobs: any[] = [];
+      try {
+        jobs = await get<any[]>(
+          `/api/app/jobs/user/${encodeURIComponent(userId)}`
+        );
+      } catch {
+        return [];
       }
+      let applications: any[] = [];
+      try {
+        applications = await get<any[]>(
+          `/api/app/applications/user/${encodeURIComponent(userId)}`
+        );
+      } catch {}
 
       // Merge job and application data
       return jobs.map((job: any) => {
@@ -564,28 +511,15 @@ export class JobBoardManager {
         };
       }
 
-      const webAppUrl = (await this.getWebAppUrl()).replace(/\/$/, "");
-
-      const response = await fetch(`${webAppUrl}/api/app/follow-ups`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      try {
+        await post("/api/app/follow-ups", {
           applicationId,
           userId,
           ...followUpData,
-        }),
-      });
-
-      if (response.ok) {
-        return {
-          success: true,
-          message: "Follow-up scheduled successfully.",
-        };
-      } else {
-        return {
-          success: false,
-          message: "Failed to schedule follow-up.",
-        };
+        });
+        return { success: true, message: "Follow-up scheduled successfully." };
+      } catch {
+        return { success: false, message: "Failed to schedule follow-up." };
       }
     } catch (error) {
       console.error("Error adding follow-up:", error);

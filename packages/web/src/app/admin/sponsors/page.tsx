@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import {
   Building2,
   Search,
-  Filter,
   MoreHorizontal,
   Plus,
   Edit,
@@ -13,9 +12,6 @@ import {
   Eye,
   BarChart3,
   TrendingUp,
-  Globe,
-  Users,
-  DollarSign,
   Activity,
 } from "lucide-react";
 
@@ -64,10 +60,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import toast from "react-hot-toast";
 
@@ -85,11 +79,7 @@ interface SponsoredCompany {
   updatedAt?: number;
 }
 
-interface SponsorStats {
-  totalSponsoredCompanies: number;
-  industryStats: Record<string, number>;
-  sponsorshipTypeStats: Record<string, number>;
-}
+
 
 export default function AdminSponsorsDashboard() {
   const { user } = useFirebaseAuth();
@@ -197,7 +187,7 @@ export default function AdminSponsorsDashboard() {
       toast.success(`${companyName} has been removed from sponsored companies`);
       refetchCompanies();
       refetchStats();
-    } catch (error) {
+    } catch {
       toast.error("Failed to delete sponsor");
     }
   };
@@ -724,7 +714,9 @@ export default function AdminSponsorsDashboard() {
                   <div>
                     <Label className="text-sm font-medium">Last Updated</Label>
                     <p className="text-sm text-muted-foreground">
-                      {new Date(selectedSponsor.updatedAt).toLocaleDateString()}
+                      {selectedSponsor.updatedAt
+                        ? new Date(selectedSponsor.updatedAt).toLocaleDateString()
+                        : "Never"}
                     </p>
                   </div>
                 </div>

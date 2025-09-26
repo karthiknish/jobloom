@@ -36,15 +36,15 @@ export default function FAQSection() {
   };
 
   return (
-    <section className="py-20 bg-gray-50">
+    <section className="py-20 bg-muted">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2
-            className={`text-3xl font-bold text-gray-900 sm:text-4xl ${playfair.className}`}
+            className={`text-3xl font-bold text-foreground sm:text-4xl ${playfair.className}`}
           >
             Frequently Asked Questions
           </h2>
-          <p className="mt-4 text-xl text-gray-600">
+          <p className="mt-4 text-xl text-muted-foreground">
             Everything you need to know about Hireall
           </p>
         </div>
@@ -63,9 +63,9 @@ export default function FAQSection() {
                   transition={{ duration: 0.2 }}
                 >
                   {openIndex === i ? (
-                    <ChevronUp className="w-5 h-5 text-gray-500" />
+                    <ChevronUp className="w-5 h-5 text-muted-foreground" />
                   ) : (
-                    <ChevronDown className="w-5 h-5 text-gray-500" />
+                    <ChevronDown className="w-5 h-5 text-muted-foreground" />
                   )}
                 </motion.div>
               </CardHeader>
@@ -79,7 +79,7 @@ export default function FAQSection() {
                     transition={{ duration: 0.2, ease: "easeInOut" }}
                   >
                     <CardContent>
-                      <p className="text-gray-600">{faq.a}</p>
+                      <p className="text-muted-foreground">{faq.a}</p>
                     </CardContent>
                   </motion.div>
                 )}

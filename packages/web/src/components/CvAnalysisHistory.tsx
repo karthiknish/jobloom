@@ -188,7 +188,7 @@ export function CvAnalysisHistory({ analyses, optimistic }: CvAnalysisHistoryPro
           Analysis History
         </h3>
         <div className="flex items-center gap-3">
-          <span className="text-sm text-muted-foreground bg-gray-100 px-3 py-1 rounded-full">
+          <span className="text-sm text-muted-foreground bg-muted px-3 py-1 rounded-full">
             {filteredAnalyses.length} of {(analyses || []).length} analyses
           </span>
           {(analyses || []).length >= 2 && !optimistic && (
@@ -234,7 +234,7 @@ export function CvAnalysisHistory({ analyses, optimistic }: CvAnalysisHistoryPro
             }}
             whileHover={{ y: -2, scale: 1.01 }}
           >
-            <Card className="shadow-sm border-gray-200 hover:shadow-md transition-all duration-200">
+            <Card className="shadow-sm border-border hover:shadow-md transition-all duration-200">
               <CardContent className="p-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex-1 min-w-0">
@@ -366,7 +366,7 @@ export function CvAnalysisHistory({ analyses, optimistic }: CvAnalysisHistoryPro
           transition={{ delay: 0.15, duration: 0.3 }}
           className="text-center pt-6"
         >
-          <div className="bg-gray-50 rounded-lg p-4 inline-block">
+          <div className="bg-muted rounded-lg p-4 inline-block">
             <p className="text-sm text-muted-foreground">
               Showing {analyses.length} analyses. Older analyses are automatically
               archived after 90 days.

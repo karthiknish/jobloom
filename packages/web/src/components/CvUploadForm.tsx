@@ -153,7 +153,7 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted }: CvUpl
       transition={{ duration: 0.4 }}
       className="w-full max-w-2xl mx-auto"
     >
-      <Card className="shadow-sm border-gray-200">
+      <Card className="shadow-sm border-border">
         <CardHeader className="pb-4">
           <CardTitle className="text-lg">Upload Your CV for Analysis</CardTitle>
           <CardDescription className="text-base">

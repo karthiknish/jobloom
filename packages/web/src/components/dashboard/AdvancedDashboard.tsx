@@ -10,9 +10,7 @@ import { JobList } from "@/components/dashboard/JobList";
 import { KanbanBoard } from "@/components/dashboard/KanbanBoard";
 import { ExportCsvButton } from "@/components/dashboard/ExportCsvButton";
 import { FileText, Sparkles, Rocket } from "lucide-react";
-import { UpcomingFollowUps } from "@/components/dashboard/UpcomingFollowUps";
-import { SponsorshipQuickCheck } from "@/components/dashboard/SponsorshipQuickCheck";
-import { JobStatsDashboard } from "@/components/dashboard/JobStatsDashboard";
+
 import { ApplicationForm } from "@/components/dashboard/ApplicationForm";
 import { JobForm } from "@/components/dashboard/JobForm";
 import { ExtensionIntegration } from "@/components/dashboard/ExtensionIntegration";
@@ -36,14 +34,8 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cvEvaluatorApi } from "@/utils/api/cvEvaluator";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
+
+
 import { Badge } from "@/components/ui/badge";
 import { useSubscription } from "@/hooks/useSubscription";
 import { PremiumUpgradeBanner } from "@/components/dashboard/PremiumUpgradeBanner";
@@ -111,8 +103,6 @@ export function AdvancedDashboard() {
 
   // Use the new hooks
   const { dashboardLayout, handleLayoutChange } = useDashboardLayout();
-  const applicationManagement = useApplicationManagement(refetchApplications);
-  const jobManagement = useJobManagement(refetchJobStats);
 
   // Fetch user record
   const { data: userRecord } = useApiQuery(
@@ -163,6 +153,10 @@ export function AdvancedDashboard() {
     }
   }, [savedViewsData]);
 
+  // Initialize management hooks after refetch functions are available
+  const applicationManagement = useApplicationManagement(refetchApplications);
+  const jobManagement = useJobManagement(refetchJobStats);
+
   const hasApplications =
     Array.isArray(applications) && applications.length > 0;
 
@@ -208,7 +202,7 @@ export function AdvancedDashboard() {
   // Define dashboard widgets using the hook
   const dashboardWidgets = useDashboardWidgets({
     jobStats,
-    applications,
+    applications: applications || [],
     hasApplications,
     userRecord,
     onEditApplication: applicationManagement.handleEditApplication,

@@ -7,7 +7,7 @@ interface RateLimitInfoProps {
 
 export function RateLimitInfo({ rateLimit }: RateLimitInfoProps) {
   return (
-    <div className="text-sm text-gray-600">
+    <div className="text-sm text-muted-foreground">
       <span className="mr-4">
         Requests remaining: <span className="font-medium">{rateLimit.remaining}</span>/5
       </span>

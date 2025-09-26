@@ -249,12 +249,12 @@ export function ApplicationForm({
                   <ul className="text-sm mt-1 space-y-1">
                     {application.job.requirements.slice(0, 3).map((req, index) => (
                       <li key={index} className="flex items-start gap-1">
-                        <span className="text-gray-400">•</span>
+                        <span className="text-muted-foreground">•</span>
                         {req}
                       </li>
                     ))}
                     {application.job.requirements.length > 3 && (
-                      <li className="text-gray-500 text-xs">
+                      <li className="text-muted-foreground text-xs">
                         +{application.job.requirements.length - 3} more requirements
                       </li>
                     )}
@@ -299,7 +299,7 @@ export function ApplicationForm({
               </div>
               
               {/* Dates */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground">
                 <div>
                   <span className="font-medium">Posted:</span> {application.job.postedDate || "N/A"}
                 </div>

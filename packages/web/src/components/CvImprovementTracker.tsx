@@ -141,7 +141,7 @@ export function CvImprovementTracker({ analyses }: CvImprovementTrackerProps) {
                   <TrendingDown className="h-4 w-4 text-red-500" />
                 )}
                 {overallImprovement === 0 && (
-                  <div className="h-4 w-4 rounded-full bg-gray-400" />
+                  <div className="h-4 w-4 rounded-full bg-muted-foreground" />
                 )}
               </div>
             </div>
@@ -260,7 +260,7 @@ export function CvImprovementTracker({ analyses }: CvImprovementTrackerProps) {
                   className={`flex items-center justify-between p-3 rounded-lg border ${
                     milestone.achieved
                       ? "bg-green-50 border-green-200"
-                      : "bg-gray-50 border-gray-200"
+                      : "bg-muted border-border"
                   }`}
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -271,7 +271,7 @@ export function CvImprovementTracker({ analyses }: CvImprovementTrackerProps) {
                       className={`w-6 h-6 rounded-full flex items-center justify-center ${
                         milestone.achieved
                           ? "bg-green-500 text-white"
-                          : "bg-gray-300 text-gray-600"
+                          : "bg-muted-foreground text-muted-foreground"
                       }`}
                     >
                       {milestone.achieved ? (
@@ -282,7 +282,7 @@ export function CvImprovementTracker({ analyses }: CvImprovementTrackerProps) {
                     </div>
                     <span
                       className={`text-sm font-medium ${
-                        milestone.achieved ? "text-green-800" : "text-gray-700"
+                        milestone.achieved ? "text-emerald-800" : "text-foreground"
                       }`}
                     >
                       {milestone.label}

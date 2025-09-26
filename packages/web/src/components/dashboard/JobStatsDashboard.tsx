@@ -288,7 +288,7 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <div className="group/insight flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-gray-100   rounded-xl hover:from-gray-100 hover:to-gray-200   transition-all duration-300 cursor-help">
+                      <div className="group/insight flex items-center justify-between p-4 bg-gradient-to-r from-muted to-muted/80   rounded-xl hover:from-muted/80 hover:to-muted/60   transition-all duration-300 cursor-help">
                         <div className="flex items-center">
                           <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-md group-hover/insight:shadow-lg transition-shadow">
                             <span className="text-white text-xl">🏢</span>

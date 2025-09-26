@@ -170,129 +170,167 @@ function skipEndpoint(name, reason) {
  * Test all API endpoints
  */
 async function testAllEndpoints() {
-  console.log('🚀 Starting API Endpoints Testing for HireAll');
-  console.log('=' .repeat(60));
+  console.log("🚀 Starting API Endpoints Testing for HireAll");
+  console.log("=".repeat(60));
 
   // App API Routes
-  await testEndpoint('App Root', `${BASE_URL}/api/app`, { logResponse: true });
+  await testEndpoint("App Root", `${BASE_URL}/api/app`, { logResponse: true });
 
   // User Management - expect 401 (unauthorized)
-  await testEndpoint('Get All Users', `${BASE_URL}/api/app/users`, { expectedStatus: 401 });
-  await skipEndpoint('Get User by ID', 'Requires authentication');
-  await skipEndpoint('Update User', 'Requires authentication');
+  await testEndpoint("Get All Users", `${BASE_URL}/api/app/users`, {
+    expectedStatus: 401,
+  });
+  await skipEndpoint("Get User by ID", "Requires authentication");
+  await skipEndpoint("Update User", "Requires authentication");
 
   // Jobs - expect 401 (unauthorized)
-  await testEndpoint('Get All Jobs', `${BASE_URL}/api/app/jobs`, { expectedStatus: 401 });
-  await skipEndpoint('Get Job by ID', 'Requires valid job ID');
-  await skipEndpoint('Create Job', 'Requires authentication');
-  await skipEndpoint('Update Job', 'Requires authentication');
-  await skipEndpoint('Delete Job', 'Requires authentication');
-  await skipEndpoint('Get User Jobs', 'Requires authentication');
-  await skipEndpoint('Get User Job Stats', 'Requires authentication');
+  await testEndpoint("Get All Jobs", `${BASE_URL}/api/app/jobs`, {
+    expectedStatus: 401,
+  });
+  await skipEndpoint("Get Job by ID", "Requires valid job ID");
+  await skipEndpoint("Create Job", "Requires authentication");
+  await skipEndpoint("Update Job", "Requires authentication");
+  await skipEndpoint("Delete Job", "Requires authentication");
+  await skipEndpoint("Get User Jobs", "Requires authentication");
+  await skipEndpoint("Get User Job Stats", "Requires authentication");
 
   // Applications - all require authentication
-  await skipEndpoint('Get All Applications', 'Requires authentication');
-  await skipEndpoint('Get Application by ID', 'Requires authentication');
-  await skipEndpoint('Create Application', 'Requires authentication');
-  await skipEndpoint('Update Application', 'Requires authentication');
-  await skipEndpoint('Delete Application', 'Requires authentication');
-  await skipEndpoint('Get User Applications', 'Requires authentication');
+  await skipEndpoint("Get All Applications", "Requires authentication");
+  await skipEndpoint("Get Application by ID", "Requires authentication");
+  await skipEndpoint("Create Application", "Requires authentication");
+  await skipEndpoint("Update Application", "Requires authentication");
+  await skipEndpoint("Delete Application", "Requires authentication");
+  await skipEndpoint("Get User Applications", "Requires authentication");
 
   // Contacts - all require authentication
-  await skipEndpoint('Get All Contacts', 'Requires authentication');
-  await skipEndpoint('Create Contact', 'Requires authentication');
-  await skipEndpoint('Get Admin Contacts', 'Requires admin authentication');
-  await skipEndpoint('Update Admin Contact', 'Requires admin authentication');
-  await skipEndpoint('Delete Admin Contact', 'Requires admin authentication');
+  await skipEndpoint("Get All Contacts", "Requires authentication");
+  await skipEndpoint("Create Contact", "Requires authentication");
+  await skipEndpoint("Get Admin Contacts", "Requires admin authentication");
+  await skipEndpoint("Update Admin Contact", "Requires admin authentication");
+  await skipEndpoint("Delete Admin Contact", "Requires admin authentication");
 
   // CV Analysis - all require authentication
-  await skipEndpoint('Get User CV Analysis Stats', 'Requires authentication');
-  await skipEndpoint('Get User CV Analyses', 'Requires authentication');
+  await skipEndpoint("Get User CV Analysis Stats", "Requires authentication");
+  await skipEndpoint("Get User CV Analyses", "Requires authentication");
 
   // Follow-ups - all require authentication
-  await skipEndpoint('Get Follow-ups', 'Requires authentication');
-  await skipEndpoint('Create Follow-up', 'Requires authentication');
+  await skipEndpoint("Get Follow-ups", "Requires authentication");
+  await skipEndpoint("Create Follow-up", "Requires authentication");
 
   // Sponsorship - expect 401 (unauthorized)
-  await testEndpoint('Get Sponsored Companies', `${BASE_URL}/api/app/sponsorship/companies`, { expectedStatus: 401 });
+  await testEndpoint(
+    "Get Sponsored Companies",
+    `${BASE_URL}/api/app/sponsorship/companies`,
+    { expectedStatus: 401 }
+  );
 
   // Admin - requires authentication
-  await skipEndpoint('Check Admin Status', 'Requires authentication');
+  await skipEndpoint("Check Admin Status", "Requires authentication");
 
   // Blog API Routes - may fail if database not set up
   try {
-    await testEndpoint('Get All Blog Posts', `${BASE_URL}/api/blog/posts`, { logResponse: true });
+    await testEndpoint("Get All Blog Posts", `${BASE_URL}/api/blog/posts`, {
+      logResponse: true,
+    });
   } catch (error) {
-    console.log('   Note: Blog API may fail if database is not configured');
+    console.log("   Note: Blog API may fail if database is not configured");
     results.failed--; // Don't count as failure if it's expected
     results.skipped++;
   }
 
-  await skipEndpoint('Get Blog Post by Slug', 'May not exist');
-  await skipEndpoint('Create Blog Post', 'Requires admin authentication');
-  await skipEndpoint('Update Blog Post', 'Requires admin authentication');
-  await skipEndpoint('Delete Blog Post', 'Requires admin authentication');
-  await skipEndpoint('Get Blog Stats', 'Requires admin authentication');
+  await skipEndpoint("Get Blog Post by Slug", "May not exist");
+  await skipEndpoint("Create Blog Post", "Requires admin authentication");
+  await skipEndpoint("Update Blog Post", "Requires admin authentication");
+  await skipEndpoint("Delete Blog Post", "Requires admin authentication");
+  await skipEndpoint("Get Blog Stats", "Requires admin authentication");
 
   // Chatbot - requires authentication
-  await skipEndpoint('Chatbot Interaction', 'Requires authentication and valid request body');
+  await skipEndpoint(
+    "Chatbot Interaction",
+    "Requires authentication and valid request body"
+  );
 
   // CV Upload - requires authentication
-  await skipEndpoint('Upload CV', 'Requires file upload and authentication');
-  await skipEndpoint('Get User CV', 'Requires authentication');
+  await skipEndpoint("Upload CV", "Requires file upload and authentication");
+  await skipEndpoint("Get User CV", "Requires authentication");
 
   // Interview Questions - requires authentication
-  await skipEndpoint('Get Interview Questions', 'Requires authentication');
+  await skipEndpoint("Get Interview Questions", "Requires authentication");
 
   // Portfolio - requires authentication
-  await skipEndpoint('Get Portfolio Resume', 'Requires authentication');
-  await skipEndpoint('Get/Update Portfolio Site', 'Requires authentication');
+  await skipEndpoint("Get Portfolio Resume", "Requires authentication");
+  await skipEndpoint("Get/Update Portfolio Site", "Requires authentication");
 
   // SOC Codes - requires authentication
-  await skipEndpoint('Get SOC Codes', 'Requires authentication');
+  await skipEndpoint("Get SOC Codes", "Requires authentication");
 
   // Sponsors - requires authentication
-  await skipEndpoint('Get Sponsors (without params)', 'Requires authentication');
-  await skipEndpoint('Get Sponsors (with params)', 'Requires authentication');
+  await skipEndpoint(
+    "Get Sponsors (without params)",
+    "Requires authentication"
+  );
+  await skipEndpoint("Get Sponsors (with params)", "Requires authentication");
+
+  // Public API Routes - no authentication required
+  await testEndpoint(
+    "Get Public Sponsors",
+    `${BASE_URL}/api/public/sponsors?q=Google`
+  );
+  await testEndpoint(
+    "Get Public Interview Questions",
+    `${BASE_URL}/api/public/interview-questions`
+  );
+  await testEndpoint(
+    "Get Public SOC Codes",
+    `${BASE_URL}/api/public/soc-codes?q=engineer`
+  );
 
   // Stripe - requires authentication
-  await skipEndpoint('Create Checkout Session', 'Requires authentication and payment data');
-  await skipEndpoint('Stripe Webhook', 'Requires valid Stripe signature');
+  await skipEndpoint(
+    "Create Checkout Session",
+    "Requires authentication and payment data"
+  );
+  await skipEndpoint("Stripe Webhook", "Requires valid Stripe signature");
 
   // Subscription - requires authentication
-  await skipEndpoint('Get Subscription Status', 'Requires authentication');
-  await skipEndpoint('Upgrade Subscription', 'Requires authentication');
+  await skipEndpoint("Get Subscription Status", "Requires authentication");
+  await skipEndpoint("Upgrade Subscription", "Requires authentication");
 
   // Subdomain - requires parameter
-  await skipEndpoint('Check Subdomain', 'Requires subdomain parameter');
+  await skipEndpoint("Check Subdomain", "Requires subdomain parameter");
 
-  console.log('\n' + '=' .repeat(60));
-  console.log('📊 Test Results Summary');
-  console.log('=' .repeat(60));
+  console.log("\n" + "=".repeat(60));
+  console.log("📊 Test Results Summary");
+  console.log("=".repeat(60));
   console.log(`Total Tests: ${results.total}`);
   console.log(`✅ Passed: ${results.passed}`);
   console.log(`❌ Failed: ${results.failed}`);
   console.log(`⏭️  Skipped: ${results.skipped}`);
-  console.log(`Success Rate: ${((results.passed / (results.total - results.skipped)) * 100).toFixed(1)}%`);
+  console.log(
+    `Success Rate: ${(
+      (results.passed / (results.total - results.skipped)) *
+      100
+    ).toFixed(1)}%`
+  );
 
   if (results.failed > 0) {
-    console.log('\n❌ Failed Tests:');
+    console.log("\n❌ Failed Tests:");
     results.details
-      .filter(test => !test.success && !test.skipped)
-      .forEach(test => {
-        console.log(`   - ${test.name}: ${test.status || 'Error'}`);
+      .filter((test) => !test.success && !test.skipped)
+      .forEach((test) => {
+        console.log(`   - ${test.name}: ${test.status || "Error"}`);
       });
   }
 
-  console.log('\n📋 API Endpoint Categories:');
-  console.log('🔓 Public Endpoints: Available without authentication');
-  console.log('🔒 Protected Endpoints: Require user authentication');
-  console.log('👑 Admin Endpoints: Require admin privileges');
-  console.log('📝 Special Endpoints: Require specific parameters or setup');
+  console.log("\n📋 API Endpoint Categories:");
+  console.log("🔓 Public Endpoints: Available without authentication");
+  console.log("🔒 Protected Endpoints: Require user authentication");
+  console.log("👑 Admin Endpoints: Require admin privileges");
+  console.log("📝 Special Endpoints: Require specific parameters or setup");
 
-  console.log('\n✅ Public API endpoints are working correctly!');
-  console.log('🔒 Protected endpoints correctly require authentication.');
-  console.log('📝 Special endpoints require proper parameters.');
+  console.log("\n✅ Public API endpoints are working correctly!");
+  console.log("🔒 Protected endpoints correctly require authentication.");
+  console.log("📝 Special endpoints require proper parameters.");
 
   // Exit with appropriate code
   process.exit(results.failed > 0 ? 1 : 0);

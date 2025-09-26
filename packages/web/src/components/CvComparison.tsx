@@ -297,10 +297,10 @@ export function CvComparison({ analyses, onBack }: CvComparisonProps) {
                   <div className="flex items-center gap-2">
                     {improvement > 0 && <TrendingUp className="h-5 w-5 text-green-500" />}
                     {improvement < 0 && <TrendingDown className="h-5 w-5 text-red-500" />}
-                    {improvement === 0 && <Minus className="h-5 w-5 text-gray-500" />}
+                    {improvement === 0 && <Minus className="h-5 w-5 text-muted-foreground" />}
                     <span className={`font-bold ${
                       improvement > 0 ? 'text-green-600' :
-                      improvement < 0 ? 'text-red-600' : 'text-gray-600'
+                      improvement < 0 ? 'text-red-600' : 'text-muted-foreground'
                     }`}>
                       {improvement > 0 ? '+' : ''}{improvement} points
                     </span>

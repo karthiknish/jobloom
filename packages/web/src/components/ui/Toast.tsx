@@ -69,9 +69,9 @@ export function AppToaster() {
               </div>
               <button
                 onClick={() => toast.dismiss(t.id)}
-                className="flex-shrink-0 p-1 rounded-full hover:bg-gray-100 transition-colors"
+                className="flex-shrink-0 p-1 rounded-full hover:bg-muted transition-colors"
               >
-                <X className="h-4 w-4 text-gray-500" />
+                <X className="h-4 w-4 text-muted-foreground" />
               </button>
             </div>
           )}

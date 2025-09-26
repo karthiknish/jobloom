@@ -200,7 +200,7 @@ export default function Header() {
                   size="icon"
                   onClick={() => setIsMobileMenuOpen(true)}
                 >
-                  <Menu className="h-6 w-6 text-gray-600" />
+                  <Menu className="h-6 w-6 text-muted-foreground" />
                   <span className="sr-only">Toggle menu</span>
                 </Button>
               </SheetTrigger>
@@ -232,7 +232,7 @@ export default function Header() {
                     <AuthButtons />
                   </div>
                   {isSignedIn && (
-                    <div className="pt-4 border-t border-gray-200">
+                    <div className="pt-4 border-t border-border">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
                           <Avatar className="h-10 w-10">

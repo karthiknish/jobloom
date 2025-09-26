@@ -230,7 +230,7 @@ export function UpgradePrompt({ feature }: UpgradePromptProps) {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               {content.highlightFeatures.map((feature, index) => (
                 <motion.div key={index} whileHover={{ y: -5 }}>
-                  <Card className="bg-white border-gray-100 h-full">
+                  <Card className="bg-background border-border h-full">
                     <CardContent className="p-6 text-center">
                       <div className="mb-4">
                         {(() => {
@@ -295,9 +295,9 @@ export function FeatureGate({
   // Show loading state while checking subscription
   if (isLoading) {
     return (
-      <div className="animate-pulse bg-gray-100 rounded-lg p-4">
-        <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-        <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+      <div className="animate-pulse bg-muted rounded-lg p-4">
+        <div className="h-4 bg-muted-foreground/20 rounded w-3/4 mb-2"></div>
+        <div className="h-3 bg-muted-foreground/20 rounded w-1/2"></div>
       </div>
     );
   }

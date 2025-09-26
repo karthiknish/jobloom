@@ -1,29 +1,72 @@
 import { DEFAULT_WEB_APP_URL } from "./constants";
-import { 
-  Target, 
-  ClipboardPlus, 
-  BookmarkPlus, 
-  Search, 
-  Users, 
-  FileText, 
-  User, 
-  Check, 
-  X, 
-  AlertTriangle, 
-  Home, 
-  Star, 
-  Briefcase, 
+import {
+  Target,
+  ClipboardPlus,
+  BookmarkPlus,
+  FileText,
+  X,
+  AlertTriangle,
+  Home,
+  Star,
+  Briefcase,
   Eye,
   Clock,
   Flag,
-  Plus,
   CheckCircle,
   XCircle,
   Info,
   Crown,
   Sparkles,
-  Building2
+  Building2,
 } from "lucide-react";
+// --- Sponsorship lookup cache & concurrency limiter utilities ---
+const sponsorshipCache: Map<string, any> = new Map();
+const sponsorshipInFlight: Map<string, Promise<any>> = new Map();
+const MAX_SPONSOR_LOOKUPS = 4; // limit parallel sponsor queries
+let activeSponsorLookups = 0;
+const sponsorQueue: Array<() => void> = [];
+
+async function runWithSponsorLimit<T>(fn: () => Promise<T>): Promise<T> {
+  if (activeSponsorLookups >= MAX_SPONSOR_LOOKUPS) {
+    await new Promise<void>((resolve) => sponsorQueue.push(resolve));
+  }
+  activeSponsorLookups++;
+  try {
+    return await fn();
+  } finally {
+    activeSponsorLookups--;
+    const next = sponsorQueue.shift();
+    if (next) next();
+  }
+}
+
+async function fetchSponsorRecord(company: string): Promise<any | null> {
+  const key = company.trim().toLowerCase();
+  if (!key) return null;
+  if (sponsorshipCache.has(key)) return sponsorshipCache.get(key);
+  if (sponsorshipInFlight.has(key)) return sponsorshipInFlight.get(key);
+
+  const p = runWithSponsorLimit(async () => {
+    try {
+      const data = await (
+        await import("./apiClient")
+      ).get<any>("/api/app/sponsorship/companies", { q: company, limit: 1 });
+      const rec =
+        data && data.results && data.results.length > 0
+          ? data.results[0]
+          : null;
+      if (rec) sponsorshipCache.set(key, rec);
+      return rec;
+    } catch (e) {
+      console.warn("Sponsor lookup failed", e);
+      return null;
+    } finally {
+      sponsorshipInFlight.delete(key);
+    }
+  });
+  sponsorshipInFlight.set(key, p);
+  return p;
+}
 interface JobData {
   title: string;
   company: string;
@@ -52,18 +95,6 @@ interface JobData {
   sponsorshipType?: string;
   dateFound: string;
   source: string;
-}
-
-interface PersonData {
-  name: string;
-  title: string;
-  company: string;
-  location: string;
-  profileUrl: string;
-  connectionDegree: string;
-  isRelevant: boolean;
-  relevanceScore?: number;
-  keywords?: string[];
 }
 
 interface SponsorshipCheckResult {
@@ -104,10 +135,12 @@ interface AutofillProfile {
   };
 }
 
-
-
 // Helper function to create Lucide icon elements
-function createIcon(IconComponent: any, size: number = 16, color: string = "currentColor") {
+function createIcon(
+  IconComponent: any,
+  size: number = 16,
+  color: string = "currentColor"
+) {
   const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   icon.setAttribute("width", size.toString());
   icon.setAttribute("height", size.toString());
@@ -117,21 +150,21 @@ function createIcon(IconComponent: any, size: number = 16, color: string = "curr
   icon.setAttribute("stroke-width", "2");
   icon.setAttribute("stroke-linecap", "round");
   icon.setAttribute("stroke-linejoin", "round");
-  
+
   // Add the icon path (simplified - in real implementation you'd need the actual paths)
   return icon;
 }
 
 class JobTracker {
   private isHighlightMode = false;
-  private isPeopleSearchMode = false;
+  // Removed people search mode state
   private webAppUrl: string;
   private currentJobSite: string;
   private lastRequestTime = 0;
   private requestCount = 0;
   private rateLimitWindow = 60000; // 1 minute
   private maxRequestsPerWindow = 10;
-  private peopleSearchPanel: HTMLElement | null = null;
+  // Removed people search panel reference
   private observer: MutationObserver | null = null;
 
   constructor() {
@@ -145,12 +178,7 @@ class JobTracker {
     this.loadWebAppUrl();
     this.createToggleButton();
     this.createAutofillButton();
-    if (
-      this.currentJobSite === "linkedin" &&
-      window.location.pathname.includes("/jobs/")
-    ) {
-      this.createPeopleSearchButton();
-    }
+    // Removed people search button creation
     this.setupAutoDetection();
   }
 
@@ -183,7 +211,9 @@ class JobTracker {
   private createToggleButton() {
     const button = document.createElement("button");
     button.id = "hireall-toggle";
-    button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${createIcon(Target, 16).outerHTML} Check Sponsored Jobs</span>`;
+    button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${
+      createIcon(Target, 16).outerHTML
+    } Check Sponsored Jobs</span>`;
     button.style.cssText = `
       position: fixed;
       top: 140px;
@@ -203,7 +233,9 @@ class JobTracker {
     button.addEventListener("click", async () => {
       if (this.isHighlightMode) {
         this.clearHighlights();
-        button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${createIcon(Target, 16).outerHTML} Check Sponsored Jobs</span>`;
+        button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${
+          createIcon(Target, 16).outerHTML
+        } Check Sponsored Jobs</span>`;
         button.style.background = "#b86e37";
         this.isHighlightMode = false;
       } else {
@@ -211,35 +243,45 @@ class JobTracker {
         if (!(await this.checkRateLimit())) {
           const timeUntilReset =
             this.rateLimitWindow - (Date.now() - this.lastRequestTime);
-          button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${createIcon(Clock, 16).outerHTML} Rate limited (${Math.ceil(
-            timeUntilReset / 1000
-          )}s)</span>`;
+          button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${
+            createIcon(Clock, 16).outerHTML
+          } Rate limited (${Math.ceil(timeUntilReset / 1000)}s)</span>`;
           button.style.background = "#f59e0b";
 
           // Reset button after rate limit expires
           setTimeout(() => {
-            button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${createIcon(Target, 16).outerHTML} Check Sponsored Jobs</span>`;
+            button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${
+              createIcon(Target, 16).outerHTML
+            } Check Sponsored Jobs</span>`;
             button.style.background = "#4f46e5";
           }, timeUntilReset);
           return;
         }
 
-        button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${createIcon(Clock, 16).outerHTML} Checking...</span>`;
+        button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${
+          createIcon(Clock, 16).outerHTML
+        } Checking...</span>`;
         button.disabled = true;
 
         try {
           await this.checkAndHighlightSponsoredJobs();
-          button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${createIcon(X, 16).outerHTML} Clear Highlights</span>`;
+          button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${
+            createIcon(X, 16).outerHTML
+          } Clear Highlights</span>`;
           button.style.background = "#ef4444";
           this.isHighlightMode = true;
         } catch (error) {
           console.error("Error checking sponsored jobs:", error);
-          button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${createIcon(XCircle, 16).outerHTML} Error occurred</span>`;
+          button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${
+            createIcon(XCircle, 16).outerHTML
+          } Error occurred</span>`;
           button.style.background = "#ef4444";
 
           // Reset button after error
           setTimeout(() => {
-            button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${createIcon(Target, 16).outerHTML} Check Sponsored Jobs</span>`;
+            button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${
+              createIcon(Target, 16).outerHTML
+            } Check Sponsored Jobs</span>`;
             button.style.background = "#4f46e5";
           }, 3000);
         } finally {
@@ -254,7 +296,9 @@ class JobTracker {
   private createAutofillButton() {
     const button = document.createElement("button");
     button.id = "hireall-autofill";
-    button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${createIcon(FileText, 16).outerHTML} Autofill Application</span>`;
+    button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${
+      createIcon(FileText, 16).outerHTML
+    } Autofill Application</span>`;
     button.style.cssText = `
       position: fixed;
       top: 80px;
@@ -273,26 +317,36 @@ class JobTracker {
     `;
 
     button.addEventListener("click", async () => {
-      button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${createIcon(Clock, 16).outerHTML} Filling...</span>`;
+      button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${
+        createIcon(Clock, 16).outerHTML
+      } Filling...</span>`;
       button.disabled = true;
 
       try {
         await this.autofillApplication();
-        button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${createIcon(CheckCircle, 16).outerHTML} Filled!</span>`;
+        button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${
+          createIcon(CheckCircle, 16).outerHTML
+        } Filled!</span>`;
         button.style.background = "#b86e37";
 
         setTimeout(() => {
-          button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${createIcon(FileText, 16).outerHTML} Autofill Application</span>`;
+          button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${
+            createIcon(FileText, 16).outerHTML
+          } Autofill Application</span>`;
           button.style.background = "#e6c9a8";
           button.disabled = false;
         }, 3000);
       } catch (error) {
         console.error("Autofill error:", error);
-        button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${createIcon(XCircle, 16).outerHTML} Error</span>`;
+        button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${
+          createIcon(XCircle, 16).outerHTML
+        } Error</span>`;
         button.style.background = "#ef4444";
 
         setTimeout(() => {
-          button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${createIcon(FileText, 16).outerHTML} Autofill Application</span>`;
+          button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${
+            createIcon(FileText, 16).outerHTML
+          } Autofill Application</span>`;
           button.style.background = "#e6c9a8";
           button.disabled = false;
         }, 3000);
@@ -305,447 +359,7 @@ class JobTracker {
     this.detectApplicationForms();
   }
 
-  private createPeopleSearchButton() {
-    const button = document.createElement("button");
-    button.id = "hireall-people-search";
-    button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${createIcon(Users, 16).outerHTML} Find Relevant People</span>`;
-    button.style.cssText = `
-      position: fixed;
-      top: 80px;
-      right: 20px;
-      z-index: 10000;
-      background: #b86e37;
-      color: #ffffff;
-      border: none;
-      padding: 12px 16px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 600;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      transition: all 0.2s;
-    `;
-
-    button.addEventListener("click", () => {
-      if (this.isPeopleSearchMode) {
-        this.closePeopleSearchPanel();
-        button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${createIcon(Users, 16).outerHTML} Find Relevant People</span>`;
-        button.style.background = "#b86e37";
-        this.isPeopleSearchMode = false;
-      } else {
-        this.openPeopleSearchPanel();
-        button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${createIcon(X, 16).outerHTML} Close People Search</span>`;
-        button.style.background = "#ef4444";
-        this.isPeopleSearchMode = true;
-      }
-    });
-
-    document.body.appendChild(button);
-  }
-
-  private openPeopleSearchPanel() {
-    if (this.peopleSearchPanel) {
-      this.peopleSearchPanel.style.display = "block";
-      return;
-    }
-
-    const panel = document.createElement("div");
-    panel.id = "hireall-people-panel";
-    panel.style.cssText = `
-      position: fixed;
-      top: 140px;
-      right: 20px;
-      width: 350px;
-      max-height: 600px;
-      background: white;
-      border: 1px solid #ddd;
-      border-radius: 12px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.12);
-      z-index: 10001;
-      overflow: hidden;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    `;
-
-    panel.innerHTML = `
-      <div style="padding: 20px; border-bottom: 1px solid #eee; background: #f8f9fa;">
-        <h3 style="margin: 0 0 15px 0; color: #333; font-size: 16px; display: flex; align-items: center; gap: 8px;">${createIcon(Search, 18).outerHTML} Find Relevant People</h3>
-        
-        <div style="margin-bottom: 12px;">
-          <label style="display: block; margin-bottom: 5px; font-size: 12px; color: #666; font-weight: 600;">SEARCH KEYWORDS</label>
-          <input type="text" id="people-keywords" placeholder="e.g., software engineer, product manager" 
-                 style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; color: #111 !important; background: #ffffff !important;">
-        </div>
-        
-        <div style="margin-bottom: 12px;">
-          <label style="display: block; margin-bottom: 5px; font-size: 12px; color: #666; font-weight: 600;">COMPANY</label>
-          <input type="text" id="people-company" placeholder="e.g., Google, Microsoft" 
-                 style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; color: #111 !important; background: #ffffff !important;">
-        </div>
-        
-        <div style="margin-bottom: 12px;">
-          <label style="display: block; margin-bottom: 5px; font-size: 12px; color: #666; font-weight: 600;">LOCATION</label>
-          <input type="text" id="people-location" placeholder="e.g., San Francisco, Remote" 
-                 style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; color: #111 !important; background: #ffffff !important;">
-        </div>
-        
-        <div style="margin-bottom: 15px;">
-          <label style="display: block; margin-bottom: 5px; font-size: 12px; color: #666; font-weight: 600;">CONNECTION LEVEL</label>
-          <select id="people-connection" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; color: #111 !important; background: #ffffff !important;">
-            <option value="all">All connections</option>
-            <option value="1st">1st connections</option>
-            <option value="2nd">2nd connections</option>
-            <option value="3rd">3rd+ connections</option>
-          </select>
-        </div>
-        
-        <button id="search-people-btn" style="width: 100%; background: #0a66c2; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
-          ${createIcon(Search, 16).outerHTML} Search People
-        </button>
-      </div>
-      
-      <div id="people-results" style="max-height: 400px; overflow-y: auto; padding: 15px;">
-        <div style="text-align: center; color: #666; padding: 20px;">
-          Enter search criteria and click "Search People" to find relevant connections
-        </div>
-      </div>
-    `;
-
-    document.body.appendChild(panel);
-    this.peopleSearchPanel = panel;
-
-    // Add event listeners
-    const searchBtn = panel.querySelector(
-      "#search-people-btn"
-    ) as HTMLButtonElement;
-
-    searchBtn.addEventListener("click", () => this.searchRelevantPeople());
-
-    // Load default settings
-    this.loadPeopleSearchDefaults();
-  }
-
-  private closePeopleSearchPanel() {
-    if (this.peopleSearchPanel) {
-      this.peopleSearchPanel.style.display = "none";
-    }
-  }
-
-  private async loadPeopleSearchDefaults() {
-    try {
-      const result = await chrome.storage.sync.get([
-        "defaultKeywords",
-        "defaultConnectionLevel",
-      ]);
-
-      const panel = this.peopleSearchPanel;
-      if (!panel) return;
-
-      const keywordsInput = panel.querySelector(
-        "#people-keywords"
-      ) as HTMLInputElement;
-      const connectionSelect = panel.querySelector(
-        "#people-connection"
-      ) as HTMLSelectElement;
-
-      if (keywordsInput && result.defaultKeywords) {
-        keywordsInput.value = result.defaultKeywords;
-      }
-      if (connectionSelect && result.defaultConnectionLevel) {
-        connectionSelect.value = result.defaultConnectionLevel;
-      }
-    } catch (error) {
-      console.error("Failed to load people search defaults:", error);
-    }
-  }
-
-  private async searchRelevantPeople() {
-    const panel = this.peopleSearchPanel;
-    if (!panel) return;
-
-    const keywords = (
-      panel.querySelector("#people-keywords") as HTMLInputElement
-    ).value;
-    const company = (panel.querySelector("#people-company") as HTMLInputElement)
-      .value;
-    const location = (
-      panel.querySelector("#people-location") as HTMLInputElement
-    ).value;
-    const connectionLevel = (
-      panel.querySelector("#people-connection") as HTMLSelectElement
-    ).value;
-    const resultsDiv = panel.querySelector("#people-results") as HTMLElement;
-    const searchBtn = panel.querySelector(
-      "#search-people-btn"
-    ) as HTMLButtonElement;
-
-    if (!keywords.trim()) {
-      resultsDiv.innerHTML =
-        '<div style="color: #ef4444; text-align: center; padding: 20px;">Please enter search keywords</div>';
-      return;
-    }
-
-    searchBtn.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${createIcon(Clock, 16).outerHTML} Searching...</span>`;
-    searchBtn.disabled = true;
-
-    try {
-      // Check rate limit
-      if (!(await this.checkRateLimit())) {
-        resultsDiv.innerHTML =
-          '<div style="color: #f59e0b; text-align: center; padding: 20px;">Rate limited. Please wait before searching again.</div>';
-        return;
-      }
-
-      // Build LinkedIn search URL
-      const searchUrl = this.buildLinkedInPeopleSearchUrl(
-        keywords,
-        company,
-        location,
-        connectionLevel
-      );
-
-      // Navigate to search results or extract current page people
-      if (window.location.href.includes("/search/people/")) {
-        // Already on people search page, extract results
-        const people = this.extractPeopleFromCurrentPage();
-        const relevantPeople = this.filterRelevantPeople(people, keywords);
-        this.displayPeopleResults(relevantPeople);
-      } else {
-        // Show search URL and instructions
-        resultsDiv.innerHTML = `
-          <div style="padding: 15px; background: #f0f8ff; border-radius: 8px; margin-bottom: 15px;">
-            <p style="margin: 0 0 10px 0; font-weight: 600; color: #0a66c2; display: flex; align-items: center; gap: 6px;">${createIcon(Search, 16).outerHTML} LinkedIn Search URL Generated</p>
-            <p style="margin: 0 0 10px 0; font-size: 12px; color: #666;">Click the link below to search LinkedIn, then return to this page and click "Search People" again:</p>
-            <a href="${searchUrl}" target="_blank" style="color: #0a66c2; text-decoration: none; font-size: 12px; word-break: break-all;">${searchUrl}</a>
-          </div>
-          <div style="text-align: center; color: #666;">
-            <p>Or stay on this page if you're already viewing people search results</p>
-          </div>
-        `;
-      }
-    } catch (error) {
-      console.error("Error searching people:", error);
-      resultsDiv.innerHTML =
-        '<div style="color: #ef4444; text-align: center; padding: 20px;">Error occurred while searching. Please try again.</div>';
-    } finally {
-      searchBtn.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${createIcon(Search, 16).outerHTML} Search People</span>`;
-      searchBtn.disabled = false;
-    }
-  }
-
-  private buildLinkedInPeopleSearchUrl(
-    keywords: string,
-    company: string,
-    location: string,
-    connectionLevel: string
-  ): string {
-    const baseUrl = "https://www.linkedin.com/search/results/people/";
-    const params = new URLSearchParams();
-
-    // Add keywords to search
-    if (keywords.trim()) {
-      params.append("keywords", keywords.trim());
-    }
-
-    // Add company filter
-    if (company.trim()) {
-      params.append("currentCompany", `["${company.trim()}"]`);
-    }
-
-    // Add location filter
-    if (location.trim()) {
-      params.append("geoUrn", `["${location.trim()}"]`);
-    }
-
-    // Add connection level filter
-    if (connectionLevel !== "all") {
-      const connectionMap = {
-        "1st": "F",
-        "2nd": "S",
-        "3rd": "O",
-      };
-      params.append(
-        "network",
-        `["${connectionMap[connectionLevel as keyof typeof connectionMap]}"]`
-      );
-    }
-
-    return `${baseUrl}?${params.toString()}`;
-  }
-
-  private extractPeopleFromCurrentPage(): PersonData[] {
-    const people: PersonData[] = [];
-
-    // LinkedIn people search result selectors
-    const peopleElements = document.querySelectorAll(
-      ".reusable-search__result-container, .search-result__wrapper"
-    );
-
-    peopleElements.forEach((element) => {
-      try {
-        const nameEl = element.querySelector(
-          ".entity-result__title-text a, .search-result__result-link"
-        );
-        const titleEl = element.querySelector(
-          ".entity-result__primary-subtitle, .subline-level-1"
-        );
-        const companyEl = element.querySelector(
-          ".entity-result__secondary-subtitle, .subline-level-2"
-        );
-        const locationEl = element.querySelector(
-          ".entity-result__summary, .search-result__snippets"
-        );
-        const connectionEl = element.querySelector(
-          ".entity-result__badge-text, .dist-value"
-        );
-        const profileLinkEl = element.querySelector('a[href*="/in/"]');
-
-        if (nameEl && titleEl) {
-          const person: PersonData = {
-            name: nameEl.textContent?.trim() || "Unknown",
-            title: titleEl.textContent?.trim() || "Unknown",
-            company: companyEl?.textContent?.trim() || "Unknown",
-            location: locationEl?.textContent?.trim() || "Unknown",
-            profileUrl: profileLinkEl?.getAttribute("href") || "",
-            connectionDegree: connectionEl?.textContent?.trim() || "Unknown",
-            isRelevant: false,
-          };
-
-          people.push(person);
-        }
-      } catch (error) {
-        console.error("Error extracting person data:", error);
-      }
-    });
-
-    return people;
-  }
-
-  private filterRelevantPeople(
-    people: PersonData[],
-    keywords: string
-  ): PersonData[] {
-    const keywordList = keywords
-      .toLowerCase()
-      .split(",")
-      .map((k) => k.trim());
-
-    return people
-      .map((person) => {
-        let relevanceScore = 0;
-        const matchedKeywords: string[] = [];
-
-        // Check keywords against title and company
-        const searchText = `${person.title} ${person.company}`.toLowerCase();
-
-        keywordList.forEach((keyword) => {
-          if (searchText.includes(keyword)) {
-            relevanceScore += 1;
-            matchedKeywords.push(keyword);
-          }
-        });
-
-        // Boost score for exact title matches
-        if (
-          keywordList.some((keyword) =>
-            person.title.toLowerCase().includes(keyword)
-          )
-        ) {
-          relevanceScore += 0.5;
-        }
-
-        return {
-          ...person,
-          isRelevant: relevanceScore > 0,
-          relevanceScore,
-          keywords: matchedKeywords,
-        };
-      })
-      .filter((person) => person.isRelevant)
-      .sort((a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0));
-  }
-
-  private displayPeopleResults(people: PersonData[]) {
-    const resultsDiv = this.peopleSearchPanel?.querySelector(
-      "#people-results"
-    ) as HTMLElement;
-    if (!resultsDiv) return;
-
-    if (people.length === 0) {
-      resultsDiv.innerHTML =
-        '<div style="text-align: center; color: #666; padding: 20px;">No relevant people found. Try different keywords or navigate to LinkedIn people search results.</div>';
-      return;
-    }
-
-    const resultsHtml = people
-      .map(
-        (person) => `
-      <div style="border: 1px solid #eee; border-radius: 8px; padding: 12px; margin-bottom: 10px; background: white;">
-        <div style="display: flex; justify-content: between; align-items: start; margin-bottom: 8px;">
-          <div style="flex: 1;">
-            <h4 style="margin: 0 0 4px 0; font-size: 14px; color: #333;">
-              <a href="${
-                person.profileUrl
-              }" target="_blank" style="color: #0a66c2; text-decoration: none;">${
-          person.name
-        }</a>
-            </h4>
-            <p style="margin: 0 0 2px 0; font-size: 12px; color: #666;">${
-              person.title
-            }</p>
-            <p style="margin: 0 0 2px 0; font-size: 12px; color: #666;">${
-              person.company
-            }</p>
-            <p style="margin: 0; font-size: 11px; color: #999;">${
-              person.location
-            } • ${person.connectionDegree}</p>
-          </div>
-          <div style="margin-left: 10px;">
-            <span style="background: #e3f2fd; color: #1976d2; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600;">
-              Score: ${person.relevanceScore?.toFixed(1)}
-            </span>
-          </div>
-        </div>
-        ${
-          person.keywords && person.keywords.length > 0
-            ? `
-          <div style="margin-top: 8px;">
-            <div style="font-size: 10px; color: #666; margin-bottom: 4px;">Matched keywords:</div>
-            <div style="display: flex; flex-wrap: wrap; gap: 4px;">
-              ${person.keywords
-                .map(
-                  (keyword) => `
-                <span style="background: #f0f8ff; color: #0a66c2; padding: 2px 6px; border-radius: 3px; font-size: 10px;">${keyword}</span>
-              `
-                )
-                .join("")}
-            </div>
-          </div>
-        `
-            : ""
-        }
-        <div style="margin-top: 10px; display: flex; gap: 6px;">
-          <button onclick="window.open('${person.profileUrl}', '_blank')" 
-                  style="flex: 1; background: #0a66c2; color: white; border: none; padding: 6px; border-radius: 4px; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;">
-            ${createIcon(User, 12).outerHTML} View Profile
-          </button>
-          <button onclick="this.innerHTML='${createIcon(Check, 12).outerHTML} Noted'; this.disabled=true;" 
-                  style="flex: 1; background: #057642; color: white; border: none; padding: 6px; border-radius: 4px; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;">
-            ${createIcon(Plus, 12).outerHTML} Connect
-          </button>
-        </div>
-      </div>
-    `
-      )
-      .join("");
-
-    resultsDiv.innerHTML = `
-      <div style="margin-bottom: 15px; padding: 10px; background: #f0f8ff; border-radius: 6px;">
-        <p style="margin: 0; font-size: 12px; color: #0a66c2; font-weight: 600; display: flex; align-items: center; gap: 6px;">
-          ${createIcon(Users, 14).outerHTML} Found ${people.length} relevant people
-        </p>
-      </div>
-      ${resultsHtml}
-    `;
-  }
+  // People search feature removed
 
   private async checkAndHighlightSponsoredJobs() {
     const jobElements = this.findJobElements();
@@ -870,30 +484,56 @@ class JobTracker {
       }
 
       const base = (this.webAppUrl || DEFAULT_WEB_APP_URL).replace(/\/$/, "");
-      const response = await fetch(`${base}/api/app/sponsorship/check`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ companies: limitedCompanies }),
-      });
-
-      if (response.status === 429) {
-        // Rate limited by server
-        console.warn(
-          "Rate limited by server. Please wait before making more requests."
-        );
-        return companies.map((company) => ({
-          company,
-          isSponsored: false,
-          sponsorshipType: null,
-          source: "server_rate_limited",
-        }));
+      // Authenticated sponsors lookup per company (temporary sequential)
+      const results: any[] = [];
+      for (const company of limitedCompanies) {
+        try {
+          let token: string | null = null;
+          try {
+            const { getAuthInstance } = await import("./firebase");
+            const auth = getAuthInstance();
+            if (auth.currentUser) {
+              token = await auth.currentUser.getIdToken();
+            }
+          } catch {}
+          const resp = await fetch(
+            `${base}/api/app/sponsorship/companies?q=${encodeURIComponent(
+              company
+            )}&limit=1`,
+            {
+              headers: {
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+              },
+            }
+          );
+          if (resp.ok) {
+            const data = await resp.json();
+            const isSponsored = !!(data.results && data.results[0]);
+            results.push({
+              company,
+              isSponsored,
+              sponsorshipType: isSponsored
+                ? data.results[0].route || "sponsored"
+                : null,
+              source: "extension_lookup",
+            });
+          } else {
+            results.push({
+              company,
+              isSponsored: false,
+              sponsorshipType: null,
+              source: "error",
+            });
+          }
+        } catch {
+          results.push({
+            company,
+            isSponsored: false,
+            sponsorshipType: null,
+            source: "exception",
+          });
+        }
       }
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const results = await response.json();
       return results;
     } catch (error) {
       console.error("Failed to check company sponsorship:", error);
@@ -1527,7 +1167,10 @@ class JobTracker {
     if (!element.querySelector(".hireall-badge")) {
       const badge = document.createElement("div");
       badge.className = "hireall-badge";
-      const badgeIcon = sponsorshipType === "recruitment_agency" ? createIcon(Building2, 12).outerHTML : createIcon(Target, 12).outerHTML;
+      const badgeIcon =
+        sponsorshipType === "recruitment_agency"
+          ? createIcon(Building2, 12).outerHTML
+          : createIcon(Target, 12).outerHTML;
       const badgeText =
         sponsorshipType === "recruitment_agency"
           ? "AGENCY"
@@ -1994,7 +1637,9 @@ class JobTracker {
     // Check Sponsorship Button
     const checkSponsorshipBtn = document.createElement("button");
     checkSponsorshipBtn.className = "hireall-check-sponsorship";
-    checkSponsorshipBtn.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(Flag, 12).outerHTML} Check Sponsor</span>`;
+    checkSponsorshipBtn.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${
+      createIcon(Flag, 12).outerHTML
+    } Check Sponsor</span>`;
     checkSponsorshipBtn.style.cssText = `
       background: linear-gradient(135deg, #3b82f6, #2563eb);
       color: white;
@@ -2011,13 +1656,19 @@ class JobTracker {
 
     checkSponsorshipBtn.addEventListener("click", async (e) => {
       e.stopPropagation();
-      await this.checkJobSponsorshipFromButton(element, jobData.company, checkSponsorshipBtn);
+      await this.checkJobSponsorshipFromButton(
+        element,
+        jobData.company,
+        checkSponsorshipBtn
+      );
     });
 
     // Add to Board Button
     const addToBoardBtn = document.createElement("button");
     addToBoardBtn.className = "hireall-add-to-board";
-    addToBoardBtn.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(ClipboardPlus, 12).outerHTML} Add to Board</span>`;
+    addToBoardBtn.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${
+      createIcon(ClipboardPlus, 12).outerHTML
+    } Add to Board</span>`;
     addToBoardBtn.style.cssText = `
       background: linear-gradient(135deg, #10b981, #059669);
       color: white;
@@ -2078,7 +1729,9 @@ class JobTracker {
     // Add to board button
     const addButton = document.createElement("button");
     addButton.className = "hireall-add-btn";
-    addButton.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(ClipboardPlus, 12).outerHTML} Add to Board</span>`;
+    addButton.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${
+      createIcon(ClipboardPlus, 12).outerHTML
+    } Add to Board</span>`;
     addButton.style.cssText = `
       background: #4f46e5;
       color: white;
@@ -2109,7 +1762,9 @@ class JobTracker {
       e.stopPropagation();
 
       const originalContent = addButton.innerHTML;
-      addButton.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(Clock, 12).outerHTML} Adding...</span>`;
+      addButton.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${
+        createIcon(Clock, 12).outerHTML
+      } Adding...</span>`;
       addButton.disabled = true;
 
       try {
@@ -2119,7 +1774,9 @@ class JobTracker {
         // Check if job already exists
         const jobExists = await JobBoardManager.checkIfJobExists(jobData);
         if (jobExists) {
-          addButton.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(CheckCircle, 12).outerHTML} Added</span>`;
+          addButton.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${
+            createIcon(CheckCircle, 12).outerHTML
+          } Added</span>`;
           addButton.style.background = "#6b7280";
           addButton.disabled = true;
 
@@ -2136,7 +1793,9 @@ class JobTracker {
         );
 
         if (result.success) {
-          addButton.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(CheckCircle, 12).outerHTML} Added!</span>`;
+          addButton.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${
+            createIcon(CheckCircle, 12).outerHTML
+          } Added!</span>`;
           addButton.style.background = "#10b981";
 
           // Show success animation
@@ -2157,7 +1816,9 @@ class JobTracker {
 
           // Revert after 3 seconds
           setTimeout(() => {
-            addButton.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(ClipboardPlus, 12).outerHTML} Added</span>`;
+            addButton.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${
+              createIcon(ClipboardPlus, 12).outerHTML
+            } Added</span>`;
             addButton.style.background = "#6b7280";
             addButton.disabled = true;
           }, 3000);
@@ -2166,7 +1827,9 @@ class JobTracker {
         }
       } catch (error) {
         console.error("Error adding to job board:", error);
-        addButton.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(XCircle, 12).outerHTML} Error</span>`;
+        addButton.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${
+          createIcon(XCircle, 12).outerHTML
+        } Error</span>`;
         addButton.style.background = "#ef4444";
 
         this.showInlineToast(element, "Failed to add job", "error");
@@ -2182,7 +1845,9 @@ class JobTracker {
     // Check sponsor button
     const sponsorButton = document.createElement("button");
     sponsorButton.className = "hireall-sponsor-btn";
-    sponsorButton.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(Flag, 12).outerHTML} Check Sponsorship</span>`;
+    sponsorButton.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${
+      createIcon(Flag, 12).outerHTML
+    } Check Sponsorship</span>`;
     sponsorButton.title = "Check Sponsor Status";
     sponsorButton.style.cssText = `
       background: #059669;
@@ -2214,34 +1879,55 @@ class JobTracker {
       e.stopPropagation();
 
       const originalContent = sponsorButton.innerHTML;
-      sponsorButton.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(Clock, 12).outerHTML} Checking...</span>`;
+      sponsorButton.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${
+        createIcon(Clock, 12).outerHTML
+      } Checking...</span>`;
       sponsorButton.disabled = true;
 
       try {
-        // Get web app URL
-        const webAppUrl = await this.getWebAppUrl();
+        // Authenticated sponsor lookup using api client helper
+        const result = await fetchSponsorRecord(jobData.company);
 
-        // Check sponsor status using company and additional job details
-        const response = await fetch(`${webAppUrl}/api/sponsors?q=${encodeURIComponent(jobData.company)}&limit=1`);
-        const data = await response.json();
-
-        if (data.success && data.results.length > 0) {
-          const result = data.results[0];
+        if (result) {
           const isSkilledWorker = result.isSkilledWorker;
 
           if (isSkilledWorker) {
-            sponsorButton.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(CheckCircle, 12).outerHTML} Licensed</span>`;
+            sponsorButton.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${
+              createIcon(CheckCircle, 12).outerHTML
+            } Licensed</span>`;
             sponsorButton.style.background = "#10b981";
-            this.showInlineToast(element, `${createIcon(CheckCircle, 12).outerHTML} ${result.name} is a licensed sponsor!`, "success");
+            this.showInlineToast(
+              element,
+              `${createIcon(CheckCircle, 12).outerHTML} ${
+                result.name
+              } is a licensed sponsor!`,
+              "success"
+            );
           } else {
-            sponsorButton.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(AlertTriangle, 12).outerHTML} Not SW</span>`;
+            sponsorButton.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${
+              createIcon(AlertTriangle, 12).outerHTML
+            } Not SW</span>`;
             sponsorButton.style.background = "#f59e0b";
-            this.showInlineToast(element, `${createIcon(AlertTriangle, 12).outerHTML} ${result.name} is licensed but not for Skilled Worker visas`, "info");
+            this.showInlineToast(
+              element,
+              `${createIcon(AlertTriangle, 12).outerHTML} ${
+                result.name
+              } is licensed but not for Skilled Worker visas`,
+              "info"
+            );
           }
         } else {
-          sponsorButton.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(XCircle, 12).outerHTML} Not Found</span>`;
+          sponsorButton.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${
+            createIcon(XCircle, 12).outerHTML
+          } Not Found</span>`;
           sponsorButton.style.background = "#ef4444";
-          this.showInlineToast(element, `${createIcon(XCircle, 12).outerHTML} ${jobData.company} not found in sponsor register`, "error");
+          this.showInlineToast(
+            element,
+            `${createIcon(XCircle, 12).outerHTML} ${
+              jobData.company
+            } not found in sponsor register`,
+            "error"
+          );
         }
 
         // Keep result visible for 5 seconds then revert
@@ -2250,13 +1936,18 @@ class JobTracker {
           sponsorButton.style.background = "#059669";
           sponsorButton.disabled = false;
         }, 5000);
-
       } catch (error) {
         console.error("Error checking sponsor status:", error);
-        sponsorButton.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(XCircle, 12).outerHTML} Error</span>`;
+        sponsorButton.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${
+          createIcon(XCircle, 12).outerHTML
+        } Error</span>`;
         sponsorButton.style.background = "#ef4444";
 
-        this.showInlineToast(element, `${createIcon(XCircle, 12).outerHTML} Error checking sponsor status`, "error");
+        this.showInlineToast(
+          element,
+          `${createIcon(XCircle, 12).outerHTML} Error checking sponsor status`,
+          "error"
+        );
 
         setTimeout(() => {
           sponsorButton.innerHTML = originalContent;
@@ -2746,34 +2437,54 @@ class JobTracker {
     button: HTMLButtonElement
   ) {
     const originalContent = button.innerHTML;
-    button.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(Clock, 12).outerHTML} Checking...</span>`;
+    button.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${
+      createIcon(Clock, 12).outerHTML
+    } Checking...</span>`;
     button.disabled = true;
 
     try {
-      // Get web app URL
-      const webAppUrl = await this.getWebAppUrl();
+      const result = await fetchSponsorRecord(company);
 
-      // Check sponsor status using company
-      const response = await fetch(`${webAppUrl}/api/sponsors?q=${encodeURIComponent(company)}&limit=1`);
-      const data = await response.json();
-
-      if (data.success && data.results.length > 0) {
-        const result = data.results[0];
+      if (result) {
         const isSkilledWorker = result.isSkilledWorker;
 
         if (isSkilledWorker) {
-          button.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(CheckCircle, 12).outerHTML} Licensed</span>`;
+          button.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${
+            createIcon(CheckCircle, 12).outerHTML
+          } Licensed</span>`;
           button.style.background = "#10b981";
-          this.showInlineToast(element, `${createIcon(CheckCircle, 12).outerHTML} ${result.name} is a licensed sponsor!`, "success");
+          this.showInlineToast(
+            element,
+            `${createIcon(CheckCircle, 12).outerHTML} ${
+              result.name
+            } is a licensed sponsor!`,
+            "success"
+          );
         } else {
-          button.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(AlertTriangle, 12).outerHTML} Not SW</span>`;
+          button.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${
+            createIcon(AlertTriangle, 12).outerHTML
+          } Not SW</span>`;
           button.style.background = "#f59e0b";
-          this.showInlineToast(element, `${createIcon(AlertTriangle, 12).outerHTML} ${result.name} is licensed but not for Skilled Worker visas`, "info");
+          this.showInlineToast(
+            element,
+            `${createIcon(AlertTriangle, 12).outerHTML} ${
+              result.name
+            } is licensed but not for Skilled Worker visas`,
+            "info"
+          );
         }
       } else {
-        button.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(XCircle, 12).outerHTML} Not Found</span>`;
+        button.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${
+          createIcon(XCircle, 12).outerHTML
+        } Not Found</span>`;
         button.style.background = "#ef4444";
-        this.showInlineToast(element, `${createIcon(XCircle, 12).outerHTML} ${company} not found in sponsor register`, "error");
+        this.showInlineToast(
+          element,
+          `${
+            createIcon(XCircle, 12).outerHTML
+          } ${company} not found in sponsor register`,
+          "error"
+        );
       }
 
       // Keep result visible for 5 seconds then revert
@@ -2782,13 +2493,18 @@ class JobTracker {
         button.style.background = "linear-gradient(135deg, #3b82f6, #2563eb)";
         button.disabled = false;
       }, 5000);
-
     } catch (error) {
       console.error("Error checking sponsor status:", error);
-      button.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(XCircle, 12).outerHTML} Error</span>`;
+      button.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${
+        createIcon(XCircle, 12).outerHTML
+      } Error</span>`;
       button.style.background = "#ef4444";
 
-      this.showInlineToast(element, `${createIcon(XCircle, 12).outerHTML} Error checking sponsor status`, "error");
+      this.showInlineToast(
+        element,
+        `${createIcon(XCircle, 12).outerHTML} Error checking sponsor status`,
+        "error"
+      );
 
       setTimeout(() => {
         button.innerHTML = originalContent;
@@ -2804,7 +2520,9 @@ class JobTracker {
     button: HTMLButtonElement
   ) {
     const originalContent = button.innerHTML;
-    button.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(Clock, 12).outerHTML} Adding...</span>`;
+    button.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${
+      createIcon(Clock, 12).outerHTML
+    } Adding...</span>`;
     button.disabled = true;
 
     try {
@@ -2814,7 +2532,9 @@ class JobTracker {
       // Check if job already exists
       const jobExists = await JobBoardManager.checkIfJobExists(jobData);
       if (jobExists) {
-        button.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(CheckCircle, 12).outerHTML} Added</span>`;
+        button.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${
+          createIcon(CheckCircle, 12).outerHTML
+        } Added</span>`;
         button.style.background = "#6b7280";
         button.disabled = true;
 
@@ -2824,10 +2544,15 @@ class JobTracker {
       }
 
       // Add job to board with default status
-      const result = await JobBoardManager.addToBoardWithStatus(jobData, "interested");
+      const result = await JobBoardManager.addToBoardWithStatus(
+        jobData,
+        "interested"
+      );
 
       if (result.success) {
-        button.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(CheckCircle, 12).outerHTML} Added!</span>`;
+        button.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${
+          createIcon(CheckCircle, 12).outerHTML
+        } Added!</span>`;
         button.style.background = "#10b981";
 
         // Show success animation
@@ -2844,7 +2569,9 @@ class JobTracker {
 
         // Revert after 3 seconds
         setTimeout(() => {
-          button.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(ClipboardPlus, 12).outerHTML} Added</span>`;
+          button.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${
+            createIcon(ClipboardPlus, 12).outerHTML
+          } Added</span>`;
           button.style.background = "#6b7280";
           button.disabled = true;
         }, 3000);
@@ -2853,7 +2580,9 @@ class JobTracker {
       }
     } catch (error) {
       console.error("Error adding to job board:", error);
-      button.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${createIcon(XCircle, 12).outerHTML} Error</span>`;
+      button.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${
+        createIcon(XCircle, 12).outerHTML
+      } Error</span>`;
       button.style.background = "#ef4444";
 
       this.showInlineToast(element, "Failed to add job", "error");

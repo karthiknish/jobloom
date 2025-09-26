@@ -775,19 +775,6 @@
 
         <!-- Quick Actions -->
         <div class="quick-actions">
-          <button class="action-btn" id="highlight-btn">
-            <div class="action-icon primary">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
-              </svg>
-            </div>
-            <div class="action-content">
-              <h3>Check Sponsored Jobs</h3>
-              <p>Scan current page for sponsored listings</p>
-            </div>
-          </button>
-
           <button class="action-btn" id="autofill-btn">
             <div class="action-icon success">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -804,20 +791,7 @@
             </div>
           </button>
 
-          <button class="action-btn" id="people-search-btn">
-            <div class="action-icon info">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                <circle cx="9" cy="7" r="4"></circle>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-              </svg>
-            </div>
-            <div class="action-content">
-              <h3>Find Relevant People</h3>
-              <p>Search LinkedIn for hiring managers</p>
-            </div>
-          </button>
+          <!-- People search removed for simplified extension -->
 
           <a class="action-btn" id="open-board-btn">
             <div class="action-icon primary">
@@ -954,38 +928,24 @@
           <p>Sign in to sync your jobs across devices and access advanced features</p>
         </div>
 
-        <div class="auth-buttons">
-          <button class="auth-btn" id="signin-btn">
-            <span>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-              </svg>
-            </span>
-            Sign In
-          </button>
-          <button class="auth-btn" id="signup-btn">
-            <span>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                <circle cx="8.5" cy="7" r="4"></circle>
-                <line x1="20" y1="8" x2="20" y2="14"></line>
-                <line x1="23" y1="11" x2="17" y2="11"></line>
-              </svg>
-            </span>
-            Create Account
-          </button>
-
-          <button class="auth-btn" id="signout-btn" style="display: none; background: #ef4444; color: white; border-color: #ef4444;">
-            <span>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                <polyline points="16 17 21 12 16 7"></polyline>
-                <line x1="21" y1="12" x2="9" y2="12"></line>
-              </svg>
-            </span>
-            Sign Out
-          </button>
+        <div class="auth-buttons" id="auth-form-container">
+          <form id="email-auth-form" style="display:flex; flex-direction:column; gap:10px; width:100%;">
+            <input type="email" id="auth-email" placeholder="Email" required style="padding:10px; border:1px solid var(--border); border-radius:6px; font-size:14px;" />
+            <input type="password" id="auth-password" placeholder="Password" required style="padding:10px; border:1px solid var(--border); border-radius:6px; font-size:14px;" />
+            <button type="submit" class="auth-btn" id="email-auth-submit">
+              <span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+              </span>
+              Sign In / Create
+            </button>
+          </form>
+          <button class="auth-btn google" id="google-auth-btn">Continue with Google</button>
+          <button class="auth-btn" id="signout-btn" style="display:none; background:#ef4444; color:white; border-color:#ef4444;">Sign Out</button>
+          <div id="auth-error" style="display:none; color:#ef4444; font-size:12px; text-align:left;"></div>
+          <div id="auth-success" style="display:none; color:#10b981; font-size:12px; text-align:left;"></div>
         </div>
       </div>
     </main>

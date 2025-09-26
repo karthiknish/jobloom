@@ -32,11 +32,11 @@ export default function TestimonialSection() {
         {/* Heading */}
         <div className="text-center mb-16">
           <h2
-            className={`text-3xl font-bold text-gray-900 sm:text-4xl ${playfair.className}`}
+            className={`text-3xl font-bold text-foreground sm:text-4xl ${playfair.className}`}
           >
             What Our Users Say
           </h2>
-          <p className="mt-4 text-xl text-gray-600">
+          <p className="mt-4 text-xl text-muted-foreground">
             Real stories from people who landed their dream jobs with Hireall
           </p>
         </div>
@@ -51,7 +51,7 @@ export default function TestimonialSection() {
               transition={{ duration: 0.5, delay: i * 0.1 }}
               viewport={{ once: true }}
             >
-              <Card className="hover:shadow-lg transition-shadow rounded-2xl border border-gray-100">
+              <Card className="hover:shadow-lg transition-shadow rounded-2xl border border-border">
                 <CardHeader>
                   <div className="flex items-center space-x-4">
                     <Avatar className="h-12 w-12">
@@ -62,13 +62,13 @@ export default function TestimonialSection() {
                       <AvatarFallback>{t.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div>
-                      <h3 className="font-semibold text-gray-900">{t.name}</h3>
-                      <p className="text-sm text-gray-500">{t.role}</p>
+                      <h3 className="font-semibold text-foreground">{t.name}</h3>
+                      <p className="text-sm text-muted-foreground">{t.role}</p>
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-600 leading-relaxed">{t.text}</p>
+                  <p className="text-muted-foreground leading-relaxed">{t.text}</p>
                 </CardContent>
               </Card>
             </motion.div>

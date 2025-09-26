@@ -30,30 +30,42 @@ module.exports = {
   plugins: [
     new Dotenv({
       path: "./.env",
-      // Do not require an example file during local dev builds
       safe: false,
       allowEmptyValues: true,
-      systemvars: true,
+      systemvars: false, // avoid pulling in CI/system env duplicates that cause DefinePlugin conflicts
       silent: true,
       defaults: false,
     }),
-    // Ensure reasonable defaults if env vars are missing so build-time
-    // replacements always produce a string in the bundle
-    new webpack.DefinePlugin({
-      "process.env.WEB_APP_URL": JSON.stringify(
-        process.env.WEB_APP_URL || "https://hireall.app"
-      ),
-    }),
+    // Define only a minimal set of variables for the extension runtime to reduce conflicts.
+    // If these vars already injected by Dotenv/system, we rely on process.env at runtime (DefinePlugin stringifies at build time).
+    new webpack.DefinePlugin(
+      Object.fromEntries(
+        [
+          ["process.env.WEB_APP_URL", process.env.WEB_APP_URL || "https://hireall.app"],
+          ["process.env.NEXT_PUBLIC_FIREBASE_API_KEY", process.env.NEXT_PUBLIC_FIREBASE_API_KEY || ""],
+          ["process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN", process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || ""],
+          ["process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID", process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || ""],
+          ["process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET", process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || ""],
+          ["process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID", process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || ""],
+          ["process.env.NEXT_PUBLIC_FIREBASE_APP_ID", process.env.NEXT_PUBLIC_FIREBASE_APP_ID || ""],
+        ].map(([k, v]) => [k, JSON.stringify(v)])
+      )
+    ),
     new CopyPlugin({
       patterns: [
         {
           from: "manifest.json",
           to: "manifest.json",
           transform(content) {
-            return content.toString().replace(
-              /"OAUTH_CLIENT_ID_PLACEHOLDER"/g,
-              JSON.stringify(process.env.OAUTH_CLIENT_ID || "575119663017-s0bf9hfbc4suitbnp12kuvne4gsnkedr.apps.googleusercontent.com")
-            );
+            return content
+              .toString()
+              .replace(
+                /"OAUTH_CLIENT_ID_PLACEHOLDER"/g,
+                JSON.stringify(
+                  process.env.OAUTH_CLIENT_ID ||
+                    "575119663017-s0bf9hfbc4suitbnp12kuvne4gsnkedr.apps.googleusercontent.com"
+                )
+              );
           },
         },
         { from: "src/popup.html", to: "popup.html" },

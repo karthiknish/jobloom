@@ -38,7 +38,8 @@
     "@tiptap/starter-kit": "^3.4.4",
     "class-variance-authority": "^0.7.1",
     "lowlight": "^3.3.0",
-    "lucide-react": "^0.539.0"
+    "lucide-react": "^0.539.0",
+    "firebase": "^10.13.1"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.246",

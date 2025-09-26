@@ -85,14 +85,14 @@ export function SubdomainSettings({ initialSubdomain }: Props) {
           <div className="space-y-2">
             <p className="text-sm">Your public portfolio is live at:</p>
             <div className="flex items-center gap-2">
-              <code className="rounded bg-gray-100 px-2 py-1 text-sm">https://{subdomain}.hireall.app</code>
+              <code className="rounded bg-muted px-2 py-1 text-sm">https://{subdomain}.hireall.app</code>
               <Button size="sm" variant="outline" onClick={() => navigator.clipboard.writeText(`https://${subdomain}.hireall.app`)}>Copy</Button>
             </div>
-            <p className="text-xs text-gray-500">Changes are locked once claimed.</p>
+            <p className="text-xs text-muted-foreground">Changes are locked once claimed.</p>
           </div>
         ) : (
           <div className="space-y-3">
-            <p className="text-sm text-gray-600">Claim a unique link for sharing your portfolio publicly.</p>
+            <p className="text-sm text-muted-foreground">Claim a unique link for sharing your portfolio publicly.</p>
             <div className="flex flex-col sm:flex-row gap-2">
               <div className="flex items-center gap-1 flex-1">
                 <Input
@@ -101,7 +101,7 @@ export function SubdomainSettings({ initialSubdomain }: Props) {
                   onChange={e => { setInput(e.target.value.toLowerCase()); setAvailable(null); }}
                   disabled={claiming}
                 />
-                <span className="text-sm text-gray-500">.hireall.app</span>
+                <span className="text-sm text-muted-foreground">.hireall.app</span>
               </div>
               <Button type="button" onClick={checkAvailability} disabled={checking || !input}> {checking ? 'Checking...' : 'Check'} </Button>
               <Button type="button" onClick={claim} disabled={claiming || !available}> {claiming ? 'Claiming...' : 'Claim'} </Button>
