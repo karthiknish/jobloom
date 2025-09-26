@@ -232,15 +232,15 @@ className="border-border focus:border-amber-500 focus:ring-amber-500"
                 checked={showRecruitmentAgency}
                 onCheckedChange={(checked) => setShowRecruitmentAgency(checked === true)}
               />
-              <Label htmlFor="recruitment-agency" className="text-sm text-gray-600">
+              <Label htmlFor="recruitment-agency" className="text-sm text-muted-foreground">
                 Show recruitment agency jobs
               </Label>
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <Label className="text-sm font-medium text-gray-700">Sort by:</Label>
+            <Label className="text-sm font-medium text-foreground">Sort by:</Label>
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-40 border-gray-200">
+              <SelectTrigger className="w-40 border-border">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -256,10 +256,10 @@ className="border-border focus:border-amber-500 focus:ring-amber-500"
 
       {/* Bulk Actions */}
       {selectedIds.size > 0 && (
-        <Card className="border-0 bg-gradient-to-br from-blue-50 to-indigo-50 shadow-lg">
+        <Card className="border-0 bg-gradient-to-br from-sky-50 to-violet-50 shadow-lg">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-blue-700">
+              <span className="text-sm text-sky-700">
                 {selectedIds.size} application{selectedIds.size !== 1 ? "s" : ""} selected
               </span>
               <div className="flex gap-2">
@@ -294,7 +294,7 @@ className="border-border focus:border-amber-500 focus:ring-amber-500"
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <Card className="border border-gray-200 hover:border-orange-300 transition-colors">
+            <Card className="border border-border hover:border-amber-300 transition-colors">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
                   <Checkbox
@@ -312,10 +312,10 @@ className="border-border focus:border-amber-500 focus:ring-amber-500"
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                        <h3 className="text-lg font-semibold text-foreground mb-1">
                           {application.job?.title || "Untitled Job"}
                         </h3>
-                        <p className="text-gray-600 mb-2">{application.job?.company || "Unknown Company"}</p>
+                        <p className="text-muted-foreground mb-2">{application.job?.company || "Unknown Company"}</p>
                         
                         {/* Basic Info */}
                         <div className="flex items-center gap-4 text-sm text-gray-500 mb-3">
@@ -420,7 +420,7 @@ className="border-border focus:border-amber-500 focus:ring-amber-500"
                                 variant="outline"
                                 size="sm"
                                 onClick={() => onViewApplication(application)}
-                                className="text-blue-600 border-blue-200 hover:bg-blue-50"
+className="text-sky-600 border-sky-200 hover:bg-sky-50"
                               >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
