@@ -267,7 +267,7 @@ className="border-border focus:border-amber-500 focus:ring-amber-500"
                   variant="outline"
                   size="sm"
                   onClick={() => setSelectedIds(new Set())}
-                  className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                  className="text-sky-600 border-sky-200 hover:bg-sky-50"
                 >
                   Clear Selection
                 </Button>
@@ -318,7 +318,7 @@ className="border-border focus:border-amber-500 focus:ring-amber-500"
                         <p className="text-muted-foreground mb-2">{application.job?.company || "Unknown Company"}</p>
                         
                         {/* Basic Info */}
-                        <div className="flex items-center gap-4 text-sm text-gray-500 mb-3">
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
                           <span className="flex items-center gap-1">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -344,7 +344,7 @@ className="border-border focus:border-amber-500 focus:ring-amber-500"
                         
                         {/* Additional Details */}
                         {(application.job?.salary || application.job?.experienceLevel || application.job?.industry) && (
-                          <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
                             {application.job?.salary && (
                               <span className="flex items-center gap-1">
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -396,17 +396,17 @@ className="border-border focus:border-amber-500 focus:ring-amber-500"
                             {application.status}
                           </Badge>
                           {application.job?.isSponsored && (
-                            <Badge variant="outline" className="border-green-500 text-green-700">
+                            <Badge variant="outline" className="border-emerald-500 text-emerald-700">
                               🇬🇧 Sponsored
                             </Badge>
                           )}
                           {application.job?.isRecruitmentAgency && (
-                            <Badge variant="outline" className="border-blue-500 text-blue-700">
+                            <Badge variant="outline" className="border-sky-500 text-sky-700">
                               Agency
                             </Badge>
                           )}
                           {application.job?.remoteWork && (
-                            <Badge variant="outline" className="border-purple-500 text-purple-700">
+                            <Badge variant="outline" className="border-violet-500 text-violet-700">
                               Remote
                             </Badge>
                           )}
@@ -504,17 +504,17 @@ className="text-sky-600 border-sky-200 hover:bg-sky-50"
         ))}
 
         {filteredApplications.length === 0 && (
-          <Card className="border-0 bg-gradient-to-br from-gray-50 to-gray-100 shadow-lg">
+          <Card className="border-0 bg-gradient-to-br from-muted to-muted/80 shadow-lg">
             <CardContent className="p-12 text-center">
-              <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center">
-                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-muted-foreground/20 to-muted-foreground/30 rounded-full flex items-center justify-center">
+                <svg className="w-8 h-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              <h3 className="text-lg font-semibold text-foreground mb-2">
                 No applications found
               </h3>
-              <p className="text-gray-600">
+              <p className="text-muted-foreground">
                 {applications.length === 0
                   ? "You haven't added any job applications yet."
                   : "Try adjusting your search or filter criteria."}

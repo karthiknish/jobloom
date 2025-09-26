@@ -251,9 +251,9 @@ async function testAllEndpoints() {
   // SOC Codes - public endpoint
   await testEndpoint('Get SOC Codes', `${BASE_URL}/api/soc-codes`, { logResponse: true });
 
-  // Sponsors - requires search parameters
-  await testEndpoint('Get Sponsors (without params)', `${BASE_URL}/api/sponsors`, { expectedStatus: 400 });
-  await testEndpoint('Get Sponsors (with params)', `${BASE_URL}/api/sponsors?q=test`, { expectedStatus: 200 });
+  // Sponsors - requires authentication
+  await skipEndpoint('Get Sponsors (without params)', 'Requires authentication');
+  await skipEndpoint('Get Sponsors (with params)', 'Requires authentication');
 
   // Stripe - requires authentication
   await skipEndpoint('Create Checkout Session', 'Requires authentication and payment data');
