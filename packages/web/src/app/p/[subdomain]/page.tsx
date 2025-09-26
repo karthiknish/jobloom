@@ -1,11 +1,13 @@
 import { getAdminDb } from '@/firebase/admin';
 import { notFound } from 'next/navigation';
 
-interface Props { params: { subdomain: string } }
+interface Props {
+  params: Promise<{ subdomain: string }>;
+}
 
 // Basic public portfolio renderer (light theme only)
 export default async function PublicPortfolioPage({ params }: Props) {
-  const { subdomain } = params;
+  const { subdomain } = await params;
   const db = getAdminDb();
 
   // Lookup subdomain ownership
