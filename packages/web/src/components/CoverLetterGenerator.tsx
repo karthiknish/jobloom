@@ -32,21 +32,7 @@ import {
 } from "@/components/ui/tabs";
 import { showSuccess, showError } from "@/components/ui/Toast";
 
-// Minimal subset of the ResumeData interface used by this generator.
-// (The full shape lives in the resume builder page; we redefine the required
-// parts here to avoid a circular dependency and missing type errors.)
-interface ResumeData {
-  personalInfo?: {
-    fullName?: string;
-    email?: string;
-    phone?: string;
-    location?: string;
-  };
-  experience?: Array<{
-    position?: string;
-    company?: string;
-  }>;
-}
+import { ResumeData } from "@/types/resume";
 
 interface CoverLetterData {
   jobTitle: string;
@@ -63,7 +49,7 @@ interface CoverLetterData {
 }
 
 interface CoverLetterGeneratorProps {
-  resumeData: any;
+  resumeData: ResumeData;
   onGenerate?: (letter: string) => void;
 }
 
@@ -81,11 +67,12 @@ const DEFAULT_LETTER_DATA: CoverLetterData = {
   customClosing: "",
 };
 
-const formatLetter = (
+export const formatLetter = (
   data: CoverLetterData,
-  resume: ResumeData,
+  resume: Partial<ResumeData>,
+  opts: { includeAchievements?: boolean } = {},
 ): string => {
-  const personalInfo = resume.personalInfo ?? {};
+  const personalInfo: Partial<ResumeData['personalInfo']> = resume.personalInfo ?? {} as any;
   const name = personalInfo.fullName?.trim() || "Your Name";
   const email = personalInfo.email?.trim() || "your.email@example.com";
   const phone = personalInfo.phone?.trim() || "(555) 000-0000";
@@ -150,11 +137,16 @@ const formatLetter = (
   const defaultBody = defaultBodyParts.join("\n\n");
   const closing = data.customClosing?.trim() || `Sincerely,\n${name}`;
 
+  const achievementsBlock = opts.includeAchievements && resume.experience?.length
+    ? resume.experience.slice(0,1).flatMap(exp => exp.achievements.slice(0,3)).filter(a => a.trim())
+    : [];
+
+  const bodyWithAchievements = [
+    data.customBody?.trim() || defaultBody,
+    achievementsBlock.length ? `Key Achievements:\n- ${achievementsBlock.join("\n- ")}` : undefined,
+  ].filter(Boolean).join("\n\n");
+
   return [
-    `${name}`,
-    `${location}`,
-    `${email}`,
-    `${phone}`,
     `${formattedDate}`,
     "",
     `${hiringManager}`,
@@ -165,16 +157,12 @@ const formatLetter = (
     "",
     data.customOpening?.trim() || defaultOpening,
     "",
-    data.customBody?.trim() || defaultBody,
+    bodyWithAchievements,
     "",
     closing,
     "",
-    `${name}`,
-    `${phone}`,
-    `${email}`,
-  ]
-    .filter(Boolean)
-    .join("\n");
+    `${name} | ${location} | ${email} | ${phone}`,
+  ].filter(Boolean).join("\n");
 };
 
 // A lightweight implementation so the page can render and builds succeed.
@@ -186,6 +174,7 @@ export const CoverLetterGenerator: React.FC<CoverLetterGeneratorProps> = ({
   const [formData, setFormData] = useState<CoverLetterData>(DEFAULT_LETTER_DATA);
   const [letter, setLetter] = useState<string>("");
   const [generating, setGenerating] = useState(false);
+  const [includeAchievements, setIncludeAchievements] = useState(true);
 
   const updateField = (field: keyof CoverLetterData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -219,9 +208,13 @@ export const CoverLetterGenerator: React.FC<CoverLetterGeneratorProps> = ({
   };
 
   const handleGenerate = () => {
+    if (!formData.jobTitle.trim() || !formData.companyName.trim()) {
+      showError("Enter at least a job title and company");
+      return;
+    }
     try {
       setGenerating(true);
-      const generated = formatLetter(formData, resumeData as ResumeData);
+      const generated = formatLetter(formData, resumeData, { includeAchievements });
       setLetter(generated);
       onGenerate?.(generated);
       showSuccess("Cover letter generated");
@@ -342,7 +335,7 @@ export const CoverLetterGenerator: React.FC<CoverLetterGeneratorProps> = ({
           />
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex gap-3 items-center flex-wrap">
           <Button onClick={handleGenerate} disabled={generating}>
             {generating ? "Generating..." : "Generate Letter"}
           </Button>
@@ -351,6 +344,15 @@ export const CoverLetterGenerator: React.FC<CoverLetterGeneratorProps> = ({
               Copy to Clipboard
             </Button>
           )}
+          <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+            <input
+              type="checkbox"
+              className="h-4 w-4"
+              checked={includeAchievements}
+              onChange={e => setIncludeAchievements(e.target.checked)}
+            />
+            Include achievements
+          </label>
         </div>
 
         {letter && (

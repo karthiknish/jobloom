@@ -3,7 +3,6 @@ import { verifyIdToken, getAdminDb, getAdminStorage } from "@/firebase/admin";
 import { getStorage } from "firebase-admin/storage";
 
 const db = getAdminDb();
-const bucket = getAdminStorage().bucket();
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,6 +17,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
     const userId = decodedToken.uid;
+
+    // Initialize bucket only when needed
+    const bucket = getAdminStorage().bucket();
 
     // Collect all user data
     const exportData: any = {
