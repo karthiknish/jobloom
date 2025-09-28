@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
   Building2,
@@ -13,7 +13,12 @@ import {
   BarChart3,
   TrendingUp,
   Activity,
+  Download,
+  RefreshCw,
+  CheckCircle2,
+  Ban,
 } from "lucide-react";
+import { format } from "date-fns";
 
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { useApiQuery, useApiMutation } from "@/hooks/useApi";
@@ -63,7 +68,8 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import toast from "react-hot-toast";
+import { showError, showSuccess, showWarning } from "@/components/ui/Toast";
+import { exportToCsv } from "@/utils/exportToCsv";
 
 interface SponsoredCompany {
   _id: string;
@@ -125,6 +131,11 @@ export default function AdminSponsorsDashboard() {
     adminApi.deleteSponsoredCompany(companyId, userRecord?._id || "")
   );
 
+  const { mutate: updateSponsorStatus } = useApiMutation(
+    ({ companyId, isActive }: { companyId: string; isActive: boolean }) =>
+      adminApi.updateSponsoredCompany(companyId, { isActive })
+  );
+
   // Filter sponsors based on search and filters
   const filteredSponsors =
     sponsoredCompanies?.filter((sponsor: SponsoredCompany) => {
@@ -148,6 +159,70 @@ export default function AdminSponsorsDashboard() {
 
       return matchesSearch && matchesIndustry && matchesType && matchesStatus;
     }) || [];
+
+  const recentSponsors = useMemo(() => {
+    const sponsors = sponsoredCompanies ?? [];
+    return [...sponsors]
+      .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))
+      .slice(0, 5);
+  }, [sponsoredCompanies]);
+
+  const handleExportSponsors = () => {
+    if (!filteredSponsors.length) {
+      showWarning("No sponsors match the current filters.");
+      return;
+    }
+
+    const rows = filteredSponsors.map((sponsor) => ({
+      ID: sponsor._id,
+      Name: sponsor.name,
+      Type: sponsor.sponsorshipType,
+      Industry: sponsor.industry || "",
+      Website: sponsor.website || "",
+      Status: sponsor.isActive !== false ? "Active" : "Inactive",
+      Aliases: sponsor.aliases.join(", "),
+      "Created At": new Date(sponsor.createdAt).toISOString(),
+      "Updated At": sponsor.updatedAt
+        ? new Date(sponsor.updatedAt).toISOString()
+        : "",
+    }));
+
+    exportToCsv(
+      `hireall-sponsors-${new Date().toISOString().slice(0, 10)}`,
+      rows
+    );
+
+    showSuccess(`Exported ${filteredSponsors.length} sponsors to CSV`);
+  };
+
+  const handleRefreshData = async () => {
+    try {
+      await Promise.allSettled([refetchCompanies(), refetchStats()]);
+      showSuccess("Sponsor dashboard refreshed");
+    } catch (error) {
+      console.error("Failed to refresh sponsor data", error);
+      showError("Unable to refresh sponsor data");
+    }
+  };
+
+  const handleToggleSponsorStatus = async (sponsor: SponsoredCompany) => {
+    const nextStatus = sponsor.isActive === false;
+
+    try {
+      await updateSponsorStatus({
+        companyId: sponsor._id,
+        isActive: nextStatus,
+      });
+      showSuccess(
+        `${sponsor.name} marked as ${nextStatus ? "active" : "inactive"}`
+      );
+      refetchCompanies();
+      refetchStats();
+    } catch (error) {
+      console.error("Failed to toggle sponsor status", error);
+      showError(`Unable to update ${sponsor.name}`);
+    }
+  };
 
   const getSponsorshipTypeBadge = (type: string) => {
     const variants: Record<
@@ -184,11 +259,11 @@ export default function AdminSponsorsDashboard() {
 
     try {
       await deleteSponsorMutation.mutate(companyId);
-      toast.success(`${companyName} has been removed from sponsored companies`);
+      showSuccess(`${companyName} has been removed from sponsored companies`);
       refetchCompanies();
       refetchStats();
     } catch {
-      toast.error("Failed to delete sponsor");
+      showError("Failed to delete sponsor");
     }
   };
 
@@ -430,6 +505,122 @@ export default function AdminSponsorsDashboard() {
           </motion.div>
         )}
 
+        {/* Quick Actions & Recent Activity */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+          className="grid grid-cols-1 gap-6 lg:grid-cols-3"
+        >
+          <Card className="card-depth-2">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Activity className="h-5 w-5 text-primary" />
+                Quick Actions
+              </CardTitle>
+              <CardDescription>
+                Apply tools to the current sponsor filters
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Button
+                variant="secondary"
+                className="w-full justify-start"
+                onClick={handleExportSponsors}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export sponsors to CSV
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full justify-start"
+                onClick={handleRefreshData}
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh sponsor metrics
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Tip: combine search and filters to export or refresh just the
+                subset you need.
+              </p>
+            </CardContent>
+          </Card>
+
+          {recentSponsors.length > 0 && (
+            <Card className="card-depth-2 lg:col-span-2">
+              <CardHeader>
+                <CardTitle className="text-lg">Recent sponsor additions</CardTitle>
+                <CardDescription>
+                  Latest companies added to the sponsored list
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-md border overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Company</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Added on</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {recentSponsors.map((sponsor) => (
+                        <TableRow key={sponsor._id}>
+                          <TableCell className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                                {getCompanyInitials(sponsor.name)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0">
+                              <p className="font-medium truncate">
+                                {sponsor.name}
+                              </p>
+                              {sponsor.website && (
+                                <p className="text-xs text-muted-foreground truncate">
+                                  {sponsor.website}
+                                </p>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={getSponsorshipTypeBadge(
+                                sponsor.sponsorshipType
+                              )}
+                              className="capitalize"
+                            >
+                              {sponsor.sponsorshipType}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={
+                                sponsor.isActive !== false
+                                  ? "default"
+                                  : "secondary"
+                              }
+                            >
+                              {sponsor.isActive !== false
+                                ? "Active"
+                                : "Inactive"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right text-sm text-muted-foreground">
+                            {format(new Date(sponsor.createdAt), "PP")}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </motion.div>
+
         {/* Filters and Search */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -587,6 +778,21 @@ export default function AdminSponsorsDashboard() {
                             >
                               <Eye className="h-4 w-4 mr-2" />
                               View Details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleToggleSponsorStatus(sponsor)}
+                            >
+                              {sponsor.isActive !== false ? (
+                                <>
+                                  <Ban className="h-4 w-4 mr-2" />
+                                  Deactivate Sponsor
+                                </>
+                              ) : (
+                                <>
+                                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                                  Activate Sponsor
+                                </>
+                              )}
                             </DropdownMenuItem>
                             <DropdownMenuItem>
                               <Edit className="h-4 w-4 mr-2" />

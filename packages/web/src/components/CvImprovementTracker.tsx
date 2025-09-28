@@ -368,7 +368,7 @@ export function CvImprovementTracker({ analyses }: CvImprovementTrackerProps) {
             {consistency > 80 && (
               <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg">
                 <p className="text-sm text-purple-800">
-                  High consistency in your scores indicates you're building on
+                  High consistency in your scores indicates you&apos;re building on
                   solid foundations.
                 </p>
               </div>

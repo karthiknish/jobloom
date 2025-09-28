@@ -1,17 +1,28 @@
 import { ResumeData, ValidationIssue } from "@/types/resume";
+import { evaluateAtsCompatibilityFromResume } from "@/lib/ats";
 
-export function calculateATSScore(resume: ResumeData): number {
-  let score = 0;
-  if (resume.experience.length > 0 || resume.education.length > 0) score += 3;
-  if (resume.personalInfo.email && resume.personalInfo.phone) score += 2;
-  if (resume.skills.some(s => s.skills.length > 0)) score += 2;
-  const quantified = resume.experience.some(exp => exp.achievements.some(a => /\d/.test(a)));
-  if (quantified) score += 3;
-  return score;
+export interface AtsEvaluationOptions {
+  targetRole?: string | null;
+  industry?: string | null;
 }
 
-export function calculateResumeScore(resume: ResumeData): number {
+export function calculateATSScore(
+  resume: ResumeData,
+  options?: AtsEvaluationOptions
+): number {
+  const evaluation = evaluateAtsCompatibilityFromResume(resume, options);
+  const normalizedScore = Math.round(evaluation.score / 10);
+  return Math.min(Math.max(normalizedScore, 0), 10);
+}
+
+export function calculateResumeScore(
+  resume: ResumeData,
+  options?: AtsEvaluationOptions
+): number {
   let score = 0;
+  const atsEvaluation = evaluateAtsCompatibilityFromResume(resume, options);
+  const atsScore = Math.min(Math.max(Math.round(atsEvaluation.score / 10), 0), 10);
+
   // Personal info (15%)
   const personalFields = ['fullName', 'email', 'phone', 'location', 'summary'] as const;
   personalFields.forEach(f => {
@@ -46,28 +57,52 @@ export function calculateResumeScore(resume: ResumeData): number {
     if (resume.projects.some(p => p.technologies.length > 0)) score += 3;
   }
   // ATS (10%)
-  score += calculateATSScore(resume);
+  score += atsScore;
   return Math.round(score);
 }
 
-export function suggestKeywords(resume: ResumeData, pool: string[] = defaultKeywords): string[] {
+export function getAtsEvaluation(
+  resume: ResumeData,
+  options?: AtsEvaluationOptions
+) {
+  return evaluateAtsCompatibilityFromResume(resume, options);
+}
+
+export function suggestKeywords(
+  resume: ResumeData,
+  pool: string[] = defaultKeywords,
+  options?: AtsEvaluationOptions
+): string[] {
+  const evaluation = evaluateAtsCompatibilityFromResume(resume, options);
+  const missing = evaluation.missingKeywords.slice(0, 10);
+  if (missing.length >= 6) {
+    return missing;
+  }
+
   const text = JSON.stringify(resume).toLowerCase();
-  return pool.filter(k => !text.includes(k.toLowerCase())).slice(0, 8);
+  const fallback = pool.filter(k => !text.includes(k.toLowerCase()));
+  return Array.from(new Set([...missing, ...fallback])).slice(0, 10);
 }
 
 const defaultKeywords = [
   'JavaScript','React','Node.js','Python','TypeScript','AWS','Docker','Leadership','Communication','Agile','Scrum','Data Analysis','Machine Learning'
 ];
 
-export function getImprovementSuggestions(resume: ResumeData): string[] {
+export function getImprovementSuggestions(
+  resume: ResumeData,
+  options?: AtsEvaluationOptions
+): string[] {
   const suggestions: string[] = [];
+  const evaluation = evaluateAtsCompatibilityFromResume(resume, options);
+  const atsScore = Math.min(Math.max(Math.round(evaluation.score / 10), 0), 10);
   if (!resume.personalInfo.summary?.trim()) suggestions.push('Add a professional summary');
   if (resume.experience.length === 0) suggestions.push('Add at least one experience entry');
   if (resume.experience.some(e => !e.achievements.some(a => a.trim()))) suggestions.push('Provide quantified achievements for each experience');
   if (resume.skills.every(s => s.skills.length === 0)) suggestions.push('Add relevant skills');
   if (resume.projects.length === 0) suggestions.push('Add at least one project');
-  if (calculateATSScore(resume) < 7) suggestions.push('Improve ATS compatibility (contact info, sections, quantified achievements)');
-  return suggestions;
+  if (atsScore < 7) suggestions.push('Improve ATS compatibility (contact info, sections, quantified achievements)');
+  suggestions.push(...(evaluation.suggestions || []));
+  return Array.from(new Set(suggestions));
 }
 
 export function validateResume(resume: ResumeData): ValidationIssue[] {

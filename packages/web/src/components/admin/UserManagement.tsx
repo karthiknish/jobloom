@@ -1,10 +1,10 @@
 // components/admin/UserManagement.tsx
 import { useApiMutation } from "../../hooks/useApi";
 import { adminApi } from "../../utils/api/admin";
-import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { showError, showSuccess } from "@/components/ui/Toast";
 
 interface User {
   _id: string;
@@ -38,10 +38,10 @@ export function UserManagement({ users, currentUser, onUsersUpdate }: UserManage
   const handleSetAdmin = async (userId: string) => {
     try {
       await setAdminUser({ userId });
-      toast.success("User granted admin privileges");
+      showSuccess("User granted admin privileges");
       onUsersUpdate();
     } catch (error) {
-      toast.error("Failed to grant admin privileges");
+      showError("Failed to grant admin privileges");
       console.error("Error setting admin:", error);
     }
   };
@@ -49,10 +49,10 @@ export function UserManagement({ users, currentUser, onUsersUpdate }: UserManage
   const handleRemoveAdmin = async (userId: string) => {
     try {
       await removeAdminUser({ userId });
-      toast.success("Admin privileges removed");
+      showSuccess("Admin privileges removed");
       onUsersUpdate();
     } catch (error) {
-      toast.error("Failed to remove admin privileges");
+      showError("Failed to remove admin privileges");
       console.error("Error removing admin:", error);
     }
   };

@@ -1,7 +1,46 @@
 "use client";
 
 import { Toaster, toast, ToastBar } from "react-hot-toast";
-import { CheckCircle, AlertCircle, Info, X } from "lucide-react";
+import { CheckCircle, AlertCircle, Info, AlertTriangle, X } from "lucide-react";
+
+const DEFAULT_DURATION = 4000;
+
+type ToastKind = "success" | "error" | "info" | "warning";
+
+const ICONS: Record<ToastKind, JSX.Element> = {
+  success: <CheckCircle className="h-5 w-5" />,
+  error: <AlertCircle className="h-5 w-5" />,
+  info: <Info className="h-5 w-5" />,
+  warning: <AlertTriangle className="h-5 w-5" />,
+};
+
+const DURATIONS: Record<ToastKind, number> = {
+  success: DEFAULT_DURATION,
+  info: DEFAULT_DURATION,
+  warning: 5000,
+  error: 6000,
+};
+
+const buildContent = (title: string, description?: string) => (
+  <div className="flex flex-col gap-1">
+    <span className="text-sm font-medium leading-relaxed">{title}</span>
+    {description && (
+      <span className="text-xs text-muted-foreground leading-relaxed">
+        {description}
+      </span>
+    )}
+  </div>
+);
+
+const showStructuredToast = (
+  kind: ToastKind,
+  title: string,
+  description?: string
+) =>
+  toast(buildContent(title, description), {
+    duration: DURATIONS[kind],
+    icon: ICONS[kind],
+  });
 
 export function AppToaster() {
   return (
@@ -82,32 +121,24 @@ export function AppToaster() {
 }
 
 // Centralized toast functions with user-friendly messages
-export const showSuccess = (message: string, _description?: string) => {
-  return toast.success(message, {
-    duration: 4000,
-    icon: <CheckCircle className="h-5 w-5" />,
-  });
-};
+export const showSuccess = (message: string, description?: string) =>
+  showStructuredToast("success", message, description);
 
-export const showError = (message: string, _description?: string) => {
-  return toast.error(message, {
-    duration: 5000,
-    icon: <AlertCircle className="h-5 w-5" />,
-  });
-};
+export const showError = (message: string, description?: string) =>
+  showStructuredToast("error", message, description);
 
-export const showInfo = (message: string, _description?: string) => {
-  return toast(message, {
-    duration: 4000,
-    icon: <Info className="h-5 w-5" />,
-  });
-};
+export const showInfo = (message: string, description?: string) =>
+  showStructuredToast("info", message, description);
 
-export const showLoading = (message: string) => {
-  return toast.loading(message, {
-    icon: <div className="h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />,
+export const showWarning = (message: string, description?: string) =>
+  showStructuredToast("warning", message, description);
+
+export const showLoading = (message: string) =>
+  toast.loading(buildContent(message), {
+    icon: (
+      <div className="h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+    ),
   });
-};
 
 export const dismissToast = (toastId: string) => {
   toast.dismiss(toastId);

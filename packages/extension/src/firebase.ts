@@ -15,8 +15,8 @@ const firebaseConfig = {
 
 function validateConfig(cfg: Record<string, any>) {
   const missing = Object.entries(cfg)
-    .filter(([_, v]) => !v)
-    .map(([k]) => k);
+    .filter(([, value]) => !value)
+    .map(([key]) => key);
   if (missing.length) {
     throw new Error(`Missing Firebase config values for extension: ${missing.join(', ')}`);
   }

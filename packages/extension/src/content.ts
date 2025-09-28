@@ -2,7 +2,6 @@ import { DEFAULT_WEB_APP_URL } from "./constants";
 import {
   Target,
   ClipboardPlus,
-  BookmarkPlus,
   FileText,
   X,
   AlertTriangle,
@@ -23,9 +22,6 @@ import { sponsorBatchLimiter, checkRateLimit } from "./rateLimiter";
 // --- Sponsorship lookup cache & concurrency limiter utilities ---
 const sponsorshipCache: Map<string, any> = new Map();
 const sponsorshipInFlight: Map<string, Promise<any>> = new Map();
-const MAX_SPONSOR_LOOKUPS = 4; // limit parallel sponsor queries
-let activeSponsorLookups = 0;
-const sponsorQueue: Array<() => void> = [];
 
 async function runWithSponsorLimit<T>(fn: () => Promise<T>): Promise<T> {
   // Use the global batch rate limiter instead of local concurrency control
@@ -478,7 +474,9 @@ class JobTracker {
             if (auth.currentUser) {
               token = await auth.currentUser.getIdToken();
             }
-          } catch {}
+          } catch (tokenError) {
+            console.warn("Failed to retrieve auth token for sponsorship lookup", tokenError);
+          }
           const resp = await fetch(
             `${base}/api/app/sponsorship/companies?q=${encodeURIComponent(
               company
@@ -2594,19 +2592,10 @@ class JobTracker {
     }
   }
 
-  private async addToJobBoard(
-    jobData: JobData,
-    sponsorshipData: any
-  ): Promise<boolean> {
-    // This function is now handled by JobBoardManager
-    // Keeping it for backward compatibility but it's deprecated
-    console.warn("addToJobBoard is deprecated. Use JobBoardManager instead.");
-    return true;
-  }
 }
 
 // Listen for messages from popup
-chrome.runtime.onMessage.addListener((request: any, sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void) => {
+chrome.runtime.onMessage.addListener((request: any) => {
   if (request.action === "togglePeopleSearch") {
     const peopleSearchBtn = document.getElementById(
       "hireall-people-search"

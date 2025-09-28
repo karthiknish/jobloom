@@ -59,17 +59,17 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
   return (
     <div className="space-y-8">
       {/* Main Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 motion-stagger">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <Card className="group hover:scale-105 transition-transform duration-300">
+          <Card className="group motion-card">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
-                  <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg group-hover:shadow-xl transition-shadow">
+                  <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg">
                     <Briefcase className="h-6 w-6 text-white" />
                   </div>
                   <div className="ml-4">
@@ -100,11 +100,11 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.1 }}
         >
-          <Card className="group hover:scale-105 transition-transform duration-300">
+          <Card className="group motion-card">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
-                  <div className="p-4 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 shadow-lg group-hover:shadow-xl transition-shadow">
+                  <div className="p-4 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 shadow-lg">
                     <span className="text-white text-2xl">📍</span>
                   </div>
                   <div className="ml-4">
@@ -135,18 +135,18 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.2 }}
         >
-          <Card className="group hover:scale-105 transition-transform duration-300">
+          <Card className="group motion-card">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
-                  <div className="p-4 rounded-2xl bg-gradient-to-br from-green-500 to-green-600 shadow-lg group-hover:shadow-xl transition-shadow">
-                    <span className="text-white text-2xl">📄</span>
+                  <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-lg">
+                    <span className="text-white text-2xl">⚡</span>
                   </div>
                   <div className="ml-4">
                     <p className="text-sm font-medium text-muted-foreground">
-                      Applications
+                      Active Applications
                     </p>
-                    <p className="text-3xl font-bold bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent">
+                    <p className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-800 bg-clip-text text-transparent">
                       {stats.totalApplications}
                     </p>
                   </div>
@@ -157,7 +157,7 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
-                    <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
+                    <path d="M11 3H3L9 12H6l4 7 1-9h3l-5-7z" />
                   </svg>
                 </div>
               </div>
@@ -170,33 +170,29 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.3 }}
         >
-          <Card className="group hover:scale-105 transition-transform duration-300">
+          <Card className="group motion-card">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
-                  <div className="p-4 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600 shadow-lg group-hover:shadow-xl transition-shadow">
-                    <span className="text-white text-2xl">📅</span>
+                  <div className="p-4 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600 shadow-lg">
+                    <span className="text-white text-2xl">📈</span>
                   </div>
                   <div className="ml-4">
                     <p className="text-sm font-medium text-muted-foreground">
-                      Jobs Today
+                      Today&apos;s Jobs
                     </p>
                     <p className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-purple-800 bg-clip-text text-transparent">
                       {stats.jobsToday}
                     </p>
                   </div>
                 </div>
-                <div className="text-violet-500 opacity-20 group-hover:opacity-30 transition-opacity">
+                <div className="text-purple-500 opacity-20 group-hover:opacity-30 transition-opacity">
                   <svg
                     className="w-8 h-8"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
-                    <path
-                      fillRule="evenodd"
-                      d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
-                      clipRule="evenodd"
-                    />
+                    <path d="M3 3a1 1 0 100 2h11.586l-3.293 3.293a1 1 0 001.414 1.414l4.999-4.999a1 1 0 000-1.414l-5-5a1 1 0 10-1.414 1.414L14.586 3H3z" />
                   </svg>
                 </div>
               </div>

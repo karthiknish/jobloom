@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { PlusCircle, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { motion } from "framer-motion";
 
 interface Job {
   _id: string;
@@ -169,7 +170,7 @@ export function ApplicationForm({
   };
 
   return (
-    <Card className="w-full max-w-4xl mx-auto">
+    <Card className="w-full max-w-4xl mx-auto motion-card">
       <CardHeader>
         <CardTitle>{application ? "Edit Application" : "Add New Application"}</CardTitle>
         <CardDescription>Track your job application progress</CardDescription>
@@ -178,7 +179,7 @@ export function ApplicationForm({
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Job Information (if editing existing application) */}
           {application?.job && (
-            <div className="bg-muted rounded-lg p-4 space-y-4">
+            <div className="bg-muted rounded-lg p-4 space-y-4 motion-fade-in-out">
               <h3 className="font-medium text-foreground">Job Details</h3>
               
               {/* Basic Info */}
@@ -234,7 +235,7 @@ export function ApplicationForm({
                   <span className="font-medium text-sm">Skills:</span>
                   <div className="flex flex-wrap gap-1 mt-1">
                     {application.job.skills.map((skill, index) => (
-                      <Badge key={index} variant="outline" className="text-xs">
+                      <Badge key={index} variant="outline" className="text-xs motion-fade-in-out">
                         {skill}
                       </Badge>
                     ))}
@@ -248,7 +249,7 @@ export function ApplicationForm({
                   <span className="font-medium text-sm">Requirements:</span>
                   <ul className="text-sm mt-1 space-y-1">
                     {application.job.requirements.slice(0, 3).map((req, index) => (
-                      <li key={index} className="flex items-start gap-1">
+                      <li key={index} className="flex items-start gap-1 motion-fade-in-out">
                         <span className="text-muted-foreground">•</span>
                         {req}
                       </li>
@@ -268,12 +269,12 @@ export function ApplicationForm({
                   <span className="font-medium text-sm">Benefits:</span>
                   <div className="flex flex-wrap gap-1 mt-1">
                     {application.job.benefits.slice(0, 5).map((benefit, index) => (
-                      <Badge key={index} variant="secondary" className="text-xs">
+                      <Badge key={index} variant="secondary" className="text-xs motion-fade-in-out">
                         {benefit}
                       </Badge>
                     ))}
                     {application.job.benefits.length > 5 && (
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge variant="secondary" className="text-xs motion-fade-in-out">
                         +{application.job.benefits.length - 5}
                       </Badge>
                     )}
@@ -282,7 +283,7 @@ export function ApplicationForm({
               )}
               
               {/* Status and Badges */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 motion-fade-in-out">
                 <span className="font-medium">Status:</span>
                 <Badge variant={statusBadges[formData.status as keyof typeof statusBadges] || "secondary"}>
                   {statusOptions.find(opt => opt.value === formData.status)?.label || formData.status}
@@ -299,7 +300,7 @@ export function ApplicationForm({
               </div>
               
               {/* Dates */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground motion-fade-in-out">
                 <div>
                   <span className="font-medium">Posted:</span> {application.job.postedDate || "N/A"}
                 </div>
@@ -313,7 +314,7 @@ export function ApplicationForm({
           <Separator />
           
           {/* Status */}
-          <div className="space-y-2">
+          <div className="space-y-2 motion-fade-in-out">
             <Label htmlFor="status">Application Status</Label>
             <Select value={formData.status} onValueChange={handleStatusChange}>
               <SelectTrigger id="status">
@@ -330,7 +331,7 @@ export function ApplicationForm({
           </div>
           
           {/* Applied Date */}
-          <div className="space-y-2">
+          <div className="space-y-2 motion-fade-in-out">
             <Label htmlFor="appliedDate">Applied Date</Label>
             <Input
               id="appliedDate"
@@ -342,15 +343,15 @@ export function ApplicationForm({
           </div>
           
           {/* Interview Dates */}
-          <div className="space-y-2">
+          <div className="space-y-2 motion-fade-in-out">
             <div className="flex items-center justify-between">
               <Label>Interview Dates</Label>
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
+                className="gap-1 motion-button"
                 onClick={addInterviewDate}
-                className="gap-1"
               >
                 <PlusCircle className="h-4 w-4" />
                 Add Date
@@ -358,7 +359,7 @@ export function ApplicationForm({
             </div>
             <div className="space-y-2">
               {interviewDates.map((date, index) => (
-                <div key={index} className="flex items-center space-x-2">
+                <div key={index} className="flex items-center space-x-2 motion-fade-in-out">
                   <Input
                     type="date"
                     value={date}
@@ -369,6 +370,7 @@ export function ApplicationForm({
                       type="button"
                       variant="outline"
                       size="sm"
+                      className="motion-button"
                       onClick={() => removeInterviewDate(index)}
                     >
                       <X className="h-4 w-4" />
@@ -380,7 +382,7 @@ export function ApplicationForm({
           </div>
           
           {/* Follow-up Date */}
-          <div className="space-y-2">
+          <div className="space-y-2 motion-fade-in-out">
             <Label htmlFor="followUpDate">Follow-up Date</Label>
             <Input
               id="followUpDate"
@@ -392,7 +394,7 @@ export function ApplicationForm({
           </div>
           
           {/* Notes */}
-          <div className="space-y-2">
+          <div className="space-y-2 motion-fade-in-out">
             <Label htmlFor="notes">Notes</Label>
             <Textarea
               id="notes"
@@ -406,10 +408,10 @@ export function ApplicationForm({
         </form>
       </CardContent>
       <CardFooter className="flex justify-end space-x-3">
-        <Button variant="outline" onClick={onCancel}>
+        <Button variant="outline" className="motion-button" onClick={onCancel}>
           Cancel
         </Button>
-        <Button onClick={handleSubmit}>
+        <Button className="motion-button" onClick={handleSubmit}>
           {application ? "Update Application" : "Create Application"}
         </Button>
       </CardFooter>

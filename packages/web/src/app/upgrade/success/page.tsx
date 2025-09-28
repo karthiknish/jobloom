@@ -7,24 +7,50 @@ import { CheckCircle, Crown, ArrowRight, Rocket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 
 function UpgradeSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { plan, refreshSubscription } = useSubscription();
+  const { refreshSubscription } = useSubscription();
+  const { user } = useFirebaseAuth();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const sessionId = searchParams.get("session_id");
 
-    if (sessionId) {
-      // Refresh subscription data to get the latest status
-      refreshSubscription();
-      setIsLoading(false);
-    } else {
-      setIsLoading(false);
-    }
-  }, [searchParams, refreshSubscription]);
+    const finalizeUpgrade = async () => {
+      if (!sessionId) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        if (user) {
+          const response = await fetch("/api/subscription/upgrade", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${await user.getIdToken()}`,
+            },
+            body: JSON.stringify({ sessionId }),
+          });
+
+          if (!response.ok) {
+            const error = await response.json();
+            console.warn("Subscription confirmation failed", error);
+          }
+        }
+      } catch (error) {
+        console.error("Error confirming subscription:", error);
+      } finally {
+        await refreshSubscription();
+        setIsLoading(false);
+      }
+    };
+
+    finalizeUpgrade();
+  }, [searchParams, refreshSubscription, user]);
 
   const handleContinue = () => {
     router.push("/dashboard");

@@ -62,29 +62,12 @@ function showToast(
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Tab navigation
-  const navTabs = document.querySelectorAll(".nav-tab");
-  const tabContents = document.querySelectorAll(".tab-content");
-
   // Main action buttons
   const autofillBtn = document.getElementById("autofill-btn");
   // const peopleSearchBtn removed (feature deprecated)
   const openBoardBtn = document.getElementById("open-board-btn");
 
   // Settings controls
-  const configureProfileBtn = document.getElementById("configure-profile-btn");
-  const autoDetectToggle = document.getElementById("auto-detect-toggle");
-  const showBadgesToggle = document.getElementById("show-badges-toggle");
-  const autoSaveProfileToggle = document.getElementById(
-    "auto-save-profile-toggle"
-  );
-  const webAppUrlInput = document.getElementById(
-    "web-app-url"
-  ) as HTMLInputElement;
-  const syncFrequencySelect = document.getElementById(
-    "sync-frequency"
-  ) as HTMLSelectElement;
-
   // Auth buttons
   const signoutBtn = document.getElementById("signout-btn");
   const emailForm = document.getElementById(
@@ -102,9 +85,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const authError = document.getElementById("auth-error");
   const authSuccess = document.getElementById("auth-success");
 
-  // Job management
-  const jobFilters = document.querySelectorAll(".filter-btn");
-
   // Initialize
   loadStats();
   loadSettings();
@@ -116,7 +96,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Firebase auth state observer
   const auth = getAuthInstance();
   onAuthStateChanged(auth, (user) => {
-    updateAuthUI(!!user, user?.uid || null);
+    updateAuthUI(!!user);
     if (user?.uid) {
       // Persist uid to chrome storage for content scripts/background
       chrome.storage.sync.set({ firebaseUid: user.uid });
@@ -125,7 +105,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  function updateAuthUI(isAuthed: boolean, uid: string | null) {
+  function updateAuthUI(isAuthed: boolean) {
     const authStatus = document.getElementById("auth-status")!;
     const statusDot = authStatus.querySelector(".status-dot") as HTMLElement;
     const statusText = authStatus.querySelector(".status-text") as HTMLElement;
@@ -654,9 +634,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function signOut() {
     try {
-      await firebaseSignOut(auth);
-      chrome.storage.sync.remove(["firebaseUid", "userId"], () => {});
-      updateAuthUI(false, null);
+  await firebaseSignOut(auth);
+  chrome.storage.sync.remove(["firebaseUid", "userId"], () => {});
+  updateAuthUI(false);
       showToast("You've been signed out successfully", { type: "info" });
     } catch (e) {
       showToast("Sign out failed", { type: "error" });
@@ -767,16 +747,6 @@ function saveSettings() {
   chrome.storage.sync.set(settings, () => {
     showToast("Settings updated successfully", { type: "success" });
   });
-}
-
-function showResult(
-  element: HTMLElement,
-  message: string,
-  type: "success" | "error" | "warning" | "info"
-) {
-  element.textContent = message;
-  element.className = `result-box ${type}`;
-  element.style.display = "block";
 }
 
 // Global function for checking job sponsors (called from HTML onclick)

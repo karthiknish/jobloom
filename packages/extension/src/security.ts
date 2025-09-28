@@ -1,9 +1,116 @@
 // Security utilities for browser extension
 
+const HTML_TAG_REGEX = /<[^>]*?>/g;
+const SCRIPT_TAG_REGEX = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi;
+const EVENT_HANDLER_REGEX = /on[a-z]+\s*=\s*(['"]).*?\1/gi;
+const JS_PROTOCOL_REGEX = /javascript:/gi;
+const DATA_HTML_REGEX = /data:text\/html[^\s]*/gi;
+
+const JOB_STRING_FIELDS = [
+  'title',
+  'company',
+  'location',
+  'description',
+  'url',
+  'salary',
+  'sponsorshipType',
+  'jobType',
+  'experienceLevel',
+  'companySize',
+  'industry',
+  'postedDate',
+  'applicationDeadline',
+  'source',
+];
+
+const JOB_BOOLEAN_FIELDS = ['isSponsored', 'isRecruitmentAgency', 'remoteWork'];
+const JOB_ARRAY_FIELDS = ['skills', 'requirements', 'benefits'];
+const JOB_MAX_LENGTHS: Record<string, number> = {
+  title: 200,
+  company: 100,
+  location: 100,
+  description: 5000,
+  url: 2048,
+  salary: 120,
+  sponsorshipType: 120,
+  jobType: 80,
+  experienceLevel: 80,
+  companySize: 80,
+  industry: 120,
+  postedDate: 40,
+  applicationDeadline: 40,
+  source: 80,
+};
+
+type StorageArea = 'sync' | 'local';
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return Object.prototype.toString.call(value) === '[object Object]';
+}
+
+function sanitizeString(value: string, maxLength = 10000): string {
+  const trimmed = value.slice(0, maxLength * 2);
+  const withoutScripts = trimmed.replace(SCRIPT_TAG_REGEX, '');
+  const withoutHandlers = withoutScripts.replace(EVENT_HANDLER_REGEX, '');
+  const withoutProtocols = withoutHandlers
+    .replace(JS_PROTOCOL_REGEX, '')
+    .replace(DATA_HTML_REGEX, '');
+  const withoutTags = withoutProtocols.replace(HTML_TAG_REGEX, '');
+  return withoutTags.trim().slice(0, maxLength);
+}
+
+function sanitizeStringArray(values: unknown[], maxLength = 80): string[] {
+  return values
+    .filter((item): item is string => typeof item === 'string')
+    .map((item) => sanitizeString(item, maxLength))
+    .filter((item) => item.length > 0)
+    .slice(0, 50);
+}
+
+function sanitizeSalaryRange(value: unknown): {
+  min?: number;
+  max?: number;
+  currency?: string;
+  period?: string;
+} | undefined {
+  if (!isPlainObject(value)) {
+    return undefined;
+  }
+
+  const sanitized: {
+    min?: number;
+    max?: number;
+    currency?: string;
+    period?: string;
+  } = {};
+
+  if (typeof value.min === 'number' && Number.isFinite(value.min)) {
+    sanitized.min = value.min;
+  }
+
+  if (typeof value.max === 'number' && Number.isFinite(value.max)) {
+    sanitized.max = value.max;
+  }
+
+  if (typeof value.currency === 'string') {
+    sanitized.currency = sanitizeString(value.currency, 10);
+  }
+
+  if (typeof value.period === 'string') {
+    sanitized.period = sanitizeString(value.period, 20);
+  }
+
+  return Object.keys(sanitized).length > 0 ? sanitized : undefined;
+}
+
 // Validate URLs to prevent XSS and other attacks
 export function validateUrl(url: string): boolean {
+  if (typeof url !== 'string' || url.trim().length === 0) {
+    return false;
+  }
+
   try {
-    const parsedUrl = new URL(url);
+    const parsedUrl = new URL(url.trim());
     // Only allow HTTPS URLs
     return parsedUrl.protocol === 'https:';
   } catch {
@@ -12,22 +119,52 @@ export function validateUrl(url: string): boolean {
 }
 
 // Sanitize job data to prevent injection attacks
-export function sanitizeJobData(data: any): any {
-  if (!data || typeof data !== 'object') return {};
+export function sanitizeJobData(data: any): Record<string, unknown> {
+  if (!isPlainObject(data)) return {};
 
-  const sanitized = { ...data };
+  const sanitized: Record<string, unknown> = {};
 
-  // Sanitize string fields
-  const stringFields = ['title', 'company', 'location', 'description', 'url'];
-  stringFields.forEach(field => {
-    if (typeof sanitized[field] === 'string') {
-      sanitized[field] = sanitized[field]
-        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-        .replace(/javascript:/gi, '')
-        .replace(/on\w+="[^"]*"/gi, '')
-        .substring(0, 10000); // Limit length
+  JOB_STRING_FIELDS.forEach((field) => {
+    const value = data[field];
+    if (typeof value === 'string' && value.trim().length > 0) {
+      const maxLength = JOB_MAX_LENGTHS[field] ?? 1000;
+      const cleaned = sanitizeString(value, maxLength);
+      if (cleaned.length > 0) {
+        if (field === 'url') {
+          if (validateUrl(cleaned)) {
+            sanitized[field] = cleaned;
+          }
+        } else {
+          sanitized[field] = cleaned;
+        }
+      }
     }
   });
+
+  JOB_BOOLEAN_FIELDS.forEach((field) => {
+    const value = data[field];
+    sanitized[field] = typeof value === 'boolean' ? value : false;
+  });
+
+  JOB_ARRAY_FIELDS.forEach((field) => {
+    const value = data[field];
+    if (Array.isArray(value)) {
+      const maxLength = field === 'benefits' ? 200 : 120;
+      const sanitizedArray = sanitizeStringArray(value, maxLength);
+      if (sanitizedArray.length > 0) {
+        sanitized[field] = sanitizedArray;
+      }
+    }
+  });
+
+  const salaryRange = sanitizeSalaryRange(data.salaryRange);
+  if (salaryRange) {
+    sanitized.salaryRange = salaryRange;
+  }
+
+  if (typeof data.dateFound === 'string') {
+    sanitized.dateFound = sanitizeString(data.dateFound, 40);
+  }
 
   return sanitized;
 }
@@ -50,38 +187,86 @@ export function validateMessage(message: any): boolean {
     'checkSponsorStatus'
   ];
 
-  return allowedActions.includes(message.action);
+  if (!allowedActions.includes(message.action)) {
+    return false;
+  }
+
+  // Restrict unexpected properties
+  const allowedKeys = new Set(['action', 'data', 'url', 'requestId', 'userId']);
+  if (!Object.keys(message).every((key) => allowedKeys.has(key))) {
+    return false;
+  }
+
+  switch (message.action) {
+    case 'addJob':
+    case 'jobAddedToBoard':
+      return isPlainObject(message.data);
+    case 'openJobUrl':
+      return typeof message.url === 'string' && validateUrl(message.url);
+    case 'authSuccess':
+      return message.userId === undefined || typeof message.userId === 'string';
+    default:
+      return true;
+  }
 }
 
 // Secure storage wrapper
 export class SecureStorage {
-  static async set(key: string, value: any): Promise<void> {
+  private static getArea(area: StorageArea = 'sync'): chrome.storage.StorageArea {
+    return area === 'local' ? chrome.storage.local : chrome.storage.sync;
+  }
+
+  static async set(key: string, value: any, options?: { area?: StorageArea }): Promise<void> {
+    const storageKey = this.normalizeKey(key);
+    const storageArea = this.getArea(options?.area);
+
     try {
       const data = JSON.stringify(value);
-      await chrome.storage.sync.set({ [key]: data });
+      if (data.length > 7500) {
+        throw new Error('Payload too large for secure storage');
+      }
+      await storageArea.set({ [storageKey]: data });
     } catch (error) {
       console.error('SecureStorage set error:', error);
       throw new Error('Failed to store data securely');
     }
   }
 
-  static async get(key: string): Promise<any> {
+  static async get<T = unknown>(key: string, options?: { area?: StorageArea }): Promise<T | null> {
+    const storageKey = this.normalizeKey(key);
+    const storageArea = this.getArea(options?.area);
+
     try {
-      const result = await chrome.storage.sync.get([key]);
-      const data = result[key];
-      return data ? JSON.parse(data) : null;
+      const result = await storageArea.get([storageKey]);
+      const raw = result[storageKey];
+      if (!raw) {
+        return null;
+      }
+
+      return JSON.parse(raw) as T;
     } catch (error) {
       console.error('SecureStorage get error:', error);
       return null;
     }
   }
 
-  static async remove(key: string): Promise<void> {
+  static async remove(key: string, options?: { area?: StorageArea }): Promise<void> {
+    const storageKey = this.normalizeKey(key);
+    const storageArea = this.getArea(options?.area);
+
     try {
-      await chrome.storage.sync.remove([key]);
+      await storageArea.remove([storageKey]);
     } catch (error) {
       console.error('SecureStorage remove error:', error);
     }
+  }
+
+  private static normalizeKey(key: string): string {
+    if (typeof key !== 'string' || key.trim().length === 0) {
+      throw new Error('Storage key must be a non-empty string');
+    }
+
+    return key.trim();
   }
 }
 
@@ -147,16 +332,9 @@ export function validateJobData(data: any): { valid: boolean; errors: string[] }
     errors.push('Job URL must be a valid HTTPS URL');
   }
 
-  // Limit field lengths
-  const maxLengths = {
-    title: 200,
-    company: 100,
-    location: 100,
-    description: 5000
-  };
-
-  Object.entries(maxLengths).forEach(([field, maxLength]) => {
-    if (data[field] && data[field].length > maxLength) {
+  Object.entries(JOB_MAX_LENGTHS).forEach(([field, maxLength]) => {
+    const value = data[field as keyof typeof data];
+    if (typeof value === 'string' && value.length > maxLength) {
       errors.push(`${field} exceeds maximum length of ${maxLength} characters`);
     }
   });

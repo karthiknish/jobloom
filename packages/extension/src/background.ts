@@ -1,12 +1,6 @@
 import { DEFAULT_WEB_APP_URL } from "./constants";
-import { getAuthInstance } from "./firebase";
 import { post } from "./apiClient";
-import {
-  checkRateLimit,
-  initRateLimitCleanup,
-  createRateLimitedFunction,
-  type RateLimitConfig
-} from "./rateLimiter";
+import { checkRateLimit, initRateLimitCleanup } from "./rateLimiter";
 import { startRateLimitMonitoring } from "./rateLimitStatus";
 import {
   validateMessage,
@@ -148,11 +142,6 @@ async function handleJobData(jobData: any) {
       "firebaseUid",
       "userId",
     ]) as { webAppUrl?: string; firebaseUid?: string; userId?: string };
-    const baseUrl = (
-      result.webAppUrl ||
-      process.env.WEB_APP_URL ||
-      DEFAULT_WEB_APP_URL
-    ).replace(/\/$/, "");
     const uid = result.firebaseUid || result.userId;
     if (!uid) {
       console.warn("No Firebase user id present; cannot sync job.");
@@ -161,15 +150,6 @@ async function handleJobData(jobData: any) {
 
     // Generate client ID for rate limiting (local only)
     await getOrCreateClientId();
-
-    // Acquire Firebase ID token for auth
-    let idToken: string | null = null;
-    try {
-      const auth = getAuthInstance();
-      if (auth.currentUser) {
-        idToken = await auth.currentUser.getIdToken();
-      }
-    } catch {}
 
     try {
       await post("/api/app/jobs", {

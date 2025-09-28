@@ -281,6 +281,49 @@ export function CvAnalysisResults({ analysis }: CvAnalysisResultsProps) {
                   ></div>
                 </div>
               </div>
+              {analysis.atsCompatibility.breakdown && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                  {Object.entries(analysis.atsCompatibility.breakdown).map(
+                    ([key, value]) => {
+                      const labelMap: Record<string, string> = {
+                        structure: "Structure",
+                        contact: "Contact Details",
+                        keywords: "Keyword Match",
+                        formatting: "Formatting",
+                        readability: "Readability",
+                        extras: "Extras",
+                      };
+                      const maxMap: Record<string, number> = {
+                        structure: 25,
+                        contact: 20,
+                        keywords: 25,
+                        formatting: 15,
+                        readability: 10,
+                        extras: 15,
+                      };
+                      const label = labelMap[key] || key;
+                      const max = maxMap[key] ?? 25;
+                      const percentage = Math.min((value / max) * 100, 100);
+                      return (
+                        <div key={key} className="space-y-1">
+                          <div className="flex items-center justify-between text-xs text-muted-foreground">
+                            <span>{label}</span>
+                            <span className="font-medium text-foreground">
+                              {Math.round(value)}/{max}
+                            </span>
+                          </div>
+                          <div className="bg-muted rounded-full h-2">
+                            <div
+                              className="h-2 rounded-full bg-primary"
+                              style={{ width: `${percentage}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      );
+                    }
+                  )}
+                </div>
+              )}
               {analysis.atsCompatibility.issues &&
                 analysis.atsCompatibility.issues.length > 0 && (
                   <div className="mt-4">

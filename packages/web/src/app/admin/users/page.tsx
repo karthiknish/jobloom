@@ -1,26 +1,27 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
   Users,
-  UserCheck,
-  Shield,
-  Mail,
-  Calendar,
   Search,
-  Filter,
   MoreHorizontal,
   UserPlus,
   Trash2,
-  Edit,
   Crown,
   Activity,
   BarChart3,
   TrendingUp,
   UserX,
   Eye,
+  Download,
+  Copy,
+  RefreshCw,
+  ShieldCheck,
+  ShieldAlert,
+  Clock3,
 } from "lucide-react";
+import { format, formatDistanceToNow } from "date-fns";
 
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { useApiQuery, useApiMutation } from "@/hooks/useApi";
@@ -67,11 +68,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import toast from "react-hot-toast";
+import { showError, showSuccess, showWarning } from "@/components/ui/Toast";
+import { exportToCsv } from "@/utils/exportToCsv";
 
 // Mirror of UserRecord (plus optional UI-only props) from adminApi
 interface User {
@@ -168,14 +169,162 @@ export default function AdminUserDashboard() {
     return matchesSearch && matchesStatus && matchesPlan;
   }) || [];
 
+  const recentUsers = useMemo(() => {
+    const users = (usersData?.users as User[] | undefined) ?? [];
+    return [...users]
+      .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))
+      .slice(0, 5);
+  }, [usersData?.users]);
+
+  const recentAdmins = useMemo(() => {
+    const users = (usersData?.users as User[] | undefined) ?? [];
+    return users
+      .filter((user) => user.isAdmin)
+      .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))
+      .slice(0, 5);
+  }, [usersData?.users]);
+
+  const verificationStats = useMemo(() => {
+    const users = (usersData?.users as User[] | undefined) ?? [];
+    if (!users.length) {
+      return {
+        total: 0,
+        verified: 0,
+        unverified: 0,
+        verificationRate: 0,
+        neverLoggedIn: 0,
+        dormant: 0,
+      };
+    }
+
+    const verified = users.filter((u) => u.emailVerified).length;
+    const unverified = users.length - verified;
+    const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
+    const neverLoggedIn = users.filter((u) => !u.lastLoginAt).length;
+    const dormant = users.filter(
+      (u) => u.lastLoginAt && Date.now() - u.lastLoginAt > THIRTY_DAYS
+    ).length;
+
+    return {
+      total: users.length,
+      verified,
+      unverified,
+      verificationRate: users.length
+        ? Math.round((verified / users.length) * 100)
+        : 0,
+      neverLoggedIn,
+      dormant,
+    };
+  }, [usersData?.users]);
+
+  const copyEmailsToClipboard = async (
+    users: User[],
+    emptyMessage: string,
+    successMessage: (count: number) => string
+  ) => {
+    if (!users.length) {
+      showWarning(emptyMessage);
+      return;
+    }
+
+    const emails = users
+      .map((user) => user.email)
+      .filter(Boolean)
+      .join(", ");
+
+    try {
+      if (typeof navigator !== "undefined" && navigator.clipboard) {
+        await navigator.clipboard.writeText(emails);
+      } else if (typeof document !== "undefined") {
+        const textarea = document.createElement("textarea");
+        textarea.value = emails;
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+      } else {
+        throw new Error("Clipboard APIs are not available");
+      }
+
+      showSuccess(successMessage(users.length));
+    } catch (error) {
+      console.error("Failed to copy email addresses", error);
+      showError(
+        "Unable to copy email addresses",
+        "Try again from a secure context."
+      );
+    }
+  };
+
+  const handleExportUsers = () => {
+    if (!filteredUsers.length) {
+      showWarning("No users match the current filters.");
+      return;
+    }
+
+    const rows = filteredUsers.map((u) => ({
+      ID: u._id,
+      Name: u.name || "",
+      Email: u.email,
+      "Admin?": u.isAdmin ? "Yes" : "No",
+      "Email Verified": u.emailVerified ? "Yes" : "No",
+      "Subscription Plan": u.subscriptionPlan || "free",
+      "Created At": new Date(u.createdAt).toISOString(),
+      "Last Login": u.lastLoginAt ? new Date(u.lastLoginAt).toISOString() : "",
+    }));
+
+    exportToCsv(
+      `hireall-users-${new Date().toISOString().slice(0, 10)}`,
+      rows
+    );
+    showSuccess(`Exported ${filteredUsers.length} users to CSV`);
+  };
+
+  const handleCopyEmails = () =>
+    copyEmailsToClipboard(
+      filteredUsers,
+      "No user emails available to copy.",
+      (count) =>
+        `Copied ${count} email address${count === 1 ? "" : "es"} to your clipboard`
+    );
+
+  const handleCopyAdminEmails = () =>
+    copyEmailsToClipboard(
+      filteredUsers.filter((user) => user.isAdmin),
+      "No admin emails in the current view.",
+      (count) =>
+        `Copied ${count} admin email${count === 1 ? "" : "s"} to your clipboard`
+    );
+
+  const handleCopyUnverifiedEmails = () =>
+    copyEmailsToClipboard(
+      filteredUsers.filter((user) => !user.emailVerified),
+      "No unverified users in the current view.",
+      (count) =>
+        `Copied ${count} unverified email${count === 1 ? "" : "s"} to your clipboard`
+    );
+
+  const handleRefreshData = async () => {
+    try {
+      await Promise.allSettled([refetchUsers(), refetchStats()]);
+      showSuccess("User dashboard refreshed");
+    } catch (error) {
+      console.error("Failed to refresh user data", error);
+      showError("Unable to refresh user data");
+    }
+  };
+
   const handleSetAdmin = async (userId: string) => {
     try {
       await setAdminUser(userId);
-      toast.success("User granted admin privileges");
+      showSuccess("User granted admin privileges");
       refetchUsers();
       refetchStats();
     } catch (error) {
-      toast.error("Failed to grant admin privileges");
+      showError("Failed to grant admin privileges");
     }
   };
 
@@ -184,11 +333,11 @@ export default function AdminUserDashboard() {
 
     try {
       await removeAdminUser(userId);
-      toast.success("Admin privileges removed");
+      showSuccess("Admin privileges removed");
       refetchUsers();
       refetchStats();
     } catch (error) {
-      toast.error("Failed to remove admin privileges");
+      showError("Failed to remove admin privileges");
     }
   };
 
@@ -197,11 +346,11 @@ export default function AdminUserDashboard() {
 
     try {
       await deleteUser(userId);
-      toast.success("User deleted successfully");
+      showSuccess("User deleted successfully");
       refetchUsers();
       refetchStats();
     } catch (error) {
-      toast.error("Failed to delete user");
+      showError("Failed to delete user");
     }
   };
 
@@ -335,9 +484,9 @@ export default function AdminUserDashboard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+            className="grid grid-cols-1 gap-6 xl:grid-cols-3"
           >
-            <Card className="lg:col-span-2 card-depth-2">
+            <Card className="card-depth-2 xl:col-span-2">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <BarChart3 className="h-5 w-5" />
@@ -350,11 +499,17 @@ export default function AdminUserDashboard() {
                   {Object.entries(userStats.usersByPlan).map(([plan, count]) => (
                     <div key={plan} className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className={`w-3 h-3 rounded-full ${
-                          plan === 'free' ? 'bg-muted-foreground' :
-                          plan === 'premium' ? 'bg-sky-500' :
-                          plan === 'enterprise' ? 'bg-violet-500' : 'bg-emerald-500'
-                        }`} />
+                        <div
+                          className={`w-3 h-3 rounded-full ${
+                            plan === "free"
+                              ? "bg-muted-foreground"
+                              : plan === "premium"
+                              ? "bg-sky-500"
+                              : plan === "enterprise"
+                              ? "bg-violet-500"
+                              : "bg-emerald-500"
+                          }`}
+                        />
                         <span className="capitalize">{plan}</span>
                       </div>
                       <div className="flex items-center gap-2">
@@ -362,11 +517,19 @@ export default function AdminUserDashboard() {
                         <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
                           <div
                             className={`h-full ${
-                              plan === 'free' ? 'bg-muted-foreground' :
-                              plan === 'premium' ? 'bg-sky-500' :
-                              plan === 'enterprise' ? 'bg-violet-500' : 'bg-emerald-500'
+                              plan === "free"
+                                ? "bg-muted-foreground"
+                                : plan === "premium"
+                                ? "bg-sky-500"
+                                : plan === "enterprise"
+                                ? "bg-violet-500"
+                                : "bg-emerald-500"
                             }`}
-                            style={{ width: `${(count / userStats.totalUsers) * 100}%` }}
+                            style={{
+                              width: `${userStats.totalUsers
+                                ? (count / userStats.totalUsers) * 100
+                                : 0}%`,
+                            }}
                           />
                         </div>
                       </div>
@@ -378,24 +541,225 @@ export default function AdminUserDashboard() {
 
             <Card className="card-depth-2">
               <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-                <CardDescription>Common administrative tasks</CardDescription>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <ShieldCheck className="h-5 w-5 text-primary" />
+                  Verification Snapshot
+                </CardTitle>
+                <CardDescription>Email verification & health signals</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <Button variant="outline" className="w-full justify-start">
-                  <Mail className="h-4 w-4 mr-2" />
-                  Send Bulk Email
-                </Button>
-                <Button variant="outline" className="w-full justify-start">
-                  <UserCheck className="h-4 w-4 mr-2" />
-                  Export User Data
-                </Button>
-                <Button variant="outline" className="w-full justify-start">
-                  <Shield className="h-4 w-4 mr-2" />
-                  Security Audit
-                </Button>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="h-4 w-4 text-emerald-500" />
+                    <span className="text-sm font-medium">Verified</span>
+                  </div>
+                  <span className="text-sm text-muted-foreground">
+                    {verificationStats.verified} users ({verificationStats.verificationRate}% )
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <ShieldAlert className="h-4 w-4 text-amber-500" />
+                    <span className="text-sm font-medium">Unverified</span>
+                  </div>
+                  <span className="text-sm text-muted-foreground">
+                    {verificationStats.unverified} users
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Clock3 className="h-4 w-4 text-slate-500" />
+                    <span className="text-sm font-medium">Never logged in</span>
+                  </div>
+                  <span className="text-sm text-muted-foreground">
+                    {verificationStats.neverLoggedIn}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Clock3 className="h-4 w-4 text-orange-500" />
+                    <span className="text-sm font-medium">Dormant (&gt; 30 days)</span>
+                  </div>
+                  <span className="text-sm text-muted-foreground">
+                    {verificationStats.dormant}
+                  </span>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Use these insights to re-engage users or trigger verification reminders.
+                </div>
               </CardContent>
             </Card>
+
+            <Card className="card-depth-2 xl:col-span-3">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="h-5 w-5 text-primary" />
+                  Quick Actions
+                </CardTitle>
+                <CardDescription>Applies to the currently filtered users</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  <Button
+                    variant="outline"
+                    className="justify-start"
+                    onClick={handleCopyEmails}
+                  >
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copy all emails
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="justify-start"
+                    onClick={handleCopyAdminEmails}
+                  >
+                    <Crown className="h-4 w-4 mr-2" />
+                    Copy admin emails
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="justify-start"
+                    onClick={handleCopyUnverifiedEmails}
+                  >
+                    <ShieldAlert className="h-4 w-4 mr-2" />
+                    Copy unverified emails
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="justify-start"
+                    onClick={handleExportUsers}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Export filtered users
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="justify-start"
+                    onClick={handleRefreshData}
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Refresh metrics
+                  </Button>
+                  <div className="sm:col-span-2 lg:col-span-3 text-xs text-muted-foreground">
+                    Tip: Apply search and filters to narrow your actions.
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
+        {(recentUsers.length > 0 || recentAdmins.length > 0) && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+            className="grid grid-cols-1 gap-6 xl:grid-cols-2"
+          >
+            {recentUsers.length > 0 && (
+              <Card className="card-depth-2">
+                <CardHeader>
+                  <CardTitle>Recent Signups</CardTitle>
+                  <CardDescription>Latest users added to the platform</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead className="hidden sm:table-cell">Status</TableHead>
+                        <TableHead className="text-right">Joined</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {recentUsers.map((recentUser) => (
+                        <TableRow key={recentUser._id}>
+                          <TableCell className="font-medium flex items-center gap-2">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage
+                                src={`https://www.gravatar.com/avatar/${btoa(
+                                  recentUser.email.trim().toLowerCase()
+                                )}?d=identicon`}
+                                alt={recentUser.name || recentUser.email}
+                              />
+                              <AvatarFallback>
+                                {getInitials(recentUser.name, recentUser.email)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0">
+                              <p className="truncate">
+                                {recentUser.name || "Unnamed User"}
+                              </p>
+                              <p className="text-xs text-muted-foreground truncate">
+                                Joined {formatDistanceToNow(recentUser.createdAt, { addSuffix: true })}
+                              </p>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {recentUser.email}
+                          </TableCell>
+                          <TableCell className="hidden sm:table-cell">
+                            {getStatusBadge(recentUser)}
+                          </TableCell>
+                          <TableCell className="text-right text-sm text-muted-foreground">
+                            {format(new Date(recentUser.createdAt), "PP")}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            )}
+
+            {recentAdmins.length > 0 && (
+              <Card className="card-depth-2">
+                <CardHeader>
+                  <CardTitle>Recent Admin Approvals</CardTitle>
+                  <CardDescription>Who recently gained admin access</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Admin</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead className="text-right">Added</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {recentAdmins.map((adminUser) => (
+                        <TableRow key={adminUser._id}>
+                          <TableCell className="flex items-center gap-2">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src="" alt={adminUser.name || adminUser.email} />
+                              <AvatarFallback className="bg-violet-100 text-violet-700">
+                                {getInitials(adminUser.name, adminUser.email)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0">
+                              <p className="truncate font-medium">
+                                {adminUser.name || "Unnamed Admin"}
+                              </p>
+                              <p className="text-xs text-muted-foreground truncate">
+                                Admin since {formatDistanceToNow(adminUser.createdAt, { addSuffix: true })}
+                              </p>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {adminUser.email}
+                          </TableCell>
+                          <TableCell className="text-right text-sm text-muted-foreground">
+                            {format(new Date(adminUser.createdAt), "PP")}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            )}
           </motion.div>
         )}
 
@@ -457,7 +821,10 @@ export default function AdminUserDashboard() {
                   <TableRow>
                     <TableHead>User</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Plan</TableHead>
+                      <TableHead>Plan</TableHead>
+                      <TableHead className="hidden lg:table-cell">
+                        Verification
+                      </TableHead>
                     <TableHead>Joined</TableHead>
                     <TableHead>Last Login</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -489,20 +856,32 @@ export default function AdminUserDashboard() {
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className="capitalize">
-                          {user.subscriptionPlan || 'free'}
+                          {user.subscriptionPlan || "free"}
                         </Badge>
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        {user.emailVerified ? (
+                          <div className="flex items-center gap-2 text-emerald-600">
+                            <ShieldCheck className="h-4 w-4" />
+                            <span className="text-sm font-medium">Verified</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 text-amber-600">
+                            <ShieldAlert className="h-4 w-4" />
+                            <span className="text-sm font-medium">Pending</span>
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell>
                         <div className="text-sm">
-                          {new Date(user.createdAt).toLocaleDateString()}
+                          {format(new Date(user.createdAt), "PP")}
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="text-sm text-muted-foreground">
                           {user.lastLoginAt
-                            ? new Date(user.lastLoginAt).toLocaleDateString()
-                            : 'Never'
-                          }
+                            ? format(new Date(user.lastLoginAt), "PP")
+                            : "Never"}
                         </div>
                       </TableCell>
                       <TableCell className="text-right">

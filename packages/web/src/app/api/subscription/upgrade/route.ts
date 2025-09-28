@@ -1,19 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyIdToken, getAdminDb } from "@/firebase/admin";
-import * as admin from "firebase-admin";
+import { verifyIdToken } from "@/firebase/admin";
+import { getStripeClient } from "@/lib/stripe";
+import { upsertSubscriptionFromStripe } from "@/lib/subscriptions";
 
-// Initialize Firebase Admin if not already initialized
-if (!admin.apps.length) {
-  // Use the centralized initialization
-  admin.initializeApp({
-    projectId: process.env.FIREBASE_PROJECT_ID,
-  });
+const stripe = getStripeClient();
+
+interface UpgradeRequestBody {
+  sessionId?: string;
 }
 
-// Get Firestore instance using the centralized admin initialization
-const db = getAdminDb();
-
-// POST /api/subscription/upgrade - Upgrade user subscription
+// POST /api/subscription/upgrade - Confirm subscription upgrade after successful checkout
 export async function POST(request: NextRequest) {
   try {
     const authHeader = request.headers.get("authorization");
@@ -28,66 +24,57 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 });
     }
 
-    const userId = decodedToken.uid;
-    const body = await request.json();
-    const { plan } = body;
-    const billingCycle = "monthly"; // Only monthly billing is supported
+    const { sessionId } = (await request.json()) as UpgradeRequestBody;
 
-    if (!plan || !["premium"].includes(plan)) {
+    if (!sessionId) {
+      return NextResponse.json({ error: "Missing Stripe session ID" }, { status: 400 });
+    }
+
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+    if (!session) {
+      return NextResponse.json({ error: "Checkout session not found" }, { status: 404 });
+    }
+
+    const userId = decodedToken.uid;
+
+    const sessionUserId = session.metadata?.userId || session.client_reference_id;
+    if (!sessionUserId || sessionUserId !== userId) {
+      return NextResponse.json({ error: "Session does not belong to this user" }, { status: 403 });
+    }
+
+    const subscriptionId = typeof session.subscription === "string"
+      ? session.subscription
+      : session.subscription?.id;
+
+    if (!subscriptionId) {
       return NextResponse.json(
-        { error: "Invalid plan. Only 'premium' is available for upgrade." },
+        { error: "No subscription information available for this session" },
         { status: 400 }
       );
     }
 
-    // Get user record
-    const userDoc = await db.collection("users").doc(userId).get();
-    const userData = userDoc.data();
+    const plan = session.metadata?.plan ?? "premium";
+    const billingCycle = session.metadata?.billingCycle ?? undefined;
 
-    if (!userData) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
 
-    // Create or update subscription
-    const subscriptionId = userData.subscriptionId || `sub_${Date.now()}_${Math.random().toString(36).substring(2)}`;
-
-    const subscriptionData = {
+    await upsertSubscriptionFromStripe({
+      subscription,
       userId,
       plan,
-      status: "active",
-      currentPeriodStart: admin.firestore.Timestamp.now(),
-      currentPeriodEnd: admin.firestore.Timestamp.fromDate(
-        new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days for monthly billing
-      ),
-      cancelAtPeriodEnd: false,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      // Mock payment data - in real implementation, this would come from Stripe
-      stripeSubscriptionId: `mock_stripe_${subscriptionId}`,
-      stripeCustomerId: `mock_customer_${userId}`,
       billingCycle,
-      price: 9.99, // Monthly premium price
-    };
-
-    // Save subscription
-    await db.collection("subscriptions").doc(subscriptionId).set(subscriptionData);
-
-    // Update user record with subscription ID
-    await db.collection("users").doc(userId).update({
-      subscriptionId,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
     return NextResponse.json({
       success: true,
       subscription: {
-        id: subscriptionId,
-        ...subscriptionData,
+        id: subscription.id,
+        status: subscription.status,
       },
-      message: `Successfully upgraded to ${plan} plan`,
     });
   } catch (error) {
-    console.error("Error upgrading subscription:", error);
+    console.error("Error confirming subscription upgrade:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

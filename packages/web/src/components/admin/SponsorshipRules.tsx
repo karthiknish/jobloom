@@ -3,7 +3,6 @@ import { useState } from "react";
 import { ClipboardList } from "lucide-react";
 import { useApiMutation, useApiQuery } from "../../hooks/useApi";
 import { adminApi } from "../../utils/api/admin";
-import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { showError, showSuccess } from "@/components/ui/Toast";
 
 export function SponsorshipRules() {
   const [showAddForm, setShowAddForm] = useState(false);
@@ -113,7 +113,7 @@ export function SponsorshipRules() {
         keywords: formData.keywords.filter(k => k.trim() !== "")
       });
       
-      toast.success("Sponsorship rule added successfully!");
+      showSuccess("Sponsorship rule added successfully");
       setShowAddForm(false);
       setFormData({
         name: "",
@@ -125,7 +125,7 @@ export function SponsorshipRules() {
       });
       refetchRules();
     } catch (error) {
-      toast.error("Failed to add sponsorship rule");
+      showError("Failed to add sponsorship rule");
       console.error("Error adding rule:", error);
     }
   };
@@ -133,10 +133,10 @@ export function SponsorshipRules() {
   const toggleRuleStatus = async (ruleId: string, isActive: boolean) => {
     try {
       await updateRuleStatus({ ruleId, isActive: !isActive });
-      toast.success(`Rule ${!isActive ? 'activated' : 'deactivated'} successfully!`);
+      showSuccess(`Rule ${!isActive ? 'activated' : 'deactivated'} successfully`);
       refetchRules();
     } catch (error) {
-      toast.error(`Failed to ${!isActive ? 'activate' : 'deactivate'} rule`);
+      showError(`Failed to ${!isActive ? 'activate' : 'deactivate'} rule`);
       console.error("Error updating rule:", error);
     }
   };

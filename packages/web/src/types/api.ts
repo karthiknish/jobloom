@@ -37,6 +37,14 @@ export interface CvAnalysis {
     score: number;
     issues?: string[];
     suggestions?: string[];
+    breakdown?: {
+      structure: number;
+      contact: number;
+      keywords: number;
+      formatting: number;
+      readability: number;
+      extras: number;
+    };
   };
   summary?: string;
   createdAt: number;

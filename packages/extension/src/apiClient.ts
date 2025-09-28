@@ -1,6 +1,6 @@
 import { getAuthInstance } from './firebase';
 import { DEFAULT_WEB_APP_URL } from './constants';
-import { checkRateLimit, RATE_LIMITS } from './rateLimiter';
+import { checkRateLimit } from './rateLimiter';
 
 interface ApiOptions extends RequestInit {
   auth?: boolean; // whether to inject bearer token (defaults true for /api/app/*)

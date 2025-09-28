@@ -1,5 +1,5 @@
 // Rate limiting status utilities for the extension
-import { checkRateLimit, getRateLimitStatus, getTimeUntilReset } from './rateLimiter';
+import { getRateLimitStatus, RATE_LIMITS } from './rateLimiter';
 
 // Rate limit status display utilities
 export interface RateLimitDisplayInfo {
@@ -10,6 +10,13 @@ export interface RateLimitDisplayInfo {
   percentageUsed: number;
   isNearLimit: boolean;
   isAtLimit: boolean;
+}
+
+export interface RateLimitWarning {
+  endpoint: string;
+  message: string;
+  level: 'warning' | 'error';
+  resetIn: number;
 }
 
 /**
@@ -34,7 +41,7 @@ export function getRateLimitDisplayInfo(endpoint: string): RateLimitDisplayInfo 
  * Get all rate limit statuses for monitoring
  */
 export function getAllRateLimitStatuses(): Record<string, RateLimitDisplayInfo> {
-  const endpoints = ['job-add', 'sponsor-lookup', 'user-settings', 'general'];
+  const endpoints = Object.keys(RATE_LIMITS);
 
   const statuses: Record<string, RateLimitDisplayInfo> = {};
   endpoints.forEach(endpoint => {
@@ -47,21 +54,28 @@ export function getAllRateLimitStatuses(): Record<string, RateLimitDisplayInfo> 
 /**
  * Check if any rate limits are close to being exceeded
  */
-export function checkRateLimitWarnings(): string[] {
-  const warnings: string[] = [];
+export function checkRateLimitWarnings(): RateLimitWarning[] {
+  const warnings: RateLimitWarning[] = [];
   const statuses = getAllRateLimitStatuses();
 
   Object.entries(statuses).forEach(([endpoint, status]) => {
-    if (status.isNearLimit && !status.isAtLimit) {
-      const resetInMinutes = Math.ceil(status.resetIn / 60000);
-      warnings.push(
-        `${endpoint}: ${status.remaining} requests remaining. Resets in ${resetInMinutes} minutes.`
-      );
-    } else if (status.isAtLimit) {
-      const resetInMinutes = Math.ceil(status.resetIn / 60000);
-      warnings.push(
-        `${endpoint}: Rate limit exceeded. Resets in ${resetInMinutes} minutes.`
-      );
+    if (status.isAtLimit) {
+      warnings.push({
+        endpoint,
+        level: 'error',
+        message: getRateLimitMessage(endpoint),
+        resetIn: status.resetIn,
+      });
+      return;
+    }
+
+    if (status.isNearLimit) {
+      warnings.push({
+        endpoint,
+        level: 'warning',
+        message: getRateLimitMessage(endpoint),
+        resetIn: status.resetIn,
+      });
     }
   });
 
@@ -100,28 +114,29 @@ export function getRateLimitMessage(endpoint: string): string {
 /**
  * Create a rate limit notification for the user
  */
-export function createRateLimitNotification(endpoint: string): {
+export function createRateLimitNotification(
+  endpoint: string,
+  message: string,
+  level: 'warning' | 'error'
+): {
   title: string;
   message: string;
   iconUrl: string;
   type: 'warning' | 'error';
 } {
-  const status = getRateLimitStatus(endpoint);
-  const isAtLimit = status.remaining === 0;
-
   return {
-    title: isAtLimit ? 'Rate Limit Reached' : 'Rate Limit Warning',
-    message: getRateLimitMessage(endpoint),
+    title: level === 'error' ? 'Rate Limit Reached' : 'Rate Limit Warning',
+    message,
     iconUrl: chrome.runtime.getURL('icons/icon48.png'),
-    type: isAtLimit ? 'error' : 'warning',
+    type: level,
   };
 }
 
 /**
  * Show rate limit notification to user
  */
-export function showRateLimitNotification(endpoint: string): void {
-  const notification = createRateLimitNotification(endpoint);
+export function showRateLimitNotification(endpoint: string, message: string, level: 'warning' | 'error'): void {
+  const notification = createRateLimitNotification(endpoint, message, level);
 
   chrome.notifications.create(`rate-limit-${endpoint}-${Date.now()}`, {
     type: 'basic',
@@ -136,17 +151,41 @@ export function showRateLimitNotification(endpoint: string): void {
 /**
  * Monitor rate limits and show notifications when needed
  */
-export function startRateLimitMonitoring(): void {
-  // Check every 30 seconds for rate limit warnings
-  setInterval(() => {
-    const warnings = checkRateLimitWarnings();
+const displayedWarnings = new Map<string, number>();
+let monitorIntervalId: ReturnType<typeof setInterval> | null = null;
 
-    warnings.forEach(warning => {
-      console.warn('Rate limit warning:', warning);
-      // Only show notification if it's a new warning
-      if (!document.querySelector(`[data-rate-limit-warning="${warning}"]`)) {
-        showRateLimitNotification('general');
+export function startRateLimitMonitoring(): void {
+  if (monitorIntervalId !== null) {
+    return;
+  }
+
+  monitorIntervalId = setInterval(() => {
+    const warnings: RateLimitWarning[] = checkRateLimitWarnings();
+    const now = Date.now();
+
+    warnings.forEach((warning) => {
+      const key = `${warning.endpoint}:${warning.level}`;
+      const expiresAt = now + Math.max(warning.resetIn, 15000);
+
+      if ((displayedWarnings.get(key) ?? 0) > now) {
+        return;
       }
+
+      console.warn('Rate limit warning:', warning.message);
+      showRateLimitNotification(warning.endpoint, warning.message, warning.level);
+      displayedWarnings.set(key, expiresAt);
     });
+
+    // Clean up expired warning markers
+    for (const [key, expiry] of displayedWarnings.entries()) {
+      if (expiry <= now) {
+        displayedWarnings.delete(key);
+      }
+    }
   }, 30000);
+  
+  // Ensure interval keeps running in background contexts
+  if (typeof monitorIntervalId === 'number') {
+    (globalThis as unknown as { __hireallRateLimitMonitor?: number }).__hireallRateLimitMonitor = monitorIntervalId;
+  }
 }

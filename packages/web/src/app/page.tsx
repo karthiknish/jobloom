@@ -66,30 +66,30 @@ export default async function Home() {
             </p>
 
             {/* Value proposition highlights */}
-            <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-              <div className="flex items-center justify-center gap-3 p-4 bg-white/50 backdrop-blur-sm rounded-xl border border-white/20 shadow-sm">
-                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+            <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto motion-stagger">
+              <div className="flex items-center justify-center gap-3 p-4 bg-white/50 backdrop-blur-sm rounded-xl border border-white/20 shadow-sm motion-card">
+                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center motion-scale-in">
                   <Target className="h-4 w-4 text-primary" />
                 </div>
                 <span className="font-semibold text-foreground">95% More Responses</span>
               </div>
-              <div className="flex items-center justify-center gap-3 p-4 bg-white/50 backdrop-blur-sm rounded-xl border border-white/20 shadow-sm">
-                <div className="w-8 h-8 bg-secondary/10 rounded-full flex items-center justify-center">
+              <div className="flex items-center justify-center gap-3 p-4 bg-white/50 backdrop-blur-sm rounded-xl border border-white/20 shadow-sm motion-card">
+                <div className="w-8 h-8 bg-secondary/10 rounded-full flex items-center justify-center motion-scale-in">
                   <TrendingUp className="h-4 w-4 text-secondary" />
                 </div>
                 <span className="font-semibold text-foreground">3x Faster Applications</span>
               </div>
-              <div className="flex items-center justify-center gap-3 p-4 bg-white/50 backdrop-blur-sm rounded-xl border border-white/20 shadow-sm">
-                <div className="w-8 h-8 bg-accent/10 rounded-full flex items-center justify-center">
+              <div className="flex items-center justify-center gap-3 p-4 bg-white/50 backdrop-blur-sm rounded-xl border border-white/20 shadow-sm motion-card">
+                <div className="w-8 h-8 bg-accent/10 rounded-full flex items-center justify-center motion-scale-in">
                   <Shield className="h-4 w-4 text-accent-foreground" />
                 </div>
                 <span className="font-semibold text-foreground">Privacy Protected</span>
               </div>
             </div>
 
-            <div className="mt-12 flex flex-col sm:flex-row gap-6 justify-center items-center">
+            <div className="mt-12 flex flex-col sm:flex-row gap-6 justify-center items-center motion-stagger">
               {userId ? (
-                <Button asChild size="lg" className="text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all duration-300">
+                <Button asChild size="lg" className="text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all duration-300 motion-button">
                   <Link href="/dashboard" className="flex items-center gap-2">
                     Go to Dashboard
                     <ArrowRight className="h-5 w-5" />
@@ -97,7 +97,7 @@ export default async function Home() {
                 </Button>
               ) : (
                 <>
-                  <Button asChild size="lg" className="text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all duration-300">
+                  <Button asChild size="lg" className="text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all duration-300 motion-button">
                     <Link href="/sign-up" className="flex items-center gap-2">
                       <Sparkles className="h-5 w-5" />
                       Start Free Today
@@ -107,7 +107,7 @@ export default async function Home() {
                     asChild
                     size="lg"
                     variant="outline"
-                    className="text-lg px-8 py-6 border-2 hover:bg-secondary/10 transition-all duration-300"
+                    className="text-lg px-8 py-6 border-2 hover:bg-secondary/10 transition-all duration-300 motion-button"
                   >
                     <a href="#how-it-works" className="flex items-center gap-2">
                       <Eye className="h-5 w-5" />
@@ -160,8 +160,8 @@ export default async function Home() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-white to-destructive/5 hover:shadow-2xl transition-all duration-500 hover:-translate-y-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 motion-stagger">
+            <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-white to-destructive/5 hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 motion-card">
               <div className="absolute inset-0 bg-gradient-to-br from-destructive/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
               <CardHeader className="relative">
                 <div className="w-20 h-20 bg-gradient-to-br from-destructive/10 to-destructive/20 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
@@ -183,7 +183,7 @@ export default async function Home() {
               </CardContent>
             </Card>
 
-            <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-white to-secondary/5 hover:shadow-2xl transition-all duration-500 hover:-translate-y-2">
+            <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-white to-secondary/5 hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 motion-card">
               <div className="absolute inset-0 bg-gradient-to-br from-secondary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
               <CardHeader className="relative">
                 <div className="w-20 h-20 bg-gradient-to-br from-secondary/10 to-secondary/20 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
@@ -205,7 +205,7 @@ export default async function Home() {
               </CardContent>
             </Card>
 
-            <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-white to-accent/5 hover:shadow-2xl transition-all duration-500 hover:-translate-y-2">
+            <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-white to-accent/5 hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 motion-card">
               <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
               <CardHeader className="relative">
                 <div className="w-20 h-20 bg-gradient-to-br from-accent/10 to-accent/20 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
@@ -849,7 +849,7 @@ export default async function Home() {
               <Button
                 asChild
                 size="lg"
-                className="text-xl px-12 py-8 bg-white text-primary hover:bg-gray-100 shadow-2xl transform hover:scale-105 transition-all duration-300"
+                className="text-xl px-12 py-8 bg-white text-primary hover:bg-gray-100 shadow-2xl transform hover:scale-105 transition-all duration-300 motion-button"
               >
                 <Link href="/dashboard" className="flex items-center gap-3">
                   <Sparkles className="h-6 w-6" />
@@ -862,7 +862,7 @@ export default async function Home() {
                 <Button
                   asChild
                   size="lg"
-                  className="text-xl px-12 py-8 bg-white text-primary hover:bg-gray-100 shadow-2xl transform hover:scale-105 transition-all duration-300"
+                  className="text-xl px-12 py-8 bg-white text-primary hover:bg-gray-100 shadow-2xl transform hover:scale-105 transition-all duration-300 motion-button"
                 >
                   <Link href="/sign-up" className="flex items-center gap-3">
                     <Sparkles className="h-6 w-6" />

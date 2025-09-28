@@ -6,10 +6,13 @@ import { SUBSCRIPTION_LIMITS } from "@/types/api";
 import {
   validateFileUpload,
   sanitizeFileName,
-  sanitizeString,
   SecurityLogger,
   validateAndSanitizeFormData
 } from "@/utils/security";
+import {
+  evaluateAtsCompatibilityFromText,
+  getIndustryKeywordSet,
+} from "@/lib/ats";
 
 // Initialize Firebase Admin if not already initialized (for storage)
 // Centralized admin initialization already handled in firebase/admin.ts
@@ -143,8 +146,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const sanitizedTargetRole = sanitized.targetRole;
-    const sanitizedIndustry = sanitized.industry;
+  const sanitizedTargetRole = typeof sanitized.targetRole === "string" ? sanitized.targetRole : "";
+  const sanitizedIndustry = typeof sanitized.industry === "string" ? sanitized.industry : "";
 
     // Check subscription limits
   debug.step = 'check-subscription';
@@ -255,8 +258,8 @@ export async function POST(request: NextRequest) {
         cvAnalysisRef.id,
         buffer,
         file.type,
-        sanitizedTargetRole,
-        sanitizedIndustry
+        sanitizedTargetRole || null,
+        sanitizedIndustry || null
       );
     }, 1000);
 
@@ -285,8 +288,8 @@ async function performCvAnalysis(
   analysisId: string,
   fileBuffer: Buffer,
   fileType: string,
-  targetRole: string,
-  industry: string
+  targetRole: string | null,
+  industry: string | null
 ) {
   try {
     // Extract text from file (simplified)
@@ -295,7 +298,7 @@ async function performCvAnalysis(
       : fileBuffer.toString();
 
     // Perform AI analysis (simplified mock analysis)
-    const analysis = await analyzeCvText(text, targetRole, industry);
+  const analysis = await analyzeCvText(text, targetRole, industry, fileType);
 
     // Update the analysis record
     await db.collection("cvAnalyses").doc(analysisId).update({
@@ -320,288 +323,226 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
   return "Sample CV text extracted from PDF. This is a placeholder.";
 }
 
-// Mock CV analysis with deterministic ATS scoring
-async function analyzeCvText(text: string, targetRole: string, industry: string) {
-  // In a real implementation, this would call an AI service like OpenAI, Anthropic, etc.
+const METRICS_REGEX = /\b(\d+%|\$?\d+[kKmM]?|[+\-]?\d+%|[0-9]+ (customers?|clients?|users?|projects?|teams?|leads?|opportunities?|accounts?|revenue|roi))\b/gi;
+const ACTION_VERB_REGEX = /\b(achieved|improved|increased|decreased|developed|created|managed|led|delivered|implemented|optimized|designed|architected|built|launched|resolved|scaled|orchestrated|drove|initiated)\b/gi;
 
-  // Analyze CV content for ATS compatibility
-  const atsScore = calculateAtsScore(text, targetRole, industry);
-  const overallScore = calculateOverallScore(text, atsScore);
+const clampValue = (value: number, min: number, max: number) =>
+  Math.min(Math.max(value, min), max);
 
-  const strengths = [
-    "Strong professional summary",
-    "Relevant work experience",
-    "Good use of action verbs",
-    "Clear career progression"
-  ];
+// Mock CV analysis with deterministic ATS scoring backed by shared evaluator
+async function analyzeCvText(
+  text: string,
+  targetRole: string | null,
+  industry: string | null,
+  fileType?: string | null
+) {
+  const safeText = text || "";
+  const lowerText = safeText.toLowerCase();
+  const normalizedTargetRole = targetRole?.trim() || null;
+  const normalizedIndustry = industry?.trim() || null;
 
-  const weaknesses = [
-    "Missing quantifiable achievements",
-    "Generic objective statement",
-    "Lack of industry-specific keywords"
-  ];
+  const atsEvaluation = evaluateAtsCompatibilityFromText({
+    text: safeText,
+    targetRole: normalizedTargetRole,
+    industry: normalizedIndustry,
+    fileType: fileType ?? null,
+  });
 
-  const recommendations = [
-    "Add specific metrics to achievements",
-    "Tailor resume for target role",
-    "Include relevant keywords from job description",
-    "Add professional certifications"
-  ];
+  const presentKeywords = atsEvaluation.matchedKeywords || [];
+  const missingKeywords = atsEvaluation.missingKeywords || [];
+  const combinedKeywords = Array.from(
+    new Set([...presentKeywords, ...missingKeywords])
+  );
+  const keywordCoverage = combinedKeywords.length
+    ? (presentKeywords.length / combinedKeywords.length) * 100
+    : 0;
 
-  const missingSkills = [
-    "Project Management",
-    "Data Analysis",
-    "Leadership",
-    "Communication"
-  ];
+  const missingSections = atsEvaluation.missingSections || [];
+  const hasSummary = !missingSections.includes("summary");
+  const hasExperience = !missingSections.includes("experience");
+  const hasEducation = !missingSections.includes("education");
+  const hasSkills = !missingSections.includes("skills");
+  const hasContact = !missingSections.includes("contact");
 
-  const atsCompatibility = {
-    score: atsScore,
-    issues: calculateAtsIssues(text),
-    suggestions: calculateAtsSuggestions(text, atsScore)
+  const actionVerbCount = (safeText.match(ACTION_VERB_REGEX) || []).length;
+  const hasMetrics = METRICS_REGEX.test(safeText);
+  METRICS_REGEX.lastIndex = 0;
+  ACTION_VERB_REGEX.lastIndex = 0;
+
+  const hasProjects = /\b(projects?|portfolio|case study|case studies)\b/i.test(
+    safeText
+  );
+  const hasCertifications = /\b(certified|certification|license|credential|aws certified|pmp|cfa|scrum master)\b/i.test(
+    safeText
+  );
+
+  let contentQuality = 0;
+  if (hasSummary) contentQuality += 10;
+  if (hasExperience) contentQuality += 20;
+  if (hasEducation) contentQuality += 10;
+  if (hasSkills) contentQuality += 10;
+  if (hasContact) contentQuality += 5;
+
+  contentQuality += Math.min(actionVerbCount * 3, 18);
+  if (hasMetrics) contentQuality += 15;
+  if (hasProjects) contentQuality += 6;
+  if (hasCertifications) contentQuality += 6;
+
+  if (keywordCoverage >= 70) {
+    contentQuality += 18;
+  } else if (keywordCoverage >= 50) {
+    contentQuality += 12;
+  } else if (keywordCoverage >= 30) {
+    contentQuality += 7;
+  } else if (keywordCoverage > 0) {
+    contentQuality += 4;
+  }
+
+  const wordCount = safeText.trim().split(/\s+/).filter(Boolean).length;
+  if (wordCount < 250) {
+    contentQuality -= 6;
+  } else if (wordCount > 2000) {
+    contentQuality -= 4;
+  } else {
+    contentQuality += 4;
+  }
+
+  contentQuality = clampValue(contentQuality, 0, 100);
+
+  const overallScore = clampValue(
+    Math.round(atsEvaluation.score * 0.55 + contentQuality * 0.45),
+    0,
+    100
+  );
+
+  const strengths = new Set<string>();
+  const weaknesses = new Set<string>();
+  const recommendations: string[] = [];
+
+  if (atsEvaluation.score >= 80) {
+    strengths.add("Excellent ATS-ready structure and formatting.");
+  } else if (atsEvaluation.score >= 65) {
+    strengths.add("Good ATS compatibility foundation.");
+  }
+
+  if (keywordCoverage >= 60) {
+    strengths.add("Solid coverage of target role and industry keywords.");
+  }
+
+  if (hasMetrics) {
+    strengths.add("Highlights achievements with measurable outcomes.");
+  }
+
+  if (actionVerbCount >= 6) {
+    strengths.add("Uses powerful action verbs to describe impact.");
+  }
+
+  if (hasSummary) {
+    strengths.add("Includes a concise professional summary.");
+  }
+
+  if (atsEvaluation.score < 65) {
+    weaknesses.add("ATS compatibility is below the recommended threshold of 70+.");
+  }
+
+  if (keywordCoverage < 45) {
+    weaknesses.add("Resume is missing many role-specific keywords.");
+  }
+
+  if (!hasMetrics) {
+    weaknesses.add("Achievements lack quantifiable metrics or scope.");
+  }
+
+  if (!hasSummary) {
+    weaknesses.add("Missing or weak professional summary section.");
+  }
+
+  if (!hasExperience) {
+    weaknesses.add("Experience section is hard to detect or missing key details.");
+  }
+
+  const baseSuggestions = atsEvaluation.suggestions ?? [];
+  recommendations.push(...baseSuggestions);
+
+  if (!hasMetrics) {
+    recommendations.push(
+      "Add numbers, percentages, or scope to quantify your accomplishments."
+    );
+  }
+
+  if (keywordCoverage < 70) {
+    recommendations.push(
+      "Mirror terminology from job listings to boost keyword matching."
+    );
+  }
+
+  if (!hasSummary) {
+    recommendations.push(
+      "Write a two-to-three sentence professional summary that highlights experience and goals."
+    );
+  }
+
+  const targetRoleLower = normalizedTargetRole?.toLowerCase() ?? "";
+  if (!hasProjects && /engineer|developer|designer/.test(targetRoleLower)) {
+    recommendations.push(
+      "Include a projects section with tools, scope, and results."
+    );
+  }
+
+  const missingSkills = Array.from(new Set(missingKeywords.slice(0, 10)));
+
+  const industryKeywords = getIndustryKeywordSet(normalizedIndustry);
+  const industryMatches = industryKeywords.filter((keyword) =>
+    lowerText.includes(keyword.toLowerCase())
+  );
+  const industryAlignmentScore = industryKeywords.length
+    ? Math.round((industryMatches.length / industryKeywords.length) * 100)
+    : atsEvaluation.score;
+
+  let industryFeedback = "";
+  if (!normalizedIndustry) {
+    industryFeedback =
+      "Specify an industry to receive targeted alignment guidance.";
+  } else if (industryAlignmentScore >= 75) {
+    industryFeedback = `Strong alignment with ${normalizedIndustry} roles.`;
+  } else if (industryAlignmentScore >= 50) {
+    industryFeedback = `Moderate ${normalizedIndustry} alignment. Add more industry terminology, tools, and outcomes.`;
+  } else {
+    industryFeedback = `Limited ${normalizedIndustry} alignment detected. Highlight industry-specific accomplishments and vocabulary.`;
+  }
+
+  const sectionAnalysis = {
+    hasSummary,
+    hasExperience,
+    hasEducation,
+    hasSkills,
+    hasContact,
+    missingsections: missingSections,
   };
 
   const keywordAnalysis = {
-    presentKeywords: ["JavaScript", "React", "Node.js", "SQL"],
-    missingKeywords: ["TypeScript", "AWS", "Docker", "Kubernetes"],
-    keywordDensity: 2.5
-  };
-
-  const sectionAnalysis = {
-    hasSummary: true,
-    hasExperience: true,
-    hasEducation: true,
-    hasSkills: true,
-    hasContact: true,
-    missingsections: []
-  };
-
-  const industryAlignment = {
-    score: calculateIndustryAlignmentScore(text, industry),
-    feedback: generateIndustryAlignmentFeedback(text, industry)
+    presentKeywords: presentKeywords.slice(0, 25),
+    missingKeywords: missingKeywords.slice(0, 25),
+    keywordDensity: atsEvaluation.keywordDensity,
   };
 
   return {
     overallScore,
-    strengths,
-    weaknesses,
-    recommendations,
+    strengths: Array.from(strengths),
+    weaknesses: Array.from(weaknesses),
+    recommendations: Array.from(new Set(recommendations)),
     missingSkills,
-    atsCompatibility,
+    atsCompatibility: {
+      score: atsEvaluation.score,
+      issues: atsEvaluation.issues,
+      suggestions: Array.from(new Set(baseSuggestions)),
+      breakdown: atsEvaluation.breakdown,
+    },
     keywordAnalysis,
     sectionAnalysis,
-    industryAlignment,
+    industryAlignment: {
+      score: clampValue(industryAlignmentScore, 0, 100),
+      feedback: industryFeedback,
+    },
   };
-}
-
-// Helper function to calculate ATS compatibility score based on CV content
-function calculateAtsScore(text: string, targetRole: string, industry: string): number {
-  let score = 60; // Base score
-
-  // Check for ATS-friendly formatting
-  const hasStandardSections = /\b(experience|education|skills|summary|objective)\b/i.test(text);
-  if (hasStandardSections) score += 10;
-
-  // Check for contact information
-  const hasEmail = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/.test(text);
-  const hasPhone = /\b\d{3}[-.]?\d{3}[-.]?\d{4}\b/.test(text);
-  if (hasEmail && hasPhone) score += 8;
-
-  // Check for standard fonts and formatting (no fancy formatting)
-  const hasSimpleFormatting = !text.includes('•') && !text.includes('■') && !text.includes('→');
-  if (hasSimpleFormatting) score += 5;
-
-  // Check for appropriate file format (PDF is ATS-friendly)
-  const hasPdfStructure = text.includes('PDF') || text.includes('Portable Document Format');
-  if (hasPdfStructure) score += 5;
-
-  // Role-specific keyword matching
-  const roleKeywords = getRoleKeywords(targetRole);
-  const foundKeywords = roleKeywords.filter(keyword =>
-    text.toLowerCase().includes(keyword.toLowerCase())
-  );
-  const keywordScore = Math.min((foundKeywords.length / roleKeywords.length) * 15, 15);
-  score += keywordScore;
-
-  return Math.min(Math.max(score, 0), 100);
-}
-
-// Helper function to calculate overall CV score based on ATS score and content quality
-function calculateOverallScore(text: string, atsScore: number): number {
-  let score = atsScore * 0.4; // ATS compatibility is 40% of overall score
-
-  // Content quality factors (60% of score)
-  const contentScore = calculateContentQualityScore(text);
-  score += contentScore * 0.6;
-
-  return Math.min(Math.max(Math.round(score), 0), 100);
-}
-
-// Calculate content quality score based on CV structure and content
-function calculateContentQualityScore(text: string): number {
-  let score = 0;
-
-  // Check for professional summary/objective
-  const hasSummary = /\b(summary|objective|profile|about)\b/i.test(text);
-  if (hasSummary) score += 15;
-
-  // Check for quantifiable achievements
-  const hasQuantifiableAchievements = /\b\d+%|\b\d+x|\$\d+|\b\d+\s+(customers?|clients?|users?|projects?|years?)\b/i.test(text);
-  if (hasQuantifiableAchievements) score += 20;
-
-  // Check for action verbs
-  const actionVerbs = /\b(achieved|improved|increased|decreased|developed|created|managed|led|delivered|implemented|optimized|designed)\b/i;
-  const actionVerbCount = (text.match(actionVerbs) || []).length;
-  const actionVerbScore = Math.min(actionVerbCount * 2, 15);
-  score += actionVerbScore;
-
-  // Check for skills section
-  const hasSkillsSection = /\b(skills|competencies|expertise|proficiencies)\b/i.test(text);
-  if (hasSkillsSection) score += 10;
-
-  // Check for education section
-  const hasEducation = /\b(education|degree|university|college|bachelor|master|phd|certification)\b/i.test(text);
-  if (hasEducation) score += 10;
-
-  // Check for work experience
-  const hasExperience = /\b(experience|employment|work|career|position|role)\b/i.test(text);
-  if (hasExperience) score += 15;
-
-  // Check for proper formatting and structure
-  const hasProperStructure = text.split('\n').length > 10; // Multiple lines indicate structure
-  if (hasProperStructure) score += 10;
-
-  // Check for industry-specific terms
-  const hasIndustryTerms = /\b(leadership|management|strategy|analysis|development|implementation|optimization)\b/i.test(text);
-  if (hasIndustryTerms) score += 5;
-
-  return Math.min(score, 100);
-}
-
-// Get role-specific keywords for ATS scoring
-function getRoleKeywords(targetRole: string): string[] {
-  const roleKeywordMap: Record<string, string[]> = {
-    'software engineer': ['JavaScript', 'Python', 'React', 'Node.js', 'SQL', 'Git', 'Agile', 'API', 'REST', 'MongoDB'],
-    'data scientist': ['Python', 'R', 'SQL', 'Machine Learning', 'Statistics', 'Pandas', 'TensorFlow', 'Tableau', 'Hadoop', 'Spark'],
-    'product manager': ['Product Strategy', 'Roadmap', 'Analytics', 'User Experience', 'A/B Testing', 'Stakeholder', 'KPI', 'Agile', 'Scrum'],
-    'marketing': ['SEO', 'SEM', 'Social Media', 'Content Marketing', 'Google Analytics', 'CRM', 'Lead Generation', 'Campaign', 'Brand'],
-    'sales': ['CRM', 'Lead Generation', 'Pipeline', 'Revenue', 'Quota', 'Negotiation', 'Relationship', 'Prospecting', 'Closing'],
-    'designer': ['Figma', 'Adobe Creative Suite', 'User Experience', 'Prototyping', 'Wireframes', 'Visual Design', 'Typography', 'Color Theory'],
-    'default': ['Leadership', 'Communication', 'Problem Solving', 'Teamwork', 'Project Management', 'Time Management', 'Organization']
-  };
-
-  return roleKeywordMap[targetRole.toLowerCase()] || roleKeywordMap['default'];
-}
-
-// Calculate ATS compatibility issues based on CV content
-function calculateAtsIssues(text: string): string[] {
-  const issues: string[] = [];
-
-  if (!/\b(experience|education|skills|summary|objective)\b/i.test(text)) {
-    issues.push("Missing standard section headers");
-  }
-
-  if (text.includes('•') || text.includes('■') || text.includes('→')) {
-    issues.push("Complex formatting may confuse ATS");
-  }
-
-  if (!/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/.test(text)) {
-    issues.push("Missing or unclear contact information");
-  }
-
-  if (!/\b\d{3}[-.]?\d{3}[-.]?\d{4}\b/.test(text)) {
-    issues.push("Missing phone number");
-  }
-
-  if (text.length < 1000) {
-    issues.push("CV content may be too brief for ATS evaluation");
-  }
-
-  return issues;
-}
-
-// Calculate ATS suggestions based on score and content
-function calculateAtsSuggestions(text: string, score: number): string[] {
-  const suggestions: string[] = [];
-
-  if (score < 70) {
-    suggestions.push("Use standard fonts (Arial, Calibri, Times New Roman)");
-  }
-
-  if (score < 75) {
-    suggestions.push("Include clear section headers (Experience, Education, Skills)");
-  }
-
-  if (score < 80) {
-    suggestions.push("Avoid tables, graphics, and complex formatting");
-  }
-
-  if (score < 85) {
-    suggestions.push("Add relevant keywords from the job description");
-  }
-
-  if (score < 90) {
-    suggestions.push("Include quantifiable achievements and metrics");
-  }
-
-  return suggestions;
-}
-
-// Calculate industry alignment score based on CV content and target industry
-function calculateIndustryAlignmentScore(text: string, industry: string): number {
-  let score = 60; // Base score
-
-  // Industry-specific keyword matching
-  const industryKeywords = getIndustryKeywords(industry);
-  const foundKeywords = industryKeywords.filter(keyword =>
-    text.toLowerCase().includes(keyword.toLowerCase())
-  );
-  const keywordScore = Math.min((foundKeywords.length / industryKeywords.length) * 25, 25);
-  score += keywordScore;
-
-  // Check for industry-specific achievements and experience
-  const hasIndustryAchievements = /\b(managed|led|directed|oversaw|coordinated|executed|implemented)\s+\w+\s+(team|project|initiative|program|strategy|campaign)\b/i.test(text);
-  if (hasIndustryAchievements) score += 10;
-
-  // Check for relevant certifications or qualifications
-  const hasRelevantQualifications = /\b(certified|certification|license|credential|qualified|accredited)\b/i.test(text);
-  if (hasRelevantQualifications) score += 5;
-
-  // Check for industry-specific tools and technologies
-  const hasIndustryTools = /\b(software|platform|system|tool|technology|framework|methodology)\b/i.test(text);
-  if (hasIndustryTools) score += 5;
-
-  return Math.min(Math.max(score, 0), 100);
-}
-
-// Generate industry-specific feedback based on CV content
-function generateIndustryAlignmentFeedback(text: string, industry: string): string {
-  const industryKeywords = getIndustryKeywords(industry);
-  const foundKeywords = industryKeywords.filter(keyword =>
-    text.toLowerCase().includes(keyword.toLowerCase())
-  );
-
-  if (foundKeywords.length >= industryKeywords.length * 0.8) {
-    return `Excellent alignment with ${industry} industry. Strong use of industry-specific terminology and relevant experience.`;
-  } else if (foundKeywords.length >= industryKeywords.length * 0.5) {
-    return `Good alignment with ${industry} industry. Consider adding more industry-specific keywords and examples.`;
-  } else {
-    return `Moderate alignment with ${industry} industry. Include more relevant industry terms and demonstrate experience in this sector.`;
-  }
-}
-
-// Get industry-specific keywords for alignment scoring
-function getIndustryKeywords(industry: string): string[] {
-  const industryKeywordMap: Record<string, string[]> = {
-    'technology': ['Software Development', 'Agile', 'Scrum', 'DevOps', 'Cloud Computing', 'API', 'Database', 'Programming', 'Testing', 'Deployment'],
-    'finance': ['Financial Analysis', 'Risk Management', 'Portfolio Management', 'Investment', 'Banking', 'Compliance', 'Audit', 'Financial Modeling', 'Budgeting', 'Forecasting'],
-    'healthcare': ['Patient Care', 'Medical Records', 'HIPAA', 'Clinical', 'Healthcare Policy', 'Medical Terminology', 'Treatment', 'Diagnosis', 'Healthcare Management', 'Quality Improvement'],
-    'marketing': ['Digital Marketing', 'SEO', 'SEM', 'Social Media', 'Content Strategy', 'Brand Management', 'Market Research', 'Campaign Management', 'Analytics', 'Lead Generation'],
-    'sales': ['Sales Strategy', 'Customer Relationship', 'Pipeline Management', 'Revenue Growth', 'Negotiation', 'Prospecting', 'Closing', 'Account Management', 'Sales Forecasting', 'CRM'],
-    'education': ['Curriculum Development', 'Instructional Design', 'Assessment', 'Student Learning', 'Educational Technology', 'Classroom Management', 'Differentiated Instruction', 'Professional Development', 'Learning Outcomes', 'Educational Leadership'],
-    'consulting': ['Strategic Planning', 'Business Analysis', 'Process Improvement', 'Change Management', 'Stakeholder Management', 'Project Management', 'Business Development', 'Client Relations', 'Problem Solving', 'Data Analysis'],
-    'default': ['Professional Experience', 'Industry Knowledge', 'Leadership', 'Communication', 'Problem Solving', 'Team Collaboration', 'Project Management', 'Strategic Thinking', 'Results-Oriented', 'Customer Focus']
-  };
-
-  return industryKeywordMap[industry.toLowerCase()] || industryKeywordMap['default'];
 }

@@ -69,8 +69,8 @@ new MutationObserver(() => {
             action: "authSuccess",
             url: url,
           })
-          .catch(() => {
-            // Ignore errors if extension context is invalid
+          .catch((error) => {
+            console.debug("Auth success notification failed; extension context may be invalid", error);
           });
       }, 1000);
     }
@@ -93,7 +93,9 @@ window.addEventListener("message", (event) => {
         try {
           const s = localStorage.getItem("__firebase_user");
           if (s) userId = JSON.parse(s)?.id ?? null;
-        } catch {}
+        } catch (parseError) {
+          ExtensionSecurityLogger.log('Error parsing Firebase user data for auth success message', parseError);
+        }
       }
 
       if (userId) {
@@ -136,12 +138,12 @@ window.addEventListener("message", (event) => {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(body),
           });
-        } catch {
-          // ignore failures
+        } catch (syncError) {
+          ExtensionSecurityLogger.log('Failed to sync web settings from extension', syncError);
         }
       });
-    } catch {
-      // ignore
+    } catch (settingsError) {
+      ExtensionSecurityLogger.log('Error preparing settings sync payload', settingsError);
     }
   }
 });
@@ -158,7 +160,9 @@ function trySendUserId() {
     try {
       const s = localStorage.getItem("__firebase_user");
       if (s) userId = JSON.parse(s)?.id ?? null;
-    } catch {}
+    } catch (parseError) {
+      ExtensionSecurityLogger.log('Error parsing Firebase user data during auto-sync', parseError);
+    }
   }
   if (userId) {
     chrome.runtime.sendMessage({ action: "authSuccess", userId });

@@ -31,6 +31,35 @@ export const RATE_LIMITS: Record<string, RateLimitConfig> = {
 
 // Global rate limiting state
 const rateLimitState = new Map<string, RateLimitState>();
+let cleanupIntervalId: ReturnType<typeof setInterval> | null = null;
+
+function resolveRateLimitConfig(
+  endpoint: string,
+  overrides?: Partial<RateLimitConfig>
+): RateLimitConfig {
+  const baseConfig = RATE_LIMITS[endpoint] ?? RATE_LIMITS.general;
+
+  if (!baseConfig) {
+    throw new Error(
+      `Missing rate limit configuration for "${endpoint}" and no general fallback is defined.`
+    );
+  }
+
+  const mergedConfig: RateLimitConfig = {
+    ...baseConfig,
+    ...overrides,
+  };
+
+  if (!Number.isFinite(mergedConfig.maxRequests) || mergedConfig.maxRequests <= 0) {
+    throw new Error(`Invalid maxRequests for rate limiter: ${mergedConfig.maxRequests}`);
+  }
+
+  if (!Number.isFinite(mergedConfig.windowMs) || mergedConfig.windowMs <= 0) {
+    throw new Error(`Invalid windowMs for rate limiter: ${mergedConfig.windowMs}`);
+  }
+
+  return mergedConfig;
+}
 
 /**
  * Check if a request should be allowed based on rate limits
@@ -39,9 +68,10 @@ export function checkRateLimit(
   endpoint: string,
   config?: Partial<RateLimitConfig>
 ): { allowed: boolean; resetIn?: number; remaining?: number } {
-  const rateLimitConfig = { ...RATE_LIMITS[endpoint], ...config };
+  const rateLimitConfig = resolveRateLimitConfig(endpoint, config);
   const now = Date.now();
-  const state = rateLimitState.get(endpoint);
+  const stateKey = config?.endpoint ?? endpoint;
+  const state = rateLimitState.get(stateKey);
 
   // If no state exists or window has expired, reset
   if (!state || now > state.resetTime) {
@@ -50,7 +80,7 @@ export function checkRateLimit(
       resetTime: now + rateLimitConfig.windowMs,
       lastRequest: now,
     };
-    rateLimitState.set(endpoint, newState);
+    rateLimitState.set(stateKey, newState);
     return {
       allowed: true,
       remaining: rateLimitConfig.maxRequests - 1,
@@ -142,8 +172,12 @@ export function cleanupExpiredLimits(): void {
  * Initialize rate limiting cleanup interval
  */
 export function initRateLimitCleanup(): void {
+  if (cleanupIntervalId !== null) {
+    return;
+  }
+
   // Clean up expired limits every minute
-  setInterval(cleanupExpiredLimits, 60000);
+  cleanupIntervalId = setInterval(cleanupExpiredLimits, 60000);
 }
 
 /**

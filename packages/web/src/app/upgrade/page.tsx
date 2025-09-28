@@ -14,7 +14,7 @@ import { showSuccess, showError } from "@/components/ui/Toast";
 
 export default function UpgradePage() {
   const [isUpgrading, setIsUpgrading] = useState(false);
-  const { plan, refreshSubscription } = useSubscription();
+  const { plan } = useSubscription();
   const { user } = useFirebaseAuth();
   const router = useRouter();
 
@@ -32,8 +32,7 @@ export default function UpgradePage() {
 
     setIsUpgrading(true);
     try {
-      // For now, simulate upgrade - Stripe integration coming soon
-      const response = await fetch("/api/subscription/upgrade", {
+      const response = await fetch("/api/stripe/create-checkout-session", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -47,11 +46,12 @@ export default function UpgradePage() {
 
       if (response.ok) {
         const data = await response.json();
-        showSuccess(
-          `Successfully upgraded to ${targetPlan} plan! (Stripe integration coming soon)`
-        );
-        await refreshSubscription();
-        router.push("/upgrade/success");
+        if (data.url) {
+          showSuccess(`Redirecting to secure checkout for ${targetPlan} plan`);
+          window.location.href = data.url;
+        } else {
+          showError("Unable to start checkout session. Please contact support.");
+        }
       } else {
         const error = await response.json();
         showError(error.error || "Failed to upgrade subscription");

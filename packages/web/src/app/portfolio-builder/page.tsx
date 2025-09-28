@@ -36,10 +36,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { portfolioTemplates, getPortfolioTemplate } from "@/config/portfolioTemplates";
+import { portfolioTemplates } from "@/config/portfolioTemplates";
 import { showSuccess, showError } from "@/components/ui/Toast";
 
 // Portfolio data structure
@@ -212,18 +211,6 @@ const sectionTypes = [
 
 export default function PortfolioBuilderPage() {
   const { user } = useFirebaseAuth();
-
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="mb-4">Please sign in to access portfolio builder.</p>
-          <a className="underline" href="/sign-in">Sign in</a>
-        </div>
-      </div>
-    );
-  }
-
   const [activeTab, setActiveTab] = useState("design");
   const [saving, setSaving] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
@@ -286,6 +273,17 @@ export default function PortfolioBuilderPage() {
   useEffect(() => {
     fetchPortfolio();
   }, [fetchPortfolio]);
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="mb-4">Please sign in to access portfolio builder.</p>
+          <a className="underline" href="/sign-in">Sign in</a>
+        </div>
+      </div>
+    );
+  }
 
   // Save portfolio data
   const savePortfolio = async () => {

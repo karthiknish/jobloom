@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { UploadCloud, CheckCircle2, Loader2, Lightbulb } from "lucide-react";
-import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
@@ -24,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { showError, showSuccess, showWarning } from "@/components/ui/Toast";
 
 interface CvUploadFormProps {
   userId: string;
@@ -71,7 +71,7 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted }: CvUpl
     e.preventDefault();
 
     if (!file) {
-      toast.error("Please select a CV file to upload");
+      showWarning("Select a CV file to upload");
       return;
     }
 
@@ -110,7 +110,10 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted }: CvUpl
       const result = await response.json();
 
       if (response.ok) {
-        toast.success("CV uploaded successfully! Our AI is now analyzing your CV. You'll receive detailed feedback shortly.");
+        showSuccess(
+          "CV uploaded successfully",
+          "Our AI is analyzing your CV. You'll receive detailed feedback shortly."
+        );
         setFile(null);
         setTargetRole("");
         setIndustry("");
@@ -128,11 +131,17 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted }: CvUpl
         setUpgradePromptVisible(true);
         setLimitInfo(result);
       } else {
-        toast.error((result.error ? `${result.error}. ` : "") + "Please check your file format and size, then try again.");
+        showError(
+          "Upload failed",
+          `${result.error ? `${result.error}. ` : ""}Check the file format and size, then try again.`
+        );
       }
     } catch (error) {
       console.error("Upload error:", error);
-      toast.error("Upload interrupted. Please check your connection and try again.");
+      showError(
+        "Upload interrupted",
+        "Check your connection and try again."
+      );
     } finally {
       setUploading(false);
     }

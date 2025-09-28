@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   FileText,
   Save,
@@ -10,16 +10,8 @@ import {
   Lightbulb,
   Target,
   CheckCircle,
-  AlertCircle,
   Plus,
   Trash2,
-  Move,
-  Copy,
-  Edit,
-  ArrowLeft,
-  ArrowRight,
-  Star,
-  TrendingUp,
   Users,
   Award,
   Briefcase,
@@ -27,9 +19,6 @@ import {
   Code2,
   Palette,
   Sparkles,
-  Zap,
-  Clock,
-  Shield,
   Globe,
   Settings,
 } from "lucide-react";
@@ -41,14 +30,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { resumeTemplates, getResumeTemplate } from "@/config/resumeTemplates";
+import { resumeTemplates } from "@/config/resumeTemplates";
 import { showSuccess, showError, showInfo } from "@/components/ui/Toast";
 import { CoverLetterGenerator } from "@/components/CoverLetterGenerator";
 import { ResumePreview } from "@/components/ResumePreview";
@@ -124,7 +110,6 @@ export default function ResumeBuilderPage() {
   const [activeTab, setActiveTab] = useState("personal");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [previewMode, setPreviewMode] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState("modern");
 
@@ -154,12 +139,10 @@ export default function ResumeBuilderPage() {
   // Calculate comprehensive resume score
   const calculateResumeScore = () => {
     let score = 0;
-    let totalFields = 0;
 
     // Personal info (15%)
     const personalFields = ['fullName', 'email', 'phone', 'location', 'summary'];
     personalFields.forEach(field => {
-      totalFields++;
       if (resumeData.personalInfo[field as keyof typeof resumeData.personalInfo]?.trim()) {
         score += 15 / personalFields.length;
       }
@@ -265,6 +248,7 @@ export default function ResumeBuilderPage() {
       updatePersonalInfo("summary", suggestedSummary);
       showSuccess("Summary suggestion generated!");
     } catch (error) {
+      console.error("Failed to generate summary suggestion:", error);
       showError("Failed to generate summary suggestion");
     }
   };
@@ -493,25 +477,8 @@ export default function ResumeBuilderPage() {
       // For now, we'll show a placeholder message
       showInfo("PDF export feature coming soon! For now, you can print the preview or copy the content.");
     } catch (error) {
+      console.error("Failed to export PDF:", error);
       showError("Failed to export PDF");
-    }
-  };
-
-  // Get completion status for each section
-  const getSectionStatus = (section: string) => {
-    switch (section) {
-      case 'personal':
-        return resumeData.personalInfo.fullName && resumeData.personalInfo.email;
-      case 'experience':
-        return resumeData.experience.length > 0;
-      case 'education':
-        return resumeData.education.length > 0;
-      case 'skills':
-        return resumeData.skills.some(skill => skill.skills.length > 0);
-      case 'projects':
-        return resumeData.projects.length > 0;
-      default:
-        return false;
     }
   };
 
@@ -547,18 +514,20 @@ export default function ResumeBuilderPage() {
                 variant="outline"
                 onClick={() => setShowPreviewModal(true)}
                 className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                disabled={loading}
               >
                 <Eye className="h-4 w-4 mr-2" />
                 Preview
               </Button>
-              <Button onClick={saveResume} disabled={saving}>
+              <Button onClick={saveResume} disabled={saving || loading}>
                 <Save className="h-4 w-4 mr-2" />
-                {saving ? "Saving..." : "Save"}
+                {saving ? "Saving..." : loading ? "Loading..." : "Save"}
               </Button>
               <Button
                 variant="outline"
                 className="bg-white/10 border-white/20 text-white hover:bg-white/20"
                 onClick={exportAsPDF}
+                disabled={loading}
               >
                 <Download className="h-4 w-4 mr-2" />
                 Export PDF
@@ -737,7 +706,7 @@ export default function ResumeBuilderPage() {
                           placeholder="Write a compelling summary that highlights your key strengths and career goals..."
                         />
                         <p className="text-xs text-muted-foreground mt-1">
-                          Keep it concise (2-3 sentences) and tailor it to the job you're applying for.
+                          Keep it concise (2-3 sentences) and tailor it to the job you&apos;re applying for.
                         </p>
                       </div>
 
@@ -1201,14 +1170,14 @@ export default function ResumeBuilderPage() {
                     <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
                     <div className="text-sm">
                       <div className="font-medium">Quantify achievements</div>
-                      <div className="text-muted-foreground">Use numbers to show impact (e.g., "Increased sales by 30%")</div>
+                      <div className="text-muted-foreground">Use numbers to show impact (e.g., &quot;Increased sales by 30%&quot;)</div>
                     </div>
                   </div>
                   <div className="flex items-start gap-2">
                     <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
                     <div className="text-sm">
                       <div className="font-medium">Use action verbs</div>
-                      <div className="text-muted-foreground">Start bullet points with words like "Led", "Developed", "Optimized"</div>
+                      <div className="text-muted-foreground">Start bullet points with words like &quot;Led&quot;, &quot;Developed&quot;, &quot;Optimized&quot;</div>
                     </div>
                   </div>
                   <div className="flex items-start gap-2">

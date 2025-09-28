@@ -52,7 +52,7 @@ export const PersonalInfoForm: React.FC = () => {
         <div>
           <Label htmlFor="summary">Professional Summary</Label>
           <Textarea id="summary" rows={4} value={resumeData.personalInfo.summary} onChange={e=> updatePersonalInfo('summary', e.target.value)} placeholder="Write a compelling summary that highlights your key strengths and career goals..." />
-          <p className="text-xs text-muted-foreground mt-1">Keep it concise (2-3 sentences) and tailor it to the job you're applying for.</p>
+          <p className="text-xs text-muted-foreground mt-1">Keep it concise (2-3 sentences) and tailor it to the job you&apos;re applying for.</p>
         </div>
         <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-200">
           <div className="flex items-center gap-2">

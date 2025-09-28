@@ -1,5 +1,9 @@
 // utils/api/admin.ts
-import type { SponsoredCompany, SponsorshipStats } from "../../types/api";
+import type {
+  SponsoredCompany,
+  SponsorshipStats,
+  ContactSubmission,
+} from "../../types/api";
 import {
   collection,
   doc,
@@ -60,6 +64,19 @@ type FireRule = {
   isActive?: boolean;
   createdAt?: number;
   updatedAt?: number;
+};
+
+type FireContact = {
+  name?: string;
+  email?: string;
+  message?: string;
+  subject?: string;
+  status?: string;
+  createdAt?: number;
+  updatedAt?: number;
+  response?: string;
+  respondedAt?: number;
+  respondedBy?: string;
 };
 
 export const adminApi = {
@@ -302,6 +319,64 @@ export const adminApi = {
 
     const { deleteDoc } = await import("firebase/firestore");
     await deleteDoc(doc(db, "users", userId));
+  },
+
+  // Contact submissions
+  getAllContactSubmissions: async (): Promise<ContactSubmission[]> => {
+    const db = getDb();
+    if (!db) throw new Error("Firestore not initialized");
+
+    const snap = await getDocs(collection(db, "contacts"));
+    return snap.docs.map((d) => {
+      const data = d.data() as FireContact;
+      return {
+        _id: d.id,
+        name: data.name ?? "",
+        email: data.email ?? "",
+        message: data.message ?? "",
+        subject: data.subject ?? "",
+        status: (data.status as ContactSubmission["status"]) ?? "new",
+        createdAt: data.createdAt ?? Date.now(),
+        updatedAt: data.updatedAt ?? Date.now(),
+        response: data.response ?? "",
+        respondedAt: data.respondedAt,
+        respondedBy: data.respondedBy ?? "",
+      } satisfies ContactSubmission;
+    });
+  },
+
+  updateContactSubmission: async (
+    contactId: string,
+    updates: Partial<
+      Pick<
+        ContactSubmission,
+        "status" | "response" | "respondedAt" | "respondedBy"
+      >
+    >
+  ): Promise<void> => {
+    const db = getDb();
+    if (!db) throw new Error("Firestore not initialized");
+
+    const payload: Record<string, unknown> = {
+      ...updates,
+      updatedAt: Date.now(),
+    };
+
+    if (updates?.status === "responded" && !updates.respondedAt) {
+      payload.respondedAt = Date.now();
+    }
+
+    await updateDoc(doc(db, "contacts", contactId), payload);
+  },
+
+  deleteContactSubmission: async (
+    contactId: string
+  ): Promise<void> => {
+    const db = getDb();
+    if (!db) throw new Error("Firestore not initialized");
+
+    const { deleteDoc } = await import("firebase/firestore");
+    await deleteDoc(doc(db, "contacts", contactId));
   },
 
   // Sponsorship rules

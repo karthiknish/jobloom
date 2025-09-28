@@ -2,7 +2,7 @@
 
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { useState, useEffect } from "react";
-import toast from "react-hot-toast";
+import { showError, showSuccess } from "@/components/ui/Toast";
 import { useRateLimit } from "../../hooks/useRateLimit";
 import { useApiQuery, useApiMutation } from "../../hooks/useApi";
 import { adminApi } from "../../utils/api/admin";
@@ -106,7 +106,7 @@ export default function AdminPage() {
         createdBy: userRecord._id,
       });
 
-      toast.success("Sponsored company added successfully!");
+      showSuccess("Sponsored company added successfully");
       setShowAddForm(false);
       refetchCompanies();
     } catch (error: unknown) {
@@ -114,9 +114,9 @@ export default function AdminPage() {
         error instanceof Error &&
         error.message.includes("Rate limit exceeded")
       ) {
-        toast.error(`Rate limit exceeded. ${error.message}`);
+        showError("Rate limit exceeded", error.message);
       } else {
-        toast.error("Failed to add sponsored company");
+        showError("Failed to add sponsored company", "Something went wrong while saving. Please try again.");
       }
       console.error("Error adding company:", error);
     }

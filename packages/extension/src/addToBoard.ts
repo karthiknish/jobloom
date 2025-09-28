@@ -1,5 +1,4 @@
 import { DEFAULT_WEB_APP_URL } from "./constants";
-import { getAuthInstance } from "./firebase";
 import { get, post, put } from "./apiClient";
 // addToBoard.ts - Utility functions for adding jobs to the user's board
 
@@ -115,22 +114,6 @@ export class JobBoardManager {
     return new Promise((resolve) => {
       chrome.storage.sync.get(["firebaseUid", "userId"], (result) => {
         resolve(result.firebaseUid || result.userId || null);
-      });
-    });
-  }
-
-  private static async getOrCreateClientId(): Promise<string> {
-    return new Promise((resolve) => {
-      chrome.storage.local.get(["clientId"], (result) => {
-        if (result.clientId) {
-          resolve(result.clientId);
-        } else {
-          const newClientId =
-            "ext-" + Math.random().toString(36).substr(2, 9) + "-" + Date.now();
-          chrome.storage.local.set({ clientId: newClientId }, () => {
-            resolve(newClientId);
-          });
-        }
       });
     });
   }
@@ -253,8 +236,7 @@ export class JobBoardManager {
       const userId = await this.getUserId();
       if (!userId) return false;
 
-      const base = (await this.getWebAppUrl()).replace(/\/$/, "");
-      const clientId = await this.getOrCreateClientId();
+  const base = (await this.getWebAppUrl()).replace(/\/$/, "");
 
       // Check if job already exists in user's job board
       const response = await fetch(
@@ -350,15 +332,15 @@ export class JobBoardManager {
       }
 
       // Get all user applications via api client
-      let applications: any[] = [];
+      let applications: ApplicationData[] = [];
       try {
-        applications = await get<any[]>(
+        applications = await get<ApplicationData[]>(
           `/api/app/applications/user/${encodeURIComponent(userId)}`
         );
       } catch {
         return { success: false, message: "Failed to fetch applications." };
       }
-      const application = applications.find((app: any) => app.jobId === jobId);
+      const application = applications.find((app) => app.jobId === jobId);
 
       if (!application) {
         return {
@@ -426,16 +408,16 @@ export class JobBoardManager {
         return null;
       }
 
-      let applications: any[] = [];
+      let applications: ApplicationData[] = [];
       try {
-        applications = await get<any[]>(
+        applications = await get<ApplicationData[]>(
           `/api/app/applications/user/${encodeURIComponent(userId)}`
         );
-      } catch {}
+      } catch (err) {
+        console.warn("Failed to fetch applications for job details", err);
+      }
 
-      const applicationData = applications.find(
-        (app: any) => app.jobId === jobId
-      );
+      const applicationData = applications.find((app) => app.jobId === jobId);
 
       return {
         ...jobData,
@@ -446,7 +428,6 @@ export class JobBoardManager {
         status: applicationData?.status || "interested",
       };
 
-      return null;
     } catch (error) {
       console.error("Error getting job details:", error);
       return null;
@@ -466,18 +447,18 @@ export class JobBoardManager {
       } catch {
         return [];
       }
-      let applications: any[] = [];
+      let applications: ApplicationData[] = [];
       try {
-        applications = await get<any[]>(
+        applications = await get<ApplicationData[]>(
           `/api/app/applications/user/${encodeURIComponent(userId)}`
         );
-      } catch {}
+      } catch (err) {
+        console.warn("Failed to fetch applications for jobs list", err);
+      }
 
       // Merge job and application data
       return jobs.map((job: any) => {
-        const application = applications.find(
-          (app: any) => app.jobId === job.id
-        );
+        const application = applications.find((app) => app.jobId === job.id);
         return {
           ...job,
           applicationId: application?.id,

@@ -3,6 +3,8 @@ import { initializeApp, getApps, cert, applicationDefault, type App } from "fire
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore, type Firestore } from "firebase-admin/firestore";
 import { getStorage, type Storage } from "firebase-admin/storage";
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 
 let adminApp: App | undefined;
 
@@ -44,30 +46,26 @@ try {
   // Method 3: Load from temp-key.json file (development fallback)
   if (!serviceAccount) {
     try {
-      const fs = require('fs');
-      const path = require('path');
-      const keyPath = path.join(process.cwd(), 'temp-key.json');
-      if (fs.existsSync(keyPath)) {
-        serviceAccount = JSON.parse(fs.readFileSync(keyPath, 'utf8'));
-        console.log('Loaded service account from temp-key.json');
+      const keyPath = join(process.cwd(), "temp-key.json");
+      if (existsSync(keyPath)) {
+        serviceAccount = JSON.parse(readFileSync(keyPath, "utf8"));
+        console.log("Loaded service account from temp-key.json");
       }
     } catch (error) {
-      console.warn('Failed to load temp-key.json:', error);
+      console.warn("Failed to load temp-key.json:", error);
     }
   }
 
   // Method 4: Load from hireall-4f106-firebase-adminsdk-fbsvc-2e91c28cd6.json
   if (!serviceAccount) {
     try {
-      const fs = require('fs');
-      const path = require('path');
-      const keyPath = path.join(process.cwd(), 'hireall-4f106-firebase-adminsdk-fbsvc-2e91c28cd6.json');
-      if (fs.existsSync(keyPath)) {
-        serviceAccount = JSON.parse(fs.readFileSync(keyPath, 'utf8'));
-        console.log('Loaded service account from hireall-4f106-firebase-adminsdk-fbsvc-2e91c28cd6.json');
+      const keyPath = join(process.cwd(), "hireall-4f106-firebase-adminsdk-fbsvc-2e91c28cd6.json");
+      if (existsSync(keyPath)) {
+        serviceAccount = JSON.parse(readFileSync(keyPath, "utf8"));
+        console.log("Loaded service account from hireall-4f106-firebase-adminsdk-fbsvc-2e91c28cd6.json");
       }
     } catch (error) {
-      console.warn('Failed to load hireall-4f106-firebase-adminsdk-fbsvc-2e91c28cd6.json:', error);
+      console.warn("Failed to load hireall-4f106-firebase-adminsdk-fbsvc-2e91c28cd6.json:", error);
     }
   }
 
