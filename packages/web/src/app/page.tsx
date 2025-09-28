@@ -9,7 +9,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import FAQSection from "@/components/custom/FAQSection";
-import { playfair } from "@/font";
 import TestimonialSection from "@/components/custom/TestimonialSection";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Zap, Shield, Users, TrendingUp, CheckCircle, Sparkles, Target, Eye } from "lucide-react";
@@ -53,7 +52,7 @@ export default async function Home() {
           <div className="text-center">
 
             <h1
-              className={`text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-foreground animate-fade-in-up leading-tight ${playfair.className}`}
+              className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-foreground animate-fade-in-up leading-tight font-playfair"
             >
               Never Miss a
               <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary via-secondary to-accent animate-gradient">
@@ -151,7 +150,7 @@ export default async function Home() {
               The Problem
             </div>
             <h2
-              className={`text-3xl sm:text-4xl md:text-5xl font-bold text-foreground ${playfair.className}`}
+              className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground font-playfair"
             >
               You&apos;re Missing Out on the
               <span className="block text-destructive">Best Opportunities</span>
@@ -170,7 +169,7 @@ export default async function Home() {
                     <span className="text-white text-xl font-bold">?</span>
                   </div>
                 </div>
-                <CardTitle className={`text-xl font-bold text-center group-hover:text-destructive transition-colors ${playfair.className}`}>
+                <CardTitle className="text-xl font-bold text-center group-hover:text-destructive transition-colors font-playfair">
                   Invisible Sponsorships
                 </CardTitle>
               </CardHeader>
@@ -192,7 +191,7 @@ export default async function Home() {
                     <span className="text-white text-xl font-bold">!</span>
                   </div>
                 </div>
-                <CardTitle className={`text-xl font-bold text-center group-hover:text-secondary transition-colors ${playfair.className}`}>
+                <CardTitle className="text-xl font-bold text-center group-hover:text-secondary transition-colors font-playfair">
                   Scattered Applications
                 </CardTitle>
               </CardHeader>
@@ -214,7 +213,7 @@ export default async function Home() {
                     <span className="text-white text-xl font-bold">💸</span>
                   </div>
                 </div>
-                <CardTitle className={`text-xl font-bold text-center group-hover:text-accent-foreground transition-colors ${playfair.className}`}>
+                <CardTitle className="text-xl font-bold text-center group-hover:text-accent-foreground transition-colors font-playfair">
                   Wasted Time & Energy
                 </CardTitle>
               </CardHeader>
@@ -275,7 +274,7 @@ export default async function Home() {
               The Solution
             </div>
             <h2
-              className={`text-4xl sm:text-5xl font-bold text-foreground ${playfair.className}`}
+              className="text-4xl sm:text-5xl font-bold text-foreground font-playfair"
             >
               Three Simple Steps to
               <span className="block text-primary">Job Search Success</span>
@@ -293,7 +292,7 @@ export default async function Home() {
                   <span className="text-2xl font-bold text-white">1</span>
                 </div>
                 <div>
-                  <h3 className={`text-2xl font-bold text-foreground ${playfair.className}`}>
+                  <h3 className="text-2xl font-bold text-foreground font-playfair">
                     Install & Activate
                   </h3>
                   <p className="text-muted-foreground">One-click setup across all job sites</p>
@@ -357,7 +356,7 @@ export default async function Home() {
                   <span className="text-2xl font-bold text-white">2</span>
                 </div>
                 <div>
-                  <h3 className={`text-2xl font-bold text-foreground ${playfair.className}`}>
+                  <h3 className="text-2xl font-bold text-foreground font-playfair">
                     Reveal Hidden Opportunities
                   </h3>
                   <p className="text-muted-foreground">See which companies are serious about hiring</p>
@@ -451,7 +450,7 @@ export default async function Home() {
                   <span className="text-2xl font-bold text-white">3</span>
                 </div>
                 <div>
-                  <h3 className={`text-2xl font-bold text-foreground ${playfair.className}`}>
+                  <h3 className="text-2xl font-bold text-foreground font-playfair">
                     Track & Organize
                   </h3>
                   <p className="text-muted-foreground">Never lose track of your applications</p>
@@ -512,7 +511,7 @@ export default async function Home() {
             <div className="order-1 lg:order-2">
               <Card className="bg-gradient-to-br from-primary/5 to-secondary/5 border-0 shadow-2xl overflow-hidden">
                 <CardHeader className="pb-6">
-                  <CardTitle className={`${playfair.className} text-center text-2xl`}>
+                  <CardTitle className="font-playfair text-center text-2xl">
                     Your Job Search Dashboard
                   </CardTitle>
                 </CardHeader>
@@ -568,7 +567,7 @@ export default async function Home() {
               Powerful Features
             </div>
             <h2
-              className={`text-4xl sm:text-5xl font-bold text-foreground ${playfair.className}`}
+              className="text-4xl sm:text-5xl font-bold text-foreground font-playfair"
             >
               Everything You Need to
               <span className="block text-secondary">Dominate Your Job Search</span>
@@ -588,7 +587,7 @@ export default async function Home() {
                     <Target className="h-6 w-6 text-white" />
                   </div>
                 </div>
-                <CardTitle className={`text-xl font-bold text-center group-hover:text-primary transition-colors ${playfair.className}`}>
+                <CardTitle className="text-xl font-bold text-center group-hover:text-primary transition-colors font-playfair">
                   Smart Company Detection
                 </CardTitle>
               </CardHeader>
@@ -616,7 +615,7 @@ export default async function Home() {
                     <TrendingUp className="h-6 w-6 text-white" />
                   </div>
                 </div>
-                <CardTitle className={`text-xl font-bold text-center group-hover:text-primary transition-colors ${playfair.className}`}>
+                <CardTitle className="text-xl font-bold text-center group-hover:text-primary transition-colors font-playfair">
                   Advanced Analytics
                 </CardTitle>
               </CardHeader>
@@ -644,7 +643,7 @@ export default async function Home() {
                     <Sparkles className="h-6 w-6 text-white" />
                   </div>
                 </div>
-                <CardTitle className={`text-xl font-bold text-center group-hover:text-accent-foreground transition-colors ${playfair.className}`}>
+                <CardTitle className="text-xl font-bold text-center group-hover:text-accent-foreground transition-colors font-playfair">
                   Real-time Sync
                 </CardTitle>
               </CardHeader>
@@ -672,7 +671,7 @@ export default async function Home() {
                     <Users className="h-6 w-6 text-white" />
                   </div>
                 </div>
-                <CardTitle className={`text-xl font-bold text-center group-hover:text-secondary transition-colors ${playfair.className}`}>
+                <CardTitle className="text-xl font-bold text-center group-hover:text-secondary transition-colors font-playfair">
                   Company Intelligence
                 </CardTitle>
               </CardHeader>
@@ -700,7 +699,7 @@ export default async function Home() {
                     <Shield className="h-6 w-6 text-white" />
                   </div>
                 </div>
-                <CardTitle className={`text-xl font-bold text-center group-hover:text-accent-foreground transition-colors ${playfair.className}`}>
+                <CardTitle className="text-xl font-bold text-center group-hover:text-accent-foreground transition-colors font-playfair">
                   Privacy First
                 </CardTitle>
               </CardHeader>
@@ -728,7 +727,7 @@ export default async function Home() {
                     <Zap className="h-6 w-6 text-white" />
                   </div>
                 </div>
-                <CardTitle className={`text-xl font-bold text-center group-hover:text-secondary transition-colors ${playfair.className}`}>
+                <CardTitle className="text-xl font-bold text-center group-hover:text-secondary transition-colors font-playfair">
                   Lightning Fast
                 </CardTitle>
               </CardHeader>
@@ -754,7 +753,7 @@ export default async function Home() {
               <div className="w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
                 <span className="text-2xl text-white">🚀</span>
               </div>
-              <h3 className={`text-xl font-bold text-foreground mb-2 ${playfair.className}`}>Quick Setup</h3>
+              <h3 className="text-xl font-bold text-foreground mb-2 font-playfair">Quick Setup</h3>
               <p className="text-muted-foreground">Install in seconds, start using immediately</p>
             </div>
 
@@ -762,7 +761,7 @@ export default async function Home() {
               <div className="w-16 h-16 bg-gradient-to-br from-primary to-accent-foreground rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
                 <span className="text-2xl text-white">📱</span>
               </div>
-              <h3 className={`text-xl font-bold text-foreground mb-2 ${playfair.className}`}>Mobile Ready</h3>
+              <h3 className="text-xl font-bold text-foreground mb-2 font-playfair">Mobile Ready</h3>
               <p className="text-muted-foreground">Access your dashboard from any device</p>
             </div>
 
@@ -770,7 +769,7 @@ export default async function Home() {
               <div className="w-16 h-16 bg-gradient-to-br from-secondary to-destructive rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
                 <span className="text-2xl text-white">🔄</span>
               </div>
-              <h3 className={`text-xl font-bold text-foreground mb-2 ${playfair.className}`}>Auto Updates</h3>
+              <h3 className="text-xl font-bold text-foreground mb-2 font-playfair">Auto Updates</h3>
               <p className="text-muted-foreground">Always stays current with latest job sites</p>
             </div>
           </div>
@@ -789,7 +788,7 @@ export default async function Home() {
               Success Stories
             </div>
             <h2
-              className={`text-4xl sm:text-5xl font-bold text-foreground ${playfair.className}`}
+              className="text-4xl sm:text-5xl font-bold text-foreground font-playfair"
             >
               Join <span className="text-accent-foreground">10,000+</span> Job Seekers
               <span className="block text-primary">Who Found Their Dream Jobs</span>
@@ -818,7 +817,7 @@ export default async function Home() {
             </div>
 
             <h2
-              className={`text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-6 ${playfair.className}`}
+              className="text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-6 font-playfair"
             >
               Stop Wasting Time on
               <span className="block text-yellow-300">Dead-End Applications</span>

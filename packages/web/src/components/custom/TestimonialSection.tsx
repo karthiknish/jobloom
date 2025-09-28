@@ -2,7 +2,6 @@
 import { motion } from "framer-motion";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { playfair } from "@/font";
 
 const testimonials = [
   {
@@ -32,7 +31,7 @@ export default function TestimonialSection() {
         {/* Heading */}
         <div className="text-center mb-16">
           <h2
-            className={`text-3xl font-bold text-foreground sm:text-4xl ${playfair.className}`}
+            className="text-3xl font-bold text-foreground sm:text-4xl font-playfair"
           >
             What Our Users Say
           </h2>
