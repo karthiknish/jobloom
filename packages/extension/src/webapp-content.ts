@@ -1,37 +1,55 @@
 /// <reference types="chrome" />
 
+import { ExtensionSecurityLogger } from "./security";
+
 // Content script for the web app to handle authentication communication
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  // Only allow specific actions
   if (request.action === "getUserId") {
-    // Try to get user ID from various sources
-    let userId: string | null = null;
+    try {
+      // Try to get user ID from various sources
+      let userId: string | null = null;
 
-    // Method 1: Firebase signal on window from app provider
-    if ((window as any).__firebase_user?.id) {
-      userId = String((window as any).__firebase_user.id);
-    }
+      // Method 1: Firebase signal on window from app provider
+      if ((window as any).__firebase_user?.id) {
+        userId = String((window as any).__firebase_user.id);
+      }
 
-    // Method 2: Check localStorage for firebase user
-    if (!userId) {
-      try {
-        const firebaseUser = localStorage.getItem("__firebase_user");
-        if (firebaseUser) {
-          const data = JSON.parse(firebaseUser);
-          userId = data?.id ? String(data.id) : null;
+      // Method 2: Check localStorage for firebase user (with error handling)
+      if (!userId) {
+        try {
+          const firebaseUser = localStorage.getItem("__firebase_user");
+          if (firebaseUser) {
+            const data = JSON.parse(firebaseUser);
+            userId = data?.id ? String(data.id) : null;
+          }
+        } catch (error) {
+          ExtensionSecurityLogger.log('Error parsing Firebase user data', error);
         }
-      } catch {}
-    }
+      }
 
-    // Method 3: Fallback DOM attribute
-    if (!userId) {
-      const el = document.querySelector("[data-user-id]");
-      if (el) userId = el.getAttribute("data-user-id");
-    }
+      // Method 3: Fallback DOM attribute (sanitize input)
+      if (!userId) {
+        const el = document.querySelector("[data-user-id]");
+        if (el) {
+          const rawUserId = el.getAttribute("data-user-id");
+          if (rawUserId && typeof rawUserId === 'string' && rawUserId.length < 100) {
+            userId = rawUserId;
+          }
+        }
+      }
 
-    sendResponse({ userId });
-    return true; // Keep the message channel open for async response
+      sendResponse({ userId });
+      return true; // Keep the message channel open for async response
+    } catch (error) {
+      ExtensionSecurityLogger.log('Error retrieving user ID', error);
+      sendResponse({ userId: null, error: 'Failed to retrieve user ID' });
+      return true;
+    }
   }
 
+  // Log suspicious activity
+  ExtensionSecurityLogger.logSuspiciousActivity('unknown_message_action', request.action);
   return false;
 });
 

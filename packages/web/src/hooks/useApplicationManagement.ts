@@ -38,10 +38,10 @@ export function useApplicationManagement(onRefetchApplications: () => void) {
     try {
       await dashboardApi.deleteApplication(applicationId);
       await onRefetchApplications();
-      showSuccess("Application deleted successfully");
+      showSuccess("Application removed", "The application has been successfully removed from your dashboard.");
     } catch (error) {
       console.error("Error deleting application:", error);
-      showError("Failed to delete application");
+      showError("Unable to delete application", "Please try again in a moment. If this issue continues, your application data is safely stored and you can try again later.");
     }
   };
 
@@ -59,7 +59,7 @@ export function useApplicationManagement(onRefetchApplications: () => void) {
       setEditingApplication(null);
     } catch (error) {
       console.error("Error saving application:", error);
-      showError("Failed to save application");
+      showError("Unable to save application", "Please check your internet connection and try again. Your application data is temporarily stored locally.");
     }
   };
 

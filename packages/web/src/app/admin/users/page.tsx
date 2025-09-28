@@ -73,13 +73,14 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import toast from "react-hot-toast";
 
+// Mirror of UserRecord (plus optional UI-only props) from adminApi
 interface User {
   _id: string;
   email: string;
   name?: string;
   isAdmin?: boolean;
-  createdAt: string;
-  lastLoginAt?: string;
+  createdAt: number; // stored as timestamp (ms)
+  lastLoginAt?: number;
   emailVerified?: boolean;
   firebaseUid?: string;
   subscriptionStatus?: string;
@@ -133,20 +134,23 @@ export default function AdminUserDashboard() {
   }, [userRecord]);
 
   // Admin action mutations
-  const { mutate: setAdminUser } = useApiMutation(
-    (userId: string) => adminApi.setAdminUser(userId, userRecord?._id)
-  );
+  const { mutate: setAdminUser } = useApiMutation((userId: string) => {
+    if (!userRecord?._id) return Promise.reject(new Error("No admin context id"));
+    return adminApi.setAdminUser(userId, userRecord._id);
+  });
 
-  const { mutate: removeAdminUser } = useApiMutation(
-    (userId: string) => adminApi.removeAdminUser(userId, userRecord?._id)
-  );
+  const { mutate: removeAdminUser } = useApiMutation((userId: string) => {
+    if (!userRecord?._id) return Promise.reject(new Error("No admin context id"));
+    return adminApi.removeAdminUser(userId, userRecord._id);
+  });
 
-  const { mutate: deleteUser } = useApiMutation(
-    (userId: string) => adminApi.deleteUser(userId, userRecord?._id)
-  );
+  const { mutate: deleteUser } = useApiMutation((userId: string) => {
+    if (!userRecord?._id) return Promise.reject(new Error("No admin context id"));
+    return adminApi.deleteUser(userId, userRecord._id);
+  });
 
   // Filter users based on search and filters
-  const filteredUsers = usersData?.users?.filter((user: User) => {
+  const filteredUsers: User[] = (usersData?.users as User[] | undefined)?.filter((user) => {
     const matchesSearch =
       user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase());
@@ -460,7 +464,7 @@ export default function AdminUserDashboard() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredUsers.map((user: User) => (
+                  {filteredUsers.map((user) => (
                     <TableRow key={user._id}>
                       <TableCell>
                         <div className="flex items-center gap-3">

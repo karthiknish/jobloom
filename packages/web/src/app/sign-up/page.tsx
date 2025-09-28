@@ -65,22 +65,22 @@ function SignUpInner() {
 
   // Validation functions
   const validateName = (name: string) => {
-    if (name && name.length > 0 && name.length < 2) return "Name must be at least 2 characters";
-    if (name && name.length > 50) return "Name must be less than 50 characters";
+    if (name && name.length > 0 && name.length < 2) return "Please enter at least 2 characters for your name";
+    if (name && name.length > 50) return "Please keep your name under 50 characters";
     return null;
   };
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email) return "Email is required";
-    if (!emailRegex.test(email)) return "Please enter a valid email address";
+    if (!email) return "Please enter your email address to continue";
+    if (!emailRegex.test(email)) return "Please enter a valid email address (e.g., you@example.com)";
     return null;
   };
 
   const validatePassword = (password: string) => {
-    if (!password) return "Password is required";
-    if (password.length < 6) return "Password must be at least 6 characters";
-    if (password.length > 100) return "Password must be less than 100 characters";
+    if (!password) return "Please create a password to secure your account";
+    if (password.length < 6) return "Please use at least 6 characters for your password";
+    if (password.length > 100) return "Please keep your password under 100 characters";
     return null;
   };
 
@@ -374,7 +374,7 @@ function SignUpInner() {
                     className="flex items-center justify-center"
                   >
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    <span>Creating account...</span>
+                    <span>Setting up your account...</span>
                   </motion.div>
                 ) : (
                   <motion.div

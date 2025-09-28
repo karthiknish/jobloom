@@ -284,7 +284,7 @@ document.addEventListener("DOMContentLoaded", () => {
       jobList.innerHTML = `
         <div class="loading">
           <div class="spinner"></div>
-          <span>Loading jobs...</span>
+          <span>Fetching your latest job opportunities...</span>
         </div>
       `;
 
@@ -506,7 +506,7 @@ document.addEventListener("DOMContentLoaded", () => {
       );
 
       if (result.success) {
-        showToast(`Job status updated to ${newStatus}`, { type: "success" });
+        showToast(`Job marked as ${newStatus}!`, { type: "success" });
         // Reload jobs to reflect changes
         setTimeout(() => loadJobs(), 500);
       } else {
@@ -514,7 +514,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     } catch (error) {
       console.error("Error updating job status:", error);
-      showToast("Failed to update job status", { type: "error" });
+      showToast("Unable to update job status", { type: "error" });
     }
   }
 
@@ -546,7 +546,7 @@ document.addEventListener("DOMContentLoaded", () => {
         chrome.storage.sync.get(["autofillProfile"], (result) => {
           if (!result.autofillProfile) {
             // Show toast to configure profile first
-            showToast("Please configure your Autofill Profile in Settings.", {
+            showToast("Please set up your profile information in Settings first.", {
               type: "warning",
               duration: 3000,
             });
@@ -657,7 +657,7 @@ document.addEventListener("DOMContentLoaded", () => {
       await firebaseSignOut(auth);
       chrome.storage.sync.remove(["firebaseUid", "userId"], () => {});
       updateAuthUI(false, null);
-      showToast("Signed out", { type: "info" });
+      showToast("You've been signed out successfully", { type: "info" });
     } catch (e) {
       showToast("Sign out failed", { type: "error" });
     }
@@ -765,7 +765,7 @@ function saveSettings() {
   };
 
   chrome.storage.sync.set(settings, () => {
-    showToast("Settings saved", { type: "success" });
+    showToast("Settings updated successfully", { type: "success" });
   });
 }
 
@@ -807,8 +807,18 @@ async function checkJobSponsor(jobId: string, companyName: string) {
       if (data && data.results && data.results.length > 0) {
         result = data.results[0];
       }
-    } catch (e) {
+    } catch (e: any) {
       console.warn("Sponsor lookup error", e);
+      if (e?.rateLimitInfo) {
+        const resetIn = Math.ceil((e.rateLimitInfo.resetIn || 0) / 1000);
+        showToast(
+          `Rate limit exceeded. Try again in ${resetIn} seconds.`,
+          { type: "warning", duration: 5000 }
+        );
+        sponsorStatus.textContent = `Rate Limited (${resetIn}s)`;
+        sponsorStatus.className = "sponsor-status rate-limited";
+        return;
+      }
     }
 
     if (result) {
@@ -818,18 +828,14 @@ async function checkJobSponsor(jobId: string, companyName: string) {
         sponsorStatus.textContent = "Licensed";
         sponsorStatus.className = "sponsor-status licensed";
         showToast(
-          `${createSVGString("checkCircle")} ${
-            result.name
-          } is a licensed sponsor!`,
+          `Great news! ${result.name} is licensed to sponsor Skilled Worker visas`,
           { type: "success" }
         );
       } else {
         sponsorStatus.textContent = "Not SW";
         sponsorStatus.className = "sponsor-status not-licensed";
         showToast(
-          `${createSVGString("alertTriangle")} ${
-            result.name
-          } is licensed but not for Skilled Worker visas`,
+          `${result.name} is licensed but doesn't sponsor Skilled Worker visas`,
           { type: "warning" }
         );
       }
@@ -837,16 +843,14 @@ async function checkJobSponsor(jobId: string, companyName: string) {
       sponsorStatus.textContent = "Not Found";
       sponsorStatus.className = "sponsor-status not-licensed";
       showToast(
-        `${createSVGString(
-          "xCircle"
-        )} ${companyName} not found in sponsor register`,
+        `${companyName} isn't in the UK sponsor register`,
         { type: "error" }
       );
     }
   } catch (error) {
     sponsorStatus.textContent = "Error";
     sponsorStatus.className = "sponsor-status not-licensed";
-    showToast(`${createSVGString("xCircle")} Error checking sponsor status`, {
+    showToast("Unable to check sponsor status", {
       type: "error",
     });
   } finally {

@@ -60,7 +60,7 @@ export function JobImportModal({
 
   const handleCsvImport = async () => {
     if (!userRecord || !csvFile) {
-      toast.error("Please select a CSV file");
+      toast.error("Please select a CSV file. Choose a CSV containing your job listings to import them into your dashboard.");
       return;
     }
 
@@ -74,16 +74,16 @@ export function JobImportModal({
       const result = await importJobsFromCSV(userRecord._id, csvText);
 
       toast.success(
-        `Successfully imported ${result.importedCount} jobs (${result.skippedCount} duplicates skipped)`
+        `Imported ${result.importedCount} jobs successfully. ` + (result.skippedCount > 0 ? `${result.skippedCount} duplicates skipped.` : "All jobs added to your dashboard.")
       );
       onImportComplete();
       onClose();
     } catch (error: unknown) {
       console.error("Error importing CSV:", error);
       if (error instanceof Error) {
-        toast.error(error.message || "Failed to import jobs from CSV");
+        toast.error((error.message || "Unable to import jobs from CSV") + " Please check file format and try again.");
       } else {
-        toast.error("Failed to import jobs from CSV");
+        toast.error("Unable to import jobs from CSV. Please check file format and try again.");
       }
     } finally {
       setIsImporting(false);
@@ -92,12 +92,12 @@ export function JobImportModal({
 
   const handleApiImport = async () => {
     if (!userRecord) {
-      toast.error("User not found");
+      toast.error("Session expired. Please sign in again to continue importing jobs.");
       return;
     }
 
     if (apiSource === "custom") {
-      toast.error("Please select a valid job board");
+      toast.error("Please select a job board (LinkedIn, Indeed, or Glassdoor).");
       return;
     }
 
@@ -113,16 +113,16 @@ export function JobImportModal({
       );
 
       toast.success(
-        `Successfully imported ${result.importedCount} jobs from ${result.source} (${result.skippedCount} duplicates skipped)`
+        `Imported ${result.importedCount} jobs from ${result.source}. ` + (result.skippedCount > 0 ? `${result.skippedCount} duplicates skipped.` : "Jobs now available in your dashboard.")
       );
       onImportComplete();
       onClose();
     } catch (error: unknown) {
       console.error("Error importing from API:", error);
       if (error instanceof Error) {
-        toast.error(error.message || "Failed to import jobs from API");
+        toast.error((error.message || "Unable to import jobs from API") + " Check search terms and try again.");
       } else {
-        toast.error("Failed to import jobs from API");
+        toast.error("Unable to import jobs from API. Check search terms and try again.");
       }
     } finally {
       setIsImporting(false);
@@ -133,7 +133,7 @@ export function JobImportModal({
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       if (file.type !== "text/csv" && !file.name.endsWith(".csv")) {
-        toast.error("Please select a CSV file");
+        toast.error("Invalid file type. Please select a .csv file.");
         return;
       }
       setCsvFile(file);

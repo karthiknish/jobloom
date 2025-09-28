@@ -1,48 +1,28 @@
 import { DEFAULT_WEB_APP_URL } from "./constants";
 import { getAuthInstance } from "./firebase";
 import { post } from "./apiClient";
-// Rate limiting configuration
-const RATE_LIMITS = {
-  addJob: { maxRequests: 20, windowMs: 60000 }, // 20 requests per minute
-  general: { maxRequests: 50, windowMs: 60000 }, // 50 requests per minute
-};
-
-// Rate limiting state
-const rateLimitState = new Map<string, { count: number; resetTime: number }>();
-
-function checkRateLimit(endpoint: string): boolean {
-  const config =
-    RATE_LIMITS[endpoint as keyof typeof RATE_LIMITS] || RATE_LIMITS.general;
-  const now = Date.now();
-  const state = rateLimitState.get(endpoint);
-
-  if (!state || now > state.resetTime) {
-    // Reset or initialize
-    rateLimitState.set(endpoint, {
-      count: 1,
-      resetTime: now + config.windowMs,
-    });
-    return true;
-  }
-
-  if (state.count >= config.maxRequests) {
-    console.warn(
-      `Rate limit exceeded for ${endpoint}. Try again in ${Math.ceil(
-        (state.resetTime - now) / 1000
-      )} seconds.`
-    );
-    return false;
-  }
-
-  state.count++;
-  return true;
-}
+import {
+  checkRateLimit,
+  initRateLimitCleanup,
+  createRateLimitedFunction,
+  type RateLimitConfig
+} from "./rateLimiter";
+import { startRateLimitMonitoring } from "./rateLimitStatus";
+import {
+  validateMessage,
+  validateUrl,
+  sanitizeJobData,
+  validateJobData,
+  SecureStorage,
+  ExtensionRateLimiter,
+  ExtensionSecurityLogger
+} from "./security";
 
 chrome.runtime.onInstalled.addListener(() => {
   console.log("HireallMonorepo extension installed");
 
   // Ensure web app URL exists for API calls
-  chrome.storage.sync.get(["webAppUrl"], (result) => {
+  chrome.storage.sync.get(["webAppUrl"], (result: { webAppUrl?: string }) => {
     if (!result.webAppUrl) {
       chrome.storage.sync.set({
         webAppUrl: process.env.WEB_APP_URL || DEFAULT_WEB_APP_URL,
@@ -50,37 +30,74 @@ chrome.runtime.onInstalled.addListener(() => {
     }
   });
 
-  // Initialize rate limiting cleanup
-  setInterval(() => {
-    const now = Date.now();
-    for (const [endpoint, state] of rateLimitState.entries()) {
-      if (now > state.resetTime) {
-        rateLimitState.delete(endpoint);
-      }
-    }
-  }, 60000); // Cleanup every minute
+  // Initialize rate limiting cleanup and monitoring
+  initRateLimitCleanup();
+  startRateLimitMonitoring();
 });
 
-// Handle messages from content script
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+// Initialize security components
+const messageRateLimiter = new ExtensionRateLimiter(60000, 50); // 50 messages per minute
+
+// Handle messages from content script with security validation
+chrome.runtime.onMessage.addListener((request: any, sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void) => {
+  // Validate message format
+  if (!validateMessage(request)) {
+    ExtensionSecurityLogger.logSuspiciousActivity('invalid_message_format', request);
+    sendResponse({ error: 'Invalid message format' });
+    return;
+  }
+
+  // Rate limiting
+  const senderId = sender.tab?.id?.toString() || 'unknown';
+  if (!messageRateLimiter.isAllowed(senderId)) {
+    ExtensionSecurityLogger.logSuspiciousActivity('rate_limit_exceeded', { senderId });
+    sendResponse({ error: 'Rate limit exceeded' });
+    return;
+  }
+
   if (request.action === "addJob") {
-    // Store job data and sync with web API
-    handleJobData(request.data);
+    // Validate and sanitize job data
+    const validation = validateJobData(request.data);
+    if (!validation.valid) {
+      ExtensionSecurityLogger.logValidationFailure('job_data', request.data);
+      sendResponse({ error: 'Invalid job data', details: validation.errors });
+      return;
+    }
+
+    const sanitizedData = sanitizeJobData(request.data);
+    handleJobData(sanitizedData);
+    sendResponse({ success: true });
   } else if (request.action === "jobAddedToBoard") {
-    // Handle job board analytics
-    handleJobBoardAddition(request.data);
+    // Validate and sanitize job data
+    const validation = validateJobData(request.data);
+    if (!validation.valid) {
+      ExtensionSecurityLogger.logValidationFailure('job_board_data', request.data);
+      sendResponse({ error: 'Invalid job data', details: validation.errors });
+      return;
+    }
+
+    const sanitizedData = sanitizeJobData(request.data);
+    handleJobBoardAddition(sanitizedData);
+    sendResponse({ success: true });
   } else if (request.action === "getWebAppUrl") {
     // Respond with webAppUrl
-    chrome.storage.sync.get(["webAppUrl"], (result) => {
+    SecureStorage.get("webAppUrl").then(webAppUrl => {
       sendResponse({
-        webAppUrl: result.webAppUrl,
+        webAppUrl: webAppUrl || DEFAULT_WEB_APP_URL,
       });
+    }).catch(error => {
+      ExtensionSecurityLogger.log('Error retrieving web app URL', error);
+      sendResponse({ error: 'Failed to retrieve web app URL' });
     });
     return true;
   } else if (request.action === "openJobUrl") {
-    // Open job URL in new tab
-    if (request.url) {
+    // Validate URL before opening
+    if (request.url && validateUrl(request.url)) {
       chrome.tabs.create({ url: request.url });
+      sendResponse({ success: true });
+    } else {
+      ExtensionSecurityLogger.logValidationFailure('job_url', request.url);
+      sendResponse({ error: 'Invalid URL' });
     }
   } else if (request.action === "authSuccess") {
     // After web app login, capture Firebase UID and store
@@ -114,8 +131,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 async function handleJobData(jobData: any) {
   // Check rate limit before processing
-  if (!checkRateLimit("addJob")) {
-    console.warn("Rate limit exceeded for adding jobs. Skipping request.");
+  const rateCheck = checkRateLimit("job-add");
+  if (!rateCheck.allowed) {
+    console.warn(
+      `Rate limit exceeded for job-add endpoint. Try again in ${Math.ceil(
+        (rateCheck.resetIn || 0) / 1000
+      )} seconds.`
+    );
     return;
   }
 
@@ -125,7 +147,7 @@ async function handleJobData(jobData: any) {
       "webAppUrl",
       "firebaseUid",
       "userId",
-    ]);
+    ]) as { webAppUrl?: string; firebaseUid?: string; userId?: string };
     const baseUrl = (
       result.webAppUrl ||
       process.env.WEB_APP_URL ||
@@ -186,7 +208,7 @@ async function handleJobBoardAddition(jobBoardEntry: any) {
     console.log("Job added to board:", jobBoardEntry);
 
     // Update local stats
-    chrome.storage.local.get(["jobBoardStats"], (result) => {
+    chrome.storage.local.get(["jobBoardStats"], (result: { jobBoardStats?: any }) => {
       const stats = result.jobBoardStats || {
         totalAdded: 0,
         addedToday: 0,

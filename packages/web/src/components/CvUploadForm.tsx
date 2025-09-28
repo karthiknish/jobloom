@@ -110,7 +110,7 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted }: CvUpl
       const result = await response.json();
 
       if (response.ok) {
-        toast.success("CV uploaded successfully! Analysis in progress...");
+        toast.success("CV uploaded successfully! Our AI is now analyzing your CV. You'll receive detailed feedback shortly.");
         setFile(null);
         setTargetRole("");
         setIndustry("");
@@ -128,11 +128,11 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted }: CvUpl
         setUpgradePromptVisible(true);
         setLimitInfo(result);
       } else {
-        toast.error(result.error || "Failed to upload CV");
+        toast.error((result.error ? `${result.error}. ` : "") + "Please check your file format and size, then try again.");
       }
     } catch (error) {
       console.error("Upload error:", error);
-      toast.error("Failed to upload CV");
+      toast.error("Upload interrupted. Please check your connection and try again.");
     } finally {
       setUploading(false);
     }
@@ -314,7 +314,7 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted }: CvUpl
               {uploading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Analyzing...
+                  Analyzing your CV with AI...
                 </>
               ) : (
                 "Analyze CV"

@@ -12,6 +12,7 @@
     "lint": "eslint src --ext .ts,.js",
     "publish:store": "npm run build:prod && zip -r hireall-extension.zip dist/",
     "publish:test": "npm run build:test && zip -r hireall-extension-test.zip dist/",
+  "package:zip": "npm run build && cd dist && zip -r ../hireall-extension-dist.zip .",
     "setup:chrome-store": "node scripts/setup-chrome-store.js"
   },
   "dependencies": {
@@ -37,9 +38,9 @@
     "@tiptap/react": "^3.4.4",
     "@tiptap/starter-kit": "^3.4.4",
     "class-variance-authority": "^0.7.1",
+    "firebase": "^10.13.1",
     "lowlight": "^3.3.0",
-    "lucide-react": "^0.539.0",
-    "firebase": "^10.13.1"
+    "lucide-react": "^0.539.0"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.246",

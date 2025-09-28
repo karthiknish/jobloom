@@ -36,6 +36,7 @@ type FireUser = {
   isAdmin?: boolean;
   createdAt?: number;
   updatedAt?: number;
+  subscriptionPlan?: string;
 };
 
 type FireCompany = {

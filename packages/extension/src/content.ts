@@ -19,6 +19,7 @@ import {
   Sparkles,
   Building2,
 } from "lucide-react";
+import { sponsorBatchLimiter, checkRateLimit } from "./rateLimiter";
 // --- Sponsorship lookup cache & concurrency limiter utilities ---
 const sponsorshipCache: Map<string, any> = new Map();
 const sponsorshipInFlight: Map<string, Promise<any>> = new Map();
@@ -27,17 +28,8 @@ let activeSponsorLookups = 0;
 const sponsorQueue: Array<() => void> = [];
 
 async function runWithSponsorLimit<T>(fn: () => Promise<T>): Promise<T> {
-  if (activeSponsorLookups >= MAX_SPONSOR_LOOKUPS) {
-    await new Promise<void>((resolve) => sponsorQueue.push(resolve));
-  }
-  activeSponsorLookups++;
-  try {
-    return await fn();
-  } finally {
-    activeSponsorLookups--;
-    const next = sponsorQueue.shift();
-    if (next) next();
-  }
+  // Use the global batch rate limiter instead of local concurrency control
+  return sponsorBatchLimiter.add(fn);
 }
 
 async function fetchSponsorRecord(company: string): Promise<any | null> {
@@ -57,8 +49,11 @@ async function fetchSponsorRecord(company: string): Promise<any | null> {
           : null;
       if (rec) sponsorshipCache.set(key, rec);
       return rec;
-    } catch (e) {
+    } catch (e: any) {
       console.warn("Sponsor lookup failed", e);
+      if (e?.rateLimitInfo) {
+        console.warn(`Rate limit hit for sponsor lookup: ${e.rateLimitInfo.remaining} remaining, resets in ${e.rateLimitInfo.resetIn}ms`);
+      }
       return null;
     } finally {
       sponsorshipInFlight.delete(key);
@@ -422,26 +417,16 @@ class JobTracker {
   }
 
   private async checkRateLimit(): Promise<boolean> {
-    const now = Date.now();
-
-    // Reset counter if window has passed
-    if (now - this.lastRequestTime > this.rateLimitWindow) {
-      this.requestCount = 0;
-      this.lastRequestTime = now;
-    }
-
-    // Check if we've exceeded the limit
-    if (this.requestCount >= this.maxRequestsPerWindow) {
-      const timeUntilReset =
-        this.rateLimitWindow - (now - this.lastRequestTime);
+    const rateCheck = checkRateLimit('sponsor-lookup');
+    if (!rateCheck.allowed) {
+      const timeUntilReset = rateCheck.resetIn || 0;
       console.warn(
-        `Rate limit exceeded. Try again in ${Math.ceil(
+        `Rate limit exceeded for sponsor lookups. Try again in ${Math.ceil(
           timeUntilReset / 1000
         )} seconds.`
       );
       return false;
     }
-
     return true;
   }
 
@@ -470,8 +455,6 @@ class JobTracker {
     }
 
     try {
-      // Increment request counter
-      this.requestCount++;
 
       // Limit companies per request
       const maxCompaniesPerRequest = 50;
@@ -525,13 +508,25 @@ class JobTracker {
               source: "error",
             });
           }
-        } catch {
-          results.push({
-            company,
-            isSponsored: false,
-            sponsorshipType: null,
-            source: "exception",
-          });
+        } catch (e: any) {
+          console.warn(`Error checking sponsorship for ${company}:`, e);
+          if (e?.rateLimitInfo) {
+            console.warn(`Rate limit hit during batch sponsor lookup: ${e.rateLimitInfo.remaining} remaining`);
+            // Return rate limited result for this company
+            results.push({
+              company,
+              isSponsored: false,
+              sponsorshipType: null,
+              source: "rate_limited",
+            });
+          } else {
+            results.push({
+              company,
+              isSponsored: false,
+              sponsorshipType: null,
+              source: "exception",
+            });
+          }
         }
       }
       return results;
@@ -1712,7 +1707,7 @@ class JobTracker {
     `;
 
     // Load default status from settings if available
-    chrome.storage.sync.get(["defaultJobStatus"], (res) => {
+    chrome.storage.sync.get(["defaultJobStatus"], (res: { defaultJobStatus?: string }) => {
       if (res.defaultJobStatus) {
         statusSelect.value = res.defaultJobStatus;
       }
@@ -1995,6 +1990,8 @@ class JobTracker {
         chrome.runtime.sendMessage({
           action: "openJobUrl",
           url: jobData.url,
+        }).catch((error) => {
+          console.warn("Failed to send openJobUrl message:", error);
         });
       }
     });
@@ -2124,7 +2121,7 @@ class JobTracker {
 
   private updateJobStats() {
     // Update local storage stats
-    chrome.storage.local.get(["jobBoardData"], (result) => {
+    chrome.storage.local.get(["jobBoardData"], (result: { jobBoardData?: any[] }) => {
       const jobs = result.jobBoardData || [];
       const stats = {
         jobsToday: jobs.filter((job: any) => {
@@ -2146,6 +2143,8 @@ class JobTracker {
     chrome.runtime.sendMessage({
       action: "addJob",
       data: jobData,
+    }).catch((error) => {
+      console.warn("Failed to send addJob message:", error);
     });
   }
 
@@ -2226,7 +2225,7 @@ class JobTracker {
 
   private async loadAutofillProfile(): Promise<AutofillProfile | null> {
     return new Promise((resolve) => {
-      chrome.storage.sync.get(["autofillProfile"], (result) => {
+      chrome.storage.sync.get(["autofillProfile"], (result: { autofillProfile?: AutofillProfile }) => {
         resolve(result.autofillProfile || null);
       });
     });
@@ -2607,7 +2606,7 @@ class JobTracker {
 }
 
 // Listen for messages from popup
-chrome.runtime.onMessage.addListener((request) => {
+chrome.runtime.onMessage.addListener((request: any, sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void) => {
   if (request.action === "togglePeopleSearch") {
     const peopleSearchBtn = document.getElementById(
       "hireall-people-search"
@@ -2654,7 +2653,7 @@ chrome.runtime.onMessage.addListener((request) => {
 });
 
 function initHireallTracker() {
-  chrome.storage.sync.get(["firebaseUid", "userId"], (result) => {
+  chrome.storage.sync.get(["firebaseUid", "userId"], (result: { firebaseUid?: string; userId?: string }) => {
     const uid = result.firebaseUid || result.userId;
     if (uid) {
       if (document.readyState === "loading") {

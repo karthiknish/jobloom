@@ -10,11 +10,11 @@ export function useJobManagement(onRefetchJobStats: () => void) {
     try {
       await dashboardApi.createJob(data);
       await onRefetchJobStats();
-      showSuccess("Job added successfully");
+      showSuccess("Job added to your dashboard!", "You can now track this opportunity and update its status as you progress through the application process.");
       setShowJobForm(false);
     } catch (error) {
       console.error("Error adding job:", error);
-      showError("Failed to add job");
+      showError("Unable to save job", "Please check your internet connection and try again. If the problem persists, contact support.");
     }
   };
 

@@ -1,0 +1,46 @@
+name: Extension Release
+
+on:
+  push:
+    tags:
+      - 'extension-v*'
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build extension (prod)
+        run: npm run build:prod -w packages/extension
+
+      - name: Package zip
+        run: npm run package:zip -w packages/extension
+
+      - name: Generate SHA256 checksum
+        run: |
+          cd packages/extension
+          shasum -a 256 hireall-extension-dist.zip > hireall-extension-dist.zip.sha256
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            packages/extension/hireall-extension-dist.zip
+            packages/extension/hireall-extension-dist.zip.sha256
+          draft: false
+          prerelease: ${{ contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

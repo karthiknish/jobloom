@@ -1,5 +1,6 @@
 import { getAuthInstance } from './firebase';
 import { DEFAULT_WEB_APP_URL } from './constants';
+import { checkRateLimit, RATE_LIMITS } from './rateLimiter';
 
 interface ApiOptions extends RequestInit {
   auth?: boolean; // whether to inject bearer token (defaults true for /api/app/*)
@@ -43,6 +44,28 @@ export async function apiRequest<T = any>(opts: ApiOptions): Promise<T> {
   const needsAuth = auth === false ? false : path.startsWith('/api/app/');
   const url = `${base}${path}${buildQuery(query)}`;
 
+  // Determine rate limit endpoint based on path
+  let rateLimitEndpoint = 'general';
+  if (path.includes('/sponsorship/')) {
+    rateLimitEndpoint = 'sponsor-lookup';
+  } else if (path.includes('/jobs') && opts.method === 'POST') {
+    rateLimitEndpoint = 'job-add';
+  } else if (path.includes('/users/') && path.includes('/settings')) {
+    rateLimitEndpoint = 'user-settings';
+  }
+
+  // Check rate limit before making request
+  const rateCheck = checkRateLimit(rateLimitEndpoint);
+  if (!rateCheck.allowed) {
+    const error = new Error(
+      `Rate limit exceeded for ${rateLimitEndpoint}. Try again in ${Math.ceil(
+        (rateCheck.resetIn || 0) / 1000
+      )} seconds.`
+    );
+    (error as any).rateLimitInfo = rateCheck;
+    throw error;
+  }
+
   const finalHeaders: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(headers as any),
@@ -62,7 +85,9 @@ export async function apiRequest<T = any>(opts: ApiOptions): Promise<T> {
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`API ${res.status} ${res.statusText}: ${text}`);
+    const error = new Error(`API ${res.status} ${res.statusText}: ${text}`);
+    (error as any).statusCode = res.status;
+    throw error;
   }
   const ct = res.headers.get('content-type') || '';
   if (ct.includes('application/json')) {

@@ -3,7 +3,7 @@
   "name": "HireAll - Job Tracker",
   "version": "1.0.0",
   "description": "Highlight sponsored job roles and track applications",
-  "permissions": ["activeTab", "storage", "scripting"],
+  "permissions": ["activeTab", "storage"],
   "host_permissions": [
     "https://*.linkedin.com/*",
     "https://*.indeed.com/*",
@@ -14,11 +14,12 @@
     "https://*.seek.com/*",
     "https://*.totaljobs.com/*",
     "https://*.reed.co.uk/*",
-    "https://*.jobsite.co.uk/*",
-    "https://*.vercel.app/*",
-    "https://*.netlify.app/*",
-    "https://hireall.app/*"
+    "https://*.jobsite.co.uk/*"
   ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self';",
+    "content_scripts": "script-src 'self'; object-src 'none';"
+  },
   "background": {
     "service_worker": "background.js"
   },

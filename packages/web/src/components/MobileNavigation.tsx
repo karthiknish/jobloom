@@ -33,8 +33,8 @@ const navigationItems = [
     requiresAuth: true,
   },
   {
-    name: "Resume",
-    href: "/portfolio",
+    name: "Resume Builder",
+    href: "/resume-builder",
     icon: FileText,
     requiresAuth: true,
   },

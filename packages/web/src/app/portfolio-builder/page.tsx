@@ -4,9 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Palette,
-  Type,
   Layout,
-  Image,
   MessageSquare,
   Users,
   Briefcase,
@@ -22,7 +20,6 @@ import {
   Plus,
   Trash2,
   Move,
-  Copy,
   Edit,
   ChevronDown,
   ChevronUp,
@@ -39,12 +36,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { portfolioTemplates, getPortfolioTemplate } from "@/config/portfolioTemplates";
-import { showSuccess, showError, showInfo } from "@/components/ui/Toast";
+import { showSuccess, showError } from "@/components/ui/Toast";
 
 // Portfolio data structure
 interface PortfolioSection {
@@ -216,8 +212,19 @@ const sectionTypes = [
 
 export default function PortfolioBuilderPage() {
   const { user } = useFirebaseAuth();
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="mb-4">Please sign in to access portfolio builder.</p>
+          <a className="underline" href="/sign-in">Sign in</a>
+        </div>
+      </div>
+    );
+  }
+
   const [activeTab, setActiveTab] = useState("design");
-  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
 
@@ -257,13 +264,11 @@ export default function PortfolioBuilderPage() {
     }
   });
 
-  const [draggedSection, setDraggedSection] = useState<string | null>(null);
   const [showSectionSelector, setShowSectionSelector] = useState(false);
 
   // Load portfolio data
   const fetchPortfolio = useCallback(async () => {
     if (!user) return;
-    setLoading(true);
     try {
       const token = await user.getIdToken();
       const res = await fetch("/api/portfolio/site", {
@@ -275,8 +280,6 @@ export default function PortfolioBuilderPage() {
       }
     } catch (e: any) {
       console.error("Failed to load portfolio:", e);
-    } finally {
-      setLoading(false);
     }
   }, [user]);
 
@@ -342,28 +345,6 @@ export default function PortfolioBuilderPage() {
     }));
   };
 
-  // Reorder sections
-  const reorderSections = (fromIndex: number, toIndex: number) => {
-    const sections = [...portfolio.sections];
-    const [removed] = sections.splice(fromIndex, 1);
-    sections.splice(toIndex, 0, removed);
-
-    // Update order values
-    const reordered = sections.map((s, index) => ({ ...s, order: index }));
-
-    setPortfolio(prev => ({ ...prev, sections: reordered }));
-  };
-
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="mb-4">Please sign in to access portfolio builder.</p>
-          <a className="underline" href="/sign-in">Sign in</a>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background pt-16">
