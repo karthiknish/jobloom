@@ -3,9 +3,23 @@ import { verifyIdToken, getAdminDb } from "@/firebase/admin";
 import { getStripeClient } from "@/lib/stripe";
 import { upsertSubscriptionFromStripe } from "@/lib/subscriptions";
 import { FieldValue } from "firebase-admin/firestore";
+import type Stripe from "stripe";
 
 const stripe = getStripeClient();
 const db = getAdminDb();
+
+type SubscriptionWithLegacyPeriods = Stripe.Subscription & {
+  current_period_end?: number | null;
+};
+
+const resolveCurrentPeriodEnd = (
+  subscription: Stripe.Subscription
+): number | null => {
+  const legacy = subscription as SubscriptionWithLegacyPeriods;
+  return typeof legacy.current_period_end === "number"
+    ? legacy.current_period_end * 1000
+    : null;
+};
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,9 +48,10 @@ export async function POST(request: NextRequest) {
       }, { status: 404 });
     }
 
-    const stripeSubscription = await stripe.subscriptions.retrieve(subscriptionId, {
+    const stripeSubscriptionResponse = await stripe.subscriptions.retrieve(subscriptionId, {
       expand: ["latest_invoice.payment_intent"],
     });
+  const stripeSubscription = stripeSubscriptionResponse as Stripe.Subscription;
 
     if (!stripeSubscription.cancel_at_period_end) {
       return NextResponse.json({
@@ -45,17 +60,16 @@ export async function POST(request: NextRequest) {
           id: stripeSubscription.id,
           status: stripeSubscription.status,
           cancelAtPeriodEnd: stripeSubscription.cancel_at_period_end,
-          currentPeriodEnd: stripeSubscription.current_period_end
-            ? stripeSubscription.current_period_end * 1000
-            : null,
+          currentPeriodEnd: resolveCurrentPeriodEnd(stripeSubscription),
         },
         message: "Subscription is not set to cancel",
       });
     }
 
-    const updatedSubscription = await stripe.subscriptions.update(subscriptionId, {
+    const updatedSubscriptionResponse = await stripe.subscriptions.update(subscriptionId, {
       cancel_at_period_end: false,
     });
+  const updatedSubscription = updatedSubscriptionResponse as Stripe.Subscription;
 
     await upsertSubscriptionFromStripe({
       subscription: updatedSubscription,
@@ -76,9 +90,7 @@ export async function POST(request: NextRequest) {
         id: updatedSubscription.id,
         status: updatedSubscription.status,
         cancelAtPeriodEnd: updatedSubscription.cancel_at_period_end,
-        currentPeriodEnd: updatedSubscription.current_period_end
-          ? updatedSubscription.current_period_end * 1000
-          : null,
+        currentPeriodEnd: resolveCurrentPeriodEnd(updatedSubscription),
       },
     });
   } catch (error) {

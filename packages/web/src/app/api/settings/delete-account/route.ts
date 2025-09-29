@@ -1,11 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyIdToken, getAdminDb, getAdminStorage } from "@/firebase/admin";
 import { getAuth } from "firebase-admin/auth";
-import { getStorage } from "firebase-admin/storage";
 
 const db = getAdminDb();
 const auth = getAuth();
-const bucket = getAdminStorage().bucket();
+const storageBucketName = process.env.FIREBASE_STORAGE_BUCKET || process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
+
+function getStorageBucket() {
+  try {
+    const storage = getAdminStorage();
+    if (!storage) {
+      return null;
+    }
+
+    if (storageBucketName) {
+      return storage.bucket(storageBucketName);
+    }
+
+    return storage.bucket();
+  } catch (error) {
+    console.warn("Firebase storage bucket unavailable:", error);
+    return null;
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -37,13 +54,15 @@ export async function POST(request: NextRequest) {
     const deletionPromises = [];
 
     // 1. Delete CV analyses and files
+    const bucket = getStorageBucket();
+
     const cvAnalysesSnapshot = await db.collection('cvAnalyses')
       .where('userId', '==', userId)
       .get();
 
     for (const doc of cvAnalysesSnapshot.docs) {
       const analysisData = doc.data();
-      if (analysisData.storagePath) {
+      if (analysisData.storagePath && bucket) {
         // Delete file from storage
         try {
           const file = bucket.file(analysisData.storagePath);
@@ -51,6 +70,8 @@ export async function POST(request: NextRequest) {
         } catch (error) {
           console.warn(`Failed to delete file ${analysisData.storagePath}:`, error);
         }
+      } else if (analysisData.storagePath && !bucket) {
+        console.warn("Skipping storage delete because no bucket is configured", analysisData.storagePath);
       }
       deletionPromises.push(doc.ref.delete());
     }
@@ -83,13 +104,17 @@ export async function POST(request: NextRequest) {
     });
 
     // 5. Delete user export files
-    try {
-      const [files] = await bucket.getFiles({ prefix: `user-exports/${userId}/` });
-      files.forEach(file => {
-        deletionPromises.push(file.delete());
-      });
-    } catch (error) {
-      console.warn('Failed to list/delete user export files:', error);
+    if (bucket) {
+      try {
+        const [files] = await bucket.getFiles({ prefix: `user-exports/${userId}/` });
+        files.forEach(file => {
+          deletionPromises.push(file.delete());
+        });
+      } catch (error) {
+        console.warn('Failed to list/delete user export files:', error);
+      }
+    } else {
+      console.warn('Skipping export file cleanup; no Firebase storage bucket configured.');
     }
 
     // 6. Delete user document

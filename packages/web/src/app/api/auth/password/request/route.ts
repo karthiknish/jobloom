@@ -30,9 +30,10 @@ export async function POST(request: Request) {
     }
 
     const admin = getAdminApp();
-    let userRecord: Awaited<ReturnType<typeof import("firebase-admin/auth").getAuth>> | null = null;
+    const adminAuth = (await import("firebase-admin/auth")).getAuth(admin);
+    let userRecord: import("firebase-admin/auth").UserRecord | null = null;
     try {
-      userRecord = await (await import("firebase-admin/auth")).getAuth(admin).getUserByEmail(email);
+      userRecord = await adminAuth.getUserByEmail(email);
     } catch (error: any) {
       if (error?.code === "auth/user-not-found") {
         await new Promise((resolve) => setTimeout(resolve, 400));

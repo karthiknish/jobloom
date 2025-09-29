@@ -1,3 +1,5 @@
+"use client";
+
 // components/UpgradePrompt.tsx
 import { useState } from "react";
 import { motion } from "framer-motion";
