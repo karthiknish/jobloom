@@ -38,32 +38,47 @@ export default function CvEvaluatorPage() {
     "upload"
   );
 
-  const userRecordQuery = useApiQuery(
+  const userRecordQueryFn = useCallback(
     () =>
       user && user.uid
         ? cvEvaluatorApi.getUserByFirebaseUid(user.uid)
         : Promise.reject(new Error("No user")),
+    [user?.uid]
+  );
+
+  const userRecordQuery = useApiQuery(
+    userRecordQueryFn,
     [user?.uid],
     { enabled: !!user?.uid }
   );
   const userRecord = userRecordQuery.data;
 
-  const cvAnalysesQuery = useApiQuery(
+  const cvAnalysesQueryFn = useCallback(
     () =>
       userRecord
         ? cvEvaluatorApi.getUserCvAnalyses(userRecord._id)
         : Promise.reject(new Error("No user record")),
+    [userRecord?._id]
+  );
+
+  const cvAnalysesQuery = useApiQuery(
+    cvAnalysesQueryFn,
     [userRecord?._id],
     { enabled: !!userRecord }
   );
   const cvAnalyses = cvAnalysesQuery.data;
   const [optimisticPending, setOptimisticPending] = useState<any | null>(null);
 
-  const cvStatsQuery = useApiQuery(
+  const cvStatsQueryFn = useCallback(
     () =>
       userRecord
         ? cvEvaluatorApi.getCvAnalysisStats(userRecord._id)
         : Promise.reject(new Error("No user record")),
+    [userRecord?._id]
+  );
+
+  const cvStatsQuery = useApiQuery(
+    cvStatsQueryFn,
     [userRecord?._id],
     { enabled: !!userRecord }
   );

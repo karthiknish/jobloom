@@ -25,34 +25,34 @@ html {
   --motion-scale-sm: 0.97;
   --motion-scale-md: 0.94;
 
-  --color-background: #ffffff;
-  --color-foreground: #18181b;
+  --color-background: 0 0% 100%;
+  --color-foreground: 240 10% 3.9%;
 
-  --color-muted: #f4f4f5;
-  --color-muted-foreground: #71717a;
+  --color-muted: 240 4.8% 95.9%;
+  --color-muted-foreground: 240 3.8% 46.1%;
 
-  --color-popover: #ffffff;
-  --color-popover-foreground: #18181b;
+  --color-popover: 0 0% 100%;
+  --color-popover-foreground: 240 10% 3.9%;
 
-  --color-border: #e4e4e7;
-  --color-input: #e4e4e7;
+  --color-border: 240 5.9% 90%;
+  --color-input: 240 5.9% 90%;
 
-  --color-card: #ffffff;
-  --color-card-foreground: #18181b;
+  --color-card: 0 0% 100%;
+  --color-card-foreground: 240 10% 3.9%;
 
-  --color-primary: #4CAF50;
-  --color-primary-foreground: #ffffff;
+  --color-primary: 122 39% 49%;
+  --color-primary-foreground: 0 0% 98%;
 
-  --color-secondary: #20B2AA;
-  --color-secondary-foreground: #ffffff;
+  --color-secondary: 173 58% 39%;
+  --color-secondary-foreground: 0 0% 98%;
 
-  --color-accent: #C8E6C9;
-  --color-accent-foreground: #1B5E20;
+  --color-accent: 122 22% 85%;
+  --color-accent-foreground: 122 39% 23%;
 
-  --color-destructive: #ef4444;
-  --color-destructive-foreground: #f4f4f5;
+  --color-destructive: 0 84.2% 60.2%;
+  --color-destructive-foreground: 210 40% 98%;
 
-  --color-ring: #9FE2BF;
+  --color-ring: 122 39% 68%;
 }
 
 
