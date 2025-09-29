@@ -524,12 +524,12 @@ export default function SettingsPage() {
                     </div>
 
                     {subscription?.cancelAtPeriodEnd && cancellationEffectiveDate && (
-                      <Alert className="border-amber-200 bg-amber-50 text-amber-900">
-                        <AlertTitle className="flex items-center gap-2 text-amber-900">
+                      <Alert className="border-accent/20 bg-accent/5 text-accent-foreground">
+                        <AlertTitle className="flex items-center gap-2">
                           <Ban className="h-4 w-4" />
                           Subscription Cancelling
                         </AlertTitle>
-                        <AlertDescription className="text-sm text-amber-900/80">
+                        <AlertDescription className="text-sm">
                           Your subscription will end on {cancellationEffectiveDate}. You can resume it before this date.
                         </AlertDescription>
                       </Alert>
@@ -659,10 +659,10 @@ export default function SettingsPage() {
                         whileHover={{ y: -2 }}
                         className="text-center"
                       >
-                        <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50">
-                          <ClipboardList className="h-5 w-5 text-emerald-600" />
+                        <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-secondary/10">
+                          <ClipboardList className="h-5 w-5 text-secondary" />
                         </div>
-                        <div className="mt-2 text-2xl font-bold text-emerald-600">
+                        <div className="mt-2 text-2xl font-bold text-secondary">
                           {currentUsage?.cvAnalyses || 0}
                         </div>
                         <div className="text-sm text-muted-foreground">

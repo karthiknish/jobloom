@@ -453,7 +453,7 @@ export default function ApplicationPage() {
                             </div>
                             <p className="text-xs text-muted-foreground mt-1">{t.description}</p>
                           </div>
-                          {t.popular && <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary text-white">Popular</span>}
+                          {t.popular && <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary text-primary-foreground">Popular</span>}
                         </div>
                         {resume.templateId === t.id && (
                           <div className="absolute top-1 right-1 text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded">Selected</div>

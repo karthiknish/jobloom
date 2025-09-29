@@ -24,7 +24,7 @@ export function SeoHead() {
       ) : (
         <meta name="robots" content="index,follow" />
       )}
-      <meta name="theme-color" content="#4CAF50" />
+      <meta name="theme-color" content="hsl(122 39% 49%)" />
       <link rel="manifest" href="/manifest.json" />
       <link rel="icon" href="/favicon.ico" sizes="any" />
       <link rel="apple-touch-icon" href="/apple-touch-icon.png" />

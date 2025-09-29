@@ -68,13 +68,13 @@ export default function ConnectExtensionClient() {
           )}
           {connectionStatus === 'error' && (
             <div className="flex items-center">
-              <span className="text-red-600 mr-2">❌</span>
-              <span className="text-red-600">Connection failed</span>
+              <span className="text-destructive mr-2">❌</span>
+              <span className="text-destructive">Connection failed</span>
             </div>
           )}
         </div>
         {errorMessage && (
-          <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-700">
+          <div className="mt-2 p-2 bg-destructive/5 border border-destructive/20 rounded text-sm text-destructive">
             {errorMessage}
           </div>
         )}

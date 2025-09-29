@@ -125,11 +125,11 @@ export default function ForgotPasswordPage() {
               </Button>
 
               {sent && (
-                <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 flex items-start gap-3">
-                  <CheckCircle2 className="h-5 w-5 text-emerald-600 mt-0.5" />
+                <div className="rounded-lg border border-secondary/20 bg-secondary/5 p-4 flex items-start gap-3">
+                  <CheckCircle2 className="h-5 w-5 text-secondary mt-0.5" />
                   <div className="space-y-1 text-sm">
-                    <p className="font-semibold text-emerald-900">Check your inbox</p>
-                    <p className="text-emerald-800/80">
+                    <p className="font-semibold text-secondary">Check your inbox</p>
+                    <p className="text-secondary/80">
                       We sent instructions to {email}. The link is valid for 30 minutes.
                     </p>
                   </div>

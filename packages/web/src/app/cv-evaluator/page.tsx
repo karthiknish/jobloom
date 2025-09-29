@@ -377,8 +377,8 @@ export default function CvEvaluatorPage() {
                     <CardTitle className="text-sm font-medium">
                       Total Analyses
                     </CardTitle>
-                    <div className="bg-blue-100 rounded-lg w-10 h-10 flex items-center justify-center">
-                      <BarChart3 className="h-5 w-5 text-blue-600" />
+                    <div className="bg-primary/10 rounded-lg w-10 h-10 flex items-center justify-center">
+                      <BarChart3 className="h-5 w-5 text-primary" />
                     </div>
                   </CardHeader>
                   <CardContent>
@@ -396,8 +396,8 @@ export default function CvEvaluatorPage() {
                     <CardTitle className="text-sm font-medium">
                       Avg. Score
                     </CardTitle>
-                    <div className="bg-green-100 rounded-lg w-10 h-10 flex items-center justify-center">
-                      <Star className="h-5 w-5 text-green-600" />
+                    <div className="bg-secondary/10 rounded-lg w-10 h-10 flex items-center justify-center">
+                      <Star className="h-5 w-5 text-secondary" />
                     </div>
                   </CardHeader>
                   <CardContent>
@@ -417,8 +417,8 @@ export default function CvEvaluatorPage() {
                     <CardTitle className="text-sm font-medium">
                       Keywords
                     </CardTitle>
-                    <div className="bg-secondary/20 rounded-lg w-10 h-10 flex items-center justify-center">
-                      <Search className="h-5 w-5 text-secondary" />
+                    <div className="bg-accent/10 rounded-lg w-10 h-10 flex items-center justify-center">
+                      <Search className="h-5 w-5 text-accent-foreground" />
                     </div>
                   </CardHeader>
                   <CardContent>
@@ -438,8 +438,8 @@ export default function CvEvaluatorPage() {
                     <CardTitle className="text-sm font-medium">
                       Success Rate
                     </CardTitle>
-                    <div className="bg-yellow-100 rounded-lg w-10 h-10 flex items-center justify-center">
-                      <Target className="h-5 w-5 text-yellow-600" />
+                    <div className="bg-accent rounded-lg w-10 h-10 flex items-center justify-center">
+                      <Target className="h-5 w-5 text-accent-foreground" />
                     </div>
                   </CardHeader>
                   <CardContent>

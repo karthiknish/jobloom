@@ -368,10 +368,10 @@ export default function AdminUserDashboardClient() {
 
   const getStatusBadge = (user: User) => {
     if (user.isAdmin) {
-      return <Badge variant="default" className="bg-violet-100 text-violet-800">Admin</Badge>;
+      return <Badge variant="default" className="bg-primary/10 text-primary">Admin</Badge>;
     }
     if (user.emailVerified) {
-      return <Badge variant="default" className="bg-emerald-100 text-emerald-800">Verified</Badge>;
+      return <Badge variant="default" className="bg-secondary/10 text-secondary">Verified</Badge>;
     }
     return <Badge variant="secondary">Unverified</Badge>;
   };
@@ -512,10 +512,10 @@ export default function AdminUserDashboardClient() {
                             plan === "free"
                               ? "bg-muted-foreground"
                               : plan === "premium"
-                              ? "bg-sky-500"
+                              ? "bg-primary"
                               : plan === "enterprise"
-                              ? "bg-violet-500"
-                              : "bg-emerald-500"
+                              ? "bg-accent"
+                              : "bg-secondary"
                           }`}
                         />
                         <span className="capitalize">{plan}</span>
@@ -528,10 +528,10 @@ export default function AdminUserDashboardClient() {
                               plan === "free"
                                 ? "bg-muted-foreground"
                                 : plan === "premium"
-                                ? "bg-sky-500"
+                                ? "bg-primary"
                                 : plan === "enterprise"
-                                ? "bg-violet-500"
-                                : "bg-emerald-500"
+                                ? "bg-accent"
+                                : "bg-secondary"
                             }`}
                             style={{
                               width: `${userStats.totalUsers
@@ -743,7 +743,7 @@ export default function AdminUserDashboardClient() {
                           <TableCell className="flex items-center gap-2">
                             <Avatar className="h-8 w-8">
                               <AvatarImage src="" alt={adminUser.name || adminUser.email} />
-                              <AvatarFallback className="bg-violet-100 text-violet-700">
+                              <AvatarFallback className="bg-primary/10 text-primary">
                                 {getInitials(adminUser.name, adminUser.email)}
                               </AvatarFallback>
                             </Avatar>

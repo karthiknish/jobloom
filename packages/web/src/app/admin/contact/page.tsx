@@ -81,10 +81,10 @@ const STATUS_LABELS: Record<ContactSubmission["status"], string> = {
 };
 
 const STATUS_COLORS: Record<ContactSubmission["status"], string> = {
-  new: "bg-blue-100 text-blue-700",
-  read: "bg-amber-100 text-amber-700",
-  responded: "bg-emerald-100 text-emerald-700",
-  archived: "bg-slate-200 text-slate-700",
+  new: "bg-primary/10 text-primary",
+  read: "bg-accent text-accent-foreground",
+  responded: "bg-secondary/10 text-secondary",
+  archived: "bg-muted text-muted-foreground",
 };
 
 export default function AdminContactDashboard() {

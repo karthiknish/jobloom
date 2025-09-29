@@ -86,7 +86,7 @@ export default function UpgradePage() {
     },
     {
       name: "Premium",
-      price: 9.99,
+      price: 5.99,
       description: "Everything you need to accelerate your job search",
       features: [
         "Unlimited CV analyses",

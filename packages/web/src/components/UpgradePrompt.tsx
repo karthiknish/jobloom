@@ -269,7 +269,7 @@ export function UpgradePrompt({ feature }: UpgradePromptProps) {
                 </Link>
               </motion.div>
               <p className="text-sm text-muted-foreground mt-4">
-                7-day free trial • Cancel anytime • $9.99/month
+                7-day free trial • Cancel anytime • $5.99/month
               </p>
             </div>
           </CardContent>

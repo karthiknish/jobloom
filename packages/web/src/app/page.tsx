@@ -849,7 +849,7 @@ export default async function Home() {
               <Button
                 asChild
                 size="lg"
-                className="text-xl px-12 py-8 bg-white text-primary hover:bg-gray-100 shadow-2xl transform hover:scale-105 transition-all duration-300 motion-button"
+                className="text-xl px-12 py-8 bg-card text-primary hover:bg-card/80 shadow-2xl transform hover:scale-105 transition-all duration-300 motion-button"
               >
                 <Link href="/dashboard" className="flex items-center gap-3">
                   <Sparkles className="h-6 w-6" />
@@ -862,7 +862,7 @@ export default async function Home() {
                 <Button
                   asChild
                   size="lg"
-                  className="text-xl px-12 py-8 bg-white text-primary hover:bg-gray-100 shadow-2xl transform hover:scale-105 transition-all duration-300 motion-button"
+                  className="text-xl px-12 py-8 bg-card text-primary hover:bg-card/80 shadow-2xl transform hover:scale-105 transition-all duration-300 motion-button"
                 >
                   <Link href="/sign-up" className="flex items-center gap-3">
                     <Sparkles className="h-6 w-6" />

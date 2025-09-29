@@ -182,14 +182,14 @@ function SignInInner() {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.3 }}
-                className="rounded-lg border border-red-200 bg-red-50 p-4 flex items-start gap-3"
+                className="rounded-lg border border-destructive/20 bg-destructive/5 p-4 flex items-start gap-3"
               >
-                <div className="flex-shrink-0 w-5 h-5 bg-red-100 rounded-full flex items-center justify-center mt-0.5">
-                  <XIcon className="h-3 w-3 text-red-600" />
+                <div className="flex-shrink-0 w-5 h-5 bg-destructive/10 rounded-full flex items-center justify-center mt-0.5">
+                  <XIcon className="h-3 w-3 text-destructive" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-red-800">Authentication Error</p>
-                  <p className="text-sm text-red-700 mt-1">{error}</p>
+                  <p className="text-sm font-medium text-destructive">Authentication Error</p>
+                  <p className="text-sm text-destructive/80 mt-1">{error}</p>
                 </div>
               </motion.div>
             )}
