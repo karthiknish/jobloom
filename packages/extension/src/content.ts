@@ -86,6 +86,11 @@ interface JobData {
   sponsorshipType?: string;
   dateFound: string;
   source: string;
+  jobId?: string;
+  metadata?: {
+    remote: boolean;
+    seniority: string | undefined;
+  };
 }
 
 interface SponsorshipCheckResult {
@@ -167,10 +172,13 @@ class JobTracker {
 
   private init() {
     this.loadWebAppUrl();
-    this.createToggleButton();
-    this.createAutofillButton();
-    // Removed people search button creation
-    this.setupAutoDetection();
+    if (this.currentJobSite === "linkedin") {
+    if (this.currentJobSite === "linkedin") {
+      this.createToggleButton();
+      this.createAutofillButton();
+      this.setupAutoDetection();
+    }
+    }
   }
 
   private async loadWebAppUrl() {
@@ -187,16 +195,7 @@ class JobTracker {
   private detectJobSite(): string {
     const hostname = window.location.hostname.toLowerCase();
     if (hostname.includes("linkedin")) return "linkedin";
-    if (hostname.includes("indeed")) return "indeed";
-    if (hostname.includes("glassdoor")) return "glassdoor";
-    if (hostname.includes("monster")) return "monster";
-    if (hostname.includes("ziprecruiter")) return "ziprecruiter";
-    if (hostname.includes("jobs.google")) return "google_jobs";
-    if (hostname.includes("seek.com")) return "seek";
-    if (hostname.includes("totaljobs")) return "totaljobs";
-    if (hostname.includes("reed.co.uk")) return "reed";
-    if (hostname.includes("jobsite.co.uk")) return "jobsite";
-    return "unknown";
+    return "unsupported";
   }
 
   private createToggleButton() {
@@ -541,301 +540,241 @@ class JobTracker {
   }
 
   private findJobElements(): Element[] {
-    const siteSelectors = {
-      linkedin: [
-        ".jobs-search-results__list-item",
-        ".job-card-container",
-        "[data-job-id]",
-        ".reusable-search__result-container",
-        ".jobs-unified-top-card",
-        ".job-card-list",
-        "[data-test-id='job-card']",
-      ],
-      indeed: [
-        ".job_seen_beacon",
-        ".slider_container .slider_item",
-        "[data-jk]",
-        ".jobsearch-SerpJobCard",
-        "[data-testid='job-card']",
-        ".tapItem",
-        ".jobCardItem",
-      ],
-      glassdoor: [
-        ".react-job-listing",
-        ".jobContainer",
-        '[data-test="job-listing"]',
-        ".JobCard",
-        "[data-testid='job-card']",
-        ".jl",
-        ".jobListing",
-      ],
-      monster: [
-        ".job-card",
-        ".job-listing",
-        "[data-jobid]",
-        ".jobTitle",
-        ".job-card__content",
-        ".card-job",
-      ],
-      ziprecruiter: [
-        ".job_content",
-        ".job-listing",
-        "[data-job-id]",
-        ".job_result",
-        ".job-item",
-        "[data-testid='job-card']",
-      ],
-      google_jobs: [
-        ".PwjeAc",
-        ".gws-plugins-horizon-jobs__li-ed",
-        "[data-ved]",
-        ".gws-plugins-horizon-jobs__job",
-        "[data-testid='job-card']",
-      ],
-      seek: [
-        ".job-card",
-        '[data-automation="jobListing"]',
-        ".JobCard",
-        "[data-testid='job-card']",
-        ".job-result",
-      ],
-      totaljobs: [
-        ".job",
-        ".job-item",
-        "[data-job-id]",
-        ".jobCard",
-        ".job-listing",
-        "[data-testid='job-card']",
-      ],
-      reed: [
-        ".job-result",
-        ".job-card",
-        "[data-id]",
-        ".job-item",
-        "[data-testid='job-card']",
-        ".jobCard",
-      ],
-      jobsite: [
-        ".job",
-        ".job-item",
-        ".job-card",
-        "[data-job-id]",
-        "[data-testid='job-card']",
-        ".job-result",
-      ],
-      // Additional job sites
-      dice: [
-        ".card-job",
-        ".job-card",
-        "[data-cy='job-card']",
-        ".job",
-        ".job-listing",
-      ],
-      careerbuilder: [
-        ".job-listing",
-        ".job-card",
-        ".job-item",
-        "[data-job-id]",
-        ".job-result",
-      ],
-      snagajob: [
-        ".job-card",
-        ".job-listing",
-        ".job-item",
-        "[data-job-id]",
-        ".job-result",
-      ],
-      snaphire: [
-        ".job-card",
-        ".job-listing",
-        ".job-item",
-        "[data-job-id]",
-        ".job-result",
-      ],
-      unknown: [
-        ".job-card",
-        ".job-listing",
-        ".job-result",
-        ".job-item",
-        "[data-job-id]",
-        "[data-testid='job-card']",
-        "[data-cy='job-card']",
-      ],
-    };
+    if (this.currentJobSite !== "linkedin") {
+      return [];
+    }
 
-    const selectors =
-      siteSelectors[this.currentJobSite as keyof typeof siteSelectors] ||
-      siteSelectors.unknown;
+    const selectors = [
+      "section.jobs-search__results-list li",
+      "li.jobs-search-results__list-item",
+      "div.job-card-container",
+      "div.jobs-unified-top-card",
+      "div[data-job-id]",
+    ];
+
     const elements: Element[] = [];
-
     selectors.forEach((selector) => {
       try {
-        const found = document.querySelectorAll(selector);
-        elements.push(...Array.from(found));
+        document.querySelectorAll(selector).forEach((el) => {
+          if (!elements.includes(el)) {
+            elements.push(el);
+          }
+        });
       } catch (error) {
         console.warn(`Invalid selector: ${selector}`, error);
       }
     });
 
-    // Remove nested duplicates: keep only outermost elements
-    const filtered = elements.filter(
-      (el) =>
-        el &&
-        el.isConnected &&
-        !elements.some((other) => other !== el && other.contains(el))
-    );
-
-    // Return unique elements (in case of duplicates in selectors)
-    return Array.from(new Set(filtered));
+    return elements.filter((el) => el && el.isConnected);
   }
 
   private extractJobData(element: Element): JobData {
-    const siteSpecificSelectors = {
-      linkedin: {
-        title:
-          ".job-card-list__title, .job-card-container__link, .job-card-container__link strong",
-        company:
-          ".job-card-container__primary-description, .job-card-list__company, .job-card-container__company-name",
-        location:
-          ".job-card-container__metadata-item, .job-card-list__metadata, .job-card-container__metadata-wrapper",
-        link: 'a[data-control-name="job_card_click"], .job-card-container__link',
-        description:
-          ".job-card-list__description, .job-card-container__details",
-        salary: ".job-card-container__salary, .salary",
-        skills: ".job-card-list__skills, .job-card-container__skills",
-        postedDate: ".job-card-container__posted-date, .posted-date",
-      },
-      indeed: {
-        title: '[data-testid="job-title"], .jobTitle, h2 a',
-        company: '[data-testid="company-name"], .companyName, .company',
-        location: '[data-testid="job-location"], .companyLocation, .location',
-        link: "h2 a, .jobTitle a",
-        description: ".job-snippet, .summary",
-        salary: ".salary-snippet, .salary",
-        skills: ".jobsearch-JobMetadataHeader-item",
-        postedDate: ".date",
-      },
-      glassdoor: {
-        title: '[data-test="job-title"], .jobTitle, .jobLink',
-        company: '[data-test="employer-name"], .employerName, .employer',
-        location: '[data-test="job-location"], .location',
-        link: '[data-test="job-link"], .jobTitle a, .jobLink',
-        description: ".jobDescription, .desc",
-        salary: ".salary-estimate, .salary",
-        skills: ".jobTags, .skill",
-        postedDate: ".minor, .date",
-      },
-      monster: {
-        title: ".jobTitle, .title, h2 a",
-        company: ".company, .job-company",
-        location: ".location, .job-location",
-        link: ".jobTitle a, h2 a",
-        description: ".job-description, .summary",
-        salary: ".salary, .compensation",
-        skills: ".job-skills, .skills",
-        postedDate: ".posted-date, .date",
-      },
-      ziprecruiter: {
-        title: ".job_title, .jobTitle, h1",
-        company: ".job_company, .company",
-        location: ".job_location, .location",
-        link: ".job_title a, h1 a",
-        description: ".job_description, .description",
-        salary: ".job_salary, .salary",
-        skills: ".job_skills, .skills",
-        postedDate: ".posted-date, .date",
-      },
-      google_jobs: {
-        title: ".PwjeAc, .BjJfJf, h2",
-        company: ".vNEEBe, .pMhGee, .Qk80Jf",
-        location: ".Qk80Jf, .KKryqe",
-        link: "a[href]",
-        description: ".HBvzbc, .YgLbI",
-        salary: ".KKryqe",
-        skills: ".nZp5Db, .rP6RAd",
-        postedDate: ".KKryqe",
-      },
-      seek: {
-        title: ".job-title, h1, .title",
-        company: ".company, .job-company",
-        location: ".location, .job-location",
-        link: ".job-title a, h1 a",
-        description: ".job-description, .description",
-        salary: ".salary, .compensation",
-        skills: ".job-skills, .skills",
-        postedDate: ".posted-date, .date",
-      },
-      unknown: {
-        title: 'h3, .job-title, [data-testid="job-title"], .title',
-        company: '.company, .job-company, [data-testid="job-company"]',
-        location: '.location, .job-location, [data-testid="job-location"]',
-        link: "a",
-        description:
-          '.description, .summary, .snippet, [data-testid="job-description"]',
-        salary: '.salary, .compensation, [data-testid="job-salary"]',
-        skills: '.skills, .job-skills, [data-testid="job-skills"]',
-        postedDate: '.date, .posted-date, [data-testid="job-date"]',
-      },
-    };
+    if (this.currentJobSite !== "linkedin") {
+      throw new Error(`Unsupported job source: ${this.currentJobSite}`);
+    }
 
-    const selectors =
-      siteSpecificSelectors[
-        this.currentJobSite as keyof typeof siteSpecificSelectors
-      ] || siteSpecificSelectors.unknown;
+    const title = this.extractLinkedInTitle(element) ?? "Unknown Role";
+    const company = this.extractLinkedInCompany(element) ?? "Unknown Company";
+    const primaryUrl = this.extractLinkedInJobUrl(element);
+    const fallbackUrl = this.extractLinkedInJobUrlFromParent(element);
+    const url = primaryUrl || fallbackUrl || window.location.href;
 
-    const titleEl = element.querySelector(selectors.title);
-    const companyEl = element.querySelector(selectors.company);
-    const locationEl = element.querySelector(selectors.location);
-    const linkEl = element.querySelector(selectors.link);
-    const descriptionEl = element.querySelector(selectors.description);
-    const salaryEl = element.querySelector(selectors.salary);
-    const skillsEl = element.querySelector(selectors.skills);
-    const postedDateEl = element.querySelector(selectors.postedDate);
+    const location = this.extractLinkedInLocation(element) ?? "Not specified";
 
-    const title = titleEl?.textContent?.trim() || "Unknown Title";
-    const company = companyEl?.textContent?.trim() || "Unknown Company";
-    const location = locationEl?.textContent?.trim() || "Unknown Location";
-    const url = linkEl?.getAttribute("href") || window.location.href;
-    const description =
-      descriptionEl?.textContent?.trim() ||
-      element.textContent?.trim().slice(0, 2000);
-    const salaryText = salaryEl?.textContent?.trim() || "";
-    const skillsText = skillsEl?.textContent?.trim() || "";
-    const postedDateText = postedDateEl?.textContent?.trim() || "";
-    // postedDateText is used for future enhancements
-    void postedDateText; // Prevent unused variable warning
-
-    // Parse salary information
-    const salaryRange = this.parseSalary(salaryText);
-
-    // Extract skills
-    const skills = this.extractSkills(skillsText, description);
-
-    // Extract job type and other metadata
-    const jobMetadata = this.extractJobMetadata(
-      description || "",
-      element.textContent || ""
-    );
-
-    return {
+    const data: JobData = {
       title,
       company,
       location,
       url,
-      description,
-      salary: salaryText,
-      salaryRange,
-      skills,
-      ...jobMetadata,
-      isSponsored: false,
-      isRecruitmentAgency: this.detectRecruitmentAgency(
-        title,
-        company,
-        element
+      description: this.extractLinkedInDescription(element) ?? undefined,
+      salary: this.extractLinkedInSalary(element) ?? undefined,
+      skills: this.extractLinkedInSkills(element) ?? undefined,
+      postedDate: this.normalizeLinkedInPostedDate(
+        this.extractLinkedInPostedDate(element)
       ),
-      dateFound: new Date().toISOString(),
       source: this.currentJobSite,
+      jobId: this.extractLinkedInJobId(element) ?? undefined,
+      metadata: {
+        remote: this.detectRemote(element),
+        seniority: this.detectSeniority(element),
+      },
+      isSponsored: false,
+      dateFound: new Date().toISOString(),
     };
+
+    return data;
+  }
+
+  private extractLinkedInJobId(element: Element): string | null {
+    const direct = element.getAttribute("data-job-id");
+    if (direct) {
+      return direct;
+    }
+
+    const url = this.extractLinkedInJobUrl(element) || this.extractLinkedInJobUrlFromParent(element);
+    if (url) {
+      const match = url.match(/jobs\/view\/(\d+)/);
+      if (match) {
+        return match[1];
+      }
+    }
+
+    return null;
+  }
+
+  private extractLinkedInJobUrl(element: Element): string | null {
+    return (
+      this.getElementHref(
+        element,
+        'a[data-control-name="job_card_click"], a[href*="linkedin.com/jobs/view"]'
+      ) || null
+    );
+  }
+
+  private extractLinkedInJobUrlFromParent(element: Element): string | null {
+    let current: Element | null = element;
+    while (current) {
+      const link = this.getElementHref(
+        current,
+        'a[data-tracking-control-name="public_jobs_topcard-title"], a[href*="linkedin.com/jobs/view"]'
+      );
+      if (link) return link;
+      current = current.parentElement;
+    }
+    return null;
+  }
+
+  private extractLinkedInTitle(element: Element): string | null {
+    return (
+      this.getElementText(element, "h1.top-card-layout__title") ||
+      this.getElementText(element, ".jobs-unified-top-card__job-title") ||
+      this.getElementText(element, ".job-card-list__title") ||
+      this.getElementText(element, ".job-card-container__link")
+    );
+  }
+
+  private extractLinkedInCompany(element: Element): string | null {
+    return (
+      this.getElementText(element, "a.topcard__org-name-link") ||
+      this.getElementText(element, "span.topcard__flavor") ||
+      this.getElementText(element, ".job-card-container__primary-description") ||
+      this.getElementText(element, ".job-card-list__company")
+    );
+  }
+
+  private extractLinkedInLocation(element: Element): string | null {
+    return (
+      this.getElementText(element, "span.topcard__flavor--bullet") ||
+      this.getElementText(element, ".jobs-unified-top-card__bullet") ||
+      this.getElementText(element, ".job-card-container__metadata-item") ||
+      this.getElementText(element, ".job-card-list__location")
+    );
+  }
+
+  private extractLinkedInDescription(element: Element): string | null {
+    return (
+      this.getElementText(element, "div.show-more-less-html__markup") ||
+      this.getElementText(element, ".jobs-description__content") ||
+      this.getElementText(element, ".job-card-list__description") ||
+      this.getElementText(element, ".job-card-container__details")
+    );
+  }
+
+  private extractLinkedInSalary(element: Element): string | null {
+    return (
+      this.getElementText(element, ".jobs-unified-top-card__salary-info") ||
+      this.getElementText(element, ".job-card-container__salary")
+    );
+  }
+
+  private extractLinkedInSkills(element: Element): string[] | null {
+    const containers = element.querySelectorAll(
+      "ul.description__job-criteria-list li, .job-card-list__skills li"
+    );
+    if (!containers.length) {
+      return null;
+    }
+
+    const skills = Array.from(containers)
+      .map((item) => item.textContent?.trim())
+      .filter(Boolean) as string[];
+
+    return skills.length ? skills : null;
+  }
+
+  private extractLinkedInPostedDate(element: Element): string | null {
+    return (
+      this.getElementText(element, "span.topcard__flavor--metadata") ||
+      this.getElementText(element, ".jobs-unified-top-card__posted-date") ||
+      this.getElementText(element, ".job-card-container__posted-date")
+    );
+  }
+
+  private normalizeLinkedInPostedDate(raw: string | null): string | undefined {
+    if (!raw) return undefined;
+    const text = raw.trim();
+    if (!text) return undefined;
+
+    // Examples: "6 hours ago", "1 day ago", "3 weeks ago", "Posted on 12 Jun 2024"
+    const relativeMatch = text.match(/(\d+)\s+(hour|day|week|month|year)s?\s+ago/i);
+    if (relativeMatch) {
+      const value = parseInt(relativeMatch[1], 10);
+      const unit = relativeMatch[2].toLowerCase();
+      const date = new Date();
+      switch (unit) {
+        case "hour":
+          date.setHours(date.getHours() - value);
+          break;
+        case "day":
+          date.setDate(date.getDate() - value);
+          break;
+        case "week":
+          date.setDate(date.getDate() - value * 7);
+          break;
+        case "month":
+          date.setMonth(date.getMonth() - value);
+          break;
+        case "year":
+          date.setFullYear(date.getFullYear() - value);
+          break;
+      }
+      return date.toISOString();
+    }
+
+    const exactMatch = text.match(/Posted on\s+(.*)/i);
+    if (exactMatch) {
+      const parsed = new Date(exactMatch[1]);
+      if (!isNaN(parsed.getTime())) {
+        return parsed.toISOString();
+      }
+    }
+
+    return text;
+  }
+
+  private detectRemote(element: Element): boolean {
+    const remoteKeywords = ["remote", "work from home", "hybrid"];
+    const textContent = element.textContent?.toLowerCase() || "";
+    return remoteKeywords.some((keyword) => textContent.includes(keyword));
+  }
+
+  private detectSeniority(element: Element): string | undefined {
+    const seniorityKeywords = [
+      { keyword: "intern", label: "internship" },
+      { keyword: "entry level", label: "entry" },
+      { keyword: "associate", label: "associate" },
+      { keyword: "mid-senior", label: "mid" },
+      { keyword: "senior", label: "senior" },
+      { keyword: "lead", label: "lead" },
+      { keyword: "principal", label: "principal" },
+      { keyword: "director", label: "director" },
+    ];
+
+    const textContent = element.textContent?.toLowerCase() || "";
+    const match = seniorityKeywords.find(({ keyword }) =>
+      textContent.includes(keyword)
+    );
+    return match?.label;
   }
 
   private parseSalary(salaryText: string): JobData["salaryRange"] {
@@ -2589,6 +2528,33 @@ class JobTracker {
         button.style.background = "linear-gradient(135deg, #10b981, #059669)";
         button.disabled = false;
       }, 3000);
+    }
+  }
+
+  private getElementText(root: Element, selector: string): string | null {
+    try {
+      const el = root.querySelector(selector);
+      return el ? el.textContent?.trim() || null : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private getElementHref(root: Element, selector: string): string | null {
+    try {
+      const el = root.querySelector(selector);
+      if (el instanceof HTMLAnchorElement) {
+        return el.href;
+      }
+      if (el) {
+        const parentLink = el.closest('a[href]');
+        if (parentLink instanceof HTMLAnchorElement) {
+          return parentLink.href;
+        }
+      }
+      return null;
+    } catch {
+      return null;
     }
   }
 

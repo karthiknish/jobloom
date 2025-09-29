@@ -301,12 +301,12 @@ function SignInInner() {
                 </a>
               </div>
               <div>
-                <a
-                  href={`/reset-password?redirect_url=${encodeURIComponent(redirectUrlComplete)}`}
+                <Link
+                  href={`/auth/forgot?redirect_url=${encodeURIComponent(redirectUrlComplete)}`}
                   className="text-muted-foreground hover:text-primary hover:underline transition-colors"
                 >
                   Forgot your password?
-                </a>
+                </Link>
               </div>
             </div>
           </CardContent>

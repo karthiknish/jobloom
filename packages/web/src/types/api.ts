@@ -159,13 +159,17 @@ export interface Subscription {
   userId: string;
   plan: SubscriptionPlan;
   status: "active" | "inactive" | "cancelled" | "past_due";
-  currentPeriodStart: number;
-  currentPeriodEnd: number;
+  currentPeriodStart: number | null;
+  currentPeriodEnd: number | null;
   cancelAtPeriodEnd: boolean;
-  createdAt: number;
-  updatedAt: number;
+  createdAt: number | null;
+  updatedAt: number | null;
   stripeSubscriptionId?: string;
   stripeCustomerId?: string;
+  billingCycle?: "monthly" | "yearly" | null;
+  price?: number | null;
+  currency?: string | null;
+  customerPortalUrl?: string | null;
 }
 
 export const SUBSCRIPTION_LIMITS: Record<SubscriptionPlan, SubscriptionLimits> = {

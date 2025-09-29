@@ -329,6 +329,21 @@ export function FirebaseAuthProvider({
           await updateProfile(credential.user, { displayName: name });
         }
 
+        try {
+          await fetch("/api/email/welcome", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              email: credential.user.email ?? email,
+              name: name ?? credential.user.displayName ?? undefined,
+            }),
+          });
+        } catch (sendError) {
+          console.warn("Failed to trigger welcome email", sendError);
+        }
+
         showSuccess("Account created successfully!");
       } catch (error) {
         handleAuthError(error);

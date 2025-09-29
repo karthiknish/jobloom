@@ -16,18 +16,24 @@ import {
   Palette,
   Globe,
   CreditCard,
+  Clock,
   Database,
   Key,
   Mail,
   Moon,
   Sun,
+  Loader2,
+  Crown,
   Briefcase,
   ClipboardList,
   CalendarCheck,
   Save,
   Trash2,
   Download,
-  Upload
+  Upload,
+  Ban,
+  RotateCcw,
+  ShieldAlert
 } from "lucide-react";
 import {
   Card,
@@ -50,6 +56,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { showSuccess, showError } from "@/components/ui/Toast";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface UserPreferences {
   theme: 'light' | 'dark' | 'system';
@@ -69,7 +76,7 @@ interface UserPreferences {
 
 export default function SettingsPage() {
   const { user } = useFirebaseAuth();
-  const { subscription, plan, limits, currentUsage, hasFeature } = useSubscription();
+  const { subscription, plan, limits, currentUsage, actions, hasFeature, refreshSubscription } = useSubscription();
   const {
     isJobImportEnabled,
     isCvAnalysisEnabled,
@@ -105,6 +112,118 @@ export default function SettingsPage() {
   const [exporting, setExporting] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isManagingBilling, setIsManagingBilling] = useState(false);
+  const [isCancellingSubscription, setIsCancellingSubscription] = useState(false);
+  const [isResumingSubscription, setIsResumingSubscription] = useState(false);
+  const [subscriptionError, setSubscriptionError] = useState<string | null>(null);
+
+  const nextBillingDate = subscription?.currentPeriodEnd
+    ? format(new Date(subscription.currentPeriodEnd), "MMM d, yyyy")
+    : null;
+
+  const cancellationEffectiveDate = subscription?.cancelAtPeriodEnd && subscription?.currentPeriodEnd
+    ? format(new Date(subscription.currentPeriodEnd), "MMM d, yyyy")
+    : null;
+
+  const manageBilling = async () => {
+    if (!user) return;
+
+    try {
+      setIsManagingBilling(true);
+      setSubscriptionError(null);
+      const token = await user.getIdToken();
+      const response = await fetch("/api/subscription/portal", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.error || "Unable to open billing portal");
+      }
+
+      const data = await response.json();
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error("Billing portal URL was not returned");
+      }
+    } catch (error) {
+      console.error("Error opening billing portal:", error);
+      const message = error instanceof Error ? error.message : "Unable to open billing portal";
+      setSubscriptionError(message);
+      showError(message);
+    } finally {
+      setIsManagingBilling(false);
+    }
+  };
+
+  const cancelSubscription = async () => {
+    if (!user) return;
+
+    try {
+      setIsCancellingSubscription(true);
+      setSubscriptionError(null);
+      const token = await user.getIdToken();
+      const response = await fetch("/api/subscription/cancel", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to cancel subscription");
+      }
+
+      showSuccess("Subscription will cancel at period end");
+      await refreshSubscription();
+    } catch (error) {
+      console.error("Error cancelling subscription:", error);
+      const message = error instanceof Error ? error.message : "Unable to cancel subscription";
+      setSubscriptionError(message);
+      showError(message);
+    } finally {
+      setIsCancellingSubscription(false);
+    }
+  };
+
+  const resumeSubscription = async () => {
+    if (!user) return;
+
+    try {
+      setIsResumingSubscription(true);
+      setSubscriptionError(null);
+      const token = await user.getIdToken();
+      const response = await fetch("/api/subscription/resume", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to resume subscription");
+      }
+
+      showSuccess("Subscription cancellation revoked");
+      await refreshSubscription();
+    } catch (error) {
+      console.error("Error resuming subscription:", error);
+      const message = error instanceof Error ? error.message : "Unable to resume subscription";
+      setSubscriptionError(message);
+      showError(message);
+    } finally {
+      setIsResumingSubscription(false);
+    }
+  };
 
   // Load user preferences from backend
   useEffect(() => {
@@ -367,6 +486,138 @@ export default function SettingsPage() {
                         {user.emailVerified ? "Verified" : "Unverified"}
                       </p>
                     </div>
+                  </CardContent>
+                </Card>
+
+                {/* Subscription Management */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <CreditCard className="h-5 w-5" />
+                      Subscription & Billing
+                    </CardTitle>
+                    <CardDescription>
+                      Manage your plan, billing cycle, and cancellation settings.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Current Plan</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant={plan === 'free' ? 'secondary' : 'default'} className="capitalize">
+                            {plan} plan
+                          </Badge>
+                          {subscription?.status === 'active' && subscription?.billingCycle && (
+                            <span className="text-xs text-muted-foreground uppercase tracking-wide">
+                              {subscription.billingCycle}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {nextBillingDate && (
+                        <div className="text-right">
+                          <p className="text-sm font-medium text-muted-foreground">Next Billing</p>
+                          <p className="text-sm">{nextBillingDate}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {subscription?.cancelAtPeriodEnd && cancellationEffectiveDate && (
+                      <Alert className="border-amber-200 bg-amber-50 text-amber-900">
+                        <AlertTitle className="flex items-center gap-2 text-amber-900">
+                          <Ban className="h-4 w-4" />
+                          Subscription Cancelling
+                        </AlertTitle>
+                        <AlertDescription className="text-sm text-amber-900/80">
+                          Your subscription will end on {cancellationEffectiveDate}. You can resume it before this date.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+
+                    {subscriptionError && (
+                      <Alert variant="destructive">
+                        <AlertTitle className="flex items-center gap-2">
+                          <ShieldAlert className="h-4 w-4" />
+                          Billing Action Failed
+                        </AlertTitle>
+                        <AlertDescription>{subscriptionError}</AlertDescription>
+                      </Alert>
+                    )}
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={manageBilling}
+                        disabled={isManagingBilling}
+                      >
+                        {isManagingBilling ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Opening Portal...
+                          </>
+                        ) : (
+                          <>
+                            <CreditCard className="h-4 w-4" />
+                            Manage Billing
+                          </>
+                        )}
+                      </Button>
+
+                      {plan === 'free' ? (
+                        <Button className="w-full" asChild>
+                          <a href="/upgrade">
+                            <Crown className="h-4 w-4" />
+                            Upgrade Plan
+                          </a>
+                        </Button>
+                      ) : subscription?.cancelAtPeriodEnd ? (
+                        <Button
+                          variant="secondary"
+                          className="w-full"
+                          onClick={resumeSubscription}
+                          disabled={isResumingSubscription}
+                        >
+                          {isResumingSubscription ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              Resuming...
+                            </>
+                          ) : (
+                            <>
+                              <RotateCcw className="h-4 w-4" />
+                              Resume Subscription
+                            </>
+                          )}
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="destructive"
+                          className="w-full"
+                          onClick={cancelSubscription}
+                          disabled={isCancellingSubscription}
+                        >
+                          {isCancellingSubscription ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              Cancelling...
+                            </>
+                          ) : (
+                            <>
+                              <Ban className="h-4 w-4" />
+                              Cancel at Period End
+                            </>
+                          )}
+                        </Button>
+                      )}
+                    </div>
+
+                    {plan !== 'free' && (
+                      <p className="text-xs text-muted-foreground">
+                        Need to change payment method or download invoices? Open the billing portal for full Stripe controls.
+                      </p>
+                    )}
                   </CardContent>
                 </Card>
 

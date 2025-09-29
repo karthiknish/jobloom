@@ -32,6 +32,16 @@ chrome.runtime.onInstalled.addListener(() => {
 // Initialize security components
 const messageRateLimiter = new ExtensionRateLimiter(60000, 50); // 50 messages per minute
 
+function isLinkedInUrl(url?: string) {
+  if (!url) return false;
+  try {
+    const parsed = new URL(url);
+    return parsed.hostname.endsWith("linkedin.com") && parsed.pathname.startsWith("/jobs/");
+  } catch (error) {
+    return false;
+  }
+}
+
 // Handle messages from content script with security validation
 chrome.runtime.onMessage.addListener((request: any, sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void) => {
   // Validate message format
@@ -50,6 +60,10 @@ chrome.runtime.onMessage.addListener((request: any, sender: chrome.runtime.Messa
   }
 
   if (request.action === "addJob") {
+    if (!isLinkedInUrl(request.data?.url)) {
+      sendResponse({ error: 'Unsupported job source' });
+      return;
+    }
     // Validate and sanitize job data
     const validation = validateJobData(request.data);
     if (!validation.valid) {
@@ -62,6 +76,10 @@ chrome.runtime.onMessage.addListener((request: any, sender: chrome.runtime.Messa
     handleJobData(sanitizedData);
     sendResponse({ success: true });
   } else if (request.action === "jobAddedToBoard") {
+    if (!isLinkedInUrl(request.data?.url)) {
+      sendResponse({ error: 'Unsupported job source' });
+      return;
+    }
     // Validate and sanitize job data
     const validation = validateJobData(request.data);
     if (!validation.valid) {

@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactElement } from "react";
 import { Toaster, toast, ToastBar } from "react-hot-toast";
 import { CheckCircle, AlertCircle, Info, AlertTriangle, X } from "lucide-react";
 
@@ -7,7 +8,7 @@ const DEFAULT_DURATION = 4000;
 
 type ToastKind = "success" | "error" | "info" | "warning";
 
-const ICONS: Record<ToastKind, JSX.Element> = {
+const ICONS: Record<ToastKind, ReactElement> = {
   success: <CheckCircle className="h-5 w-5" />,
   error: <AlertCircle className="h-5 w-5" />,
   info: <Info className="h-5 w-5" />,
@@ -143,5 +144,4 @@ export const showLoading = (message: string) =>
 export const dismissToast = (toastId: string) => {
   toast.dismiss(toastId);
 };
-
 

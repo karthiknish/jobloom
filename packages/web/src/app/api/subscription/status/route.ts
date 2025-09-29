@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyIdToken, getAdminDb } from "@/firebase/admin";
 import * as admin from "firebase-admin";
-import { SUBSCRIPTION_LIMITS } from "@/types/api";
+import { SUBSCRIPTION_LIMITS, Subscription, SubscriptionPlan } from "@/types/api";
 
 // Get Firestore instance using the centralized admin initialization
 const db = getAdminDb();
@@ -25,21 +25,55 @@ export async function GET(request: NextRequest) {
 
     // Get user record
     const userDoc = await db.collection("users").doc(userId).get();
-    const userData = userDoc.data();
+    const userData = userDoc.data() as Record<string, any> | undefined;
 
-    let subscription = null;
-    let plan = "free";
-    let limits = SUBSCRIPTION_LIMITS.free;
+    let subscription: Subscription | null = null;
+    let plan: SubscriptionPlan = "free";
 
     if (userData?.subscriptionId) {
       const subscriptionDoc = await db.collection("subscriptions").doc(userData.subscriptionId).get();
-      subscription = subscriptionDoc.data();
 
-      if (subscription?.status === "active" && subscription?.plan) {
-        plan = subscription.plan;
-        limits = SUBSCRIPTION_LIMITS[subscription.plan as keyof typeof SUBSCRIPTION_LIMITS];
+      if (subscriptionDoc.exists) {
+        const data = subscriptionDoc.data() as Record<string, any> | undefined;
+
+        if (data) {
+          const toMillis = (value: admin.firestore.Timestamp | number | null | undefined) => {
+            if (value instanceof admin.firestore.Timestamp) {
+              return value.toMillis();
+            }
+            return typeof value === "number" ? value : null;
+          };
+
+          subscription = {
+            _id: subscriptionDoc.id,
+            userId: data.userId ?? userId,
+            plan: (data.plan ?? "premium") as SubscriptionPlan,
+            status: data.status ?? "inactive",
+            currentPeriodStart: toMillis(data.currentPeriodStart ?? null),
+            currentPeriodEnd: toMillis(data.currentPeriodEnd ?? null),
+            cancelAtPeriodEnd: Boolean(data.cancelAtPeriodEnd),
+            createdAt: toMillis(data.createdAt ?? null),
+            updatedAt: toMillis(data.updatedAt ?? null),
+            stripeSubscriptionId: data.stripeSubscriptionId ?? undefined,
+            stripeCustomerId: data.stripeCustomerId ?? undefined,
+            billingCycle: data.billingCycle ?? null,
+            price: typeof data.price === "number" ? data.price : null,
+            currency: data.currency ?? null,
+            customerPortalUrl: data.customerPortalUrl ?? null,
+          };
+
+          if (subscription.plan in SUBSCRIPTION_LIMITS) {
+            plan = subscription.plan;
+          }
+        }
       }
     }
+
+    if (!subscription && typeof userData?.plan === "string" && userData.plan in SUBSCRIPTION_LIMITS) {
+      plan = userData.plan as SubscriptionPlan;
+    }
+
+    const limits = SUBSCRIPTION_LIMITS[plan] ?? SUBSCRIPTION_LIMITS.free;
 
     // Get current usage for this month
     const startOfMonth = new Date();
@@ -62,11 +96,22 @@ export async function GET(request: NextRequest) {
       applications: applicationsQuery.size,
     };
 
+    const customerPortalUrl = subscription?.customerPortalUrl ?? userData?.stripeCustomerPortalUrl ?? null;
+    const checkoutUrl = userData?.pendingCheckoutUrl ?? null;
+    const cancelUrl = subscription ? "/api/subscription/cancel" : null;
+    const resumeUrl = subscription?.cancelAtPeriodEnd ? "/api/subscription/resume" : null;
+
     return NextResponse.json({
       subscription,
       plan,
       limits,
       currentUsage,
+      actions: {
+        customerPortalUrl,
+        checkoutUrl,
+        cancelUrl,
+        resumeUrl,
+      },
     });
   } catch (error) {
     console.error("Error fetching subscription status:", error);

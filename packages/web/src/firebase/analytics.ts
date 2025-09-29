@@ -1,10 +1,8 @@
 // Firebase Analytics integration for tracking user behavior and app usage
 import {
-  getAnalytics,
   logEvent,
   setUserProperties,
   setUserId,
-  isSupported,
   type Analytics,
 } from "firebase/analytics";
 import { getAnalyticsClient } from "./client";
@@ -86,12 +84,16 @@ class FirebaseAnalyticsService {
       if (analytics) {
         this.analytics = analytics;
         this.isInitialized = true;
-        console.log('Firebase Analytics initialized');
+        if (process.env.NODE_ENV === 'development') {
+          console.info('[Analytics] Firebase Analytics initialized');
+        }
       } else {
-        console.warn('Firebase Analytics not available');
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[Analytics] Firebase Analytics not available');
+        }
       }
     } catch (error) {
-      console.warn('Failed to initialize Firebase Analytics:', error);
+      console.warn('[Analytics] Failed to initialize Firebase Analytics:', error);
     }
   }
 
@@ -107,7 +109,9 @@ class FirebaseAnalyticsService {
     try {
       logEvent(this.analytics!, event.name, event.parameters);
     } catch (error) {
-      console.warn('Failed to log analytics event:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[Analytics] Failed to log event:', event.name, error);
+      }
     }
   }
 
@@ -118,7 +122,9 @@ class FirebaseAnalyticsService {
     try {
       setUserProperties(this.analytics!, properties as any);
     } catch (error) {
-      console.warn('Failed to set user properties:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[Analytics] Failed to set user properties:', error);
+      }
     }
   }
 
@@ -129,7 +135,9 @@ class FirebaseAnalyticsService {
     try {
       setUserId(this.analytics!, userId);
     } catch (error) {
-      console.warn('Failed to set user ID:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[Analytics] Failed to set user ID:', error);
+      }
     }
   }
 
@@ -140,7 +148,9 @@ class FirebaseAnalyticsService {
     try {
       setUserId(this.analytics!, null);
     } catch (error) {
-      console.warn('Failed to clear user ID:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[Analytics] Failed to clear user ID:', error);
+      }
     }
   }
 

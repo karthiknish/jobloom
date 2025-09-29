@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import type { ReactNode } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Palette,
@@ -24,6 +25,11 @@ import {
   ChevronDown,
   ChevronUp,
   X,
+  Sparkles,
+  CheckCircle2,
+  CircleDashed,
+  ArrowRight,
+  ExternalLink,
 } from "lucide-react";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { FeatureGate } from "@/components/UpgradePrompt";
@@ -37,6 +43,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Progress } from "@/components/ui/progress";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { SubdomainSettings } from "@/components/account/SubdomainSettings";
 import { cn } from "@/lib/utils";
 import { portfolioTemplates } from "@/config/portfolioTemplates";
 import { showSuccess, showError } from "@/components/ui/Toast";
@@ -92,6 +101,14 @@ interface PortfolioData {
     allowDownloads: boolean;
     password?: string;
   };
+}
+
+interface ChecklistItem {
+  id: string;
+  label: string;
+  helper?: string;
+  completed: boolean;
+  actionHint?: string;
 }
 
 // Section types and their default content
@@ -209,6 +226,29 @@ const sectionTypes = [
   { id: 'custom', type: 'custom' as const, name: 'Custom Section', icon: Layout, description: 'Fully customizable content' }
 ];
 
+const CHECKLIST_TAB_MAP: Record<string, string> = {
+  "choose-template": "design",
+  "hero-content": "content",
+  "projects": "sections",
+  "about-section": "sections",
+  "contact-details": "sections",
+  seo: "seo",
+  social: "settings",
+  publish: "settings",
+};
+
+const ShareableLink = ({ label, href }: { label: string; href: string }) => (
+  <a
+    className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+    href={href}
+    target="_blank"
+    rel="noopener noreferrer"
+  >
+    {label}
+    <ExternalLink className="h-3.5 w-3.5" />
+  </a>
+);
+
 export default function PortfolioBuilderPage() {
   const { user } = useFirebaseAuth();
   const [activeTab, setActiveTab] = useState("design");
@@ -252,6 +292,140 @@ export default function PortfolioBuilderPage() {
   });
 
   const [showSectionSelector, setShowSectionSelector] = useState(false);
+  const [portfolioProgress, setPortfolioProgress] = useState(0);
+  const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
+  const [statusCard, setStatusCard] = useState<{ title: string; description: string; icon: ReactNode; accent: string }>(
+    () => ({
+      title: "Draft Portfolio",
+      description: "Fill out your content, publish settings, and preview before sharing.",
+      icon: <CircleDashed className="h-5 w-5" />,
+      accent: "border-border/70"
+    })
+  );
+
+  const completionFlags = useMemo(() => {
+    const heroSection = portfolio.sections.find((section) => section.type === "hero");
+    const hasHeadline = Boolean(heroSection?.content?.headline);
+    const hasDescription = Boolean(heroSection?.content?.subheadline || portfolio.description);
+    const hasProjects = portfolio.sections.some(
+      (section) => section.type === "projects" && section.content?.items?.some((item: any) => item.title || item.description)
+    );
+    const hasAbout = portfolio.sections.some(
+      (section) => section.type === "about" && (section.content?.content || section.content?.skills?.length)
+    );
+    const hasContact = portfolio.sections.some(
+      (section) => section.type === "contact" && (section.content?.email || section.content?.message)
+    );
+    const hasTemplate = Boolean(portfolio.templateId);
+    const hasPublicLink = Boolean(portfolio.settings.isPublic && (portfolio.subdomain || portfolio.customDomain));
+    const hasSeoFields = Boolean(portfolio.seo.metaTitle && portfolio.seo.metaDescription);
+    const hasSocialLinks = Object.values(portfolio.socialLinks).some(Boolean);
+
+    return {
+      hasHero: hasHeadline,
+      hasDescription,
+      hasProjects,
+      hasAbout,
+      hasContact,
+      hasTemplate,
+      hasPublicLink,
+      hasSeoFields,
+      hasSocialLinks,
+    };
+  }, [portfolio]);
+
+  useEffect(() => {
+    const items: ChecklistItem[] = [
+      {
+        id: "choose-template",
+        label: "Select a template",
+        helper: "Pick a design foundation that matches your personal brand.",
+        actionHint: completionFlags.hasTemplate ? undefined : "Open the Design tab to choose one.",
+        completed: completionFlags.hasTemplate,
+      },
+      {
+        id: "hero-content",
+        label: "Fill hero headline and intro",
+        helper: "Lead with a clear value statement so visitors know who you are.",
+        actionHint: completionFlags.hasHero ? undefined : "Add a headline inside the hero section.",
+        completed: completionFlags.hasHero && completionFlags.hasDescription,
+      },
+      {
+        id: "projects",
+        label: "Showcase at least one project",
+        helper: "Highlight work you're proud of with descriptions and links.",
+        actionHint: completionFlags.hasProjects ? undefined : "Add a project card in the sections tab.",
+        completed: completionFlags.hasProjects,
+      },
+      {
+        id: "about-section",
+        label: "Share your story",
+        helper: "Add an about section with a narrative or bio to give context.",
+        actionHint: completionFlags.hasAbout ? undefined : "Enable and fill the About section.",
+        completed: completionFlags.hasAbout,
+      },
+      {
+        id: "contact-details",
+        label: "Add contact or call-to-action",
+        helper: "Let recruiters reach out by including contact info or form.",
+        actionHint: completionFlags.hasContact ? undefined : "Add your email or enable the contact form.",
+        completed: completionFlags.hasContact,
+      },
+      {
+        id: "seo",
+        label: "Write SEO title & description",
+        helper: "Improve search visibility with a meta title and description.",
+        actionHint: completionFlags.hasSeoFields ? undefined : "Fill the SEO tab fields.",
+        completed: completionFlags.hasSeoFields,
+      },
+      {
+        id: "social",
+        label: "Link social profiles",
+        helper: "Add LinkedIn, GitHub, or other profiles for deeper insight.",
+        actionHint: completionFlags.hasSocialLinks ? undefined : "Add links in the settings tab.",
+        completed: completionFlags.hasSocialLinks,
+      },
+      {
+        id: "publish",
+        label: "Publish with a subdomain",
+        helper: "Turn on public access and reserve a subdomain to share your site.",
+        actionHint: completionFlags.hasPublicLink ? undefined : "Toggle public mode and claim a subdomain below.",
+        completed: completionFlags.hasPublicLink,
+      },
+    ];
+
+    setChecklist(items);
+
+    const completedCount = items.filter((item) => item.completed).length;
+    setPortfolioProgress(Math.round((completedCount / items.length) * 100));
+
+    setStatusCard(() => {
+      if (completionFlags.hasPublicLink) {
+        return {
+          title: "Portfolio Published",
+          description: "Your site is live. Share the link with recruiters and track performance.",
+          icon: <CheckCircle2 className="h-5 w-5 text-emerald-600" />,
+          accent: "border-emerald-200/80",
+        };
+      }
+
+      if (completedCount >= 4) {
+        return {
+          title: "Ready to Publish",
+          description: "Great content! Reserve a subdomain to make your portfolio public.",
+          icon: <Sparkles className="h-5 w-5 text-primary" />,
+          accent: "border-primary/40",
+        };
+      }
+
+      return {
+        title: "Draft Portfolio",
+        description: "Fill out your content, publish settings, and preview before sharing.",
+        icon: <CircleDashed className="h-5 w-5 text-muted-foreground" />,
+        accent: "border-border/70",
+      };
+    });
+  }, [completionFlags]);
 
   // Load portfolio data
   const fetchPortfolio = useCallback(async () => {

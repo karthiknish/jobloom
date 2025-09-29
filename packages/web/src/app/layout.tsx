@@ -7,6 +7,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Chatbot from "@/components/Chatbot";
 import MobileNavigation from "@/components/MobileNavigation";
+import { AnalyticsProvider } from "@/providers/analytics-provider";
 import { resolveSeoMeta } from "@/seo.config";
 import React from "react";
 
@@ -68,12 +69,14 @@ export default function RootLayout({
       <body className="antialiased safe-area-inset-top safe-area-inset-bottom safe-area-inset-left safe-area-inset-right font-inter">
         <FirebaseInitializer />
         <FirebaseAuthProvider>
-          <Header />
-          {children}
-          <Footer />
-          <MobileNavigation />
-          <AppToaster />
-          <Chatbot />
+          <AnalyticsProvider>
+            <Header />
+            {children}
+            <Footer />
+            <MobileNavigation />
+            <AppToaster />
+            <Chatbot />
+          </AnalyticsProvider>
         </FirebaseAuthProvider>
       </body>
     </html>

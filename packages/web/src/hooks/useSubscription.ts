@@ -4,10 +4,18 @@ import { useState, useEffect, useCallback } from "react";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { Subscription, SubscriptionPlan, SUBSCRIPTION_LIMITS, SubscriptionLimits } from "@/types/api";
 
+export interface SubscriptionActions {
+  checkoutUrl?: string;
+  customerPortalUrl?: string;
+  cancelUrl?: string;
+  resumeUrl?: string;
+}
+
 export interface SubscriptionState {
   subscription: Subscription | null;
   plan: SubscriptionPlan;
   limits: SubscriptionLimits;
+  actions: SubscriptionActions;
   currentUsage?: {
     cvAnalyses: number;
     applications: number;
@@ -22,6 +30,7 @@ export function useSubscription() {
     subscription: null,
     plan: "free",
     limits: SUBSCRIPTION_LIMITS.free,
+    actions: {},
     isLoading: true,
     error: null,
   });
@@ -32,6 +41,7 @@ export function useSubscription() {
         subscription: null,
         plan: "free",
         limits: SUBSCRIPTION_LIMITS.free,
+        actions: {},
         isLoading: false,
         error: null,
       });
@@ -49,11 +59,13 @@ export function useSubscription() {
 
       if (response.ok) {
         const data = await response.json();
+        const actions: SubscriptionActions = data.actions ?? {};
         setState({
           subscription: data.subscription,
           plan: data.plan,
           limits: data.limits,
           currentUsage: data.currentUsage,
+          actions,
           isLoading: false,
           error: null,
         });
@@ -63,6 +75,7 @@ export function useSubscription() {
           subscription: null,
           plan: "free",
           limits: SUBSCRIPTION_LIMITS.free,
+          actions: {},
           isLoading: false,
           error: null,
         });
@@ -73,6 +86,7 @@ export function useSubscription() {
         subscription: null,
         plan: "free",
         limits: SUBSCRIPTION_LIMITS.free,
+        actions: {},
         isLoading: false,
         error: "Failed to load subscription information",
       });
@@ -123,7 +137,7 @@ export function useSubscription() {
   }, [state.limits]);
 
   const refreshSubscription = useCallback(() => {
-    fetchSubscription();
+    return fetchSubscription();
   }, [fetchSubscription]);
 
   return {

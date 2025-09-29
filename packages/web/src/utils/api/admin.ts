@@ -357,7 +357,13 @@ export const adminApi = {
     const db = getDb();
     if (!db) throw new Error("Firestore not initialized");
 
-    const payload: Record<string, unknown> = {
+    const payload: Partial<{
+      status: ContactSubmission["status"];
+      response: string;
+      respondedAt: number;
+      respondedBy: string;
+      updatedAt: number;
+    }> = {
       ...updates,
       updatedAt: Date.now(),
     };
