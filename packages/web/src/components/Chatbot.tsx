@@ -45,6 +45,7 @@ export default function Chatbot() {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [autoScroll, setAutoScroll] = useState(true);
   const [showScrollButton, setShowScrollButton] = useState(false);
+  const [shouldPulse, setShouldPulse] = useState(true);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Message persistence keys
@@ -85,6 +86,18 @@ export default function Chatbot() {
       setTimeout(() => scrollToBottom(behavior, retries - 1), 10);
     }
   }, []);
+
+  // Stop attention pulse after initial exposure or when chat opens
+  useEffect(() => {
+    const timeout = setTimeout(() => setShouldPulse(false), 8000);
+    return () => clearTimeout(timeout);
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      setShouldPulse(false);
+    }
+  }, [isOpen]);
 
   // Detect user scroll position to toggle auto-scroll & button
   useEffect(() => {
@@ -272,6 +285,7 @@ export default function Chatbot() {
     if (!isOpen) {
       setIsMinimized(false);
     }
+    setShouldPulse(false);
   };
 
   const toggleMinimize = () => {
@@ -323,7 +337,7 @@ export default function Chatbot() {
           onClick={toggleChat}
           size="lg"
           className={`rounded-full h-14 w-14 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 hover:scale-105 ${
-            !isOpen ? 'animate-pulse' : ''
+            !isOpen && shouldPulse ? 'animate-[pulse_3s_ease-in-out_infinite]' : ''
           }`}
         >
           <AnimatePresence mode="wait">

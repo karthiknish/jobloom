@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CheckCircle, AlertTriangle } from "lucide-react";
 
 interface ExtensionIntegrationProps {
   userId: string;
@@ -124,7 +125,7 @@ export function ExtensionIntegration({ userId }: ExtensionIntegrationProps) {
           <div className="space-y-6">
             <div className="flex items-center p-3 bg-emerald-50 rounded-lg border border-emerald-200">
               <div className="flex-shrink-0">
-                <span className="text-emerald-600 text-xl">✅</span>
+                <CheckCircle className="h-6 w-6 text-emerald-600" />
               </div>
               <div className="ml-3">
                 <p className="text-sm font-medium text-emerald-800">
@@ -178,7 +179,7 @@ export function ExtensionIntegration({ userId }: ExtensionIntegrationProps) {
           <div className="space-y-6">
             <div className="flex items-center p-3 bg-amber-50 rounded-lg border border-amber-200">
               <div className="flex-shrink-0">
-                <span className="text-amber-600 text-xl">⚠</span>
+                <AlertTriangle className="h-6 w-6 text-amber-600" />
               </div>
               <div className="ml-3">
                 <p className="text-sm font-medium text-amber-800">

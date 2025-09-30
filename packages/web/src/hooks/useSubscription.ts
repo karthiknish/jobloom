@@ -97,11 +97,56 @@ export function useSubscription() {
     fetchSubscription();
   }, [fetchSubscription]);
 
-  const hasFeature = useCallback((feature: keyof SubscriptionLimits): boolean => {
-    return state.limits[feature] === true ||
-           (typeof state.limits[feature] === 'number' && state.limits[feature] === -1) ||
-           (Array.isArray(state.limits[feature]) && state.limits[feature].length > 0);
-  }, [state.limits]);
+  const hasFeature = useCallback(
+    (
+      feature: keyof SubscriptionLimits,
+      requiredValue?: boolean | number | string | Array<string | number>
+    ): boolean => {
+      const value = state.limits[feature];
+
+      if (typeof value === "boolean") {
+        return value;
+      }
+
+      if (typeof value === "number") {
+        if (requiredValue !== undefined) {
+          if (typeof requiredValue === "number") {
+            if (requiredValue === -1) {
+              return value === -1;
+            }
+            return value === -1 || value >= requiredValue;
+          }
+
+          if (requiredValue === "unlimited") {
+            return value === -1;
+          }
+        }
+
+        return value === -1 || value > 0;
+      }
+
+      if (Array.isArray(value)) {
+        if (requiredValue !== undefined) {
+          if (Array.isArray(requiredValue)) {
+            return requiredValue.every((item) =>
+              value.includes(typeof item === "string" ? item : String(item))
+            );
+          }
+
+          const lookup =
+            typeof requiredValue === "string"
+              ? requiredValue
+              : String(requiredValue);
+          return value.includes(lookup);
+        }
+
+        return value.length > 0;
+      }
+
+      return false;
+    },
+    [state.limits]
+  );
 
   const canUseFeature = useCallback((feature: keyof SubscriptionLimits, currentUsage?: number): boolean => {
     const limit = state.limits[feature];

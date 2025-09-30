@@ -11,7 +11,7 @@ import {
 import FAQSection from "@/components/custom/FAQSection";
 import TestimonialSection from "@/components/custom/TestimonialSection";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Zap, Shield, Users, TrendingUp, CheckCircle, Sparkles, Target, Eye } from "lucide-react";
+import { ArrowRight, Zap, Shield, Users, TrendingUp, CheckCircle, Sparkles, Target, Eye, List, BarChart3, Calendar } from "lucide-react";
 
 export default async function Home() {
   // TODO: Replace with Firebase server-side auth if needed. For now assume logged-out.
@@ -403,8 +403,8 @@ export default async function Home() {
                         <p className="text-muted-foreground">Google • Mountain View, CA</p>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           <span>💰 $150k - $220k</span>
-                          <span>🏠 Remote OK</span>
-                          <span>📅 Posted 2 days ago</span>
+                          <span>Remote OK</span>
+                          <span>Posted 2 days ago</span>
                         </div>
                       </div>
                     </div>
@@ -418,9 +418,9 @@ export default async function Home() {
                         <h4 className="font-bold text-lg text-foreground">Product Manager</h4>
                         <p className="text-muted-foreground">Microsoft • Seattle, WA</p>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span>💰 $120k - $180k</span>
-                          <span>🏢 Hybrid</span>
-                          <span>📅 Posted 1 week ago</span>
+                          <span>$120k - $180k</span>
+                          <span>Hybrid</span>
+                          <span>Posted 1 week ago</span>
                         </div>
                       </div>
                     </div>
@@ -465,7 +465,7 @@ export default async function Home() {
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-secondary/10 rounded-full flex items-center justify-center">
-                      <span className="text-secondary font-bold">📋</span>
+                      <List className="h-4 w-4 text-secondary" />
                     </div>
                     <div>
                       <div className="font-semibold text-foreground">Smart Sync</div>
@@ -475,7 +475,7 @@ export default async function Home() {
 
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                      <span className="text-primary font-bold">📊</span>
+                      <BarChart3 className="h-4 w-4 text-primary" />
                     </div>
                     <div>
                       <div className="font-semibold text-foreground">Analytics</div>
@@ -487,7 +487,7 @@ export default async function Home() {
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-accent/10 rounded-full flex items-center justify-center">
-                      <span className="text-accent-foreground font-bold">📅</span>
+                      <Calendar className="h-4 w-4 text-accent-foreground" />
                     </div>
                     <div>
                       <div className="font-semibold text-foreground">Scheduling</div>
@@ -546,7 +546,7 @@ export default async function Home() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <span>📅 Interview scheduled for Friday</span>
+                      <span>Interview scheduled for Friday</span>
                       <span className="text-primary">•</span>
                       <span>High priority</span>
                     </div>
@@ -751,7 +751,7 @@ export default async function Home() {
           <div className="mt-20 grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="text-center">
               <div className="w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-                <span className="text-2xl text-white">🚀</span>
+                <Zap className="h-8 w-8 text-white" />
               </div>
               <h3 className="text-xl font-bold text-foreground mb-2 font-playfair">Quick Setup</h3>
               <p className="text-muted-foreground">Install in seconds, start using immediately</p>
@@ -759,7 +759,7 @@ export default async function Home() {
 
             <div className="text-center">
               <div className="w-16 h-16 bg-gradient-to-br from-primary to-accent-foreground rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-                <span className="text-2xl text-white">📱</span>
+                <Eye className="h-8 w-8 text-white" />
               </div>
               <h3 className="text-xl font-bold text-foreground mb-2 font-playfair">Mobile Ready</h3>
               <p className="text-muted-foreground">Access your dashboard from any device</p>
@@ -767,7 +767,7 @@ export default async function Home() {
 
             <div className="text-center">
               <div className="w-16 h-16 bg-gradient-to-br from-secondary to-destructive rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-                <span className="text-2xl text-white">🔄</span>
+                <TrendingUp className="h-8 w-8 text-white" />
               </div>
               <h3 className="text-xl font-bold text-foreground mb-2 font-playfair">Auto Updates</h3>
               <p className="text-muted-foreground">Always stays current with latest job sites</p>

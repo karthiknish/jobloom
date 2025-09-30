@@ -21,8 +21,11 @@ async function getIdToken(): Promise<string | null> {
     const auth = getAuthInstance();
     const user = auth.currentUser;
     if (!user) return null;
-    return await user.getIdToken();
-  } catch {
+    
+    // Force token refresh to ensure we have a valid token
+    return await user.getIdToken(true);
+  } catch (error) {
+    console.warn('Failed to get ID token:', error);
     return null;
   }
 }
@@ -73,9 +76,10 @@ export async function apiRequest<T = any>(opts: ApiOptions): Promise<T> {
 
   if (needsAuth) {
     const token = await getIdToken();
-    if (token) {
-      finalHeaders['Authorization'] = `Bearer ${token}`;
+    if (!token) {
+      throw new Error('Authentication required. Please sign in to the extension.');
     }
+    finalHeaders['Authorization'] = `Bearer ${token}`;
   }
 
   const res = await fetch(url, {
@@ -85,7 +89,18 @@ export async function apiRequest<T = any>(opts: ApiOptions): Promise<T> {
 
   if (!res.ok) {
     const text = await res.text();
-    const error = new Error(`API ${res.status} ${res.statusText}: ${text}`);
+    let errorMessage = `API ${res.status} ${res.statusText}: ${text}`;
+    
+    // Provide better error messages for common authentication issues
+    if (res.status === 401) {
+      errorMessage = 'Authentication failed. Please sign in again.';
+    } else if (res.status === 403) {
+      errorMessage = 'Permission denied. You do not have access to this resource.';
+    } else if (res.status === 429) {
+      errorMessage = 'Too many requests. Please try again later.';
+    }
+    
+    const error = new Error(errorMessage);
     (error as any).statusCode = res.status;
     throw error;
   }

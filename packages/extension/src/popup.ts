@@ -9,6 +9,7 @@ import {
   onAuthStateChanged,
   signOut as firebaseSignOut,
 } from "firebase/auth";
+import { EXT_COLORS } from "./theme";
 
 // Helper function to create SVG strings from Lucide icons
 function createSVGString(iconName: string, size: number = 16): string {
@@ -122,7 +123,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (!isAuthed) {
       authStatus.className = "auth-status unauthenticated";
-      statusDot.style.background = "#f59e0b";
+      statusDot.style.background = EXT_COLORS.warning;
       statusText.textContent = "Not signed in";
       mainTabs.forEach((t) => ((t as HTMLElement).style.display = "none"));
       if (authTab) authTab.style.display = "flex";
@@ -131,7 +132,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (formContainer) formContainer.style.display = "flex";
     } else {
       authStatus.className = "auth-status authenticated";
-      statusDot.style.background = "#10b981";
+      statusDot.style.background = EXT_COLORS.success;
       statusText.textContent = "Signed in";
       const allTabs = document.querySelectorAll(".nav-tab");
       allTabs.forEach((t) => ((t as HTMLElement).style.display = "flex"));
@@ -281,7 +282,7 @@ document.addEventListener("DOMContentLoaded", () => {
               "clipboardPlus",
               48
             )}</div>
-            <h3 style="margin: 0 0 8px 0; color: #374151;">No jobs tracked yet</h3>
+            <h3 style="margin: 0 0 8px 0; color: var(--muted-foreground);">No jobs tracked yet</h3>
             <p style="margin: 0; font-size: 14px;">Jobs you add to your board will appear here</p>
             <button class="action-btn" style="margin-top: 16px; padding: 8px 16px; font-size: 12px;" onclick="switchToDashboard()">
               <div class="action-icon primary">${createSVGString(
@@ -324,15 +325,15 @@ document.addEventListener("DOMContentLoaded", () => {
       jobList.innerHTML = filteredJobs
         .map((job) => {
           const statusColors: Record<string, string> = {
-            interested: "#6b7280",
-            applied: "#3b82f6",
-            interviewing: "#f59e0b",
-            offered: "#10b981",
-            rejected: "#ef4444",
-            withdrawn: "#8b5cf6",
+            interested: EXT_COLORS.muted,
+            applied: EXT_COLORS.info,
+            interviewing: EXT_COLORS.warning,
+            offered: EXT_COLORS.success,
+            rejected: EXT_COLORS.destructive,
+            withdrawn: "EXT_COLORS.violet",
           };
 
-          const statusColor = statusColors[job.status] || "#6b7280";
+          const statusColor = statusColors[job.status] || EXT_COLORS.muted;
 
           return `
           <div class="job-item" data-status="${job.status}" data-sponsored="${
@@ -369,7 +370,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 ?.map((x) => parseInt(x, 16))
                 .join(", ")}, 0.1); color: ${statusColor};">
                 ${
-                  job.status === "interested" ? "⭐" : getStatusIcon(job.status)
+                  job.status === "interested" ? "Star" : getStatusIcon(job.status)
                 } ${job.status.charAt(0).toUpperCase() + job.status.slice(1)}
               </span>
               ${
@@ -400,7 +401,7 @@ document.addEventListener("DOMContentLoaded", () => {
             ${
               job.notes
                 ? `
-              <div style="margin: 8px 0; padding: 8px 12px; background: #f9fafb; border-radius: 6px; font-size: 12px; color: #374151;">
+              <div style="margin: 8px 0; padding: 8px 12px; background: EXT_COLORS.light; border-radius: 6px; font-size: 12px; color: EXT_COLORS.slate;">
                 <strong>Notes:</strong> ${job.notes}
               </div>
             `
@@ -469,9 +470,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const icons: Record<string, string> = {
       applied: createSVGString("fileText", 12),
       interviewing: createSVGString("target", 12),
-      offered: "⭐",
+      offered: createSVGString("star", 12),
       rejected: createSVGString("xCircle", 12),
-      withdrawn: "❌",
+      withdrawn: createSVGString("x", 12),
     };
     return icons[status] || createSVGString("clipboardPlus", 12);
   }
@@ -779,6 +780,8 @@ async function checkJobSponsor(jobId: string, companyName: string) {
       }
     } catch (e: any) {
       console.warn("Sponsor lookup error", e);
+      
+      // Handle different error types appropriately
       if (e?.rateLimitInfo) {
         const resetIn = Math.ceil((e.rateLimitInfo.resetIn || 0) / 1000);
         showToast(
@@ -788,7 +791,25 @@ async function checkJobSponsor(jobId: string, companyName: string) {
         sponsorStatus.textContent = `Rate Limited (${resetIn}s)`;
         sponsorStatus.className = "sponsor-status rate-limited";
         return;
+      } else if (e?.statusCode === 401) {
+        showToast(
+          "Please sign in to check sponsor status",
+          { type: "error", duration: 5000 }
+        );
+        sponsorStatus.textContent = "Sign In Required";
+        sponsorStatus.className = "sponsor-status not-licensed";
+        return;
+      } else if (e?.statusCode === 403) {
+        showToast(
+          "Permission denied. You don't have access to sponsor lookup.",
+          { type: "error", duration: 5000 }
+        );
+        sponsorStatus.textContent = "Access Denied";
+        sponsorStatus.className = "sponsor-status not-licensed";
+        return;
       }
+      
+      // For other errors, continue with null result
     }
 
     if (result) {
@@ -818,9 +839,10 @@ async function checkJobSponsor(jobId: string, companyName: string) {
       );
     }
   } catch (error) {
+    console.error("Unexpected error in sponsor check:", error);
     sponsorStatus.textContent = "Error";
     sponsorStatus.className = "sponsor-status not-licensed";
-    showToast("Unable to check sponsor status", {
+    showToast("Unable to check sponsor status due to an unexpected error", {
       type: "error",
     });
   } finally {

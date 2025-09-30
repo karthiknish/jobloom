@@ -2,128 +2,64 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import toast from 'react-hot-toast';
-
-interface RateLimitState {
-  isLimited: boolean;
-  remaining: number;
-  resetTime: number;
-  lastRequest: number;
-}
+import { ClientRateLimiter } from '../lib/rateLimiter';
 
 interface RateLimitConfig {
-  maxRequests: number;
-  windowMs: number;
   endpoint: string;
 }
 
 const DEFAULT_CONFIG: RateLimitConfig = {
-  maxRequests: 10,
-  windowMs: 60000, // 1 minute
   endpoint: 'default'
 };
 
 export function useRateLimit(config: Partial<RateLimitConfig> = {}) {
   const finalConfig = useMemo(() => ({ ...DEFAULT_CONFIG, ...config }), [config]);
-  const storageKey = `rateLimit_${finalConfig.endpoint}`;
   
-  const [rateLimitState, setRateLimitState] = useState<RateLimitState>(() => {
-    if (typeof window === 'undefined') return {
-      isLimited: false,
-      remaining: finalConfig.maxRequests,
-      resetTime: 0,
-      lastRequest: 0
-    };
-
-    const stored = localStorage.getItem(storageKey);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      const now = Date.now();
-      
-      // Check if window has expired
-      if (now - parsed.lastRequest > finalConfig.windowMs) {
-        return {
-          isLimited: false,
-          remaining: finalConfig.maxRequests,
-          resetTime: now + finalConfig.windowMs,
-          lastRequest: now
-        };
-      }
-      
-      return parsed;
+  // Create a client rate limiter instance for this endpoint
+  const [rateLimiter] = useState(() => new ClientRateLimiter(finalConfig.endpoint));
+  
+  const [rateLimitState, setRateLimitState] = useState(() => {
+    if (typeof window === 'undefined') {
+      return {
+        isLimited: false,
+        remaining: 10,
+        resetTime: 0
+      };
     }
     
-    return {
-      isLimited: false,
-      remaining: finalConfig.maxRequests,
-      resetTime: Date.now() + finalConfig.windowMs,
-      lastRequest: 0
-    };
+    return rateLimiter.getStatus();
   });
 
   const checkRateLimit = useCallback((): boolean => {
-    const now = Date.now();
+    if (typeof window === 'undefined') return true;
     
-    // Reset if window has passed
-    if (now - rateLimitState.lastRequest > finalConfig.windowMs) {
-      const newState = {
-        isLimited: false,
-        remaining: finalConfig.maxRequests - 1,
-        resetTime: now + finalConfig.windowMs,
-        lastRequest: now
-      };
-      setRateLimitState(newState);
-      localStorage.setItem(storageKey, JSON.stringify(newState));
-      return true;
-    }
+    const result = rateLimiter.checkLimit();
+    setRateLimitState(rateLimiter.getStatus());
     
-    // Check if we have remaining requests
-    if (rateLimitState.remaining <= 0) {
-      const timeUntilReset = rateLimitState.resetTime - now;
-      toast.error(`Rate limit exceeded. Try again in ${Math.ceil(timeUntilReset / 1000)} seconds.`);
+    if (result.isLimited) {
+      const timeUntilReset = Math.ceil(result.resetTime / 1000);
+      toast.error(`${result.errorMsg} Try again in ${timeUntilReset} seconds.`);
       return false;
     }
     
-    // Decrement remaining requests
-    const newState = {
-      ...rateLimitState,
-      remaining: rateLimitState.remaining - 1,
-      lastRequest: now,
-      isLimited: rateLimitState.remaining - 1 <= 0
-    };
-    
-    setRateLimitState(newState);
-    localStorage.setItem(storageKey, JSON.stringify(newState));
-    
     return true;
-  }, [rateLimitState, finalConfig.maxRequests, finalConfig.windowMs, storageKey]);
+  }, [rateLimiter]);
 
   const getRemainingRequests = useCallback((): number => {
-    const now = Date.now();
-    
-    // Reset if window has passed
-    if (now - rateLimitState.lastRequest > finalConfig.windowMs) {
-      return finalConfig.maxRequests;
-    }
-    
-    return rateLimitState.remaining;
-  }, [rateLimitState, finalConfig.maxRequests, finalConfig.windowMs]);
+    if (typeof window === 'undefined') return 10;
+    return rateLimiter.getStatus().remaining;
+  }, [rateLimiter]);
 
   const getTimeUntilReset = useCallback((): number => {
-    const now = Date.now();
-    return Math.max(0, rateLimitState.resetTime - now);
-  }, [rateLimitState]);
+    if (typeof window === 'undefined') return 0;
+    return rateLimiter.getStatus().resetTime;
+  }, [rateLimiter]);
 
   const resetRateLimit = useCallback(() => {
-    const now = Date.now();
-    const newState = {
-      isLimited: false,
-      remaining: finalConfig.maxRequests,
-      resetTime: now + finalConfig.windowMs,
-      lastRequest: 0
-    };
-    setRateLimitState(newState);
-    localStorage.setItem(storageKey, JSON.stringify(newState));
-  }, [finalConfig.maxRequests, finalConfig.windowMs, storageKey]);
+    if (typeof window === 'undefined') return;
+    rateLimiter.resetLimit();
+    setRateLimitState(rateLimiter.getStatus());
+  }, [rateLimiter]);
 
   return {
     checkRateLimit,

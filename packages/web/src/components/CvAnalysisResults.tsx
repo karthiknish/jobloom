@@ -1,7 +1,7 @@
 "use client";
 
 import { format } from "date-fns";
-import { AlertTriangle, Rocket, Lightbulb } from "lucide-react";
+import { AlertTriangle, Rocket, Lightbulb, CheckCircle, XCircle } from "lucide-react";
 import type { CvAnalysis } from "../types/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -127,7 +127,7 @@ export function CvAnalysisResults({ analysis }: CvAnalysisResultsProps) {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
-              <span className="text-green-500 mr-2">✅</span>
+              <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
               Strengths
             </CardTitle>
           </CardHeader>
@@ -467,7 +467,11 @@ export function CvAnalysisResults({ analysis }: CvAnalysisResultsProps) {
                         : "text-red-500"
                     }`}
                   >
-                    {analysis.sectionAnalysis.hasSummary ? "✅" : "❌"}
+                    {analysis.sectionAnalysis.hasSummary ? (
+                      <CheckCircle className="h-4 w-4" />
+                    ) : (
+                      <XCircle className="h-4 w-4" />
+                    )}
                   </span>
                   <span className="text-sm">Professional Summary</span>
                 </div>
@@ -479,7 +483,11 @@ export function CvAnalysisResults({ analysis }: CvAnalysisResultsProps) {
                         : "text-red-500"
                     }`}
                   >
-                    {analysis.sectionAnalysis.hasExperience ? "✅" : "❌"}
+                    {analysis.sectionAnalysis.hasExperience ? (
+                      <CheckCircle className="h-4 w-4" />
+                    ) : (
+                      <XCircle className="h-4 w-4" />
+                    )}
                   </span>
                   <span className="text-sm">Work Experience</span>
                 </div>
@@ -491,7 +499,11 @@ export function CvAnalysisResults({ analysis }: CvAnalysisResultsProps) {
                         : "text-red-500"
                     }`}
                   >
-                    {analysis.sectionAnalysis.hasEducation ? "✅" : "❌"}
+                    {analysis.sectionAnalysis.hasEducation ? (
+                      <CheckCircle className="h-4 w-4" />
+                    ) : (
+                      <XCircle className="h-4 w-4" />
+                    )}
                   </span>
                   <span className="text-sm">Education</span>
                 </div>
@@ -505,7 +517,11 @@ export function CvAnalysisResults({ analysis }: CvAnalysisResultsProps) {
                         : "text-red-500"
                     }`}
                   >
-                    {analysis.sectionAnalysis.hasSkills ? "✅" : "❌"}
+                    {analysis.sectionAnalysis.hasSkills ? (
+                      <CheckCircle className="h-4 w-4" />
+                    ) : (
+                      <XCircle className="h-4 w-4" />
+                    )}
                   </span>
                   <span className="text-sm">Skills</span>
                 </div>
@@ -517,7 +533,11 @@ export function CvAnalysisResults({ analysis }: CvAnalysisResultsProps) {
                         : "text-red-500"
                     }`}
                   >
-                    {analysis.sectionAnalysis.hasContact ? "✅" : "❌"}
+                    {analysis.sectionAnalysis.hasContact ? (
+                      <CheckCircle className="h-4 w-4" />
+                    ) : (
+                      <XCircle className="h-4 w-4" />
+                    )}
                   </span>
                   <span className="text-sm">Contact Information</span>
                 </div>

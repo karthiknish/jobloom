@@ -7,7 +7,6 @@ const db: Firestore = getAdminDb();
 
 interface CheckoutRequestBody {
   plan: "premium";
-  billingCycle?: "monthly" | "yearly";
 }
 
 export async function POST(request: NextRequest) {
@@ -27,7 +26,6 @@ export async function POST(request: NextRequest) {
     const userId = decodedToken.uid;
     const body = (await request.json()) as CheckoutRequestBody;
     const plan = body.plan;
-    const billingCycle = body.billingCycle ?? "monthly";
 
     if (plan !== "premium") {
       return NextResponse.json(
@@ -43,7 +41,7 @@ export async function POST(request: NextRequest) {
       "http://localhost:3000";
 
     const stripe = getStripeClient();
-    const priceId = getPriceIdForPlan(plan, billingCycle);
+    const priceId = getPriceIdForPlan(plan);
 
     const userRef = db.collection("users").doc(userId);
     const userDoc = await userRef.get();
@@ -92,20 +90,17 @@ export async function POST(request: NextRequest) {
         metadata: {
           userId,
           plan,
-          billingCycle,
         },
       },
       metadata: {
         userId,
         plan,
-        billingCycle,
       },
     });
 
     await db.collection("subscriptionCheckouts").doc(session.id).set({
       userId,
       plan,
-      billingCycle,
       stripeCustomerId,
       createdAt: Timestamp.now(),
       status: "created",

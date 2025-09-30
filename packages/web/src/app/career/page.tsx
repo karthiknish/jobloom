@@ -95,7 +95,7 @@ const careerStats = {
       title: "Offer Received",
       description: "Received your first job offer",
       date: "2024-02-20",
-      icon: "🎉",
+      icon: "award",
     },
     {
       id: "3",

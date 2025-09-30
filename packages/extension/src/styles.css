@@ -1,5 +1,8 @@
 /* Hireall Extension Styles - Enhanced UI with Site Theme Match */
 
+/* Import centralized animations */
+@import "./animations.css";
+
 /* Enhanced Job Badges */
 .hireall-enhanced-badge {
   pointer-events: none;
@@ -29,36 +32,15 @@
   pointer-events: auto;
 }
 
-/* Inline Toast Animations */
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateX(-50%) translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
-  to {
-    opacity: 0;
-    transform: translateX(-50%) translateY(-10px);
-  }
-}
-
+/* Inline Toast Animations - Using centralized animations */
 .hireall-inline-toast {
-  animation: slideDown 0.3s ease-out;
+  animation: animate-slide-in-down 300ms cubic-bezier(0, 0, 0.2, 1);
 }
 
-/* Enhanced Job Highlighting */
+/* Enhanced Job Highlighting - Using centralized animations */
 .hireall-highlighted {
-  transition: all 0.3s ease;
+  transition: transform 300ms cubic-bezier(0, 0, 0.2, 1),
+              box-shadow 300ms cubic-bezier(0, 0, 0.2, 1);
 }
 
 .hireall-highlighted:hover {

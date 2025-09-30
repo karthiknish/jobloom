@@ -24,8 +24,8 @@ export async function GET(request: NextRequest) {
         title: "",
         description: "",
         theme: {
-          primaryColor: "#3b82f6",
-          secondaryColor: "#64748b",
+          primaryColor: "var(--primary)",
+          secondaryColor: "var(--secondary)",
           fontFamily: "Inter",
           fontSize: "medium",
           spacing: "normal",

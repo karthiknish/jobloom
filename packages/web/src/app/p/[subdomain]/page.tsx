@@ -40,8 +40,8 @@ export default async function PublicPortfolioPage({ params }: Props) {
       title: data.resumeData?.personalInfo?.fullName || 'Portfolio',
       description: data.resumeData?.personalInfo?.summary || '',
       theme: {
-        primaryColor: "#3b82f6",
-        secondaryColor: "#64748b",
+        primaryColor: "var(--primary)",
+        secondaryColor: "var(--secondary)",
         fontFamily: "Inter",
         fontSize: "medium",
         spacing: "normal",
@@ -96,8 +96,8 @@ export default async function PublicPortfolioPage({ params }: Props) {
 
   const template = portfolioData.templateId || 'minimalist';
   const theme = portfolioData.theme || {
-    primaryColor: "#3b82f6",
-    secondaryColor: "#64748b",
+    primaryColor: "var(--primary)",
+    secondaryColor: "var(--secondary)",
     fontFamily: "Inter",
     fontSize: "medium",
     spacing: "normal",

@@ -202,7 +202,7 @@ export default function ConditionsPage() {
                     <div className="ml-11 space-y-4">
                       <div>
                         <h3 className="text-lg font-medium mb-2 text-green-700">
-                          ✅ Acceptable Content
+                          Acceptable Content
                         </h3>
                         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                           <ul className="text-green-800 space-y-1">
@@ -219,7 +219,7 @@ export default function ConditionsPage() {
 
                       <div>
                         <h3 className="text-lg font-medium mb-2 text-red-700">
-                          ❌ Prohibited Content
+                          Prohibited Content
                         </h3>
                         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                           <ul className="text-red-800 space-y-1">

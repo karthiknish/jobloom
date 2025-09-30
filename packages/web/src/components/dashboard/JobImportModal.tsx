@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { showError, showSuccess, showWarning } from "@/components/ui/Toast";
+import { AlertTriangle } from "lucide-react";
 
 interface JobImportModalProps {
   isOpen: boolean;
@@ -321,7 +322,7 @@ export function JobImportModal({
             <div className="bg-amber-50 border border-amber-200 rounded-md p-4">
               <div className="flex">
                 <div className="flex-shrink-0">
-                  <span className="text-amber-500">⚠</span>
+                  <AlertTriangle className="h-5 w-5 text-amber-500" />
                 </div>
                 <div className="ml-3">
                   <h3 className="text-sm font-medium text-amber-800">

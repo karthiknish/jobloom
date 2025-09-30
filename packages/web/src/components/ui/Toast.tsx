@@ -51,38 +51,38 @@ export function AppToaster() {
       toastOptions={{
         duration: 4000,
         style: {
-          border: "1px solid var(--color-border, #e4e4e7)",
-          background: "var(--color-popover, #fff)",
-          color: "var(--color-popover-foreground, #18181b)",
+          border: "1px solid var(--border)",
+          background: "var(--popover)",
+          color: "var(--popover-foreground)",
           padding: "16px",
           borderRadius: "8px",
           boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
         },
         success: {
           iconTheme: {
-            primary: "#16a34a",
-            secondary: "#fff"
+            primary: "var(--success)",
+            secondary: "var(--card)"
           },
           style: {
-            borderLeft: "4px solid #16a34a",
+            borderLeft: "4px solid var(--success)",
           },
         },
         error: {
           iconTheme: {
-            primary: "#ef4444",
-            secondary: "#fff"
+            primary: "var(--destructive)",
+            secondary: "var(--card)"
           },
           style: {
-            borderLeft: "4px solid #ef4444",
+            borderLeft: "4px solid var(--destructive)",
           },
         },
         loading: {
           iconTheme: {
-            primary: "#3b82f6",
-            secondary: "#fff"
+            primary: "var(--info)",
+            secondary: "var(--card)"
           },
           style: {
-            borderLeft: "4px solid #3b82f6",
+            borderLeft: "4px solid var(--info)",
           },
         },
       }}
@@ -137,7 +137,10 @@ export const showWarning = (message: string, description?: string) =>
 export const showLoading = (message: string) =>
   toast.loading(buildContent(message), {
     icon: (
-      <div className="h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+      <div
+        className="h-5 w-5 border-2 border-t-transparent rounded-full animate-spin"
+        style={{ borderColor: "var(--info)", borderTopColor: "transparent" }}
+      />
     ),
   });
 

@@ -120,7 +120,7 @@ export function UpgradePrompt({ feature }: UpgradePromptProps) {
               title: "Performance Insights",
               description:
                 "AI-powered recommendations to improve your job search strategy",
-              icon: "💡",
+              icon: "Lightbulb",
             },
           ],
         };
@@ -146,7 +146,7 @@ export function UpgradePrompt({ feature }: UpgradePromptProps) {
               title: "Professional Templates",
               description:
                 "Access premium templates for reports and presentations",
-              icon: "✨",
+              icon: "Sparkles",
             },
           ],
         };
@@ -184,7 +184,7 @@ export function UpgradePrompt({ feature }: UpgradePromptProps) {
               title: "Custom Alerts",
               description:
                 "Create personalized job alerts for specific companies and roles",
-              icon: "🔔",
+    icon: "Bell",
             },
             {
               title: "Smart Filtering",
@@ -284,6 +284,7 @@ interface FeatureGateProps {
   feature?: string;
   fallback?: React.ReactNode;
   showUpgradePrompt?: boolean;
+  requires?: boolean | number | string | Array<string | number>;
 }
 
 export function FeatureGate({
@@ -291,8 +292,9 @@ export function FeatureGate({
   feature,
   fallback,
   showUpgradePrompt = true,
+  requires,
 }: FeatureGateProps) {
-  const { hasFeature, plan, isLoading } = useSubscription();
+  const { hasFeature, isLoading } = useSubscription();
 
   // Show loading state while checking subscription
   if (isLoading) {
@@ -307,7 +309,8 @@ export function FeatureGate({
   // Check if feature is available
   if (feature) {
     const isFeatureAvailable = hasFeature(
-      feature as keyof typeof SUBSCRIPTION_LIMITS.free
+      feature as keyof typeof SUBSCRIPTION_LIMITS.free,
+      requires
     );
 
     if (!isFeatureAvailable) {

@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { dashboardApi, type Application } from "@/utils/api/dashboard";
 import { format } from "date-fns";
 import { showSuccess, showError } from "@/components/ui/Toast";
+import { CheckCircle } from "lucide-react";
 
 export function UpcomingFollowUps({ applications, onChanged }: { applications: Application[]; onChanged?: () => void }) {
   const now = Date.now();
@@ -46,7 +47,7 @@ export function UpcomingFollowUps({ applications, onChanged }: { applications: A
           </ul>
         ) : (
           <div className="text-center py-8">
-            <div className="text-muted-foreground text-4xl mb-4">✅</div>
+            <CheckCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-sm font-medium text-foreground mb-2">
               All caught up!
             </h3>

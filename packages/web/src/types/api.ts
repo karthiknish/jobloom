@@ -151,6 +151,7 @@ export interface SubscriptionLimits {
   prioritySupport: boolean;
   customAlerts: boolean;
   teamCollaboration: boolean;
+  apiAccess: boolean;
   apiRateLimit: number; // requests per minute
 }
 
@@ -166,7 +167,7 @@ export interface Subscription {
   updatedAt: number | null;
   stripeSubscriptionId?: string;
   stripeCustomerId?: string;
-  billingCycle?: "monthly" | "yearly" | null;
+  billingCycle?: "monthly" | null;
   price?: number | null;
   currency?: string | null;
   customerPortalUrl?: string | null;
@@ -181,6 +182,7 @@ export const SUBSCRIPTION_LIMITS: Record<SubscriptionPlan, SubscriptionLimits> =
     prioritySupport: false,
     customAlerts: false,
     teamCollaboration: false,
+    apiAccess: false,
     apiRateLimit: 10,
   },
   premium: {
@@ -191,6 +193,7 @@ export const SUBSCRIPTION_LIMITS: Record<SubscriptionPlan, SubscriptionLimits> =
     prioritySupport: true,
     customAlerts: true,
     teamCollaboration: true,
+    apiAccess: true,
     apiRateLimit: 200,
   },
 };

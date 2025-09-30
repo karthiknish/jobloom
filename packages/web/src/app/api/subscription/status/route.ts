@@ -2,26 +2,73 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyIdToken, getAdminDb } from "@/firebase/admin";
 import * as admin from "firebase-admin";
 import { SUBSCRIPTION_LIMITS, Subscription, SubscriptionPlan } from "@/types/api";
+import { ValidationError, DatabaseError } from "@/lib/subscriptions";
+import { checkUserRateLimit } from "@/lib/rateLimiter";
 
 // Get Firestore instance using the centralized admin initialization
 const db = getAdminDb();
 
+// Input validation
+function validateAuthorizationHeader(authHeader: string | null): { isValid: boolean; token?: string; error?: string } {
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return { isValid: false, error: "Missing or invalid authorization header" };
+  }
+  
+  const token = authHeader.substring(7);
+  if (!token || token.trim().length === 0) {
+    return { isValid: false, error: "Empty token" };
+  }
+  
+  return { isValid: true, token };
+}
+
+// Security headers
+function setSecurityHeaders(response: NextResponse): NextResponse {
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('X-Frame-Options', 'DENY');
+  response.headers.set('X-XSS-Protection', '1; mode=block');
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  return response;
+}
+
 // GET /api/subscription/status - Get current subscription status
 export async function GET(request: NextRequest) {
   try {
+    // Validate authorization header
     const authHeader = request.headers.get("authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const authValidation = validateAuthorizationHeader(authHeader);
+    
+    if (!authValidation.isValid) {
+      const response = NextResponse.json({ error: authValidation.error }, { status: 401 });
+      return setSecurityHeaders(response);
     }
 
-    const token = authHeader.substring(7);
+    const token = authValidation.token!;
     const decodedToken = await verifyIdToken(token);
 
     if (!decodedToken) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+      const response = NextResponse.json({ error: "Invalid token" }, { status: 401 });
+      return setSecurityHeaders(response);
     }
 
     const userId = decodedToken.uid;
+    
+    // Apply rate limiting
+    const rateLimitResult = checkUserRateLimit(userId, 'subscription-status');
+    if (rateLimitResult.isLimited) {
+      const response = NextResponse.json({ 
+        error: rateLimitResult.errorMsg,
+        resetTime: rateLimitResult.resetTime
+      }, { 
+        status: 429,
+        headers: {
+          'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+          'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+          'X-RateLimit-Reset': rateLimitResult.resetTime.toString()
+        }
+      });
+      return setSecurityHeaders(response);
+    }
 
     // Get user record
     const userDoc = await db.collection("users").doc(userId).get();
@@ -101,7 +148,7 @@ export async function GET(request: NextRequest) {
     const cancelUrl = subscription ? "/api/subscription/cancel" : null;
     const resumeUrl = subscription?.cancelAtPeriodEnd ? "/api/subscription/resume" : null;
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       subscription,
       plan,
       limits,
@@ -113,11 +160,26 @@ export async function GET(request: NextRequest) {
         resumeUrl,
       },
     });
+    
+    return setSecurityHeaders(response);
+    
   } catch (error) {
     console.error("Error fetching subscription status:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    
+    let statusCode = 500;
+    let errorMessage = "Internal server error";
+    
+    if (error instanceof ValidationError) {
+      statusCode = 400;
+      errorMessage = error.message;
+    } else if (error instanceof DatabaseError) {
+      statusCode = 500;
+      errorMessage = "Database operation failed";
+    } else if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    
+    const response = NextResponse.json({ error: errorMessage }, { status: statusCode });
+    return setSecurityHeaders(response);
   }
 }

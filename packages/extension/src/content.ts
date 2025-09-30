@@ -18,7 +18,8 @@ import {
   Sparkles,
   Building2,
 } from "lucide-react";
-import { sponsorBatchLimiter, checkRateLimit } from "./rateLimiter";
+import { sponsorBatchLimiter } from "./rateLimiter";
+import { EXT_COLORS } from "./theme";
 // --- Sponsorship lookup cache & concurrency limiter utilities ---
 const sponsorshipCache: Map<string, any> = new Map();
 const sponsorshipInFlight: Map<string, Promise<any>> = new Map();
@@ -29,32 +30,32 @@ async function runWithSponsorLimit<T>(fn: () => Promise<T>): Promise<T> {
 }
 
 async function fetchSponsorRecord(company: string): Promise<any | null> {
-  const key = company.trim().toLowerCase();
-  if (!key) return null;
+  const key = company.toLowerCase().trim();
   if (sponsorshipCache.has(key)) return sponsorshipCache.get(key);
   if (sponsorshipInFlight.has(key)) return sponsorshipInFlight.get(key);
 
   const p = runWithSponsorLimit(async () => {
     try {
-      const data = await (
-        await import("./apiClient")
-      ).get<any>("/api/app/sponsorship/companies", { q: company, limit: 1 });
-      const rec =
-        data && data.results && data.results.length > 0
-          ? data.results[0]
-          : null;
+      const { get } = await import("./apiClient");
+      const data = await get<any>("/api/app/sponsorship/companies", { q: company, limit: 1 });
+      const rec = data.results?.[0] || null;
       if (rec) sponsorshipCache.set(key, rec);
       return rec;
     } catch (e: any) {
       console.warn("Sponsor lookup failed", e);
       if (e?.rateLimitInfo) {
         console.warn(`Rate limit hit for sponsor lookup: ${e.rateLimitInfo.remaining} remaining, resets in ${e.rateLimitInfo.resetIn}ms`);
+      } else if (e?.statusCode === 401) {
+        console.warn(`Authentication failed for sponsor lookup: ${e.message}`);
+      } else if (e?.statusCode === 403) {
+        console.warn(`Permission denied for sponsor lookup: ${e.message}`);
       }
       return null;
     } finally {
       sponsorshipInFlight.delete(key);
     }
   });
+
   sponsorshipInFlight.set(key, p);
   return p;
 }
@@ -71,12 +72,6 @@ interface JobData {
     currency?: string;
     period?: string;
   };
-  skills?: string[];
-  requirements?: string[];
-  benefits?: string[];
-  jobType?: string;
-  experienceLevel?: string;
-  remoteWork?: boolean;
   companySize?: string;
   industry?: string;
   postedDate?: string;
@@ -84,9 +79,20 @@ interface JobData {
   isSponsored: boolean;
   isRecruitmentAgency?: boolean;
   sponsorshipType?: string;
+  sponsorshipInfo?: {
+    isSponsored: boolean;
+    sponsorshipType?: string;
+    source?: string;
+  };
   dateFound: string;
   source: string;
   jobId?: string;
+  jobType?: string;
+  skills?: string[];
+  requirements?: string[];
+  remoteWork?: boolean;
+  experienceLevel?: string;
+  benefits?: string[];
   metadata?: {
     remote: boolean;
     seniority: string | undefined;
@@ -151,6 +157,18 @@ function createIcon(
   return icon;
 }
 
+// Utility: convert #rrggbb to "r, g, b" for rgba usage
+function hexToRgb(hex: string): string {
+  const cleaned = hex.replace('#', '');
+  // support shorthand '#fff'
+  const full = cleaned.length === 3 ? cleaned.split('').map((c) => c + c).join('') : cleaned;
+  const bigint = parseInt(full, 16);
+  const r = (bigint >> 16) & 255;
+  const g = (bigint >> 8) & 255;
+  const b = bigint & 255;
+  return `${r}, ${g}, ${b}`;
+}
+
 class JobTracker {
   private isHighlightMode = false;
   // Removed people search mode state
@@ -209,8 +227,8 @@ class JobTracker {
       top: 140px;
       right: 20px;
       z-index: 10000;
-      background: #b86e37;
-      color: #ffffff;
+      background: ${EXT_COLORS.brown};
+      color: ${EXT_COLORS.cardForeground};
       border: none;
       padding: 12px 16px;
       border-radius: 8px;
@@ -226,27 +244,10 @@ class JobTracker {
         button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${
           createIcon(Target, 16).outerHTML
         } Check Sponsored Jobs</span>`;
-        button.style.background = "#b86e37";
+        button.style.background = EXT_COLORS.brown;
         this.isHighlightMode = false;
       } else {
-        // Check rate limit before proceeding
-        if (!(await this.checkRateLimit())) {
-          const timeUntilReset =
-            this.rateLimitWindow - (Date.now() - this.lastRequestTime);
-          button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${
-            createIcon(Clock, 16).outerHTML
-          } Rate limited (${Math.ceil(timeUntilReset / 1000)}s)</span>`;
-          button.style.background = "#f59e0b";
 
-          // Reset button after rate limit expires
-          setTimeout(() => {
-            button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${
-              createIcon(Target, 16).outerHTML
-            } Check Sponsored Jobs</span>`;
-            button.style.background = "#4f46e5";
-          }, timeUntilReset);
-          return;
-        }
 
         button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${
           createIcon(Clock, 16).outerHTML
@@ -258,21 +259,10 @@ class JobTracker {
           button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${
             createIcon(X, 16).outerHTML
           } Clear Highlights</span>`;
-          button.style.background = "#ef4444";
+          button.style.background = EXT_COLORS.destructive;
           this.isHighlightMode = true;
-        } catch (error) {
-          console.error("Error checking sponsored jobs:", error);
-          button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${
-            createIcon(XCircle, 16).outerHTML
-          } Error occurred</span>`;
-          button.style.background = "#ef4444";
-
-          // Reset button after error
           setTimeout(() => {
-            button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${
-              createIcon(Target, 16).outerHTML
-            } Check Sponsored Jobs</span>`;
-            button.style.background = "#4f46e5";
+            button.style.background = EXT_COLORS.indigo;
           }, 3000);
         } finally {
           button.disabled = false;
@@ -294,8 +284,8 @@ class JobTracker {
       top: 80px;
       right: 20px;
       z-index: 10000;
-      background: #e6c9a8;
-      color: #18181b;
+      background: ${EXT_COLORS.beige};
+      color: ${EXT_COLORS.cardForeground};
       border: none;
       padding: 12px 16px;
       border-radius: 8px;
@@ -317,13 +307,13 @@ class JobTracker {
         button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${
           createIcon(CheckCircle, 16).outerHTML
         } Filled!</span>`;
-        button.style.background = "#b86e37";
+        button.style.background = EXT_COLORS.brown;
 
         setTimeout(() => {
           button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${
             createIcon(FileText, 16).outerHTML
           } Autofill Application</span>`;
-          button.style.background = "#e6c9a8";
+          button.style.background = EXT_COLORS.beige;
           button.disabled = false;
         }, 3000);
       } catch (error) {
@@ -331,13 +321,13 @@ class JobTracker {
         button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${
           createIcon(XCircle, 16).outerHTML
         } Error</span>`;
-        button.style.background = "#ef4444";
+        button.style.background = EXT_COLORS.destructive;
 
         setTimeout(() => {
           button.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">${
             createIcon(FileText, 16).outerHTML
           } Autofill Application</span>`;
-          button.style.background = "#e6c9a8";
+          button.style.background = EXT_COLORS.beige;
           button.disabled = false;
         }, 3000);
       }
@@ -406,24 +396,13 @@ class JobTracker {
     const recruitmentAgencyCount = jobsToCheck.filter(
       (job) => job.data.isRecruitmentAgency
     ).length;
+    
     console.log(
       `Found ${sponsoredCount} sponsored jobs and ${recruitmentAgencyCount} recruitment agency jobs out of ${jobsToCheck.length} total jobs`
     );
   }
 
-  private async checkRateLimit(): Promise<boolean> {
-    const rateCheck = checkRateLimit('sponsor-lookup');
-    if (!rateCheck.allowed) {
-      const timeUntilReset = rateCheck.resetIn || 0;
-      console.warn(
-        `Rate limit exceeded for sponsor lookups. Try again in ${Math.ceil(
-          timeUntilReset / 1000
-        )} seconds.`
-      );
-      return false;
-    }
-    return true;
-  }
+
 
   private generateClientId(): string {
     // Generate a session-based client ID for rate limiting
@@ -439,18 +418,7 @@ class JobTracker {
   private async checkCompanySponsorship(
     companies: string[]
   ): Promise<SponsorshipCheckResult[]> {
-    // Check rate limit before making request
-    if (!(await this.checkRateLimit())) {
-      return companies.map((company) => ({
-        company,
-        isSponsored: false,
-        sponsorshipType: null,
-        source: "rate_limited",
-      }));
-    }
-
     try {
-
       // Limit companies per request
       const maxCompaniesPerRequest = 50;
       const limitedCompanies = companies.slice(0, maxCompaniesPerRequest);
@@ -461,60 +429,45 @@ class JobTracker {
         );
       }
 
-      const base = (this.webAppUrl || DEFAULT_WEB_APP_URL).replace(/\/$/, "");
-      // Authenticated sponsors lookup per company (temporary sequential)
-      const results: any[] = [];
+      // Use the centralized API client for consistent authentication and rate limiting
+      const { get } = await import("./apiClient");
+      const results: SponsorshipCheckResult[] = [];
+
       for (const company of limitedCompanies) {
         try {
-          let token: string | null = null;
-          try {
-            const { getAuthInstance } = await import("./firebase");
-            const auth = getAuthInstance();
-            if (auth.currentUser) {
-              token = await auth.currentUser.getIdToken();
-            }
-          } catch (tokenError) {
-            console.warn("Failed to retrieve auth token for sponsorship lookup", tokenError);
-          }
-          const resp = await fetch(
-            `${base}/api/app/sponsorship/companies?q=${encodeURIComponent(
-              company
-            )}&limit=1`,
-            {
-              headers: {
-                ...(token ? { Authorization: `Bearer ${token}` } : {}),
-              },
-            }
-          );
-          if (resp.ok) {
-            const data = await resp.json();
-            const isSponsored = !!(data.results && data.results[0]);
-            results.push({
-              company,
-              isSponsored,
-              sponsorshipType: isSponsored
-                ? data.results[0].route || "sponsored"
-                : null,
-              source: "extension_lookup",
-            });
-          } else {
-            results.push({
-              company,
-              isSponsored: false,
-              sponsorshipType: null,
-              source: "error",
-            });
-          }
+          const data = await get("/api/app/sponsorship/companies", {
+            q: company,
+            limit: 1,
+          });
+          
+          const isSponsored = !!(data.results && data.results[0]);
+          results.push({
+            company,
+            isSponsored,
+            sponsorshipType: isSponsored
+              ? data.results[0].route || "sponsored"
+              : null,
+            source: "extension_lookup",
+          });
         } catch (e: any) {
           console.warn(`Error checking sponsorship for ${company}:`, e);
+          
+          // Handle different error types appropriately
           if (e?.rateLimitInfo) {
-            console.warn(`Rate limit hit during batch sponsor lookup: ${e.rateLimitInfo.remaining} remaining`);
-            // Return rate limited result for this company
+            console.warn(`Rate limit hit during sponsor lookup: ${e.rateLimitInfo.remaining} remaining`);
             results.push({
               company,
               isSponsored: false,
               sponsorshipType: null,
               source: "rate_limited",
+            });
+          } else if (e?.statusCode === 401) {
+            console.warn(`Authentication failed for sponsor lookup: ${e.message}`);
+            results.push({
+              company,
+              isSponsored: false,
+              sponsorshipType: null,
+              source: "auth_error",
             });
           } else {
             results.push({
@@ -526,6 +479,7 @@ class JobTracker {
           }
         }
       }
+      
       return results;
     } catch (error) {
       console.error("Failed to check company sponsorship:", error);
@@ -1061,29 +1015,29 @@ class JobTracker {
 
     const colors = {
       sponsored: {
-        border: "#b86e37",
-        bg: "rgba(184, 110, 55, 0.12)",
-        badge: "#b86e37",
+        border: EXT_COLORS.brown,
+        bg: `rgba(${hexToRgb(EXT_COLORS.brown)}, 0.12)`,
+        badge: EXT_COLORS.brown,
       },
       promoted: {
-        border: "#8b5cf6",
-        bg: "rgba(139, 92, 246, 0.12)",
-        badge: "#8b5cf6",
+        border: EXT_COLORS.violet,
+        bg: `rgba(${hexToRgb(EXT_COLORS.violet)}, 0.12)`,
+        badge: EXT_COLORS.violet,
       },
       featured: {
-        border: "#10b981",
-        bg: "rgba(16, 185, 129, 0.12)",
-        badge: "#10b981",
+        border: EXT_COLORS.success,
+        bg: `rgba(${hexToRgb(EXT_COLORS.success)}, 0.12)`,
+        badge: EXT_COLORS.success,
       },
       premium: {
-        border: "#e6c9a8",
-        bg: "rgba(230, 201, 168, 0.2)",
-        badge: "#e6c9a8",
+        border: EXT_COLORS.beige,
+        bg: `rgba(${hexToRgb(EXT_COLORS.beige)}, 0.2)`,
+        badge: EXT_COLORS.beige,
       },
       recruitment_agency: {
-        border: "#ef4444",
-        bg: "rgba(239, 68, 68, 0.12)",
-        badge: "#ef4444",
+        border: EXT_COLORS.destructive,
+        bg: `rgba(${hexToRgb(EXT_COLORS.destructive)}, 0.12)`,
+        badge: EXT_COLORS.destructive,
       },
     };
 
@@ -1113,7 +1067,7 @@ class JobTracker {
         top: 5px;
         right: 5px;
         background: ${color.badge};
-        color: white;
+        color: ${EXT_COLORS.card};
         padding: 4px 8px;
         border-radius: 4px;
         font-size: 12px;
@@ -1276,7 +1230,7 @@ class JobTracker {
       mainBadge.innerHTML = `
         <span style="
           background: rgba(255,255,255,0.9);
-          color: #6b7280;
+          color: EXT_COLORS.muted;
           padding: 4px 8px;
           border-radius: 12px;
           font-size: 10px;
@@ -1314,7 +1268,7 @@ class JobTracker {
         jobData.salaryRange.currency + jobData.salaryRange.min.toLocaleString();
       salaryBadge.innerHTML = `
         <span style="
-          background: linear-gradient(135deg, #10b981, #059669);
+          background: linear-gradient(135deg, EXT_COLORS.success, EXT_COLORS.greenDark);
           color: white;
           padding: 3px 6px;
           border-radius: 8px;
@@ -1335,7 +1289,7 @@ class JobTracker {
       const remoteBadge = document.createElement("div");
       remoteBadge.innerHTML = `
         <span style="
-          background: linear-gradient(135deg, #3b82f6, #2563eb);
+          background: linear-gradient(135deg, EXT_COLORS.info, EXT_COLORS.brandBlue);
           color: white;
           padding: 3px 6px;
           border-radius: 8px;
@@ -1355,10 +1309,10 @@ class JobTracker {
     if (jobData.experienceLevel) {
       const expBadge = document.createElement("div");
       const expColor = jobData.experienceLevel.includes("Senior")
-        ? "#f59e0b"
+        ? "EXT_COLORS.warning"
         : jobData.experienceLevel.includes("Mid")
-        ? "#8b5cf6"
-        : "#10b981";
+        ? "EXT_COLORS.violet"
+        : "EXT_COLORS.success";
       expBadge.innerHTML = `
         <span style="
           background: ${expColor};
@@ -1446,8 +1400,8 @@ class JobTracker {
     if (jobData.jobType) {
       const typeBadge = document.createElement("span");
       typeBadge.style.cssText = `
-        background: #e0f2fe;
-        color: #0369a1;
+        background: EXT_COLORS.paleBlue;
+        color: EXT_COLORS.skyBlue;
         padding: 3px 8px;
         border-radius: 12px;
         font-weight: 600;
@@ -1471,8 +1425,8 @@ class JobTracker {
       jobData.skills.slice(0, 3).forEach((skill) => {
         const skillBadge = document.createElement("span");
         skillBadge.style.cssText = `
-          background: #f3f4f6;
-          color: #374151;
+          background: EXT_COLORS.light;
+          color: EXT_COLORS.slate;
           padding: 2px 6px;
           border-radius: 8px;
           font-size: 10px;
@@ -1486,8 +1440,8 @@ class JobTracker {
       if (jobData.skills.length > 3) {
         const moreBadge = document.createElement("span");
         moreBadge.style.cssText = `
-          background: #e5e7eb;
-          color: #6b7280;
+          background: EXT_COLORS.border;
+          color: EXT_COLORS.muted;
           padding: 2px 6px;
           border-radius: 8px;
           font-size: 10px;
@@ -1506,11 +1460,11 @@ class JobTracker {
       reqDiv.style.cssText = `
         margin-top: 6px;
         padding: 6px 10px;
-        background: #fefce8;
-        border-left: 3px solid #f59e0b;
+        background: EXT_COLORS.beigeLight;
+        border-left: 3px solid EXT_COLORS.warning;
         border-radius: 4px;
         font-size: 11px;
-        color: #92400e;
+        color: EXT_COLORS.warningDark;
         font-weight: 500;
       `;
       reqDiv.innerHTML = `
@@ -1573,7 +1527,7 @@ class JobTracker {
       createIcon(Flag, 12).outerHTML
     } Check Sponsor</span>`;
     checkSponsorshipBtn.style.cssText = `
-      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      background: linear-gradient(135deg, EXT_COLORS.info, EXT_COLORS.brandBlue);
       color: white;
       border: none;
       padding: 6px 10px;
@@ -1602,7 +1556,7 @@ class JobTracker {
       createIcon(ClipboardPlus, 12).outerHTML
     } Add to Board</span>`;
     addToBoardBtn.style.cssText = `
-      background: linear-gradient(135deg, #10b981, #059669);
+      background: linear-gradient(135deg, EXT_COLORS.success, EXT_COLORS.greenDark);
       color: white;
       border: none;
       padding: 6px 10px;
@@ -1635,7 +1589,7 @@ class JobTracker {
     statusSelect.style.cssText = `
       height: 28px;
       padding: 2px 6px;
-      border: 1px solid #d1d5db;
+      border: 1px solid EXT_COLORS.grayBorder;
       border-radius: 4px;
       background: white;
       font-size: 10px;
@@ -1665,7 +1619,7 @@ class JobTracker {
       createIcon(ClipboardPlus, 12).outerHTML
     } Add to Board</span>`;
     addButton.style.cssText = `
-      background: #4f46e5;
+      background: EXT_COLORS.indigo;
       color: white;
       border: none;
       padding: 6px 10px;
@@ -1680,12 +1634,12 @@ class JobTracker {
     `;
 
     addButton.addEventListener("mouseenter", () => {
-      addButton.style.background = "#4338ca";
+      addButton.style.background = "EXT_COLORS.deepIndigo";
       addButton.style.transform = "translateY(-1px)";
     });
 
     addButton.addEventListener("mouseleave", () => {
-      addButton.style.background = "#4f46e5";
+      addButton.style.background = "EXT_COLORS.indigo";
       addButton.style.transform = "translateY(0)";
     });
 
@@ -1709,7 +1663,7 @@ class JobTracker {
           addButton.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${
             createIcon(CheckCircle, 12).outerHTML
           } Added</span>`;
-          addButton.style.background = "#6b7280";
+          addButton.style.background = "EXT_COLORS.muted";
           addButton.disabled = true;
 
           // Show success message
@@ -1728,7 +1682,7 @@ class JobTracker {
           addButton.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${
             createIcon(CheckCircle, 12).outerHTML
           } Added!</span>`;
-          addButton.style.background = "#10b981";
+          addButton.style.background = "EXT_COLORS.success";
 
           // Show success animation
           addButton.style.transform = "scale(1.1)";
@@ -1751,7 +1705,7 @@ class JobTracker {
             addButton.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${
               createIcon(ClipboardPlus, 12).outerHTML
             } Added</span>`;
-            addButton.style.background = "#6b7280";
+            addButton.style.background = "EXT_COLORS.muted";
             addButton.disabled = true;
           }, 3000);
         } else {
@@ -1762,13 +1716,13 @@ class JobTracker {
         addButton.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${
           createIcon(XCircle, 12).outerHTML
         } Error</span>`;
-        addButton.style.background = "#ef4444";
+        addButton.style.background = "EXT_COLORS.destructive";
 
         this.showInlineToast(element, "Failed to add job", "error");
 
         setTimeout(() => {
           addButton.innerHTML = originalContent;
-          addButton.style.background = "#4f46e5";
+          addButton.style.background = "EXT_COLORS.indigo";
           addButton.disabled = false;
         }, 3000);
       }
@@ -1782,7 +1736,7 @@ class JobTracker {
     } Check Sponsorship</span>`;
     sponsorButton.title = "Check Sponsor Status";
     sponsorButton.style.cssText = `
-      background: #059669;
+      background: EXT_COLORS.greenDark;
       color: white;
       border: none;
       padding: 6px 10px;
@@ -1797,12 +1751,12 @@ class JobTracker {
     `;
 
     sponsorButton.addEventListener("mouseenter", () => {
-      sponsorButton.style.background = "#047857";
+      sponsorButton.style.background = "EXT_COLORS.greenDarker";
       sponsorButton.style.transform = "translateY(-1px)";
     });
 
     sponsorButton.addEventListener("mouseleave", () => {
-      sponsorButton.style.background = "#059669";
+      sponsorButton.style.background = "EXT_COLORS.greenDark";
       sponsorButton.style.transform = "translateY(0)";
     });
 
@@ -1827,7 +1781,7 @@ class JobTracker {
             sponsorButton.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${
               createIcon(CheckCircle, 12).outerHTML
             } Licensed</span>`;
-            sponsorButton.style.background = "#10b981";
+            sponsorButton.style.background = "EXT_COLORS.success";
             this.showInlineToast(
               element,
               `${createIcon(CheckCircle, 12).outerHTML} ${
@@ -1839,7 +1793,7 @@ class JobTracker {
             sponsorButton.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${
               createIcon(AlertTriangle, 12).outerHTML
             } Not SW</span>`;
-            sponsorButton.style.background = "#f59e0b";
+            sponsorButton.style.background = "EXT_COLORS.warning";
             this.showInlineToast(
               element,
               `${createIcon(AlertTriangle, 12).outerHTML} ${
@@ -1852,7 +1806,7 @@ class JobTracker {
           sponsorButton.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${
             createIcon(XCircle, 12).outerHTML
           } Not Found</span>`;
-          sponsorButton.style.background = "#ef4444";
+          sponsorButton.style.background = "EXT_COLORS.destructive";
           this.showInlineToast(
             element,
             `${createIcon(XCircle, 12).outerHTML} ${
@@ -1865,7 +1819,7 @@ class JobTracker {
         // Keep result visible for 5 seconds then revert
         setTimeout(() => {
           sponsorButton.innerHTML = originalContent;
-          sponsorButton.style.background = "#059669";
+          sponsorButton.style.background = "EXT_COLORS.greenDark";
           sponsorButton.disabled = false;
         }, 5000);
       } catch (error) {
@@ -1873,7 +1827,7 @@ class JobTracker {
         sponsorButton.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${
           createIcon(XCircle, 12).outerHTML
         } Error</span>`;
-        sponsorButton.style.background = "#ef4444";
+        sponsorButton.style.background = "EXT_COLORS.destructive";
 
         this.showInlineToast(
           element,
@@ -1883,7 +1837,7 @@ class JobTracker {
 
         setTimeout(() => {
           sponsorButton.innerHTML = originalContent;
-          sponsorButton.style.background = "#059669";
+          sponsorButton.style.background = "EXT_COLORS.greenDark";
           sponsorButton.disabled = false;
         }, 3000);
       }
@@ -1894,8 +1848,8 @@ class JobTracker {
     viewButton.innerHTML = createIcon(Eye, 14).outerHTML;
     viewButton.title = "View Job Details";
     viewButton.style.cssText = `
-      background: #f3f4f6;
-      color: #374151;
+      background: EXT_COLORS.light;
+      color: EXT_COLORS.slate;
       border: none;
       width: 32px;
       height: 32px;
@@ -1909,12 +1863,12 @@ class JobTracker {
     `;
 
     viewButton.addEventListener("mouseenter", () => {
-      viewButton.style.background = "#e5e7eb";
+      viewButton.style.background = "EXT_COLORS.border";
       viewButton.style.transform = "scale(1.1)";
     });
 
     viewButton.addEventListener("mouseleave", () => {
-      viewButton.style.background = "#f3f4f6";
+      viewButton.style.background = "EXT_COLORS.light";
       viewButton.style.transform = "scale(1)";
     });
 
@@ -1979,27 +1933,27 @@ class JobTracker {
   private getBadgeConfig(sponsorshipType: string) {
     const configs = {
       sponsored: {
-        background: "#ef4444",
+        background: "EXT_COLORS.destructive",
         color: "white",
         icon: createIcon(Target, 12).outerHTML,
       },
       promoted: {
-        background: "#8b5cf6",
+        background: "EXT_COLORS.violet",
         color: "white",
         icon: createIcon(Star, 12).outerHTML,
       },
       featured: {
-        background: "#10b981",
+        background: "EXT_COLORS.success",
         color: "white",
         icon: createIcon(Sparkles, 12).outerHTML,
       },
       premium: {
-        background: "#f59e0b",
+        background: "EXT_COLORS.warning",
         color: "white",
         icon: createIcon(Crown, 12).outerHTML,
       },
       verified: {
-        background: "#3b82f6",
+        background: "EXT_COLORS.info",
         color: "white",
         icon: createIcon(CheckCircle, 12).outerHTML,
       },
@@ -2029,10 +1983,10 @@ class JobTracker {
       transform: translateX(-50%);
       background: ${
         type === "success"
-          ? "#10b981"
+          ? "EXT_COLORS.success"
           : type === "error"
-          ? "#ef4444"
-          : "#3b82f6"
+          ? "EXT_COLORS.destructive"
+          : "EXT_COLORS.info"
       };
       color: white;
       padding: 6px 12px;
@@ -2388,7 +2342,7 @@ class JobTracker {
           button.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${
             createIcon(CheckCircle, 12).outerHTML
           } Licensed</span>`;
-          button.style.background = "#10b981";
+          button.style.background = "EXT_COLORS.success";
           this.showInlineToast(
             element,
             `${createIcon(CheckCircle, 12).outerHTML} ${
@@ -2400,7 +2354,7 @@ class JobTracker {
           button.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${
             createIcon(AlertTriangle, 12).outerHTML
           } Not SW</span>`;
-          button.style.background = "#f59e0b";
+          button.style.background = "EXT_COLORS.warning";
           this.showInlineToast(
             element,
             `${createIcon(AlertTriangle, 12).outerHTML} ${
@@ -2413,7 +2367,7 @@ class JobTracker {
         button.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${
           createIcon(XCircle, 12).outerHTML
         } Not Found</span>`;
-        button.style.background = "#ef4444";
+        button.style.background = "EXT_COLORS.destructive";
         this.showInlineToast(
           element,
           `${
@@ -2426,7 +2380,7 @@ class JobTracker {
       // Keep result visible for 5 seconds then revert
       setTimeout(() => {
         button.innerHTML = originalContent;
-        button.style.background = "linear-gradient(135deg, #3b82f6, #2563eb)";
+        button.style.background = "linear-gradient(135deg, EXT_COLORS.info, EXT_COLORS.brandBlue)";
         button.disabled = false;
       }, 5000);
     } catch (error) {
@@ -2434,7 +2388,7 @@ class JobTracker {
       button.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${
         createIcon(XCircle, 12).outerHTML
       } Error</span>`;
-      button.style.background = "#ef4444";
+      button.style.background = "EXT_COLORS.destructive";
 
       this.showInlineToast(
         element,
@@ -2444,7 +2398,7 @@ class JobTracker {
 
       setTimeout(() => {
         button.innerHTML = originalContent;
-        button.style.background = "linear-gradient(135deg, #3b82f6, #2563eb)";
+        button.style.background = "linear-gradient(135deg, EXT_COLORS.info, EXT_COLORS.brandBlue)";
         button.disabled = false;
       }, 3000);
     }
@@ -2471,7 +2425,7 @@ class JobTracker {
         button.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${
           createIcon(CheckCircle, 12).outerHTML
         } Added</span>`;
-        button.style.background = "#6b7280";
+        button.style.background = "EXT_COLORS.muted";
         button.disabled = true;
 
         // Show success message
@@ -2489,7 +2443,7 @@ class JobTracker {
         button.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${
           createIcon(CheckCircle, 12).outerHTML
         } Added!</span>`;
-        button.style.background = "#10b981";
+        button.style.background = "EXT_COLORS.success";
 
         // Show success animation
         button.style.transform = "scale(1.1)";
@@ -2508,7 +2462,7 @@ class JobTracker {
           button.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${
             createIcon(ClipboardPlus, 12).outerHTML
           } Added</span>`;
-          button.style.background = "#6b7280";
+          button.style.background = "EXT_COLORS.muted";
           button.disabled = true;
         }, 3000);
       } else {
@@ -2519,13 +2473,25 @@ class JobTracker {
       button.innerHTML = `<span style="display: flex; align-items: center; gap: 4px;">${
         createIcon(XCircle, 12).outerHTML
       } Error</span>`;
-      button.style.background = "#ef4444";
+      button.style.background = "EXT_COLORS.destructive";
 
-      this.showInlineToast(element, "Failed to add job", "error");
+      // Show specific error message based on the error
+      let errorMessage = "Failed to add job";
+      if (error instanceof Error) {
+        if (error.message.includes("sign in")) {
+          errorMessage = "Please sign in to add jobs";
+        } else if (error.message.includes("Permission")) {
+          errorMessage = "Permission denied";
+        } else if (error.message.includes("Rate limit")) {
+          errorMessage = "Too many requests - try again later";
+        }
+      }
+
+      this.showInlineToast(element, errorMessage, "error");
 
       setTimeout(() => {
         button.innerHTML = originalContent;
-        button.style.background = "linear-gradient(135deg, #10b981, #059669)";
+        button.style.background = "EXT_COLORS.indigo";
         button.disabled = false;
       }, 3000);
     }

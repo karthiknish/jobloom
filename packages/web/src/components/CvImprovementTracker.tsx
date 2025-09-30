@@ -89,7 +89,7 @@ export function CvImprovementTracker({ analyses }: CvImprovementTrackerProps) {
     return (
       <Card>
         <CardContent className="p-6 text-center">
-          <div className="text-muted-foreground text-4xl mb-4">📊</div>
+          <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-medium mb-2">Improvement Tracking</h3>
           <p className="text-muted-foreground">
             Upload at least 2 CV analyses to track your improvement over time.
@@ -340,7 +340,7 @@ export function CvImprovementTracker({ analyses }: CvImprovementTrackerProps) {
             {overallImprovement > 5 && (
               <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
                 <p className="text-sm text-green-800">
-                  🎉 Excellent progress! Your CV has improved significantly.
+                  Excellent progress! Your CV has improved significantly.
                   Keep up the great work!
                 </p>
               </div>

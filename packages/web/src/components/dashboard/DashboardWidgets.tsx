@@ -93,7 +93,7 @@ export function useDashboardWidgets({
                 transition={{ delay: 0.35, duration: 0.3 }}
                 className="text-lg font-semibold text-foreground mb-2"
               >
-                All caught up! 🎉
+                All caught up!
               </motion.h3>
               <motion.p
                 initial={{ opacity: 0, y: 6 }}
@@ -152,10 +152,11 @@ export function useDashboardWidgets({
                 />
                 <FeatureGate
                   feature="exportFormats"
+                  requires="json"
                   fallback={
                     <Button size="sm" variant="outline" disabled>
                       <FileText className="h-4 w-4 mr-2" />
-                      JSON <span className="ml-1 text-xs">⭐</span>
+                      JSON <span className="ml-1 text-xs">Pro</span>
                     </Button>
                   }
                 >
@@ -194,7 +195,7 @@ export function useDashboardWidgets({
                     }}
                   >
                     <FileText className="h-4 w-4 mr-2" />
-                    JSON <span className="text-xs text-primary">⭐</span>
+                    JSON <span className="text-xs text-primary">Pro</span>
                   </Button>
                 </FeatureGate>
               </div>

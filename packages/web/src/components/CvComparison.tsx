@@ -194,7 +194,7 @@ export function CvComparison({ analyses, onBack }: CvComparisonProps) {
               {/* Strengths */}
               {analysis.strengths && analysis.strengths.length > 0 && (
                 <div>
-                  <h4 className="font-medium text-green-700 mb-2">✅ Strengths</h4>
+                  <h4 className="font-medium text-green-700 mb-2">Strengths</h4>
                   <ul className="text-sm space-y-1">
                     {analysis.strengths.slice(0, 3).map((strength, i) => (
                       <li key={i} className="flex items-start">

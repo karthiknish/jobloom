@@ -13,15 +13,10 @@ import {
   Bell,
   User,
   Shield,
-  Palette,
   Globe,
   CreditCard,
-  Clock,
   Database,
   Key,
-  Mail,
-  Moon,
-  Sun,
   Loader2,
   Crown,
   Briefcase,
@@ -30,10 +25,12 @@ import {
   Save,
   Trash2,
   Download,
-  Upload,
   Ban,
   RotateCcw,
-  ShieldAlert
+  ShieldAlert,
+  Sparkles,
+  CheckCircle2,
+  Lock
 } from "lucide-react";
 import {
   Card,
@@ -57,9 +54,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { showSuccess, showError } from "@/components/ui/Toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import type { SubscriptionLimits } from "@/types/api";
 
 interface UserPreferences {
-  theme: 'light' | 'dark' | 'system';
   language: string;
   timezone: string;
   emailNotifications: boolean;
@@ -72,11 +69,64 @@ interface UserPreferences {
   jobTypes: string[];
   experienceLevels: string[];
   industries: string[];
+  analyticsTracking: boolean;
+  dataSharing: boolean;
+  marketingEmails: boolean;
 }
 
+const createDefaultPreferences = (): UserPreferences => ({
+  language: 'en',
+  timezone: 'UTC',
+  emailNotifications: true,
+  pushNotifications: true,
+  jobAlertsEnabled: false,
+  jobKeywords: [],
+  preferredCompanies: [],
+  preferredLocations: [],
+  salaryRange: {},
+  jobTypes: [],
+  experienceLevels: [],
+  industries: [],
+  analyticsTracking: true,
+  dataSharing: false,
+  marketingEmails: true,
+});
+
+const PremiumFeatureLockCard = ({
+  title,
+  description,
+  feature,
+}: {
+  title: string;
+  description: string;
+  feature: string;
+}) => (
+  <Card className="h-full border-dashed border-primary/40 bg-primary/5">
+    <CardHeader>
+      <CardTitle className="flex items-center gap-2 text-primary">
+        <Crown className="h-5 w-5" />
+        {title}
+      </CardTitle>
+      <CardDescription>{description}</CardDescription>
+    </CardHeader>
+    <CardContent>
+      <Button
+        asChild
+        className="w-full bg-gradient-to-r from-primary to-secondary text-white"
+      >
+        <a href={`/upgrade?feature=${feature}`}>Upgrade to unlock</a>
+      </Button>
+    </CardContent>
+  </Card>
+);
+
 export default function SettingsPage() {
-  const { user } = useFirebaseAuth();
-  const { subscription, plan, limits, currentUsage, actions, hasFeature, refreshSubscription } = useSubscription();
+  const {
+    user,
+    updatePassword: updateUserPassword,
+    sendEmailVerification: triggerEmailVerification,
+  } = useFirebaseAuth();
+  const { subscription, plan, limits, currentUsage, hasFeature, refreshSubscription } = useSubscription();
   const {
     isJobImportEnabled,
     isCvAnalysisEnabled,
@@ -90,23 +140,8 @@ export default function SettingsPage() {
     notificationDisplayDurationSeconds,
     maintenanceMessage
   } = useRemoteConfig();
-
   const [activeTab, setActiveTab] = useState("profile");
-  const [preferences, setPreferences] = useState<UserPreferences>({
-    theme: 'system',
-    language: 'en',
-    timezone: 'UTC',
-    emailNotifications: true,
-    pushNotifications: true,
-    jobAlertsEnabled: false,
-    jobKeywords: [],
-    preferredCompanies: [],
-    preferredLocations: [],
-    salaryRange: {},
-    jobTypes: [],
-    experienceLevels: [],
-    industries: []
-  });
+  const [preferences, setPreferences] = useState<UserPreferences>(createDefaultPreferences);
 
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -116,6 +151,66 @@ export default function SettingsPage() {
   const [isCancellingSubscription, setIsCancellingSubscription] = useState(false);
   const [isResumingSubscription, setIsResumingSubscription] = useState(false);
   const [subscriptionError, setSubscriptionError] = useState<string | null>(null);
+  const [showChangePasswordForm, setShowChangePasswordForm] = useState(false);
+  const [changePasswordLoading, setChangePasswordLoading] = useState(false);
+  const [changePasswordError, setChangePasswordError] = useState<string | null>(null);
+  const [passwordForm, setPasswordForm] = useState({
+    current: "",
+    next: "",
+    confirm: "",
+  });
+  const [verificationSending, setVerificationSending] = useState(false);
+  const [revokingSessions, setRevokingSessions] = useState(false);
+
+  const exportFormats = limits.exportFormats ?? [];
+  type PremiumCapability = {
+    key: keyof SubscriptionLimits;
+    label: string;
+    description: string;
+    requires?: string[];
+  };
+
+  const premiumCapabilities: PremiumCapability[] = [
+    {
+      key: "advancedAnalytics",
+      label: "Advanced analytics",
+      description: "Detailed dashboards and performance insights to track your search.",
+    },
+    {
+      key: "customAlerts",
+      label: "Custom job alerts",
+      description: "Receive personalised alerts based on job keywords, companies, and locations.",
+    },
+    {
+      key: "prioritySupport",
+      label: "Priority support",
+      description: "Skip the queue with fast responses from the Hireall support team.",
+    },
+    {
+      key: "teamCollaboration",
+      label: "Team collaboration",
+      description: "Invite collaborators to manage job applications together.",
+    },
+    {
+      key: "exportFormats",
+      label: "Premium exports",
+      description: "Unlock JSON and PDF exports alongside CSV downloads.",
+      requires: ["json", "pdf"],
+    },
+  ];
+
+  const featureStatusList = [
+    { key: "jobImport", label: "Job import", enabled: isJobImportEnabled, description: "Import roles directly from supported sources." },
+    { key: "cvAnalysis", label: "CV analysis", enabled: isCvAnalysisEnabled, description: "Run AI-powered resume scoring and feedback." },
+    { key: "advancedFilters", label: "Advanced filters", enabled: isAdvancedFiltersEnabled, description: "Filter jobs by location, sponsorship, salary, and more." },
+    { key: "bulkActions", label: "Bulk actions", enabled: isBulkActionsEnabled, description: "Update multiple applications in one click." },
+    { key: "realTimeUpdates", label: "Real-time updates", enabled: isRealTimeUpdatesEnabled, description: "Receive instant changes when job statuses update." },
+    { key: "analytics", label: "Analytics tracking", enabled: isAnalyticsEnabled, description: "Collect usage data to power analytics dashboards." },
+    { key: "notifications", label: "Notifications", enabled: isNotificationsEnabled, description: "Enable in-app and email notifications." },
+    { key: "betaFeatures", label: "Beta features", enabled: isBetaFeaturesEnabled, description: "Access experimental tools before everyone else." },
+  ];
+  const exportFormatsFeatureKey: keyof SubscriptionLimits = "exportFormats";
+  const premiumExportsUnlocked = hasFeature(exportFormatsFeatureKey, ["json", "pdf"]);
 
   const nextBillingDate = subscription?.currentPeriodEnd
     ? format(new Date(subscription.currentPeriodEnd), "MMM d, yyyy")
@@ -124,6 +219,82 @@ export default function SettingsPage() {
   const cancellationEffectiveDate = subscription?.cancelAtPeriodEnd && subscription?.currentPeriodEnd
     ? format(new Date(subscription.currentPeriodEnd), "MMM d, yyyy")
     : null;
+
+  const handleChangePassword = async () => {
+    if (!user) return;
+
+    const { current, next, confirm } = passwordForm;
+    if (!current || !next || !confirm) {
+      setChangePasswordError("Please complete all password fields.");
+      return;
+    }
+
+    if (next.length < 8) {
+      setChangePasswordError("New password must be at least 8 characters long.");
+      return;
+    }
+
+    if (next !== confirm) {
+      setChangePasswordError("New password and confirmation do not match.");
+      return;
+    }
+
+    try {
+      setChangePasswordError(null);
+      setChangePasswordLoading(true);
+      await updateUserPassword(current, next);
+      showSuccess("Password updated successfully!");
+      setPasswordForm({ current: "", next: "", confirm: "" });
+      setShowChangePasswordForm(false);
+    } catch (error: any) {
+      const message = typeof error?.message === "string" ? error.message : "Failed to update password.";
+      setChangePasswordError(message);
+      showError(message);
+    } finally {
+      setChangePasswordLoading(false);
+    }
+  };
+
+  const handleSendVerification = async () => {
+    if (!user || user.emailVerified) return;
+
+    try {
+      setVerificationSending(true);
+      await triggerEmailVerification();
+    } catch (error) {
+      console.error("Error sending verification email:", error);
+    } finally {
+      setVerificationSending(false);
+    }
+  };
+
+  const handleRevokeSessions = async () => {
+    if (!user) return;
+
+    try {
+      setRevokingSessions(true);
+      const token = await user.getIdToken();
+      const response = await fetch('/api/settings/revoke-sessions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to revoke sessions');
+      }
+
+      showSuccess(data.message || 'All sessions revoked successfully.');
+    } catch (error) {
+      console.error('Error revoking sessions:', error);
+      const message = error instanceof Error ? error.message : 'Failed to revoke sessions';
+      showError(message);
+    } finally {
+      setRevokingSessions(false);
+    }
+  };
 
   const manageBilling = async () => {
     if (!user) return;
@@ -238,7 +409,10 @@ export default function SettingsPage() {
 
         if (response.ok) {
           const data = await response.json();
-          setPreferences(data.preferences);
+          setPreferences({
+            ...createDefaultPreferences(),
+            ...(data.preferences ?? {}),
+          });
         }
       } catch (error) {
         console.error('Error loading preferences:', error);
@@ -246,7 +420,11 @@ export default function SettingsPage() {
         const saved = localStorage.getItem('userPreferences');
         if (saved) {
           try {
-            setPreferences(JSON.parse(saved));
+            const parsed = JSON.parse(saved);
+            setPreferences({
+              ...createDefaultPreferences(),
+              ...(parsed ?? {}),
+            });
           } catch (localError) {
             console.error('Error loading local preferences:', localError);
           }
@@ -425,16 +603,37 @@ export default function SettingsPage() {
                 </Button>
               )}
             </div>
+
+            {plan === 'free' && (
+              <Card className="border border-primary/30 bg-primary/5">
+                <CardContent className="p-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-start gap-3">
+                    <div className="mt-1 flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                      <Sparkles className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-semibold text-primary">Unlock premium features</h2>
+                      <p className="text-sm text-muted-foreground">
+                        Unlimited CV analyses, custom job alerts, API access, and JSON/PDF exports are just one click away.
+                      </p>
+                    </div>
+                  </div>
+                  <Button asChild className="bg-gradient-to-r from-primary to-secondary text-white">
+                    <a href="/upgrade">View premium plans</a>
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 h-auto">
+            <TabsList className="grid w-full grid-cols-2 gap-2 md:grid-cols-4 h-auto">
               <TabsTrigger value="profile" className="flex items-center gap-2">
                 <User className="h-4 w-4" />
                 <span className="hidden sm:inline">Profile</span>
               </TabsTrigger>
               <TabsTrigger value="preferences" className="flex items-center gap-2">
-                <Palette className="h-4 w-4" />
+                <Settings className="h-4 w-4" />
                 <span className="hidden sm:inline">Preferences</span>
               </TabsTrigger>
               <TabsTrigger value="features" className="flex items-center gap-2">
@@ -703,7 +902,7 @@ export default function SettingsPage() {
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <Palette className="h-5 w-5" />
+                      <Settings className="h-5 w-5" />
                       Appearance
                     </CardTitle>
                     <CardDescription>
@@ -711,30 +910,6 @@ export default function SettingsPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="theme">Theme</Label>
-                      <Select value={preferences.theme} onValueChange={(value: any) => updatePreference('theme', value)}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="light">
-                            <div className="flex items-center gap-2">
-                              <Sun className="h-4 w-4" />
-                              Light
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="dark">
-                            <div className="flex items-center gap-2">
-                              <Moon className="h-4 w-4" />
-                              Dark
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="system">System</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
                     <div className="space-y-2">
                       <Label htmlFor="language">Language</Label>
                       <Select value={preferences.language} onValueChange={(value) => updatePreference('language', value)}>
@@ -806,7 +981,17 @@ export default function SettingsPage() {
                 </Card>
 
                 {/* Job Preferences */}
-                <FeatureGate feature="customAlerts">
+                <FeatureGate
+                  feature="customAlerts"
+                  showUpgradePrompt={false}
+                  fallback={
+                    <PremiumFeatureLockCard
+                      feature="customAlerts"
+                      title="Personalised job alerts"
+                      description="Upgrade to set job keywords, preferred companies, and salary bands for tailored alerts."
+                    />
+                  }
+                >
                   <Card className="lg:col-span-2">
                     <CardHeader>
                       <CardTitle>Job Preferences</CardTitle>
@@ -900,74 +1085,149 @@ export default function SettingsPage() {
 
             {/* Features Tab */}
             <TabsContent value="features" className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Feature Toggles */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Plan capabilities</CardTitle>
+                  <CardDescription>
+                    {plan === 'premium'
+                      ? 'Everything currently available with your premium subscription.'
+                      : 'Preview what unlocks instantly when you upgrade to premium.'}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    {premiumCapabilities.map((capability) => {
+                      const unlocked = hasFeature(
+                        capability.key,
+                        capability.requires
+                      );
+
+                      return (
+                        <div
+                          key={capability.key}
+                          className="flex gap-3 rounded-lg border border-border/60 bg-background/60 p-4"
+                        >
+                          <div
+                            className={`mt-1 flex h-9 w-9 items-center justify-center rounded-full ${
+                              unlocked
+                                ? 'bg-primary/10 text-primary'
+                                : 'bg-muted text-muted-foreground'
+                            }`}
+                          >
+                            {unlocked ? (
+                              <CheckCircle2 className="h-5 w-5" />
+                            ) : (
+                              <Lock className="h-5 w-5" />
+                            )}
+                          </div>
+                          <div className="space-y-1">
+                            <p className="font-semibold text-foreground">{capability.label}</p>
+                            <p className="text-sm text-muted-foreground">{capability.description}</p>
+                            {capability.key === 'exportFormats' && (
+                              <div className="flex flex-wrap gap-2 pt-2">
+                                {exportFormats.length > 0 ? (
+                                  exportFormats.map((format) => (
+                                    <Badge
+                                      key={format}
+                                      variant={
+                                        ['json', 'pdf'].includes(format)
+                                          ? 'default'
+                                          : 'secondary'
+                                      }
+                                      className="uppercase text-[10px] tracking-wide"
+                                    >
+                                      {format}
+                                    </Badge>
+                                  ))
+                                ) : (
+                                  <Badge
+                                    variant="outline"
+                                    className="uppercase text-[10px] tracking-wide"
+                                  >
+                                    CSV
+                                  </Badge>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Feature Settings</CardTitle>
+                    <CardTitle>Feature availability</CardTitle>
                     <CardDescription>
-                      Enable or disable various application features.
+                      Live status of the remote feature flags powering Hireall.
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    {[
-                      { key: 'jobImport', label: 'Job Import', enabled: isJobImportEnabled, desc: 'Import jobs from external sources' },
-                      { key: 'cvAnalysis', label: 'CV Analysis', enabled: isCvAnalysisEnabled, desc: 'AI-powered CV analysis and scoring' },
-                      { key: 'advancedFilters', label: 'Advanced Filters', enabled: isAdvancedFiltersEnabled, desc: 'Advanced job filtering options' },
-                      { key: 'bulkActions', label: 'Bulk Actions', enabled: isBulkActionsEnabled, desc: 'Perform actions on multiple items' },
-                      { key: 'realTimeUpdates', label: 'Real-time Updates', enabled: isRealTimeUpdatesEnabled, desc: 'Live updates for job changes' },
-                      { key: 'analytics', label: 'Analytics Tracking', enabled: isAnalyticsEnabled, desc: 'Usage analytics and insights' },
-                      { key: 'notifications', label: 'Notifications', enabled: isNotificationsEnabled, desc: 'Push and email notifications' },
-                      { key: 'betaFeatures', label: 'Beta Features', enabled: isBetaFeaturesEnabled, desc: 'Early access to new features' },
-                    ].map((feature) => (
-                      <div key={feature.key} className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <Label>{feature.label}</Label>
-                          <p className="text-sm text-muted-foreground">{feature.desc}</p>
+                  <CardContent className="space-y-3">
+                    {featureStatusList.map((feature) => (
+                      <div
+                        key={feature.key}
+                        className="flex flex-col gap-2 rounded-lg border border-border/50 bg-card/50 p-4 md:flex-row md:items-center md:justify-between"
+                      >
+                        <div>
+                          <p className="font-medium text-foreground">{feature.label}</p>
+                          <p className="text-sm text-muted-foreground">{feature.description}</p>
                         </div>
-                        <Switch checked={feature.enabled} disabled />
+                        <Badge
+                          variant={feature.enabled ? 'default' : 'outline'}
+                          className={feature.enabled ? 'bg-primary/10 text-primary border-primary/30' : ''}
+                        >
+                          {feature.enabled ? 'Enabled' : 'Disabled'}
+                        </Badge>
                       </div>
                     ))}
                   </CardContent>
                 </Card>
 
-                {/* System Information */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>System Information</CardTitle>
+                    <CardTitle>System information</CardTitle>
                     <CardDescription>
-                      Current system configuration and limits.
+                      Key configuration values for your workspace.
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <Label className="text-sm font-medium">Dashboard Refresh</Label>
+                      <Label className="text-sm font-medium">Dashboard refresh</Label>
                       <p className="text-sm text-muted-foreground mt-1">
                         Every {dashboardRefreshIntervalSeconds} seconds
                       </p>
                     </div>
-
                     <div>
-                      <Label className="text-sm font-medium">Notification Duration</Label>
+                      <Label className="text-sm font-medium">Notification duration</Label>
                       <p className="text-sm text-muted-foreground mt-1">
                         {notificationDisplayDurationSeconds} seconds
                       </p>
                     </div>
-
                     <div>
-                      <Label className="text-sm font-medium">Rate Limits</Label>
+                      <Label className="text-sm font-medium">Monthly limits</Label>
                       <div className="text-sm text-muted-foreground mt-1 space-y-1">
-                        <p>Jobs: 100/hour</p>
-                        <p>CV Analyses: 20/hour</p>
-                        <p>Applications: 50/hour</p>
+                        <p>
+                          CV analyses: {limits.cvAnalysesPerMonth === -1 ? 'Unlimited' : limits.cvAnalysesPerMonth}
+                        </p>
+                        <p>
+                          Applications: {limits.applicationsPerMonth === -1 ? 'Unlimited' : limits.applicationsPerMonth}
+                        </p>
                       </div>
                     </div>
-
+                    {maintenanceMessage && (
+                      <div>
+                        <Label className="text-sm font-medium">Maintenance notice</Label>
+                        <p className="text-sm text-muted-foreground mt-1">{maintenanceMessage}</p>
+                      </div>
+                    )}
                     <div>
                       <Label className="text-sm font-medium">Subscription</Label>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge variant={plan === 'free' ? 'secondary' : 'default'}>
-                          {plan.charAt(0).toUpperCase() + plan.slice(1)} Plan
+                      <div className="mt-1 flex items-center gap-2">
+                        <Badge variant={plan === 'free' ? 'secondary' : 'default'} className="capitalize">
+                          {plan} plan
                         </Badge>
                         {plan === 'free' && (
                           <Button size="sm" variant="outline" asChild>
@@ -979,54 +1239,74 @@ export default function SettingsPage() {
                   </CardContent>
                 </Card>
 
-                {/* Data Management */}
                 <Card className="lg:col-span-2">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Database className="h-5 w-5" />
-                      Data Management
+                      Data management
                     </CardTitle>
                     <CardDescription>
-                      Export, import, or delete your data.
+                      Export your records or permanently close your account.
                     </CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <Button
-                        variant="outline"
-                        className="flex items-center gap-2"
-                        onClick={exportData}
-                        disabled={exporting}
-                      >
-                        {exporting ? (
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mr-2"></div>
-                        ) : (
-                          <Download className="h-4 w-4" />
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div className="rounded-lg border border-border/60 bg-card/40 p-4">
+                        <p className="font-medium text-foreground">Export your data</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Includes jobs, applications, preferences, and subscription history.
+                        </p>
+                        <Button
+                          variant="outline"
+                          className="mt-4 flex items-center gap-2"
+                          onClick={exportData}
+                          disabled={exporting}
+                        >
+                          {exporting ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              Exporting...
+                            </>
+                          ) : (
+                            <>
+                              <Download className="h-4 w-4" />
+                              Export {premiumExportsUnlocked ? 'JSON' : 'CSV'}
+                            </>
+                          )}
+                        </Button>
+                        {!premiumExportsUnlocked && (
+                          <p className="mt-2 text-xs text-muted-foreground">
+                            Premium unlocks JSON and PDF export formats in addition to CSV.
+                          </p>
                         )}
-                        {exporting ? 'Exporting...' : 'Export Data'}
-                      </Button>
-                      <Button variant="outline" className="flex items-center gap-2" disabled>
-                        <Upload className="h-4 w-4" />
-                        Import Data
-                        <span className="text-xs opacity-60">(Coming Soon)</span>
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        className="flex items-center gap-2"
-                        onClick={deleteAccount}
-                        disabled={deletingAccount}
-                      >
-                        {deletingAccount ? (
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        ) : (
-                          <Trash2 className="h-4 w-4" />
-                        )}
-                        {deletingAccount ? 'Deleting...' : 'Delete Account'}
-                      </Button>
+                      </div>
+                      <div className="rounded-lg border border-border/60 bg-card/40 p-4">
+                        <p className="font-medium text-foreground">Delete account</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Permanently remove your Hireall data and account access.
+                        </p>
+                        <Button
+                          variant="destructive"
+                          className="mt-4 flex items-center gap-2"
+                          onClick={deleteAccount}
+                          disabled={deletingAccount}
+                        >
+                          {deletingAccount ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              Deleting...
+                            </>
+                          ) : (
+                            <>
+                              <Trash2 className="h-4 w-4" />
+                              Delete account
+                            </>
+                          )}
+                        </Button>
+                      </div>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-4">
-                      Data export includes all your jobs, applications, and settings.
-                      Account deletion is permanent and cannot be undone.
+                    <p className="text-xs text-muted-foreground">
+                      Data exports remain available for one hour via secure links. Account deletion is immediate and irreversible.
                     </p>
                   </CardContent>
                 </Card>
@@ -1064,13 +1344,104 @@ export default function SettingsPage() {
                       <div>
                         <p className="font-medium">Password</p>
                         <p className="text-sm text-muted-foreground">
-                          Last changed 30 days ago
+                        Keep your account secure by using a strong, unique password.
                         </p>
                       </div>
-                      <Button variant="outline" size="sm">
-                        Change Password
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setShowChangePasswordForm((prev) => !prev);
+                          setChangePasswordError(null);
+                        }}
+                      >
+                        {showChangePasswordForm ? "Cancel" : "Change Password"}
                       </Button>
                     </div>
+                    </div>
+
+                  {showChangePasswordForm && (
+                    <Card className="border border-border/60 bg-muted/30">
+                      <CardContent className="pt-6 space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="current-password">Current Password</Label>
+                          <Input
+                            id="current-password"
+                            type="password"
+                            placeholder="Enter current password"
+                            value={passwordForm.current}
+                            onChange={(e) =>
+                              setPasswordForm((prev) => ({ ...prev, current: e.target.value }))
+                            }
+                            disabled={changePasswordLoading}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="new-password">New Password</Label>
+                          <Input
+                            id="new-password"
+                            type="password"
+                            placeholder="Enter new password"
+                            value={passwordForm.next}
+                            onChange={(e) =>
+                              setPasswordForm((prev) => ({ ...prev, next: e.target.value }))
+                            }
+                            disabled={changePasswordLoading}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="confirm-password">Confirm New Password</Label>
+                          <Input
+                            id="confirm-password"
+                            type="password"
+                            placeholder="Confirm new password"
+                            value={passwordForm.confirm}
+                            onChange={(e) =>
+                              setPasswordForm((prev) => ({ ...prev, confirm: e.target.value }))
+                            }
+                            disabled={changePasswordLoading}
+                          />
+                        </div>
+
+                        {changePasswordError && (
+                          <Alert variant="destructive">
+                            <AlertTitle>Password update failed</AlertTitle>
+                            <AlertDescription>{changePasswordError}</AlertDescription>
+                          </Alert>
+                        )}
+
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="secondary"
+                            onClick={() => {
+                              setShowChangePasswordForm(false);
+                              setPasswordForm({ current: "", next: "", confirm: "" });
+                              setChangePasswordError(null);
+                            }}
+                            disabled={changePasswordLoading}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            onClick={handleChangePassword}
+                            disabled={changePasswordLoading}
+                          >
+                            {changePasswordLoading ? (
+                              <>
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                Updating...
+                              </>
+                            ) : (
+                              "Update Password"
+                            )}
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
 
                     <div className="flex items-center justify-between">
                       <div>
@@ -1129,43 +1500,6 @@ export default function SettingsPage() {
                     </div>
                   </CardContent>
                 </Card>
-
-                {/* API & Integrations */}
-                <FeatureGate feature="apiAccess">
-                  <Card className="lg:col-span-2">
-                    <CardHeader>
-                      <CardTitle>API & Integrations</CardTitle>
-                      <CardDescription>
-                        Manage API keys and third-party integrations.
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div>
-                          <Label>API Key</Label>
-                          <div className="flex items-center gap-2 mt-1">
-                            <code className="flex-1 px-3 py-2 bg-muted rounded text-sm font-mono">
-                              hireall_••••••••••••••••••••••••
-                            </code>
-                            <Button variant="outline" size="sm">
-                              Regenerate
-                            </Button>
-                          </div>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label>Webhook Endpoints</Label>
-                          <div className="space-y-2">
-                            <Input placeholder="https://your-app.com/webhook" />
-                            <Button variant="outline" size="sm">
-                              Add Webhook
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </FeatureGate>
               </div>
             </TabsContent>
           </Tabs>

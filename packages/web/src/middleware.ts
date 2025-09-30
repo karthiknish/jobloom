@@ -1,12 +1,9 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { checkServerRateLimit, getEndpointFromPath, cleanupExpiredServerLimits } from "./lib/rateLimiter";
 
-// Simple in-memory rate limiting store (for production, use Redis or similar)
-const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
-
-// Rate limiting configuration
-const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
-const RATE_LIMIT_MAX_REQUESTS = 100; // requests per window per IP
+// Clean up expired limits every 5 minutes
+setInterval(cleanupExpiredServerLimits, 5 * 60 * 1000);
 
 // Security headers configuration (additional headers are now in next.config.ts)
 const securityHeaders = {
@@ -29,26 +26,7 @@ function getClientIP(request: NextRequest): string {
   return cfConnectingIP || realIP || forwarded?.split(',')[0] || 'unknown';
 }
 
-function isRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const record = rateLimitStore.get(ip);
-  
-  if (!record || now > record.resetTime) {
-    // Reset or create new record
-    rateLimitStore.set(ip, {
-      count: 1,
-      resetTime: now + RATE_LIMIT_WINDOW
-    });
-    return false;
-  }
-  
-  if (record.count >= RATE_LIMIT_MAX_REQUESTS) {
-    return true;
-  }
-  
-  record.count++;
-  return false;
-}
+
 
 function applySecurityHeaders(response: NextResponse): NextResponse {
   Object.entries(securityHeaders).forEach(([key, value]) => {
@@ -88,12 +66,25 @@ export function middleware(request: NextRequest) {
 
   // Apply rate limiting to API routes
   if (pathname.startsWith('/api/')) {
-    if (isRateLimited(clientIP)) {
+    const endpoint = getEndpointFromPath(pathname);
+    const rateLimitResult = checkServerRateLimit(clientIP, endpoint);
+    
+    if (rateLimitResult.isLimited) {
       return new NextResponse(
-        JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
+        JSON.stringify({ 
+          error: rateLimitResult.errorMsg,
+          endpoint,
+          resetTime: rateLimitResult.resetTime
+        }),
         { 
           status: 429,
-          headers: { 'Content-Type': 'application/json', 'Retry-After': '60' }
+          headers: { 
+            'Content-Type': 'application/json',
+            'Retry-After': Math.ceil(rateLimitResult.resetTime / 1000).toString(),
+            'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+            'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+            'X-RateLimit-Reset': rateLimitResult.resetTime.toString()
+          }
         }
       );
     }
@@ -145,11 +136,10 @@ export const config = {
   matcher: [
     /*
      * Match all request paths except for ones starting with:
-     * - api (API routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      */
-    "/((?!api|_next/static|_next/image|favicon.ico).*)",
+    "/((?!_next/static|_next/image|favicon.ico).*)",
   ],
 };

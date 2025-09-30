@@ -89,7 +89,7 @@ function UpgradeSuccessContent() {
               transition={{ delay: 0.2, duration: 0.6 }}
               className="text-4xl font-bold sm:text-5xl lg:text-6xl"
             >
-              Welcome to Premium! 🎉
+              Welcome to Premium!
             </motion.h1>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
@@ -120,7 +120,7 @@ function UpgradeSuccessContent() {
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
-                  <h3 className="font-semibold text-lg text-green-700">✅ Now Available</h3>
+                  <h3 className="font-semibold text-lg text-green-700">Now Available</h3>
                   <ul className="space-y-2">
                     <li className="flex items-center gap-2">
                       <CheckCircle className="h-4 w-4 text-green-500" />

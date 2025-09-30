@@ -17,20 +17,16 @@ export function getStripeClient(): Stripe {
   return stripeClient;
 }
 
-export type BillingCycle = "monthly" | "yearly";
 export type StripePlan = "premium";
 
-const PRICE_ID_CONFIG: Record<StripePlan, Partial<Record<BillingCycle, string>>> = {
-  premium: {
-    monthly: process.env.STRIPE_PRICE_ID_PREMIUM_MONTHLY,
-    yearly: process.env.STRIPE_PRICE_ID_PREMIUM_YEARLY,
-  },
+const PRICE_ID_CONFIG: Record<StripePlan, string> = {
+  premium: process.env.STRIPE_PRICE_ID_PREMIUM_MONTHLY || '',
 };
 
-export function getPriceIdForPlan(plan: StripePlan, billingCycle: BillingCycle = "monthly"): string {
-  const priceId = PRICE_ID_CONFIG[plan]?.[billingCycle];
+export function getPriceIdForPlan(plan: StripePlan): string {
+  const priceId = PRICE_ID_CONFIG[plan];
   if (!priceId) {
-    throw new Error(`Stripe price ID not configured for plan "${plan}" and cycle "${billingCycle}"`);
+    throw new Error(`Stripe price ID not configured for plan "${plan}"`);
   }
   return priceId;
 }

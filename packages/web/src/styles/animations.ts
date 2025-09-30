@@ -1,0 +1,309 @@
+// Centralized animation definitions for the Hireall platform
+// Provides consistent animations and transitions across the entire application
+
+export const animations = {
+  // Duration constants (in seconds)
+  duration: {
+    fast: 0.15,
+    normal: 0.25,
+    slow: 0.35,
+    slower: 0.5,
+    slowest: 0.75,
+  },
+
+  // Easing functions
+  easing: {
+    // Linear
+    linear: "linear",
+    
+    // Standard
+    easeIn: "cubic-bezier(0.4, 0, 1, 1)",
+    easeOut: "cubic-bezier(0, 0, 0.2, 1)",
+    easeInOut: "cubic-bezier(0.4, 0, 0.2, 1)",
+    
+    // Custom easing for specific effects
+    smooth: "cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+    bouncy: "cubic-bezier(0.68, -0.55, 0.265, 1.55)",
+    sharp: "cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+    gentle: "cubic-bezier(0.165, 0.84, 0.44, 1)",
+  },
+
+  // Common transitions
+  transitions: {
+    // Fade transitions
+    fadeIn: {
+      initial: { opacity: 0 },
+      animate: { opacity: 1 },
+      exit: { opacity: 0 },
+      transition: { duration: 0.2, ease: "easeOut" },
+    },
+
+    fadeOut: {
+      initial: { opacity: 1 },
+      animate: { opacity: 0 },
+      transition: { duration: 0.2, ease: "easeIn" },
+    },
+
+    // Slide transitions
+    slideInFromTop: {
+      initial: { opacity: 0, y: -20 },
+      animate: { opacity: 1, y: 0 },
+      exit: { opacity: 0, y: -20 },
+      transition: { duration: 0.3, ease: "easeOut" },
+    },
+
+    slideInFromBottom: {
+      initial: { opacity: 0, y: 20 },
+      animate: { opacity: 1, y: 0 },
+      exit: { opacity: 0, y: 20 },
+      transition: { duration: 0.3, ease: "easeOut" },
+    },
+
+    slideInFromLeft: {
+      initial: { opacity: 0, x: -20 },
+      animate: { opacity: 1, x: 0 },
+      exit: { opacity: 0, x: -20 },
+      transition: { duration: 0.3, ease: "easeOut" },
+    },
+
+    slideInFromRight: {
+      initial: { opacity: 0, x: 20 },
+      animate: { opacity: 1, x: 0 },
+      exit: { opacity: 0, x: 20 },
+      transition: { duration: 0.3, ease: "easeOut" },
+    },
+
+    // Scale transitions
+    scaleIn: {
+      initial: { opacity: 0, scale: 0.95 },
+      animate: { opacity: 1, scale: 1 },
+      exit: { opacity: 0, scale: 0.95 },
+      transition: { duration: 0.2, ease: "easeOut" },
+    },
+
+    scaleOut: {
+      initial: { opacity: 1, scale: 1 },
+      animate: { opacity: 0, scale: 0.95 },
+      transition: { duration: 0.2, ease: "easeIn" },
+    },
+
+    // Bounce effects
+    bounceIn: {
+      initial: { opacity: 0, scale: 0.3 },
+      animate: { opacity: 1, scale: 1 },
+      transition: { 
+        duration: 0.4, 
+        ease: "cubic-bezier(0.68, -0.55, 0.265, 1.55)" 
+      },
+    },
+  },
+};
+
+// Export individual animation variants for easy import
+export const fadeIn = animations.transitions.fadeIn;
+export const fadeOut = animations.transitions.fadeOut;
+export const slideInUp = animations.transitions.slideInFromBottom;
+export const slideInDown = animations.transitions.slideInFromTop;
+export const slideInLeft = animations.transitions.slideInFromLeft;
+export const slideInRight = animations.transitions.slideInFromRight;
+export const scaleIn = animations.transitions.scaleIn;
+export const scaleOut = animations.transitions.scaleOut;
+export const bounceIn = animations.transitions.bounceIn;
+
+// CSS-in-JS animation utilities for non-Framer Motion usage
+export const cssAnimations = {
+  // CSS keyframes
+  keyframes: {
+    fadeIn: `
+      from { opacity: 0; }
+      to { opacity: 1; }
+    `,
+    
+    slideInFromTop: `
+      from { 
+        opacity: 0; 
+        transform: translateY(-20px); 
+      }
+      to { 
+        opacity: 1; 
+        transform: translateY(0); 
+      }
+    `,
+    
+    slideInFromBottom: `
+      from { 
+        opacity: 0; 
+        transform: translateY(20px); 
+      }
+      to { 
+        opacity: 1; 
+        transform: translateY(0); 
+      }
+    `,
+    
+    slideInFromLeft: `
+      from { 
+        opacity: 0; 
+        transform: translateX(-20px); 
+      }
+      to { 
+        opacity: 1; 
+        transform: translateX(0); 
+      }
+    `,
+    
+    slideInFromRight: `
+      from { 
+        opacity: 0; 
+        transform: translateX(20px); 
+      }
+      to { 
+        opacity: 1; 
+        transform: translateX(0); 
+      }
+    `,
+    
+    scaleIn: `
+      from { 
+        opacity: 0; 
+        transform: scale(0.95); 
+      }
+      to { 
+        opacity: 1; 
+        transform: scale(1); 
+      }
+    `,
+    
+    pulse: `
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 1; }
+    `,
+    
+    spin: `
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    `,
+    
+    bounce: `
+      0%, 20%, 53%, 80%, 100% {
+        transform: translate3d(0, 0, 0);
+      }
+      40%, 43% {
+        transform: translate3d(0, -30px, 0);
+      }
+      70% {
+        transform: translate3d(0, -15px, 0);
+      }
+      90% {
+        transform: translate3d(0, -4px, 0);
+      }
+    `,
+    
+    shake: `
+      0%, 100% { transform: translateX(0); }
+      10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+      20%, 40%, 60%, 80% { transform: translateX(5px); }
+    `,
+  },
+
+  // CSS animation utilities
+  utilities: {
+    // Duration classes
+    duration: {
+      fast: "duration-150",
+      normal: "duration-250",
+      slow: "duration-350",
+      slower: "duration-500",
+      slowest: "duration-750",
+    },
+
+    // Easing classes
+    ease: {
+      linear: "ease-linear",
+      in: "ease-in",
+      out: "ease-out",
+      inOut: "ease-in-out",
+    },
+
+    // Animation classes
+    animate: {
+      fadeIn: "animate-fade-in",
+      slideInTop: "animate-slide-in-top",
+      slideInBottom: "animate-slide-in-bottom",
+      slideInLeft: "animate-slide-in-left",
+      slideInRight: "animate-slide-in-right",
+      scaleIn: "animate-scale-in",
+      pulse: "animate-pulse",
+      spin: "animate-spin",
+      bounce: "animate-bounce",
+      shake: "animate-shake",
+    },
+
+    // Transition classes
+    transition: {
+      all: "transition-all",
+      colors: "transition-colors",
+      opacity: "transition-opacity",
+      transform: "transition-transform",
+      shadow: "transition-shadow",
+    },
+  },
+};
+
+// Helper functions for common animation patterns
+export const animationHelpers = {
+  // Stagger animation for lists
+  createStagger: (delay: number = 0.1) => ({
+    initial: { opacity: 0, y: 20 },
+    animate: { opacity: 1, y: 0 },
+    transition: { 
+      delay,
+      duration: 0.3, 
+      ease: "easeOut" 
+    },
+  }),
+
+  // Hover animation with customizable scale
+  createHover: (scale: number = 1.02) => ({
+    whileHover: { 
+      scale, 
+      transition: { duration: 0.2, ease: "easeOut" } 
+    },
+    whileTap: { 
+      scale: 1 - (scale - 1), 
+      transition: { duration: 0.1, ease: "easeIn" } 
+    },
+  }),
+
+  // Slide animation with customizable direction and distance
+  createSlide: (direction: 'top' | 'bottom' | 'left' | 'right' = 'bottom', distance: number = 20) => {
+    const axis = direction === 'top' || direction === 'bottom' ? 'y' : 'x';
+    const value = direction === 'top' || direction === 'left' ? -distance : distance;
+    
+    return {
+      initial: { opacity: 0, [axis]: value },
+      animate: { opacity: 1, [axis]: 0 },
+      exit: { opacity: 0, [axis]: value },
+      transition: { duration: 0.3, ease: "easeOut" },
+    };
+  },
+
+  // Fade animation with customizable duration
+  createFade: (duration: number = 0.2) => ({
+    initial: { opacity: 0 },
+    animate: { opacity: 1 },
+    exit: { opacity: 0 },
+    transition: { duration, ease: "easeOut" },
+  }),
+
+  // Scale animation with customizable scale
+  createScale: (scale: number = 0.95) => ({
+    initial: { opacity: 0, scale },
+    animate: { opacity: 1, scale: 1 },
+    exit: { opacity: 0, scale },
+    transition: { duration: 0.2, ease: "easeOut" },
+  }),
+};
+
+// Export default for easy importing
+export default animations;

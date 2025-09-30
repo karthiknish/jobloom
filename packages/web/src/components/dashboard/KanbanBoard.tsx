@@ -122,7 +122,8 @@ export function KanbanBoard({
   } as const;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+    <div className="overflow-x-auto pb-2">
+      <div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-3 gap-4 min-w-max md:min-w-0">
       {columns.map((col) => (
         <Card key={col} className="min-h-[320px]">
           <CardHeader className="flex flex-row items-center justify-between">
@@ -184,6 +185,7 @@ export function KanbanBoard({
           </CardContent>
         </Card>
       ))}
+      </div>
     </div>
   );
 }

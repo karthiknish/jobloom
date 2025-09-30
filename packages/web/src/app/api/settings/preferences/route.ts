@@ -36,6 +36,9 @@ export async function GET(request: NextRequest) {
       jobTypes: [],
       experienceLevels: [],
       industries: [],
+      analyticsTracking: true,
+      dataSharing: false,
+      marketingEmails: true,
       createdAt: new Date(),
       updatedAt: new Date()
     };
@@ -77,7 +80,8 @@ export async function PUT(request: NextRequest) {
     const validKeys = [
       'theme', 'language', 'timezone', 'emailNotifications', 'pushNotifications',
       'jobAlertsEnabled', 'jobKeywords', 'preferredCompanies', 'preferredLocations',
-      'salaryRange', 'jobTypes', 'experienceLevels', 'industries'
+      'salaryRange', 'jobTypes', 'experienceLevels', 'industries',
+      'analyticsTracking', 'dataSharing', 'marketingEmails'
     ];
 
     const sanitizedPreferences: any = {};

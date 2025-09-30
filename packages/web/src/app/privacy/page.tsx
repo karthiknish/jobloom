@@ -44,7 +44,7 @@ export default function PrivacyPolicy() {
           <section className="space-y-6">
             <p>
               Your privacy is important to us. This Privacy Policy explains how
-              Hireall ("we", "our", or "us") collects, uses, and protects your personal information when you use our website, Chrome extension, and related services (collectively, the "Service").
+              Hireall (&ldquo;we&rdquo;, &ldquo;our&rdquo;, or &ldquo;us&rdquo;) collects, uses, and protects your personal information when you use our website, Chrome extension, and related services (collectively, the &ldquo;Service&rdquo;).
             </p>
 
             <h2 className="text-xl font-semibold">1. Information We Collect</h2>

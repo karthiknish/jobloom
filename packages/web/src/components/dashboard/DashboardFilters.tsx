@@ -35,7 +35,7 @@ export function DashboardFilters({
         <CardTitle className="text-lg">Advanced Filters</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Search */}
           <div className="space-y-2">
             <label className="text-sm font-medium">Search</label>
@@ -98,7 +98,7 @@ export function DashboardFilters({
         </div>
 
         {/* Active Filters */}
-        <div className="flex flex-wrap gap-2 mt-4">
+        <div className="flex flex-wrap gap-2 mt-4 gap-y-3">
           {statusFilter !== "all" && (
             <Badge
               variant="secondary"

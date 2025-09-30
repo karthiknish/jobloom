@@ -135,12 +135,12 @@ export class JobBoardManager {
       | "withdrawn" = "interested"
   ): Promise<{ success: boolean; message: string }> {
     try {
-      // Get user ID
+      // Get user ID and verify authentication
       const userId = await this.getUserId();
       if (!userId) {
         return {
           success: false,
-          message: "User not authenticated. Please sign in to Hireall.",
+          message: "Please sign in to add jobs to your board.",
         };
       }
 
@@ -172,16 +172,35 @@ export class JobBoardManager {
           userId: userId,
         });
       } catch (e: any) {
-        const msg = (e?.message || "").toLowerCase();
-        if (msg.includes("429")) {
+        const msg = e?.message || "";
+        
+        // Provide specific error messages based on the error
+        if (msg.includes("Authentication required") || msg.includes("Authentication failed")) {
+          return {
+            success: false,
+            message: "Please sign in to add jobs to your board.",
+          };
+        } else if (msg.includes("429") || msg.includes("Too many requests")) {
           return {
             success: false,
             message: "Rate limit exceeded. Please try again later.",
           };
+        } else if (msg.includes("Permission denied")) {
+          return {
+            success: false,
+            message: "Permission denied. Please check your account access.",
+          };
+        } else if (msg.includes("User ID does not match")) {
+          return {
+            success: false,
+            message: "Authentication mismatch. Please sign in again.",
+          };
         }
+        
+        console.error("Job creation error:", e);
         return {
           success: false,
-          message: "Failed to add job to board. Please try again.",
+          message: "Failed to add job. Please try again.",
         };
       }
 
@@ -327,7 +346,7 @@ export class JobBoardManager {
       if (!userId) {
         return {
           success: false,
-          message: "User not authenticated. Please sign in to Hireall.",
+          message: "Please sign in to update job status.",
         };
       }
 
@@ -337,8 +356,13 @@ export class JobBoardManager {
         applications = await get<ApplicationData[]>(
           `/api/app/applications/user/${encodeURIComponent(userId)}`
         );
-      } catch {
-        return { success: false, message: "Failed to fetch applications." };
+      } catch (error: any) {
+        console.error("Failed to fetch applications:", error);
+        let errorMessage = "Failed to fetch applications.";
+        if (error?.message?.includes("Authentication")) {
+          errorMessage = "Please sign in to update job status.";
+        }
+        return { success: false, message: errorMessage };
       }
       const application = applications.find((app) => app.jobId === jobId);
 

@@ -63,7 +63,6 @@ export async function POST(request: NextRequest) {
       subscription,
       userId,
       plan,
-      billingCycle,
     });
 
     return NextResponse.json({

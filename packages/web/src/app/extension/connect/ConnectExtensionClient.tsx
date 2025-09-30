@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { showSuccess } from "@/components/ui/Toast";
+import { CheckCircle, XCircle } from "lucide-react";
 
 export default function ConnectExtensionClient() {
   const [uid, setUid] = useState<string | null>(null);
@@ -62,13 +63,13 @@ export default function ConnectExtensionClient() {
           )}
           {connectionStatus === 'connected' && uid && (
             <div className="flex items-center">
-              <span className="text-green-600 mr-2">✅</span>
+              <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
               <span className="text-green-600">Connected (UID: {uid})</span>
             </div>
           )}
           {connectionStatus === 'error' && (
             <div className="flex items-center">
-              <span className="text-destructive mr-2">❌</span>
+              <XCircle className="h-4 w-4 text-destructive mr-2" />
               <span className="text-destructive">Connection failed</span>
             </div>
           )}

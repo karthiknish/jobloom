@@ -1,12 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyIdToken, getAdminDb } from "@/firebase/admin";
 import { getStripeClient } from "@/lib/stripe";
-import { upsertSubscriptionFromStripe } from "@/lib/subscriptions";
+import { upsertSubscriptionFromStripe, ValidationError, DatabaseError } from "@/lib/subscriptions";
 import { FieldValue } from "firebase-admin/firestore";
+import { checkUserRateLimit } from "@/lib/rateLimiter";
 import type Stripe from "stripe";
 
 const stripe = getStripeClient();
 const db = getAdminDb();
+
+function validateAuthorizationHeader(authHeader: string | null): { isValid: boolean; token?: string; error?: string } {
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return { isValid: false, error: "Missing or invalid authorization header" };
+  }
+  
+  const token = authHeader.substring(7);
+  if (!token || token.trim().length === 0) {
+    return { isValid: false, error: "Empty token" };
+  }
+  
+  return { isValid: true, token };
+}
+
+function setSecurityHeaders(response: NextResponse): NextResponse {
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('X-Frame-Options', 'DENY');
+  response.headers.set('X-XSS-Protection', '1; mode=block');
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  return response;
+}
 
 type SubscriptionWithLegacyPeriods = Stripe.Subscription & {
   current_period_end?: number | null;
@@ -23,19 +45,41 @@ const resolveCurrentPeriodEnd = (
 
 export async function POST(request: NextRequest) {
   try {
+    // Validate authorization header
     const authHeader = request.headers.get("authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const authValidation = validateAuthorizationHeader(authHeader);
+    
+    if (!authValidation.isValid) {
+      const response = NextResponse.json({ error: authValidation.error }, { status: 401 });
+      return setSecurityHeaders(response);
     }
 
-    const token = authHeader.substring(7);
+    const token = authValidation.token!;
     const decodedToken = await verifyIdToken(token);
 
     if (!decodedToken) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+      const response = NextResponse.json({ error: "Invalid token" }, { status: 401 });
+      return setSecurityHeaders(response);
     }
 
     const userId = decodedToken.uid;
+    
+    // Apply stricter rate limiting for sensitive operations
+    const rateLimitResult = checkUserRateLimit(userId, 'subscription-resume');
+    if (rateLimitResult.isLimited) {
+      const response = NextResponse.json({ 
+        error: rateLimitResult.errorMsg,
+        resetTime: rateLimitResult.resetTime
+      }, { 
+        status: 429,
+        headers: {
+          'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+          'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+          'X-RateLimit-Reset': rateLimitResult.resetTime.toString()
+        }
+      });
+      return setSecurityHeaders(response);
+    }
 
     const userDoc = await db.collection("users").doc(userId).get();
     const userData = userDoc.data() as Record<string, any> | undefined;
@@ -75,7 +119,6 @@ export async function POST(request: NextRequest) {
       subscription: updatedSubscription,
       userId,
       plan: (updatedSubscription.metadata?.plan ?? userData?.plan ?? "premium") as string,
-      billingCycle: updatedSubscription.metadata?.billingCycle ?? undefined,
     });
 
     await db.collection("users").doc(userId).set({
@@ -84,7 +127,7 @@ export async function POST(request: NextRequest) {
       updatedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       subscription: {
         id: updatedSubscription.id,
@@ -93,10 +136,27 @@ export async function POST(request: NextRequest) {
         currentPeriodEnd: resolveCurrentPeriodEnd(updatedSubscription),
       },
     });
+    
+    return setSecurityHeaders(response);
+    
   } catch (error) {
     console.error("Error resuming subscription:", error);
-    const message = error instanceof Error ? error.message : "Internal server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    
+    let statusCode = 500;
+    let errorMessage = "Internal server error";
+    
+    if (error instanceof ValidationError) {
+      statusCode = 400;
+      errorMessage = error.message;
+    } else if (error instanceof DatabaseError) {
+      statusCode = 500;
+      errorMessage = "Database operation failed";
+    } else if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    
+    const response = NextResponse.json({ error: errorMessage }, { status: statusCode });
+    return setSecurityHeaders(response);
   }
 }
 

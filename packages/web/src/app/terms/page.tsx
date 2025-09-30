@@ -34,7 +34,7 @@ export default function TermsOfService() {
         <CardContent className="prose max-w-none">
           <section className="space-y-6">
             <p>
-              Welcome to Hireall! These Terms of Service ("Terms") govern your use of the Hireall platform, Chrome extension, and related services (collectively, the "Service"). By accessing or using the Service, you agree to be bound by these Terms.
+              Welcome to Hireall! These Terms of Service (&ldquo;Terms&rdquo;) govern your use of the Hireall platform, Chrome extension, and related services (collectively, the &ldquo;Service&rdquo;). By accessing or using the Service, you agree to be bound by these Terms.
             </p>
 
             <h2 className="text-xl font-semibold">1. Eligibility</h2>

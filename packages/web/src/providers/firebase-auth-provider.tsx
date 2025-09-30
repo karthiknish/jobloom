@@ -160,7 +160,13 @@ export function FirebaseAuthProvider({
       return;
     }
 
+    // Set a timeout to ensure loading state is eventually set to false
+    const timeoutId = setTimeout(() => {
+      setState((prev) => ({ ...prev, loading: false, isInitialized: true }));
+    }, 5000); // 5 second timeout
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      clearTimeout(timeoutId);
       setState((prev) => ({
         ...prev,
         user,
@@ -185,6 +191,7 @@ export function FirebaseAuthProvider({
 
     return () => {
       unsubscribe();
+      clearTimeout(timeoutId);
       // Clear timeouts on cleanup - functions will be defined by this point
       if ((window as any).__sessionWarningTimeout) {
         clearTimeout((window as any).__sessionWarningTimeout);

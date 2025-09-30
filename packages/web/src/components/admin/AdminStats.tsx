@@ -1,6 +1,7 @@
 // components/admin/AdminStats.tsx
 import type { SponsorshipStats } from "../../types/api";
 import { Card, CardContent } from "@/components/ui/card";
+import { MapPin, Link, TrendingUp } from "lucide-react";
 
 interface AdminStatsProps {
   stats: SponsorshipStats;
@@ -13,7 +14,7 @@ export function AdminStats({ stats }: AdminStatsProps) {
         <CardContent className="p-5">
           <div className="flex items-center">
             <div className="flex-shrink-0 bg-blue-100 rounded-lg p-3">
-              <span className="text-2xl">📍</span>
+              <MapPin className="h-8 w-8 text-orange-500" />
             </div>
             <div className="ml-5 w-0 flex-1">
               <dl>
@@ -33,7 +34,7 @@ export function AdminStats({ stats }: AdminStatsProps) {
         <CardContent className="p-5">
           <div className="flex items-center">
             <div className="flex-shrink-0 bg-primary/10 rounded-lg p-3">
-              <span className="text-2xl">🔗</span>
+              <Link className="h-8 w-8 text-blue-500" />
             </div>
             <div className="ml-5 w-0 flex-1">
               <dl>
@@ -53,7 +54,7 @@ export function AdminStats({ stats }: AdminStatsProps) {
         <CardContent className="p-5">
           <div className="flex items-center">
             <div className="flex-shrink-0 bg-secondary/20 rounded-lg p-3">
-              <span className="text-2xl">📈</span>
+              <TrendingUp className="h-8 w-8 text-green-500" />
             </div>
             <div className="ml-5 w-0 flex-1">
               <dl>

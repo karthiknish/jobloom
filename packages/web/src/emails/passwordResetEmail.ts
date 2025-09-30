@@ -1,4 +1,5 @@
 import { format } from "date-fns";
+import { COLORS } from "../styles/colors";
 
 export const PASSWORD_RESET_SUBJECT = "Reset your Hireall password";
 
@@ -10,12 +11,12 @@ interface PasswordResetTemplateProps {
   signInUrl?: string;
 }
 
-const brandColor = "#2563eb";
-const backgroundColor = "#f5f6ff";
-const textColor = "#1f2937";
-const mutedTextColor = "#4b5563";
-const cardBackground = "#ffffff";
-const borderColor = "#e5e7eb";
+const brandColor = COLORS.brand;
+const backgroundColor = COLORS.backgroundLight;
+const textColor = COLORS.text;
+const mutedTextColor = COLORS.mutedText;
+const cardBackground = COLORS.cardBackground;
+const borderColor = COLORS.border;
 const supportEmailDefault = "support@hireall.com";
 const signInUrlDefault = "https://hireall.com/sign-in";
 

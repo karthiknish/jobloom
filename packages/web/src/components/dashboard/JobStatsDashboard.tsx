@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Briefcase } from "lucide-react";
+import { Briefcase, MapPin, TrendingUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -105,7 +105,7 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
                   <div className="p-4 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 shadow-lg">
-                    <span className="text-white text-2xl">📍</span>
+                    <MapPin className="h-8 w-8 text-white" />
                   </div>
                   <div className="ml-4">
                     <p className="text-sm font-medium text-muted-foreground">
@@ -175,7 +175,7 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
                   <div className="p-4 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600 shadow-lg">
-                    <span className="text-white text-2xl">📈</span>
+                    <TrendingUp className="h-8 w-8 text-white" />
                   </div>
                   <div className="ml-4">
                     <p className="text-sm font-medium text-muted-foreground">
@@ -212,7 +212,7 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
           <Card className="group hover:shadow-xl transition-shadow duration-300">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <span className="text-2xl">📈</span>
+                <TrendingUp className="h-6 w-6" />
                 Applications by Status
               </CardTitle>
             </CardHeader>
@@ -315,7 +315,7 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
                       <div className="group/insight flex items-center justify-between p-4 bg-gradient-to-r from-orange-50 to-orange-100   rounded-xl hover:from-orange-100 hover:to-orange-200   transition-all duration-300 cursor-help">
                         <div className="flex items-center">
                           <div className="p-3 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 shadow-md group-hover/insight:shadow-lg transition-shadow">
-                            <span className="text-white text-xl">📍</span>
+                            <MapPin className="h-6 w-6 text-white" />
                           </div>
                           <div className="ml-4">
                             <span className="font-semibold text-foreground">
@@ -340,7 +340,7 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
                 <div className="group/insight flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-green-100   rounded-xl hover:from-green-100 hover:to-green-200   transition-all duration-300">
                   <div className="flex items-center">
                     <div className="p-3 rounded-xl bg-gradient-to-br from-green-500 to-green-600 shadow-md group-hover/insight:shadow-lg transition-shadow">
-                      <span className="text-white text-xl">📈</span>
+                      <TrendingUp className="h-6 w-6 text-white" />
                     </div>
                     <div className="ml-4">
                       <span className="font-semibold text-foreground">
