@@ -159,9 +159,17 @@ async function initializeAnalytics(): Promise<void> {
   try {
     if (services && (await analyticsSupported())) {
       services.analytics = getAnalytics(services.app!);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[FirebaseClient] Analytics initialized successfully');
+      }
+    } else {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[FirebaseClient] Analytics not supported or services not available');
+      }
     }
   } catch (error) {
-    console.warn("Firebase Analytics initialization failed:", error);
+    console.warn("[FirebaseClient] Analytics initialization failed:", error);
+    services!.analytics = undefined; // Ensure it's undefined on failure
   }
 }
 

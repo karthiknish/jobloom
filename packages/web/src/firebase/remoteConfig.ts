@@ -255,7 +255,7 @@ export const remoteConfig = {
   },
 
   get isAnalyticsEnabled(): boolean {
-    return isFeatureEnabled('analytics_tracking');
+    return remoteConfigService.getValue('feature_analytics_tracking', true);
   },
 
   get isPerformanceMonitoringEnabled(): boolean {

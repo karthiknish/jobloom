@@ -5,9 +5,9 @@ import { getAdminApp } from "@/firebase/admin";
 import { PASSWORD_RESET_SUBJECT, renderPasswordResetEmailHtml, renderPasswordResetEmailText } from "@/emails/passwordResetEmail";
 
 const resendApiKey = process.env.RESEND_API_KEY;
-const resendFrom = process.env.RESEND_FROM_EMAIL ?? "Hireall <hello@hireall.com>";
-const appUrl = process.env.HIREALL_WEB_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "https://hireall.com";
-const supportEmail = process.env.HIREALL_SUPPORT_EMAIL ?? "support@hireall.com";
+const resendFrom = process.env.RESEND_FROM_EMAIL ?? "Hireall <hello@hireall.app>";
+const appUrl = process.env.HIREALL_WEB_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "https://hireall.app";
+const supportEmail = process.env.HIREALL_SUPPORT_EMAIL ?? "support@hireall.app";
 
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
 

@@ -43,9 +43,16 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      await analyticsService.initialize();
-      if (!cancelled) {
-        setReady(true);
+      try {
+        await analyticsService.initialize();
+        if (!cancelled && analyticsService.isReady()) {
+          setReady(true);
+        }
+      } catch (error) {
+        console.warn('[AnalyticsProvider] Failed to initialize analytics:', error);
+        if (!cancelled) {
+          setReady(false);
+        }
       }
     }
 
@@ -62,7 +69,7 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
     if (user) {
       setAnalyticsUserId(user.uid);
       setAnalyticsUserProperties({
-        user_type: user.email?.endsWith("@hireall.com") ? "admin" : undefined,
+        user_type: user.email?.endsWith("@hireall.app") ? "admin" : undefined,
         signup_method: user.providerData?.[0]?.providerId,
         last_login_date: new Date().toISOString().split("T")[0],
       });
@@ -74,16 +81,43 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo<AnalyticsContextValue>(() => ({
     isReady: ready,
     identify: (properties) => {
-      if (!ready || !properties) return;
-      setAnalyticsUserProperties(properties);
+      if (!ready || !properties) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[AnalyticsProvider] Cannot identify user - analytics not ready or no properties');
+        }
+        return;
+      }
+      try {
+        setAnalyticsUserProperties(properties);
+      } catch (error) {
+        console.warn('[AnalyticsProvider] Failed to set user properties:', error);
+      }
     },
     reset: () => {
-      if (!ready) return;
-      clearAnalyticsUserId();
+      if (!ready) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[AnalyticsProvider] Cannot reset analytics - not ready');
+        }
+        return;
+      }
+      try {
+        clearAnalyticsUserId();
+      } catch (error) {
+        console.warn('[AnalyticsProvider] Failed to clear user ID:', error);
+      }
     },
     track: (event, params) => {
-      if (!ready || !event) return;
-      analyticsService.logEvent({ name: event, parameters: params });
+      if (!ready || !event) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[AnalyticsProvider] Cannot track event - analytics not ready or no event name');
+        }
+        return;
+      }
+      try {
+        analyticsService.logEvent({ name: event, parameters: params });
+      } catch (error) {
+        console.warn('[AnalyticsProvider] Failed to track event:', event, error);
+      }
     },
   }), [ready]);
 

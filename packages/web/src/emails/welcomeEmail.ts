@@ -15,8 +15,8 @@ const textColor = COLORS.text;
 const mutedTextColor = COLORS.mutedText;
 const cardBackground = COLORS.cardBackground;
 const borderColor = COLORS.border;
-const defaultDashboardUrl = "https://hireall.com/dashboard";
-const defaultSettingsUrl = "https://hireall.com/settings";
+const defaultDashboardUrl = "https://hireall.app/dashboard";
+const defaultSettingsUrl = "https://hireall.app/settings";
 
 const currentYear = () => format(new Date(), "yyyy");
 
@@ -105,7 +105,7 @@ export function renderWelcomeEmailHtml({
                           <td style="padding:18px 24px; border:1px solid ${borderColor}; border-radius:12px; background:${backgroundColor};">
                             <p style="margin:0 0 12px; font-size:15px; font-weight:600; color:${textColor};">Need a hand?</p>
                             <p style="margin:0; font-size:14px; line-height:1.6; color:${mutedTextColor};">
-                              We love hearing from job seekers. Reply to this email or reach us anytime at <a href="mailto:support@hireall.com" style="color:${brandColor}; text-decoration:none;">support@hireall.com</a>.
+                              We love hearing from job seekers. Reply to this email or reach us anytime at <a href="mailto:support@hireall.app" style="color:${brandColor}; text-decoration:none;">support@hireall.app</a>.
                             </p>
                           </td>
                         </tr>
@@ -141,5 +141,5 @@ export function renderWelcomeEmailText({
 }: WelcomeEmailTemplateProps): string {
   const greeting = getGreeting(name);
   const year = currentYear();
-  return `${greeting} 👋\n\nWelcome to Hireall — your smarter job search starts now.\n\nYou're ready to:\n• Track every role from one dashboard\n• Stay on top of follow-ups with reminders\n• Prioritize visa-friendly opportunities with sponsor insights\n\nJump into your dashboard → ${dashboardUrl}\n\nNeed help? Reply to this email or reach us at support@hireall.com.\n\nCheering you on,\nThe Hireall Team\n\n© ${year} Hireall | Manage notifications in your settings: ${settingsUrl}`;
+  return `${greeting} 👋\n\nWelcome to Hireall — your smarter job search starts now.\n\nYou're ready to:\n• Track every role from one dashboard\n• Stay on top of follow-ups with reminders\n• Prioritize visa-friendly opportunities with sponsor insights\n\nJump into your dashboard → ${dashboardUrl}\n\nNeed help? Reply to this email or reach us at support@hireall.app.\n\nCheering you on,\nThe Hireall Team\n\n© ${year} Hireall | Manage notifications in your settings: ${settingsUrl}`;
 }

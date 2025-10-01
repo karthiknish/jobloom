@@ -17,8 +17,8 @@ const textColor = COLORS.text;
 const mutedTextColor = COLORS.mutedText;
 const cardBackground = COLORS.cardBackground;
 const borderColor = COLORS.border;
-const supportEmailDefault = "support@hireall.com";
-const signInUrlDefault = "https://hireall.com/sign-in";
+const supportEmailDefault = "support@hireall.app";
+const signInUrlDefault = "https://hireall.app/sign-in";
 
 const currentYear = () => format(new Date(), "yyyy");
 

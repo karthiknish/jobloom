@@ -8,9 +8,9 @@ import {
 } from "@/emails/welcomeEmail";
 
 const resendApiKey = process.env.RESEND_API_KEY;
-const resendFrom = process.env.RESEND_FROM_EMAIL ?? "Hireall <hello@hireall.com>";
-const dashboardUrl = process.env.HIREALL_DASHBOARD_URL ?? "https://hireall.com/dashboard";
-const settingsUrl = process.env.HIREALL_SETTINGS_URL ?? "https://hireall.com/settings";
+const resendFrom = process.env.RESEND_FROM_EMAIL ?? "Hireall <hello@hireall.app>";
+const dashboardUrl = process.env.HIREALL_DASHBOARD_URL ?? "https://hireall.app/dashboard";
+const settingsUrl = process.env.HIREALL_SETTINGS_URL ?? "https://hireall.app/settings";
 
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
 

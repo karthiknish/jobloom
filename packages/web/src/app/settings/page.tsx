@@ -1527,7 +1527,7 @@ export default function SettingsPage() {
                                 {sessions.length > 0 && (
                                   <div className="pt-2 border-t">
                                     <p className="text-xs text-muted-foreground mb-3">
-                                      Note: Due to Firebase Auth limitations, only the current session is shown. Use "Revoke All Sessions" to sign out from all devices.
+                                      Note: Due to Firebase Auth limitations, only the current session is shown. Use &quot;Revoke All Sessions&quot; to sign out from all devices.
                                     </p>
                                     <Button
                                       variant="destructive"

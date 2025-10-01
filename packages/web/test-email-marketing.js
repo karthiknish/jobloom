@@ -48,7 +48,7 @@ async function testEmailMarketing() {
         name: 'Test Campaign',
         templateId: templateId,
         subject: 'Test Campaign Subject',
-        fromEmail: 'test@hireall.com',
+        fromEmail: 'test@hireall.app',
         fromName: 'HireAll Test',
         scheduledFor: null,
         recipientSelection: 'all',

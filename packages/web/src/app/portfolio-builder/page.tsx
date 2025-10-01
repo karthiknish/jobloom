@@ -1344,7 +1344,7 @@ export default function PortfolioBuilderPage() {
                             placeholder="yourname"
                             className="h-11 text-base flex-1"
                           />
-                          <span className="flex items-center text-sm text-muted-foreground bg-muted/50 px-3 rounded-lg border">.hireall.com</span>
+                          <span className="flex items-center text-sm text-muted-foreground bg-muted/50 px-3 rounded-lg border">.hireall.app</span>
                         </div>
                       </div>
                     )}

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { showError } from "@/components/ui/Toast";
 
@@ -46,6 +46,7 @@ export default function Chatbot() {
   const [autoScroll, setAutoScroll] = useState(true);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [shouldPulse, setShouldPulse] = useState(true);
+  const [isLoaded, setIsLoaded] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Message persistence keys
@@ -87,11 +88,58 @@ export default function Chatbot() {
     }
   }, []);
 
+  // Initialize component and load data
+  useEffect(() => {
+    let mounted = true;
+    
+    const initializeChat = async () => {
+      try {
+        // Load chat history
+        const savedHistory = localStorage.getItem(CHAT_SESSIONS_KEY);
+        const savedCurrent = localStorage.getItem(CHAT_HISTORY_KEY);
+
+        if (savedHistory && mounted) {
+          const parsedHistory = JSON.parse(savedHistory);
+          const historyWithDates = parsedHistory.map((session: Message[]) =>
+            session.map(msg => ({
+              ...msg,
+              timestamp: new Date(msg.timestamp)
+            }))
+          );
+          setChatHistory(historyWithDates);
+        }
+
+        if (savedCurrent && mounted) {
+          const parsedCurrent = JSON.parse(savedCurrent);
+          const currentWithDates = parsedCurrent.map((msg: Message) => ({
+            ...msg,
+            timestamp: new Date(msg.timestamp)
+          }));
+          setMessages(currentWithDates);
+        }
+      } catch (error) {
+        console.error('Failed to load chat history:', error);
+      } finally {
+        if (mounted) {
+          setIsLoaded(true);
+        }
+      }
+    };
+
+    initializeChat();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   // Stop attention pulse after initial exposure or when chat opens
   useEffect(() => {
+    if (!isLoaded) return;
+    
     const timeout = setTimeout(() => setShouldPulse(false), 8000);
     return () => clearTimeout(timeout);
-  }, []);
+  }, [isLoaded]);
 
   useEffect(() => {
     if (isOpen) {
@@ -101,6 +149,8 @@ export default function Chatbot() {
 
   // Detect user scroll position to toggle auto-scroll & button
   useEffect(() => {
+    if (!isLoaded || !isOpen || isMinimized) return;
+    
     const viewport = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement | null;
     if (!viewport) return;
 
@@ -113,80 +163,51 @@ export default function Chatbot() {
       setShowScrollButton(!isAtBottom);
     };
 
-    // Check initial position
-    handleScroll();
+    // Check initial position after a short delay
+    const timeoutId = setTimeout(handleScroll, 100);
 
     viewport.addEventListener('scroll', handleScroll, { passive: true });
-    return () => viewport.removeEventListener('scroll', handleScroll);
-  }, [autoScroll]);
+    return () => {
+      clearTimeout(timeoutId);
+      viewport.removeEventListener('scroll', handleScroll);
+    };
+  }, [autoScroll, isLoaded, isOpen, isMinimized]);
 
   // Auto-scroll only if user hasn't scrolled up
   useEffect(() => {
-    if (autoScroll) {
-      // Use multiple attempts with delays to ensure DOM is updated
-      const scrollAttempts = [0, 10, 25, 50, 100];
-      scrollAttempts.forEach(delay => {
-        setTimeout(() => scrollToBottom('instant'), delay);
-      });
-    }
-  }, [messages, autoScroll, scrollToBottom]);
+    if (!isLoaded || !autoScroll) return;
+    
+    // Use multiple attempts with delays to ensure DOM is updated
+    const scrollAttempts = [0, 10, 25, 50, 100];
+    scrollAttempts.forEach(delay => {
+      setTimeout(() => scrollToBottom('instant'), delay);
+    });
+  }, [messages, autoScroll, scrollToBottom, isLoaded]);
 
   // Re-enable auto-scroll when new chat session starts
   useEffect(() => {
-    if (messages.length === 1) {
-      setAutoScroll(true);
-      setTimeout(() => scrollToBottom('instant'), 50);
-    }
-  }, [messages.length, scrollToBottom]);
+    if (!isLoaded || messages.length !== 1) return;
+    
+    setAutoScroll(true);
+    setTimeout(() => scrollToBottom('instant'), 50);
+  }, [messages.length, scrollToBottom, isLoaded]);
 
   // Focus textarea when chat opens
   useEffect(() => {
-    if (isOpen && !isMinimized && textareaRef.current) {
+    if (!isLoaded || !isOpen || isMinimized) return;
+    
+    if (textareaRef.current) {
       setTimeout(() => textareaRef.current?.focus(), 100);
     }
-  }, [isOpen, isMinimized]);
+  }, [isOpen, isMinimized, isLoaded]);
 
-  // Load chat history on component mount
+
+
+  // Save current chat session to localStorage (debounced)
   useEffect(() => {
-    const loadChatHistory = () => {
-      try {
-        const savedHistory = localStorage.getItem(CHAT_SESSIONS_KEY);
-        const savedCurrent = localStorage.getItem(CHAT_HISTORY_KEY);
-
-        if (savedHistory) {
-          const parsedHistory = JSON.parse(savedHistory);
-          // Convert timestamp strings back to Date objects
-          const historyWithDates = parsedHistory.map((session: Message[]) =>
-            session.map(msg => ({
-              ...msg,
-              timestamp: new Date(msg.timestamp)
-            }))
-          );
-          setChatHistory(historyWithDates);
-        }
-
-        if (savedCurrent) {
-          const parsedCurrent = JSON.parse(savedCurrent);
-          // Convert timestamp strings back to Date objects
-          const currentWithDates = parsedCurrent.map((msg: Message) => ({
-            ...msg,
-            timestamp: new Date(msg.timestamp)
-          }));
-          setMessages(currentWithDates);
-        }
-      } catch (error) {
-        console.error('Failed to load chat history:', error);
-        // Reset to default if loading fails
-        setMessages([WELCOME_MESSAGE]);
-      }
-    };
-
-    loadChatHistory();
-  }, []);
-
-  // Save current chat session to localStorage
-  useEffect(() => {
-    const saveCurrentChat = () => {
+    if (!isLoaded) return;
+    
+    const timeoutId = setTimeout(() => {
       try {
         if (messages.length > 1) { // Only save if there are actual messages (beyond welcome)
           localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(messages));
@@ -194,23 +215,25 @@ export default function Chatbot() {
       } catch (error) {
         console.error('Failed to save current chat:', error);
       }
-    };
+    }, 1000); // Debounce for 1 second
 
-    saveCurrentChat();
-  }, [messages]);
+    return () => clearTimeout(timeoutId);
+  }, [messages, isLoaded]);
 
-  // Save chat history to localStorage when history changes
+  // Save chat history to localStorage when history changes (debounced)
   useEffect(() => {
-    const saveChatHistory = () => {
+    if (!isLoaded) return;
+    
+    const timeoutId = setTimeout(() => {
       try {
         localStorage.setItem(CHAT_SESSIONS_KEY, JSON.stringify(chatHistory));
       } catch (error) {
         console.error('Failed to save chat history:', error);
       }
-    };
+    }, 1000); // Debounce for 1 second
 
-    saveChatHistory();
-  }, [chatHistory]);
+    return () => clearTimeout(timeoutId);
+  }, [chatHistory, isLoaded]);
 
   const sendMessage = async (message: string) => {
     if (!message.trim() || isLoading) return;
@@ -324,6 +347,11 @@ export default function Chatbot() {
       console.error('Failed to clear chat history:', error);
     }
   };
+
+  // Don't render until component is loaded to prevent blinking
+  if (!isLoaded) {
+    return null;
+  }
 
   return (
     <>

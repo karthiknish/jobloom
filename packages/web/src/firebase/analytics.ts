@@ -85,15 +85,18 @@ class FirebaseAnalyticsService {
         this.analytics = analytics;
         this.isInitialized = true;
         if (process.env.NODE_ENV === 'development') {
-          console.info('[Analytics] Firebase Analytics initialized');
+          console.info('[Analytics] Firebase Analytics initialized successfully');
         }
       } else {
+        this.isInitialized = false;
         if (process.env.NODE_ENV === 'development') {
-          console.warn('[Analytics] Firebase Analytics not available');
+          console.warn('[Analytics] Firebase Analytics not available - client returned null');
         }
       }
     } catch (error) {
+      this.isInitialized = false;
       console.warn('[Analytics] Failed to initialize Firebase Analytics:', error);
+      throw error; // Re-throw to allow caller to handle the error
     }
   }
 
@@ -104,10 +107,18 @@ class FirebaseAnalyticsService {
 
   // Log custom events
   async logEvent(event: AnalyticsEvent): Promise<void> {
-    if (!this.isReady()) return;
+    if (!this.isReady()) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[Analytics] Cannot log event - analytics not ready:', event.name);
+      }
+      return;
+    }
 
     try {
       logEvent(this.analytics!, event.name, event.parameters);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[Analytics] Event logged:', event.name, event.parameters);
+      }
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
         console.warn('[Analytics] Failed to log event:', event.name, error);

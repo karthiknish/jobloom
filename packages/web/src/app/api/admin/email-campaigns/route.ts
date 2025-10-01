@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
       name: campaignData.name,
       templateId: campaignData.templateId,
       subject: campaignData.subject,
-      fromEmail: campaignData.fromEmail || 'noreply@hireall.com',
+      fromEmail: campaignData.fromEmail || 'noreply@hireall.app',
       fromName: campaignData.fromName || 'HireAll Team',
       replyTo: campaignData.replyTo,
       recipients: campaignData.recipients || { type: 'all' },

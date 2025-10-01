@@ -72,7 +72,7 @@ export default function EmailMarketingPage() {
     name: "",
     templateId: "",
     subject: "",
-    fromEmail: "noreply@hireall.com",
+    fromEmail: "noreply@hireall.app",
     fromName: "HireAll Team",
     replyTo: "",
     recipients: {
@@ -314,7 +314,7 @@ export default function EmailMarketingPage() {
       name: "",
       templateId: "",
       subject: "",
-      fromEmail: "noreply@hireall.com",
+    fromEmail: "noreply@hireall.app",
       fromName: "HireAll Team",
       replyTo: "",
       recipients: {
@@ -794,7 +794,7 @@ export default function EmailMarketingPage() {
                           id="from-email"
                           value={campaignForm.fromEmail}
                           onChange={(e) => setCampaignForm(prev => ({ ...prev, fromEmail: e.target.value }))}
-                          placeholder="noreply@hireall.com"
+                          placeholder="noreply@hireall.app"
                         />
                       </div>
                       <div>
