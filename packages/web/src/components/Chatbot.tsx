@@ -53,39 +53,20 @@ export default function Chatbot() {
   const CHAT_HISTORY_KEY = 'hireall_chat_history';
   const CHAT_SESSIONS_KEY = 'hireall_chat_sessions';
 
-  // Helper to scroll to bottom with retry logic
-  const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth', retries = 3) => {
+  // Helper to scroll to bottom - simplified and more reliable
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
     if (!scrollAreaRef.current) return;
 
-    const attemptScroll = () => {
-      const viewport = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement | null;
-      if (!viewport) return false;
+    const viewport = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement | null;
+    if (!viewport) return;
 
-      const scrollHeight = viewport.scrollHeight;
-      const clientHeight = viewport.clientHeight;
-      const scrollTop = viewport.scrollTop;
-      const isAtBottom = scrollHeight - scrollTop - clientHeight < 10;
-
-      if (!isAtBottom || behavior === 'instant') {
-        viewport.scrollTo({ top: scrollHeight, behavior });
-        // Verify scroll worked
-        setTimeout(() => {
-          const newScrollTop = viewport.scrollTop;
-          const newIsAtBottom = scrollHeight - newScrollTop - clientHeight < 10;
-          if (!newIsAtBottom && retries > 0) {
-            // Try again if scroll didn't work
-            setTimeout(() => scrollToBottom(behavior, retries - 1), 10);
-          }
-        }, 50);
-      }
-      return true;
-    };
-
-    // Initial attempt
-    if (!attemptScroll() && retries > 0) {
-      // Retry after a short delay if viewport wasn't found
-      setTimeout(() => scrollToBottom(behavior, retries - 1), 10);
-    }
+    // Use requestAnimationFrame for smoother scrolling
+    requestAnimationFrame(() => {
+      viewport.scrollTo({ 
+        top: viewport.scrollHeight, 
+        behavior 
+      });
+    });
   }, []);
 
   // Initialize component and load data
@@ -154,34 +135,42 @@ export default function Chatbot() {
     const viewport = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement | null;
     if (!viewport) return;
 
-    const handleScroll = () => {
-      const distanceFromBottom = viewport.scrollHeight - (viewport.scrollTop + viewport.clientHeight);
-      const isAtBottom = distanceFromBottom < 20; // More sensitive threshold (20px from bottom)
-      if (!isAtBottom && autoScroll) {
-        setAutoScroll(false);
-      }
-      setShowScrollButton(!isAtBottom);
-    };
+    let scrollTimeout: NodeJS.Timeout;
 
-    // Check initial position after a short delay
-    const timeoutId = setTimeout(handleScroll, 100);
+    const handleScroll = () => {
+      // Debounce scroll events to reduce performance impact
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        const distanceFromBottom = viewport.scrollHeight - (viewport.scrollTop + viewport.clientHeight);
+        const isAtBottom = distanceFromBottom < 50; // Increased threshold for better UX
+        
+        // Only update state if actually needed
+        if (isAtBottom !== autoScroll) {
+          setAutoScroll(isAtBottom);
+        }
+        if (isAtBottom !== !showScrollButton) {
+          setShowScrollButton(!isAtBottom);
+        }
+      }, 16); // ~60fps
+    };
 
     viewport.addEventListener('scroll', handleScroll, { passive: true });
     return () => {
-      clearTimeout(timeoutId);
+      clearTimeout(scrollTimeout);
       viewport.removeEventListener('scroll', handleScroll);
     };
-  }, [autoScroll, isLoaded, isOpen, isMinimized]);
+  }, [autoScroll, showScrollButton, isLoaded, isOpen, isMinimized]);
 
   // Auto-scroll only if user hasn't scrolled up
   useEffect(() => {
     if (!isLoaded || !autoScroll) return;
     
-    // Use multiple attempts with delays to ensure DOM is updated
-    const scrollAttempts = [0, 10, 25, 50, 100];
-    scrollAttempts.forEach(delay => {
-      setTimeout(() => scrollToBottom('instant'), delay);
-    });
+    // Use a single delayed scroll to ensure DOM is updated
+    const scrollTimer = setTimeout(() => {
+      scrollToBottom('instant');
+    }, 50);
+
+    return () => clearTimeout(scrollTimer);
   }, [messages, autoScroll, scrollToBottom, isLoaded]);
 
   // Re-enable auto-scroll when new chat session starts
@@ -189,7 +178,8 @@ export default function Chatbot() {
     if (!isLoaded || messages.length !== 1) return;
     
     setAutoScroll(true);
-    setTimeout(() => scrollToBottom('instant'), 50);
+    const scrollTimer = setTimeout(() => scrollToBottom('instant'), 100);
+    return () => clearTimeout(scrollTimer);
   }, [messages.length, scrollToBottom, isLoaded]);
 
   // Focus textarea when chat opens
@@ -250,6 +240,9 @@ export default function Chatbot() {
   setAutoScroll(true);
   setInputMessage("");
   setIsLoading(true);
+  
+  // Scroll immediately after adding user message
+  setTimeout(() => scrollToBottom('instant'), 10);
 
     try {
       const response = await fetch('/api/chatbot', {
@@ -277,6 +270,9 @@ export default function Chatbot() {
       };
 
   setMessages(prev => [...prev, assistantMessage]);
+  
+  // Scroll after receiving assistant response
+  setTimeout(() => scrollToBottom('instant'), 10);
     } catch (error) {
       console.error('Chatbot error:', error);
       showError('Connection failed', 'Unable to connect to AI assistant. Please try again.');
@@ -289,6 +285,9 @@ export default function Chatbot() {
         timestamp: new Date()
       };
   setMessages(prev => [...prev, errorMessage]);
+  
+  // Scroll after error message
+  setTimeout(() => scrollToBottom('instant'), 10);
     } finally {
       setIsLoading(false);
     }
@@ -544,14 +543,10 @@ export default function Chatbot() {
                               variant="outline"
                               size="sm"
                               className="text-xs h-7 px-3 shadow-sm bg-background/80 backdrop-blur border-border/50 hover:bg-background"
-                              onClick={() => {
-                                setAutoScroll(true);
-                                // Use multiple smooth scroll attempts
-                                const scrollAttempts = [0, 25, 50];
-                                scrollAttempts.forEach(delay => {
-                                  setTimeout(() => scrollToBottom('smooth'), delay);
-                                });
-                              }}
+                               onClick={() => {
+                                 setAutoScroll(true);
+                                 scrollToBottom('smooth');
+                               }}
                             >
                               Scroll to latest ↓
                             </Button>
