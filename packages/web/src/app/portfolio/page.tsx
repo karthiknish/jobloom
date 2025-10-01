@@ -56,19 +56,20 @@ export default function PortfolioPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="bg-gradient-to-r from-primary to-secondary shadow-lg"
+        className="bg-gradient-to-r from-primary via-primary/90 to-secondary shadow-xl"
       >
-        <div className="relative max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-          <h1 className="text-4xl font-bold text-white">Portfolio Builder</h1>
-          <p className="mt-4 text-primary-foreground/80 max-w-2xl">
-            Create stunning portfolio websites to showcase your work and attract
-            opportunities.
-          </p>
+        <div className="relative max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
+          <div className="space-y-4">
+            <h1 className="text-5xl sm:text-6xl font-bold text-white tracking-tight">Portfolio Builder</h1>
+            <p className="text-xl sm:text-2xl text-primary-foreground/90 max-w-3xl leading-relaxed">
+              Create stunning portfolio websites to showcase your work and attract opportunities
+            </p>
+          </div>
         </div>
       </motion.div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+       {/* Main Content */}
+      <div className="max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
         <FeatureGate>
           <div className="max-w-4xl mx-auto">
             {/* Portfolio Builder Access */}
@@ -77,11 +78,11 @@ export default function PortfolioPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
             >
-              <Card className="shadow-lg border-primary/20">
-                <CardHeader className="text-center">
-                  <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+              <Card className="shadow-2xl border-0 bg-gradient-to-br from-card to-muted/20 hover:shadow-3xl transition-all duration-300">
+                <CardHeader className="text-center pb-8">
+                  <div className="mx-auto w-20 h-20 bg-primary/10 rounded-2xl flex items-center justify-center mb-6">
                     <svg
-                      className="w-8 h-8 text-primary"
+                      className="w-10 h-10 text-primary"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -94,21 +95,19 @@ export default function PortfolioPage() {
                       />
                     </svg>
                   </div>
-                  <CardTitle className="text-2xl">
+                  <CardTitle className="text-3xl sm:text-4xl font-bold">
                     Advanced Portfolio Builder
                   </CardTitle>
-                  <CardDescription className="text-base">
-                    Create professional portfolio websites with custom
-                    templates, sections, and themes. Perfect for showcasing your
-                    work, projects, and professional journey.
+                  <CardDescription className="text-lg mt-4 max-w-2xl mx-auto leading-relaxed">
+                    Create professional portfolio websites with custom templates, sections, and themes. Perfect for showcasing your work, projects, and professional journey.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="text-center">
-                  <Button asChild size="lg" className="px-8 py-3">
+                <CardContent className="text-center pt-0">
+                  <Button asChild size="lg" className="px-10 py-4 text-lg shadow-lg hover:shadow-xl transition-all duration-200">
                     <a href="/portfolio-builder">
                       Start Building Your Portfolio
                       <svg
-                        className="ml-2 w-4 h-4"
+                        className="ml-3 w-5 h-5"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -131,25 +130,25 @@ export default function PortfolioPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className="mt-12 grid md:grid-cols-2 lg:grid-cols-3 gap-6"
+              className="mt-16 grid md:grid-cols-2 lg:grid-cols-3 gap-8"
             >
               {[
                 {
                   icon: "palette",
                   title: "Custom Templates",
                   description:
-                    "Choose from professional templates designed for different careers",
+                    "Choose from professional templates designed for different careers and industries",
                 },
                 {
                   icon: "smartphone",
                   title: "Mobile Responsive",
                   description:
-                    "Your portfolio looks great on all devices and screen sizes",
+                    "Your portfolio looks perfect on all devices and screen sizes",
                 },
                 {
                   icon: "rocket",
                   title: "Fast & SEO Ready",
-                  description: "Optimized performance with built-in SEO tools",
+                  description: "Lightning-fast performance with built-in SEO optimization",
                 },
                 {
                   icon: "settings",
@@ -161,7 +160,7 @@ export default function PortfolioPage() {
                   icon: "bar-chart",
                   title: "Analytics Integration",
                   description:
-                    "Track visits and engagement with integrated analytics",
+                    "Track visits and engagement with integrated analytics tools",
                 },
                 {
                   icon: "lock",
@@ -176,16 +175,18 @@ export default function PortfolioPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.3 + index * 0.1 }}
                 >
-                  <Card className="h-full hover:shadow-lg transition-shadow">
-                    <CardContent className="p-6 text-center">
-                      <div className="text-3xl mb-4 flex justify-center">
-                        {(() => {
-                          const Icon = getFeatureIcon(feature.icon);
-                          return <Icon className="w-8 h-8 text-primary" />;
-                        })()}
+                  <Card className="h-full hover:shadow-xl transition-all duration-300 border-0 shadow-lg hover:scale-[1.02]">
+                    <CardContent className="p-8 text-center">
+                      <div className="mb-6 flex justify-center">
+                        <div className="p-4 bg-primary/10 rounded-2xl">
+                          {(() => {
+                            const Icon = getFeatureIcon(feature.icon);
+                            return <Icon className="w-8 h-8 text-primary" />;
+                          })()}
+                        </div>
                       </div>
-                      <h3 className="font-semibold mb-2">{feature.title}</h3>
-                      <p className="text-sm text-muted-foreground">
+                      <h3 className="font-bold text-lg mb-3">{feature.title}</h3>
+                      <p className="text-base text-muted-foreground leading-relaxed">
                         {feature.description}
                       </p>
                     </CardContent>
@@ -199,37 +200,38 @@ export default function PortfolioPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.8 }}
-              className="mt-12"
+              className="mt-16"
             >
-              <Card className="shadow-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <svg
-                      className="w-5 h-5 text-primary"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                      />
-                    </svg>
+              <Card className="shadow-lg border-0 hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-muted/20 to-card">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-3 text-xl">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                      <svg
+                        className="w-6 h-6 text-primary"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        />
+                      </svg>
+                    </div>
                     Resume Builder
                   </CardTitle>
-                  <CardDescription>
-                    Need to update your resume? Our resume builder is available
-                    at /application
+                  <CardDescription className="text-base">
+                    Need to update your resume? Our professional resume builder is available at /application
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <Button asChild variant="outline">
+                <CardContent className="pt-0">
+                  <Button asChild variant="outline" size="lg" className="shadow-md hover:shadow-lg transition-all duration-200">
                     <a href="/application" className="inline-flex items-center">
                       Go to Resume Builder
                       <svg
-                        className="ml-2 w-4 h-4"
+                        className="ml-3 w-5 h-5"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"

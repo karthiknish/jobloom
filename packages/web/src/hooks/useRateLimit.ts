@@ -53,7 +53,7 @@ export function useRateLimit(config: Partial<RateLimitConfig> = {}) {
     
     if (status.isLimited) {
       const timeUntilReset = Math.ceil(status.resetTime / 1000);
-      toast.error(`Rate limit exceeded. Try again in ${timeUntilReset} seconds.`);
+      toast.error(`Too many requests. Please wait ${timeUntilReset} seconds before trying again.`);
       return false;
     }
     

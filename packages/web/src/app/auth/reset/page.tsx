@@ -119,11 +119,11 @@ export default function ResetPasswordPage() {
         }
       } else {
         setRequestSuccess(true);
-        showSuccess("If your email exists, you will receive a reset link shortly.");
+        showSuccess("Reset link sent!", "Check your inbox for password reset instructions.");
       }
     } catch (error) {
       console.error("Password reset request failed", error);
-      showError("Unable to send password reset email. Please try again later." );
+      showError("Failed to send reset email", "Please check your email and try again.");
     } finally {
       setLoading(false);
     }
@@ -155,13 +155,13 @@ export default function ResetPasswordPage() {
       }
 
       setView("success");
-      showSuccess("Password updated successfully! You can sign in with the new password.");
+      showSuccess("Password changed!", "Your password has been updated successfully.");
       setTimeout(() => {
         router.push(redirect || "/sign-in");
       }, 2500);
     } catch (error) {
       console.error("Failed to reset password", error);
-      showError("Something went wrong. Please try again.");
+      showError("Password reset failed", "An error occurred. Please try again.");
     } finally {
       setLoading(false);
     }

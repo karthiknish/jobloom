@@ -106,7 +106,7 @@ export default function AdminPage() {
         createdBy: userRecord._id,
       });
 
-      showSuccess("Sponsored company added successfully");
+      showSuccess("Company added!", "Sponsored company has been added successfully.");
       setShowAddForm(false);
       refetchCompanies();
     } catch (error: unknown) {
@@ -114,9 +114,9 @@ export default function AdminPage() {
         error instanceof Error &&
         error.message.includes("Rate limit exceeded")
       ) {
-        showError("Rate limit exceeded", error.message);
+        showError("Too many requests", "Please wait before adding another company.");
       } else {
-        showError("Failed to add sponsored company", "Something went wrong while saving. Please try again.");
+        showError("Add failed", "Unable to add company. Please try again later.");
       }
       console.error("Error adding company:", error);
     }

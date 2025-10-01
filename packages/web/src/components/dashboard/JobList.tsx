@@ -152,10 +152,10 @@ export function JobList({
   const handleDeleteClick = async (applicationId: string) => {
     try {
       await dashboardApi.deleteApplication(applicationId);
-      showSuccess("Application deleted successfully");
+      showSuccess("Application deleted", "The job application has been removed.");
       onChanged?.();
     } catch (error) {
-      showError("Failed to delete application");
+      showError("Delete failed", "Unable to delete application. Please try again.");
       console.error("Delete application error:", error);
     }
   };
@@ -167,11 +167,11 @@ export function JobList({
           dashboardApi.deleteApplication(id)
         )
       );
-      showSuccess(`${selectedIds.size} applications deleted successfully`);
+      showSuccess("Applications deleted", `${selectedIds.size} applications have been removed.`);
       setSelectedIds(new Set());
       onChanged?.();
     } catch (error) {
-      showError("Failed to delete applications");
+      showError("Delete failed", "Unable to delete applications. Please try again.");
       console.error("Bulk delete error:", error);
     }
   };

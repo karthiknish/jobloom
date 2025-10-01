@@ -256,7 +256,7 @@ export default function Chatbot() {
   setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       console.error('Chatbot error:', error);
-      showError('Sorry, I\'m having trouble connecting. Please try again.');
+      showError('Connection failed', 'Unable to connect to AI assistant. Please try again.');
 
       // Add error message to chat
       const errorMessage: Message = {

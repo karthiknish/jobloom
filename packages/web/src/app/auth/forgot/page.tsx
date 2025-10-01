@@ -66,10 +66,10 @@ export default function ForgotPasswordPage() {
       }
 
       setSent(true);
-      showSuccess("If your email exists, a reset link will arrive shortly.");
+      showSuccess("Password reset email sent!", "Check your inbox for instructions to reset your password.");
     } catch (error) {
       console.error("Failed to request password reset", error);
-      showError("Unable to send password reset email. Please try again later.");
+      showError("Failed to send reset email", "Please check your email address and try again.");
     } finally {
       setLoading(false);
     }

@@ -72,7 +72,7 @@ export function middleware(request: NextRequest) {
     if (!rateLimitResult.allowed) {
       return new NextResponse(
         JSON.stringify({ 
-          error: `Rate limit exceeded for ${endpoint}. Try again in ${Math.ceil((rateLimitResult.resetIn || 0) / 1000)} seconds.`,
+          error: `Too many requests. Please wait ${Math.ceil((rateLimitResult.resetIn || 0) / 1000)} seconds before trying again.`,
           endpoint,
           resetTime: rateLimitResult.resetIn
         }),

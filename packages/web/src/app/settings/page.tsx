@@ -243,7 +243,7 @@ export default function SettingsPage() {
       setChangePasswordError(null);
       setChangePasswordLoading(true);
       await updateUserPassword(current, next);
-      showSuccess("Password updated successfully!");
+      showSuccess("Password changed!", "Your password has been updated successfully.");
       setPasswordForm({ current: "", next: "", confirm: "" });
       setShowChangePasswordForm(false);
     } catch (error: any) {
@@ -286,7 +286,7 @@ export default function SettingsPage() {
         throw new Error(data.error || 'Failed to revoke sessions');
       }
 
-      showSuccess(data.message || 'All sessions revoked successfully.');
+      showSuccess("Sessions revoked!", "You've been signed out from all other devices.");
     } catch (error) {
       console.error('Error revoking sessions:', error);
       const message = error instanceof Error ? error.message : 'Failed to revoke sessions';
@@ -352,7 +352,7 @@ export default function SettingsPage() {
         throw new Error(data.error || "Unable to cancel subscription");
       }
 
-      showSuccess("Subscription will cancel at period end");
+      showSuccess("Cancellation scheduled", "Your subscription will end at the next billing date.");
       await refreshSubscription();
     } catch (error) {
       console.error("Error cancelling subscription:", error);
@@ -384,7 +384,7 @@ export default function SettingsPage() {
         throw new Error(data.error || "Unable to resume subscription");
       }
 
-      showSuccess("Subscription cancellation revoked");
+      showSuccess("Subscription restored!", "Your subscription will continue as normal.");
       await refreshSubscription();
     } catch (error) {
       console.error("Error resuming subscription:", error);
@@ -454,13 +454,13 @@ export default function SettingsPage() {
       if (response.ok) {
         // Also save to localStorage as backup
         localStorage.setItem('userPreferences', JSON.stringify(preferences));
-        showSuccess('Preferences saved successfully!');
+        showSuccess('Preferences saved!', 'Your settings have been updated.');
       } else {
         throw new Error('Failed to save preferences');
       }
     } catch (error) {
       console.error('Error saving preferences:', error);
-      showError('Failed to save preferences. Please try again.');
+      showError('Save failed', 'Unable to save preferences. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -490,13 +490,13 @@ export default function SettingsPage() {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        showSuccess(`Data exported successfully! Downloaded ${data.filename}`);
+        showSuccess('Data exported!', `Your data has been downloaded as ${data.filename}`);
       } else {
         throw new Error('Export failed');
       }
     } catch (error) {
       console.error('Error exporting data:', error);
-      showError('Failed to export data. Please try again.');
+      showError('Export failed', 'Unable to export your data. Please try again.');
     } finally {
       setExporting(false);
     }
@@ -511,7 +511,7 @@ export default function SettingsPage() {
     );
 
     if (confirmation !== 'DELETE_MY_ACCOUNT_PERMANENTLY') {
-      showError('Account deletion cancelled - incorrect confirmation');
+      showError('Deletion cancelled', 'Confirmation text did not match. Account deletion cancelled.');
       return;
     }
 
@@ -531,7 +531,7 @@ export default function SettingsPage() {
       });
 
       if (response.ok) {
-        showSuccess('Account deleted successfully. You will be redirected shortly.');
+        showSuccess('Account deleted', 'Your account has been permanently deleted.');
         // Sign out and redirect after a delay
         setTimeout(() => {
           window.location.href = '/';
@@ -542,7 +542,7 @@ export default function SettingsPage() {
       }
     } catch (error) {
       console.error('Error deleting account:', error);
-      showError('Failed to delete account. Please contact support.');
+      showError('Deletion failed', 'Unable to delete account. Please contact support.');
     } finally {
       setDeletingAccount(false);
       setShowDeleteConfirm(false);

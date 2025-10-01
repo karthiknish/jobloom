@@ -141,7 +141,7 @@ export default function ApplicationPage() {
         resumeData: data.resumeData,
       });
     } catch (e: any) {
-      showError(e.message || "Could not load resume");
+      showError("Load failed", e.message || "Unable to load your resume data.");
     } finally {
       setLoading(false);
     }
@@ -272,7 +272,7 @@ export default function ApplicationPage() {
   const saveResume = async (opts: { silent?: boolean } = {}) => {
     if (!user) return;
     setSaving(true);
-    if (!opts.silent) showInfo("Saving resume...");
+    if (!opts.silent) showInfo("Saving", "Your resume is being saved...");
     try {
       const token = await user.getIdToken();
       const res = await fetch("/api/portfolio/resume", {
@@ -314,7 +314,7 @@ export default function ApplicationPage() {
         const retryData = await retry.json();
         if (!retry.ok || (retryData as any).error) throw new Error((retryData as any).error || "Retry failed");
         setResume(r => ({ ...r, id: retryData.id, version: retryData.version, resumeData: merged }));
-        showSuccess("Resume saved (merged)");
+        showSuccess("Resume saved", "Changes have been merged and saved.");
         setDirty(false);
         setSaving(false);
         return;
@@ -325,10 +325,10 @@ export default function ApplicationPage() {
         id: data.id,
         version: data.version,
       }));
-      showSuccess("Resume saved");
+      showSuccess("Resume saved!", "Your changes have been saved successfully.");
       setDirty(false);
     } catch (e: any) {
-      showError(e.message || "Could not save");
+      showError("Save failed", e.message || "Unable to save your resume. Please try again.");
     } finally {
       setSaving(false);
     }
