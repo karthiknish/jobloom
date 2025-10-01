@@ -62,7 +62,7 @@ export async function checkSubscriptionHealth(subscriptionId: string): Promise<S
     // Get subscription from Stripe
     let stripeSubscription: Stripe.Subscription | null = null;
     let stripeSyncStatus: "synced" | "out_of_sync" | "error" = "error";
-    let issues: string[] = [];
+    const issues: string[] = [];
 
     try {
       stripeSubscription = await stripe.subscriptions.retrieve(subscriptionId);

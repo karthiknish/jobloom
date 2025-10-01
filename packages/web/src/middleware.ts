@@ -69,21 +69,20 @@ export function middleware(request: NextRequest) {
     const endpoint = getEndpointFromPath(pathname);
     const rateLimitResult = checkServerRateLimit(clientIP, endpoint);
     
-    if (rateLimitResult.isLimited) {
+    if (!rateLimitResult.allowed) {
       return new NextResponse(
         JSON.stringify({ 
-          error: rateLimitResult.errorMsg,
+          error: `Rate limit exceeded for ${endpoint}. Try again in ${Math.ceil((rateLimitResult.resetIn || 0) / 1000)} seconds.`,
           endpoint,
-          resetTime: rateLimitResult.resetTime
+          resetTime: rateLimitResult.resetIn
         }),
         { 
           status: 429,
-          headers: { 
+          headers: {
             'Content-Type': 'application/json',
-            'Retry-After': Math.ceil(rateLimitResult.resetTime / 1000).toString(),
-            'X-RateLimit-Limit': rateLimitResult.limit.toString(),
-            'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
-            'X-RateLimit-Reset': rateLimitResult.resetTime.toString()
+            'X-RateLimit-Limit': (rateLimitResult.maxRequests || 0).toString(),
+            'X-RateLimit-Remaining': (rateLimitResult.remaining || 0).toString(),
+            'X-RateLimit-Reset': (rateLimitResult.resetIn || 0).toString()
           }
         }
       );

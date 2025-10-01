@@ -3,7 +3,7 @@ import { verifyIdToken, getAdminDb } from "@/firebase/admin";
 import { getStripeClient } from "@/lib/stripe";
 import { upsertSubscriptionFromStripe, ValidationError, DatabaseError } from "@/lib/subscriptions";
 import { FieldValue } from "firebase-admin/firestore";
-import { checkUserRateLimit } from "@/lib/rateLimiter";
+import { checkServerRateLimit } from "@/lib/rateLimiter";
 import type Stripe from "stripe";
 
 const stripe = getStripeClient();
@@ -65,17 +65,17 @@ export async function POST(request: NextRequest) {
     const userId = decodedToken.uid;
     
     // Apply stricter rate limiting for sensitive operations
-    const rateLimitResult = checkUserRateLimit(userId, 'subscription-resume');
-    if (rateLimitResult.isLimited) {
+    const rateLimitResult = checkServerRateLimit(userId, 'subscription-resume');
+    if (!rateLimitResult.allowed) {
       const response = NextResponse.json({ 
-        error: rateLimitResult.errorMsg,
-        resetTime: rateLimitResult.resetTime
+        error: `Rate limit exceeded. Try again in ${Math.ceil((rateLimitResult.resetIn || 0) / 1000)} seconds.`,
+        resetTime: rateLimitResult.resetIn
       }, { 
         status: 429,
         headers: {
-          'X-RateLimit-Limit': rateLimitResult.limit.toString(),
-          'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
-          'X-RateLimit-Reset': rateLimitResult.resetTime.toString()
+          'X-RateLimit-Limit': (rateLimitResult.maxRequests || 0).toString(),
+          'X-RateLimit-Remaining': (rateLimitResult.remaining || 0).toString(),
+          'X-RateLimit-Reset': (rateLimitResult.resetIn || 0).toString()
         }
       });
       return setSecurityHeaders(response);

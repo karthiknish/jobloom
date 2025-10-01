@@ -46,6 +46,10 @@ export const RATE_LIMITS: Record<string, RateLimitConfig> = {
 
   // General API calls
   'general': { maxRequests: 100, windowMs: 60000 }, // 100 general requests per minute
+  
+  // Admin operations (very restrictive)
+  'admin': { maxRequests: 5, windowMs: 60000 }, // 5 admin operations per minute
+  'addSponsoredCompany': { maxRequests: 5, windowMs: 60000 }, // 5 company additions per minute
 };
 
 // In-memory rate limiting store for server-side

@@ -2,43 +2,58 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import toast from 'react-hot-toast';
-import { ClientRateLimiter } from '../lib/rateLimiter';
-
-interface RateLimitConfig {
-  endpoint: string;
-}
+import { ClientRateLimiter, RateLimitConfig, RATE_LIMITS } from '../lib/rateLimiter';
 
 const DEFAULT_CONFIG: RateLimitConfig = {
-  endpoint: 'default'
+  maxRequests: 100,
+  windowMs: 60000,
+  endpoint: 'general'
 };
 
 export function useRateLimit(config: Partial<RateLimitConfig> = {}) {
-  const finalConfig = useMemo(() => ({ ...DEFAULT_CONFIG, ...config }), [config]);
+  const finalConfig = useMemo(() => {
+    // If endpoint is provided and exists in RATE_LIMITS, use that config
+    if (config.endpoint && RATE_LIMITS[config.endpoint]) {
+      return { ...RATE_LIMITS[config.endpoint], ...config };
+    }
+    // Otherwise use default config with provided overrides
+    return { ...DEFAULT_CONFIG, ...config };
+  }, [config]);
   
   // Create a client rate limiter instance for this endpoint
-  const [rateLimiter] = useState(() => new ClientRateLimiter(finalConfig.endpoint));
+  const [rateLimiter] = useState(() => new ClientRateLimiter(finalConfig.endpoint || 'default', finalConfig));
   
   const [rateLimitState, setRateLimitState] = useState(() => {
     if (typeof window === 'undefined') {
       return {
         isLimited: false,
-        remaining: 10,
+        remaining: finalConfig.maxRequests,
         resetTime: 0
       };
     }
     
-    return rateLimiter.getStatus();
+    const result = rateLimiter.checkRateLimit();
+    return {
+      isLimited: !result.allowed,
+      remaining: result.remaining || finalConfig.maxRequests,
+      resetTime: result.resetIn || 0
+    };
   });
 
   const checkRateLimit = useCallback((): boolean => {
     if (typeof window === 'undefined') return true;
     
-    const result = rateLimiter.checkLimit();
-    setRateLimitState(rateLimiter.getStatus());
+    const result = rateLimiter.checkRateLimit();
+    const status = {
+      isLimited: !result.allowed,
+      remaining: result.remaining || 0,
+      resetTime: result.resetIn || 0
+    };
+    setRateLimitState(status);
     
-    if (result.isLimited) {
-      const timeUntilReset = Math.ceil(result.resetTime / 1000);
-      toast.error(`${result.errorMsg} Try again in ${timeUntilReset} seconds.`);
+    if (status.isLimited) {
+      const timeUntilReset = Math.ceil(status.resetTime / 1000);
+      toast.error(`Rate limit exceeded. Try again in ${timeUntilReset} seconds.`);
       return false;
     }
     
@@ -46,20 +61,25 @@ export function useRateLimit(config: Partial<RateLimitConfig> = {}) {
   }, [rateLimiter]);
 
   const getRemainingRequests = useCallback((): number => {
-    if (typeof window === 'undefined') return 10;
-    return rateLimiter.getStatus().remaining;
-  }, [rateLimiter]);
+    if (typeof window === 'undefined') return finalConfig.maxRequests;
+    return rateLimiter.getRemainingRequests();
+  }, [rateLimiter, finalConfig.maxRequests]);
 
   const getTimeUntilReset = useCallback((): number => {
     if (typeof window === 'undefined') return 0;
-    return rateLimiter.getStatus().resetTime;
+    return rateLimiter.getTimeUntilReset();
   }, [rateLimiter]);
 
   const resetRateLimit = useCallback(() => {
     if (typeof window === 'undefined') return;
-    rateLimiter.resetLimit();
-    setRateLimitState(rateLimiter.getStatus());
-  }, [rateLimiter]);
+    rateLimiter.reset();
+    const status = {
+      isLimited: false,
+      remaining: finalConfig.maxRequests,
+      resetTime: 0
+    };
+    setRateLimitState(status);
+  }, [rateLimiter, finalConfig.maxRequests]);
 
   return {
     checkRateLimit,
