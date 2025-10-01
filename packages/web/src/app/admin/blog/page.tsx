@@ -55,17 +55,6 @@ import { showSuccess, showError } from "@/components/ui/Toast";
 import { useApiQuery, useApiMutation } from "../../../hooks/useApi";
 import type { BlogPost } from "../../../types/api";
 
-type BlogPostCreatePayload = {
-  title: string;
-  excerpt: string;
-  content: string;
-  category: string;
-  tags: string[];
-  status: "draft" | "published" | "archived";
-};
-
-type BlogPostUpdatePayload = Partial<BlogPostCreatePayload>;
-
 type BlogPostPayload = {
   title: string;
   excerpt: string;
@@ -97,41 +86,62 @@ export default function AdminBlogPage() {
     status: "draft",
   });
 
+  // Helper function to get auth headers
+  const getAuthHeaders = async (): Promise<Record<string, string>> => {
+    if (!user) return {};
+    const token = await user.getIdToken();
+    return {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    };
+  };
+
   // Fetch blog posts and stats
   const { data: posts, refetch: refetchPosts } = useApiQuery(
-    () => fetch("/api/blog/admin/posts").then((res) => res.json()),
+    async () => {
+      const headers = await getAuthHeaders();
+      return fetch("/api/blog/admin/posts", { headers }).then((res) => res.json());
+    },
     [],
     { enabled: !!user }
   );
 
   const { data: stats } = useApiQuery(
-    () => fetch("/api/blog/admin/stats").then((res) => res.json()),
+    async () => {
+      const headers = await getAuthHeaders();
+      return fetch("/api/blog/admin/stats", { headers }).then((res) => res.json());
+    },
     [],
     { enabled: !!user }
   );
 
-  const createPostMutation = useApiMutation((data: BlogPostPayload) =>
-    fetch("/api/blog/admin/posts", {
+  const createPostMutation = useApiMutation(async (data: BlogPostPayload) => {
+    const headers = await getAuthHeaders();
+    return fetch("/api/blog/admin/posts", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify(data),
-    }).then((res) => res.json())
-  );
+    }).then((res) => res.json());
+  });
 
   const updatePostMutation = useApiMutation(
-    ({ postId, data }: { postId: string; data: Partial<BlogPostPayload> }) =>
-      fetch(`/api/blog/admin/posts/${postId}`, {
+    async ({ postId, data }: { postId: string; data: Partial<BlogPostPayload> }) => {
+      const headers = await getAuthHeaders();
+      return fetch(`/api/blog/admin/posts/${postId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify(data),
-      }).then((res) => res.json())
+      }).then((res) => res.json());
+    }
   );
 
-  const deletePostMutation = useApiMutation((postId: string) =>
-    fetch(`/api/blog/admin/posts/${postId}`, {
+  const deletePostMutation = useApiMutation(async (postId: string) => {
+    const headers = await getAuthHeaders();
+    return fetch(`/api/blog/admin/posts/${postId}`, {
       method: "DELETE",
-    }).then((res) => res.json())
-  );
+      headers,
+    }).then((res) => res.json());
+  });
 
   // Filter posts based on search and status
   const filteredPosts =
@@ -168,7 +178,7 @@ export default function AdminBlogPage() {
         status: "draft",
       });
       refetchPosts();
-    } catch (error) {
+    } catch {
       showError("Failed to create blog post");
     }
   };
@@ -200,7 +210,7 @@ export default function AdminBlogPage() {
         status: "draft",
       });
       refetchPosts();
-    } catch (error) {
+    } catch {
       showError("Failed to update blog post");
     }
   };
@@ -212,7 +222,7 @@ export default function AdminBlogPage() {
       await deletePostMutation.mutate(postId);
       showSuccess("Blog post deleted successfully");
       refetchPosts();
-    } catch (error) {
+    } catch {
       showError("Failed to delete blog post");
     }
   };

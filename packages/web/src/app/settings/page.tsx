@@ -54,11 +54,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { showSuccess, showError } from "@/components/ui/Toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import type { SubscriptionLimits } from "@/types/api";
 
 interface UserPreferences {
-  language: string;
-  timezone: string;
   emailNotifications: boolean;
   pushNotifications: boolean;
   jobAlertsEnabled: boolean;
@@ -75,8 +74,6 @@ interface UserPreferences {
 }
 
 const createDefaultPreferences = (): UserPreferences => ({
-  language: 'en',
-  timezone: 'UTC',
   emailNotifications: true,
   pushNotifications: true,
   jobAlertsEnabled: false,
@@ -161,6 +158,9 @@ export default function SettingsPage() {
   });
   const [verificationSending, setVerificationSending] = useState(false);
   const [revokingSessions, setRevokingSessions] = useState(false);
+  const [viewingSessions, setViewingSessions] = useState(false);
+  const [sessions, setSessions] = useState<any[]>([]);
+  const [sessionsError, setSessionsError] = useState<string | null>(null);
 
   const exportFormats = limits.exportFormats ?? [];
   type PremiumCapability = {
@@ -287,12 +287,40 @@ export default function SettingsPage() {
       }
 
       showSuccess("Sessions revoked!", "You've been signed out from all other devices.");
+      // Refresh sessions list after revoking
+      handleViewSessions();
     } catch (error) {
       console.error('Error revoking sessions:', error);
       const message = error instanceof Error ? error.message : 'Failed to revoke sessions';
       showError(message);
     } finally {
       setRevokingSessions(false);
+    }
+  };
+
+  const handleViewSessions = async () => {
+    if (!user) return;
+
+    try {
+      setViewingSessions(true);
+      setSessionsError(null);
+      const token = await user.getIdToken();
+      const response = await fetch('/api/settings/sessions', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setSessions(data.sessions || []);
+      } else {
+        throw new Error('Failed to fetch sessions');
+      }
+    } catch (error) {
+      console.error('Error fetching sessions:', error);
+      setSessionsError('Unable to fetch sessions. Please try again.');
+      setSessions([]);
+    } finally {
+      setViewingSessions(false);
     }
   };
 
@@ -403,17 +431,35 @@ export default function SettingsPage() {
 
       try {
         const token = await user.getIdToken();
-        const response = await fetch('/api/settings/preferences', {
+        
+        // Load regular preferences
+        const preferencesResponse = await fetch('/api/settings/preferences', {
           headers: { Authorization: `Bearer ${token}` }
         });
 
-        if (response.ok) {
-          const data = await response.json();
-          setPreferences({
-            ...createDefaultPreferences(),
-            ...(data.preferences ?? {}),
-          });
+        // Load marketing preference from Firestore
+        const marketingResponse = await fetch('/api/settings/marketing', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        let preferencesData = {};
+        let marketingData = { marketingEmails: true }; // default
+
+        if (preferencesResponse.ok) {
+          const data = await preferencesResponse.json();
+          preferencesData = data.preferences ?? {};
         }
+
+        if (marketingResponse.ok) {
+          const data = await marketingResponse.json();
+          marketingData = { marketingEmails: data.marketingEmails };
+        }
+
+        setPreferences({
+          ...createDefaultPreferences(),
+          ...preferencesData,
+          ...marketingData,
+        });
       } catch (error) {
         console.error('Error loading preferences:', error);
         // Fallback to localStorage
@@ -466,8 +512,29 @@ export default function SettingsPage() {
     }
   };
 
-  const updatePreference = <K extends keyof UserPreferences>(key: K, value: UserPreferences[K]) => {
+  const updatePreference = async <K extends keyof UserPreferences>(key: K, value: UserPreferences[K]) => {
     setPreferences(prev => ({ ...prev, [key]: value }));
+    
+    // Special handling for marketing emails to sync with Resend
+    if (key === 'marketingEmails' && user) {
+      try {
+        const token = await user.getIdToken();
+        const response = await fetch('/api/settings/marketing', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ marketingEmails: value })
+        });
+
+        if (!response.ok) {
+          console.error('Failed to update marketing preferences in Firestore');
+        }
+      } catch (error) {
+        console.error('Error syncing marketing preferences:', error);
+      }
+    }
   };
 
   // Export user data
@@ -898,35 +965,6 @@ export default function SettingsPage() {
             {/* Preferences Tab */}
             <TabsContent value="preferences" className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Appearance */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Settings className="h-5 w-5" />
-                      Appearance
-                    </CardTitle>
-                    <CardDescription>
-                      Customize how the application looks and feels.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="language">Language</Label>
-                      <Select value={preferences.language} onValueChange={(value) => updatePreference('language', value)}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="en">English</SelectItem>
-                          <SelectItem value="es">Español</SelectItem>
-                          <SelectItem value="fr">Français</SelectItem>
-                          <SelectItem value="de">Deutsch</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </CardContent>
-                </Card>
-
                 {/* Notifications */}
                 <Card>
                   <CardHeader>
@@ -1330,18 +1368,6 @@ export default function SettingsPage() {
                   <CardContent className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium">Two-Factor Authentication</p>
-                        <p className="text-sm text-muted-foreground">
-                          Add an extra layer of security to your account
-                        </p>
-                      </div>
-                      <Button variant="outline" size="sm">
-                        Enable 2FA
-                      </Button>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div>
                         <p className="font-medium">Password</p>
                         <p className="text-sm text-muted-foreground">
                         Keep your account secure by using a strong, unique password.
@@ -1450,9 +1476,82 @@ export default function SettingsPage() {
                           Manage your active login sessions
                         </p>
                       </div>
-                      <Button variant="outline" size="sm">
-                        View Sessions
-                      </Button>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" size="sm" onClick={handleViewSessions}>
+                            {viewingSessions ? (
+                              <>
+                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                Loading...
+                              </>
+                            ) : (
+                              "View Sessions"
+                            )}
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-md">
+                          <DialogHeader>
+                            <DialogTitle>Active Sessions</DialogTitle>
+                            <DialogDescription>
+                              Manage your active login sessions across devices
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="space-y-4">
+                            {sessionsError ? (
+                              <Alert variant="destructive">
+                                <AlertTitle>Error</AlertTitle>
+                                <AlertDescription>{sessionsError}</AlertDescription>
+                              </Alert>
+                            ) : sessions.length === 0 ? (
+                              <p className="text-sm text-muted-foreground">No active sessions found.</p>
+                            ) : (
+                              <div className="space-y-3">
+                                {sessions.map((session) => (
+                                  <div key={session.id} className="flex items-center justify-between p-3 border rounded-lg">
+                                    <div className="flex-1">
+                                      <div className="flex items-center gap-2">
+                                        <p className="font-medium text-sm">{session.device}</p>
+                                        {session.isCurrent && (
+                                          <Badge variant="secondary" className="text-xs">Current</Badge>
+                                        )}
+                                      </div>
+                                      <p className="text-xs text-muted-foreground mt-1">
+                                        {session.browser}
+                                      </p>
+                                      <p className="text-xs text-muted-foreground">
+                                        Last active: {new Date(session.lastActive).toLocaleString()}
+                                      </p>
+                                    </div>
+                                  </div>
+                                ))}
+                                {sessions.length > 0 && (
+                                  <div className="pt-2 border-t">
+                                    <p className="text-xs text-muted-foreground mb-3">
+                                      Note: Due to Firebase Auth limitations, only the current session is shown. Use "Revoke All Sessions" to sign out from all devices.
+                                    </p>
+                                    <Button
+                                      variant="destructive"
+                                      size="sm"
+                                      onClick={handleRevokeSessions}
+                                      disabled={revokingSessions}
+                                      className="w-full"
+                                    >
+                                      {revokingSessions ? (
+                                        <>
+                                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                          Revoking...
+                                        </>
+                                      ) : (
+                                        "Revoke All Sessions"
+                                      )}
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </DialogContent>
+                      </Dialog>
                     </div>
                   </CardContent>
                 </Card>
@@ -1476,7 +1575,10 @@ export default function SettingsPage() {
                           Help improve the app with usage data
                         </p>
                       </div>
-                      <Switch defaultChecked={isAnalyticsEnabled} />
+                      <Switch
+                        checked={preferences.analyticsTracking}
+                        onCheckedChange={(checked) => updatePreference('analyticsTracking', checked)}
+                      />
                     </div>
 
                     <div className="flex items-center justify-between">
@@ -1486,7 +1588,10 @@ export default function SettingsPage() {
                           Share anonymized data for research
                         </p>
                       </div>
-                      <Switch />
+                      <Switch
+                        checked={preferences.dataSharing}
+                        onCheckedChange={(checked) => updatePreference('dataSharing', checked)}
+                      />
                     </div>
 
                     <div className="flex items-center justify-between">
@@ -1496,7 +1601,10 @@ export default function SettingsPage() {
                           Receive product updates and offers
                         </p>
                       </div>
-                      <Switch defaultChecked />
+                      <Switch
+                        checked={preferences.marketingEmails}
+                        onCheckedChange={(checked) => updatePreference('marketingEmails', checked)}
+                      />
                     </div>
                   </CardContent>
                 </Card>

@@ -25,9 +25,14 @@ export async function GET(
     }
 
     const doc = snapshot.docs[0];
+    const data = doc.data();
     const post = {
       _id: doc.id,
-      ...doc.data(),
+      ...data,
+      // Convert Firestore timestamps to milliseconds for frontend compatibility
+      createdAt: data.createdAt?.toMillis?.() || data.createdAt || Date.now(),
+      updatedAt: data.updatedAt?.toMillis?.() || data.updatedAt || Date.now(),
+      publishedAt: data.publishedAt?.toMillis?.() || data.publishedAt,
     };
 
     // Increment view count (fire and forget)

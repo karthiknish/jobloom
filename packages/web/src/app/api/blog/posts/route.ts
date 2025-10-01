@@ -1,74 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getAdminDb } from "@/firebase/admin";
 
-// Sample blog posts data for demonstration
-const sampleBlogPosts = [
-  {
-    _id: "1",
-    title: "10 Essential Skills Every Job Seeker Needs in 2025",
-    slug: "essential-skills-job-seekers-2025",
-    excerpt: "Discover the most in-demand skills that will make you stand out in today's competitive job market.",
-    content: "# 10 Essential Skills Every Job Seeker Needs in 2025\n\nIn today's rapidly evolving job market, staying ahead of the curve is crucial for career success.\n\n## 1. Digital Literacy\n\nTechnology proficiency is now a baseline requirement.\n\n## 2. Data Analysis\n\nUnderstanding data trends is increasingly important.\n\n## 3. Communication Skills\n\nSoft skills remain crucial for success.",
-    category: "Career Development",
-    tags: ["skills", "career"],
-    featuredImage: "https://images.pexels.com/photos/3184430/pexels-photo-3184430.jpeg?auto=compress&cs=tinysrgb&w=1200",
-    status: "published",
-    author: {
-      id: "admin",
-      name: "HireAll Team",
-      email: "team@hireall.com"
-    },
-    publishedAt: { _seconds: Date.now() / 1000 },
-    createdAt: { _seconds: Date.now() / 1000 },
-    updatedAt: { _seconds: Date.now() / 1000 },
-    readingTime: 5,
-    viewCount: 0,
-    likeCount: 0
-  },
-  {
-    _id: "2",
-    title: "How to Ace Your Technical Interview",
-    slug: "ace-technical-interview-guide",
-    excerpt: "Master the art of technical interviews with proven strategies.",
-    content: "# How to Ace Your Technical Interview\n\nTechnical interviews can be intimidating, but preparation is key.\n\n## Preparation Strategies\n\nPractice coding problems regularly and understand algorithms.\n\n## During the Interview\n\nCommunicate your thought process clearly.\n\n## Key Tips\n\nStay calm and ask clarifying questions when needed.",
-    category: "Interview Preparation",
-    tags: ["interview", "technical"],
-    featuredImage: "https://images.pexels.com/photos/3184465/pexels-photo-3184465.jpeg?auto=compress&cs=tinysrgb&w=1200",
-    status: "published",
-    author: {
-      id: "admin",
-      name: "HireAll Team",
-      email: "team@hireall.com"
-    },
-    publishedAt: { _seconds: Date.now() / 1000 },
-    createdAt: { _seconds: Date.now() / 1000 },
-    updatedAt: { _seconds: Date.now() / 1000 },
-    readingTime: 3,
-    viewCount: 0,
-    likeCount: 0
-  },
-  {
-    _id: "3",
-    title: "Building a Personal Brand",
-    slug: "building-personal-brand-career",
-    excerpt: "Learn how to build a compelling personal brand for career growth.",
-    content: "# Building a Personal Brand\n\nYour personal brand is how others perceive you professionally.\n\n## Key Components\n\n- Professional identity\n- Values and beliefs\n- Online presence\n\n## Getting Started\n\nDefine your unique value proposition and create consistent content.\n\n## Networking\n\nBuild genuine professional relationships online.",
-    category: "Career Development",
-    tags: ["personal branding", "career"],
-    featuredImage: "https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=1200",
-    status: "published",
-    author: {
-      id: "admin",
-      name: "HireAll Team",
-      email: "team@hireall.com"
-    },
-    publishedAt: { _seconds: Date.now() / 1000 },
-    createdAt: { _seconds: Date.now() / 1000 },
-    updatedAt: { _seconds: Date.now() / 1000 },
-    readingTime: 4,
-    viewCount: 0,
-    likeCount: 0
-  }
-];
+// Get Firestore instance using the centralized admin initialization
+const db = getAdminDb();
 
 // GET /api/blog/posts - Get published blog posts with pagination and filtering
 export async function GET(request: NextRequest) {
@@ -80,20 +14,43 @@ export async function GET(request: NextRequest) {
     const tag = url.searchParams.get("tag");
     const search = url.searchParams.get("search");
 
-    let posts = [...sampleBlogPosts];
+    // Start with published posts only
+    let query = db.collection("blogPosts").where("status", "==", "published");
 
-    // Apply filters
+    // Apply category filter
     if (category) {
-      posts = posts.filter(post => post.category.toLowerCase() === category.toLowerCase());
+      query = query.where("category", "==", category);
     }
 
+    // Order by creation date (newest first)
+    query = query.orderBy("createdAt", "desc");
+
+    const snapshot = await query.get();
+
+    // Convert documents to blog post objects
+    let posts = snapshot.docs.map((doc) => {
+      const data = doc.data() as any;
+      return {
+        _id: doc.id,
+        ...data,
+        // Convert Firestore timestamps to milliseconds for frontend compatibility
+        createdAt: data.createdAt?.toMillis?.() || data.createdAt || Date.now(),
+        updatedAt: data.updatedAt?.toMillis?.() || data.updatedAt || Date.now(),
+        publishedAt: data.publishedAt?.toMillis?.() || data.publishedAt,
+      };
+    });
+
+    // Apply tag filter (client-side since Firestore doesn't support array-contains with multiple filters in this query structure)
     if (tag) {
-      posts = posts.filter(post => post.tags.some(t => t.toLowerCase().includes(tag.toLowerCase())));
+      posts = posts.filter((post: any) => 
+        post.tags && post.tags.some((t: string) => t.toLowerCase().includes(tag.toLowerCase()))
+      );
     }
 
+    // Apply search filter (client-side for full-text search)
     if (search) {
       const searchLower = search.toLowerCase();
-      posts = posts.filter(post =>
+      posts = posts.filter((post: any) =>
         post.title.toLowerCase().includes(searchLower) ||
         post.excerpt.toLowerCase().includes(searchLower) ||
         post.content.toLowerCase().includes(searchLower)
