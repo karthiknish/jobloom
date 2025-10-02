@@ -6,6 +6,9 @@ import { UploadCloud, CheckCircle2, Loader2, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
+import { RealTimeAtsFeedback } from "./RealTimeAtsFeedback";
+import { calculateEnhancedATSScore } from "@/lib/enhancedAts";
+import type { ResumeData } from "@/types/resume";
 import {
   Card,
   CardContent,
@@ -40,6 +43,8 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted }: CvUpl
   const [dragActive, setDragActive] = useState(false);
   const [upgradePromptVisible, setUpgradePromptVisible] = useState(false);
   const [limitInfo, setLimitInfo] = useState<any>(null);
+  const [showRealTimeFeedback, setShowRealTimeFeedback] = useState(false);
+  const [sampleResume, setSampleResume] = useState<ResumeData | null>(null);
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -145,6 +150,89 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted }: CvUpl
     } finally {
       setUploading(false);
     }
+  };
+
+  const createSampleResume = (): ResumeData => {
+    return {
+      personalInfo: {
+        fullName: "John Doe",
+        email: "john.doe@example.com",
+        phone: "555-123-4567",
+        location: "San Francisco, CA",
+        linkedin: "linkedin.com/in/johndoe",
+        github: "github.com/johndoe",
+        summary: targetRole ? `Experienced ${targetRole} with proven track record of success in ${industry || "technology"} industry.` : "Experienced professional with proven track record of success."
+      },
+      experience: [
+        {
+          id: "1",
+          company: "Tech Corp",
+          position: targetRole || "Senior Professional",
+          location: "San Francisco, CA",
+          startDate: "2020-01",
+          endDate: "2023-12",
+          current: false,
+          description: "Led key initiatives and delivered exceptional results",
+          achievements: [
+            "Increased performance by 40% through optimization",
+            "Managed cross-functional teams",
+            "Reduced costs by 25% through process improvements"
+          ]
+        }
+      ],
+      education: [
+        {
+          id: "1",
+          institution: "University of California",
+          degree: "Bachelor of Science",
+          field: targetRole === "Software Engineer" ? "Computer Science" : "Business Administration",
+          graduationDate: "2018-05",
+          gpa: "3.8"
+        }
+      ],
+      skills: [
+        {
+          category: targetRole === "Software Engineer" ? "Technical" : "Core Competencies",
+          skills: targetRole === "Software Engineer"
+            ? ["JavaScript", "React", "Node.js", "Python", "AWS", "Docker"]
+            : ["Leadership", "Project Management", "Communication", "Problem Solving", "Data Analysis"]
+        }
+      ],
+      projects: [],
+      certifications: [],
+      languages: []
+    };
+  };
+
+  const handleShowRealTimeFeedback = () => {
+    if (!sampleResume) {
+      setSampleResume(createSampleResume());
+    }
+    setShowRealTimeFeedback(true);
+  };
+
+  const updateResumeField = (field: string, value: string) => {
+    if (!sampleResume) return;
+
+    const [section, subsection] = field.split('.');
+    setSampleResume(prev => {
+      if (!prev) return prev;
+
+      if (subsection) {
+        return {
+          ...prev,
+          [section]: {
+            ...(prev as any)[section],
+            [subsection]: value
+          }
+        };
+      } else {
+        return {
+          ...prev,
+          [field]: value
+        };
+      }
+    });
   };
 
   const formatFileSize = (bytes: number) => {
@@ -332,6 +420,49 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted }: CvUpl
           </motion.div>
         </CardFooter>
       </Card>
+
+      {/* Real-time ATS Feedback Section */}
+      {(targetRole || industry) && (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.2 }}
+        >
+          <Card className="shadow-sm border-border bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg text-blue-900">
+                    ⚡ Real-time ATS Feedback
+                  </CardTitle>
+                  <CardDescription className="text-blue-700">
+                    See how your target role and industry affect ATS optimization
+                  </CardDescription>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleShowRealTimeFeedback}
+                  className="border-blue-300 text-blue-700 hover:bg-blue-100"
+                >
+                  {showRealTimeFeedback ? "Hide" : "Show"} Preview
+                </Button>
+              </div>
+            </CardHeader>
+            {showRealTimeFeedback && sampleResume && (
+              <CardContent className="pt-0">
+                <RealTimeAtsFeedback
+                  resume={sampleResume}
+                  targetRole={targetRole}
+                  industry={industry}
+                  onFieldChange={updateResumeField}
+                  compact={true}
+                />
+              </CardContent>
+            )}
+          </Card>
+        </motion.div>
+      )}
 
       {/* Upgrade Prompt for CV Analysis Limits */}
       {upgradePromptVisible && limitInfo && (

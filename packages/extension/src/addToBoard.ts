@@ -60,6 +60,7 @@ interface JobBoardEntry {
     isSponsored: boolean;
     sponsorshipType?: string;
   };
+  ukEligibility?: boolean | null;
   isRecruitmentAgency?: boolean;
   applicationId?: string;
   appliedDate?: string;
@@ -118,6 +119,97 @@ export class JobBoardManager {
     });
   }
 
+  // Enhanced job validation and deduplication
+  private static async validateAndDeduplicateJob(jobData: JobData): Promise<{ isValid: boolean; reason?: string }> {
+    // Check required fields
+    if (!jobData.title || !jobData.company) {
+      return { isValid: false, reason: "Missing required job information (title and company)" };
+    }
+
+    // Check if job already exists
+    const exists = await this.checkIfJobExists(jobData);
+    if (exists) {
+      return { isValid: false, reason: "This job is already in your board" };
+    }
+
+    // Validate job title quality
+    if (jobData.title.length < 3 || jobData.title.length > 200) {
+      return { isValid: false, reason: "Job title appears to be invalid" };
+    }
+
+    // Validate company name
+    if (jobData.company.length < 2 || jobData.company.length > 100) {
+      return { isValid: false, reason: "Company name appears to be invalid" };
+    }
+
+    return { isValid: true };
+  }
+
+  // Enhanced job scoring and priority calculation
+  private static calculateJobScore(jobData: JobData): number {
+    let score = 0;
+
+    // Sponsorship status (highest priority)
+    if (jobData.isSponsored) {
+      score += 40;
+      if (jobData.sponsorshipType === 'visa_sponsorship') score += 10;
+    }
+
+    // Recent posting (higher priority for newer jobs)
+    if (jobData.postedDate) {
+      const daysSincePosted = Math.floor((Date.now() - new Date(jobData.postedDate).getTime()) / (1000 * 60 * 60 * 24));
+      if (daysSincePosted <= 3) score += 20;
+      else if (daysSincePosted <= 7) score += 15;
+      else if (daysSincePosted <= 14) score += 10;
+      else if (daysSincePosted <= 30) score += 5;
+    }
+
+    // Salary information
+    if (jobData.salary || jobData.salaryRange) {
+      score += 15;
+      if (jobData.salaryRange?.min && jobData.salaryRange.min > 50000) score += 10;
+    }
+
+    // Remote work availability
+    if (jobData.remoteWork) {
+      score += 10;
+    }
+
+    // Company size (medium to large companies often more stable)
+    if (jobData.companySize) {
+      if (jobData.companySize.includes('1000+') || jobData.companySize.includes('Large')) {
+        score += 5;
+      }
+    }
+
+    return Math.min(score, 100);
+  }
+
+  // Enhanced notification system
+  private static async showNotification(message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info'): Promise<void> {
+    try {
+      // Try Chrome notifications first
+      if (chrome.notifications) {
+        await chrome.notifications.create({
+          type: 'basic',
+          iconUrl: chrome.runtime.getURL('icons/icon48.png'),
+          title: 'HireAll - Job Board',
+          message: message
+        });
+      } else {
+        // Fallback to console and localStorage
+        console.log(`[HireAll ${type.toUpperCase()}] ${message}`);
+        localStorage.setItem('__hireall_notification', JSON.stringify({
+          message,
+          type,
+          timestamp: Date.now()
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to show notification:', error);
+    }
+  }
+
   public static async addToBoard(
     jobData: JobData
   ): Promise<{ success: boolean; message: string }> {
@@ -133,18 +225,32 @@ export class JobBoardManager {
       | "offered"
       | "rejected"
       | "withdrawn" = "interested"
-  ): Promise<{ success: boolean; message: string }> {
+  ): Promise<{ success: boolean; message: string; jobScore?: number }> {
     try {
       // Get user ID and verify authentication
       const userId = await this.getUserId();
       if (!userId) {
+        await this.showNotification("Please sign in to add jobs to your board.", "error");
         return {
           success: false,
           message: "Please sign in to add jobs to your board.",
         };
       }
 
-      // Create job via API client
+      // Validate job data
+      const validation = await this.validateAndDeduplicateJob(jobData);
+      if (!validation.isValid) {
+        await this.showNotification(validation.reason || "Invalid job data", "warning");
+        return {
+          success: false,
+          message: validation.reason || "Invalid job data",
+        };
+      }
+
+      // Calculate job score for priority
+      const jobScore = this.calculateJobScore(jobData);
+
+      // Create job via API client with enhanced data
       let createdJobId: string | null = null;
       try {
         createdJobId = await post<string>("/api/app/jobs", {
@@ -170,6 +276,7 @@ export class JobBoardManager {
           sponsorshipType: jobData.sponsorshipType || undefined,
           source: jobData.source || "extension",
           userId: userId,
+          jobScore: jobScore, // Add the calculated score
         });
       } catch (e: any) {
         const msg = e?.message || "";
@@ -237,9 +344,17 @@ export class JobBoardManager {
         chrome.storage.local.set({ jobBoardStats: stats });
       });
 
+      // Show success notification with job score
+      const scoreText = jobScore >= 80 ? "High Priority" : jobScore >= 60 ? "Medium Priority" : "Standard Priority";
+      await this.showNotification(
+        `✅ ${jobData.title} at ${jobData.company} added successfully! (${scoreText})`,
+        "success"
+      );
+
       return {
         success: true,
-        message: `Job added and status set to "${status}"`,
+        message: `Job added and status set to "${status}" (${scoreText})`,
+        jobScore
       };
     } catch (error) {
       console.error("Error adding job to board:", error);

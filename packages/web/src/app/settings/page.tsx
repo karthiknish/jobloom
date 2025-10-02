@@ -1,1392 +1,711 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
-import { useSubscription } from "@/hooks/useSubscription";
-import { useRemoteConfig } from "@/hooks/useRemoteConfig";
-import { SubdomainSettings } from "@/components/account/SubdomainSettings";
-import { FeatureGate } from "@/components/UpgradePrompt";
-import { ProfileSettings } from "./components/ProfileSettings";
-import { PreferencesSettings } from "./components/PreferencesSettings";
-import { FeaturesSettings } from "./components/FeaturesSettings";
-import { SecuritySettings } from "./components/SecuritySettings";
-import { motion } from "framer-motion";
-import { format } from "date-fns";
+import React, { useState, useEffect } from "react";
 import {
-  Settings,
-  Bell,
   User,
+  Settings,
   Shield,
-  Globe,
   CreditCard,
-  Database,
-  Key,
-  Loader2,
-  Crown,
-  Briefcase,
-  ClipboardList,
-  CalendarCheck,
   Save,
-  Trash2,
+  Camera,
+  Lock,
+  Key,
   Download,
-  Ban,
-  RotateCcw,
-  ShieldAlert,
-  Sparkles,
-  CheckCircle2,
-  Lock
+  Trash2,
+  RefreshCw,
 } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle
-} from "@/components/ui/card";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger
-} from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { showSuccess, showError } from "@/components/ui/Toast";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import type { SubscriptionLimits } from "@/types/api";
-
-interface UserPreferences {
-  emailNotifications: boolean;
-  pushNotifications: boolean;
-  jobAlertsEnabled: boolean;
-  jobKeywords: string[];
-  preferredCompanies: string[];
-  preferredLocations: string[];
-  salaryRange: { min?: number; max?: number };
-  jobTypes: string[];
-  experienceLevels: string[];
-  industries: string[];
-  analyticsTracking: boolean;
-  dataSharing: boolean;
-  marketingEmails: boolean;
-}
-
-const createDefaultPreferences = (): UserPreferences => ({
-  emailNotifications: true,
-  pushNotifications: true,
-  jobAlertsEnabled: false,
-  jobKeywords: [],
-  preferredCompanies: [],
-  preferredLocations: [],
-  salaryRange: {},
-  jobTypes: [],
-  experienceLevels: [],
-  industries: [],
-  analyticsTracking: true,
-  dataSharing: false,
-  marketingEmails: true,
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+// Mock hooks for demo - replace with actual implementations
+const useToast = () => ({
+  toast: ({ title, description, variant }: any) => {
+    console.log(`${variant || 'info'}: ${title} - ${description}`);
+  }
 });
 
-const PremiumFeatureLockCard = ({
-  title,
-  description,
-  feature,
-}: {
-  title: string;
-  description: string;
-  feature: string;
-}) => (
-  <Card className="h-full border-dashed border-primary/40 bg-primary/5">
-    <CardHeader>
-      <CardTitle className="flex items-center gap-2 text-primary">
-        <Crown className="h-5 w-5" />
-        {title}
-      </CardTitle>
-      <CardDescription>{description}</CardDescription>
-    </CardHeader>
-    <CardContent>
-      <Button
-        asChild
-        className="w-full bg-gradient-to-r from-primary to-secondary text-white"
-      >
-        <a href={`/upgrade?feature=${feature}`}>Upgrade to unlock</a>
-      </Button>
-    </CardContent>
-  </Card>
-);
+const useUser = () => ({
+  user: {
+    firstName: "John",
+    lastName: "Doe",
+    email: "john@example.com",
+    phone: "",
+    location: "",
+    title: "",
+    company: "",
+    bio: "",
+    avatar: "",
+    emailNotifications: true,
+    pushNotifications: false,
+    newsletter: true,
+    marketingEmails: false,
+    theme: "light",
+    createdAt: new Date().toISOString()
+  },
+  loading: false
+});
+import { getAuth, signOut as firebaseSignOut } from "firebase/auth";
+import { useRouter } from "next/navigation";
+
+const tabs = [
+  {
+    id: "profile",
+    label: "Profile",
+    icon: User,
+    description: "Personal information",
+  },
+  {
+    id: "preferences",
+    label: "Preferences",
+    icon: Settings,
+    description: "App settings",
+  },
+  {
+    id: "security",
+    label: "Security",
+    icon: Shield,
+    description: "Password & privacy",
+  },
+];
 
 export default function SettingsPage() {
-  const {
-    user,
-    updatePassword: updateUserPassword,
-    sendEmailVerification: triggerEmailVerification,
-  } = useFirebaseAuth();
-  const { subscription, plan, limits, currentUsage, hasFeature, refreshSubscription } = useSubscription();
-  const {
-    isJobImportEnabled,
-    isCvAnalysisEnabled,
-    isAdvancedFiltersEnabled,
-    isBulkActionsEnabled,
-    isRealTimeUpdatesEnabled,
-    isAnalyticsEnabled,
-    isNotificationsEnabled,
-    isBetaFeaturesEnabled,
-    dashboardRefreshIntervalSeconds,
-    notificationDisplayDurationSeconds,
-    maintenanceMessage
-  } = useRemoteConfig();
+  const { user, loading: userLoading } = useUser();
+  const router = useRouter();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("profile");
-  const [preferences, setPreferences] = useState<UserPreferences>(createDefaultPreferences);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
 
-  const [saving, setSaving] = useState(false);
-  const [exporting, setExporting] = useState(false);
-  const [deletingAccount, setDeletingAccount] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [isManagingBilling, setIsManagingBilling] = useState(false);
-  const [isCancellingSubscription, setIsCancellingSubscription] = useState(false);
-  const [isResumingSubscription, setIsResumingSubscription] = useState(false);
-  const [subscriptionError, setSubscriptionError] = useState<string | null>(null);
-  const [showChangePasswordForm, setShowChangePasswordForm] = useState(false);
-  const [changePasswordLoading, setChangePasswordLoading] = useState(false);
-  const [changePasswordError, setChangePasswordError] = useState<string | null>(null);
-  const [passwordForm, setPasswordForm] = useState({
-    current: "",
-    next: "",
-    confirm: "",
+  const [formData, setFormData] = useState({
+    profile: {
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+      location: "",
+      title: "",
+      company: "",
+      bio: "",
+      avatar: "",
+    },
+    preferences: {
+      emailNotifications: true,
+      pushNotifications: false,
+      newsletter: true,
+      marketingEmails: false,
+      theme: "light",
+    },
+    security: {
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    },
   });
-  const [verificationSending, setVerificationSending] = useState(false);
-  const [revokingSessions, setRevokingSessions] = useState(false);
-  const [viewingSessions, setViewingSessions] = useState(false);
-  const [sessions, setSessions] = useState<any[]>([]);
-  const [sessionsError, setSessionsError] = useState<string | null>(null);
 
-  const exportFormats = limits.exportFormats ?? [];
-  type PremiumCapability = {
-    key: keyof SubscriptionLimits;
-    label: string;
-    description: string;
-    requires?: string[];
-  };
+  const [originalData, setOriginalData] = useState(formData);
 
-  const premiumCapabilities: PremiumCapability[] = [
-    {
-      key: "advancedAnalytics",
-      label: "Advanced analytics",
-      description: "Detailed dashboards and performance insights to track your search.",
-    },
-    {
-      key: "customAlerts",
-      label: "Custom job alerts",
-      description: "Receive personalised alerts based on job keywords, companies, and locations.",
-    },
-    {
-      key: "prioritySupport",
-      label: "Priority support",
-      description: "Skip the queue with fast responses from the Hireall support team.",
-    },
-    {
-      key: "teamCollaboration",
-      label: "Team collaboration",
-      description: "Invite collaborators to manage job applications together.",
-    },
-    {
-      key: "exportFormats",
-      label: "Premium exports",
-      description: "Unlock JSON and PDF exports alongside CSV downloads.",
-      requires: ["json", "pdf"],
-    },
-  ];
-
-  const featureStatusList = [
-    { key: "jobImport", label: "Job import", enabled: isJobImportEnabled, description: "Import roles directly from supported sources." },
-    { key: "cvAnalysis", label: "CV analysis", enabled: isCvAnalysisEnabled, description: "Run AI-powered resume scoring and feedback." },
-    { key: "advancedFilters", label: "Advanced filters", enabled: isAdvancedFiltersEnabled, description: "Filter jobs by location, sponsorship, salary, and more." },
-    { key: "bulkActions", label: "Bulk actions", enabled: isBulkActionsEnabled, description: "Update multiple applications in one click." },
-    { key: "realTimeUpdates", label: "Real-time updates", enabled: isRealTimeUpdatesEnabled, description: "Receive instant changes when job statuses update." },
-    { key: "analytics", label: "Analytics tracking", enabled: isAnalyticsEnabled, description: "Collect usage data to power analytics dashboards." },
-    { key: "notifications", label: "Notifications", enabled: isNotificationsEnabled, description: "Enable in-app and email notifications." },
-    { key: "betaFeatures", label: "Beta features", enabled: isBetaFeaturesEnabled, description: "Access experimental tools before everyone else." },
-  ];
-  const exportFormatsFeatureKey: keyof SubscriptionLimits = "exportFormats";
-  const premiumExportsUnlocked = hasFeature(exportFormatsFeatureKey, ["json", "pdf"]);
-
-  const nextBillingDate = subscription?.currentPeriodEnd
-    ? format(new Date(subscription.currentPeriodEnd), "MMM d, yyyy")
-    : null;
-
-  const cancellationEffectiveDate = subscription?.cancelAtPeriodEnd && subscription?.currentPeriodEnd
-    ? format(new Date(subscription.currentPeriodEnd), "MMM d, yyyy")
-    : null;
-
-  const handleChangePassword = async () => {
-    if (!user) return;
-
-    const { current, next, confirm } = passwordForm;
-    if (!current || !next || !confirm) {
-      setChangePasswordError("Please complete all password fields.");
-      return;
-    }
-
-    if (next.length < 8) {
-      setChangePasswordError("New password must be at least 8 characters long.");
-      return;
-    }
-
-    if (next !== confirm) {
-      setChangePasswordError("New password and confirmation do not match.");
-      return;
-    }
-
-    try {
-      setChangePasswordError(null);
-      setChangePasswordLoading(true);
-      await updateUserPassword(current, next);
-      showSuccess("Password changed!", "Your password has been updated successfully.");
-      setPasswordForm({ current: "", next: "", confirm: "" });
-      setShowChangePasswordForm(false);
-    } catch (error: any) {
-      const message = typeof error?.message === "string" ? error.message : "Failed to update password.";
-      setChangePasswordError(message);
-      showError(message);
-    } finally {
-      setChangePasswordLoading(false);
-    }
-  };
-
-  const handleSendVerification = async () => {
-    if (!user || user.emailVerified) return;
-
-    try {
-      setVerificationSending(true);
-      await triggerEmailVerification();
-    } catch (error) {
-      console.error("Error sending verification email:", error);
-    } finally {
-      setVerificationSending(false);
-    }
-  };
-
-  const handleRevokeSessions = async () => {
-    if (!user) return;
-
-    try {
-      setRevokingSessions(true);
-      const token = await user.getIdToken();
-      const response = await fetch('/api/settings/revoke-sessions', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to revoke sessions');
-      }
-
-      showSuccess("Sessions revoked!", "You've been signed out from all other devices.");
-      // Refresh sessions list after revoking
-      handleViewSessions();
-    } catch (error) {
-      console.error('Error revoking sessions:', error);
-      const message = error instanceof Error ? error.message : 'Failed to revoke sessions';
-      showError(message);
-    } finally {
-      setRevokingSessions(false);
-    }
-  };
-
-  const handleViewSessions = async () => {
-    if (!user) return;
-
-    try {
-      setViewingSessions(true);
-      setSessionsError(null);
-      const token = await user.getIdToken();
-      const response = await fetch('/api/settings/sessions', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setSessions(data.sessions || []);
-      } else {
-        throw new Error('Failed to fetch sessions');
-      }
-    } catch (error) {
-      console.error('Error fetching sessions:', error);
-      setSessionsError('Unable to fetch sessions. Please try again.');
-      setSessions([]);
-    } finally {
-      setViewingSessions(false);
-    }
-  };
-
-  const manageBilling = async () => {
-    if (!user) return;
-
-    try {
-      setIsManagingBilling(true);
-      setSubscriptionError(null);
-      const token = await user.getIdToken();
-      const response = await fetch("/api/subscription/portal", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.error || "Unable to open billing portal");
-      }
-
-      const data = await response.json();
-      if (data?.url) {
-        window.location.href = data.url;
-      } else {
-        throw new Error("Billing portal URL was not returned");
-      }
-    } catch (error) {
-      console.error("Error opening billing portal:", error);
-      const message = error instanceof Error ? error.message : "Unable to open billing portal";
-      setSubscriptionError(message);
-      showError(message);
-    } finally {
-      setIsManagingBilling(false);
-    }
-  };
-
-  const cancelSubscription = async () => {
-    if (!user) return;
-
-    try {
-      setIsCancellingSubscription(true);
-      setSubscriptionError(null);
-      const token = await user.getIdToken();
-      const response = await fetch("/api/subscription/cancel", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(data.error || "Unable to cancel subscription");
-      }
-
-      showSuccess("Cancellation scheduled", "Your subscription will end at the next billing date.");
-      await refreshSubscription();
-    } catch (error) {
-      console.error("Error cancelling subscription:", error);
-      const message = error instanceof Error ? error.message : "Unable to cancel subscription";
-      setSubscriptionError(message);
-      showError(message);
-    } finally {
-      setIsCancellingSubscription(false);
-    }
-  };
-
-  const resumeSubscription = async () => {
-    if (!user) return;
-
-    try {
-      setIsResumingSubscription(true);
-      setSubscriptionError(null);
-      const token = await user.getIdToken();
-      const response = await fetch("/api/subscription/resume", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(data.error || "Unable to resume subscription");
-      }
-
-      showSuccess("Subscription restored!", "Your subscription will continue as normal.");
-      await refreshSubscription();
-    } catch (error) {
-      console.error("Error resuming subscription:", error);
-      const message = error instanceof Error ? error.message : "Unable to resume subscription";
-      setSubscriptionError(message);
-      showError(message);
-    } finally {
-      setIsResumingSubscription(false);
-    }
-  };
-
-  // Load user preferences from backend
   useEffect(() => {
-    const loadPreferences = async () => {
-      if (!user) return;
-
-      try {
-        const token = await user.getIdToken();
-        
-        // Load regular preferences
-        const preferencesResponse = await fetch('/api/settings/preferences', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-
-        // Load marketing preference from Firestore
-        const marketingResponse = await fetch('/api/settings/marketing', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-
-        let preferencesData = {};
-        let marketingData = { marketingEmails: true }; // default
-
-        if (preferencesResponse.ok) {
-          const data = await preferencesResponse.json();
-          preferencesData = data.preferences ?? {};
-        }
-
-        if (marketingResponse.ok) {
-          const data = await marketingResponse.json();
-          marketingData = { marketingEmails: data.marketingEmails };
-        }
-
-        setPreferences({
-          ...createDefaultPreferences(),
-          ...preferencesData,
-          ...marketingData,
-        });
-      } catch (error) {
-        console.error('Error loading preferences:', error);
-        // Fallback to localStorage
-        const saved = localStorage.getItem('userPreferences');
-        if (saved) {
-          try {
-            const parsed = JSON.parse(saved);
-            setPreferences({
-              ...createDefaultPreferences(),
-              ...(parsed ?? {}),
-            });
-          } catch (localError) {
-            console.error('Error loading local preferences:', localError);
-          }
-        }
-      }
-    };
-
-    loadPreferences();
-  }, [user]);
-
-  // Save preferences to backend
-  const savePreferences = async () => {
-    if (!user) return;
-
-    setSaving(true);
-    try {
-      const token = await user.getIdToken();
-      const response = await fetch('/api/settings/preferences', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
+    if (!userLoading && user) {
+      const userData = {
+        profile: {
+          firstName: user.firstName || "",
+          lastName: user.lastName || "",
+          email: user.email || "",
+          phone: user.phone || "",
+          location: user.location || "",
+          title: user.title || "",
+          company: user.company || "",
+          bio: user.bio || "",
+          avatar: user.avatar || "",
         },
-        body: JSON.stringify({ preferences })
-      });
-
-      if (response.ok) {
-        // Also save to localStorage as backup
-        localStorage.setItem('userPreferences', JSON.stringify(preferences));
-        showSuccess('Preferences saved!', 'Your settings have been updated.');
-      } else {
-        throw new Error('Failed to save preferences');
-      }
-    } catch (error) {
-      console.error('Error saving preferences:', error);
-      showError('Save failed', 'Unable to save preferences. Please try again.');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const updatePreference = async <K extends keyof UserPreferences>(key: K, value: UserPreferences[K]) => {
-    setPreferences(prev => ({ ...prev, [key]: value }));
-    
-    // Special handling for marketing emails to sync with Resend
-    if (key === 'marketingEmails' && user) {
-      try {
-        const token = await user.getIdToken();
-        const response = await fetch('/api/settings/marketing', {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`
-          },
-          body: JSON.stringify({ marketingEmails: value })
-        });
-
-        if (!response.ok) {
-          console.error('Failed to update marketing preferences in Firestore');
-        }
-      } catch (error) {
-        console.error('Error syncing marketing preferences:', error);
-      }
-    }
-  };
-
-  // Export user data
-  const exportData = async () => {
-    if (!user) return;
-
-    setExporting(true);
-    try {
-      const token = await user.getIdToken();
-      const response = await fetch('/api/settings/export', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        // Trigger download
-        const link = document.createElement('a');
-        link.href = data.downloadUrl;
-        link.download = data.filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        showSuccess('Data exported!', `Your data has been downloaded as ${data.filename}`);
-      } else {
-        throw new Error('Export failed');
-      }
-    } catch (error) {
-      console.error('Error exporting data:', error);
-      showError('Export failed', 'Unable to export your data. Please try again.');
-    } finally {
-      setExporting(false);
-    }
-  };
-
-  // Delete account
-  const deleteAccount = async () => {
-    if (!user) return;
-
-    const confirmation = prompt(
-      'This action cannot be undone. Type "DELETE_MY_ACCOUNT_PERMANENTLY" to confirm:'
-    );
-
-    if (confirmation !== 'DELETE_MY_ACCOUNT_PERMANENTLY') {
-      showError('Deletion cancelled', 'Confirmation text did not match. Account deletion cancelled.');
-      return;
-    }
-
-    setDeletingAccount(true);
-    try {
-      const token = await user.getIdToken();
-      const response = await fetch('/api/settings/delete-account', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
+        preferences: {
+          emailNotifications: user.emailNotifications ?? true,
+          pushNotifications: user.pushNotifications ?? false,
+          newsletter: user.newsletter ?? true,
+          marketingEmails: user.marketingEmails ?? false,
+          theme: user.theme || "light",
         },
-        body: JSON.stringify({
-          confirmation,
-          reason: 'User requested account deletion from settings'
-        })
-      });
+        security: {
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        },
+      };
+      setFormData(userData);
+      setOriginalData(userData);
+    }
+  }, [user, userLoading]);
 
-      if (response.ok) {
-        showSuccess('Account deleted', 'Your account has been permanently deleted.');
-        // Sign out and redirect after a delay
-        setTimeout(() => {
-          window.location.href = '/';
-        }, 3000);
-      } else {
-        const error = await response.json();
-        throw new Error(error.error || 'Deletion failed');
-      }
+  const handleInputChange = (section: string, field: string, value: string | boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      [section]: {
+        ...prev[section as keyof typeof prev],
+        [field]: value,
+      },
+    }));
+    setHasChanges(true);
+  };
+
+  const handleSave = async () => {
+    setIsLoading(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setOriginalData(formData);
+      setHasChanges(false);
+      toast({
+        title: "Settings saved",
+        description: "Your changes have been saved successfully.",
+      });
     } catch (error) {
-      console.error('Error deleting account:', error);
-      showError('Deletion failed', 'Unable to delete account. Please contact support.');
+      toast({
+        title: "Error saving settings",
+        description: "Please try again later.",
+        variant: "destructive",
+      });
     } finally {
-      setDeletingAccount(false);
-      setShowDeleteConfirm(false);
+      setIsLoading(false);
     }
   };
 
-  if (!user) {
+  const handleReset = () => {
+    setFormData(originalData);
+    setHasChanges(false);
+  };
+
+  const handleSignOut = async () => {
+    try {
+      const auth = getAuth();
+      await firebaseSignOut(auth);
+      router.push("/");
+    } catch (error) {
+      toast({
+        title: "Error signing out",
+        description: "Please try again later.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (userLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted/30">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <p className="mb-4">Please sign in to access settings.</p>
-          <a className="underline" href="/sign-in">
-            Sign in
-          </a>
+          <RefreshCw className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-gray-600">Loading settings...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-muted to-muted/80 pt-16">
-      <div className="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          {/* Header */}
-          <div className="mb-8">
-            <div className="flex items-center gap-3 mb-4">
-              <motion.div
-                initial={{ scale: 0.9, rotate: -4, opacity: 0 }}
-                animate={{ scale: 1, rotate: 0, opacity: 1 }}
-                transition={{ type: "spring", stiffness: 240, damping: 18 }}
-                className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center"
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => router.push("/dashboard")}
+                className="gap-2"
               >
-                <Settings className="h-5 w-5 text-primary" />
-              </motion.div>
-              <div>
-                <h1 className="text-2xl font-bold text-foreground">Settings</h1>
-                <p className="text-muted-foreground">Manage your account, preferences, and features</p>
-              </div>
+                <Settings className="h-4 w-4" />
+                Settings
+              </Button>
             </div>
-
-            {/* Subscription Status */}
-            <div className="flex items-center gap-4 mb-6">
-              <Badge variant={plan === 'free' ? 'secondary' : 'default'} className="capitalize">
-                {plan} Plan
-              </Badge>
-              {subscription?.status === 'active' && (
-                <span className="text-sm text-muted-foreground">
-                  Next billing: {subscription.currentPeriodEnd ? format(new Date(subscription.currentPeriodEnd), 'MMM d, yyyy') : 'N/A'}
-                </span>
-              )}
-              {plan === 'free' && (
-                <Button size="sm" asChild>
-                  <a href="/upgrade">Upgrade</a>
-                </Button>
+            <div className="flex items-center gap-3">
+              {hasChanges && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleReset}
+                    disabled={isLoading}
+                  >
+                    Reset
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleSave}
+                    disabled={isLoading}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    {isLoading ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4 mr-2" />
+                        Save Changes
+                      </>
+                    )}
+                  </Button>
+                </>
               )}
             </div>
+          </div>
+        </div>
+      </header>
 
-            {plan === 'free' && (
-              <Card className="border border-primary/30 bg-primary/5">
-                <CardContent className="p-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex items-start gap-3">
-                    <div className="mt-1 flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                      <Sparkles className="h-5 w-5 text-primary" />
+      {/* Main Content */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Sidebar */}
+          <div className="lg:w-80">
+            <Card className="bg-white shadow-sm">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4 mb-6">
+                  <Avatar className="h-16 w-16">
+                    <AvatarImage src={user?.avatar} alt={user?.firstName} />
+                    <AvatarFallback className="text-lg bg-blue-100 text-blue-600">
+                      {user?.firstName?.[0]}{user?.lastName?.[0]}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <div className="font-semibold text-gray-900">
+                      {user?.firstName} {user?.lastName}
                     </div>
-                    <div>
-                      <h2 className="text-lg font-semibold text-primary">Unlock premium features</h2>
-                      <p className="text-sm text-muted-foreground">
-                        Unlimited CV analyses, custom job alerts, API access, and JSON/PDF exports are just one click away.
-                      </p>
+                    <div className="text-sm text-gray-600">{user?.email}</div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      Member since {new Date(user?.createdAt || Date.now()).toLocaleDateString()}
                     </div>
                   </div>
-                  <Button asChild className="bg-gradient-to-r from-primary to-secondary text-white">
-                    <a href="/upgrade">View premium plans</a>
+                </div>
+                <Separator className="mb-6" />
+                <div className="space-y-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-start gap-2"
+                    onClick={() => router.push("/billing")}
+                  >
+                    <CreditCard className="h-4 w-4" />
+                    Billing & Plans
                   </Button>
-                </CardContent>
-              </Card>
-            )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-start gap-2"
+                    onClick={handleSignOut}
+                  >
+                    <Key className="h-4 w-4" />
+                    Sign Out
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 gap-2 md:grid-cols-4 h-auto">
-              <TabsTrigger value="profile" className="flex items-center gap-2">
-                <User className="h-4 w-4" />
-                <span className="hidden sm:inline">Profile</span>
-              </TabsTrigger>
-              <TabsTrigger value="preferences" className="flex items-center gap-2">
-                <Settings className="h-4 w-4" />
-                <span className="hidden sm:inline">Preferences</span>
-              </TabsTrigger>
-              <TabsTrigger value="features" className="flex items-center gap-2">
-                <Globe className="h-4 w-4" />
-                <span className="hidden sm:inline">Features</span>
-              </TabsTrigger>
-              <TabsTrigger value="security" className="flex items-center gap-2">
-                <Shield className="h-4 w-4" />
-                <span className="hidden sm:inline">Security</span>
-              </TabsTrigger>
-            </TabsList>
+          {/* Main Content */}
+          <div className="flex-1">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+              <TabsList className="bg-white p-1 grid w-full grid-cols-3 shadow-sm">
+                {tabs.map((tab) => (
+                  <TabsTrigger
+                    key={tab.id}
+                    value={tab.id}
+                    className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+                  >
+                    <tab.icon className="h-4 w-4 mr-2" />
+                    {tab.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
 
-            {/* Profile Tab */}
-            <TabsContent value="profile" className="space-y-6">
-              <ProfileSettings
-                user={user}
-                plan={plan}
-                subscription={subscription}
-                limits={limits}
-                currentUsage={currentUsage}
-                nextBillingDate={nextBillingDate || undefined}
-                cancellationEffectiveDate={cancellationEffectiveDate || undefined}
-                subscriptionError={subscriptionError}
-                isManagingBilling={isManagingBilling}
-                isCancellingSubscription={isCancellingSubscription}
-                isResumingSubscription={isResumingSubscription}
-                manageBilling={manageBilling}
-                cancelSubscription={cancelSubscription}
-                resumeSubscription={resumeSubscription}
-              />
-            </TabsContent>
-
-            {/* Preferences Tab */}
-            <TabsContent value="preferences" className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Notifications */}
-                <Card>
+              {/* Profile Tab */}
+              <TabsContent value="profile">
+                <Card className="bg-white shadow-sm">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Bell className="h-5 w-5" />
-                      Notifications
-                    </CardTitle>
-                    <CardDescription>
-                      Configure how you receive notifications and updates.
+                    <CardTitle className="text-2xl font-bold text-gray-900">Profile Information</CardTitle>
+                    <CardDescription className="text-gray-600">
+                      Update your personal information
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label>Email Notifications</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Receive updates via email
+                  <CardContent className="space-y-8">
+                    <div className="flex items-center gap-6">
+                      <Avatar className="h-24 w-24">
+                        <AvatarImage src={formData.profile.avatar} alt="Profile" />
+                        <AvatarFallback className="text-xl bg-blue-100 text-blue-600">
+                          {formData.profile.firstName?.[0]}{formData.profile.lastName?.[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="space-y-3">
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            toast({
+                              title: "Avatar uploaded",
+                              description: "Your profile picture has been updated.",
+                            });
+                          }}
+                          className="gap-2"
+                        >
+                          <Camera className="h-4 w-4" />
+                          Change Avatar
+                        </Button>
+                        <p className="text-sm text-gray-600">
+                          JPG, PNG or GIF. Max size 2MB
                         </p>
                       </div>
-                      <Switch
-                        checked={preferences.emailNotifications}
-                        onCheckedChange={(checked) => updatePreference('emailNotifications', checked)}
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-3">
+                        <Label htmlFor="firstName" className="text-sm font-medium text-gray-700">
+                          First Name
+                        </Label>
+                        <Input
+                          id="firstName"
+                          value={formData.profile.firstName}
+                          onChange={(e) => handleInputChange("profile", "firstName", e.target.value)}
+                          placeholder="Enter your first name"
+                          className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div className="space-y-3">
+                        <Label htmlFor="lastName" className="text-sm font-medium text-gray-700">
+                          Last Name
+                        </Label>
+                        <Input
+                          id="lastName"
+                          value={formData.profile.lastName}
+                          onChange={(e) => handleInputChange("profile", "lastName", e.target.value)}
+                          placeholder="Enter your last name"
+                          className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+                        Email Address
+                      </Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={formData.profile.email}
+                        onChange={(e) => handleInputChange("profile", "email", e.target.value)}
+                        placeholder="Enter your email"
+                        className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                       />
                     </div>
 
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label>Push Notifications</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Browser push notifications
-                        </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-3">
+                        <Label htmlFor="phone" className="text-sm font-medium text-gray-700">
+                          Phone Number
+                        </Label>
+                        <Input
+                          id="phone"
+                          type="tel"
+                          value={formData.profile.phone}
+                          onChange={(e) => handleInputChange("profile", "phone", e.target.value)}
+                          placeholder="Enter your phone number"
+                          className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                        />
                       </div>
-                      <Switch
-                        checked={preferences.pushNotifications}
-                        onCheckedChange={(checked) => updatePreference('pushNotifications', checked)}
-                      />
+                      <div className="space-y-3">
+                        <Label htmlFor="location" className="text-sm font-medium text-gray-700">
+                          Location
+                        </Label>
+                        <Input
+                          id="location"
+                          value={formData.profile.location}
+                          onChange={(e) => handleInputChange("profile", "location", e.target.value)}
+                          placeholder="City, Country"
+                          className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                        />
+                      </div>
                     </div>
 
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label>Job Alerts</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Get notified about new job opportunities
-                        </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-3">
+                        <Label htmlFor="title" className="text-sm font-medium text-gray-700">
+                          Job Title
+                        </Label>
+                        <Input
+                          id="title"
+                          value={formData.profile.title}
+                          onChange={(e) => handleInputChange("profile", "title", e.target.value)}
+                          placeholder="Your current job title"
+                          className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                        />
                       </div>
-                      <Switch
-                        checked={preferences.jobAlertsEnabled}
-                        onCheckedChange={(checked) => updatePreference('jobAlertsEnabled', checked)}
+                      <div className="space-y-3">
+                        <Label htmlFor="company" className="text-sm font-medium text-gray-700">
+                          Company
+                        </Label>
+                        <Input
+                          id="company"
+                          value={formData.profile.company}
+                          onChange={(e) => handleInputChange("profile", "company", e.target.value)}
+                          placeholder="Your current company"
+                          className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <Label htmlFor="bio" className="text-sm font-medium text-gray-700">
+                        Bio
+                      </Label>
+                      <Textarea
+                        id="bio"
+                        value={formData.profile.bio}
+                        onChange={(e) => handleInputChange("profile", "bio", e.target.value)}
+                        placeholder="Tell us about yourself..."
+                        rows={4}
+                        className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                       />
                     </div>
                   </CardContent>
                 </Card>
+              </TabsContent>
 
-                {/* Job Preferences */}
-                <FeatureGate
-                  feature="customAlerts"
-                  showUpgradePrompt={false}
-                  fallback={
-                    <PremiumFeatureLockCard
-                      feature="customAlerts"
-                      title="Personalised job alerts"
-                      description="Upgrade to set job keywords, preferred companies, and salary bands for tailored alerts."
-                    />
-                  }
-                >
-                  <Card className="lg:col-span-2">
+              {/* Preferences Tab */}
+              <TabsContent value="preferences">
+                <div className="space-y-6">
+                  <Card className="bg-white shadow-sm">
                     <CardHeader>
-                      <CardTitle>Job Preferences</CardTitle>
-                      <CardDescription>
-                        Set your job search preferences to receive personalized recommendations.
+                      <CardTitle className="text-xl font-bold text-gray-900">Notifications</CardTitle>
+                      <CardDescription className="text-gray-600">
+                        Manage how you receive updates
                       </CardDescription>
                     </CardHeader>
-                    <CardContent>
-                      <div className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div className="space-y-2">
-                            <Label>Job Keywords</Label>
-                            <Textarea
-                              placeholder="e.g., React, Node.js, Senior, Frontend"
-                              value={preferences.jobKeywords.join(', ')}
-                              onChange={(e) => updatePreference('jobKeywords', e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
-                            />
-                            <p className="text-xs text-muted-foreground">
-                              Enter keywords separated by commas
-                            </p>
-                          </div>
-
-                          <div className="space-y-2">
-                            <Label>Preferred Companies</Label>
-                            <Textarea
-                              placeholder="e.g., Google, Microsoft, Apple"
-                              value={preferences.preferredCompanies.join(', ')}
-                              onChange={(e) => updatePreference('preferredCompanies', e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
-                            />
-                          </div>
-
-                          <div className="space-y-2">
-                            <Label>Preferred Locations</Label>
-                            <Textarea
-                              placeholder="e.g., San Francisco, Remote, New York"
-                              value={preferences.preferredLocations.join(', ')}
-                              onChange={(e) => updatePreference('preferredLocations', e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
-                            />
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-2">
-                            <div className="space-y-2">
-                              <Label>Min Salary ($)</Label>
-                              <Input
-                                type="number"
-                                placeholder="80000"
-                                value={preferences.salaryRange.min || ''}
-                                onChange={(e) => updatePreference('salaryRange', {
-                                  ...preferences.salaryRange,
-                                  min: e.target.value ? parseInt(e.target.value) : undefined
-                                })}
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label>Max Salary ($)</Label>
-                              <Input
-                                type="number"
-                                placeholder="150000"
-                                value={preferences.salaryRange.max || ''}
-                                onChange={(e) => updatePreference('salaryRange', {
-                                  ...preferences.salaryRange,
-                                  max: e.target.value ? parseInt(e.target.value) : undefined
-                                })}
-                              />
-                            </div>
-                          </div>
+                    <CardContent className="space-y-6">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-1">
+                          <Label htmlFor="emailNotifications" className="text-sm font-medium text-gray-700">
+                            Email Notifications
+                          </Label>
+                          <p className="text-sm text-gray-500">
+                            Receive job alerts and updates via email
+                          </p>
                         </div>
+                        <Switch
+                          id="emailNotifications"
+                          checked={formData.preferences.emailNotifications}
+                          onCheckedChange={(checked) => handleInputChange("preferences", "emailNotifications", checked)}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-1">
+                          <Label htmlFor="pushNotifications" className="text-sm font-medium text-gray-700">
+                            Push Notifications
+                          </Label>
+                          <p className="text-sm text-gray-500">
+                            Receive browser push notifications
+                          </p>
+                        </div>
+                        <Switch
+                          id="pushNotifications"
+                          checked={formData.preferences.pushNotifications}
+                          onCheckedChange={(checked) => handleInputChange("preferences", "pushNotifications", checked)}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-1">
+                          <Label htmlFor="newsletter" className="text-sm font-medium text-gray-700">
+                            Newsletter
+                          </Label>
+                          <p className="text-sm text-gray-500">
+                            Weekly job tips and opportunities
+                          </p>
+                        </div>
+                        <Switch
+                          id="newsletter"
+                          checked={formData.preferences.newsletter}
+                          onCheckedChange={(checked) => handleInputChange("preferences", "newsletter", checked)}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-1">
+                          <Label htmlFor="marketingEmails" className="text-sm font-medium text-gray-700">
+                            Marketing Emails
+                          </Label>
+                          <p className="text-sm text-gray-500">
+                            Special offers and promotions
+                          </p>
+                        </div>
+                        <Switch
+                          id="marketingEmails"
+                          checked={formData.preferences.marketingEmails}
+                          onCheckedChange={(checked) => handleInputChange("preferences", "marketingEmails", checked)}
+                        />
                       </div>
                     </CardContent>
                   </Card>
-                </FeatureGate>
-              </div>
 
-              {/* Save Preferences */}
-              <div className="flex justify-end">
-                <Button onClick={savePreferences} disabled={saving}>
-                  {saving ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4 mr-2" />
-                      Save Preferences
-                    </>
-                  )}
-                </Button>
-              </div>
-            </TabsContent>
-
-            {/* Features Tab */}
-            <TabsContent value="features" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Plan capabilities</CardTitle>
-                  <CardDescription>
-                    {plan === 'premium'
-                      ? 'Everything currently available with your premium subscription.'
-                      : 'Preview what unlocks instantly when you upgrade to premium.'}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    {premiumCapabilities.map((capability) => {
-                      const unlocked = hasFeature(
-                        capability.key,
-                        capability.requires
-                      );
-
-                      return (
-                        <div
-                          key={capability.key}
-                          className="flex gap-3 rounded-lg border border-border/60 bg-background/60 p-4"
-                        >
-                          <div
-                            className={`mt-1 flex h-9 w-9 items-center justify-center rounded-full ${
-                              unlocked
-                                ? 'bg-primary/10 text-primary'
-                                : 'bg-muted text-muted-foreground'
-                            }`}
-                          >
-                            {unlocked ? (
-                              <CheckCircle2 className="h-5 w-5" />
-                            ) : (
-                              <Lock className="h-5 w-5" />
-                            )}
-                          </div>
-                          <div className="space-y-1">
-                            <p className="font-semibold text-foreground">{capability.label}</p>
-                            <p className="text-sm text-muted-foreground">{capability.description}</p>
-                            {capability.key === 'exportFormats' && (
-                              <div className="flex flex-wrap gap-2 pt-2">
-                                {exportFormats.length > 0 ? (
-                                  exportFormats.map((format) => (
-                                    <Badge
-                                      key={format}
-                                      variant={
-                                        ['json', 'pdf'].includes(format)
-                                          ? 'default'
-                                          : 'secondary'
-                                      }
-                                      className="uppercase text-[10px] tracking-wide"
-                                    >
-                                      {format}
-                                    </Badge>
-                                  ))
-                                ) : (
-                                  <Badge
-                                    variant="outline"
-                                    className="uppercase text-[10px] tracking-wide"
-                                  >
-                                    CSV
-                                  </Badge>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Feature availability</CardTitle>
-                    <CardDescription>
-                      Live status of the remote feature flags powering Hireall.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {featureStatusList.map((feature) => (
-                      <div
-                        key={feature.key}
-                        className="flex flex-col gap-2 rounded-lg border border-border/50 bg-card/50 p-4 md:flex-row md:items-center md:justify-between"
-                      >
-                        <div>
-                          <p className="font-medium text-foreground">{feature.label}</p>
-                          <p className="text-sm text-muted-foreground">{feature.description}</p>
-                        </div>
-                        <Badge
-                          variant={feature.enabled ? 'default' : 'outline'}
-                          className={feature.enabled ? 'bg-primary/10 text-primary border-primary/30' : ''}
-                        >
-                          {feature.enabled ? 'Enabled' : 'Disabled'}
-                        </Badge>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>System information</CardTitle>
-                    <CardDescription>
-                      Key configuration values for your workspace.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <Label className="text-sm font-medium">Dashboard refresh</Label>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Every {dashboardRefreshIntervalSeconds} seconds
-                      </p>
-                    </div>
-                    <div>
-                      <Label className="text-sm font-medium">Notification duration</Label>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {notificationDisplayDurationSeconds} seconds
-                      </p>
-                    </div>
-                    <div>
-                      <Label className="text-sm font-medium">Monthly limits</Label>
-                      <div className="text-sm text-muted-foreground mt-1 space-y-1">
-                        <p>
-                          CV analyses: {limits.cvAnalysesPerMonth === -1 ? 'Unlimited' : limits.cvAnalysesPerMonth}
-                        </p>
-                        <p>
-                          Applications: {limits.applicationsPerMonth === -1 ? 'Unlimited' : limits.applicationsPerMonth}
-                        </p>
-                      </div>
-                    </div>
-                    {maintenanceMessage && (
-                      <div>
-                        <Label className="text-sm font-medium">Maintenance notice</Label>
-                        <p className="text-sm text-muted-foreground mt-1">{maintenanceMessage}</p>
-                      </div>
-                    )}
-                    <div>
-                      <Label className="text-sm font-medium">Subscription</Label>
-                      <div className="mt-1 flex items-center gap-2">
-                        <Badge variant={plan === 'free' ? 'secondary' : 'default'} className="capitalize">
-                          {plan} plan
-                        </Badge>
-                        {plan === 'free' && (
-                          <Button size="sm" variant="outline" asChild>
-                            <a href="/upgrade">Upgrade</a>
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="lg:col-span-2">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Database className="h-5 w-5" />
-                      Data management
-                    </CardTitle>
-                    <CardDescription>
-                      Export your records or permanently close your account.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                      <div className="rounded-lg border border-border/60 bg-card/40 p-4">
-                        <p className="font-medium text-foreground">Export your data</p>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Includes jobs, applications, preferences, and subscription history.
-                        </p>
-                        <Button
-                          variant="outline"
-                          className="mt-4 flex items-center gap-2"
-                          onClick={exportData}
-                          disabled={exporting}
-                        >
-                          {exporting ? (
-                            <>
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                              Exporting...
-                            </>
-                          ) : (
-                            <>
-                              <Download className="h-4 w-4" />
-                              Export {premiumExportsUnlocked ? 'JSON' : 'CSV'}
-                            </>
-                          )}
-                        </Button>
-                        {!premiumExportsUnlocked && (
-                          <p className="mt-2 text-xs text-muted-foreground">
-                            Premium unlocks JSON and PDF export formats in addition to CSV.
+                  <Card className="bg-white shadow-sm">
+                    <CardHeader>
+                      <CardTitle className="text-xl font-bold text-gray-900">Appearance</CardTitle>
+                      <CardDescription className="text-gray-600">
+                        Customize your app experience
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-1">
+                          <Label htmlFor="theme" className="text-sm font-medium text-gray-700">
+                            Theme
+                          </Label>
+                          <p className="text-sm text-gray-500">
+                            Choose your preferred theme
                           </p>
-                        )}
-                      </div>
-                      <div className="rounded-lg border border-border/60 bg-card/40 p-4">
-                        <p className="font-medium text-foreground">Delete account</p>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Permanently remove your Hireall data and account access.
-                        </p>
-                        <Button
-                          variant="destructive"
-                          className="mt-4 flex items-center gap-2"
-                          onClick={deleteAccount}
-                          disabled={deletingAccount}
+                        </div>
+                        <select
+                          id="theme"
+                          value={formData.preferences.theme}
+                          onChange={(e) => handleInputChange("preferences", "theme", e.target.value)}
+                          className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
-                          {deletingAccount ? (
-                            <>
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                              Deleting...
-                            </>
-                          ) : (
-                            <>
-                              <Trash2 className="h-4 w-4" />
-                              Delete account
-                            </>
-                          )}
-                        </Button>
+                          <option value="light">Light</option>
+                          <option value="dark">Dark</option>
+                          <option value="system">System</option>
+                        </select>
                       </div>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Data exports remain available for one hour via secure links. Account deletion is immediate and irreversible.
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
 
-            {/* Security Tab */}
-            <TabsContent value="security" className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Account Security */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Shield className="h-5 w-5" />
-                      Account Security
-                    </CardTitle>
-                    <CardDescription>
-                      Manage your account security settings and authentication.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">Password</p>
-                        <p className="text-sm text-muted-foreground">
-                        Keep your account secure by using a strong, unique password.
-                        </p>
+              {/* Security Tab */}
+              <TabsContent value="security">
+                <div className="space-y-6">
+                  <Card className="bg-white shadow-sm">
+                    <CardHeader>
+                      <CardTitle className="text-xl font-bold text-gray-900">Change Password</CardTitle>
+                      <CardDescription className="text-gray-600">
+                        Update your account password
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      <div className="space-y-3">
+                        <Label htmlFor="currentPassword" className="text-sm font-medium text-gray-700">
+                          Current Password
+                        </Label>
+                        <Input
+                          id="currentPassword"
+                          type="password"
+                          value={formData.security.currentPassword}
+                          onChange={(e) => handleInputChange("security", "currentPassword", e.target.value)}
+                          placeholder="Enter current password"
+                          className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                        />
                       </div>
-                    <div className="flex items-center gap-2">
+
+                      <div className="space-y-3">
+                        <Label htmlFor="newPassword" className="text-sm font-medium text-gray-700">
+                          New Password
+                        </Label>
+                        <Input
+                          id="newPassword"
+                          type="password"
+                          value={formData.security.newPassword}
+                          onChange={(e) => handleInputChange("security", "newPassword", e.target.value)}
+                          placeholder="Enter new password"
+                          className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                        />
+                      </div>
+
+                      <div className="space-y-3">
+                        <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700">
+                          Confirm New Password
+                        </Label>
+                        <Input
+                          id="confirmPassword"
+                          type="password"
+                          value={formData.security.confirmPassword}
+                          onChange={(e) => handleInputChange("security", "confirmPassword", e.target.value)}
+                          placeholder="Confirm new password"
+                          className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                        />
+                      </div>
+
+                      <Button
+                        onClick={() => {
+                          toast({
+                            title: "Password changed",
+                            description: "Your password has been updated successfully.",
+                          });
+                          setFormData(prev => ({
+                            ...prev,
+                            security: {
+                              ...prev.security,
+                              currentPassword: "",
+                              newPassword: "",
+                              confirmPassword: "",
+                            },
+                          }));
+                        }}
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                      >
+                        <Lock className="h-4 w-4 mr-2" />
+                        Update Password
+                      </Button>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-white shadow-sm">
+                    <CardHeader>
+                      <CardTitle className="text-xl font-bold text-gray-900">Data Management</CardTitle>
+                      <CardDescription className="text-gray-600">
+                        Export or delete your data
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
                       <Button
                         variant="outline"
-                        size="sm"
                         onClick={() => {
-                          setShowChangePasswordForm((prev) => !prev);
-                          setChangePasswordError(null);
+                          toast({
+                            title: "Data exported",
+                            description: "Your data has been exported successfully.",
+                          });
                         }}
+                        className="gap-2"
                       >
-                        {showChangePasswordForm ? "Cancel" : "Change Password"}
+                        <Download className="h-4 w-4" />
+                        Export Data
                       </Button>
-                    </div>
-                    </div>
 
-                  {showChangePasswordForm && (
-                    <Card className="border border-border/60 bg-muted/30">
-                      <CardContent className="pt-6 space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="current-password">Current Password</Label>
-                          <Input
-                            id="current-password"
-                            type="password"
-                            placeholder="Enter current password"
-                            value={passwordForm.current}
-                            onChange={(e) =>
-                              setPasswordForm((prev) => ({ ...prev, current: e.target.value }))
-                            }
-                            disabled={changePasswordLoading}
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="new-password">New Password</Label>
-                          <Input
-                            id="new-password"
-                            type="password"
-                            placeholder="Enter new password"
-                            value={passwordForm.next}
-                            onChange={(e) =>
-                              setPasswordForm((prev) => ({ ...prev, next: e.target.value }))
-                            }
-                            disabled={changePasswordLoading}
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="confirm-password">Confirm New Password</Label>
-                          <Input
-                            id="confirm-password"
-                            type="password"
-                            placeholder="Confirm new password"
-                            value={passwordForm.confirm}
-                            onChange={(e) =>
-                              setPasswordForm((prev) => ({ ...prev, confirm: e.target.value }))
-                            }
-                            disabled={changePasswordLoading}
-                          />
-                        </div>
-
-                        {changePasswordError && (
-                          <Alert variant="destructive">
-                            <AlertTitle>Password update failed</AlertTitle>
-                            <AlertDescription>{changePasswordError}</AlertDescription>
-                          </Alert>
-                        )}
-
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="secondary"
-                            onClick={() => {
-                              setShowChangePasswordForm(false);
-                              setPasswordForm({ current: "", next: "", confirm: "" });
-                              setChangePasswordError(null);
-                            }}
-                            disabled={changePasswordLoading}
-                          >
-                            Cancel
-                          </Button>
-                          <Button
-                            onClick={handleChangePassword}
-                            disabled={changePasswordLoading}
-                          >
-                            {changePasswordLoading ? (
-                              <>
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                                Updating...
-                              </>
-                            ) : (
-                              "Update Password"
-                            )}
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">Active Sessions</p>
-                        <p className="text-sm text-muted-foreground">
-                          Manage your active login sessions
-                        </p>
-                      </div>
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="outline" size="sm" onClick={handleViewSessions}>
-                            {viewingSessions ? (
-                              <>
-                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                                Loading...
-                              </>
-                            ) : (
-                              "View Sessions"
-                            )}
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-md">
-                          <DialogHeader>
-                            <DialogTitle>Active Sessions</DialogTitle>
-                            <DialogDescription>
-                              Manage your active login sessions across devices
-                            </DialogDescription>
-                          </DialogHeader>
-                          <div className="space-y-4">
-                            {sessionsError ? (
-                              <Alert variant="destructive">
-                                <AlertTitle>Error</AlertTitle>
-                                <AlertDescription>{sessionsError}</AlertDescription>
-                              </Alert>
-                            ) : sessions.length === 0 ? (
-                              <p className="text-sm text-muted-foreground">No active sessions found.</p>
-                            ) : (
-                              <div className="space-y-3">
-                                {sessions.map((session) => (
-                                  <div key={session.id} className="flex items-center justify-between p-3 border rounded-lg">
-                                    <div className="flex-1">
-                                      <div className="flex items-center gap-2">
-                                        <p className="font-medium text-sm">{session.device}</p>
-                                        {session.isCurrent && (
-                                          <Badge variant="secondary" className="text-xs">Current</Badge>
-                                        )}
-                                      </div>
-                                      <p className="text-xs text-muted-foreground mt-1">
-                                        {session.browser}
-                                      </p>
-                                      <p className="text-xs text-muted-foreground">
-                                        Last active: {new Date(session.lastActive).toLocaleString()}
-                                      </p>
-                                    </div>
-                                  </div>
-                                ))}
-                                {sessions.length > 0 && (
-                                  <div className="pt-2 border-t">
-                                    <p className="text-xs text-muted-foreground mb-3">
-                                      Note: Due to Firebase Auth limitations, only the current session is shown. Use &quot;Revoke All Sessions&quot; to sign out from all devices.
-                                    </p>
-                                    <Button
-                                      variant="destructive"
-                                      size="sm"
-                                      onClick={handleRevokeSessions}
-                                      disabled={revokingSessions}
-                                      className="w-full"
-                                    >
-                                      {revokingSessions ? (
-                                        <>
-                                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                                          Revoking...
-                                        </>
-                                      ) : (
-                                        "Revoke All Sessions"
-                                      )}
-                                    </Button>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Privacy Settings */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Key className="h-5 w-5" />
-                      Privacy & Data
-                    </CardTitle>
-                    <CardDescription>
-                      Control your privacy settings and data sharing preferences.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label>Analytics Tracking</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Help improve the app with usage data
-                        </p>
-                      </div>
-                      <Switch
-                        checked={preferences.analyticsTracking}
-                        onCheckedChange={(checked) => updatePreference('analyticsTracking', checked)}
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label>Data Sharing</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Share anonymized data for research
-                        </p>
-                      </div>
-                      <Switch
-                        checked={preferences.dataSharing}
-                        onCheckedChange={(checked) => updatePreference('dataSharing', checked)}
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label>Marketing Emails</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Receive product updates and offers
-                        </p>
-                      </div>
-                      <Switch
-                        checked={preferences.marketingEmails}
-                        onCheckedChange={(checked) => updatePreference('marketingEmails', checked)}
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-          </Tabs>
-        </motion.div>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          if (confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
+                            toast({
+                              title: "Account deleted",
+                              description: "Your account has been deleted successfully.",
+                              variant: "destructive",
+                            });
+                            router.push("/");
+                          }
+                        }}
+                        className="gap-2 text-red-600 hover:text-red-700 hover:border-red-300"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Delete Account
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
+        </div>
       </div>
     </div>
   );

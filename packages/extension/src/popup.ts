@@ -86,6 +86,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const authError = document.getElementById("auth-error");
   const authSuccess = document.getElementById("auth-success");
 
+  // Initialize Firebase and check for errors
+  let auth: any;
+  try {
+    auth = getAuthInstance();
+    console.log("Firebase Auth initialized successfully");
+  } catch (error: any) {
+    console.error("Firebase initialization failed:", error);
+    showAuthError("Authentication service unavailable. Please try again later.");
+    return;
+  }
+
   // Initialize
   loadStats();
   loadSettings();
@@ -95,14 +106,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Check authentication status (throttled to prevent flickering)
   // Firebase auth state observer
-  const auth = getAuthInstance();
   onAuthStateChanged(auth, (user) => {
+    console.log("Auth state changed:", user ? `User: ${user.email}` : "No user");
     updateAuthUI(!!user);
+    
     if (user?.uid) {
-      // Persist uid to chrome storage for content scripts/background
-      chrome.storage.sync.set({ firebaseUid: user.uid });
+      // Persist uid and email to chrome storage for content scripts/background
+      chrome.storage.sync.set({ 
+        firebaseUid: user.uid,
+        userEmail: user.email || ""
+      }, () => {
+        console.log("Auth data saved to storage");
+      });
     } else {
-      chrome.storage.sync.remove(["firebaseUid"]);
+      chrome.storage.sync.remove(["firebaseUid", "userEmail"], () => {
+        console.log("Auth data cleared from storage");
+      });
     }
   });
 
@@ -194,6 +213,14 @@ document.addEventListener("DOMContentLoaded", () => {
       toggle.addEventListener("click", () => {
         toggle.classList.toggle("active");
         saveSettings();
+        
+        // Handle UK filters toggle specifically
+        if (toggle.id === "uk-filters-toggle") {
+          const ukFiltersDetails = document.getElementById("uk-filters-details");
+          if (ukFiltersDetails) {
+            ukFiltersDetails.style.display = toggle.classList.contains("active") ? "block" : "none";
+          }
+        }
       });
     });
 
@@ -217,6 +244,15 @@ document.addEventListener("DOMContentLoaded", () => {
       chrome.storage.sync.get(["webAppUrl"], (result) => {
         const url = result.webAppUrl || DEFAULT_WEB_APP_URL;
         chrome.tabs.create({ url: `${url}/account` });
+      });
+    });
+
+    // Configure UK filters button
+    const configureUkFiltersBtn = document.getElementById("configure-uk-filters");
+    configureUkFiltersBtn?.addEventListener("click", () => {
+      chrome.storage.sync.get(["webAppUrl"], (result) => {
+        const url = result.webAppUrl || DEFAULT_WEB_APP_URL;
+        chrome.tabs.create({ url: `${url}/settings` });
       });
     });
   }
@@ -315,6 +351,24 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
 
+      // Check UK eligibility if filters are enabled
+      const ukFiltersEnabled = await new Promise<boolean>((resolve) => {
+        chrome.storage.sync.get(["ukFiltersEnabled"], (result) => {
+          resolve(result.ukFiltersEnabled === true);
+        });
+      });
+
+      if (ukFiltersEnabled) {
+        // Check UK eligibility for all jobs in parallel
+        const eligibilityPromises = filteredJobs.map(async (job) => {
+          const eligibility = await checkUKEligibility(job);
+          return { ...job, ukEligibility: eligibility };
+        });
+        
+        const jobsWithEligibility = await Promise.all(eligibilityPromises);
+        filteredJobs = jobsWithEligibility;
+      }
+
       // Sort jobs by date (newest first)
       filteredJobs.sort(
         (a, b) =>
@@ -381,6 +435,13 @@ document.addEventListener("DOMContentLoaded", () => {
                     )} ${
                       job.sponsorshipInfo.sponsorshipType || "Sponsored"
                     }</span>`
+                  : ""
+              }
+              ${
+                job.ukEligibility
+                  ? `<span class="job-badge badge-uk-eligible" style="background: rgba(34, 197, 94, 0.1); color: #22c55e;">🇬🇧 UK Eligible</span>`
+                  : job.ukEligibility === false
+                  ? `<span class="job-badge badge-uk-ineligible" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">🇬🇧 Not Eligible</span>`
                   : ""
               }
               ${
@@ -554,7 +615,25 @@ document.addEventListener("DOMContentLoaded", () => {
   // Email/password auth form
   emailForm?.addEventListener("submit", async (e) => {
     e.preventDefault();
-    if (!emailInput?.value || !passwordInput?.value) return;
+    if (!emailInput?.value || !passwordInput?.value) {
+      showAuthError("Please enter both email and password");
+      return;
+    }
+    
+    const email = emailInput.value.trim();
+    const password = passwordInput.value.trim();
+    
+    // Basic email validation
+    if (!email.includes("@") || !email.includes(".")) {
+      showAuthError("Please enter a valid email address");
+      return;
+    }
+    
+    if (password.length < 6) {
+      showAuthError("Password must be at least 6 characters");
+      return;
+    }
+    
     clearAuthMessages();
     const btn = document.getElementById(
       "email-auth-submit"
@@ -562,28 +641,69 @@ document.addEventListener("DOMContentLoaded", () => {
     const original = btn.textContent;
     btn.textContent = "Processing...";
     btn.disabled = true;
+    
     try {
-      try {
-        await signInWithEmailAndPassword(
-          auth,
-          emailInput.value.trim(),
-          passwordInput.value.trim()
-        );
-        showAuthSuccess("Signed in");
-      } catch (err: any) {
-        if (err.code && err.code.includes("user-not-found")) {
-          await createUserWithEmailAndPassword(
-            auth,
-            emailInput.value.trim(),
-            passwordInput.value.trim()
-          );
-          showAuthSuccess("Account created");
-        } else {
-          throw err;
-        }
-      }
+      // Try to sign in first
+      await signInWithEmailAndPassword(auth, email, password);
+      showAuthSuccess("Signed in successfully");
+      // Clear form on success
+      emailInput.value = "";
+      passwordInput.value = "";
     } catch (err: any) {
-      showAuthError(err.message || "Authentication failed");
+      console.error("Sign in error:", err);
+      
+      // If user doesn't exist, try to create account
+      if (err.code === "auth/user-not-found") {
+        try {
+          await createUserWithEmailAndPassword(auth, email, password);
+          showAuthSuccess("Account created successfully");
+          // Clear form on success
+          emailInput.value = "";
+          passwordInput.value = "";
+        } catch (createErr: any) {
+          console.error("Create account error:", createErr);
+          let errorMessage = "Failed to create account";
+          
+          // Handle specific Firebase errors
+          switch (createErr.code) {
+            case "auth/email-already-in-use":
+              errorMessage = "An account with this email already exists";
+              break;
+            case "auth/weak-password":
+              errorMessage = "Password is too weak (minimum 6 characters)";
+              break;
+            case "auth/invalid-email":
+              errorMessage = "Invalid email address";
+              break;
+            default:
+              errorMessage = createErr.message || errorMessage;
+          }
+          
+          showAuthError(errorMessage);
+        }
+      } else {
+        // Handle sign in errors
+        let errorMessage = "Sign in failed";
+        
+        switch (err.code) {
+          case "auth/wrong-password":
+            errorMessage = "Incorrect password";
+            break;
+          case "auth/user-disabled":
+            errorMessage = "This account has been disabled";
+            break;
+          case "auth/too-many-requests":
+            errorMessage = "Too many failed attempts. Please try again later";
+            break;
+          case "auth/invalid-email":
+            errorMessage = "Invalid email address";
+            break;
+          default:
+            errorMessage = err.message || errorMessage;
+        }
+        
+        showAuthError(errorMessage);
+      }
     } finally {
       btn.textContent = original;
       btn.disabled = false;
@@ -594,11 +714,35 @@ document.addEventListener("DOMContentLoaded", () => {
     clearAuthMessages();
     googleBtn.disabled = true;
     googleBtn.textContent = "Opening Google...";
+    
     try {
-      await signInWithPopup(auth, getGoogleProvider());
-      showAuthSuccess("Signed in with Google");
+      const result = await signInWithPopup(auth, getGoogleProvider());
+      console.log("Google sign-in successful:", result.user?.email);
+      showAuthSuccess("Signed in with Google successfully");
     } catch (err: any) {
-      showAuthError(err.message || "Google sign-in failed");
+      console.error("Google sign-in error:", err);
+      
+      let errorMessage = "Google sign-in failed";
+      
+      // Handle specific Google sign-in errors
+      switch (err.code) {
+        case "auth/popup-closed-by-user":
+          errorMessage = "Sign-in popup was closed before completion";
+          break;
+        case "auth/popup-blocked":
+          errorMessage = "Sign-in popup was blocked by the browser";
+          break;
+        case "auth/cancelled-popup-request":
+          errorMessage = "Sign-in was cancelled";
+          break;
+        case "auth/network-request-failed":
+          errorMessage = "Network error. Please check your connection";
+          break;
+        default:
+          errorMessage = err.message || errorMessage;
+      }
+      
+      showAuthError(errorMessage);
     } finally {
       googleBtn.textContent = "Continue with Google";
       googleBtn.disabled = false;
@@ -635,12 +779,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function signOut() {
     try {
-  await firebaseSignOut(auth);
-  chrome.storage.sync.remove(["firebaseUid", "userId"], () => {});
-  updateAuthUI(false);
+      console.log("Signing out...");
+      await firebaseSignOut(auth);
+      
+      // Clear all auth-related storage
+      chrome.storage.sync.remove(["firebaseUid", "userId"], () => {
+        console.log("Cleared auth storage");
+      });
+      
+      // Update UI immediately
+      updateAuthUI(false);
+      
+      // Show success message
       showToast("You've been signed out successfully", { type: "info" });
-    } catch (e) {
-      showToast("Sign out failed", { type: "error" });
+      
+      // Switch to auth tab
+      const authTab = document.querySelector('.nav-tab[data-tab="auth"]') as HTMLElement;
+      if (authTab) {
+        authTab.click();
+      }
+      
+    } catch (e: any) {
+      console.error("Sign out error:", e);
+      showToast("Sign out failed. Please try again.", { type: "error" });
     }
   }
 
@@ -677,6 +838,7 @@ function loadSettings() {
       "autoSaveProfile",
       "webAppUrl",
       "syncFrequency",
+      "ukFiltersEnabled",
     ],
     (result) => {
       // Load toggle states
@@ -685,6 +847,7 @@ function loadSettings() {
       const autoSaveProfileToggle = document.getElementById(
         "auto-save-profile-toggle"
       );
+      const ukFiltersToggle = document.getElementById("uk-filters-toggle");
 
       if (autoDetectToggle) {
         autoDetectToggle.classList.toggle(
@@ -703,6 +866,18 @@ function loadSettings() {
           "active",
           result.autoSaveProfile !== false
         );
+      }
+      if (ukFiltersToggle) {
+        ukFiltersToggle.classList.toggle(
+          "active",
+          result.ukFiltersEnabled === true
+        );
+        
+        // Show/hide UK filters details based on toggle state
+        const ukFiltersDetails = document.getElementById("uk-filters-details");
+        if (ukFiltersDetails) {
+          ukFiltersDetails.style.display = result.ukFiltersEnabled === true ? "block" : "none";
+        }
       }
 
       // Load input values
@@ -729,6 +904,7 @@ function saveSettings() {
   const autoSaveProfileToggle = document.getElementById(
     "auto-save-profile-toggle"
   );
+  const ukFiltersToggle = document.getElementById("uk-filters-toggle");
   const webAppUrlInput = document.getElementById(
     "web-app-url"
   ) as HTMLInputElement;
@@ -741,6 +917,7 @@ function saveSettings() {
     showJobBadges: showBadgesToggle?.classList.contains("active") ?? true,
     autoSaveProfile:
       autoSaveProfileToggle?.classList.contains("active") ?? true,
+    ukFiltersEnabled: ukFiltersToggle?.classList.contains("active") ?? false,
     webAppUrl: webAppUrlInput?.value || DEFAULT_WEB_APP_URL,
     syncFrequency: syncFrequencySelect?.value || "realtime",
   };
@@ -748,6 +925,68 @@ function saveSettings() {
   chrome.storage.sync.set(settings, () => {
     showToast("Settings updated successfully", { type: "success" });
   });
+}
+
+// Function to check UK eligibility for a job
+async function checkUKEligibility(job: any): Promise<boolean | null> {
+  try {
+    // Get UK filter settings from storage
+    const result = await new Promise<any>((resolve) => {
+      chrome.storage.sync.get(["ukFiltersEnabled", "webAppUrl"], resolve);
+    });
+
+    if (!result.ukFiltersEnabled) {
+      return null; // UK filters not enabled, don't check
+    }
+
+    // Fetch user's UK sponsorship criteria from web app
+    const auth = getAuthInstance();
+    if (!auth.currentUser) {
+      return null; // Not authenticated
+    }
+
+    const token = await auth.currentUser.getIdToken();
+    const response = await fetch(`${result.webAppUrl || DEFAULT_WEB_APP_URL}/api/user/uk-sponsorship-criteria`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      return null; // Error fetching criteria
+    }
+
+    const criteria = await response.json();
+    
+    // Check eligibility based on job data and criteria
+    if (!job.salary) return null; // No salary info, can't determine
+    
+    const salaryNum = parseInt(job.salary.replace(/[^0-9]/g, ''));
+    let minSalary = criteria.minimumSalary || 41700; // Default UK minimum
+    
+    // Apply age/education adjustments
+    if (criteria.isUnder26 || criteria.isRecentGraduate) {
+      minSalary = Math.min(minSalary, 33400); // 70% rate
+    } else if (criteria.hasPhD) {
+      if (criteria.isSTEMPhD) {
+        minSalary = Math.min(minSalary, 33400); // 80% rate for STEM PhD
+      } else {
+        minSalary = Math.min(minSalary, 37500); // 90% rate for non-STEM PhD
+      }
+    }
+    
+    // Check special roles
+    if (job.title?.toLowerCase().includes('postdoctoral') || 
+        job.title?.toLowerCase().includes('post doc')) {
+      minSalary = Math.min(minSalary, 33400);
+    }
+    
+    return salaryNum >= minSalary;
+  } catch (error) {
+    console.error('Error checking UK eligibility:', error);
+    return null;
+  }
 }
 
 // Global function for checking job sponsors (called from HTML onclick)

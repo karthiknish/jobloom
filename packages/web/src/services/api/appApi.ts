@@ -124,8 +124,21 @@ class AppApiClient {
   }
 
   // Sponsorship endpoints
-  async getAllSponsoredCompanies() {
-    return this.request<SponsoredCompany[]>(`/sponsorship/companies`);
+  async getAllSponsoredCompanies(filters?: {
+    under26?: boolean;
+    recentGraduate?: boolean;
+    stemPhD?: boolean;
+    nonStemPhD?: boolean;
+    postdoctoralPosition?: boolean;
+    immigrationSalaryList?: boolean;
+    minSalary?: number;
+  }) {
+    const params = new URLSearchParams();
+    if (filters) {
+      params.set('filters', JSON.stringify(filters));
+    }
+    const queryString = params.toString();
+    return this.request<SponsoredCompany[]>(`/sponsorship/companies${queryString ? `?${queryString}` : ''}`);
   }
 
   async getSponsorshipStats() {

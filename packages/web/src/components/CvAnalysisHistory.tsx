@@ -292,17 +292,24 @@ export function CvAnalysisHistory({ analyses, optimistic }: CvAnalysisHistoryPro
                           </p>
                           {analysis.atsCompatibility && (
                             <p className="text-sm text-muted-foreground">
-                              <span className="font-medium">ATS Score:</span>{" "}
+                              <span className="font-medium">Enhanced ATS Score:</span>{" "}
                               <span
                                 className={
-                                  analysis.atsCompatibility.score >= 80
+                                  analysis.atsCompatibility.score >= 90
+                                    ? "text-emerald-600 font-semibold"
+                                    : analysis.atsCompatibility.score >= 80
                                     ? "text-green-600 font-medium"
+                                    : analysis.atsCompatibility.score >= 70
+                                    ? "text-lime-600 font-medium"
                                     : analysis.atsCompatibility.score >= 60
                                     ? "text-yellow-600 font-medium"
+                                    : analysis.atsCompatibility.score >= 50
+                                    ? "text-orange-600 font-medium"
                                     : "text-red-600 font-medium"
                                 }
                               >
                                 {analysis.atsCompatibility.score}/100
+                                {analysis.atsCompatibility.score >= 90 && " ⭐"}
                               </span>
                             </p>
                           )}

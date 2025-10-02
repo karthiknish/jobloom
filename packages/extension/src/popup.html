@@ -43,11 +43,11 @@
       min-height: 600px;
       margin: 0;
       padding: 0;
-      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
       font-size: 14px;
       line-height: 1.5;
-      color: var(--foreground);
+      color: #1e293b;
       overflow-x: hidden;
     }
 
@@ -60,9 +60,9 @@
     /* Header */
     .header {
       background: white;
-      padding: 20px 24px 16px;
-      border-bottom: 1px solid var(--border);
-      box-shadow: var(--shadow);
+      padding: 16px 20px;
+      border-bottom: 1px solid #e2e8f0;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
       position: sticky;
       top: 0;
       z-index: 10;
@@ -77,54 +77,54 @@
     .logo-section {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
     }
 
     .logo {
-      width: 32px;
-      height: 32px;
-      background: linear-gradient(135deg, var(--primary), #388E3C);
-      border-radius: var(--radius);
+      width: 28px;
+      height: 28px;
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      border-radius: 6px;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: var(--primary-foreground);
-      font-size: 18px;
-      font-weight: bold;
+      color: white;
+      font-size: 16px;
+      font-weight: 600;
     }
 
     .brand-info h1 {
       margin: 0;
-      font-size: 18px;
+      font-size: 16px;
       font-weight: 700;
-      color: #111827;
+      color: #1e293b;
     }
 
     .brand-info p {
       margin: 0;
-      font-size: 12px;
-      color: var(--muted);
+      font-size: 11px;
+      color: #64748b;
       font-weight: 500;
     }
 
     .auth-status {
       display: flex;
       align-items: center;
-      gap: 8px;
-      font-size: 12px;
+      gap: 6px;
+      font-size: 11px;
     }
 
     .auth-status.authenticated {
-      color: var(--success);
+      color: #10b981;
     }
 
     .auth-status.unauthenticated {
-      color: var(--warning);
+      color: #f59e0b;
     }
 
     .status-dot {
-      width: 8px;
-      height: 8px;
+      width: 6px;
+      height: 6px;
       border-radius: 50%;
       background: currentColor;
     }
@@ -133,7 +133,7 @@
     .nav-tabs {
       display: flex;
       background: white;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid #e2e8f0;
     }
 
     .nav-tab {
@@ -142,29 +142,31 @@
       background: none;
       border: none;
       border-bottom: 2px solid transparent;
-      color: var(--muted);
+      color: #64748b;
       font-weight: 500;
+      font-size: 12px;
       cursor: pointer;
-      transition: var(--transition);
+      transition: all 0.2s ease;
       position: relative;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
+      gap: 4px;
     }
 
     .nav-tab:hover {
-      color: var(--primary);
-      background: rgba(184, 110, 55, 0.05);
+      color: #3b82f6;
+      background: #f8fafc;
     }
 
     .nav-tab.active {
-      color: var(--primary);
-      border-bottom-color: var(--primary);
+      color: #3b82f6;
+      border-bottom-color: #3b82f6;
+      background: #f0f9ff;
     }
 
     .nav-tab .icon {
-      font-size: 16px;
+      font-size: 14px;
     }
 
     /* Tab Content */
@@ -186,29 +188,35 @@
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 16px;
-      margin-bottom: 24px;
+      gap: 12px;
+      margin-bottom: 20px;
     }
 
     .stat-card {
       background: white;
-      padding: 16px;
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      border: 1px solid var(--border);
+      padding: 14px;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+      border: 1px solid #e2e8f0;
       text-align: center;
+      transition: all 0.2s ease;
+    }
+
+    .stat-card:hover {
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      transform: translateY(-1px);
     }
 
     .stat-value {
-      font-size: 24px;
+      font-size: 20px;
       font-weight: 700;
-      color: var(--primary);
-      margin-bottom: 4px;
+      color: #3b82f6;
+      margin-bottom: 2px;
     }
 
     .stat-label {
-      font-size: 12px;
-      color: var(--muted);
+      font-size: 10px;
+      color: #64748b;
       text-transform: uppercase;
       letter-spacing: 0.5px;
       font-weight: 600;
@@ -217,60 +225,60 @@
     .quick-actions {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
     }
 
     .action-btn {
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: 16px;
+      padding: 14px;
       background: white;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
       cursor: pointer;
-      transition: var(--transition);
+      transition: all 0.2s ease;
       text-decoration: none;
       color: inherit;
     }
 
     .action-btn:hover {
       transform: translateY(-1px);
-      box-shadow: var(--shadow-lg);
-      border-color: var(--primary);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      border-color: #3b82f6;
+      background: #f8fafc;
     }
 
     .action-icon {
-      width: 40px;
-      height: 40px;
-      border-radius: var(--radius);
+      width: 36px;
+      height: 36px;
+      border-radius: 6px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 18px;
+      font-size: 16px;
       flex-shrink: 0;
     }
 
-    .action-icon.primary { background: rgba(184, 110, 55, 0.1); color: var(--primary); }
-    .action-icon.success { background: rgba(16, 185, 129, 0.1); color: var(--success); }
-    .action-icon.info { background: rgba(59, 130, 246, 0.1); color: var(--info); }
+    .action-icon.success { background: #dcfce7; color: #16a34a; }
+    .action-icon.primary { background: #dbeafe; color: #2563eb; }
 
     .action-content h3 {
-      margin: 0 0 4px 0;
-      font-size: 16px;
+      margin: 0 0 2px 0;
+      font-size: 14px;
       font-weight: 600;
-      color: #111827;
+      color: #1e293b;
     }
 
     .action-content p {
       margin: 0;
-      font-size: 12px;
-      color: var(--muted);
+      font-size: 11px;
+      color: #64748b;
     }
 
     /* Jobs Tab */
     .jobs-tab {
-      padding: 20px 24px;
+      padding: 20px;
     }
 
     .jobs-header {
@@ -282,41 +290,41 @@
 
     .jobs-header h2 {
       margin: 0;
-      font-size: 18px;
+      font-size: 16px;
       font-weight: 600;
-      color: #111827;
+      color: #1e293b;
     }
 
     .jobs-count {
-      font-size: 12px;
-      color: var(--muted);
-      background: var(--accent);
+      font-size: 11px;
+      color: #64748b;
+      background: #f1f5f9;
       padding: 4px 8px;
       border-radius: 12px;
     }
 
     .job-filters {
       display: flex;
-      gap: 8px;
+      gap: 6px;
       margin-bottom: 16px;
       flex-wrap: wrap;
     }
 
     .filter-btn {
-      padding: 6px 12px;
-      border: 1px solid var(--border);
+      padding: 6px 10px;
+      border: 1px solid #e2e8f0;
       background: white;
-      border-radius: var(--radius-sm);
-      font-size: 12px;
+      border-radius: 6px;
+      font-size: 11px;
       cursor: pointer;
-      transition: var(--transition);
+      transition: all 0.2s ease;
     }
 
     .filter-btn:hover,
     .filter-btn.active {
-      background: var(--primary);
+      background: #3b82f6;
       color: white;
-      border-color: var(--primary);
+      border-color: #3b82f6;
     }
 
     .job-list {
@@ -326,67 +334,68 @@
 
     .job-item {
       background: white;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 16px;
-      margin-bottom: 12px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 10px;
       cursor: pointer;
-      transition: var(--transition);
+      transition: all 0.2s ease;
       position: relative;
     }
 
     .job-item:hover {
       transform: translateY(-1px);
-      box-shadow: var(--shadow-lg);
-      border-color: var(--primary);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      border-color: #3b82f6;
     }
 
     .job-item-header {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
 
     .job-title {
-      font-size: 16px;
+      font-size: 14px;
       font-weight: 600;
-      color: #111827;
-      margin: 0 0 4px 0;
+      color: #1e293b;
+      margin: 0 0 2px 0;
       line-height: 1.3;
     }
 
     .job-company {
-      font-size: 14px;
-      color: var(--primary);
+      font-size: 12px;
+      color: #3b82f6;
       font-weight: 500;
       margin: 0;
     }
 
     .job-meta {
-      font-size: 12px;
-      color: var(--muted);
-      margin: 4px 0;
+      font-size: 10px;
+      color: #64748b;
+      margin: 2px 0;
     }
 
     .job-badges {
       display: flex;
-      gap: 6px;
-      margin-top: 8px;
+      gap: 4px;
+      margin-top: 6px;
+      flex-wrap: wrap;
     }
 
     .job-badge {
-      padding: 2px 8px;
-      border-radius: 12px;
-      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 10px;
+      font-size: 9px;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
 
-    .badge-sponsored { background: rgba(239, 68, 68, 0.1); color: #dc2626; }
-    .badge-remote { background: rgba(16, 185, 129, 0.1); color: var(--success); }
-    .badge-salary { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+    .badge-sponsored { background: #fee2e2; color: #dc2626; }
+    .badge-remote { background: #dcfce7; color: #16a34a; }
+    .badge-salary { background: #fef3c7; color: #d97706; }
 
     .job-actions {
       display: flex;
@@ -410,61 +419,61 @@
     .sponsor-status.not-licensed { background: rgba(239, 68, 68, 0.1); color: var(--error); }
 
     .job-action-btn {
-      padding: 6px 12px;
-      border: 1px solid var(--border);
+      padding: 4px 8px;
+      border: 1px solid #e2e8f0;
       background: white;
-      border-radius: var(--radius-sm);
-      font-size: 11px;
+      border-radius: 4px;
+      font-size: 10px;
       cursor: pointer;
-      transition: var(--transition);
+      transition: all 0.2s ease;
       flex: 1;
     }
 
     .job-action-btn:hover {
-      background: var(--accent);
+      background: #f1f5f9;
     }
 
     .job-action-btn.primary {
-      background: var(--primary);
+      background: #3b82f6;
       color: white;
-      border-color: var(--primary);
+      border-color: #3b82f6;
     }
 
     .job-action-btn.primary:hover {
-      background: var(--primary-dark);
+      background: #2563eb;
     }
 
     /* Settings Tab */
     .settings-tab {
-      padding: 20px 24px;
+      padding: 20px;
       max-height: 500px;
       overflow-y: auto;
     }
 
     .settings-section {
-      margin-bottom: 24px;
+      margin-bottom: 20px;
     }
 
     .settings-section h3 {
       margin: 0 0 12px 0;
-      font-size: 16px;
+      font-size: 14px;
       font-weight: 600;
-      color: #111827;
+      color: #1e293b;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
     }
 
     .settings-section h3 .icon {
-      font-size: 18px;
+      font-size: 16px;
     }
 
     .setting-item {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 12px 0;
-      border-bottom: 1px solid var(--border);
+      padding: 10px 0;
+      border-bottom: 1px solid #e2e8f0;
     }
 
     .setting-item:last-child {
@@ -472,14 +481,14 @@
     }
 
     .setting-label {
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 500;
       color: #374151;
     }
 
     .setting-description {
-      font-size: 12px;
-      color: var(--muted);
+      font-size: 11px;
+      color: #64748b;
       margin-top: 2px;
     }
 
@@ -490,16 +499,16 @@
 
     .toggle-switch {
       position: relative;
-      width: 44px;
-      height: 24px;
+      width: 40px;
+      height: 20px;
       background: #e5e7eb;
-      border-radius: 12px;
+      border-radius: 10px;
       cursor: pointer;
-      transition: var(--transition);
+      transition: all 0.2s ease;
     }
 
     .toggle-switch.active {
-      background: var(--primary);
+      background: #3b82f6;
     }
 
     .toggle-switch::after {
@@ -507,11 +516,11 @@
       position: absolute;
       top: 2px;
       left: 2px;
-      width: 20px;
-      height: 20px;
+      width: 16px;
+      height: 16px;
       background: white;
       border-radius: 50%;
-      transition: var(--transition);
+      transition: all 0.2s ease;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     }
 
@@ -927,6 +936,35 @@
                 <option value="manual">Manual only</option>
               </select>
             </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3><span class="icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+            </svg>
+          </span> UK Sponsorship Filters</h3>
+          <div class="setting-item">
+            <div>
+              <div class="setting-label">Enable UK Filters</div>
+              <div class="setting-description">Filter jobs by UK visa eligibility criteria</div>
+            </div>
+            <div class="setting-control">
+              <div class="toggle-switch" id="uk-filters-toggle"></div>
+            </div>
+          </div>
+          <div id="uk-filters-details" style="display: none; margin-top: 12px; padding: 12px; background: var(--accent); border-radius: 6px; border: 1px solid var(--border);">
+            <div style="font-size: 12px; font-weight: 600; margin-bottom: 8px; color: var(--primary);">🇬🇧 UK Skilled Worker Visa Criteria</div>
+            <div style="font-size: 11px; color: var(--muted); line-height: 1.4;">
+              <div style="margin-bottom: 6px;"><strong>Age & Education:</strong> Under 26 or recent graduates (70% salary rate, £33.4k min)</div>
+              <div style="margin-bottom: 6px;"><strong>PhD Holders:</strong> STEM PhDs (80% rate, £33.4k min) • Non-STEM PhDs (90% rate, £37.5k min)</div>
+              <div style="margin-bottom: 6px;"><strong>Special Roles:</strong> Postdoctoral positions • Immigration Salary List jobs</div>
+              <div><strong>Default:</strong> Standard requirements (£41.7k or going rate)</div>
+            </div>
+            <button id="configure-uk-filters" style="margin-top: 8px; padding: 4px 8px; background: var(--primary); color: white; border: none; border-radius: 4px; font-size: 11px; cursor: pointer;">
+              Configure in Web App →
+            </button>
           </div>
         </div>
       </div>

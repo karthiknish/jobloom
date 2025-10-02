@@ -1,19 +1,14 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
 import {
   FileText,
-  Lightbulb,
-  Download,
   Copy,
   RefreshCw,
-  Target,
   CheckCircle,
   Plus,
   Trash2,
   Eye,
-  Edit3,
   Zap,
   Star,
   TrendingUp,
@@ -33,6 +28,8 @@ import { Badge } from "@/components/ui/badge";
 import { showSuccess, showError } from "@/components/ui/Toast";
 
 import { ResumeData } from "@/types/resume";
+import { dashboardApi, Job } from "@/utils/api/dashboard";
+import { getAuthClient } from "@/firebase/client";
 
 interface CoverLetterData {
   jobTitle: string;
@@ -130,7 +127,7 @@ const getTemplateStyle = (template: CoverLetterData['template']) => {
 export const formatLetter = (
   data: CoverLetterData,
   resume: Partial<ResumeData>,
-  opts: { includeAchievements?: boolean } = {},
+  opts: { includeAchievements?: boolean; selectedJob?: Job | null } = {},
 ): string => {
   const personalInfo: Partial<ResumeData['personalInfo']> = resume.personalInfo ?? {} as any;
   const name = personalInfo.fullName?.trim() || "Your Name";
@@ -165,11 +162,35 @@ export const formatLetter = (
     
     let opening = `${toneStyle.opening} ${jobTitle} position at ${companyName}. `;
     
+    // Enhanced opening when job is selected
+    if (opts.selectedJob) {
+      const job = opts.selectedJob;
+      if (job.jobType) {
+        opening += `This ${job.jobType.toLowerCase()} role particularly interests me because `;
+      }
+      
+      // Match skills with job requirements
+      const resumeSkills = resume.skills?.flatMap(s => s.skills) || [];
+      const jobSkills = job.skills || [];
+      const matchingSkills = resumeSkills.filter(skill => 
+        jobSkills?.some(jobSkill => 
+          skill.toLowerCase().includes(jobSkill.toLowerCase()) || 
+          jobSkill.toLowerCase().includes(skill.toLowerCase())
+        )
+      );
+      
+      if (matchingSkills.length > 0) {
+        opening += `my expertise in ${matchingSkills.slice(0, 3).join(', ')} directly aligns with your requirements. `;
+      }
+    }
+    
     if (templateStyle.includeObjective && yearsOfExperience > 0) {
       opening += `With ${yearsOfExperience}+ years of experience as a ${experience?.position || 'professional'}, `;
     }
     
-    opening += `I bring expertise in ${resume.skills?.flatMap(s => s.skills).slice(0, 3).join(', ') || 'various technologies'}. `;
+    if (!opts.selectedJob) {
+      opening += `I bring expertise in ${resume.skills?.flatMap(s => s.skills).slice(0, 3).join(', ') || 'various technologies'}. `;
+    }
     
     if (data.companyValues[0]) {
       opening += `My commitment to ${data.companyValues[0]} aligns perfectly with ${companyName}'s mission.`;
@@ -188,29 +209,89 @@ export const formatLetter = (
       .slice(0, 3)
       .join(", ");
 
-    // First paragraph: Experience and requirements match
-    if (requirementsLine && resume.experience?.[0]) {
-      const exp = resume.experience[0];
-      bodyParts.push(
-        `${toneStyle.body} ${requirementsLine}. In my role as ${exp.position} at ${exp.company}, ` +
-        `I successfully ${exp.achievements[0] || 'delivered outstanding results that exceeded expectations'}.`
-      );
+    // Enhanced first paragraph when job is selected
+    if (opts.selectedJob) {
+      const job = opts.selectedJob;
+      
+      if (requirementsLine && resume.experience?.[0]) {
+        const exp = resume.experience[0];
+        let experienceText = `${toneStyle.body} ${requirementsLine}. `;
+        
+        // Add specific experience matching
+        if (job.experienceLevel && exp.position) {
+          experienceText += `As a ${exp.position} with experience in ${job.experienceLevel.toLowerCase()} roles, `;
+        }
+        
+        experienceText += `In my role at ${exp.company}, I successfully ${exp.achievements[0] || 'delivered outstanding results that exceeded expectations'}.`;
+        
+        // Add job-specific details
+        if (job.industry) {
+          experienceText += ` My experience in the ${job.industry} industry has prepared me well for this opportunity.`;
+        }
+        
+        bodyParts.push(experienceText);
+      }
+      
+      // Add job-specific skills paragraph
+      if (job.skills && job.skills.length > 0) {
+        const resumeSkills = resume.skills?.flatMap(s => s.skills) || [];
+        const matchingSkills = resumeSkills.filter(skill => 
+          job.skills?.some(jobSkill => 
+            skill.toLowerCase().includes(jobSkill.toLowerCase()) || 
+            jobSkill.toLowerCase().includes(skill.toLowerCase())
+          )
+        );
+        
+        if (matchingSkills.length > 0) {
+          bodyParts.push(
+            `My technical proficiency in ${matchingSkills.slice(0, 4).join(', ')} matches perfectly with the requirements outlined in the job description. ` +
+            `I have applied these skills in real-world scenarios to deliver measurable results and drive project success.`
+          );
+        }
+      }
+      
+      // Add company-specific paragraph
+      if (job.companySize || job.remoteWork) {
+        let companyText = `I am particularly drawn to ${companyName}`;
+        if (job.companySize) {
+          companyText += ` as a ${job.companySize.toLowerCase()} company`;
+        }
+        if (job.remoteWork) {
+          companyText += ` and appreciate the flexibility of remote work`;
+        }
+        companyText += `, which aligns with my career preferences and work style.`;
+        bodyParts.push(companyText);
+      }
+    } else {
+      // Original logic for when no job is selected
+      if (requirementsLine && resume.experience?.[0]) {
+        const exp = resume.experience[0];
+        bodyParts.push(
+          `${toneStyle.body} ${requirementsLine}. In my role as ${exp.position} at ${exp.company}, ` +
+          `I successfully ${exp.achievements[0] || 'delivered outstanding results that exceeded expectations'}.`
+        );
+      }
     }
 
-    // Second paragraph: Company values alignment
+    // Company values alignment (enhanced when job is selected)
     if (data.companyValues.some(v => v.trim())) {
       const valuesLine = data.companyValues
         .filter((value) => value.trim())
         .slice(0, 2)
         .join(" and ");
       
-      bodyParts.push(
-        `What particularly draws me to ${companyName} is your emphasis on ${valuesLine}. ` +
-        `These values resonate deeply with my professional philosophy and approach to ${resume.experience?.[0]?.position || 'work'}.`
-      );
+      let valuesText = `What particularly draws me to ${companyName} is your emphasis on ${valuesLine}. `;
+      
+      if (opts.selectedJob && opts.selectedJob.isSponsored) {
+        valuesText += `The opportunity to work with a company that offers visa sponsorship demonstrates your commitment to diverse talent, which I greatly value. `;
+      }
+      
+      valuesText += `These values resonate deeply with my professional philosophy and approach to ${resume.experience?.[0]?.position || 'work'}.`;
+      
+      bodyParts.push(valuesText);
     }
 
-    // Third paragraph: Job description connection
+    // Job description connection
     if (data.jobDescription.trim()) {
       const firstSentence = data.jobDescription.split(".")[0]?.trim();
       if (firstSentence) {
@@ -271,9 +352,72 @@ export const CoverLetterGenerator: React.FC<CoverLetterGeneratorProps> = ({
   const [showPreview, setShowPreview] = useState(false);
   const [letterScore, setLetterScore] = useState(0);
   const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [loadingJobs, setLoadingJobs] = useState(false);
+
+  // Load user's jobs
+  useEffect(() => {
+    const loadJobs = async () => {
+      try {
+        setLoadingJobs(true);
+        const auth = getAuthClient();
+        const currentUser = auth?.currentUser;
+        if (!currentUser) return;
+        
+        const user = await dashboardApi.getUserByFirebaseUid(currentUser.uid);
+        const userJobs = await dashboardApi.getJobsByUser(user._id);
+        setJobs(userJobs);
+      } catch (error) {
+        console.error("Failed to load jobs:", error);
+      } finally {
+        setLoadingJobs(false);
+      }
+    };
+
+    loadJobs();
+  }, []);
 
   const updateField = (field: keyof CoverLetterData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  // Handle job selection
+  const handleJobSelect = (job: Job) => {
+    setSelectedJob(job);
+    updateField("jobTitle", job.title);
+    updateField("companyName", job.company);
+    updateField("companyLocation", job.location);
+    updateField("jobDescription", job.description?.split('.')[0] || '');
+    
+    // Extract requirements from job data
+    if (job.requirements && job.requirements.length > 0) {
+      setFormData(prev => ({
+        ...prev,
+        keyRequirements: (job.requirements || []).slice(0, 3)
+      }));
+    }
+    
+    // Extract skills as requirements if no requirements exist
+    if ((!job.requirements || job.requirements.length === 0) && job.skills && job.skills.length > 0) {
+      setFormData(prev => ({
+        ...prev,
+        keyRequirements: (job.skills || []).slice(0, 3)
+      }));
+    }
+  };
+
+  // Clear job selection
+  const handleClearJobSelection = () => {
+    setSelectedJob(null);
+    setFormData(prev => ({
+      ...prev,
+      jobTitle: '',
+      companyName: '',
+      companyLocation: '',
+      jobDescription: '',
+      keyRequirements: ['']
+    }));
   };
 
   const updateArrayField = (
@@ -351,7 +495,7 @@ export const CoverLetterGenerator: React.FC<CoverLetterGeneratorProps> = ({
     }
     try {
       setGenerating(true);
-      const generated = formatLetter(formData, resumeData, { includeAchievements });
+      const generated = formatLetter(formData, resumeData, { includeAchievements, selectedJob });
       setLetter(generated);
       const score = calculateLetterScore(generated);
       setLetterScore(score);
@@ -384,112 +528,223 @@ export const CoverLetterGenerator: React.FC<CoverLetterGeneratorProps> = ({
   };
 
   return (
-    <Card className="mt-8">
-      <CardHeader>
+    <Card className="mt-8 bg-white shadow-sm border-gray-200">
+      <CardHeader className="pb-6">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-3 text-xl text-gray-900">
+              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                <FileText className="h-5 w-5 text-blue-600" />
+              </div>
               AI Cover Letter Generator
             </CardTitle>
-            <CardDescription>Create a personalized cover letter that stands out</CardDescription>
+            <CardDescription className="text-gray-600 mt-2">
+              Create a personalized cover letter that stands out
+            </CardDescription>
           </div>
           {letterScore > 0 && (
             <div className="text-right">
-              <div className="text-2xl font-bold text-primary">{letterScore}%</div>
-              <div className="text-xs text-muted-foreground">Quality Score</div>
+              <div className="text-3xl font-bold text-blue-600">{letterScore}%</div>
+              <div className="text-sm text-gray-600">Quality Score</div>
             </div>
           )}
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Tone and Template Selection */}
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <Label>Tone Style</Label>
-            <div className="grid grid-cols-2 gap-2">
-              {(['professional', 'enthusiastic', 'formal', 'casual'] as const).map((tone) => (
-                <Button
-                  key={tone}
-                  variant={formData.tone === tone ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => updateField("tone", tone)}
-                  className="text-xs"
-                >
-                  {tone.charAt(0).toUpperCase() + tone.slice(1)}
-                </Button>
-              ))}
+        <div className="bg-gray-50 rounded-xl p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Style Options</h3>
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="space-y-3">
+              <Label className="text-sm font-medium text-gray-700">Tone Style</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {(['professional', 'enthusiastic', 'formal', 'casual'] as const).map((tone) => (
+                  <Button
+                    key={tone}
+                    variant={formData.tone === tone ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => updateField("tone", tone)}
+                    className={`text-xs ${formData.tone === tone
+                      ? "bg-blue-600 hover:bg-blue-700 text-white"
+                      : "bg-white hover:bg-gray-50 border-gray-300 text-gray-700"
+                    }`}
+                  >
+                    {tone.charAt(0).toUpperCase() + tone.slice(1)}
+                  </Button>
+                ))}
+              </div>
             </div>
-          </div>
-          <div className="space-y-2">
-            <Label>Template Style</Label>
-            <div className="grid grid-cols-2 gap-2">
-              {(['modern', 'classic', 'creative', 'executive'] as const).map((template) => (
-                <Button
-                  key={template}
-                  variant={formData.template === template ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => updateField("template", template)}
-                  className="text-xs"
-                >
-                  {template.charAt(0).toUpperCase() + template.slice(1)}
-                </Button>
-              ))}
+            <div className="space-y-3">
+              <Label className="text-sm font-medium text-gray-700">Template Style</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {(['modern', 'classic', 'creative', 'executive'] as const).map((template) => (
+                  <Button
+                    key={template}
+                    variant={formData.template === template ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => updateField("template", template)}
+                    className={`text-xs ${formData.template === template
+                      ? "bg-blue-600 hover:bg-blue-700 text-white"
+                      : "bg-white hover:bg-gray-50 border-gray-300 text-gray-700"
+                    }`}
+                  >
+                    {template.charAt(0).toUpperCase() + template.slice(1)}
+                  </Button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="jobTitle">Job Title *</Label>
-            <Input
-              id="jobTitle"
-              value={formData.jobTitle}
-              onChange={(e) => updateField("jobTitle", e.target.value)}
-              placeholder="e.g. Frontend Engineer"
-              className="border-primary/20 focus:border-primary"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="companyName">Company Name *</Label>
-            <Input
-              id="companyName"
-              value={formData.companyName}
-              onChange={(e) => updateField("companyName", e.target.value)}
-              placeholder="e.g. Acme Corp"
-              className="border-primary/20 focus:border-primary"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="companyLocation">Company Location</Label>
-            <Input
-              id="companyLocation"
-              value={formData.companyLocation}
-              onChange={(e) => updateField("companyLocation", e.target.value)}
-              placeholder="e.g. Remote / New York, NY"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="hiringManager">Hiring Manager</Label>
-            <Input
-              id="hiringManager"
-              value={formData.hiringManager}
-              onChange={(e) => updateField("hiringManager", e.target.value)}
-              placeholder="Optional - e.g. Sarah Johnson"
-            />
+        {/* Job Selection */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Job Selection</h3>
+          {loadingJobs ? (
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <RefreshCw className="h-4 w-4 animate-spin" />
+              Loading your saved jobs...
+            </div>
+          ) : jobs.length > 0 ? (
+            <div className="space-y-3">
+              {selectedJob ? (
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="font-medium text-blue-900">{selectedJob.title}</div>
+                      <div className="text-sm text-blue-700">{selectedJob.company} • {selectedJob.location}</div>
+                      {selectedJob.skills && selectedJob.skills.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          {selectedJob.skills.slice(0, 4).map((skill, index) => (
+                            <Badge key={index} variant="outline" className="text-xs border-blue-300 text-blue-700 bg-white">
+                              {skill}
+                            </Badge>
+                          ))}
+                          {selectedJob.skills.length > 4 && (
+                            <Badge variant="outline" className="text-xs border-blue-300 text-blue-700 bg-white">
+                              +{selectedJob.skills.length - 4}
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleClearJobSelection}
+                      className="text-blue-600 border-blue-300 hover:bg-blue-100"
+                    >
+                      Clear
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid gap-2 max-h-40 overflow-y-auto">
+                  {jobs.slice(0, 5).map((job) => (
+                    <Button
+                      key={job._id}
+                      variant="outline"
+                      className="justify-start h-auto p-3 text-left hover:bg-gray-50 border-gray-200"
+                      onClick={() => handleJobSelect(job)}
+                    >
+                      <div className="flex-1">
+                        <div className="font-medium text-sm text-gray-900">{job.title}</div>
+                        <div className="text-xs text-gray-600">{job.company} • {job.location}</div>
+                        {job.skills && job.skills.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {job.skills.slice(0, 3).map((skill, index) => (
+                              <Badge key={index} variant="outline" className="text-xs bg-gray-100">
+                                {skill}
+                              </Badge>
+                            ))}
+                            {job.skills.length > 3 && (
+                              <span className="text-xs text-gray-600">+{job.skills.length - 3}</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </Button>
+                  ))}
+                  {jobs.length > 5 && (
+                    <div className="text-center text-xs text-gray-600 pt-2">
+                      And {jobs.length - 5} more jobs...
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="p-4 bg-gray-50 rounded-lg text-center text-sm text-gray-600">
+              No saved jobs found. Add jobs to your dashboard to use them here.
+            </div>
+          )}
+        </div>
+
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Job Details</h3>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="jobTitle" className="text-sm font-medium text-gray-700">
+                Job Title *
+              </Label>
+              <Input
+                id="jobTitle"
+                value={formData.jobTitle}
+                onChange={(e) => updateField("jobTitle", e.target.value)}
+                placeholder="e.g. Frontend Engineer"
+                className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="companyName" className="text-sm font-medium text-gray-700">
+                Company Name *
+              </Label>
+              <Input
+                id="companyName"
+                value={formData.companyName}
+                onChange={(e) => updateField("companyName", e.target.value)}
+                placeholder="e.g. Acme Corp"
+                className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="companyLocation" className="text-sm font-medium text-gray-700">
+                Company Location
+              </Label>
+              <Input
+                id="companyLocation"
+                value={formData.companyLocation}
+                onChange={(e) => updateField("companyLocation", e.target.value)}
+                placeholder="e.g. Remote / New York, NY"
+                className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="hiringManager" className="text-sm font-medium text-gray-700">
+                Hiring Manager
+              </Label>
+              <Input
+                id="hiringManager"
+                value={formData.hiringManager}
+                onChange={(e) => updateField("hiringManager", e.target.value)}
+                placeholder="Optional - e.g. Sarah Johnson"
+                className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+              />
+            </div>
           </div>
         </div>
 
         {/* Smart Suggestions */}
-        <div className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
-          <div className="flex items-center gap-2 mb-3">
-            <Zap className="h-5 w-5 text-blue-600" />
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+              <Zap className="h-5 w-5 text-white" />
+            </div>
             <div>
-              <p className="text-sm font-medium text-blue-900">AI-Powered Enhancements</p>
-              <p className="text-xs text-blue-700">Get intelligent suggestions for a stronger cover letter</p>
+              <h4 className="text-sm font-semibold text-gray-900">AI-Powered Enhancements</h4>
+              <p className="text-xs text-gray-600">Get intelligent suggestions for a stronger cover letter</p>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <Button
               variant="outline"
               size="sm"
@@ -500,7 +755,7 @@ export const CoverLetterGenerator: React.FC<CoverLetterGeneratorProps> = ({
                   showSuccess("Key skills added from your resume!");
                 }
               }}
-              className="text-xs border-blue-300 text-blue-700 hover:bg-blue-100"
+              className="text-xs bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
             >
               🎯 Extract Skills from Resume
             </Button>
@@ -514,10 +769,34 @@ export const CoverLetterGenerator: React.FC<CoverLetterGeneratorProps> = ({
                   showSuccess("Personalized opening created!");
                 }
               }}
-              className="text-xs border-purple-300 text-purple-700 hover:bg-purple-100"
+              className="text-xs bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
             >
               ✨ Create Personalized Opening
             </Button>
+            {selectedJob && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (selectedJob.requirements && selectedJob.requirements.length > 0) {
+                    setFormData(prev => ({
+                      ...prev,
+                      keyRequirements: (selectedJob.requirements || []).slice(0, 3)
+                    }));
+                    showSuccess("Requirements extracted from job!");
+                  } else if (selectedJob.skills && selectedJob.skills.length > 0) {
+                    setFormData(prev => ({
+                      ...prev,
+                      keyRequirements: (selectedJob.skills || []).slice(0, 3)
+                    }));
+                    showSuccess("Skills extracted from job as requirements!");
+                  }
+                }}
+                className="text-xs bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+              >
+                📋 Use Job Requirements
+              </Button>
+            )}
           </div>
         </div>
 

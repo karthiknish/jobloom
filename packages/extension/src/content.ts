@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { sponsorBatchLimiter } from "./rateLimiter";
 import { EXT_COLORS } from "./theme";
+import { UKJobDescriptionParser, JobDescriptionData } from "./jobDescriptionParser";
 // --- Sponsorship lookup cache & concurrency limiter utilities ---
 const sponsorshipCache: Map<string, any> = new Map();
 const sponsorshipInFlight: Map<string, Promise<any>> = new Map();
@@ -29,9 +30,16 @@ async function runWithSponsorLimit<T>(fn: () => Promise<T>): Promise<T> {
   return sponsorBatchLimiter.add(fn);
 }
 
-async function fetchSponsorRecord(company: string): Promise<any | null> {
+async function fetchSponsorRecord(company: string, jobDescription?: JobDescriptionData): Promise<any | null> {
   const key = company.toLowerCase().trim();
-  if (sponsorshipCache.has(key)) return sponsorshipCache.get(key);
+  if (sponsorshipCache.has(key)) {
+    const cached = sponsorshipCache.get(key);
+    // Enhance cached record with job description context
+    if (jobDescription && cached) {
+      return enhanceSponsorRecordWithJobContext(cached, jobDescription);
+    }
+    return cached;
+  }
   if (sponsorshipInFlight.has(key)) return sponsorshipInFlight.get(key);
 
   const p = runWithSponsorLimit(async () => {
@@ -39,8 +47,12 @@ async function fetchSponsorRecord(company: string): Promise<any | null> {
       const { get } = await import("./apiClient");
       const data = await get<any>("/api/app/sponsorship/companies", { q: company, limit: 1 });
       const rec = data.results?.[0] || null;
-      if (rec) sponsorshipCache.set(key, rec);
-      return rec;
+      if (rec) {
+        const enhanced = enhanceSponsorRecordWithJobContext(rec, jobDescription);
+        sponsorshipCache.set(key, enhanced);
+        return enhanced;
+      }
+      return null;
     } catch (e: any) {
       console.warn("Sponsor lookup failed", e);
       if (e?.rateLimitInfo) {
@@ -58,6 +70,104 @@ async function fetchSponsorRecord(company: string): Promise<any | null> {
 
   sponsorshipInFlight.set(key, p);
   return p;
+}
+
+function enhanceSponsorRecordWithJobContext(record: any, jobDescription?: JobDescriptionData): any {
+  if (!jobDescription) return record;
+
+  const enhanced = { ...record };
+
+  // Check if job description mentions visa sponsorship
+  enhanced.jobDescriptionSponsorshipMentioned = jobDescription.visaSponsorship?.mentioned || false;
+  enhanced.jobDescriptionSponsorshipType = jobDescription.visaSponsorship?.type;
+  enhanced.jobDescriptionSponsorshipRequirements = jobDescription.visaSponsorship?.requirements;
+
+  // Add SOC code information if available
+  if (jobDescription.socCode) {
+    enhanced.socCode = jobDescription.socCode;
+    enhanced.occupationTitle = jobDescription.occupationTitle;
+  }
+
+  // Check for skill matching with sponsor requirements (if available in Firebase)
+  if (record.route && jobDescription.skills) {
+    enhanced.skillMatchScore = calculateSkillMatchScore(record.route, jobDescription.skills);
+  }
+
+  // Add salary information for context
+  if (jobDescription.salary) {
+    enhanced.salary = jobDescription.salary;
+    enhanced.isAboveMinimumThreshold = jobDescription.salary.min &&
+      (jobDescription.salary.min >= 25600 || // General minimum salary threshold for UK
+      (jobDescription.socCode && getMinimumSalaryForSOC(jobDescription.socCode) <= (jobDescription.salary.min || 0)));
+  }
+
+  return enhanced;
+}
+
+function calculateSkillMatchScore(sponsorRoute: string, jobSkills: string[]): number {
+  // This would integrate with your Firebase SOC/skills data
+  // For now, return a simple calculation
+  if (!jobSkills || jobSkills.length === 0) return 0;
+
+  // Simplified skill matching - you'd enhance this with your Firebase data
+  const requiredSkills = getRequiredSkillsForSponsorRoute(sponsorRoute);
+  const matches = jobSkills.filter(skill =>
+    requiredSkills.some(req => skill.toLowerCase().includes(req.toLowerCase()))
+  );
+
+  return Math.round((matches.length / requiredSkills.length) * 100);
+}
+
+function getRequiredSkillsForSponsorRoute(sponsorRoute: string): string[] {
+  // This would query your Firebase for required skills based on sponsor route/SOC
+  // For now, return common tech skills as example
+  const routeSkills = {
+    'software developer': ['javascript', 'python', 'react', 'node.js'],
+    'data analyst': ['sql', 'python', 'excel', 'tableau'],
+    'project manager': ['project management', 'agile', 'scrum', 'stakeholder management'],
+    'marketing manager': ['marketing', 'digital marketing', 'seo', 'analytics'],
+    'software engineer': ['java', 'python', 'c++', 'system design']
+  };
+
+  return routeSkills[sponsorRoute.toLowerCase()] || [];
+}
+
+function getMinimumSalaryForSOC(socCode: string): number {
+  // This would query your Firebase for minimum salary requirements by SOC code
+  // Based on UK Immigration Salary List 2025
+  const minimumSalaries: { [key: string]: number } = {
+    '1111': 62400, // Chief Executives
+    '1120': 45900, // Production Managers
+    '1131': 45900, // Financial Managers
+    '1132': 41500, // HR Managers
+    '1150': 52500, // IT Managers
+    '2136': 45900, // Software Developers
+    '2135': 45900, // Web Developers
+    '2137': 35100, // Data Analysts
+    '2139': 45900, // Systems Analysts
+    '3543': 37900, // Marketing Professionals
+    '2473': 29100, // Designers
+    '2211': 45900, // Medical Practitioners
+    '2212': 29100, // Nurses
+    '2213': 37900, // Pharmacists
+    '2214': 41500, // Psychologists
+    '2122': 45900, // Civil Engineers
+    '2123': 45900, // Mechanical Engineers
+    '2126': 45900, // IT/Telecom Professionals
+    '2315': 33500, // Teachers
+    '4131': 29100, // Accountants
+    '2431': 45900, // Accountants (senior)
+    '4111': 25600, // Customer Service
+    '3533': 37900, // Sales Representatives
+    '3534': 45900, // Sales Managers
+    '5311': 29100, // Construction Trades
+    '5312': 29100, // Carpenters
+    '5434': 29100, // Chefs
+    '9234': 25600, // Waiting Staff
+    '9235': 25600  // Bar Staff
+  };
+
+  return minimumSalaries[socCode] || 25600; // Default minimum
 }
 interface JobData {
   title: string;
@@ -96,6 +206,15 @@ interface JobData {
   metadata?: {
     remote: boolean;
     seniority: string | undefined;
+  };
+  // Enhanced parsed data
+  parsedDescription?: JobDescriptionData;
+  socCode?: string;
+  occupationTitle?: string;
+  visaSponsorship?: {
+    mentioned: boolean;
+    type?: string;
+    requirements?: string[];
   };
 }
 
@@ -212,7 +331,16 @@ class JobTracker {
 
   private detectJobSite(): string {
     const hostname = window.location.hostname.toLowerCase();
+
     if (hostname.includes("linkedin")) return "linkedin";
+    if (hostname.includes("indeed")) return "indeed";
+    if (hostname.includes("reed.co.uk")) return "reed";
+    if (hostname.includes("totaljobs.com")) return "totaljobs";
+    if (hostname.includes("glassdoor")) return "glassdoor";
+    if (hostname.includes("cvlibrary.co.uk")) return "cvlibrary";
+    if (hostname.includes("jobsite.co.uk")) return "jobsite";
+    if (hostname.includes("monster.co.uk")) return "monster";
+
     return "unsupported";
   }
 
@@ -373,18 +501,40 @@ class JobTracker {
     // Apply highlights based on results
     jobsToCheck.forEach((job) => {
       const sponsorshipData = sponsorshipMap.get(job.data.company);
-      if (sponsorshipData && sponsorshipData.isSponsored) {
-        job.data.isSponsored = true;
-        job.data.sponsorshipType =
-          sponsorshipData.sponsorshipType || "sponsored";
-        this.applyHighlight(
-          job.element,
-          sponsorshipData.sponsorshipType || "sponsored"
-        );
-        this.addJobToBoard(job.data);
+
+      // Fetch enhanced sponsor record with job description context
+      if (sponsorshipData) {
+        fetchSponsorRecord(job.data.company, job.data.parsedDescription).then(enhancedRecord => {
+          if (enhancedRecord) {
+            // Check for visa sponsorship mentions in job description
+            const jobSponsorshipMentioned = enhancedRecord.jobDescriptionSponsorshipMentioned;
+            const isAboveThreshold = enhancedRecord.isAboveMinimumThreshold;
+
+            if (sponsorshipData.isSponsored) {
+              job.data.isSponsored = true;
+              job.data.sponsorshipType = sponsorshipData.sponsorshipType || "sponsored";
+
+              // Determine sponsorship confidence level
+              let highlightType = "sponsored";
+              if (jobSponsorshipMentioned && enhancedRecord.isSkilledWorker) {
+                highlightType = "featured"; // High confidence
+              } else if (isAboveThreshold && enhancedRecord.isSkilledWorker) {
+                highlightType = "premium"; // Medium confidence
+              }
+
+              this.applyHighlight(job.element, highlightType);
+              this.addEnhancedJobInfo(job.element, enhancedRecord);
+              this.addJobToBoard(job.data);
+            }
+          }
+        });
       } else if (job.data.isRecruitmentAgency) {
         // Highlight recruitment agency jobs
         this.applyHighlight(job.element, "recruitment_agency");
+        this.addJobToBoard(job.data);
+      } else if (job.data.visaSponsorship?.mentioned) {
+        // Job mentions sponsorship but company not in sponsor list
+        this.applyHighlight(job.element, "potential_sponsor");
         this.addJobToBoard(job.data);
       }
     });
@@ -439,7 +589,7 @@ class JobTracker {
             q: company,
             limit: 1,
           });
-          
+
           const isSponsored = !!(data.results && data.results[0]);
           results.push({
             company,
@@ -448,6 +598,7 @@ class JobTracker {
               ? data.results[0].route || "sponsored"
               : null,
             source: "extension_lookup",
+            sponsorData: data.results?.[0] || null,
           });
         } catch (e: any) {
           console.warn(`Error checking sponsorship for ${company}:`, e);
@@ -523,37 +674,54 @@ class JobTracker {
   }
 
   private extractJobData(element: Element): JobData {
-    if (this.currentJobSite !== "linkedin") {
-      throw new Error(`Unsupported job source: ${this.currentJobSite}`);
-    }
+    // Support multiple UK job sites
+    const siteName = UKJobDescriptionParser.detectJobSite();
 
-    const title = this.extractLinkedInTitle(element) ?? "Unknown Role";
-    const company = this.extractLinkedInCompany(element) ?? "Unknown Company";
-    const primaryUrl = this.extractLinkedInJobUrl(element);
-    const fallbackUrl = this.extractLinkedInJobUrlFromParent(element);
-    const url = primaryUrl || fallbackUrl || window.location.href;
+    // Extract basic job information using existing methods
+    const title = this.extractJobTitle(element, siteName) ?? "Unknown Role";
+    const company = this.extractJobCompany(element, siteName) ?? "Unknown Company";
+    const url = this.extractJobUrl(element, siteName) ?? window.location.href;
+    const location = this.extractJobLocation(element, siteName) ?? "Not specified";
 
-    const location = this.extractLinkedInLocation(element) ?? "Not specified";
+    // Extract comprehensive job description
+    const fullDescription = UKJobDescriptionParser.extractJobDescription(element);
+
+    // Parse the job description for detailed information
+    const parsedDescription = UKJobDescriptionParser.parseJobDescription(
+      fullDescription,
+      title,
+      company
+    );
 
     const data: JobData = {
       title,
       company,
       location,
       url,
-      description: this.extractLinkedInDescription(element) ?? undefined,
-      salary: this.extractLinkedInSalary(element) ?? undefined,
-      skills: this.extractLinkedInSkills(element) ?? undefined,
-      postedDate: this.normalizeLinkedInPostedDate(
-        this.extractLinkedInPostedDate(element)
-      ),
-      source: this.currentJobSite,
-      jobId: this.extractLinkedInJobId(element) ?? undefined,
+      description: fullDescription,
+      salary: parsedDescription.salary ?
+        `£${parsedDescription.salary.min?.toLocaleString() || 'Competitive'}${parsedDescription.salary.max ? ` - £${parsedDescription.salary.max.toLocaleString()}` : ''} per ${parsedDescription.salary.period}` :
+        this.extractLinkedInSalary(element) ?? undefined,
+      skills: parsedDescription.skills,
+      requirements: parsedDescription.keyRequirements,
+      jobType: parsedDescription.jobType,
+      experienceLevel: parsedDescription.experienceLevel,
+      benefits: parsedDescription.benefits,
+      remoteWork: parsedDescription.remoteWork,
+      postedDate: this.extractPostedDate(element, siteName),
+      source: siteName,
+      jobId: this.extractJobId(element, siteName) ?? undefined,
       metadata: {
-        remote: this.detectRemote(element),
-        seniority: this.detectSeniority(element),
+        remote: parsedDescription.remoteWork,
+        seniority: parsedDescription.experienceLevel,
       },
       isSponsored: false,
       dateFound: new Date().toISOString(),
+      // Enhanced parsed data
+      parsedDescription,
+      socCode: parsedDescription.socCode,
+      occupationTitle: parsedDescription.occupationTitle,
+      visaSponsorship: parsedDescription.visaSponsorship,
     };
 
     return data;
@@ -598,31 +766,252 @@ class JobTracker {
     return null;
   }
 
+  private extractJobTitle(element: Element, siteName: string): string | null {
+    const siteSelectors = {
+      linkedin: [
+        "h1.top-card-layout__title",
+        ".jobs-unified-top-card__job-title",
+        ".job-card-list__title",
+        ".job-card-container__link"
+      ],
+      indeed: [
+        '[data-testid="job-title"]',
+        '.jobTitle',
+        '.jobtitle',
+        'h2[data-testid="jobs-unified-top-card__job-title"]'
+      ],
+      reed: [
+        '.job-title',
+        'h1',
+        '.title'
+      ],
+      totaljobs: [
+        '.job-title',
+        'h2[data-automation="job-title"]',
+        '.title'
+      ],
+      glassdoor: [
+        '.jobTitle',
+        '[data-test="job-title"]',
+        'h2'
+      ]
+    };
+
+    const selectors = siteSelectors[siteName as keyof typeof siteSelectors] || [
+      'h1', 'h2', 'h3',
+      '[data-testid*="title"]',
+      '.title',
+      '.job-title'
+    ];
+
+    for (const selector of selectors) {
+      const text = this.getElementText(element, selector);
+      if (text && text.length > 3) {
+        return text;
+      }
+    }
+
+    return null;
+  }
+
   private extractLinkedInTitle(element: Element): string | null {
-    return (
-      this.getElementText(element, "h1.top-card-layout__title") ||
-      this.getElementText(element, ".jobs-unified-top-card__job-title") ||
-      this.getElementText(element, ".job-card-list__title") ||
-      this.getElementText(element, ".job-card-container__link")
-    );
+    return this.extractJobTitle(element, "linkedin");
+  }
+
+  private extractJobCompany(element: Element, siteName: string): string | null {
+    const siteSelectors = {
+      linkedin: [
+        "a.topcard__org-name-link",
+        "span.topcard__flavor",
+        ".job-card-container__primary-description",
+        ".job-card-list__company"
+      ],
+      indeed: [
+        '[data-testid="inlineHeader-companyName"]',
+        '.companyName',
+        '.company-info',
+        '.company'
+      ],
+      reed: [
+        '.company',
+        '[data-testid="company-name"]',
+        '.employer'
+      ],
+      totaljobs: [
+        '[data-automation="jobCompany"]',
+        '.company',
+        '.company-name'
+      ],
+      glassdoor: [
+        '[data-test="employer-name"]',
+        '.employerName',
+        '.company'
+      ]
+    };
+
+    const selectors = siteSelectors[siteName as keyof typeof siteSelectors] || [
+      '.company',
+      '.employer',
+      '[data-testid*="company"]',
+      '[data-test*="company"]'
+    ];
+
+    for (const selector of selectors) {
+      const text = this.getElementText(element, selector);
+      if (text && text.length > 2) {
+        return text;
+      }
+    }
+
+    return null;
   }
 
   private extractLinkedInCompany(element: Element): string | null {
-    return (
-      this.getElementText(element, "a.topcard__org-name-link") ||
-      this.getElementText(element, "span.topcard__flavor") ||
-      this.getElementText(element, ".job-card-container__primary-description") ||
-      this.getElementText(element, ".job-card-list__company")
-    );
+    return this.extractJobCompany(element, "linkedin");
+  }
+
+  private extractJobLocation(element: Element, siteName: string): string | null {
+    const siteSelectors = {
+      linkedin: [
+        "span.topcard__flavor--bullet",
+        ".jobs-unified-top-card__bullet",
+        ".job-card-container__metadata-item",
+        ".job-card-list__location"
+      ],
+      indeed: [
+        '[data-testid="text-location"]',
+        '.jobLocation',
+        '.location',
+        '.job-location'
+      ],
+      reed: [
+        '.location',
+        '[data-testid="location"]',
+        '.job-location'
+      ],
+      totaljobs: [
+        '[data-automation="job-location"]',
+        '.location',
+        '.job-location'
+      ],
+      glassdoor: [
+        '[data-test="location"]',
+        '.location',
+        '.job-location'
+      ]
+    };
+
+    const selectors = siteSelectors[siteName as keyof typeof siteSelectors] || [
+      '.location',
+      '.job-location',
+      '[data-testid*="location"]'
+    ];
+
+    for (const selector of selectors) {
+      const text = this.getElementText(element, selector);
+      if (text && text.length > 2) {
+        return text;
+      }
+    }
+
+    return null;
+  }
+
+  private extractJobUrl(element: Element, siteName: string): string | null {
+    const siteSelectors = {
+      linkedin: [
+        'a[data-control-name="job_card_click"]',
+        'a[href*="linkedin.com/jobs/view"]',
+        'a[data-tracking-control-name="public_jobs_topcard-title"]'
+      ],
+      indeed: [
+        'a[href*="viewjob"]',
+        'a[data-testid="view-job-button"]',
+        'a[data-testid="viewjob-link"]'
+      ],
+      reed: [
+        'a[href*="/jobs/"]',
+        'a[data-testid="job-title-link"]'
+      ],
+      totaljobs: [
+        'a[href*="/jobs/"]',
+        'a[data-automation="job-title"]'
+      ],
+      glassdoor: [
+        'a[href*="/job-listing"]',
+        'a[data-test="job-title-link"]'
+      ]
+    };
+
+    const selectors = siteSelectors[siteName as keyof typeof siteSelectors] || [
+      'a[href*="/job"]',
+      'a[href*="view"]',
+      '.job-link',
+      '.job-title a'
+    ];
+
+    return this.getElementHref(element, selectors.join(', '));
+  }
+
+  private extractJobId(element: Element, siteName: string): string | null {
+    const direct = element.getAttribute("data-job-id");
+    if (direct) return direct;
+
+    const url = this.extractJobUrl(element, siteName);
+    if (url) {
+      const urlPatterns = {
+        linkedin: /\/jobs\/view\/(\d+)/,
+        indeed: /\/jobs\/([a-z0-9-]+)/i,
+        reed: /\/jobs\/([^\/]+)/i,
+        totaljobs: /\/jobs\/([^\/]+)/i,
+        glassdoor: /job-listing\.htm\?jl=(\d+)/i
+      };
+
+      const pattern = urlPatterns[siteName as keyof typeof urlPatterns];
+      if (pattern) {
+        const match = url.match(pattern);
+        if (match) return match[1];
+      }
+    }
+
+    return null;
+  }
+
+  private extractPostedDate(element: Element, siteName: string): string | null {
+    const siteSelectors = {
+      linkedin: [
+        "span.topcard__flavor--metadata",
+        ".jobs-unified-top-card__posted-date",
+        ".job-card-container__posted-date"
+      ],
+      indeed: [
+        '[data-testid="myJobsStateDate"]',
+        '.date',
+        '.job-date'
+      ],
+      reed: [
+        '.posted-date',
+        '[data-testid="posted-date"]',
+        '.date'
+      ],
+      totaljobs: [
+        '[data-automation="job-date"]',
+        '.date',
+        '.posted-date'
+      ]
+    };
+
+    const selectors = siteSelectors[siteName as keyof typeof siteSelectors] || [
+      '.date',
+      '.posted-date',
+      '[data-testid*="date"]'
+    ];
+
+    return this.getElementText(element, selectors.join(', '));
   }
 
   private extractLinkedInLocation(element: Element): string | null {
-    return (
-      this.getElementText(element, "span.topcard__flavor--bullet") ||
-      this.getElementText(element, ".jobs-unified-top-card__bullet") ||
-      this.getElementText(element, ".job-card-container__metadata-item") ||
-      this.getElementText(element, ".job-card-list__location")
-    );
+    return this.extractJobLocation(element, "linkedin");
   }
 
   private extractLinkedInDescription(element: Element): string | null {
@@ -1038,6 +1427,11 @@ class JobTracker {
         border: EXT_COLORS.destructive,
         bg: `rgba(${hexToRgb(EXT_COLORS.destructive)}, 0.12)`,
         badge: EXT_COLORS.destructive,
+      },
+      potential_sponsor: {
+        border: EXT_COLORS.info,
+        bg: `rgba(${hexToRgb(EXT_COLORS.info)}, 0.08)`,
+        badge: EXT_COLORS.info,
       },
     };
 
@@ -1957,11 +2351,88 @@ class JobTracker {
         color: "white",
         icon: createIcon(CheckCircle, 12).outerHTML,
       },
+      potential_sponsor: {
+        background: "EXT_COLORS.info",
+        color: "white",
+        icon: createIcon(Flag, 12).outerHTML,
+      },
+      recruitment_agency: {
+        background: "EXT_COLORS.destructive",
+        color: "white",
+        icon: createIcon(Building2, 12).outerHTML,
+      },
     };
 
     return (
       configs[sponsorshipType as keyof typeof configs] || configs.sponsored
     );
+  }
+
+  private addEnhancedJobInfo(element: Element, enhancedRecord: any) {
+    const companyElement = this.findCompanyElement(element);
+    if (!companyElement) return;
+
+    const infoDiv = document.createElement("div");
+    infoDiv.className = "hireall-enhanced-job-info";
+    infoDiv.style.cssText = `
+      margin-top: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    `;
+
+    // SOC Code Information
+    if (enhancedRecord.socCode) {
+      const socDiv = document.createElement("div");
+      socDiv.style.cssText = `
+        padding: 6px 10px;
+        background: linear-gradient(135deg, #f0f9ff 15%, #e0f2fe 8%);
+        border-left: 4px solid #0ea5e9;
+        border-radius: 6px;
+        font-size: 11px;
+        color: #0369a1;
+        font-weight: 600;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      `;
+      socDiv.innerHTML = `
+        <div style="font-weight: 700; margin-bottom: 2px;">SOC ${enhancedRecord.socCode}: ${enhancedRecord.occupationTitle}</div>
+        ${enhancedRecord.isAboveMinimumThreshold ?
+          '<div style="font-size: 10px; opacity: 0.8;">✓ Salary meets minimum requirements</div>' :
+          '<div style="font-size: 10px; opacity: 0.8;">⚠ Salary below minimum threshold</div>'
+        }
+        ${enhancedRecord.skillMatchScore ?
+          `<div style="font-size: 10px; opacity: 0.8;">Skill Match: ${enhancedRecord.skillMatchScore}%</div>` :
+          ''
+        }
+      `;
+      infoDiv.appendChild(socDiv);
+    }
+
+    // Visa Sponsorship Information
+    if (enhancedRecord.jobDescriptionSponsorshipMentioned) {
+      const visaDiv = document.createElement("div");
+      visaDiv.style.cssText = `
+        padding: 6px 10px;
+        background: linear-gradient(135deg, #fef3c7 15%, #fed7aa 8%);
+        border-left: 4px solid #f59e0b;
+        border-radius: 6px;
+        font-size: 11px;
+        color: #92400e;
+        font-weight: 600;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      `;
+      visaDiv.innerHTML = `
+        <div style="font-weight: 700; margin-bottom: 2px;">${createIcon(CheckCircle, 12).outerHTML} Sponsorship Mentioned</div>
+        <div style="font-size: 10px; opacity: 0.8;">Type: ${enhancedRecord.jobDescriptionSponsorshipType || 'Available'}</div>
+        ${enhancedRecord.jobDescriptionSponsorshipRequirements ?
+          `<div style="font-size: 10px; opacity: 0.8; margin-top: 2px;">Requirements: ${enhancedRecord.jobDescriptionSponsorshipRequirements.join(', ')}</div>` :
+          ''
+        }
+      `;
+      infoDiv.appendChild(visaDiv);
+    }
+
+    companyElement.appendChild(infoDiv);
   }
 
   private showInlineToast(

@@ -67,10 +67,11 @@ export type KanbanStatus =
   | "rejected"
   | "withdrawn";
 
-export type DashboardView = 
-  | "dashboard" 
-  | "jobs" 
-  | "applications" 
-  | "analytics";
+export type DashboardView =
+  | "dashboard"
+  | "jobs"
+  | "applications"
+  | "analytics"
+  | "cv-evaluator";
 
 export type BoardMode = "list" | "kanban";

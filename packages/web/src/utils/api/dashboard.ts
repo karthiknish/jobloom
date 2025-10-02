@@ -549,4 +549,78 @@ export const dashboardApi = {
     if (!res.ok) throw new Error("Failed to import jobs from API");
     return res.json();
   },
+
+  getJobsByUser: async (userId: string): Promise<Job[]> => {
+    const db = getDb();
+    if (!db) throw new Error("Firestore not initialized");
+    const q = query(
+      collection(db, "jobs"),
+      where("userId", "==", userId)
+    );
+    const snap = await getDocs(q);
+    type FireJob = {
+      title: string;
+      company: string;
+      location: string;
+      url?: string;
+      description?: string;
+      salary?: string;
+      salaryRange?: {
+        min?: number;
+        max?: number;
+        currency?: string;
+      } | null;
+      skills?: string[];
+      requirements?: string[];
+      benefits?: string[];
+      jobType?: string;
+      experienceLevel?: string;
+      remoteWork?: boolean;
+      companySize?: string;
+      industry?: string;
+      postedDate?: string;
+      applicationDeadline?: string;
+      isSponsored?: boolean;
+      isRecruitmentAgency?: boolean;
+      sponsorshipType?: string;
+      source?: string;
+      dateFound?: number;
+      createdAt?: number;
+      userId: string;
+    };
+    const jobs: Job[] = [];
+    for (const docSnap of snap.docs) {
+      const data = docSnap.data() as FireJob;
+      const job: Job = {
+        _id: docSnap.id,
+        title: data.title,
+        company: data.company,
+        location: data.location,
+        url: data.url,
+        description: data.description,
+        salary: data.salary,
+        salaryRange: data.salaryRange,
+        skills: data.skills,
+        requirements: data.requirements,
+        benefits: data.benefits,
+        jobType: data.jobType,
+        experienceLevel: data.experienceLevel,
+        remoteWork: data.remoteWork,
+        companySize: data.companySize,
+        industry: data.industry,
+        postedDate: data.postedDate,
+        applicationDeadline: data.applicationDeadline,
+        isSponsored: !!data.isSponsored,
+        isRecruitmentAgency: data.isRecruitmentAgency,
+        sponsorshipType: data.sponsorshipType,
+        source: data.source ?? "manual",
+        dateFound: data.dateFound ?? data.createdAt ?? Date.now(),
+        userId: data.userId,
+      };
+      jobs.push(job);
+    }
+    // Sort by dateFound desc
+    jobs.sort((a, b) => (b.dateFound ?? 0) - (a.dateFound ?? 0));
+    return jobs;
+  },
 };

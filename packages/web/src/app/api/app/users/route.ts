@@ -1,20 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyIdToken } from "@/firebase/admin";
+import {
+  withErrorHandling,
+  validateAuthHeader,
+  createAuthorizationError,
+  generateRequestId
+} from "@/lib/api/errors";
 
 // GET /api/app/users - Get all users (admin only)
 export async function GET(request: NextRequest) {
-  try {
-    const authHeader = request.headers.get("authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  const requestId = generateRequestId();
 
-    const token = authHeader.substring(7);
+  return withErrorHandling(async () => {
+    // Validate authorization
+    const token = validateAuthHeader(request);
     const decodedToken = await verifyIdToken(token);
-
     if (!decodedToken) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+      throw createAuthorizationError("Invalid authentication token", 'INVALID_TOKEN');
     }
+
+    // TODO: Add admin check
+    // if (!decodedToken.admin) {
+    //   throw createAuthorizationError("Admin access required", 'INSUFFICIENT_PERMISSIONS');
+    // }
 
     // For now, return mock users data
     // In a real implementation, this would fetch from Firestore
@@ -28,9 +36,14 @@ export async function GET(request: NextRequest) {
       }
     ];
 
-    return NextResponse.json(users);
-  } catch (error) {
-    console.error("Error fetching users:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
-  }
+    return NextResponse.json({
+      users,
+      count: users.length,
+      message: 'Users retrieved successfully'
+    });
+  }, {
+    endpoint: '/api/app/users',
+    method: 'GET',
+    requestId
+  });
 }

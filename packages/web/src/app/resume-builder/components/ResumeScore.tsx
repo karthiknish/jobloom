@@ -1,18 +1,23 @@
 "use client";
 
 import React from "react";
-import { motion } from "framer-motion";
 import { CheckCircle, AlertCircle, Lightbulb } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { EnhancedAtsScore } from "@/components/EnhancedAtsScore";
 import type { ResumeScore } from "../types";
 
 interface ResumeScoreProps {
   score: ResumeScore;
+  enhanced?: boolean;
 }
 
-export function ResumeScore({ score }: ResumeScoreProps) {
+export function ResumeScore({ score, enhanced = true }: ResumeScoreProps) {
+  // If enhanced mode is available and the score has enhanced data, use the enhanced component
+  if (enhanced && score.breakdown) {
+    return <EnhancedAtsScore score={score} />;
+  }
   const getScoreColor = (value: number) => {
     if (value >= 80) return "text-green-600 dark:text-green-400";
     if (value >= 60) return "text-yellow-600 dark:text-yellow-400";

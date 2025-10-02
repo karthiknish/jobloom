@@ -1,5 +1,6 @@
 import { ResumeData, ValidationIssue } from "@/types/resume";
 import { evaluateAtsCompatibilityFromResume } from "@/lib/ats";
+import { calculateEnhancedATSScore } from "@/lib/enhancedAts";
 
 export interface AtsEvaluationOptions {
   targetRole?: string | null;
@@ -10,55 +11,21 @@ export function calculateATSScore(
   resume: ResumeData,
   options?: AtsEvaluationOptions
 ): number {
-  const evaluation = evaluateAtsCompatibilityFromResume(resume, options);
-  const normalizedScore = Math.round(evaluation.score / 10);
-  return Math.min(Math.max(normalizedScore, 0), 10);
+  // Use the enhanced ATS scoring system
+  const enhancedScore = calculateEnhancedATSScore(resume, options);
+  return enhancedScore.ats;
 }
 
 export function calculateResumeScore(
   resume: ResumeData,
   options?: AtsEvaluationOptions
 ): number {
-  let score = 0;
-  const atsEvaluation = evaluateAtsCompatibilityFromResume(resume, options);
-  const atsScore = Math.min(Math.max(Math.round(atsEvaluation.score / 10), 0), 10);
-
-  // Personal info (15%)
-  const personalFields = ['fullName', 'email', 'phone', 'location', 'summary'] as const;
-  personalFields.forEach(f => {
-    if ((resume.personalInfo as any)[f]?.trim()) {
-      score += 15 / personalFields.length;
-    }
+  // Use the enhanced ATS scoring system for comprehensive resume evaluation
+  const enhancedScore = calculateEnhancedATSScore(resume, {
+    targetRole: options?.targetRole || undefined,
+    industry: options?.industry || undefined
   });
-  // Experience (25%)
-  if (resume.experience.length > 0) {
-    score += 10;
-    if (resume.experience.length >= 2) score += 5;
-    if (resume.experience.some(e => e.description.trim().length > 50)) score += 5;
-    if (resume.experience.some(e => e.achievements.some(a => a.trim().length > 20))) score += 5;
-  }
-  // Education (15%)
-  if (resume.education.length > 0) {
-    score += 8;
-    if (resume.education.some(e => e.degree.trim() && e.field.trim())) score += 4;
-    if (resume.education.some(e => e.graduationDate)) score += 3;
-  }
-  // Skills (20%)
-  const skillCount = resume.skills.reduce((acc, s) => acc + s.skills.length, 0);
-  if (skillCount > 0) {
-    score += 10;
-    if (skillCount >= 5) score += 5;
-    if (skillCount >= 10) score += 5;
-  }
-  // Projects (15%)
-  if (resume.projects.length > 0) {
-    score += 8;
-    if (resume.projects.some(p => p.description.trim().length > 30)) score += 4;
-    if (resume.projects.some(p => p.technologies.length > 0)) score += 3;
-  }
-  // ATS (10%)
-  score += atsScore;
-  return Math.round(score);
+  return enhancedScore.overall;
 }
 
 export function getAtsEvaluation(

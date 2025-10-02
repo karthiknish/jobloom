@@ -20,95 +20,57 @@ export default async function Home() {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-secondary/5 pt-16">
-        {/* Enhanced animated background elements */}
+      <section className="relative overflow-hidden bg-background/80 backdrop-blur-sm pt-16">
+        {/* Subtle background elements */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-full mix-blend-multiply filter blur-3xl animate-pulse"></div>
-          <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-r from-accent/20 to-primary/20 rounded-full mix-blend-multiply filter blur-3xl animate-pulse animation-delay-2000"></div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-gradient-to-r from-secondary/15 to-accent/15 rounded-full mix-blend-multiply filter blur-3xl animate-pulse animation-delay-4000"></div>
-
-          {/* Additional background circles */}
-          <div className="absolute top-10 right-20 w-64 h-64 bg-gradient-to-r from-primary/10 to-accent/10 rounded-full mix-blend-multiply filter blur-2xl animate-pulse animation-delay-1000"></div>
-          <div className="absolute bottom-20 right-10 w-48 h-48 bg-gradient-to-r from-secondary/15 to-primary/10 rounded-full mix-blend-multiply filter blur-2xl animate-pulse animation-delay-3000"></div>
-
-          {/* Circle patches */}
-          <div className="absolute top-0 left-0 w-72 h-72 bg-gradient-to-br from-primary/8 to-secondary/8 rounded-full mix-blend-multiply filter blur-3xl animate-pulse animation-delay-500"></div>
-          <div className="absolute top-1/4 right-0 w-56 h-56 bg-gradient-to-tl from-accent/12 to-primary/12 rounded-full mix-blend-multiply filter blur-2xl animate-pulse animation-delay-1500"></div>
-          <div className="absolute bottom-0 left-1/4 w-80 h-80 bg-gradient-to-tr from-secondary/10 to-accent/10 rounded-full mix-blend-multiply filter blur-3xl animate-pulse animation-delay-2500"></div>
-          <div className="absolute top-3/4 left-1/2 w-40 h-40 bg-gradient-to-b from-primary/15 to-secondary/15 rounded-full mix-blend-multiply filter blur-xl animate-pulse animation-delay-3500"></div>
-          <div className="absolute bottom-1/3 right-1/3 w-64 h-64 bg-gradient-to-bl from-accent/8 to-primary/8 rounded-full mix-blend-multiply filter blur-2xl animate-pulse animation-delay-700"></div>
-          <div className="absolute top-1/3 left-1/6 w-52 h-52 bg-gradient-to-r from-secondary/12 to-accent/12 rounded-full mix-blend-multiply filter blur-xl animate-pulse animation-delay-4200"></div>
-
-          {/* Floating geometric shapes */}
-          <div className="absolute top-20 left-10 w-4 h-4 bg-primary/30 rounded-full animate-bounce animation-delay-100"></div>
-          <div className="absolute top-40 right-20 w-3 h-3 bg-secondary/40 rounded-full animate-bounce animation-delay-300"></div>
-          <div className="absolute bottom-32 left-20 w-2 h-2 bg-accent/50 rounded-full animate-bounce animation-delay-500"></div>
-          <div className="absolute top-60 left-32 w-3 h-3 bg-primary/40 rounded-full animate-bounce animation-delay-200"></div>
-          <div className="absolute bottom-40 right-32 w-2 h-2 bg-secondary/50 rounded-full animate-bounce animation-delay-400"></div>
-          <div className="absolute top-80 left-1/4 w-4 h-4 bg-accent/30 rounded-full animate-bounce animation-delay-600"></div>
+          <div className="absolute top-20 right-20 w-64 h-64 bg-primary/5 rounded-full filter blur-3xl"></div>
+          <div className="absolute bottom-20 left-20 w-48 h-48 bg-secondary/5 rounded-full filter blur-2xl"></div>
         </div>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
-          <div className="text-center">
+        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
+          <div className="text-center space-y-8">
 
-            <h1
-              className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-extrabold text-foreground animate-fade-in-up leading-tight font-playfair tracking-tight"
-            >
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-foreground leading-tight font-playfair">
               Never Miss a
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary via-secondary to-accent animate-gradient">
+              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">
                 Sponsored Opportunity
               </span>
               Again
             </h1>
 
-            <p className="mt-8 sm:mt-10 max-w-4xl mx-auto text-lg sm:text-xl md:text-2xl text-muted-foreground leading-relaxed font-medium px-4">
-              Discover exactly which companies are investing thousands in hiring. Our AI-powered platform reveals sponsored jobs across all major job sites, giving you the competitive edge you&apos;ve been missing.
+            <p className="max-w-3xl mx-auto text-xl text-muted-foreground leading-relaxed font-medium px-4">
+              Discover exactly which companies are investing thousands in hiring. Our AI-powered platform reveals sponsored jobs across all major job sites.
             </p>
 
-            {/* Value proposition highlights */}
-            <div className="mt-12 sm:mt-16 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 max-w-5xl mx-auto motion-stagger px-4">
-              <div className="flex flex-col items-center justify-center gap-3 sm:gap-4 p-4 sm:p-6 bg-white/60 backdrop-blur-sm rounded-2xl border border-white/30 shadow-lg motion-card hover:bg-white/80 transition-all duration-300">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary/10 rounded-full flex items-center justify-center motion-scale-in">
-                  <Target className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-                </div>
-                <div className="text-center">
-                  <div className="text-xl sm:text-2xl font-bold text-primary mb-1">95%</div>
-                  <span className="font-semibold text-foreground text-sm sm:text-base">More Responses</span>
-                </div>
+            {/* Stats */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto px-4">
+              <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-6 border border-border shadow-sm hover:shadow-md transition-shadow">
+                <div className="text-3xl font-bold text-primary mb-1">95%</div>
+                <div className="text-sm text-muted-foreground font-medium">More Responses</div>
               </div>
-              <div className="flex flex-col items-center justify-center gap-3 sm:gap-4 p-4 sm:p-6 bg-white/60 backdrop-blur-sm rounded-2xl border border-white/30 shadow-lg motion-card hover:bg-white/80 transition-all duration-300">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-secondary/10 rounded-full flex items-center justify-center motion-scale-in">
-                  <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-secondary" />
-                </div>
-                <div className="text-center">
-                  <div className="text-xl sm:text-2xl font-bold text-secondary mb-1">3x</div>
-                  <span className="font-semibold text-foreground text-sm sm:text-base">Faster Applications</span>
-                </div>
+              <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-6 border border-border shadow-sm hover:shadow-md transition-shadow">
+                <div className="text-3xl font-bold text-secondary mb-1">3x</div>
+                <div className="text-sm text-muted-foreground font-medium">Faster Applications</div>
               </div>
-              <div className="flex flex-col items-center justify-center gap-3 sm:gap-4 p-4 sm:p-6 bg-white/60 backdrop-blur-sm rounded-2xl border border-white/30 shadow-lg motion-card hover:bg-white/80 transition-all duration-300">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-accent/10 rounded-full flex items-center justify-center motion-scale-in">
-                  <Shield className="h-5 w-5 sm:h-6 sm:w-6 text-accent-foreground" />
-                </div>
-                <div className="text-center">
-                  <div className="text-xl sm:text-2xl font-bold text-accent-foreground mb-1">100%</div>
-                  <span className="font-semibold text-foreground text-sm sm:text-base">Privacy Protected</span>
-                </div>
+              <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-6 border border-border shadow-sm hover:shadow-md transition-shadow">
+                <div className="text-3xl font-bold text-accent-foreground mb-1">100%</div>
+                <div className="text-sm text-muted-foreground font-medium">Privacy Protected</div>
               </div>
             </div>
 
-            <div className="mt-12 sm:mt-16 flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center items-center motion-stagger px-4">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center px-4">
               {userId ? (
-                <Button asChild size="lg" className="text-lg sm:text-xl px-8 sm:px-12 py-6 sm:py-8 shadow-xl hover:shadow-2xl transition-all duration-300 motion-button font-semibold w-full sm:w-auto">
+                <Button asChild size="lg" className="text-lg px-8 py-4 bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-primary-foreground font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all w-full sm:w-auto">
                   <Link href="/dashboard" className="flex items-center gap-3">
                     Go to Dashboard
-                    <ArrowRight className="h-5 w-5 sm:h-6 sm:w-6" />
+                    <ArrowRight className="h-5 w-5" />
                   </Link>
                 </Button>
               ) : (
                 <>
-                  <Button asChild size="lg" className="text-lg sm:text-xl px-8 sm:px-12 py-6 sm:py-8 shadow-xl hover:shadow-2xl transition-all duration-300 motion-button font-semibold w-full sm:w-auto">
+                  <Button asChild size="lg" className="text-lg px-8 py-4 bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-primary-foreground font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all w-full sm:w-auto">
                     <Link href="/sign-up" className="flex items-center gap-3">
-                      <Sparkles className="h-5 w-5 sm:h-6 sm:w-6" />
+                      <Sparkles className="h-5 w-5" />
                       Start Free Today
                     </Link>
                   </Button>
@@ -116,10 +78,10 @@ export default async function Home() {
                     asChild
                     size="lg"
                     variant="outline"
-                    className="text-lg sm:text-xl px-8 sm:px-12 py-6 sm:py-8 border-2 hover:bg-secondary/10 transition-all duration-300 motion-button font-semibold w-full sm:w-auto"
+                    className="text-lg px-8 py-4 border-2 border-border hover:border-primary hover:bg-primary/10 text-foreground hover:text-primary font-semibold rounded-xl transition-all w-full sm:w-auto"
                   >
                     <a href="#how-it-works" className="flex items-center gap-3">
-                      <Eye className="h-5 w-5 sm:h-6 sm:w-6" />
+                      <Eye className="h-5 w-5" />
                       See How It Works
                     </a>
                   </Button>
@@ -127,659 +89,236 @@ export default async function Home() {
               )}
             </div>
 
-            <div className="mt-8 flex items-center justify-center gap-6 text-sm text-muted-foreground">
+            <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-primary" />
+                <CheckCircle className="h-4 w-4 text-secondary" />
                 <span>Chrome extension included</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Floating action button for mobile */}
+        {/* Mobile CTA */}
         <div className="fixed bottom-6 right-6 md:hidden z-50">
           <Button
             asChild
             size="lg"
-            className="rounded-full w-14 h-14 sm:w-16 sm:h-16 shadow-2xl bg-primary hover:bg-primary/90"
+            className="rounded-full w-14 h-14 bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 shadow-xl"
           >
             <Link href="/sign-up">
-              <Sparkles className="h-5 w-5 sm:h-6 sm:w-6" />
+              <Sparkles className="h-5 w-5" />
             </Link>
           </Button>
         </div>
       </section>
 
       {/* Problem Section */}
-      <section className="py-20 bg-muted/20 section-depth-strong">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-20">
-            <div className="inline-flex items-center gap-2 bg-destructive/10 text-destructive px-6 py-3 rounded-full text-sm font-semibold mb-6">
+      <section className="py-20 bg-muted/30 backdrop-blur-sm">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 bg-destructive/10 text-destructive px-4 py-2 rounded-full text-sm font-semibold mb-6">
               <span className="w-2 h-2 bg-destructive rounded-full animate-pulse"></span>
               The Problem
             </div>
-            <h2
-              className="text-4xl sm:text-5xl md:text-6xl font-bold text-foreground font-playfair tracking-tight"
-            >
+            <h2 className="text-4xl md:text-5xl font-bold text-foreground font-playfair mb-6">
               You&apos;re Missing Out on the
               <span className="block text-destructive">Best Opportunities</span>
             </h2>
-            <p className="mt-8 text-xl text-muted-foreground max-w-4xl mx-auto leading-relaxed font-medium">
-              While companies spend thousands promoting their jobs, job seekers like you can&apos;t tell which opportunities are real priorities. This information asymmetry costs you time, energy, and missed opportunities.
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+              Companies spend thousands promoting jobs, but you can&apos;t tell which opportunities are real priorities. This information gap costs you time and opportunities.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 motion-stagger">
-            <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-white to-destructive/5 hover:shadow-2xl transition-all duration-500 hover:-translate-y-3 motion-card rounded-2xl">
-              <div className="absolute inset-0 bg-gradient-to-br from-destructive/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <CardHeader className="relative pb-6">
-                <div className="w-24 h-24 bg-gradient-to-br from-destructive/10 to-destructive/20 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
-                  <div className="w-10 h-10 bg-destructive rounded-full flex items-center justify-center">
-                    <span className="text-white text-2xl font-bold">?</span>
-                  </div>
-                </div>
-                <CardTitle className="text-2xl font-bold text-center group-hover:text-destructive transition-colors font-playfair">
-                  Invisible Sponsorships
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="relative pt-0">
-                <p className="text-muted-foreground text-center leading-relaxed text-lg">
-                  Sponsored jobs look identical to regular listings. You have no way of knowing which companies are actually investing in hiring.
-                </p>
-                <div className="mt-6 text-center">
-                  <span className="text-sm text-destructive font-semibold">Hidden Priority Signal</span>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+            <div className="bg-card/80 rounded-2xl p-8 border border-border shadow-sm hover:shadow-md transition-all">
+              <div className="w-16 h-16 bg-destructive/10 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+                <span className="text-2xl font-bold text-destructive">?</span>
+              </div>
+              <h3 className="text-xl font-semibold text-foreground text-center mb-4">Invisible Sponsorships</h3>
+              <p className="text-muted-foreground text-center leading-relaxed">
+                Sponsored jobs look identical to regular listings. You can't tell which companies are actually investing in hiring.
+              </p>
+            </div>
 
-            <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-white to-secondary/5 hover:shadow-2xl transition-all duration-500 hover:-translate-y-3 motion-card rounded-2xl">
-              <div className="absolute inset-0 bg-gradient-to-br from-secondary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <CardHeader className="relative pb-6">
-                <div className="w-24 h-24 bg-gradient-to-br from-secondary/10 to-secondary/20 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
-                  <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center">
-                    <span className="text-white text-2xl font-bold">!</span>
-                  </div>
-                </div>
-                <CardTitle className="text-2xl font-bold text-center group-hover:text-secondary transition-colors font-playfair">
-                  Scattered Applications
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="relative pt-0">
-                <p className="text-muted-foreground text-center leading-relaxed text-lg">
-                  Your job search is fragmented across multiple platforms. No central place to track applications, follow-ups, or interview schedules.
-                </p>
-                <div className="mt-6 text-center">
-                  <span className="text-sm text-secondary font-semibold">No Central Command</span>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="bg-card/80 rounded-2xl p-8 border border-border shadow-sm hover:shadow-md transition-all">
+              <div className="w-16 h-16 bg-secondary/10 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+                <span className="text-2xl font-bold text-secondary">!</span>
+              </div>
+              <h3 className="text-xl font-semibold text-foreground text-center mb-4">Scattered Applications</h3>
+              <p className="text-muted-foreground text-center leading-relaxed">
+                Your job search is fragmented across platforms with no central place to track applications and follow-ups.
+              </p>
+            </div>
 
-            <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-white to-accent/5 hover:shadow-2xl transition-all duration-500 hover:-translate-y-3 motion-card rounded-2xl">
-              <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <CardHeader className="relative pb-6">
-                <div className="w-24 h-24 bg-gradient-to-br from-accent/10 to-accent/20 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
-                  <div className="w-10 h-10 bg-accent-foreground rounded-full flex items-center justify-center">
-                    <TrendingUp className="h-5 w-5 text-white" />
-                  </div>
-                </div>
-                <CardTitle className="text-2xl font-bold text-center group-hover:text-accent-foreground transition-colors font-playfair">
-                  Wasted Time & Energy
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="relative pt-0">
-                <p className="text-muted-foreground text-center leading-relaxed text-lg">
-                  You spend hours applying to jobs without knowing which companies are serious about hiring. Most applications go into a black hole.
-                </p>
-                <div className="mt-6 text-center">
-                  <span className="text-sm text-accent-foreground font-semibold">Low Response Rate</span>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="bg-card/80 rounded-2xl p-8 border border-border shadow-sm hover:shadow-md transition-all">
+              <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+                <TrendingUp className="h-8 w-8 text-primary" />
+              </div>
+              <h3 className="text-xl font-semibold text-foreground text-center mb-4">Wasted Time & Energy</h3>
+              <p className="text-muted-foreground text-center leading-relaxed">
+                Hours spent applying to jobs without knowing which companies are serious about hiring.
+              </p>
+            </div>
           </div>
 
-          {/* Problem impact visualization */}
-          <div className="mt-20 text-center">
-            <div className="inline-flex items-center gap-8 bg-muted/50 rounded-3xl p-8 shadow-lg border border-border/20">
-              <div className="text-center">
-                <div className="text-4xl font-bold text-destructive mb-2">78%</div>
-                <div className="text-sm text-muted-foreground font-medium">of applications</div>
-                <div className="text-sm text-muted-foreground">get no response</div>
-              </div>
-              <div className="w-px h-16 bg-border"></div>
-              <div className="text-center">
-                <div className="text-4xl font-bold text-secondary mb-2">6-8</div>
-                <div className="text-sm text-muted-foreground font-medium">hours per week</div>
-                <div className="text-sm text-muted-foreground">wasted on job search</div>
-              </div>
-              <div className="w-px h-16 bg-border"></div>
-              <div className="text-center">
-                <div className="text-4xl font-bold text-accent-foreground mb-2">$2,500+</div>
-                <div className="text-sm text-muted-foreground font-medium">average cost</div>
-                <div className="text-sm text-muted-foreground">per hire (companies)</div>
-              </div>
+          {/* Stats */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-8 bg-slate-50 rounded-2xl p-8 border border-slate-200/50">
+            <div className="text-center">
+              <div className="text-4xl font-bold text-red-600 mb-1">78%</div>
+              <div className="text-sm text-slate-600">applications get no response</div>
+            </div>
+            <div className="hidden sm:block w-px h-16 bg-slate-300"></div>
+            <div className="text-center">
+              <div className="text-4xl font-bold text-amber-600 mb-1">6-8</div>
+              <div className="text-sm text-slate-600">hours wasted per week</div>
+            </div>
+            <div className="hidden sm:block w-px h-16 bg-slate-300"></div>
+            <div className="text-center">
+              <div className="text-4xl font-bold text-blue-600 mb-1">$2,500+</div>
+              <div className="text-sm text-slate-600">average cost per hire</div>
             </div>
           </div>
         </div>
       </section>
 
       {/* Solution Section */}
-      <section
-        id="how-it-works"
-        className="py-24 bg-background section-depth-strong relative overflow-hidden"
-      >
-        {/* Background decoration with circles */}
-        <div className="absolute inset-0 opacity-5">
-          <div className="absolute top-20 left-10 w-32 h-32 bg-primary rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-20 right-10 w-32 h-32 bg-secondary rounded-full blur-3xl animate-pulse animation-delay-2000"></div>
-          <div className="absolute top-1/2 left-20 w-24 h-24 bg-accent rounded-full blur-2xl animate-pulse animation-delay-1000"></div>
-          <div className="absolute bottom-1/3 right-20 w-40 h-40 bg-primary/50 rounded-full blur-3xl animate-pulse animation-delay-3000"></div>
-          <div className="absolute top-1/4 right-1/4 w-16 h-16 bg-secondary/50 rounded-full blur-xl animate-pulse animation-delay-500"></div>
-        </div>
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-          <div className="text-center mb-24">
-            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-6 py-3 rounded-full text-sm font-semibold mb-8">
-              <span className="w-2 h-2 bg-primary rounded-full animate-pulse"></span>
+      <section id="how-it-works" className="py-20 bg-gradient-to-br from-blue-50 to-teal-50/30">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-600 px-4 py-2 rounded-full text-sm font-semibold mb-6">
+              <span className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></span>
               The Solution
             </div>
-            <h2
-              className="text-4xl sm:text-5xl md:text-6xl font-bold text-foreground font-playfair tracking-tight"
-            >
+            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 font-playfair mb-6">
               Three Simple Steps to
-              <span className="block text-primary">Job Search Success</span>
+              <span className="block text-blue-600">Job Search Success</span>
             </h2>
-            <p className="mt-8 text-xl text-muted-foreground max-w-4xl mx-auto leading-relaxed font-medium">
+            <p className="text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed">
               Our intelligent platform transforms how you approach job hunting, giving you the competitive advantage you deserve.
             </p>
           </div>
 
-          {/* Step 1 */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center mb-24">
-            <div className="order-2 lg:order-1">
-               <div className="flex items-center gap-6 mb-8">
-                 <div className="w-20 h-20 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center shadow-xl">
-                   <span className="text-3xl font-bold text-white">1</span>
-                 </div>
-                 <div>
-                   <h3 className="text-3xl font-bold text-foreground font-playfair">
-                     Install & Activate
-                   </h3>
-                   <p className="text-muted-foreground text-lg mt-1">One-click setup across all job sites</p>
-                 </div>
-               </div>
-
-               <p className="text-xl text-muted-foreground mb-10 leading-relaxed">
-                 Add our lightweight Chrome extension in seconds. It works seamlessly with LinkedIn, Indeed, Glassdoor, and 50+ other major job platforms.
-               </p>
-
-               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                 <div className="flex items-center gap-4 p-6 bg-primary/5 rounded-2xl border border-primary/20 hover:bg-primary/10 transition-all duration-300">
-                   <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                     <Zap className="h-6 w-6 text-primary" />
-                   </div>
-                   <div>
-                     <div className="font-semibold text-foreground text-lg">Instant Setup</div>
-                     <div className="text-sm text-muted-foreground">2-minute installation</div>
-                   </div>
-                 </div>
-
-                 <div className="flex items-center gap-4 p-6 bg-secondary/5 rounded-2xl border border-secondary/20 hover:bg-secondary/10 transition-all duration-300">
-                   <div className="w-12 h-12 bg-secondary/10 rounded-full flex items-center justify-center">
-                     <Shield className="h-6 w-6 text-secondary" />
-                   </div>
-                   <div>
-                     <div className="font-semibold text-foreground text-lg">Privacy First</div>
-                     <div className="text-sm text-muted-foreground">Your data stays secure</div>
-                   </div>
-                 </div>
-               </div>
+          {/* Simple 3-step process */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+            <div className="text-center space-y-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto shadow-lg">
+                <span className="text-2xl font-bold text-white">1</span>
+              </div>
+              <h3 className="text-xl font-semibold text-slate-900">Install Extension</h3>
+              <p className="text-slate-600 leading-relaxed">
+                Add our lightweight Chrome extension in seconds. Works with LinkedIn, Indeed, and 50+ job sites.
+              </p>
             </div>
 
-            <div className="order-1 lg:order-2">
-              <Card className="bg-gradient-to-br from-primary/5 to-secondary/5 border-0 shadow-2xl overflow-hidden rounded-2xl">
-                <CardContent className="p-10">
-                  <div className="text-center">
-                    <div className="w-24 h-24 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-xl">
-                      <Target className="h-12 w-12 text-white" />
-                    </div>
-                    <h4 className="text-2xl font-bold text-foreground mb-6 font-playfair">Extension Active</h4>
-                    <Button className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white shadow-xl text-lg py-6">
-                      <Eye className="h-5 w-5 mr-3" />
-                      Check Sponsored Jobs
-                    </Button>
-                    <div className="mt-6 flex items-center justify-center gap-3">
-                      <div className="w-3 h-3 bg-primary rounded-full animate-pulse"></div>
-                      <span className="text-sm text-primary font-semibold">Ready to scan</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+            <div className="text-center space-y-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-teal-500 to-teal-600 rounded-2xl flex items-center justify-center mx-auto shadow-lg">
+                <span className="text-2xl font-bold text-white">2</span>
+              </div>
+              <h3 className="text-xl font-semibold text-slate-900">Spot Sponsored Jobs</h3>
+              <p className="text-slate-600 leading-relaxed">
+                Instantly see which companies are investing in hiring with color-coded badges on job listings.
+              </p>
+            </div>
+
+            <div className="text-center space-y-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto shadow-lg">
+                <span className="text-2xl font-bold text-white">3</span>
+              </div>
+              <h3 className="text-xl font-semibold text-slate-900">Track Applications</h3>
+              <p className="text-slate-600 leading-relaxed">
+                Sync jobs to your dashboard and track every application, interview, and follow-up in one place.
+              </p>
             </div>
           </div>
 
-          {/* Step 2 */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center mb-24">
-            <div className="order-2 lg:order-2">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-16 h-16 bg-gradient-to-br from-secondary to-secondary/80 rounded-2xl flex items-center justify-center shadow-lg">
-                  <span className="text-2xl font-bold text-white">2</span>
-                </div>
-                <div>
-                  <h3 className="text-2xl font-bold text-foreground font-playfair">
-                    Reveal Hidden Opportunities
-                  </h3>
-                  <p className="text-muted-foreground">See which companies are serious about hiring</p>
-                </div>
-              </div>
-
-              <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
-                Click once to instantly highlight sponsored jobs with color-coded badges. See which companies are investing real money in hiring vs. just posting requirements.
-              </p>
-
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-6 h-6 bg-destructive/10 rounded-full flex items-center justify-center">
-                    <div className="w-3 h-3 bg-destructive rounded-full"></div>
-                  </div>
-                  <span className="text-muted-foreground">Sponsored positions (high priority)</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-6 h-6 bg-secondary/10 rounded-full flex items-center justify-center">
-                    <div className="w-3 h-3 bg-secondary rounded-full"></div>
-                  </div>
-                  <span className="text-muted-foreground">Promoted listings (medium priority)</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center">
-                    <div className="w-3 h-3 bg-primary rounded-full"></div>
-                  </div>
-                  <span className="text-muted-foreground">Featured opportunities (top priority)</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="order-1 lg:order-1">
-              <Card className="bg-gradient-to-br from-secondary/5 to-accent/5 border-0 shadow-2xl overflow-hidden">
-                <CardContent className="p-8">
-                  <div className="space-y-6">
-                    {/* Sponsored job example */}
-                    <div className="relative bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-destructive/20 shadow-lg">
-                      <div className="absolute -top-2 -right-2 bg-destructive text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
-                        SPONSORED
-                      </div>
-                      <div className="space-y-3">
-                        <h4 className="font-bold text-lg text-foreground">Senior Software Engineer</h4>
-                        <p className="text-muted-foreground">Google • Mountain View, CA</p>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span className="font-semibold text-foreground">$150k - $220k</span>
-                          <span>Remote OK</span>
-                          <span>Posted 2 days ago</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Promoted job example */}
-                    <div className="relative bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-secondary/20 shadow-lg">
-                      <div className="absolute -top-2 -right-2 bg-secondary text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
-                        PROMOTED
-                      </div>
-                      <div className="space-y-3">
-                        <h4 className="font-bold text-lg text-foreground">Product Manager</h4>
-                        <p className="text-muted-foreground">Microsoft • Seattle, WA</p>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span>$120k - $180k</span>
-                          <span>Hybrid</span>
-                          <span>Posted 1 week ago</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Regular job example */}
-                    <div className="bg-white/60 backdrop-blur-sm rounded-xl p-6 border border-border/20">
-                      <div className="space-y-3">
-                        <h4 className="font-medium text-foreground">Data Scientist</h4>
-                        <p className="text-muted-foreground">StartupCorp • San Francisco, CA</p>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span className="font-semibold text-foreground">$90k - $130k</span>
-                          <span>On-site</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-
-          {/* Step 3 */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            <div className="order-2 lg:order-1">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center shadow-lg">
-                  <span className="text-2xl font-bold text-white">3</span>
-                </div>
-                <div>
-                  <h3 className="text-2xl font-bold text-foreground font-playfair">
-                    Track & Organize
-                  </h3>
-                  <p className="text-muted-foreground">Never lose track of your applications</p>
-                </div>
-              </div>
-
-              <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
-                Automatically sync discovered jobs to your personal dashboard. Track every application, interview, and follow-up in one centralized location.
-              </p>
-
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-secondary/10 rounded-full flex items-center justify-center">
-                      <List className="h-4 w-4 text-secondary" />
-                    </div>
-                    <div>
-                      <div className="font-semibold text-foreground">Smart Sync</div>
-                      <div className="text-sm text-muted-foreground">Auto-import jobs</div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                      <BarChart3 className="h-4 w-4 text-primary" />
-                    </div>
-                    <div>
-                      <div className="font-semibold text-foreground">Analytics</div>
-                      <div className="text-sm text-muted-foreground">Track progress</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-accent/10 rounded-full flex items-center justify-center">
-                      <Calendar className="h-4 w-4 text-accent-foreground" />
-                    </div>
-                    <div>
-                      <div className="font-semibold text-foreground">Scheduling</div>
-                      <div className="text-sm text-muted-foreground">Interview tracking</div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-secondary/10 rounded-full flex items-center justify-center">
-                      <ArrowRight className="h-4 w-4 text-secondary" />
-                    </div>
-                    <div>
-                      <div className="font-semibold text-foreground">Reminders</div>
-                      <div className="text-sm text-muted-foreground">Follow-up alerts</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="order-1 lg:order-2">
-              <Card className="bg-gradient-to-br from-primary/5 to-secondary/5 border-0 shadow-2xl overflow-hidden">
-                <CardHeader className="pb-6">
-                  <CardTitle className="font-playfair text-center text-2xl">
-                    Your Job Search Dashboard
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 text-center border border-secondary/20">
-                      <div className="text-2xl font-bold text-secondary">12</div>
-                      <div className="text-sm text-muted-foreground">Interested</div>
-                    </div>
-                    <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 text-center border border-accent/20">
-                      <div className="text-2xl font-bold text-accent-foreground">8</div>
-                      <div className="text-sm text-muted-foreground">Applied</div>
-                    </div>
-                    <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 text-center border border-accent/20">
-                      <div className="text-2xl font-bold text-accent-foreground">3</div>
-                      <div className="text-sm text-muted-foreground">Interviewing</div>
-                    </div>
-                    <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 text-center border border-primary/20">
-                      <div className="text-2xl font-bold text-primary">1</div>
-                      <div className="text-sm text-muted-foreground">Offered</div>
-                    </div>
-                  </div>
-
-                  <div className="bg-white/60 backdrop-blur-sm rounded-xl p-6 border border-primary/20">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                        <CheckCircle className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <div className="font-semibold text-foreground">Application Submitted</div>
-                        <div className="text-sm text-muted-foreground">Senior Software Engineer at Google</div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <span>Interview scheduled for Friday</span>
-                      <span className="text-primary">•</span>
-                      <span>High priority</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+          {/* CTA */}
+          <div className="text-center">
+            <Button asChild size="lg" className="text-lg px-8 py-4 bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all">
+              <Link href="/sign-up" className="flex items-center gap-3">
+                <Target className="h-5 w-5" />
+                Start Finding Better Jobs
+              </Link>
+            </Button>
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-24 bg-muted/20 section-depth-strong">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-24">
-            <div className="inline-flex items-center gap-2 bg-secondary/10 text-secondary px-6 py-3 rounded-full text-sm font-semibold mb-8">
-              <span className="w-2 h-2 bg-secondary rounded-full animate-pulse"></span>
-              Powerful Features
+      <section id="features" className="py-20 bg-white/50 backdrop-blur-sm">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 bg-teal-50 text-teal-600 px-4 py-2 rounded-full text-sm font-semibold mb-6">
+              <span className="w-2 h-2 bg-teal-600 rounded-full animate-pulse"></span>
+              Key Features
             </div>
-            <h2
-              className="text-4xl sm:text-5xl md:text-6xl font-bold text-foreground font-playfair tracking-tight"
-            >
+            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 font-playfair mb-6">
               Everything You Need to
-              <span className="block text-secondary">Dominate Your Job Search</span>
+              <span className="block text-teal-600">Win Your Job Search</span>
             </h2>
-            <p className="mt-8 text-xl text-muted-foreground max-w-4xl mx-auto leading-relaxed font-medium">
-              Built by job seekers, for job seekers. Every feature is designed to give you the competitive edge in today&apos;s job market.
+            <p className="text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed">
+              Built by job seekers, for job seekers. Every feature gives you a competitive edge.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-            {/* Feature 1 */}
-            <Card className="group relative overflow-hidden bg-gradient-to-br from-primary/5 to-secondary/5 border-0 hover:shadow-2xl transition-all duration-500 hover:-translate-y-4 rounded-2xl">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <CardHeader className="relative pb-6">
-                <div className="w-24 h-24 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
-                  <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center">
-                    <Target className="h-7 w-7 text-white" />
-                  </div>
-                </div>
-                <CardTitle className="text-2xl font-bold text-center group-hover:text-primary transition-colors font-playfair">
-                  Smart Company Detection
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="relative pt-0">
-                <p className="text-muted-foreground text-center leading-relaxed mb-6 text-lg">
-                  Our AI algorithm identifies sponsored companies across 50+ job sites with advanced fuzzy matching and company alias support.
-                </p>
-                <div className="flex items-center justify-center gap-3">
-                  <Badge variant="secondary" className="bg-primary/10 text-primary px-3 py-1 text-sm font-semibold">
-                    AI-Powered
-                  </Badge>
-                  <Badge variant="secondary" className="bg-secondary/10 text-secondary px-3 py-1 text-sm font-semibold">
-                    50+ Sites
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Feature 2 */}
-            <Card className="group relative overflow-hidden bg-gradient-to-br from-primary/5 to-accent/5 border-0 hover:shadow-2xl transition-all duration-500 hover:-translate-y-3">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <CardHeader className="relative">
-                <div className="w-20 h-20 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
-                  <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
-                    <TrendingUp className="h-6 w-6 text-white" />
-                  </div>
-                </div>
-                <CardTitle className="text-xl font-bold text-center group-hover:text-primary transition-colors font-playfair">
-                  Advanced Analytics
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="relative">
-                <p className="text-muted-foreground text-center leading-relaxed mb-4">
-                  Track your application success rates, response times, and identify which companies and roles are most responsive to your applications.
-                </p>
-                <div className="flex items-center justify-center gap-2">
-                  <Badge variant="secondary" className="bg-primary/10 text-primary">
-                    Success Tracking
-                  </Badge>
-                  <Badge variant="secondary" className="bg-accent/10 text-accent-foreground">
-                    Insights
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Feature 3 */}
-            <Card className="group relative overflow-hidden bg-gradient-to-br from-accent/5 to-secondary/5 border-0 hover:shadow-2xl transition-all duration-500 hover:-translate-y-3">
-              <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <CardHeader className="relative">
-                <div className="w-20 h-20 bg-gradient-to-br from-accent/10 to-accent/20 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
-                  <div className="w-10 h-10 bg-accent-foreground rounded-xl flex items-center justify-center">
-                    <Sparkles className="h-6 w-6 text-white" />
-                  </div>
-                </div>
-                <CardTitle className="text-xl font-bold text-center group-hover:text-accent-foreground transition-colors font-playfair">
-                  Real-time Sync
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="relative">
-                <p className="text-muted-foreground text-center leading-relaxed mb-4">
-                  Your data syncs instantly across all devices. Access your complete job search history from desktop, mobile, or tablet.
-                </p>
-                <div className="flex items-center justify-center gap-2">
-                  <Badge variant="secondary" className="bg-accent/10 text-accent-foreground">
-                    Cross-Platform
-                  </Badge>
-                  <Badge variant="secondary" className="bg-secondary/10 text-secondary">
-                    Instant Sync
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Feature 4 */}
-            <Card className="group relative overflow-hidden bg-gradient-to-br from-secondary/5 to-accent/5 border-0 hover:shadow-2xl transition-all duration-500 hover:-translate-y-3">
-              <div className="absolute inset-0 bg-gradient-to-br from-secondary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <CardHeader className="relative">
-                <div className="w-20 h-20 bg-gradient-to-br from-secondary/10 to-secondary/20 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
-                  <div className="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center">
-                    <Users className="h-6 w-6 text-white" />
-                  </div>
-                </div>
-                <CardTitle className="text-xl font-bold text-center group-hover:text-secondary transition-colors font-playfair">
-                  Company Intelligence
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="relative">
-                <p className="text-muted-foreground text-center leading-relaxed mb-4">
-                  Learn which companies are actively investing in hiring. Identify patterns and prioritize applications to companies with high hiring intent.
-                </p>
-                <div className="flex items-center justify-center gap-2">
-                  <Badge variant="secondary" className="bg-secondary/10 text-secondary">
-                    Hiring Patterns
-                  </Badge>
-                  <Badge variant="secondary" className="bg-destructive/10 text-destructive">
-                    Priority Scoring
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Feature 5 */}
-            <Card className="group relative overflow-hidden bg-gradient-to-br from-accent/5 to-primary/5 border-0 hover:shadow-2xl transition-all duration-500 hover:-translate-y-3">
-              <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <CardHeader className="relative">
-                <div className="w-20 h-20 bg-gradient-to-br from-accent/10 to-accent/20 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
-                  <div className="w-10 h-10 bg-accent-foreground rounded-xl flex items-center justify-center">
-                    <Shield className="h-6 w-6 text-white" />
-                  </div>
-                </div>
-                <CardTitle className="text-xl font-bold text-center group-hover:text-accent-foreground transition-colors font-playfair">
-                  Privacy First
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="relative">
-                <p className="text-muted-foreground text-center leading-relaxed mb-4">
-                  Your job search data is encrypted and private. We never share your information with employers, recruiters, or third parties.
-                </p>
-                <div className="flex items-center justify-center gap-2">
-                  <Badge variant="secondary" className="bg-accent/10 text-accent-foreground">
-                    End-to-End Encrypted
-                  </Badge>
-                  <Badge variant="secondary" className="bg-primary/10 text-primary">
-                    GDPR Compliant
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Feature 6 */}
-            <Card className="group relative overflow-hidden bg-gradient-to-br from-secondary/5 to-accent/5 border-0 hover:shadow-2xl transition-all duration-500 hover:-translate-y-3">
-              <div className="absolute inset-0 bg-gradient-to-br from-secondary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <CardHeader className="relative">
-                <div className="w-20 h-20 bg-gradient-to-br from-secondary/10 to-secondary/20 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
-                  <div className="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center">
-                    <Zap className="h-6 w-6 text-white" />
-                  </div>
-                </div>
-                <CardTitle className="text-xl font-bold text-center group-hover:text-secondary transition-colors font-playfair">
-                  Lightning Fast
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="relative">
-                <p className="text-muted-foreground text-center leading-relaxed mb-4">
-                  Ultra-lightweight extension that doesn&apos;t slow down your browsing. Get instant insights with zero performance impact.
-                </p>
-                <div className="flex items-center justify-center gap-2">
-                  <Badge variant="secondary" className="bg-secondary/10 text-secondary">
-                    Zero Lag
-                  </Badge>
-                  <Badge variant="secondary" className="bg-accent/10 text-accent-foreground">
-                    Instant Results
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Additional features showcase */}
-          <div className="mt-20 grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-                <Zap className="h-8 w-8 text-white" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+            <div className="bg-white/80 rounded-2xl p-8 border border-slate-200/50 shadow-sm hover:shadow-md transition-all text-center">
+              <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+                <Target className="h-8 w-8 text-blue-600" />
               </div>
-              <h3 className="text-xl font-bold text-foreground mb-2 font-playfair">Quick Setup</h3>
-              <p className="text-muted-foreground">Install in seconds, start using immediately</p>
+              <h3 className="text-xl font-semibold text-slate-900 mb-4">Smart Detection</h3>
+              <p className="text-slate-600 leading-relaxed">
+                AI-powered identification of sponsored companies across 50+ job sites.
+              </p>
             </div>
 
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-primary to-accent-foreground rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-                <Eye className="h-8 w-8 text-white" />
+            <div className="bg-white/80 rounded-2xl p-8 border border-slate-200/50 shadow-sm hover:shadow-md transition-all text-center">
+              <div className="w-16 h-16 bg-teal-100 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+                <TrendingUp className="h-8 w-8 text-teal-600" />
               </div>
-              <h3 className="text-xl font-bold text-foreground mb-2 font-playfair">Mobile Ready</h3>
-              <p className="text-muted-foreground">Access your dashboard from any device</p>
+              <h3 className="text-xl font-semibold text-slate-900 mb-4">Analytics</h3>
+              <p className="text-slate-600 leading-relaxed">
+                Track response rates and identify which companies are most responsive.
+              </p>
             </div>
 
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-secondary to-destructive rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-                <TrendingUp className="h-8 w-8 text-white" />
+            <div className="bg-white/80 rounded-2xl p-8 border border-slate-200/50 shadow-sm hover:shadow-md transition-all text-center">
+              <div className="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+                <Sparkles className="h-8 w-8 text-emerald-600" />
               </div>
-              <h3 className="text-xl font-bold text-foreground mb-2 font-playfair">Auto Updates</h3>
-              <p className="text-muted-foreground">Always stays current with latest job sites</p>
+              <h3 className="text-xl font-semibold text-slate-900 mb-4">Real-time Sync</h3>
+              <p className="text-slate-600 leading-relaxed">
+                Instant data sync across all devices. Access your history anywhere.
+              </p>
+            </div>
+
+            <div className="bg-white/80 rounded-2xl p-8 border border-slate-200/50 shadow-sm hover:shadow-md transition-all text-center">
+              <div className="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+                <Users className="h-8 w-8 text-purple-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-slate-900 mb-4">Company Intelligence</h3>
+              <p className="text-slate-600 leading-relaxed">
+                Learn which companies are actively investing in hiring opportunities.
+              </p>
+            </div>
+
+            <div className="bg-white/80 rounded-2xl p-8 border border-slate-200/50 shadow-sm hover:shadow-md transition-all text-center">
+              <div className="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+                <Shield className="h-8 w-8 text-amber-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-slate-900 mb-4">Privacy First</h3>
+              <p className="text-slate-600 leading-relaxed">
+                Your data is encrypted and private. We never share with third parties.
+              </p>
+            </div>
+
+            <div className="bg-white/80 rounded-2xl p-8 border border-slate-200/50 shadow-sm hover:shadow-md transition-all text-center">
+              <div className="w-16 h-16 bg-rose-100 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+                <Zap className="h-8 w-8 text-rose-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-slate-900 mb-4">Lightning Fast</h3>
+              <p className="text-slate-600 leading-relaxed">
+                Ultra-lightweight extension with zero performance impact.
+              </p>
             </div>
           </div>
         </div>
@@ -789,21 +328,18 @@ export default async function Home() {
       <FAQSection />
 
       {/* Testimonials Section */}
-      <section id="testimonials" className="py-24 bg-gradient-to-br from-background to-muted/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section id="testimonials" className="py-20 bg-white/50 backdrop-blur-sm">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 bg-accent/10 text-accent-foreground px-4 py-2 rounded-full text-sm font-medium mb-6">
-              <span className="w-2 h-2 bg-accent-foreground rounded-full animate-pulse"></span>
+            <div className="inline-flex items-center gap-2 bg-purple-50 text-purple-600 px-4 py-2 rounded-full text-sm font-medium mb-6">
+              <span className="w-2 h-2 bg-purple-600 rounded-full animate-pulse"></span>
               Success Stories
             </div>
-            <h2
-              className="text-4xl sm:text-5xl font-bold text-foreground font-playfair"
-            >
-              Join <span className="text-accent-foreground">10,000+</span> Job Seekers
-              <span className="block text-primary">Who Found Their Dream Jobs</span>
+            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 font-playfair mb-6">
+              Join <span className="text-purple-600">10,000+</span> Job Seekers
             </h2>
-            <p className="mt-6 text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              Real stories from real people who transformed their job search with HireAll
+            <p className="text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed">
+              Real stories from people who transformed their job search with HireAll
             </p>
           </div>
         </div>
@@ -811,95 +347,66 @@ export default async function Home() {
       </section>
 
       {/* Final CTA Section */}
-      <section className="py-24 bg-gradient-to-br from-primary to-green-600 relative overflow-hidden">
-        {/* Background decoration */}
+      <section className="py-20 bg-gradient-to-br from-blue-600 to-teal-600 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-10 left-10 w-32 h-32 bg-white rounded-full blur-3xl"></div>
           <div className="absolute bottom-10 right-10 w-32 h-32 bg-white rounded-full blur-3xl"></div>
         </div>
 
-        <div className="max-w-5xl mx-auto text-center px-4 sm:px-6 lg:px-8 relative">
-          <div className="mb-12">
-            <div className="inline-flex items-center gap-2 bg-white/20 text-white px-8 py-4 rounded-full text-sm font-semibold mb-12 backdrop-blur-sm">
-              <span className="w-2 h-2 bg-primary rounded-full animate-pulse"></span>
-              Limited Time: Free Premium Features
+        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8 relative">
+          <div className="mb-8">
+            <div className="inline-flex items-center gap-2 bg-white/20 text-white px-6 py-3 rounded-full text-sm font-semibold mb-8 backdrop-blur-sm">
+              <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
+              Start Free Today
             </div>
 
-            <h2
-              className="text-5xl sm:text-6xl md:text-7xl font-bold text-white mb-8 font-playfair tracking-tight"
-            >
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6 font-playfair">
               Stop Wasting Time on
               <span className="block text-yellow-300">Dead-End Applications</span>
             </h2>
 
-            <p className="text-xl sm:text-2xl text-white/90 max-w-4xl mx-auto leading-relaxed mb-12 font-medium">
-              Join thousands of successful job seekers who are landing interviews 3x faster with HireAll&apos;s sponsored job intelligence.
+            <p className="text-xl text-white/90 max-w-3xl mx-auto leading-relaxed mb-12">
+              Join thousands landing interviews 3x faster with sponsored job intelligence.
             </p>
           </div>
 
-          {/* Social proof numbers */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-10 mb-16">
-            <div className="text-center">
-              <div className="text-5xl sm:text-6xl font-bold text-primary mb-3">95%</div>
-              <div className="text-white/80 text-lg font-medium">More interview responses</div>
-            </div>
-            <div className="text-center">
-              <div className="text-5xl sm:text-6xl font-bold text-primary mb-3">3x</div>
-              <div className="text-white/80 text-lg font-medium">Faster job applications</div>
-            </div>
-            <div className="text-center">
-              <div className="text-5xl sm:text-6xl font-bold text-primary mb-3">50+</div>
-              <div className="text-white/80 text-lg font-medium">Supported job sites</div>
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-8 justify-center items-center mb-12">
+          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-12">
             {userId ? (
               <Button
                 asChild
                 size="lg"
-                className="text-2xl px-16 py-10 bg-card text-primary hover:bg-card/80 shadow-2xl transform hover:scale-105 transition-all duration-300 motion-button font-bold"
+                className="text-xl px-8 py-4 bg-white text-blue-600 hover:bg-gray-50 shadow-2xl font-bold rounded-xl"
               >
-                <Link href="/dashboard" className="flex items-center gap-4">
-                  <Sparkles className="h-7 w-7" />
+                <Link href="/dashboard" className="flex items-center gap-3">
+                  <Sparkles className="h-5 w-5" />
                   Go to Dashboard
-                  <ArrowRight className="h-6 w-6" />
+                  <ArrowRight className="h-5 w-5" />
                 </Link>
               </Button>
             ) : (
-              <>
-                <Button
-                  asChild
-                  size="lg"
-                  className="text-2xl px-16 py-10 bg-card text-primary hover:bg-card/80 shadow-2xl transform hover:scale-105 transition-all duration-300 motion-button font-bold"
-                >
-                  <Link href="/sign-up" className="flex items-center gap-4">
-                    <Sparkles className="h-7 w-7" />
-                    Start Free Today
-                    <ArrowRight className="h-6 w-6" />
-                  </Link>
-                </Button>
-              </>
+              <Button
+                asChild
+                size="lg"
+                className="text-xl px-8 py-4 bg-white text-blue-600 hover:bg-gray-50 shadow-2xl font-bold rounded-xl"
+              >
+                <Link href="/sign-up" className="flex items-center gap-3">
+                  <Sparkles className="h-5 w-5" />
+                  Start Free Today
+                  <ArrowRight className="h-5 w-5" />
+                </Link>
+              </Button>
             )}
           </div>
 
-          {/* Trust indicators */}
           <div className="flex flex-wrap items-center justify-center gap-6 text-white/80 text-sm">
             <div className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-primary" />
+              <CheckCircle className="h-4 w-4 text-yellow-300" />
               <span>Chrome extension included</span>
             </div>
             <div className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-primary" />
+              <CheckCircle className="h-4 w-4 text-yellow-300" />
               <span>Setup in 2 minutes</span>
             </div>
-          </div>
-
-          {/* Urgency indicator */}
-          <div className="mt-8 p-4 bg-destructive/20 backdrop-blur-sm rounded-xl border border-destructive/30">
-            <p className="text-white text-sm">
-              <strong>Limited Time:</strong> Premium features free for first 30 days • No commitment required
-            </p>
           </div>
         </div>
       </section>

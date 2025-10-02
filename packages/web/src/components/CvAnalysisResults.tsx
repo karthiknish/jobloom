@@ -5,6 +5,7 @@ import { AlertTriangle, Rocket, Lightbulb, CheckCircle, XCircle } from "lucide-r
 import type { CvAnalysis } from "../types/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { EnhancedAtsScore } from "./EnhancedAtsScore";
 
 interface CvAnalysisResultsProps {
   analysis: CvAnalysis;
@@ -72,55 +73,59 @@ export function CvAnalysisResults({ analysis }: CvAnalysisResultsProps) {
         </CardContent>
       </Card>
 
-      {/* Overall Score */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Overall Assessment</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center space-x-4">
-            <div className="flex-1">
-              <div className="bg-muted rounded-full h-3">
-                <div
-                  className={`h-3 rounded-full ${
-                    (analysis.overallScore || 0) >= 80
-                      ? "bg-green-500"
-                      : (analysis.overallScore || 0) >= 60
-                      ? "bg-yellow-500"
-                      : "bg-red-500"
-                  }`}
-                  style={{ width: `${analysis.overallScore || 0}%` }}
-                ></div>
+      {/* Enhanced ATS Score Display */}
+      {analysis.atsCompatibility ? (
+        <EnhancedAtsScore
+          score={{
+            overall: analysis.overallScore || 0,
+            ats: analysis.atsCompatibility.score,
+            completeness: analysis.atsCompatibility.breakdown?.structure || 0,
+            impact: analysis.atsCompatibility.breakdown?.keywords || 0,
+            suggestions: analysis.atsCompatibility.suggestions || [],
+            breakdown: {
+              structure: analysis.atsCompatibility.breakdown?.structure || 0,
+              content: analysis.atsCompatibility.breakdown?.keywords || 0,
+              keywords: analysis.atsCompatibility.breakdown?.keywords || 0,
+              readability: analysis.atsCompatibility.breakdown?.readability || 0,
+              formatting: analysis.atsCompatibility.breakdown?.formatting || 0,
+              impact: analysis.atsCompatibility.breakdown?.extras || 0,
+              modernization: analysis.atsCompatibility.breakdown?.extras || 0
+            },
+            strengths: analysis.strengths || [],
+            criticalIssues: analysis.atsCompatibility.issues || []
+          }}
+          showDetailed={true}
+          animated={true}
+          size="large"
+        />
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>Overall Assessment</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center space-x-4">
+              <div className="flex-1">
+                <div className="bg-muted rounded-full h-3">
+                  <div
+                    className={`h-3 rounded-full ${
+                      (analysis.overallScore || 0) >= 80
+                        ? "bg-green-500"
+                        : (analysis.overallScore || 0) >= 60
+                        ? "bg-yellow-500"
+                        : "bg-red-500"
+                    }`}
+                    style={{ width: `${analysis.overallScore || 0}%` }}
+                  ></div>
+                </div>
               </div>
+              <span className="text-2xl font-bold text-foreground">
+                {analysis.overallScore || 0}%
+              </span>
             </div>
-            <span className="text-2xl font-bold text-foreground">
-              {analysis.overallScore || 0}%
-            </span>
-          </div>
-
-          {/* Top ATS Improvements */}
-          {analysis.atsCompatibility &&
-            analysis.atsCompatibility.suggestions &&
-            analysis.atsCompatibility.suggestions.length > 0 && (
-              <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <h5 className="text-sm font-medium text-blue-900 mb-2">
-                  <Rocket className="h-4 w-4 mr-2" /> Top 3 ATS Improvements to
-                  Implement:
-                </h5>
-                <ul className="text-sm text-blue-800 space-y-1">
-                  {analysis.atsCompatibility.suggestions
-                    .slice(0, 3)
-                    .map((suggestion: string, index: number) => (
-                      <li key={index} className="flex items-start">
-                        <span className="text-blue-500 mr-2">•</span>
-                        <span>{suggestion}</span>
-                      </li>
-                    ))}
-                </ul>
-              </div>
-            )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Strengths */}
       {analysis.strengths && analysis.strengths.length > 0 && (
