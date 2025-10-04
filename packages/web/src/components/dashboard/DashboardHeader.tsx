@@ -55,7 +55,7 @@ export function DashboardHeader({
                 initial={{ opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.05, duration: 0.35 }}
-                className="text-4xl font-bold bg-gradient-to-r from-foreground via-emerald-900 to-emerald-800 bg-clip-text text-transparent"
+                className="text-4xl font-serif font-bold bg-gradient-to-r from-foreground via-emerald-900 to-emerald-800 bg-clip-text text-transparent"
               >
                 Job Dashboard
               </motion.h1>

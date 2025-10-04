@@ -87,11 +87,15 @@ body {
 
 /* Font utility classes */
 .font-playfair {
-  font-family: "Playfair Display", "Georgia", serif;
+  font-family: var(--font-serif), "Georgia", serif;
 }
 
-.font-inter {
-  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+.font-serif {
+  font-family: var(--font-serif), "Georgia", serif;
+}
+
+.font-sans-custom {
+  font-family: var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 /* Prevent horizontal scrolling globally */
@@ -1061,9 +1065,19 @@ body {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-/* Global heading font styles - Use Playfair Display for main headings */
+/* Global heading font styles - Use Playfair Display for all headings */
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-playfair-display), serif;
+  font-family: var(--font-serif), serif;
+}
+
+/* Additional heading elements that should use Playfair */
+.heading-font, .title, .subtitle, .section-title, .card-title, .hero-title, .feature-title {
+  font-family: var(--font-serif), serif;
+}
+
+/* Ensure consistency for all heading-like text */
+.text-4xl, .text-5xl, .text-6xl, .text-7xl, .text-8xl, .text-9xl {
+  font-family: var(--font-serif), serif;
 }
 
 /*

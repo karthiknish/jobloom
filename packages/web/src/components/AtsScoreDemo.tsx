@@ -150,7 +150,7 @@ export function AtsScoreDemo() {
   return (
     <div className="space-y-6 p-6 max-w-6xl mx-auto">
       <div className="text-center space-y-2">
-        <h1 className="text-3xl font-bold text-gray-900">Enhanced ATS Score Demo</h1>
+        <h1 className="text-3xl font-serif font-bold text-gray-900">Enhanced ATS Score Demo</h1>
         <p className="text-gray-600">
           Experience the improved ATS scoring system with real-time feedback and detailed analysis
         </p>

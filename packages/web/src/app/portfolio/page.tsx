@@ -72,7 +72,7 @@ export default function PortfolioPage() {
 
         <div className="relative max-w-7xl mx-auto py-20 px-4 sm:px-6 lg:px-8">
           <div className="space-y-6">
-            <h1 className="text-5xl sm:text-6xl font-bold text-white tracking-tight">Portfolio Builder</h1>
+            <h1 className="text-5xl sm:text-6xl font-serif font-bold text-white tracking-tight">Portfolio Builder</h1>
             <p className="text-xl sm:text-2xl text-primary-foreground/90 max-w-3xl leading-relaxed">
               Create stunning portfolio websites to showcase your work and attract opportunities
             </p>
