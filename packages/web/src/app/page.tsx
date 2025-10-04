@@ -13,37 +13,36 @@ export default function Home() {
   const userId = null as string | null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-secondary via-background to-primary/10">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
       {/* Hero Section */}
-      <section className="relative overflow-hidden pt-16">
+      <section className="relative overflow-hidden pt-8 pb-16 lg:pt-16 lg:pb-24">
         {/* Premium background elements */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-20 right-20 w-96 h-96 bg-primary/20 rounded-full filter blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-20 left-20 w-80 h-80 bg-secondary/40 rounded-full filter blur-2xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-primary/30 to-secondary/40 rounded-full filter blur-3xl"></div>
+          <div className="absolute top-20 right-20 w-96 h-96 bg-primary/15 rounded-full filter blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-20 left-20 w-80 h-80 bg-secondary/25 rounded-full filter blur-2xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-primary/20 to-secondary/30 rounded-full filter blur-3xl"></div>
         </div>
 
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
-          <div className="text-center space-y-8 fade-in-up">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20">
+          <div className="text-center space-y-10 fade-in-up">
 
             <motion.h1 
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-foreground leading-tight"
+              className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-foreground leading-[1.1] tracking-tight"
             >
-              Never Miss a
-              <span className="block text-gradient-premium font-playfair">
+              Never Miss a{" "}
+              <span className="block mt-2 bg-gradient-to-r from-primary via-primary to-secondary bg-clip-text text-transparent font-serif">
                 Sponsored Opportunity
               </span>
-              Again
             </motion.h1>
 
             <motion.p 
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.4 }}
-              className="max-w-3xl mx-auto text-xl text-muted-foreground leading-relaxed font-medium px-4"
+              className="max-w-4xl mx-auto text-xl sm:text-2xl text-muted-foreground leading-relaxed px-4"
             >
               Discover exactly which companies are investing thousands in hiring. Our AI-powered platform reveals sponsored jobs across all major job sites.
             </motion.p>
@@ -53,28 +52,28 @@ export default function Home() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.6 }}
-              className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto px-4"
+              className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-5xl mx-auto px-4"
             >
-              <div className="card-premium text-center p-8 hover-lift">
-                <div className="text-4xl font-bold text-primary mb-2">95%</div>
-                <div className="text-sm text-muted-foreground font-medium">More Responses</div>
-                <div className="mt-2 flex justify-center">
-                  <TrendingUp className="h-5 w-5 text-primary" />
+              <div className="bg-gradient-to-br from-primary/10 to-primary/5 backdrop-blur-sm rounded-3xl p-8 border border-primary/20 hover:border-primary/30 transition-all shadow-lg hover:shadow-xl">
+                <div className="flex items-center justify-center mb-3">
+                  <TrendingUp className="h-8 w-8 text-primary" />
                 </div>
+                <div className="text-5xl font-serif font-bold text-primary mb-2">95%</div>
+                <div className="text-base text-foreground font-medium">More Responses</div>
               </div>
-              <div className="card-premium text-center p-8 hover-lift">
-                <div className="text-4xl font-bold text-primary/80 mb-2">3x</div>
-                <div className="text-sm text-muted-foreground font-medium">Faster Applications</div>
-                <div className="mt-2 flex justify-center">
-                  <Zap className="h-5 w-5 text-primary/80" />
+              <div className="bg-gradient-to-br from-secondary/10 to-secondary/5 backdrop-blur-sm rounded-3xl p-8 border border-secondary/20 hover:border-secondary/30 transition-all shadow-lg hover:shadow-xl">
+                <div className="flex items-center justify-center mb-3">
+                  <Zap className="h-8 w-8 text-secondary" />
                 </div>
+                <div className="text-5xl font-serif font-bold text-secondary mb-2">3x</div>
+                <div className="text-base text-foreground font-medium">Faster Applications</div>
               </div>
-              <div className="card-premium text-center p-8 hover-lift">
-                <div className="text-4xl font-bold text-secondary-foreground mb-2">100%</div>
-                <div className="text-sm text-muted-foreground font-medium">Privacy Protected</div>
-                <div className="mt-2 flex justify-center">
-                  <Shield className="h-5 w-5 text-secondary-foreground" />
+              <div className="bg-gradient-to-br from-primary/10 to-secondary/5 backdrop-blur-sm rounded-3xl p-8 border border-primary/20 hover:border-primary/30 transition-all shadow-lg hover:shadow-xl">
+                <div className="flex items-center justify-center mb-3">
+                  <Shield className="h-8 w-8 text-primary" />
                 </div>
+                <div className="text-5xl font-serif font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-2">100%</div>
+                <div className="text-base text-foreground font-medium">Privacy Protected</div>
               </div>
             </motion.div>
 
@@ -102,10 +101,11 @@ export default function Home() {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
-                    <Button asChild size="lg" className="btn-premium text-lg px-10 py-4 gradient-primary hover:shadow-premium-xl font-bold rounded-2xl w-full sm:w-auto">
+                    <Button asChild size="lg" className="text-lg px-12 py-6 bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-white font-bold rounded-2xl shadow-2xl hover:shadow-primary/50 transition-all w-full sm:w-auto">
                       <Link href="/sign-up" className="flex items-center gap-3">
-                        <Sparkles className="h-5 w-5" />
+                        <Sparkles className="h-6 w-6" />
                         Start Free Today
+                        <ArrowRight className="h-5 w-5" />
                       </Link>
                     </Button>
                   </motion.div>
@@ -117,7 +117,7 @@ export default function Home() {
                       asChild
                       size="lg"
                       variant="outline"
-                      className="btn-premium text-lg px-10 py-4 border-2 border-border hover:border-primary hover:bg-primary/5 hover:shadow-premium-lg font-bold rounded-2xl w-full sm:w-auto"
+                      className="text-lg px-12 py-6 border-2 border-primary/30 hover:border-primary hover:bg-primary/10 text-foreground font-semibold rounded-2xl transition-all w-full sm:w-auto"
                     >
                       <a href="#how-it-works" className="flex items-center gap-3">
                         <Eye className="h-5 w-5" />
@@ -153,16 +153,16 @@ export default function Home() {
       </section>
 
       {/* Problem Section */}
-      <section className="py-20 bg-secondary backdrop-blur-sm">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-semibold mb-6">
+      <section className="py-24 bg-gradient-to-br from-muted/30 via-background to-muted/20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-20">
+            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-5 py-2.5 rounded-full text-sm font-semibold mb-8 border border-primary/20">
               <span className="w-2 h-2 bg-primary rounded-full animate-pulse"></span>
               The Problem
             </div>
-            <h2 className="text-4xl md:text-5xl font-bold text-foreground font-playfair mb-6">
+            <h2 className="text-5xl md:text-6xl font-bold text-foreground font-serif mb-6 leading-tight">
               You&apos;re Missing Out on the
-              <span className="block text-primary">Best Opportunities</span>
+              <span className="block bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mt-2">Best Opportunities</span>
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
               Companies spend thousands promoting jobs, but you can&apos;t tell which opportunities are real priorities. This information gap costs you time and opportunities.
@@ -170,32 +170,32 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-            <div className="bg-card/80 rounded-2xl p-8 border border-border shadow-sm hover:shadow-md transition-all">
-              <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-6 mx-auto">
-                <span className="text-2xl font-bold text-primary">?</span>
+            <div className="bg-card/90 backdrop-blur-sm rounded-3xl p-10 border border-border shadow-lg hover:shadow-xl hover:border-primary/30 transition-all">
+              <div className="w-20 h-20 bg-gradient-to-br from-primary/20 to-primary/10 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+                <span className="text-3xl font-bold text-primary">?</span>
               </div>
-              <h3 className="text-xl font-semibold text-foreground text-center mb-4">Invisible Sponsorships</h3>
-              <p className="text-muted-foreground text-center leading-relaxed">
+              <h3 className="text-2xl font-serif font-semibold text-foreground text-center mb-4">Invisible Sponsorships</h3>
+              <p className="text-muted-foreground text-center leading-relaxed text-lg">
                 Sponsored jobs look identical to regular listings. You can&apos;t tell which companies are actually investing in hiring.
               </p>
             </div>
 
-            <div className="bg-card/80 rounded-2xl p-8 border border-border shadow-sm hover:shadow-md transition-all">
-              <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-6 mx-auto">
-                <span className="text-2xl font-bold text-primary">!</span>
+            <div className="bg-card/90 backdrop-blur-sm rounded-3xl p-10 border border-border shadow-lg hover:shadow-xl hover:border-secondary/30 transition-all">
+              <div className="w-20 h-20 bg-gradient-to-br from-secondary/20 to-secondary/10 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+                <span className="text-3xl font-bold text-secondary">!</span>
               </div>
-              <h3 className="text-xl font-semibold text-foreground text-center mb-4">Scattered Applications</h3>
-              <p className="text-muted-foreground text-center leading-relaxed">
+              <h3 className="text-2xl font-serif font-semibold text-foreground text-center mb-4">Scattered Applications</h3>
+              <p className="text-muted-foreground text-center leading-relaxed text-lg">
                 Your job search is fragmented across platforms with no central place to track applications and follow-ups.
               </p>
             </div>
 
-            <div className="bg-card/80 rounded-2xl p-8 border border-border shadow-sm hover:shadow-md transition-all">
-              <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-6 mx-auto">
-                <TrendingUp className="h-8 w-8 text-primary" />
+            <div className="bg-card/90 backdrop-blur-sm rounded-3xl p-10 border border-border shadow-lg hover:shadow-xl hover:border-primary/30 transition-all">
+              <div className="w-20 h-20 bg-gradient-to-br from-primary/20 to-secondary/10 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+                <TrendingUp className="h-10 w-10 text-primary" />
               </div>
-              <h3 className="text-xl font-semibold text-foreground text-center mb-4">Wasted Time & Energy</h3>
-              <p className="text-muted-foreground text-center leading-relaxed">
+              <h3 className="text-2xl font-serif font-semibold text-foreground text-center mb-4">Wasted Time & Energy</h3>
+              <p className="text-muted-foreground text-center leading-relaxed text-lg">
                 Hours spent applying to jobs without knowing which companies are serious about hiring.
               </p>
             </div>
@@ -222,16 +222,16 @@ export default function Home() {
       </section>
 
       {/* Solution Section */}
-      <section id="how-it-works" className="py-20 bg-gradient-to-br from-secondary to-primary/10">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-semibold mb-6">
+      <section id="how-it-works" className="py-24 bg-gradient-to-br from-primary/5 via-secondary/5 to-background">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-20">
+            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-5 py-2.5 rounded-full text-sm font-semibold mb-8 border border-primary/20">
               <span className="w-2 h-2 bg-primary rounded-full animate-pulse"></span>
               The Solution
             </div>
-            <h2 className="text-4xl md:text-5xl font-bold text-foreground font-playfair mb-6">
+            <h2 className="text-5xl md:text-6xl font-bold text-foreground font-serif mb-6 leading-tight">
               Three Simple Steps to
-              <span className="block text-primary">Job Search Success</span>
+              <span className="block bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mt-2">Job Search Success</span>
             </h2>
             <p className="text-xl text-secondary-foreground max-w-3xl mx-auto leading-relaxed">
               Our intelligent platform transforms how you approach job hunting, giving you the competitive advantage you deserve.
@@ -284,16 +284,16 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 bg-secondary/50 backdrop-blur-sm">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-semibold mb-6">
+      <section id="features" className="py-24 bg-gradient-to-br from-muted/20 via-background to-muted/30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-20">
+            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-5 py-2.5 rounded-full text-sm font-semibold mb-8 border border-primary/20">
               <span className="w-2 h-2 bg-primary rounded-full animate-pulse"></span>
               Key Features
             </div>
-            <h2 className="text-4xl md:text-5xl font-bold text-foreground font-playfair mb-6">
+            <h2 className="text-5xl md:text-6xl font-bold text-foreground font-serif mb-6 leading-tight">
               Everything You Need to
-              <span className="block text-primary">Win Your Job Search</span>
+              <span className="block bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mt-2">Win Your Job Search</span>
             </h2>
             <p className="text-xl text-secondary-foreground max-w-3xl mx-auto leading-relaxed">
               Built by job seekers, for job seekers. Every feature gives you a competitive edge.
@@ -387,22 +387,23 @@ export default function Home() {
       </section>
 
       {/* Final CTA Section */}
-      <section className="py-20 bg-gradient-to-br from-primary to-primary/80 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-10 left-10 w-32 h-32 bg-white rounded-full blur-3xl"></div>
-          <div className="absolute bottom-10 right-10 w-32 h-32 bg-white rounded-full blur-3xl"></div>
+      <section className="py-28 bg-gradient-to-br from-primary via-primary to-secondary relative overflow-hidden">
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute top-10 left-10 w-40 h-40 bg-white rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-10 right-10 w-40 h-40 bg-white rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-white rounded-full blur-3xl"></div>
         </div>
 
-        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8 relative">
-          <div className="mb-8">
-            <div className="inline-flex items-center gap-2 bg-white/20 text-white px-6 py-3 rounded-full text-sm font-semibold mb-8 backdrop-blur-sm">
-              <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
+        <div className="max-w-5xl mx-auto text-center px-4 sm:px-6 lg:px-8 relative">
+          <div className="mb-12">
+            <div className="inline-flex items-center gap-2 bg-white/20 text-white px-6 py-3 rounded-full text-sm font-semibold mb-10 backdrop-blur-sm border border-white/30">
+              <Sparkles className="h-4 w-4" />
               Start Free Today
             </div>
 
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6 font-playfair">
+            <h2 className="text-5xl md:text-7xl font-bold text-white mb-8 font-serif leading-tight">
               Stop Wasting Time on
-              <span className="block text-yellow-300">Dead-End Applications</span>
+              <span className="block text-white/95 mt-2">Dead-End Applications</span>
             </h2>
 
             <p className="text-xl text-white/90 max-w-3xl mx-auto leading-relaxed mb-12">
@@ -410,29 +411,29 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-12">
+          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-14">
             {userId ? (
               <Button
                 asChild
                 size="lg"
-                className="text-xl px-8 py-4 bg-white text-primary hover:bg-secondary shadow-2xl font-bold rounded-xl"
+                className="text-2xl px-14 py-7 bg-white text-primary hover:bg-white/95 shadow-2xl font-bold rounded-2xl hover:scale-105 transition-transform"
               >
                 <Link href="/dashboard" className="flex items-center gap-3">
-                  <Sparkles className="h-5 w-5 text-primary" />
+                  <Sparkles className="h-6 w-6 text-primary" />
                   Go to Dashboard
-                  <ArrowRight className="h-5 w-5 text-primary" />
+                  <ArrowRight className="h-6 w-6 text-primary" />
                 </Link>
               </Button>
             ) : (
               <Button
                 asChild
                 size="lg"
-                className="text-xl px-8 py-4 bg-white text-primary hover:bg-secondary shadow-2xl font-bold rounded-xl"
+                className="text-2xl px-14 py-7 bg-white text-primary hover:bg-white/95 shadow-2xl font-bold rounded-2xl hover:scale-105 transition-transform"
               >
                 <Link href="/sign-up" className="flex items-center gap-3">
-                  <Sparkles className="h-5 w-5 text-primary" />
+                  <Sparkles className="h-6 w-6 text-primary" />
                   Start Free Today
-                  <ArrowRight className="h-5 w-5 text-primary" />
+                  <ArrowRight className="h-6 w-6 text-primary" />
                 </Link>
               </Button>
             )}
