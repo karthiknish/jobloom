@@ -1,4 +1,4 @@
-// Rate limiting configuration and utilities for the extension
+// Enhanced rate limiting configuration and utilities for the extension
 export interface RateLimitConfig {
   maxRequests: number;
   windowMs: number;
@@ -9,34 +9,179 @@ export interface RateLimitState {
   count: number;
   resetTime: number;
   lastRequest: number;
+  violations?: number;
 }
 
-// Default rate limits for different API endpoints
-export const RATE_LIMITS: Record<string, RateLimitConfig> = {
-  // Job operations (more permissive since users need to add jobs)
-  'job-add': { maxRequests: 30, windowMs: 60000 }, // 30 requests per minute
-  'job-sync': { maxRequests: 20, windowMs: 60000 }, // 20 sync operations per minute
+export interface RateLimitResult {
+  allowed: boolean;
+  resetIn?: number;
+  remaining?: number;
+  maxRequests?: number;
+  retryAfter?: number;
+}
 
-  // Sponsor lookups (moderate limits to avoid overwhelming API)
-  'sponsor-lookup': { maxRequests: 50, windowMs: 60000 }, // 50 lookups per minute
-  'sponsor-batch': { maxRequests: 10, windowMs: 60000 }, // 10 batch operations per minute
+export interface UserTierLimits {
+  free: RateLimitConfig;
+  premium: RateLimitConfig;
+  admin: RateLimitConfig;
+}
 
-  // User operations (more restrictive)
-  'user-settings': { maxRequests: 10, windowMs: 60000 }, // 10 settings updates per minute
-  'user-profile': { maxRequests: 5, windowMs: 60000 }, // 5 profile updates per minute
+export type UserTier = 'free' | 'premium' | 'admin';
+
+// Enhanced tiered rate limits for the extension
+export const TIERED_RATE_LIMITS: Record<string, UserTierLimits> = {
+  // Job operations
+  'job-add': {
+    free: { maxRequests: 10, windowMs: 60000 },     // 10 per minute for free users
+    premium: { maxRequests: 50, windowMs: 60000 },   // 50 per minute for premium users
+    admin: { maxRequests: 100, windowMs: 60000 },    // 100 per minute for admins
+  },
+  'job-sync': {
+    free: { maxRequests: 5, windowMs: 60000 },
+    premium: { maxRequests: 30, windowMs: 60000 },
+    admin: { maxRequests: 60, windowMs: 60000 },
+  },
+
+  // Sponsor lookups (core feature)
+  'sponsor-lookup': {
+    free: { maxRequests: 15, windowMs: 60000 },    // 15 lookups per minute for free users
+    premium: { maxRequests: 100, windowMs: 60000 },  // 100 lookups per minute for premium users
+    admin: { maxRequests: 500, windowMs: 60000 },    // 500 lookups per minute for admins
+  },
+  'sponsor-batch': {
+    free: { maxRequests: 2, windowMs: 60000 },
+    premium: { maxRequests: 20, windowMs: 60000 },
+    admin: { maxRequests: 50, windowMs: 60000 },
+  },
+  'sponsorship': {
+    free: { maxRequests: 15, windowMs: 60000 },
+    premium: { maxRequests: 100, windowMs: 60000 },
+    admin: { maxRequests: 500, windowMs: 60000 },
+  },
+
+  // User operations
+  'user-settings': {
+    free: { maxRequests: 5, windowMs: 60000 },
+    premium: { maxRequests: 20, windowMs: 60000 },
+    admin: { maxRequests: 50, windowMs: 60000 },
+  },
+  'user-profile': {
+    free: { maxRequests: 2, windowMs: 60000 },
+    premium: { maxRequests: 10, windowMs: 60000 },
+    admin: { maxRequests: 20, windowMs: 60000 },
+  },
 
   // General API calls
-  'general': { maxRequests: 100, windowMs: 60000 }, // 100 general requests per minute
+  'general': {
+    free: { maxRequests: 30, windowMs: 60000 },
+    premium: { maxRequests: 200, windowMs: 60000 },
+    admin: { maxRequests: 500, windowMs: 60000 },
+  },
+};
+
+// Default rate limits for backward compatibility
+export const RATE_LIMITS: Record<string, RateLimitConfig> = {
+  'job-add': { maxRequests: 30, windowMs: 60000 },
+  'job-sync': { maxRequests: 20, windowMs: 60000 },
+  'sponsor-lookup': { maxRequests: 50, windowMs: 60000 },
+  'sponsor-batch': { maxRequests: 10, windowMs: 60000 },
+  'user-settings': { maxRequests: 10, windowMs: 60000 },
+  'user-profile': { maxRequests: 5, windowMs: 60000 },
+  'general': { maxRequests: 100, windowMs: 60000 },
 };
 
 // Global rate limiting state
 const rateLimitState = new Map<string, RateLimitState>();
 let cleanupIntervalId: ReturnType<typeof setInterval> | null = null;
 
+// Extension storage for user tier
+let currentUserTier: UserTier = 'free';
+let tierCheckTime = 0;
+const TIER_CACHE_DURATION = 5 * 60 * 1000; // Cache tier for 5 minutes
+
+// Get current user tier from storage or server
+async function getCurrentUserTier(): Promise<UserTier> {
+  const now = Date.now();
+  
+  // Return cached tier if still valid
+  if (now - tierCheckTime < TIER_CACHE_DURATION) {
+    return currentUserTier;
+  }
+
+  try {
+    // Try to get from local storage first
+    const result = await chrome.storage.local.get(['userTier']);
+    if (result.userTier) {
+      currentUserTier = result.userTier;
+      tierCheckTime = now;
+      return currentUserTier;
+    }
+
+    // Check with server if we have auth
+    const authResult = await chrome.storage.local.get(['authToken']);
+    if (authResult.authToken) {
+      const response = await fetch(`${chrome.runtime.getURL('')}/api/subscription/status`, {
+        headers: {
+          'Authorization': `Bearer ${authResult.authToken}`,
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.plan === 'premium' || data.subscriptionStatus === 'active') {
+          currentUserTier = 'premium';
+        } else if (data.isAdmin) {
+          currentUserTier = 'admin';
+        } else {
+          currentUserTier = 'free';
+        }
+        
+        // Cache the tier
+        await chrome.storage.local.set({ userTier: currentUserTier });
+        tierCheckTime = now;
+        return currentUserTier;
+      }
+    }
+
+    // Default to free tier
+    currentUserTier = 'free';
+    tierCheckTime = now;
+    await chrome.storage.local.set({ userTier: currentUserTier });
+    return currentUserTier;
+  } catch (error) {
+    console.warn('Failed to get user tier:', error);
+    return 'free';
+  }
+}
+
 function resolveRateLimitConfig(
   endpoint: string,
-  overrides?: Partial<RateLimitConfig>
+  overrides?: Partial<RateLimitConfig>,
+  userTier?: UserTier
 ): RateLimitConfig {
+  // Get tiered limits if available
+  const tieredLimits = TIERED_RATE_LIMITS[endpoint];
+  if (tieredLimits && userTier) {
+    const baseConfig = tieredLimits[userTier];
+    if (baseConfig) {
+      const mergedConfig: RateLimitConfig = {
+        ...baseConfig,
+        ...overrides,
+      };
+
+      if (!Number.isFinite(mergedConfig.maxRequests) || mergedConfig.maxRequests <= 0) {
+        throw new Error(`Invalid maxRequests for rate limiter: ${mergedConfig.maxRequests}`);
+      }
+
+      if (!Number.isFinite(mergedConfig.windowMs) || mergedConfig.windowMs <= 0) {
+        throw new Error(`Invalid windowMs for rate limiter: ${mergedConfig.windowMs}`);
+      }
+
+      return mergedConfig;
+    }
+  }
+
+  // Fallback to default limits
   const baseConfig = RATE_LIMITS[endpoint] ?? RATE_LIMITS.general;
 
   if (!baseConfig) {
@@ -62,15 +207,16 @@ function resolveRateLimitConfig(
 }
 
 /**
- * Check if a request should be allowed based on rate limits
+ * Check if a request should be allowed based on rate limits with user tier support
  */
-export function checkRateLimit(
+export async function checkRateLimit(
   endpoint: string,
   config?: Partial<RateLimitConfig>
-): { allowed: boolean; resetIn?: number; remaining?: number } {
-  const rateLimitConfig = resolveRateLimitConfig(endpoint, config);
+): Promise<{ allowed: boolean; resetIn?: number; remaining?: number; retryAfter?: number }> {
+  const userTier = await getCurrentUserTier();
+  const rateLimitConfig = resolveRateLimitConfig(endpoint, config, userTier);
   const now = Date.now();
-  const stateKey = config?.endpoint ?? endpoint;
+  const stateKey = `${endpoint}:${userTier}`;
   const state = rateLimitState.get(stateKey);
 
   // If no state exists or window has expired, reset
@@ -79,22 +225,32 @@ export function checkRateLimit(
       count: 1,
       resetTime: now + rateLimitConfig.windowMs,
       lastRequest: now,
+      violations: 0,
     };
     rateLimitState.set(stateKey, newState);
     return {
       allowed: true,
       remaining: rateLimitConfig.maxRequests - 1,
       resetIn: rateLimitConfig.windowMs,
+      retryAfter: 0,
     };
   }
 
   // Check if we've exceeded the limit
   if (state.count >= rateLimitConfig.maxRequests) {
     const resetIn = state.resetTime - now;
+    
+    // Increment violation count for potential penalties
+    state.violations = (state.violations || 0) + 1;
+    
+    // Add progressive delays for repeat violators
+    const penaltyDelay = Math.min(state.violations * 3000, 30000); // Max 30 seconds penalty
+    
     return {
       allowed: false,
-      resetIn: resetIn > 0 ? resetIn : 0,
+      resetIn: resetIn > 0 ? resetIn + penaltyDelay : penaltyDelay,
       remaining: 0,
+      retryAfter: Math.ceil((resetIn + penaltyDelay) / 1000),
     };
   }
 
@@ -106,6 +262,7 @@ export function checkRateLimit(
     allowed: true,
     remaining: rateLimitConfig.maxRequests - state.count,
     resetIn: state.resetTime - now,
+    retryAfter: 0,
   };
 }
 

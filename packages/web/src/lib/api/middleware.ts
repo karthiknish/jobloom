@@ -3,6 +3,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyIdToken } from "@/firebase/admin";
 import { generateRequestId, ErrorLogger } from "./errors";
+import { validateCsrf } from "@/lib/security/csrf";
+import { verifySessionFromRequest } from "@/lib/auth/session";
+import { SecurityLogger } from "@/utils/security";
 
 // Request context interface
 export interface RequestContext {
@@ -65,6 +68,16 @@ export async function authenticateRequest(request: NextRequest): Promise<{
   name?: string;
   isAdmin?: boolean;
 }> {
+  const sessionClaims = await verifySessionFromRequest(request);
+  if (sessionClaims) {
+    return {
+      uid: sessionClaims.uid,
+      email: sessionClaims.email,
+      name: sessionClaims.name,
+      isAdmin: sessionClaims.admin === true,
+    };
+  }
+
   const authHeader = request.headers.get("authorization");
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     throw new Error("Missing or invalid authorization header");
@@ -81,7 +94,7 @@ export async function authenticateRequest(request: NextRequest): Promise<{
     uid: decodedToken.uid,
     email: decodedToken.email,
     name: decodedToken.name,
-    isAdmin: decodedToken.admin || false
+    isAdmin: decodedToken.admin || false,
   };
 }
 
@@ -234,7 +247,26 @@ export function compose(...middlewares: MiddlewareFn[]) {
 const baseMiddlewares: MiddlewareFn[] = [
   (req, ctx) => validateContentType(req),
   (req, ctx) => validateRequestSize(req),
-  (req, ctx) => logRequest(req, ctx)
+  (req, ctx) => {
+    if (["POST", "PUT", "PATCH", "DELETE"].includes(req.method)) {
+      try {
+        validateCsrf(req);
+      } catch (error) {
+        SecurityLogger.logSecurityEvent({
+          type: "suspicious_request",
+          severity: "high",
+          ip: ctx.ip,
+          details: {
+            reason: "CSRF validation failed",
+            error: error instanceof Error ? error.message : "Invalid CSRF",
+            userAgent: ctx.userAgent,
+          },
+        });
+        throw new Error("CSRF validation failed");
+      }
+    }
+    logRequest(req, ctx);
+  }
 ];
 
 export const commonMiddleware = compose(...baseMiddlewares);

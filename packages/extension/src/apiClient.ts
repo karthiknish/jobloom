@@ -76,14 +76,14 @@ export async function apiRequest<T = any>(opts: ApiOptions): Promise<T> {
   }
 
   // Check rate limit before making request
-  const rateCheck = checkRateLimit(rateLimitEndpoint);
+  const rateCheck = await checkRateLimit(rateLimitEndpoint);
   if (!rateCheck.allowed) {
+    const retryAfter = rateCheck.retryAfter || Math.ceil((rateCheck.resetIn || 0) / 1000);
     const error = new Error(
-      `Rate limit exceeded for ${rateLimitEndpoint}. Try again in ${Math.ceil(
-        (rateCheck.resetIn || 0) / 1000
-      )} seconds.`
+      `Rate limit exceeded for ${rateLimitEndpoint}. Try again in ${retryAfter} seconds.`
     );
     (error as any).rateLimitInfo = rateCheck;
+    (error as any).retryAfter = retryAfter;
     throw error;
   }
 

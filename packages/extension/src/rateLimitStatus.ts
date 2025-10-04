@@ -54,30 +54,38 @@ export function getAllRateLimitStatuses(): Record<string, RateLimitDisplayInfo> 
 /**
  * Check if any rate limits are close to being exceeded
  */
-export function checkRateLimitWarnings(): RateLimitWarning[] {
+export async function checkRateLimitWarnings(): Promise<RateLimitWarning[]> {
   const warnings: RateLimitWarning[] = [];
-  const statuses = getAllRateLimitStatuses();
+  
+  // Get statuses for all endpoints
+  const endpoints = Object.keys(RATE_LIMITS);
+  
+  for (const endpoint of endpoints) {
+    try {
+      const status = getRateLimitStatus(endpoint);
+      const percentageUsed = ((status.maxRequests - status.remaining) / status.maxRequests) * 100;
+      const isNearLimit = percentageUsed >= 80;
+      const isAtLimit = status.remaining === 0;
 
-  Object.entries(statuses).forEach(([endpoint, status]) => {
-    if (status.isAtLimit) {
-      warnings.push({
-        endpoint,
-        level: 'error',
-        message: getRateLimitMessage(endpoint),
-        resetIn: status.resetIn,
-      });
-      return;
+      if (isAtLimit) {
+        warnings.push({
+          endpoint,
+          level: 'error',
+          message: getRateLimitMessage(endpoint),
+          resetIn: status.resetIn,
+        });
+      } else if (isNearLimit) {
+        warnings.push({
+          endpoint,
+          level: 'warning',
+          message: getRateLimitMessage(endpoint),
+          resetIn: status.resetIn,
+        });
+      }
+    } catch (error) {
+      console.warn(`Failed to check rate limit status for ${endpoint}:`, error);
     }
-
-    if (status.isNearLimit) {
-      warnings.push({
-        endpoint,
-        level: 'warning',
-        message: getRateLimitMessage(endpoint),
-        resetIn: status.resetIn,
-      });
-    }
-  });
+  }
 
   return warnings;
 }

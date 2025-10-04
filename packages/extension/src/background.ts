@@ -143,12 +143,11 @@ chrome.runtime.onMessage.addListener((request: any, sender: chrome.runtime.Messa
 
 async function handleJobData(jobData: any) {
   // Check rate limit before processing
-  const rateCheck = checkRateLimit("job-add");
+  const rateCheck = await checkRateLimit("job-add");
   if (!rateCheck.allowed) {
+    const retryAfter = rateCheck.retryAfter || Math.ceil((rateCheck.resetIn || 0) / 1000);
     console.warn(
-      `Rate limit exceeded for job-add endpoint. Try again in ${Math.ceil(
-        (rateCheck.resetIn || 0) / 1000
-      )} seconds.`
+      `Rate limit exceeded for job-add endpoint. Try again in ${retryAfter} seconds.`
     );
     return;
   }

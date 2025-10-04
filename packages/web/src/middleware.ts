@@ -1,172 +1,157 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { checkServerRateLimit, getEndpointFromPath, cleanupExpiredServerLimits } from "./lib/rateLimiter";
+import { NextRequest, NextResponse } from "next/server";
+import {
+  checkServerRateLimitWithAuth,
+  cleanupExpiredServerLimits,
+  getEndpointFromPath,
+} from "@/lib/rateLimiter";
+import { ensureCsrfCookie, validateCsrf } from "@/lib/security/csrf";
+import { SecurityLogger } from "@/utils/security";
+import { generateRequestId } from "@/lib/api/errors";
 
-// Clean up expired limits every 5 minutes
-setInterval(cleanupExpiredServerLimits, 5 * 60 * 1000);
-
-// Security headers configuration (additional headers are now in next.config.ts)
-const securityHeaders = {
-  'X-Content-Type-Options': 'nosniff',
-  'X-Frame-Options': 'DENY',
-  'X-XSS-Protection': '1; mode=block',
-  'Referrer-Policy': 'strict-origin-when-cross-origin',
-  'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=()',
-  'Cross-Origin-Embedder-Policy': 'credentialless',
-  'Cross-Origin-Opener-Policy': 'same-origin',
-  'Cross-Origin-Resource-Policy': 'same-origin',
+const SECURITY_HEADERS: Record<string, string> = {
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "DENY",
+  "X-XSS-Protection": "1; mode=block",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=()",
+  "Cross-Origin-Embedder-Policy": "require-corp",
+  "Cross-Origin-Opener-Policy": "same-origin",
+  "Cross-Origin-Resource-Policy": "same-origin",
+  "X-Download-Options": "noopen",
+  "X-Permitted-Cross-Domain-Policies": "none",
+  "X-DNS-Prefetch-Control": "off",
 };
 
-function getClientIP(request: NextRequest): string {
-  // Try to get real IP from various headers
-  const forwarded = request.headers.get('x-forwarded-for');
-  const realIP = request.headers.get('x-real-ip');
-  const cfConnectingIP = request.headers.get('cf-connecting-ip');
+const CONTENT_SECURITY_POLICY = [
+  "default-src 'self';",
+  "script-src 'self' 'unsafe-inline' https://www.gstatic.com https://www.googletagmanager.com https://www.google-analytics.com;",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;",
+  "img-src 'self' data: blob: https://www.google-analytics.com https://www.googletagmanager.com;",
+  "font-src 'self' https://fonts.gstatic.com;",
+  "connect-src 'self' https://firebasestorage.googleapis.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.google-analytics.com https://www.googletagmanager.com;",
+  "frame-src 'self' https://js.stripe.com https://hooks.stripe.com;",
+  "frame-ancestors 'none';",
+  "worker-src 'self' blob:;",
+  "manifest-src 'self';",
+].join(" ");
 
-  return cfConnectingIP || realIP || forwarded?.split(',')[0] || 'unknown';
+function getClientIp(request: NextRequest): string {
+  const forwarded = request.headers.get("x-forwarded-for");
+  if (forwarded) {
+    return forwarded.split(",")[0]?.trim() || "unknown";
+  }
+
+  return (
+    request.headers.get("cf-connecting-ip") ||
+    request.headers.get("x-real-ip") ||
+    request.ip ||
+    "unknown"
+  );
 }
 
-
-
-function applySecurityHeaders(response: NextResponse): NextResponse {
-  Object.entries(securityHeaders).forEach(([key, value]) => {
+function applySecurityHeaders(response: NextResponse, requestId: string) {
+  Object.entries(SECURITY_HEADERS).forEach(([key, value]) => {
     response.headers.set(key, value);
   });
 
-  // Add CORS headers for API routes
-  if (response.headers.get('content-type')?.includes('application/json')) {
-    response.headers.set('Access-Control-Allow-Origin', process.env.NODE_ENV === 'production' ? 'https://hireall.app' : 'http://localhost:3000');
-    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  }
+  response.headers.set("Content-Security-Policy", CONTENT_SECURITY_POLICY);
+  response.headers.set("X-Request-ID", requestId);
 
-  return response;
+  if (process.env.NODE_ENV !== "development") {
+    response.headers.set(
+      "Strict-Transport-Security",
+      "max-age=63072000; includeSubDomains; preload",
+    );
+  }
 }
 
-export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  const clientIP = getClientIP(request);
-  const host = request.headers.get('host') || '';
+export async function middleware(request: NextRequest) {
+  const requestId = generateRequestId();
 
-  // Subdomain routing: {sub}.hireall.app -> /p/[sub]
-  // In development localhost:3000 treat pattern {sub}.localhost:3000
-  const isLocal = host.includes('localhost');
-  const rootDomain = isLocal ? 'localhost:3000' : 'hireall.app';
-  if (host.endsWith(rootDomain)) {
-    const sub = host.replace('.' + rootDomain, '');
-    if (sub && sub !== 'www' && sub !== rootDomain) {
-      // Avoid rewriting API/static/image paths
-      if (!pathname.startsWith('/api') && !pathname.startsWith('/_next') && pathname === '/') {
-        const url = request.nextUrl.clone();
-        url.pathname = `/p/${sub}`; // dynamic public portfolio route
-        return applySecurityHeaders(NextResponse.rewrite(url));
-      }
-    }
-  }
+  if (["POST", "PUT", "PATCH", "DELETE"].includes(request.method)) {
+    try {
+      validateCsrf(request);
+    } catch (error) {
+      SecurityLogger.logSecurityEvent({
+        type: "suspicious_request",
+        severity: "high",
+        ip: getClientIp(request),
+        details: {
+          reason: "CSRF validation failed",
+          error: error instanceof Error ? error.message : "invalid_csrf",
+          path: request.nextUrl.pathname,
+        },
+      });
 
-  // Apply rate limiting to API routes
-  if (pathname.startsWith('/api/')) {
-    const endpoint = getEndpointFromPath(pathname);
-    const rateLimitResult = checkServerRateLimit(clientIP, endpoint);
-
-    if (!rateLimitResult.allowed) {
-      return new NextResponse(
-        JSON.stringify({
-          error: `Too many requests. Please wait ${Math.ceil((rateLimitResult.resetIn || 0) / 1000)} seconds before trying again.`,
-          endpoint,
-          resetTime: rateLimitResult.resetIn
-        }),
+      return NextResponse.json(
         {
-          status: 429,
-          headers: {
-            'Content-Type': 'application/json',
-            'X-RateLimit-Limit': (rateLimitResult.maxRequests || 0).toString(),
-            'X-RateLimit-Remaining': (rateLimitResult.remaining || 0).toString(),
-            'X-RateLimit-Reset': (rateLimitResult.resetIn || 0).toString()
-          }
-        }
+          error: "Request blocked due to invalid CSRF token",
+          requestId,
+        },
+        { status: 403 },
       );
     }
   }
 
-  // Define protected routes that require authentication
-  const protectedRoutes = [
-    "/dashboard",
-    "/account",
-    "/admin"
-  ];
+  if (request.nextUrl.pathname.startsWith("/api/")) {
+    const identifier = getClientIp(request);
+    const authHeader =
+      request.headers.get("authorization") ||
+      request.headers.get("Authorization");
+    const authToken = authHeader?.startsWith("Bearer ")
+      ? authHeader.substring(7)
+      : undefined;
+    const endpoint = getEndpointFromPath(request.nextUrl.pathname);
 
-  // Define auth routes that should redirect to dashboard if already authenticated
-  const authRoutes = ["/sign-in", "/sign-up"];
+    const rateCheck = await checkServerRateLimitWithAuth(
+      identifier,
+      endpoint,
+      authToken,
+    );
 
-  // Check if current path is protected
-  const isProtectedRoute = protectedRoutes.some(route =>
-    pathname.startsWith(route)
-  );
+    if (!rateCheck.allowed) {
+      SecurityLogger.logSecurityEvent({
+        type: "rate_limit_exceeded",
+        severity: "medium",
+        ip: identifier,
+        details: {
+          endpoint,
+          retryAfter: rateCheck.retryAfter,
+          remaining: rateCheck.remaining,
+        },
+      });
 
-  // Check if current path is an auth route
-  const isAuthRoute = authRoutes.some(route =>
-    pathname.startsWith(route)
-  );
-
-  // Strengthened auth token detection:
-  // 1. Parse the __firebase_user cookie (expected JSON: {"id":"<uid>"})
-  // 2. Fallback to Authorization: Bearer <token> header (e.g. server/API calls)
-  // 3. Guard against malformed / tampered cookie values
-  const authCookie = request.cookies.get("__firebase_user")?.value;
-  let hasAuthToken = false;
-  let _firebaseUid: string | null = null;
-
-  if (authCookie) {
-    try {
-      const parsed = JSON.parse(decodeURIComponent(authCookie));
-      if (parsed && typeof parsed.id === "string" && parsed.id.length > 0) {
-        _firebaseUid = parsed.id;
-        hasAuthToken = true;
-      }
-    } catch {
-      // Malformed cookie -> treat as unauthenticated (do NOT throw)
-      hasAuthToken = false;
-      _firebaseUid = null;
+      return NextResponse.json(
+        {
+          error: "Rate limit exceeded. Please try again later.",
+          endpoint,
+          requestId,
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": (rateCheck.retryAfter || 0).toString(),
+            "X-Rate-Limit-Limit": (rateCheck.maxRequests || 0).toString(),
+            "X-Rate-Limit-Remaining": (rateCheck.remaining || 0).toString(),
+            "X-Rate-Limit-Reset": (rateCheck.resetIn || 0).toString(),
+            "X-Rate-Limit-Identifier": rateCheck.identifier || identifier,
+            "X-Request-ID": requestId,
+          },
+        },
+      );
     }
   }
 
-  // Allow authenticated API usage via Authorization header as a secondary signal
-  const authHeader = request.headers.get("authorization") || request.headers.get("Authorization");
-  if (!hasAuthToken && authHeader && authHeader.startsWith("Bearer ")) {
-    hasAuthToken = true; // We don't parse the token here (edge runtime + no admin verify); downstream handlers should verify
-  }
-
-  // Explicit admin route flag (future enhancement: server-side admin verification)
-  const _isAdminRoute = pathname.startsWith("/admin");
-
-  // Handle protected routes
-  if (isProtectedRoute && !hasAuthToken) {
-    const signInUrl = new URL("/sign-in", request.url);
-    signInUrl.searchParams.set("redirect_url", pathname);
-    const response = NextResponse.redirect(signInUrl);
-    return applySecurityHeaders(response);
-  }
-
-  // Handle auth routes when already authenticated
-  if (isAuthRoute && hasAuthToken) {
-    const response = NextResponse.redirect(new URL("/dashboard", request.url));
-    return applySecurityHeaders(response);
-  }
-
-  // Apply security headers to all responses
   const response = NextResponse.next();
-  return applySecurityHeaders(response);
+  ensureCsrfCookie(request, response);
+  applySecurityHeaders(response, requestId);
+  cleanupExpiredServerLimits();
+  return response;
 }
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    "/((?!_next/static|_next/image|favicon.ico).*)",
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)",
   ],
 };
+
