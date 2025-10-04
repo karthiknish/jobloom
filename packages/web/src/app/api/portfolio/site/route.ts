@@ -14,7 +14,11 @@ export async function GET(request: NextRequest) {
     const userId = decodedToken.uid;
 
     const db = getAdminDb();
-    const portfolioRef = db.collection('users').doc(userId).collection('portfolio').doc('site');
+    const userRef = db.collection('users').doc(userId);
+    const userSnap = await userRef.get();
+    const userSubdomain = userSnap.data()?.subdomain || null;
+
+    const portfolioRef = userRef.collection('portfolio').doc('site');
 
     const portfolioSnap = await portfolioRef.get();
     if (!portfolioSnap.exists) {
@@ -57,6 +61,7 @@ export async function GET(request: NextRequest) {
           showContactForm: true,
           allowDownloads: false
         },
+        subdomain: userSubdomain,
         createdAt: new Date(),
         updatedAt: new Date()
       };
@@ -68,7 +73,8 @@ export async function GET(request: NextRequest) {
     const portfolioData = portfolioSnap.data();
     return NextResponse.json({
       id: portfolioSnap.id,
-      ...portfolioData
+      ...portfolioData,
+      subdomain: userSubdomain || portfolioData?.subdomain || null
     });
 
   } catch (error) {
@@ -102,7 +108,25 @@ export async function POST(request: NextRequest) {
     }
 
     const db = getAdminDb();
-    const portfolioRef = db.collection('users').doc(userId).collection('portfolio').doc('site');
+    const userRef = db.collection('users').doc(userId);
+    const userSnap = await userRef.get();
+    const userSubdomain = userSnap.data()?.subdomain || null;
+
+    if (portfolioData.subdomain && portfolioData.subdomain !== userSubdomain) {
+      return NextResponse.json(
+        { error: 'Subdomain mismatch. Use the subdomain settings to update your public link.' },
+        { status: 400 }
+      );
+    }
+
+    if (portfolioData.settings?.isPublic && !userSubdomain) {
+      return NextResponse.json(
+        { error: 'Claim a subdomain before publishing publicly.' },
+        { status: 400 }
+      );
+    }
+
+    const portfolioRef = userRef.collection('portfolio').doc('site');
 
     // Check if portfolio exists for versioning
     const existingSnap = await portfolioRef.get();
@@ -114,6 +138,7 @@ export async function POST(request: NextRequest) {
 
     const portfolioToSave = {
       ...portfolioData,
+       subdomain: userSubdomain,
       userId,
       version,
       updatedAt: new Date(),
@@ -121,31 +146,6 @@ export async function POST(request: NextRequest) {
     };
 
     await portfolioRef.set(portfolioToSave, { merge: true });
-
-    // If portfolio is public and has a subdomain, update subdomain collection
-    if (portfolioData.settings?.isPublic && portfolioData.subdomain) {
-      const subdomainRef = db.collection('subdomains').doc(portfolioData.subdomain);
-
-      // Check if subdomain is already taken by another user
-      const existingSubdomain = await subdomainRef.get();
-      if (existingSubdomain.exists) {
-        const subdomainData = existingSubdomain.data();
-        if (subdomainData?.userId !== userId) {
-          return NextResponse.json(
-            { error: 'Subdomain is already taken' },
-            { status: 409 }
-          );
-        }
-      }
-
-      await subdomainRef.set({
-        userId,
-        portfolioId: 'site',
-        subdomain: portfolioData.subdomain,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
-    }
 
     return NextResponse.json({
       id: 'site',

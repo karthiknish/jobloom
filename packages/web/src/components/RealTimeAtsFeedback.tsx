@@ -20,7 +20,8 @@ import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { calculateEnhancedATSScore } from "@/lib/enhancedAts";
-import type { ResumeData, ResumeScore } from "@/types/resume";
+import type { ResumeData } from "@/types/resume";
+import type { ResumeScore } from "@/lib/enhancedAts";
 
 interface RealTimeAtsFeedbackProps {
   resume: ResumeData;
@@ -218,6 +219,9 @@ export function RealTimeAtsFeedback({
     }
   };
 
+  const detailedMetrics = score?.detailedMetrics;
+  const recommendations = score?.recommendations;
+
   if (compact) {
     return (
       <div className="space-y-4">
@@ -267,7 +271,7 @@ export function RealTimeAtsFeedback({
                   ATS Optimization Score
                 </CardTitle>
                 <CardDescription>
-                  Real-time analysis of your resume's ATS compatibility
+                  Real-time analysis of your resume&apos;s ATS compatibility
                 </CardDescription>
               </div>
               <div className="flex items-center gap-2">
@@ -418,7 +422,7 @@ export function RealTimeAtsFeedback({
                 </motion.div>
               )}
 
-              {activeTab === 'details' && score.detailedMetrics && (
+              {activeTab === 'details' && detailedMetrics && (
                 <motion.div
                   key="details"
                   initial={{ opacity: 0, y: 10 }}
@@ -432,15 +436,15 @@ export function RealTimeAtsFeedback({
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
                           <span>Word Count</span>
-                          <span>{score.detailedMetrics.wordCount}</span>
+                          <span>{detailedMetrics.wordCount}</span>
                         </div>
                         <div className="flex justify-between text-sm">
                           <span>Keyword Density</span>
-                          <span>{score.detailedMetrics.keywordDensity.toFixed(1)}%</span>
+                          <span>{detailedMetrics.keywordDensity.toFixed(1)}%</span>
                         </div>
                         <div className="flex justify-between text-sm">
                           <span>Action Verb Usage</span>
-                          <span>{score.detailedMetrics.actionVerbUsage.toFixed(1)}%</span>
+                          <span>{detailedMetrics.actionVerbUsage.toFixed(1)}%</span>
                         </div>
                       </div>
                     </div>
@@ -450,15 +454,15 @@ export function RealTimeAtsFeedback({
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
                           <span>Quantification</span>
-                          <span>{score.detailedMetrics.quantificationScore.toFixed(0)}%</span>
+                          <span>{detailedMetrics.quantificationScore.toFixed(0)}%</span>
                         </div>
                         <div className="flex justify-between text-sm">
                           <span>Professional Language</span>
-                          <span>{score.detailedMetrics.professionalLanguage.toFixed(1)}/1000</span>
+                          <span>{detailedMetrics.professionalLanguage.toFixed(1)}/1000</span>
                         </div>
                         <div className="flex justify-between text-sm">
                           <span>Section Completeness</span>
-                          <span>{score.detailedMetrics.sectionCompleteness.toFixed(0)}%</span>
+                          <span>{detailedMetrics.sectionCompleteness.toFixed(0)}%</span>
                         </div>
                       </div>
                     </div>
@@ -466,7 +470,7 @@ export function RealTimeAtsFeedback({
                 </motion.div>
               )}
 
-              {activeTab === 'suggestions' && showSuggestions && score.recommendations && (
+              {activeTab === 'suggestions' && showSuggestions && recommendations && (
                 <motion.div
                   key="suggestions"
                   initial={{ opacity: 0, y: 10 }}
@@ -474,11 +478,11 @@ export function RealTimeAtsFeedback({
                   exit={{ opacity: 0, y: -10 }}
                   className="space-y-4"
                 >
-                  {score.recommendations.high.length > 0 && (
+                  {recommendations.high.length > 0 && (
                     <div>
                       <h4 className="font-medium mb-2 text-red-600">High Priority</h4>
                       <div className="space-y-2">
-                        {score.recommendations.high.map((suggestion, index) => (
+                        {recommendations.high.map((suggestion, index) => (
                           <div key={`high-${index}`} className="flex items-start gap-2 p-2 bg-red-50 rounded">
                             <AlertCircle className="h-4 w-4 text-red-600 mt-0.5" />
                             <p className="text-sm">{suggestion}</p>
@@ -488,11 +492,11 @@ export function RealTimeAtsFeedback({
                     </div>
                   )}
 
-                  {score.recommendations.medium.length > 0 && (
+                  {recommendations.medium.length > 0 && (
                     <div>
                       <h4 className="font-medium mb-2 text-yellow-600">Medium Priority</h4>
                       <div className="space-y-2">
-                        {score.recommendations.medium.map((suggestion, index) => (
+                        {recommendations.medium.map((suggestion, index) => (
                           <div key={`medium-${index}`} className="flex items-start gap-2 p-2 bg-yellow-50 rounded">
                             <Info className="h-4 w-4 text-yellow-600 mt-0.5" />
                             <p className="text-sm">{suggestion}</p>
@@ -502,11 +506,11 @@ export function RealTimeAtsFeedback({
                     </div>
                   )}
 
-                  {score.recommendations.low.length > 0 && (
+                  {recommendations.low.length > 0 && (
                     <div>
                       <h4 className="font-medium mb-2 text-blue-600">Low Priority</h4>
                       <div className="space-y-2">
-                        {score.recommendations.low.map((suggestion, index) => (
+                        {recommendations.low.map((suggestion, index) => (
                           <div key={`low-${index}`} className="flex items-start gap-2 p-2 bg-blue-50 rounded">
                             <Lightbulb className="h-4 w-4 text-blue-600 mt-0.5" />
                             <p className="text-sm">{suggestion}</p>

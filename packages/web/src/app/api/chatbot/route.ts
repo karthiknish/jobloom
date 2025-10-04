@@ -59,6 +59,25 @@ I can help you with:
 What career-related question can I help you with today?`;
 }
 
+function sanitizeResponse(text: string): string {
+  if (!text) {
+    return "";
+  }
+
+  const normalized = text.replace(/\r\n/g, "\n");
+
+  const withoutMarkdown = normalized
+    // Convert markdown bullets to bullet character
+    .replace(/^\s*[-*]\s+/gm, "• ")
+    // Remove bold/italic markers while keeping content
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/\*([^*]+)\*/g, "$1");
+
+  const withoutAsterisks = withoutMarkdown.replace(/\*/g, "");
+
+  return withoutAsterisks.replace(/\n{3,}/g, "\n\n").trim();
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { message, context } = await request.json();
@@ -85,9 +104,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Use the faster flash model for lower latency
+    // Use the correct model name for Gemini API
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
+      model: "gemini-2.0-flash-lite",
       generationConfig: {
         temperature: 0.6,
         topK: 40,
@@ -134,19 +153,22 @@ IMPORTANT RULES:
 4. Use professional, friendly language
 5. If asked about non-career topics, politely redirect to career advice
 6. Keep responses concise but comprehensive
-7. Include specific examples when helpful
-8. End responses with relevant follow-up questions when appropriate
+7. Use clean formatting with simple numbered lists (1. 2. 3.) or bullet points (•)
+8. NEVER use asterisks (*) for formatting - use • for bullets instead
+9. Add proper line breaks between sections for readability
+10. Include specific examples when helpful
+11. End responses with relevant follow-up questions when appropriate
 
 User question: ${message}
 
 ${context ? `Additional context: ${context}` : ''}
 
-Respond as Hireall AI:`;
+Respond as Hireall AI with clean, readable formatting:`;
 
     // Generate response (prefer message array format for future extensibility)
     const result = await model.generateContent([systemPrompt]);
     const response = await result.response;
-    const generatedText = response.text().trim();
+    const generatedText = sanitizeResponse(response.text().trim());
 
     return NextResponse.json({
       response: generatedText,

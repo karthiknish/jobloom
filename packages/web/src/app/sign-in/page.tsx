@@ -15,7 +15,13 @@ import Link from "next/link";
 function SignInInner() {
   const router = useRouter();
   const search = useSearchParams();
-  const { signIn, signInWithGoogle, loading: authLoading } = useFirebaseAuth();
+  const {
+    signIn,
+    signInWithGoogle,
+    loading: authLoading,
+    user,
+    isInitialized,
+  } = useFirebaseAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -72,6 +78,13 @@ function SignInInner() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!isInitialized) return;
+    if (user) {
+      router.replace(redirectUrlComplete);
+    }
+  }, [isInitialized, user, router, redirectUrlComplete]);
 
   if (authLoading) {
     return (
@@ -133,48 +146,51 @@ function SignInInner() {
 
   async function handleGoogle() {
     setError(null);
+    setLoading(true);
     try {
       await signInWithGoogle();
-      router.replace(redirectUrlComplete);
+      // For redirect flow, the page will reload and auth state will be handled automatically
+      // Don't set loading to false here as the redirect will happen
     } catch (err: unknown) {
       const e = err as { message?: string };
       setError(e?.message || "Google sign-in failed");
+      setLoading(false);
     }
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-4 sm:p-6 lg:p-8 pt-16 sm:pt-20 lg:pt-24 bg-gradient-to-br from-primary/5 via-background to-secondary/5">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-md sm:max-w-lg space-y-6"
-      >
-        {/* Logo and Branding */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.1, duration: 0.5 }}
-          className="text-center"
-        >
-          <Link href="/" className="inline-block">
-            <div className="relative w-16 h-16 mx-auto mb-4">
-              <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl"></div>
-              <div className="relative w-full h-full bg-primary rounded-full flex items-center justify-center">
-                <span className="text-white font-bold text-xl">H</span>
-              </div>
-            </div>
-          </Link>
-          <h1 className="text-3xl font-bold text-foreground">Hireall</h1>
-          <p className="text-muted-foreground mt-2">Your smart job search companion</p>
-        </motion.div>
+    <main className="flex min-h-screen items-center justify-center p-4 sm:p-6 lg:p-8 pt-16 sm:pt-20 lg:pt-24 bg-gradient-to-br from-background via-muted/20 to-background">
+      {/* Premium background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 right-20 w-96 h-96 bg-primary/2 rounded-full filter blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-20 left-20 w-80 h-80 bg-secondary/2 rounded-full filter blur-2xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+      </div>
 
-        <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-sm">
-          <CardHeader className="space-y-1 text-center pb-6">
-            <CardTitle className="text-2xl font-bold text-foreground">Welcome back</CardTitle>
-            <CardDescription className="text-muted-foreground">
-              Sign in to your Hireall account
-            </CardDescription>
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="w-full max-w-md sm:max-w-lg space-y-8 relative z-10"
+      >
+    
+        <Card className="card-premium-elevated border-0 bg-surface p-8">
+          <CardHeader className="space-y-4 text-center pb-8">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+            >
+              <CardTitle className="text-3xl font-bold text-gradient-premium">Welcome back</CardTitle>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+            >
+              <CardDescription className="text-muted-foreground text-lg">
+                Sign in to your Hireall account
+              </CardDescription>
+            </motion.div>
           </CardHeader>
           <CardContent className="space-y-6">
             {error && (
@@ -194,81 +210,103 @@ function SignInInner() {
               </motion.div>
             )}
 
-            <form onSubmit={handlePasswordSignIn} className="space-y-5">
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium text-foreground">Email</Label>
+            <motion.form
+              onSubmit={handlePasswordSignIn}
+              className="space-y-6"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.6 }}
+            >
+              <div className="space-y-3">
+                <Label htmlFor="email" className="text-sm font-semibold text-foreground">Email</Label>
                 <div className="relative group">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                  <Mail className="absolute left-4 top-3.5 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-premium" />
                   <Input
                     id="email"
                     type="email"
                     value={email}
                     onChange={(e) => handleEmailChange(e.target.value)}
                     required
-                    className={`pl-10 h-11 bg-muted/50 border-input focus:bg-background focus:border-primary focus:ring-primary transition-all ${emailError ? 'border-destructive focus:ring-destructive' : ''}`}
+                    className={`input-premium pl-12 h-12 ${emailError ? 'border-destructive focus:ring-destructive' : ''}`}
                     placeholder="you@example.com"
                     disabled={loading}
                   />
                 </div>
                 {emailError && (
-                  <p className="text-sm text-red-600 mt-1">{emailError}</p>
+                  <motion.p
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="text-sm text-destructive font-medium"
+                  >
+                    {emailError}
+                  </motion.p>
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium text-foreground">Password</Label>
+              <div className="space-y-3">
+                <Label htmlFor="password" className="text-sm font-semibold text-foreground">Password</Label>
                 <div className="relative group">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                  <Lock className="absolute left-4 top-3.5 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-premium" />
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => handlePasswordChange(e.target.value)}
                     required
-                    className={`pl-10 pr-10 h-11 bg-muted/50 border-input focus:bg-white focus:border-primary focus:ring-primary transition-all ${passwordError ? 'border-red-500 focus:ring-red-500' : ''}`}
+                    className={`input-premium pl-12 pr-12 h-12 ${passwordError ? 'border-destructive focus:ring-destructive' : ''}`}
                     placeholder="••••••••"
                     disabled={loading}
                   />
-                  <button
+                  <motion.button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-3 h-4 w-4 text-muted-foreground hover:text-muted-foreground transition-colors"
+                    className="absolute right-4 top-3.5 h-4 w-4 text-muted-foreground hover:text-primary transition-premium"
                     disabled={loading}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
+                  </motion.button>
                 </div>
                 {passwordError && (
-                  <p className="text-sm text-red-600 mt-1">{passwordError}</p>
+                  <motion.p
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="text-sm text-destructive font-medium"
+                  >
+                    {passwordError}
+                  </motion.p>
                 )}
               </div>
 
-              <Button
-                type="submit"
-                className="w-full h-11 font-medium shadow-lg hover:shadow-xl transition-all duration-200 relative overflow-hidden"
-                disabled={loading}
-                size="lg"
-              >
-                {loading ? (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="flex items-center justify-center"
-                  >
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    <span>Signing in...</span>
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="flex items-center justify-center"
-                  >
-                    <span>Sign in</span>
-                  </motion.div>
-                )}
-              </Button>
-            </form>
+              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                <Button
+                  type="submit"
+                  className="btn-premium w-full h-12 font-bold gradient-primary hover:shadow-premium-xl text-base"
+                  disabled={loading}
+                  size="lg"
+                >
+                  {loading ? (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="flex items-center justify-center"
+                    >
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <span>Signing in...</span>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="flex items-center justify-center"
+                    >
+                      <span>Sign in</span>
+                    </motion.div>
+                  )}
+                </Button>
+              </motion.div>
+            </motion.form>
 
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
@@ -279,36 +317,67 @@ function SignInInner() {
               </div>
             </div>
 
-            <Button
-              variant="outline"
-              onClick={handleGoogle}
-              className="w-full h-11 bg-background border-input hover:bg-muted/50 hover:border-border/80 font-medium shadow-sm transition-all duration-200"
-              disabled={loading}
-              size="lg"
-            >
-              <Chrome className="mr-2 h-4 w-4" />
-              Continue with Google
-            </Button>
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Button
+                variant="outline"
+                onClick={handleGoogle}
+                className="btn-premium w-full h-12 bg-surface border-2 hover:bg-muted/20 hover:border-primary/30 font-semibold text-base shadow-premium hover:shadow-premium-lg"
+                disabled={loading}
+                size="lg"
+              >
+                {loading ? (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex items-center justify-center"
+                  >
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <span>Redirecting to Google...</span>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex items-center justify-center"
+                  >
+                    <Chrome className="mr-2 h-5 w-5" />
+                    <span>Continue with Google</span>
+                  </motion.div>
+                )}
+              </Button>
+            </motion.div>
 
-            <div className="text-center text-sm space-y-3 pt-4 border-t border-input">
-              <div>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.8 }}
+              className="text-center text-sm space-y-4 pt-6 border-t border-border/50"
+            >
+              <div className="flex items-center justify-center space-x-2">
                 <span className="text-muted-foreground">Don&apos;t have an account? </span>
-                <a
+                <motion.a
                   href={`/sign-up?redirect_url=${encodeURIComponent(redirectUrlComplete)}`}
-                  className="font-medium text-primary hover:underline transition-colors"
+                  className="font-semibold text-primary hover:text-primary/80 transition-premium"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                 >
                   Sign up
-                </a>
+                </motion.a>
               </div>
               <div>
-                <Link
-                  href={`/auth/forgot?redirect_url=${encodeURIComponent(redirectUrlComplete)}`}
-                  className="text-muted-foreground hover:text-primary hover:underline transition-colors"
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                 >
-                  Forgot your password?
-                </Link>
+                  <Link
+                    href={`/auth/forgot?redirect_url=${encodeURIComponent(redirectUrlComplete)}`}
+                    className="text-muted-foreground hover:text-primary font-medium transition-premium inline-flex items-center gap-1"
+                  >
+                    Forgot your password?
+                  </Link>
+                </motion.div>
               </div>
-            </div>
+            </motion.div>
           </CardContent>
         </Card>
       </motion.div>

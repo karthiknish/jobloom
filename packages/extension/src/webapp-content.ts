@@ -28,7 +28,24 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         }
       }
 
-      // Method 3: Fallback DOM attribute (sanitize input)
+      // Method 3: Check for cookie-based auth
+      if (!userId) {
+        try {
+          const cookies = document.cookie.split(';');
+          for (const cookie of cookies) {
+            const [name, value] = cookie.trim().split('=');
+            if (name === '__firebase_user' && value) {
+              const data = JSON.parse(decodeURIComponent(value));
+              userId = data?.id ? String(data.id) : null;
+              break;
+            }
+          }
+        } catch (error) {
+          ExtensionSecurityLogger.log('Error parsing Firebase user cookie', error);
+        }
+      }
+
+      // Method 4: Fallback DOM attribute (sanitize input)
       if (!userId) {
         const el = document.querySelector("[data-user-id]");
         if (el) {
@@ -44,6 +61,29 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     } catch (error) {
       ExtensionSecurityLogger.log('Error retrieving user ID', error);
       sendResponse({ userId: null, error: 'Failed to retrieve user ID' });
+      return true;
+    }
+  }
+
+  // Additional action to get auth token
+  if (request.action === "getAuthToken") {
+    try {
+      const auth = (window as any).__firebase_auth;
+      if (auth && auth.currentUser) {
+        auth.currentUser.getIdToken(true).then((token: string) => {
+          sendResponse({ token, userId: auth.currentUser.uid });
+        }).catch((error: any) => {
+          ExtensionSecurityLogger.log('Error getting auth token', error);
+          sendResponse({ token: null, error: 'Failed to get auth token' });
+        });
+        return true; // Async response
+      } else {
+        sendResponse({ token: null, error: 'No authenticated user' });
+        return true;
+      }
+    } catch (error) {
+      ExtensionSecurityLogger.log('Error in getAuthToken', error);
+      sendResponse({ token: null, error: 'Failed to get auth token' });
       return true;
     }
   }
@@ -104,6 +144,29 @@ window.addEventListener("message", (event) => {
         chrome.storage.sync.set({ userId });
       }
     }, 1000);
+  }
+
+  if (event.data.type === "HIREALL_EXTENSION_UPDATE_PREFS") {
+    try {
+      const payload = event.data.payload ?? {};
+      if (typeof chrome !== "undefined" && chrome.storage?.sync) {
+        const updates: Record<string, boolean> = {};
+        if (typeof payload.enableSponsorshipChecks === "boolean") {
+          updates.enableSponsorshipChecks = payload.enableSponsorshipChecks;
+        }
+
+        if (Object.keys(updates).length > 0) {
+          chrome.storage.sync.set(updates, () => {
+            if (chrome.runtime?.lastError) {
+              ExtensionSecurityLogger.log('Failed to persist extension preferences', chrome.runtime.lastError.message);
+            }
+          });
+        }
+      }
+    } catch (error) {
+      ExtensionSecurityLogger.log('Error handling extension preferences update', error);
+    }
+    return;
   }
 
   // Web page requests the extension to send settings to web (for syncing)

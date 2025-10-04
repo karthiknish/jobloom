@@ -50,16 +50,28 @@ export default function PortfolioPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-muted/30 to-muted/50 pt-16">
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background pt-16">
+      {/* Premium background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 right-20 w-96 h-96 bg-primary/2 rounded-full filter blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-20 left-20 w-80 h-80 bg-secondary/2 rounded-full filter blur-2xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+      </div>
+
       {/* Hero Section */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="bg-gradient-to-r from-primary via-primary/90 to-secondary shadow-xl"
+        transition={{ duration: 0.6 }}
+        className="gradient-primary shadow-premium-xl relative overflow-hidden"
       >
-        <div className="relative max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
-          <div className="space-y-4">
+        {/* Premium background elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full filter blur-3xl"></div>
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full filter blur-2xl"></div>
+        </div>
+
+        <div className="relative max-w-7xl mx-auto py-20 px-4 sm:px-6 lg:px-8">
+          <div className="space-y-6">
             <h1 className="text-5xl sm:text-6xl font-bold text-white tracking-tight">Portfolio Builder</h1>
             <p className="text-xl sm:text-2xl text-primary-foreground/90 max-w-3xl leading-relaxed">
               Create stunning portfolio websites to showcase your work and attract opportunities

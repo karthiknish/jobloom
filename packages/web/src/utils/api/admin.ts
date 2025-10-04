@@ -80,6 +80,21 @@ type FireContact = {
 };
 
 export const adminApi = {
+  // Verify if current user is an admin
+  verifyAdminAccess: async (): Promise<UserRecord> => {
+    const auth = getAuthClient();
+    if (!auth?.currentUser) {
+      throw new Error("Authentication required for admin access");
+    }
+
+    const currentUser = await adminApi.getUserByFirebaseUid(auth.currentUser.uid);
+    if (!currentUser.isAdmin) {
+      throw new Error("Admin access required. User does not have admin privileges.");
+    }
+
+    return currentUser;
+  },
+
   // Fetch user doc by Firebase UID; create minimal doc if missing
   getUserByFirebaseUid: async (firebaseUid: string): Promise<UserRecord> => {
     const db = getDb();
@@ -118,6 +133,9 @@ export const adminApi = {
   // Use getUserByFirebaseUid for user operations
 
   getAllSponsoredCompanies: async (): Promise<SponsoredCompany[]> => {
+    // Verify admin access before fetching sponsored companies
+    await adminApi.verifyAdminAccess();
+
     const db = getDb();
     if (!db) throw new Error("Firestore not initialized");
     const snap = await getDocs(collection(db, "sponsoredCompanies"));
@@ -139,6 +157,9 @@ export const adminApi = {
   },
 
   getSponsorshipStats: async (): Promise<SponsorshipStats> => {
+    // Verify admin access before fetching sponsorship stats
+    await adminApi.verifyAdminAccess();
+
     const companies = await adminApi.getAllSponsoredCompanies();
     const industryStats: Record<string, number> = {};
     const sponsorshipTypeStats: Record<string, number> = {};
@@ -166,6 +187,9 @@ export const adminApi = {
     industry?: string;
     createdBy: string;
   }): Promise<{ companyId: string }> => {
+    // Verify admin access before adding sponsored companies
+    const adminUser = await adminApi.verifyAdminAccess();
+
     const db = getDb();
     if (!db) throw new Error("Firestore not initialized");
     const payload = {
@@ -175,7 +199,7 @@ export const adminApi = {
       description: data.description ?? "",
       website: data.website ?? "",
       industry: data.industry ?? "",
-      createdBy: data.createdBy,
+      createdBy: data.createdBy || adminUser._id, // Use admin ID if not provided
       isActive: true,
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -185,6 +209,9 @@ export const adminApi = {
   },
 
   deleteSponsoredCompany: async (companyId: string, _requesterId: string): Promise<void> => {
+    // Verify admin access before deleting sponsored companies
+    await adminApi.verifyAdminAccess();
+
     const db = getDb();
     if (!db) throw new Error("Firestore not initialized");
 
@@ -204,6 +231,9 @@ export const adminApi = {
       isActive: boolean;
     }>
   ): Promise<void> => {
+    // Verify admin access before updating sponsored companies
+    await adminApi.verifyAdminAccess();
+
     const db = getDb();
     if (!db) throw new Error("Firestore not initialized");
 
@@ -224,18 +254,30 @@ export const adminApi = {
   },
 
   setAdminUser: async (userId: string, _requesterId: string): Promise<void> => {
+    // Verify admin access before granting admin privileges
+    const requestingAdmin = await adminApi.verifyAdminAccess();
+
+    // Prevent self-demotion or self-promotion issues
+    if (userId === requestingAdmin._id) {
+      throw new Error("Cannot modify your own admin status");
+    }
+
     const db = getDb();
     if (!db) throw new Error("Firestore not initialized");
     void _requesterId;
-    // NOTE: No server-side enforcement; assumes UI gating.
     await updateDoc(doc(db, "users", userId), {
       isAdmin: true,
       updatedAt: Date.now(),
+      updatedBy: requestingAdmin._id, // Track who made the change
     }).catch(async () => {
       const { setDoc } = await import("firebase/firestore");
       await setDoc(
         doc(db, "users", userId),
-        { isAdmin: true, updatedAt: Date.now() },
+        {
+          isAdmin: true,
+          updatedAt: Date.now(),
+          updatedBy: requestingAdmin._id
+        },
         { merge: true }
       );
     });
@@ -245,17 +287,30 @@ export const adminApi = {
     userId: string,
     _requesterId: string
   ): Promise<void> => {
+    // Verify admin access before removing admin privileges
+    const requestingAdmin = await adminApi.verifyAdminAccess();
+
+    // Prevent self-demotion
+    if (userId === requestingAdmin._id) {
+      throw new Error("Cannot remove your own admin status");
+    }
+
     const db = getDb();
     if (!db) throw new Error("Firestore not initialized");
     void _requesterId;
     await updateDoc(doc(db, "users", userId), {
       isAdmin: false,
       updatedAt: Date.now(),
+      updatedBy: requestingAdmin._id, // Track who made the change
     }).catch(async () => {
       const { setDoc } = await import("firebase/firestore");
       await setDoc(
         doc(db, "users", userId),
-        { isAdmin: false, updatedAt: Date.now() },
+        {
+          isAdmin: false,
+          updatedAt: Date.now(),
+          updatedBy: requestingAdmin._id
+        },
         { merge: true }
       );
     });
@@ -263,6 +318,9 @@ export const adminApi = {
 
   // User management
   getAllUsers: async (): Promise<{ users: UserRecord[]; total: number }> => {
+    // Verify admin access before fetching all users
+    await adminApi.verifyAdminAccess();
+
     const db = getDb();
     if (!db) throw new Error("Firestore not initialized");
     const snap = await getDocs(collection(db, "users"));
@@ -287,6 +345,9 @@ export const adminApi = {
     usersByPlan: Record<string, number>;
     recentLogins: number;
   }> => {
+    // Verify admin access before fetching user stats
+    await adminApi.verifyAdminAccess();
+
     const db = getDb();
     if (!db) throw new Error("Firestore not initialized");
 
@@ -314,6 +375,14 @@ export const adminApi = {
   },
 
   deleteUser: async (userId: string, _requesterId: string): Promise<void> => {
+    // Verify admin access before deleting users
+    const requestingAdmin = await adminApi.verifyAdminAccess();
+
+    // Prevent self-deletion
+    if (userId === requestingAdmin._id) {
+      throw new Error("Cannot delete your own account");
+    }
+
     const db = getDb();
     if (!db) throw new Error("Firestore not initialized");
 
@@ -323,6 +392,9 @@ export const adminApi = {
 
   // Contact submissions
   getAllContactSubmissions: async (): Promise<ContactSubmission[]> => {
+    // Verify admin access before fetching contact submissions
+    await adminApi.verifyAdminAccess();
+
     const db = getDb();
     if (!db) throw new Error("Firestore not initialized");
 
@@ -354,6 +426,9 @@ export const adminApi = {
       >
     >
   ): Promise<void> => {
+    // Verify admin access before updating contact submissions
+    const adminUser = await adminApi.verifyAdminAccess();
+
     const db = getDb();
     if (!db) throw new Error("Firestore not initialized");
 
@@ -372,12 +447,20 @@ export const adminApi = {
       payload.respondedAt = Date.now();
     }
 
+    // Set the responder if not provided
+    if (!payload.respondedBy) {
+      payload.respondedBy = adminUser._id;
+    }
+
     await updateDoc(doc(db, "contacts", contactId), payload);
   },
 
   deleteContactSubmission: async (
     contactId: string
   ): Promise<void> => {
+    // Verify admin access before deleting contact submissions
+    await adminApi.verifyAdminAccess();
+
     const db = getDb();
     if (!db) throw new Error("Firestore not initialized");
 
@@ -387,6 +470,9 @@ export const adminApi = {
 
   // Sponsorship rules
   getAllSponsorshipRules: async (): Promise<SponsorshipRule[]> => {
+    // Verify admin access before fetching sponsorship rules
+    await adminApi.verifyAdminAccess();
+
     const db = getDb();
     if (!db) throw new Error("Firestore not initialized");
     const snap = await getDocs(collection(db, "sponsorshipRules"));
@@ -414,6 +500,9 @@ export const adminApi = {
     keywords: string[];
     isActive: boolean;
   }): Promise<{ ruleId: string }> => {
+    // Verify admin access before adding sponsorship rules
+    const adminUser = await adminApi.verifyAdminAccess();
+
     const db = getDb();
     if (!db) throw new Error("Firestore not initialized");
     const payload = {
@@ -422,6 +511,7 @@ export const adminApi = {
       keywords: data.keywords ?? [],
       createdAt: Date.now(),
       updatedAt: Date.now(),
+      createdBy: adminUser._id, // Track who created the rule
     };
     const res = await addDoc(collection(db, "sponsorshipRules"), payload);
     return { ruleId: res.id };
@@ -431,11 +521,15 @@ export const adminApi = {
     ruleId: string,
     isActive: boolean
   ): Promise<void> => {
+    // Verify admin access before updating sponsorship rules
+    const adminUser = await adminApi.verifyAdminAccess();
+
     const db = getDb();
     if (!db) throw new Error("Firestore not initialized");
     await updateDoc(doc(db, "sponsorshipRules", ruleId), {
       isActive,
       updatedAt: Date.now(),
+      updatedBy: adminUser._id, // Track who made the change
     });
   },
 };

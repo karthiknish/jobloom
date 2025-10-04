@@ -4,7 +4,6 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
   Home,
-  Briefcase,
   MessageSquare,
   FileText,
   User
@@ -20,13 +19,7 @@ const navigationItems = [
     icon: Home,
     requiresAuth: false,
   },
-  {
-    name: "Jobs",
-    href: "/jobs",
-    icon: Briefcase,
-    requiresAuth: true,
-  },
-  {
+    {
     name: "Interview",
     href: "/interview-prep",
     icon: MessageSquare,

@@ -3,16 +3,16 @@
 import React, { useState } from "react";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { motion } from "framer-motion";
-import { showSuccess, showError } from "@/components/ui/Toast";
+
 import { useApiQuery } from "@/hooks/useApi";
 import { dashboardApi } from "@/utils/api/dashboard";
 import { ApplicationForm } from "@/components/dashboard/ApplicationForm";
 import { JobForm } from "@/components/dashboard/JobForm";
-import { ExtensionIntegration } from "@/components/dashboard/ExtensionIntegration";
+
 import { JobImportModal } from "@/components/dashboard/JobImportModal";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FeatureGate } from "@/components/UpgradePrompt";
+
 import { DraggableDashboard } from "@/components/dashboard/DraggableDashboard";
 import { useDashboardLayout } from "@/hooks/useDashboardLayout";
 import { useApplicationManagement } from "@/hooks/useApplicationManagement";
@@ -35,22 +35,22 @@ import { DashboardAnalytics } from "@/components/dashboard/DashboardAnalytics";
 import { DashboardEmptyState } from "@/components/dashboard/DashboardEmptyState";
 import { DashboardJobsView } from "@/components/dashboard/DashboardJobsView";
 import { Application, DashboardView, BoardMode } from "@/types/dashboard";
-import { UploadCloud, FilePlus, ClipboardList, Inbox, ArrowRight, FileText, Target, TrendingUp, Users, Calendar, BarChart3, Brain, Sparkles, Zap } from "lucide-react";
-import { KanbanBoard } from "@/components/dashboard/KanbanBoard";
-import { JobList } from "@/components/dashboard/JobList";
-import { DashboardFilters } from "@/components/dashboard/DashboardFilters";
-import { ExportCsvButton } from "@/components/dashboard/ExportCsvButton";
+import { ArrowRight, FileText, Target, TrendingUp, Calendar, BarChart3, Brain, Sparkles, Zap } from "lucide-react";
+
+
+
+
 
 export function AdvancedDashboard() {
   const { user, loading } = useFirebaseAuth();
-  const { plan, limits, currentUsage } = useSubscription();
+  const { plan } = useSubscription();
 
   const [view, setView] = useState<DashboardView>("dashboard");
   const [boardMode, setBoardMode] = useState<BoardMode>("list");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [companyFilter, setCompanyFilter] = useState<string>("all");
-  const [savedViews, setSavedViews] = useState<any[]>([]);
+
 
   // Use the new hooks
   const { dashboardLayout, handleLayoutChange } = useDashboardLayout();
@@ -66,67 +66,39 @@ export function AdvancedDashboard() {
 
   // Fetch applications
   const { data: applications, refetch: refetchApplications } = useApiQuery(
-    () =>
-      userRecord
-        ? dashboardApi.getApplicationsByUser(userRecord._id)
-        : Promise.reject(new Error("No user record")),
-    [userRecord?._id]
+    () => dashboardApi.getApplicationsByUser(userRecord!._id),
+    [userRecord?._id],
+    { enabled: !!userRecord }
   );
 
   // Fetch job stats
   const { data: jobStats, refetch: refetchJobStats } = useApiQuery(
-    () =>
-      userRecord
-        ? dashboardApi.getJobStats(userRecord._id)
-        : Promise.reject(new Error("No user record")),
-    [userRecord?._id]
+    () => dashboardApi.getJobStats(userRecord!._id),
+    [userRecord?._id],
+    { enabled: !!userRecord }
   );
 
   // Fetch CV analyses
   const { data: cvAnalyses } = useApiQuery(
-    () =>
-      userRecord
-        ? cvEvaluatorApi.getCvAnalysesByUser(userRecord._id)
-        : Promise.reject(new Error("No user record")),
-    [userRecord?._id]
+    () => cvEvaluatorApi.getCvAnalysesByUser(userRecord!._id),
+    [userRecord?._id],
+    { enabled: !!userRecord }
   );
 
-  // Fetch saved views
-  const { data: savedViewsData } = useApiQuery(
-    () => dashboardApi.getSavedViews(),
-    []
-  );
 
-  // Update saved views when data changes
-  React.useEffect(() => {
-    if (savedViewsData) {
-      setSavedViews(savedViewsData);
-    }
-  }, [savedViewsData]);
 
   // Initialize management hooks after refetch functions are available
   const applicationManagement = useApplicationManagement(refetchApplications);
   const jobManagement = useJobManagement(refetchJobStats);
 
   // Create wrapper functions to match expected interfaces
-  const handleDeleteApplicationWrapper = (application: Application) => {
-    applicationManagement.handleDeleteApplication(application._id);
-  };
+
 
   const hasApplications =
     Array.isArray(applications) && applications.length > 0;
 
   // Computed values for filtering
-  const filteredApplications = (applications || []).filter((app) => {
-    const matchesSearch = !searchTerm || 
-      app.job?.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      app.job?.company?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || app.status === statusFilter;
-    const matchesCompany = companyFilter === "all" || app.job?.company === companyFilter;
-    return matchesSearch && matchesStatus && matchesCompany;
-  });
 
-  const uniqueCompanies = [...new Set((applications || []).map(app => app.job?.company).filter(Boolean))];
 
 
 
@@ -144,21 +116,21 @@ export function AdvancedDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-muted via-amber-50/20 to-background mt-14">
+      <div className="min-h-screen bg-gradient-to-br from-background via-accent/10 to-background mt-14">
         <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
           <div className="space-y-8">
-            <div className="h-8 bg-gradient-to-r from-muted-foreground/20 via-muted-foreground/30 to-muted-foreground/20 bg-[length:200%_100%] animate-shimmer rounded w-1/4"></div>
+            <div className="h-8 bg-gradient-to-r from-muted-foreground/10 via-muted-foreground/15 to-muted-foreground/10 bg-[length:200%_100%] animate-shimmer rounded w-1/4"></div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {[...Array(4)].map((_, i) => (
                 <div
                   key={i}
-                  className="h-32 bg-gradient-to-r from-muted-foreground/20 via-muted-foreground/30 to-muted-foreground/20 bg-[length:200%_100%] animate-shimmer rounded-lg shadow-sm"
+                  className="h-32 bg-gradient-to-r from-muted-foreground/10 via-muted-foreground/15 to-muted-foreground/10 bg-[length:200%_100%] animate-shimmer rounded-lg shadow-sm"
                 ></div>
               ))}
             </div>
             <div className="space-y-6">
-              <div className="h-64 bg-gradient-to-r from-muted-foreground/20 via-muted-foreground/30 to-muted-foreground/20 bg-[length:200%_100%] animate-shimmer rounded-lg shadow-sm"></div>
-              <div className="h-64 bg-gradient-to-r from-muted-foreground/20 via-muted-foreground/30 to-muted-foreground/20 bg-[length:200%_100%] animate-shimmer rounded-lg shadow-sm"></div>
+              <div className="h-64 bg-gradient-to-r from-muted-foreground/10 via-muted-foreground/15 to-muted-foreground/10 bg-[length:200%_100%] animate-shimmer rounded-lg shadow-sm"></div>
+              <div className="h-64 bg-gradient-to-r from-muted-foreground/10 via-muted-foreground/15 to-muted-foreground/10 bg-[length:200%_100%] animate-shimmer rounded-lg shadow-sm"></div>
             </div>
           </div>
         </div>
@@ -201,18 +173,33 @@ export function AdvancedDashboard() {
     handleJobSubmit,
   } = jobManagement;
 
+  const handleDeleteApplicationWrapper = async (application: Application) => {
+    if (!application?._id) {
+      return;
+    }
+
+    await handleDeleteApplication(application._id);
+  };
+
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-sky-50/20 to-violet-50 pt-16">
-      {/* Header */}
-      <DashboardHeader
-        onImportJobs={() => setShowImportModal(true)}
-        onAddJob={() => setShowJobForm(true)}
-        onAddApplication={() => setShowApplicationForm(true)}
-      />
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background pt-16">
+      {/* Premium background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 right-20 w-96 h-96 bg-primary/2 rounded-full filter blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-20 left-20 w-80 h-80 bg-secondary/2 rounded-full filter blur-2xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+      </div>
 
-      <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+      <div className="relative z-10">
+        {/* Header */}
+        <DashboardHeader
+          onImportJobs={() => setShowImportModal(true)}
+          onAddJob={() => setShowJobForm(true)}
+          onAddApplication={() => setShowApplicationForm(true)}
+        />
+
+        <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         {/* Premium Upgrade Banner for Free Users */}
         {plan === "free" && <PremiumUpgradeBanner className="mb-6" />}
 
@@ -340,7 +327,7 @@ export function AdvancedDashboard() {
               >
                 <TabsTrigger
                   value="dashboard"
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-sky-600 data-[state=active]:to-violet-600 data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-300 rounded-lg"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/90 data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-300 rounded-lg"
                 >
                   <BarChart3 className="w-4 h-4 mr-2" />
                   Dashboard
@@ -352,7 +339,7 @@ export function AdvancedDashboard() {
               >
                 <TabsTrigger
                   value="jobs"
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-sky-600 data-[state=active]:to-violet-600 data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-300 rounded-lg"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/90 data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-300 rounded-lg"
                 >
                   <Target className="w-4 h-4 mr-2" />
                   Jobs ({applications?.length || 0})
@@ -364,7 +351,7 @@ export function AdvancedDashboard() {
               >
                 <TabsTrigger
                   value="cv-evaluator"
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-sky-600 data-[state=active]:to-violet-600 data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-300 rounded-lg"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/90 data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-300 rounded-lg"
                 >
                   <Brain className="w-4 h-4 mr-2" />
                   CV Evaluator
@@ -376,7 +363,7 @@ export function AdvancedDashboard() {
               >
                 <TabsTrigger
                   value="analytics"
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-sky-600 data-[state=active]:to-violet-600 data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-300 rounded-lg"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/90 data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-300 rounded-lg"
                 >
                   <TrendingUp className="w-4 h-4 mr-2" />
                   Analytics
@@ -472,7 +459,7 @@ export function AdvancedDashboard() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <BarChart3 className="w-5 h-5 text-blue-600" />
+                    <BarChart3 className="w-5 h-5 text-primary" />
                     Recent CV Analyses
                   </CardTitle>
                 </CardHeader>
@@ -484,10 +471,10 @@ export function AdvancedDashboard() {
                           <span className="text-sm font-medium truncate">{analysis.fileName}</span>
                           <span className={`text-xs px-2 py-1 rounded-full ${
                             (analysis.overallScore || 0) >= 80
-                              ? 'bg-green-100 text-green-700'
+                              ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
                               : (analysis.overallScore || 0) >= 60
-                              ? 'bg-yellow-100 text-yellow-700'
-                              : 'bg-red-100 text-red-700'
+                              ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
+                              : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
                           }`}>
                             {analysis.overallScore || 0}%
                           </span>
@@ -685,6 +672,7 @@ export function AdvancedDashboard() {
             )}
           </DialogContent>
         </Dialog>
+      </div>
       </div>
     </div>
   );

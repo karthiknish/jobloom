@@ -96,6 +96,10 @@ export function ExtensionIntegration({ userId }: ExtensionIntegrationProps) {
             source: 'hireall_web'
           }));
 
+          // Set the Firebase user data for extension
+          const firebaseUserData = { id: userId, timestamp: Date.now() };
+          (window as any).__firebase_user = firebaseUserData;
+
           // Set a timeout to retry if extension doesn't respond
           setTimeout(() => {
             if (!isExtensionInstalled) {
@@ -123,15 +127,15 @@ export function ExtensionIntegration({ userId }: ExtensionIntegrationProps) {
       <CardContent>
         {isExtensionInstalled ? (
           <div className="space-y-6">
-            <div className="flex items-center p-3 bg-emerald-50 rounded-lg border border-emerald-200">
+            <div className="flex items-center p-3 bg-green-50 rounded-lg border border-green-200">
               <div className="flex-shrink-0">
-                <CheckCircle className="h-6 w-6 text-emerald-600" />
+                <CheckCircle className="h-6 w-6 text-green-600" />
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-emerald-800">
+                <p className="text-sm font-medium text-green-800">
                   Extension Installed
                 </p>
-                <p className="text-xs text-emerald-700">
+                <p className="text-xs text-green-700">
                   Jobs will be automatically detected and synced
                 </p>
               </div>
@@ -177,15 +181,15 @@ export function ExtensionIntegration({ userId }: ExtensionIntegrationProps) {
           </div>
         ) : (
           <div className="space-y-6">
-            <div className="flex items-center p-3 bg-amber-50 rounded-lg border border-amber-200">
+            <div className="flex items-center p-3 bg-yellow-50 rounded-lg border border-yellow-200">
               <div className="flex-shrink-0">
-                <AlertTriangle className="h-6 w-6 text-amber-600" />
+                <AlertTriangle className="h-6 w-6 text-yellow-600" />
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-amber-800">
+                <p className="text-sm font-medium text-yellow-800">
                   Extension Not Installed
                 </p>
-                <p className="text-xs text-amber-700">
+                <p className="text-xs text-yellow-700">
                   Install the Chrome extension to automatically detect jobs
                 </p>
               </div>

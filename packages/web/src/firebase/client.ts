@@ -58,9 +58,8 @@ export interface FirebaseConnectionState {
 
 // Validate Firebase config
 function validateFirebaseConfig(): FirebaseConfig {
-  const authDomain =
-    process.env.NEXT_PUBLIC_FIREBASE_CUSTOM_AUTH_DOMAIN ||
-    process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN;
+  // For Google Auth to work properly, we need the correct auth domain
+  const authDomain = process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN;
 
   const config = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -302,7 +301,10 @@ export function getGoogleProvider(): GoogleAuthProvider | undefined {
   if (typeof window === "undefined") return undefined;
   try {
     const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: "select_account" });
+    provider.setCustomParameters({
+      prompt: "select_account"
+    });
+    // Use default scopes (email and profile are included by default)
     return provider;
   } catch (error) {
     console.error("Error creating Google provider:", error);

@@ -236,9 +236,9 @@ export class UKJobDescriptionParser {
     // Try generic selectors
     for (const selector of fallbackSelectors) {
       try {
-        const elements = document.querySelectorAll(selector);
+        const elements = Array.from(document.querySelectorAll(selector));
         for (const el of elements) {
-          const text = this.cleanDescriptionText(el.textContent || '');
+          const text = this.cleanDescriptionText(el.textContent || "");
           if (text.length > 100) {
             return text;
           }
@@ -253,7 +253,7 @@ export class UKJobDescriptionParser {
   }
 
   private static findLongestMeaningfulText(): string {
-    const allElements = document.querySelectorAll('*');
+    const allElements = Array.from(document.querySelectorAll('*'));
     let longestText = '';
 
     for (const element of allElements) {
@@ -508,7 +508,6 @@ export class UKJobDescriptionParser {
     ];
 
     const skills: string[] = [];
-    const words = description.toLowerCase().split(/\s+/);
 
     // Direct skill matching
     for (const skill of ukSkillKeywords) {

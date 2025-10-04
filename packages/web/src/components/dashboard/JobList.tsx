@@ -48,6 +48,8 @@ import {
 } from "@/components/ui/tooltip";
 import { dashboardApi, Job, Application } from "@/utils/api/dashboard";
 import { showSuccess, showError } from "@/components/ui/Toast";
+import { useSubscription } from "@/hooks/useSubscription";
+import { Crown } from "lucide-react";
 
 interface JobListProps {
   applications: Application[];
@@ -64,6 +66,7 @@ export function JobList({
   onViewApplication,
   onChanged,
 }: JobListProps) {
+  const { plan } = useSubscription();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [showRecruitmentAgency, setShowRecruitmentAgency] = useState(true);
@@ -256,10 +259,10 @@ className="border-border focus:border-amber-500 focus:ring-amber-500"
 
       {/* Bulk Actions */}
       {selectedIds.size > 0 && (
-        <Card className="border-0 bg-gradient-to-br from-sky-50 to-violet-50 shadow-lg">
+        <Card className="border-0 bg-gradient-to-br from-emerald-50 to-green-50 shadow-lg">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-sky-700">
+              <span className="text-sm text-emerald-700">
                 {selectedIds.size} application{selectedIds.size !== 1 ? "s" : ""} selected
               </span>
               <div className="flex gap-2">
@@ -267,7 +270,7 @@ className="border-border focus:border-amber-500 focus:ring-amber-500"
                   variant="outline"
                   size="sm"
                   onClick={() => setSelectedIds(new Set())}
-                  className="text-sky-600 border-sky-200 hover:bg-sky-50"
+                  className="text-emerald-600 border-emerald-200 hover:bg-emerald-50"
                 >
                   Clear Selection
                 </Button>
@@ -401,12 +404,12 @@ className="border-border focus:border-amber-500 focus:ring-amber-500"
                             </Badge>
                           )}
                           {application.job?.isRecruitmentAgency && (
-                            <Badge variant="outline" className="border-sky-500 text-sky-700">
+                            <Badge variant="outline" className="border-emerald-500 text-emerald-700">
                               Agency
                             </Badge>
                           )}
                           {application.job?.remoteWork && (
-                            <Badge variant="outline" className="border-violet-500 text-violet-700">
+                            <Badge variant="outline" className="border-emerald-500 text-emerald-700">
                               Remote
                             </Badge>
                           )}
@@ -521,6 +524,40 @@ className="text-sky-600 border-sky-200 hover:bg-sky-50"
               </p>
             </CardContent>
           </Card>
+        )}
+
+        {/* Upgrade Prompt for Free Users with Many Applications */}
+        {plan === "free" && applications.length >= 10 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-6"
+          >
+            <Card className="bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200 shadow-lg">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="p-3 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full">
+                      <Crown className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-amber-900">Upgrade to Premium</h3>
+                      <p className="text-amber-700">
+                        You've reached {applications.length} applications! Upgrade to unlock unlimited job tracking, advanced analytics, and AI-powered insights.
+                      </p>
+                    </div>
+                  </div>
+                  <Button 
+                    className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white"
+                    onClick={() => window.location.href = '/upgrade'}
+                  >
+                    <Crown className="h-4 w-4 mr-2" />
+                    Upgrade Now
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
         )}
       </div>
     </div>

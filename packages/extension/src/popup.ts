@@ -998,7 +998,16 @@ async function checkJobSponsor(jobId: string, companyName: string) {
     `sponsor-status-${jobId}`
   ) as HTMLDivElement;
 
-  if (!sponsorBtn || !sponsorStatus) return;
+  if (!sponsorBtn || !sponsorStatus) {
+    console.error(`Sponsor check elements not found for job ${jobId}`);
+    return;
+  }
+
+  // Validate inputs
+  if (!companyName || companyName.trim().length < 2) {
+    showToast("Invalid company name for sponsor check", { type: "error" });
+    return;
+  }
 
   // Show checking state
   sponsorBtn.disabled = true;
@@ -1008,14 +1017,20 @@ async function checkJobSponsor(jobId: string, companyName: string) {
   sponsorStatus.className = "sponsor-status checking";
 
   try {
+    console.log(`Checking sponsor status for: ${companyName}`);
+    
     let result: any | null = null;
     try {
       const data = await get<any>("/api/app/sponsorship/companies", {
-        q: companyName,
+        q: companyName.trim(),
         limit: 1,
       });
+      
       if (data && data.results && data.results.length > 0) {
         result = data.results[0];
+        console.log(`Sponsor found: ${result.name}, route: ${result.route}`);
+      } else {
+        console.log(`No sponsor found for: ${companyName}`);
       }
     } catch (e: any) {
       console.warn("Sponsor lookup error", e);
@@ -1046,41 +1061,75 @@ async function checkJobSponsor(jobId: string, companyName: string) {
         sponsorStatus.textContent = "Access Denied";
         sponsorStatus.className = "sponsor-status not-licensed";
         return;
+      } else if (e?.statusCode === 429) {
+        showToast(
+          "Too many requests. Please wait before trying again.",
+          { type: "warning", duration: 5000 }
+        );
+        sponsorStatus.textContent = "Too Many Requests";
+        sponsorStatus.className = "sponsor-status rate-limited";
+        return;
       }
       
       // For other errors, continue with null result
+      console.error("Sponsor lookup failed with error:", e);
     }
 
     if (result) {
-      const isSkilledWorker = result.isSkilledWorker;
+      // Check different sponsorship types
+      const isSkilledWorker = result.route === 'skilled worker' || 
+                             result.route?.toLowerCase().includes('skilled');
+      const isGlobalBusiness = result.route === 'global business mobility' || 
+                              result.route?.toLowerCase().includes('global');
+      const hasOtherSponsorship = !isSkilledWorker && !isGlobalBusiness;
 
       if (isSkilledWorker) {
-        sponsorStatus.textContent = "Licensed";
+        sponsorStatus.textContent = "Licensed (Skilled Worker)";
         sponsorStatus.className = "sponsor-status licensed";
         showToast(
-          `Great news! ${result.name} is licensed to sponsor Skilled Worker visas`,
+          `✅ ${result.name} is licensed to sponsor Skilled Worker visas!`,
           { type: "success" }
         );
-      } else {
-        sponsorStatus.textContent = "Not SW";
-        sponsorStatus.className = "sponsor-status not-licensed";
+      } else if (isGlobalBusiness) {
+        sponsorStatus.textContent = "Licensed (Global Business)";
+        sponsorStatus.className = "sponsor-status licensed-alt";
         showToast(
-          `${result.name} is licensed but doesn't sponsor Skilled Worker visas`,
+          `✅ ${result.name} is licensed for Global Business Mobility visas`,
+          { type: "success" }
+        );
+      } else if (hasOtherSponsorship) {
+        sponsorStatus.textContent = `Licensed (${result.route})`;
+        sponsorStatus.className = "sponsor-status licensed-alt";
+        showToast(
+          `ℹ️ ${result.name} is licensed for ${result.route} sponsorship`,
+          { type: "info" }
+        );
+      } else {
+        sponsorStatus.textContent = "Not Skilled Worker";
+        sponsorStatus.className = "sponsor-status not-skilled";
+        showToast(
+          `⚠️ ${result.name} is licensed but doesn't sponsor Skilled Worker visas`,
           { type: "warning" }
         );
       }
+
+      // Add additional information if available
+      if (result.city) {
+        sponsorStatus.textContent += ` • ${result.city}`;
+      }
+
     } else {
       sponsorStatus.textContent = "Not Found";
       sponsorStatus.className = "sponsor-status not-licensed";
       showToast(
-        `${companyName} isn't in the UK sponsor register`,
+        `❌ ${companyName} isn't in the UK sponsor register`,
         { type: "error" }
       );
     }
   } catch (error) {
     console.error("Unexpected error in sponsor check:", error);
     sponsorStatus.textContent = "Error";
-    sponsorStatus.className = "sponsor-status not-licensed";
+    sponsorStatus.className = "sponsor-status error";
     showToast("Unable to check sponsor status due to an unexpected error", {
       type: "error",
     });

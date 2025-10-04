@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyIdToken } from "@/firebase/admin";
+import { verifyIdToken, getAdminDb } from "@/firebase/admin";
 import {
   withErrorHandling,
   validateAuthHeader,
@@ -19,22 +19,28 @@ export async function GET(request: NextRequest) {
       throw createAuthorizationError("Invalid authentication token", 'INVALID_TOKEN');
     }
 
-    // TODO: Add admin check
-    // if (!decodedToken.admin) {
-    //   throw createAuthorizationError("Admin access required", 'INSUFFICIENT_PERMISSIONS');
-    // }
+    // Check admin permissions
+    const db = getAdminDb();
+    const userDoc = await db.collection("users").doc(decodedToken.uid).get();
+    if (!userDoc.exists || !userDoc.data()?.isAdmin) {
+      throw createAuthorizationError("Admin access required", 'INSUFFICIENT_PERMISSIONS');
+    }
 
-    // For now, return mock users data
-    // In a real implementation, this would fetch from Firestore
-    const users = [
-      {
-        _id: decodedToken.uid,
-        email: decodedToken.email || "user@example.com",
-        name: decodedToken.name || "User",
-        isAdmin: false,
-        createdAt: Date.now()
-      }
-    ];
+    // Fetch all users from Firestore
+    const usersSnapshot = await db.collection("users").get();
+    const users = usersSnapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        _id: doc.id,
+        email: data.email || "",
+        name: data.name || "",
+        isAdmin: data.isAdmin || false,
+        createdAt: data.createdAt || Date.now(),
+        updatedAt: data.updatedAt,
+        lastLoginAt: data.lastLoginAt,
+        emailVerified: data.emailVerified || false
+      };
+    });
 
     return NextResponse.json({
       users,

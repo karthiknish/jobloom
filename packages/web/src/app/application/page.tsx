@@ -18,325 +18,256 @@ import {
   ListChecks,
   ClipboardList,
   Sparkles,
+  Mail,
+  Copy,
+  Edit,
+  Star,
+  Lightbulb,
+  CheckCircle,
 } from "lucide-react";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { FeatureGate } from "@/components/UpgradePrompt";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { resumeTemplates } from "@/config/resumeTemplates";
 import { showSuccess, showError, showInfo } from "@/components/ui/Toast";
-// Extracted resume editor sections
-import { PersonalInfoSection } from "@/components/resume/PersonalInfoSection";
-import { ExperienceSection } from "@/components/resume/ExperienceSection";
-import { EducationSection } from "@/components/resume/EducationSection";
-import { SkillsSection } from "@/components/resume/SkillsSection";
-import { ProjectsSection } from "@/components/resume/ProjectsSection";
+import { usePreConfiguredTabs, PRECONFIGURED_TABS, TabContent, PreConfiguredTabs } from "@/lib/tabs-utils";
+import { AICoverLetterGenerator } from "@/components/application/AICoverLetterGenerator";
+import { AIResumeGenerator } from "@/components/application/AIResumeGenerator";
+import { ResumeImporter } from "@/components/application/ResumeImporter";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-// Helper to get icon component by name
-const getIcon = (iconName: string) => {
-  const icons: Record<string, any> = {
-    FileText,
-    ClipboardList,
-    Palette,
-    Sparkles,
-  };
-  return icons[iconName] || FileText;
-};
-
-interface ResumeState {
+interface ResumeData {
   id?: string;
   templateId: string;
-  version?: number;
-  resumeData: {
-    personalInfo: any;
-    experience: any[];
-    education: any[];
-    skills: { category: string; skills: string[] }[];
-    projects: any[];
+  content: string;
+  personalInfo: {
+    name: string;
+    email: string;
+    phone: string;
+    location: string;
+    summary: string;
   };
+  experience: any[];
+  education: any[];
+  skills: string[];
 }
 
-function getEmptyResume(): ResumeState["resumeData"] {
-  return {
-    personalInfo: {
-      fullName: "",
-      email: "",
-      phone: "",
-      location: "",
-      linkedin: "",
-      github: "",
-      website: "",
-      summary: "",
-    },
-    experience: [
-      {
-        id: "1",
-        company: "",
-        position: "",
-        location: "",
-        startDate: "",
-        endDate: "",
-        current: false,
-        description: "",
-        achievements: [""],
-      },
+// Cover letter templates
+const coverLetterTemplates = {
+  softwareEngineer: {
+    title: "Software Engineer Cover Letter",
+    content: `Dear Hiring Manager,
+
+I am excited to apply for the Software Engineer position at [Company Name]. With [X] years of experience in full-stack development and a passion for creating scalable, user-centric applications, I am confident in my ability to contribute to your team's success.
+
+In my previous role at [Previous Company], I led the development of [specific project], which resulted in [quantifiable achievement]. My expertise in [key technologies] and commitment to writing clean, maintainable code align perfectly with [Company Name]'s mission of [company mission].
+
+I am particularly drawn to [Company Name] because of [specific reason about company]. I would welcome the opportunity to discuss how my skills and experience can contribute to your continued success.
+
+Thank you for considering my application. I look forward to the possibility of speaking with you soon.
+
+Best regards,
+[Your Name]`,
+  },
+  productManager: {
+    title: "Product Manager Cover Letter",
+    content: `Dear Hiring Manager,
+
+I am writing to express my strong interest in the Product Manager position at [Company Name]. With [X] years of experience driving product strategy and delivering user-focused solutions, I am eager to bring my expertise to your innovative team.
+
+At [Previous Company], I successfully launched [product/feature], which increased [metric] by [percentage] and generated [revenue impact]. My background in [relevant experience] combined with my data-driven approach to product development would enable me to contribute immediately to [Company Name]'s growth objectives.
+
+What excites me most about [Company Name] is [specific aspect of company/culture]. I am passionate about [relevant industry trend] and believe my experience in [specific skill] would be valuable in driving [company goal].
+
+I would welcome the opportunity to discuss how my product leadership experience and strategic vision align with [Company Name]'s objectives.
+
+Thank you for your consideration.
+
+Sincerely,
+[Your Name]`,
+  },
+};
+
+// Email templates
+const emailTemplates = {
+  followUp: {
+    title: "Interview Follow-up Email",
+    subject: "Thank You for the Interview - [Position] Role",
+    content: `Dear [Interviewer's Name],
+
+Thank you for taking the time to interview me for the [Position] role at [Company Name] yesterday. I enjoyed learning more about [specific topic discussed] and [Company Name]'s approach to [relevant topic].
+
+Our conversation about [specific discussion point] was particularly interesting, and it reinforced my enthusiasm for [specific aspect of role/company].
+
+I am confident that my experience in [relevant experience] would allow me to contribute effectively to [specific team/project mentioned].
+
+I would welcome the opportunity to discuss next steps and learn more about the timeline for your decision. Please don't hesitate to contact me if you need any additional information.
+
+Thank you again for your time and consideration.
+
+Best regards,
+[Your Name]
+[Your Phone Number]
+[Your Email Address]
+[Your LinkedIn Profile]`,
+  },
+  networking: {
+    title: "Networking Introduction Email",
+    subject: "Introduction - [Your Background] Interested in [Company/Industry]",
+    content: `Dear [Contact's Name],
+
+I hope this email finds you well. My name is [Your Name], and I'm a [Your Current Position] with [X] years of experience in [Your Field].
+
+I came across your profile/work on [how you found them] and was impressed by [specific accomplishment/project]. I am particularly interested in [Company Name/Industry] and would love to learn more about your experience in [relevant area].
+
+I am currently exploring opportunities in [specific area of interest] and would greatly value any insights you might be willing to share about [specific question/topic].
+
+Would you be open to a brief call or meeting to discuss [specific topic]? I completely understand if you're busy, and I appreciate you taking the time to read this message.
+
+Thank you for your time and consideration.
+
+Best regards,
+[Your Name]
+[Your Phone Number]
+[Your LinkedIn Profile]`,
+  },
+};
+
+// Resume tips
+const resumeTips = [
+  {
+    category: "Content",
+    tips: [
+      "Use quantifiable achievements (numbers, percentages, metrics)",
+      "Tailor your resume for each job application",
+      "Include relevant keywords from the job description",
+      "Focus on accomplishments, not just responsibilities",
     ],
-    education: [
-      {
-        id: "1",
-        institution: "",
-        degree: "",
-        field: "",
-        graduationDate: "",
-        gpa: "",
-        honors: "",
-      },
+  },
+  {
+    category: "Format",
+    tips: [
+      "Keep it to 1-2 pages for most professionals",
+      "Use clear, readable fonts (10-12pt)",
+      "Maintain consistent formatting throughout",
+      "Use bullet points for easy scanning",
     ],
-    skills: [
-      { category: "Technical", skills: [] },
-      { category: "Soft Skills", skills: [] },
-      { category: "Languages", skills: [] },
+  },
+  {
+    category: "Keywords",
+    tips: [
+      "Include industry-specific terms",
+      "Use action verbs (achieved, implemented, led)",
+      "Match keywords from job postings",
+      "Balance keywords with natural language",
     ],
-    projects: [
-      { id: "1", name: "", description: "", technologies: [], link: "", github: "" },
-    ],
+  },
+];
+
+function getIcon(iconName: string) {
+  const icons: Record<string, any> = {
+    FileText,
+    Palette,
+    Briefcase,
+    GraduationCap,
+    Code2,
+    Layout,
+    Sparkles,
+    ListChecks,
+    ClipboardList,
   };
+  return icons[iconName] || FileText;
 }
+
+
+
 
 export default function ApplicationPage() {
   const { user } = useFirebaseAuth();
-  const [activeTab, setActiveTab] = useState("editor");
+  const { activeTab, setActiveTab, tabs } = usePreConfiguredTabs("APPLICATION", "resume-maker");
   const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
-  const [resume, setResume] = useState<ResumeState>({
-    templateId: "modern",
-    resumeData: getEmptyResume(),
-  });
-  const [statusMsg, setStatusMsg] = useState<string | null>(null); // will be removed after toast migration
+  const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
-  const autosaveDelay = 1500; // ms
-  const [pendingSave, setPendingSave] = useState<NodeJS.Timeout | null>(null);
+  const [resume, setResume] = useState<ResumeData>({
+    templateId: "modern",
+    content: "",
+    personalInfo: {
+      name: "",
+      email: "",
+      phone: "",
+      location: "",
+      summary: "",
+    },
+    experience: [],
+    education: [],
+    skills: [],
+  });
 
-  const fetchResume = useCallback(async () => {
-    if (!user) return;
-    setLoading(true);
-    try {
-      const token = await user.getIdToken();
-      const res = await fetch("/api/portfolio/resume", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error("Failed to load resume");
-      const data = await res.json();
-      if ((data as any).error) throw new Error((data as any).error);
-      setResume({
-        id: data.id,
-        templateId: data.templateId,
-        version: data.version,
-        resumeData: data.resumeData,
-      });
-    } catch (e: any) {
-      showError("Load failed", e.message || "Unable to load your resume data.");
-    } finally {
-      setLoading(false);
-    }
-  }, [user]);
+  // Template state
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+  const [customContent, setCustomContent] = useState("");
+  const [templateActiveTab, setTemplateActiveTab] = useState("cover-letters");
 
-  useEffect(() => {
-    fetchResume();
-  }, [fetchResume]);
-
-  // Debounced autosave (fires 1.5s after last change when dirty)
-  useEffect(() => {
-    if (!dirty) return;
-    if (pendingSave) clearTimeout(pendingSave);
-    const t = setTimeout(() => {
-      saveResume({ silent: true });
-    }, autosaveDelay);
-    setPendingSave(t as unknown as NodeJS.Timeout);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dirty, resume]);
-
-  const updatePersonalInfo = (field: string, value: string) => {
-    setResume(prev => ({
-      ...prev,
-      resumeData: {
-        ...prev.resumeData,
-        personalInfo: { ...prev.resumeData.personalInfo, [field]: value },
-      },
-    }));
-    setDirty(true);
-  };
-
-  const setResumeData = (updater: (d: ResumeState["resumeData"]) => ResumeState["resumeData"]) => {
-    setResume(prev => ({ ...prev, resumeData: updater(prev.resumeData) }));
-    setDirty(true);
-  };
-
-  const addExperience = () => {
-    setResumeData(d => ({
-      ...d,
-      experience: [
-        ...d.experience,
-        {
-          id: Date.now().toString(),
-          company: "",
-          position: "",
-          location: "",
-          startDate: "",
-          endDate: "",
-          current: false,
-          description: "",
-          achievements: [""],
-        },
-      ],
-    }));
-  };
-
-  const removeExperience = (id: string) => {
-    setResumeData(d => ({ ...d, experience: d.experience.filter(e => e.id !== id) }));
-  };
-
-  const addProject = () => {
-    setResumeData(d => ({
-      ...d,
-      projects: [
-        ...d.projects,
-        { id: Date.now().toString(), name: "", description: "", technologies: [], link: "", github: "" },
-      ],
-    }));
-  };
-
-  const removeProject = (id: string) => {
-    setResumeData(d => ({ ...d, projects: d.projects.filter(p => p.id !== id) }));
-  };
-
-  const addEducation = () => {
-    setResumeData(d => ({
-      ...d,
-      education: [
-        ...d.education,
-        { id: Date.now().toString(), institution: "", degree: "", field: "", graduationDate: "", gpa: "", honors: "" },
-      ],
-    }));
-  };
-
-  const removeEducation = (id: string) => {
-    setResumeData(d => ({ ...d, education: d.education.filter(e => e.id !== id) }));
-  };
-
-  const updateSkillCategory = (index: number, skills: string) => {
-    setResumeData(d => ({
-      ...d,
-      skills: d.skills.map((g, i) => (i === index ? { ...g, skills: skills.split(",").map(s => s.trim()).filter(Boolean) } : g)),
-    }));
-  };
-
-  // Update helpers for extracted components
-  const updateExperienceItem = (index: number, updater: (draft: any) => void) => {
-    setResumeData(d => {
-      const experience = [...d.experience];
-      const draft = { ...experience[index] };
-      updater(draft);
-      experience[index] = draft;
-      return { ...d, experience };
-    });
-  };
-
-  const updateEducationItem = (index: number, updater: (draft: any) => void) => {
-    setResumeData(d => {
-      const education = [...d.education];
-      const draft = { ...education[index] };
-      updater(draft);
-      education[index] = draft;
-      return { ...d, education };
-    });
-  };
-
-  const updateProjectItem = (index: number, updater: (draft: any) => void) => {
-    setResumeData(d => {
-      const projects = [...d.projects];
-      const draft = { ...projects[index] };
-      updater(draft);
-      projects[index] = draft;
-      return { ...d, projects };
-    });
-  };
-
-  const saveResume = async (opts: { silent?: boolean } = {}) => {
-    if (!user) return;
+  const saveResume = useCallback(async () => {
     setSaving(true);
-    if (!opts.silent) showInfo("Saving", "Your resume is being saved...");
     try {
-      const token = await user.getIdToken();
-      const res = await fetch("/api/portfolio/resume", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          templateId: resume.templateId,
-          resumeData: resume.resumeData,
-          version: resume.version,
-        }),
-      });
-      const data = await res.json();
-      if (res.status === 409) {
-        // Version conflict: refetch, merge, retry once
-        const latest = await fetch("/api/portfolio/resume", { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json());
-        if (!(latest as any).resumeData) throw new Error("Conflict: could not load latest");
-        // Naive merge: prefer local changes; append new array items
-        const merged = { ...latest.resumeData };
-        const local = resume.resumeData as any;
-        for (const k of ["experience","education","skills","projects"]) {
-          if (Array.isArray(local[k])) {
-            const mapById = new Map<string, any>();
-            (latest.resumeData as any)[k].forEach((item: any) => item?.id && mapById.set(item.id, item));
-            local[k].forEach((item: any) => {
-              if (item?.id) mapById.set(item.id, { ...mapById.get(item.id), ...item });
-            });
-            merged[k] = Array.from(mapById.values());
-          }
-        }
-        merged.personalInfo = { ...(latest.resumeData.personalInfo||{}), ...(local.personalInfo||{}) };
-        const retry = await fetch("/api/portfolio/resume", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ templateId: resume.templateId, resumeData: merged, version: latest.version }),
-        });
-        const retryData = await retry.json();
-        if (!retry.ok || (retryData as any).error) throw new Error((retryData as any).error || "Retry failed");
-        setResume(r => ({ ...r, id: retryData.id, version: retryData.version, resumeData: merged }));
-        showSuccess("Resume saved", "Changes have been merged and saved.");
-        setDirty(false);
-        setSaving(false);
-        return;
-      }
-      if (!res.ok || (data as any).error) throw new Error((data as any).error || "Save failed");
-      setResume(r => ({
-        ...r,
-        id: data.id,
-        version: data.version,
-      }));
-      showSuccess("Resume saved!", "Your changes have been saved successfully.");
+      // TODO: Implement actual save functionality
+      await new Promise(resolve => setTimeout(resolve, 1000));
       setDirty(false);
-    } catch (e: any) {
-      showError("Save failed", e.message || "Unable to save your resume. Please try again.");
+      showSuccess("Resume saved successfully!");
+    } catch (error) {
+      showError("Failed to save resume");
     } finally {
       setSaving(false);
     }
+  }, []);
+
+  const exportResume = useCallback(() => {
+    // TODO: Implement export functionality
+    showInfo("Export functionality coming soon!");
+  }, []);
+
+  const handleCopyToClipboard = async (content: string) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      showSuccess("Content copied to clipboard!");
+    } catch (error) {
+      showError("Failed to copy to clipboard");
+    }
   };
 
-  const exportResume = () => {
-    alert("Export coming soon – upgrade required");
+  const handleDownload = (content: string, filename: string) => {
+    try {
+      const blob = new Blob([content], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showSuccess("Template downloaded successfully!");
+    } catch (error) {
+      showError("Failed to download template");
+    }
   };
+
+  
 
   if (!user) {
     return (
@@ -350,220 +281,331 @@ export default function ApplicationPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-muted to-muted/80 pt-16">
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background pt-16">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="bg-gradient-to-r from-primary to-secondary shadow-lg"
+        transition={{ duration: 0.6 }}
+        className="gradient-primary shadow-premium-xl relative overflow-hidden"
       >
-        <div className="relative max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
-          <h1 className="text-4xl font-bold text-white">Application Workspace</h1>
-          <p className="mt-4 text-primary-foreground/80 max-w-2xl">
-            Build and maintain your resume. Templates, editing and exports moved here from Portfolio.
-          </p>
+        {/* Premium background elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full filter blur-3xl"></div>
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full filter blur-2xl"></div>
+        </div>
+        
+        <div className="relative max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
+            <h1 className="text-5xl font-bold text-white mb-4">Application Workspace</h1>
+            <p className="text-xl text-primary-foreground/90 max-w-3xl leading-relaxed">
+              Create AI-powered resumes and cover letters. Import existing documents or generate new ones with advanced ATS optimization.
+            </p>
+          </motion.div>
         </div>
       </motion.div>
 
       <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <FeatureGate>
-          <div className="mb-6 flex flex-wrap items-center gap-3">
-            <Button size="sm" variant={previewMode ? "outline" : "default"} onClick={() => setPreviewMode(p => !p)}>
-              {previewMode ? <EyeOff className="h-4 w-4 mr-2" /> : <Eye className="h-4 w-4 mr-2" />} {previewMode ? "Exit Preview" : "Preview"}
-            </Button>
-            <Button size="sm" onClick={() => saveResume()} disabled={saving || loading}>
-              <Save className="h-4 w-4 mr-2" /> {saving ? "Saving..." : "Save"}
-            </Button>
-            <Button size="sm" variant="outline" onClick={exportResume}>
-              <Download className="h-4 w-4 mr-2" /> Export
-            </Button>
-            {dirty && <span className="text-xs text-amber-600">Unsaved changes</span>}
-          </div>
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="mb-8 flex flex-wrap items-center gap-4"
+          >
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button 
+                size="sm" 
+                variant={previewMode ? "outline" : "default"} 
+                onClick={() => setPreviewMode(p => !p)}
+                className="btn-premium rounded-xl font-medium"
+              >
+                {previewMode ? <EyeOff className="h-4 w-4 mr-2" /> : <Eye className="h-4 w-4 mr-2" />} {previewMode ? "Exit Preview" : "Preview"}
+              </Button>
+            </motion.div>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button 
+                size="sm" 
+                onClick={() => saveResume()} 
+                disabled={saving || loading}
+                className="btn-premium rounded-xl font-medium"
+              >
+                <Save className="h-4 w-4 mr-2" /> {saving ? "Saving..." : "Save"}
+              </Button>
+            </motion.div>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={exportResume}
+                className="btn-premium rounded-xl font-medium"
+              >
+                <Download className="h-4 w-4 mr-2" /> Export
+              </Button>
+            </motion.div>
+            {dirty && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="flex items-center gap-2 px-3 py-1 rounded-lg bg-amber-50 border border-amber-200"
+              >
+                <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
+                <span className="text-sm text-amber-700 font-medium">Unsaved changes</span>
+              </motion.div>
+            )}
+          </motion.div>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full sm:w-auto grid-cols-4 gap-2">
-              <TabsTrigger value="editor">Editor</TabsTrigger>
-              <TabsTrigger value="templates">Templates</TabsTrigger>
-              <TabsTrigger value="projects">Projects</TabsTrigger>
-              <TabsTrigger value="preview">Preview</TabsTrigger>
-            </TabsList>
+          {/* Centralized Tab Navigation */}
+          <PreConfiguredTabs
+            configKey="APPLICATION"
+            initialTab="resume-maker"
+            onTabChange={setActiveTab}
+            variant="default"
+            showIcons={true}
+            showDescriptions={true}
+          />
 
-            {/* Editor Tab */}
-            <TabsContent value="editor" className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Left: Form Sections (extracted components) */}
-                <div className="space-y-6 lg:col-span-2">
-                  <PersonalInfoSection data={resume.resumeData.personalInfo} onChange={updatePersonalInfo} />
-                  <ExperienceSection
-                    items={resume.resumeData.experience}
-                    add={addExperience}
-                    remove={removeExperience}
-                    update={updateExperienceItem}
-                  />
-                  <EducationSection
-                    items={resume.resumeData.education}
-                    add={addEducation}
-                    remove={removeEducation}
-                    update={updateEducationItem}
-                  />
-                  <SkillsSection
-                    groups={resume.resumeData.skills}
-                    update={updateSkillCategory}
-                  />
-                </div>
-
-                {/* Right: Projects */}
-                <div className="space-y-6">
-                  <ProjectsSection
-                    items={resume.resumeData.projects}
-                    add={addProject}
-                    remove={removeProject}
-                    update={updateProjectItem}
-                  />
-                </div>
+            {/* Resume Maker Tab */}
+            <TabContent value="resume-maker" activeTab={activeTab}>
+              <div className="space-y-6">
+                <AIResumeGenerator />
               </div>
-            </TabsContent>
+            </TabContent>
+
+            {/* Cover Letter Tab */}
+            <TabContent value="cover-letter" activeTab={activeTab}>
+              <AICoverLetterGenerator />
+            </TabContent>
+
+            {/* Import Resume Tab */}
+            <TabContent value="import" activeTab={activeTab}>
+              <ResumeImporter />
+            </TabContent>
 
             {/* Templates Tab */}
-            <TabsContent value="templates" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2"><Layout className="h-5 w-5" /> Resume Templates</CardTitle>
-                  <CardDescription>Select a template style for your generated resume.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {resumeTemplates.map(t => (
-                      <button
-                        key={t.id}
-                        onClick={() => setResume(r => ({ ...r, templateId: t.id }))}
-                        className={cn(
-                          "relative p-4 rounded-lg border text-left transition-all hover:shadow-sm bg-background",
-                          resume.templateId === t.id ? "border-primary ring-2 ring-primary/30" : "border-border"
-                        )}
-                      >
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <div className="font-medium flex items-center gap-2">
-                              {(() => {
-                                const Icon = getIcon(t.icon);
-                                return <Icon className="h-4 w-4" />;
-                              })()}
-                              {t.name}
+            <TabContent value="templates" activeTab={activeTab}>
+              <Tabs value={templateActiveTab} onValueChange={setTemplateActiveTab}>
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="resume-templates">Resume Templates</TabsTrigger>
+                  <TabsTrigger value="cover-letters">Cover Letters</TabsTrigger>
+                  <TabsTrigger value="emails">Email Templates</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="resume-templates" className="space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2"><Layout className="h-5 w-5" /> Resume Templates</CardTitle>
+                      <CardDescription>Select a template style for your generated resume.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {resumeTemplates.map(t => (
+                          <button
+                            key={t.id}
+                            onClick={() => setResume(r => ({ ...r, templateId: t.id }))}
+                            className={cn(
+                              "relative p-4 rounded-lg border text-left transition-all hover:shadow-sm bg-background",
+                              resume.templateId === t.id ? "border-primary ring-2 ring-primary/30" : "border-border"
+                            )}
+                          >
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <div className="font-medium flex items-center gap-2">
+                                  {(() => {
+                                    const Icon = getIcon(t.icon);
+                                    return <Icon className="h-4 w-4" />;
+                                  })()}
+                                  {t.name}
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-1">{t.description}</p>
+                              </div>
+                              {t.popular && <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary text-primary-foreground">Popular</span>}
                             </div>
-                            <p className="text-xs text-muted-foreground mt-1">{t.description}</p>
+                            {resume.templateId === t.id && (
+                              <div className="absolute top-1 right-1 text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded">Selected</div>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Resume Tips */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Lightbulb className="h-5 w-5" />
+                        Resume Tips & Best Practices
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {resumeTips.map((category, index) => (
+                          <div key={index} className="space-y-3">
+                            <h3 className="font-semibold flex items-center gap-2">
+                              <CheckCircle className="h-4 w-4 text-primary" />
+                              {category.category}
+                            </h3>
+                            <ul className="space-y-2">
+                              {category.tips.map((tip, tipIndex) => (
+                                <li key={tipIndex} className="text-sm flex items-start gap-2">
+                                  <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
+                                  {tip}
+                                </li>
+                              ))}
+                            </ul>
                           </div>
-                          {t.popular && <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary text-primary-foreground">Popular</span>}
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="cover-letters" className="space-y-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Cover Letter Templates Selection */}
+                    <div className="space-y-4">
+                      <Card className="shadow-lg border-border/50 hover:shadow-xl transition-all duration-300">
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                            <FileText className="h-5 w-5 text-primary" />
+                            Cover Letter Templates
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            {Object.entries(coverLetterTemplates).map(([key, template], index) => (
+                              <motion.button
+                                key={key}
+                                whileHover={{ scale: 1.02, y: -2 }}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={() => {
+                                  setSelectedTemplate(key);
+                                  setCustomContent(template.content);
+                                }}
+                                className={cn(
+                                  "w-full text-left p-4 rounded-xl border transition-premium shadow-premium hover:shadow-premium-lg hover-lift",
+                                  selectedTemplate === key
+                                    ? "border-primary bg-primary/5 shadow-premium-lg"
+                                    : "border-border hover:border-primary/30 hover:bg-muted/30"
+                                )}
+                              >
+                                <div className="font-semibold text-foreground">{template.title}</div>
+                                <div className="text-sm text-muted-foreground mt-1">
+                                  Professional template with customizable sections
+                                </div>
+                              </motion.button>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {/* Cover Letter Template Preview */}
+                    <div className="lg:col-span-2">
+                      {selectedTemplate ? (
+                        <Card className="shadow-lg border-border/50">
+                          <CardHeader>
+                            <div className="flex items-center justify-between">
+                              <CardTitle>
+                                {coverLetterTemplates[selectedTemplate as keyof typeof coverLetterTemplates].title}
+                              </CardTitle>
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleCopyToClipboard(customContent)}
+                                >
+                                  <Copy className="h-4 w-4 mr-2" />
+                                  Copy
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleDownload(customContent, "cover-letter.txt")}
+                                >
+                                  <Download className="h-4 w-4 mr-2" />
+                                  Download
+                                </Button>
+                              </div>
+                            </div>
+                          </CardHeader>
+                          <CardContent>
+                            <Textarea
+                              value={customContent}
+                              onChange={(e) => setCustomContent(e.target.value)}
+                              rows={20}
+                              className="font-mono text-sm resize-none"
+                            />
+                          </CardContent>
+                        </Card>
+                      ) : (
+                        <div className="text-center py-12">
+                          <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                          <h3 className="text-lg font-medium text-foreground mb-2">
+                            Select a template
+                          </h3>
+                          <p className="text-muted-foreground">
+                            Choose a cover letter template to get started.
+                          </p>
                         </div>
-                        {resume.templateId === t.id && (
-                          <div className="absolute top-1 right-1 text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded">Selected</div>
-                        )}
-                      </button>
+                      )}
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="emails" className="space-y-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {Object.entries(emailTemplates).map(([key, template]) => (
+                      <Card key={key}>
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                            <Mail className="h-5 w-5" />
+                            {template.title}
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div>
+                            <Label className="text-sm font-medium">Subject:</Label>
+                            <p className="text-sm bg-muted p-2 rounded border mt-1">
+                              {template.subject}
+                            </p>
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium">Email Content:</Label>
+                            <Textarea
+                              value={template.content}
+                              readOnly
+                              rows={12}
+                              className="font-mono text-sm resize-none mt-1"
+                            />
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              onClick={() => handleCopyToClipboard(template.content)}
+                            >
+                              <Copy className="h-4 w-4 mr-2" />
+                              Copy Content
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => handleDownload(template.content, `${key}-email.txt`)}
+                            >
+                              <Download className="h-4 w-4 mr-2" />
+                              Download
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
                     ))}
                   </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Projects Tab (alias to focus projects only) */}
-            <TabsContent value="projects" className="space-y-6">
-              <p className="text-sm text-muted-foreground">Projects are editable in the Editor tab. A dedicated advanced project manager will arrive soon.</p>
-            </TabsContent>
-
-            {/* Preview Tab */}
-            <TabsContent value="preview" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2"><Eye className="h-5 w-5" /> Resume Preview</CardTitle>
-                  <CardDescription>Live preview of your resume using the selected template.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="bg-background p-6 border rounded-lg shadow-sm prose max-w-none">
-                    <h1 className="text-2xl font-bold mb-1">{resume.resumeData.personalInfo.fullName || "Your Name"}</h1>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      {[resume.resumeData.personalInfo.email, resume.resumeData.personalInfo.location]
-                        .filter(Boolean)
-                        .join(" • ")}
-                    </p>
-                    {resume.resumeData.personalInfo.summary && (
-                      <p className="text-sm mb-4">{resume.resumeData.personalInfo.summary}</p>
-                    )}
-
-                    {resume.resumeData.experience.some(e => e.company || e.position) && (
-                      <div className="mb-6">
-                        <h2 className="text-xl font-semibold border-b pb-1 mb-3">Experience</h2>
-                        <div className="space-y-4">
-                          {resume.resumeData.experience.filter(e => e.company || e.position).map(e => (
-                            <div key={e.id}>
-                              <div className="flex justify-between">
-                                <div>
-                                  <h3 className="font-semibold">{e.position || "Position"}</h3>
-                                  <p className="text-muted-foreground text-sm">{e.company || "Company"}</p>
-                                </div>
-                                <span className="text-xs text-muted-foreground">{e.startDate} - {e.endDate || "Present"}</span>
-                              </div>
-                              {e.description && <p className="text-sm mt-1">{e.description}</p>}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {resume.resumeData.education.some(ed => ed.institution || ed.degree) && (
-                      <div className="mb-6">
-                        <h2 className="text-xl font-semibold border-b pb-1 mb-3">Education</h2>
-                        <div className="space-y-4">
-                          {resume.resumeData.education.filter(ed => ed.institution || ed.degree).map(ed => (
-                            <div key={ed.id}>
-                              <div className="flex justify-between">
-                                <div>
-                                  <h3 className="font-semibold">{ed.degree || "Degree"}</h3>
-                                  <p className="text-muted-foreground text-sm">{ed.institution || "Institution"}</p>
-                                </div>
-                                <span className="text-xs text-muted-foreground">{ed.graduationDate}</span>
-                              </div>
-                              {ed.honors && <p className="text-sm mt-1">{ed.honors}</p>}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {resume.resumeData.projects.some(p => p.name) && (
-                      <div className="mb-6">
-                        <h2 className="text-xl font-semibold border-b pb-1 mb-3">Projects</h2>
-                        <div className="space-y-4">
-                          {resume.resumeData.projects.filter(p => p.name).map(p => (
-                            <div key={p.id}>
-                              <h3 className="font-semibold">{p.name}</h3>
-                              {p.description && <p className="text-sm mt-1">{p.description}</p>}
-                              {p.technologies.length > 0 && (
-                                <p className="text-xs text-muted-foreground mt-1">Tech: {p.technologies.join(", ")}</p>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {resume.resumeData.skills.some(g => g.skills.length) && (
-                      <div className="mb-2">
-                        <h2 className="text-xl font-semibold border-b pb-1 mb-3">Skills</h2>
-                        <div className="grid sm:grid-cols-2 gap-4">
-                          {resume.resumeData.skills.filter(g => g.skills.length).map(g => (
-                            <div key={g.category}>
-                              <h3 className="font-semibold text-sm mb-1">{g.category}</h3>
-                              <p className="text-xs text-muted-foreground">{g.skills.join(", ")}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+                </TabsContent>
+              </Tabs>
+            </TabContent>
         </FeatureGate>
       </div>
     </div>

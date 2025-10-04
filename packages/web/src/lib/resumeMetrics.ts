@@ -12,7 +12,10 @@ export function calculateATSScore(
   options?: AtsEvaluationOptions
 ): number {
   // Use the enhanced ATS scoring system
-  const enhancedScore = calculateEnhancedATSScore(resume, options);
+  const enhancedScore = calculateEnhancedATSScore(resume, {
+    targetRole: options?.targetRole || undefined,
+    industry: options?.industry || undefined
+  });
   return enhancedScore.ats;
 }
 

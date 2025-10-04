@@ -17,7 +17,6 @@ import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  signInWithPopup,
   signOut,
   User,
   updateProfile,
@@ -32,6 +31,9 @@ import {
   updateEmail,
   deleteUser,
   connectAuthEmulator,
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
 } from "firebase/auth";
 import { showError, showSuccess } from "@/components/ui/Toast";
 
@@ -85,6 +87,17 @@ export function useFirebaseAuth() {
 }
 
 // Auth error mapping for user-friendly messages
+const DEFAULT_AUTH_ERROR_MESSAGE = "An error occurred during authentication. Please try again.";
+
+const sanitizeAuthMessage = (message?: string): string => {
+  if (!message) return DEFAULT_AUTH_ERROR_MESSAGE;
+  let cleaned = message.replace(/^Firebase:\s*/i, "").trim();
+  cleaned = cleaned.replace(/^Error\s*/i, "").trim();
+  cleaned = cleaned.replace(/\([^)]*\)/g, "").trim();
+  if (!cleaned) return DEFAULT_AUTH_ERROR_MESSAGE;
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+};
+
 const AUTH_ERRORS: Record<string, string> = {
   "auth/user-disabled":
     "Your account has been disabled. Please contact support.",
@@ -113,12 +126,11 @@ const AUTH_ERRORS: Record<string, string> = {
 // Create user-friendly error
 function createAuthError(error: any): AuthError {
   const code = error?.code || "auth/unknown-error";
-  const message = error?.message || "An unknown error occurred";
-  const userMessage =
-    AUTH_ERRORS[code] ||
-    "An error occurred during authentication. Please try again.";
 
-  return { code, message, userMessage };
+  const sanitizedMessage = sanitizeAuthMessage(error?.message);
+  const userMessage = AUTH_ERRORS[code] || sanitizedMessage;
+
+  return { code, message: sanitizedMessage, userMessage };
 }
 
 export function FirebaseAuthProvider({
@@ -144,6 +156,32 @@ export function FirebaseAuthProvider({
     setState((prev) => ({ ...prev, lastActivity: Date.now() }));
   }, []);
 
+  const syncAuthStateToClient = useCallback((user: User | null) => {
+    if (typeof window === "undefined") return;
+
+    try {
+      if (user) {
+        const payload = JSON.stringify({ id: user.uid });
+        (window as any).__firebase_user = { id: user.uid };
+        localStorage.setItem("__firebase_user", payload);
+        document.cookie = `__firebase_user=${encodeURIComponent(
+          payload
+        )}; path=/; max-age=604800; samesite=strict`;
+        window.postMessage(
+          { type: "FIREBASE_AUTH_SUCCESS", uid: user.uid },
+          window.location.origin
+        );
+      } else {
+        delete (window as any).__firebase_user;
+        localStorage.removeItem("__firebase_user");
+        document.cookie =
+          "__firebase_user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      }
+    } catch (storageError) {
+      console.warn("Failed to sync auth state to client:", storageError);
+    }
+  }, []);
+
   // Handle authentication errors
   const handleAuthError = useCallback((error: any) => {
     const authError = createAuthError(error);
@@ -167,6 +205,7 @@ export function FirebaseAuthProvider({
 
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       clearTimeout(timeoutId);
+      syncAuthStateToClient(user);
       setState((prev) => ({
         ...prev,
         user,
@@ -202,7 +241,7 @@ export function FirebaseAuthProvider({
         delete (window as any).__sessionTimeout;
       }
     };
-  }, []);
+  }, [syncAuthStateToClient]);
 
   // Clear session timeouts
   const clearSessionTimeouts = useCallback(() => {
@@ -243,6 +282,32 @@ export function FirebaseAuthProvider({
     (window as any).__sessionTimeout = sessionTimeout;
   }, [clearSessionTimeouts]);
 
+
+
+  // Handle redirect result for Google sign-in
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const auth = getAuthClient();
+    if (!auth) return;
+
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result?.user) {
+          console.log("Google sign-in successful from redirect:", result.user);
+          showSuccess("Successfully signed in with Google!");
+        }
+      })
+      .catch((redirectError) => {
+        const code = (redirectError as { code?: string })?.code;
+        if (code === "auth/no-auth-event") return;
+
+        console.error("Redirect result error:", redirectError);
+        const authError = createAuthError(redirectError);
+        setError(authError);
+        showError(authError.userMessage);
+      });
+  }, []);
+
   // Monitor online/offline status
   useEffect(() => {
     const handleOnline = () => {
@@ -273,32 +338,16 @@ export function FirebaseAuthProvider({
 
   // Broadcast auth state to extension
   useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    try {
-      if (state.user) {
-        (window as any).__firebase_user = { id: state.user.uid };
-        localStorage.setItem(
-          "__firebase_user",
-          JSON.stringify({ id: state.user.uid })
-        );
-        document.cookie = `__firebase_user=${JSON.stringify({
-          id: state.user.uid,
-        })}; path=/; max-age=604800; samesite=strict`;
-        window.postMessage(
-          { type: "FIREBASE_AUTH_SUCCESS", uid: state.user.uid },
-          window.location.origin
-        );
-      } else {
-        delete (window as any).__firebase_user;
-        localStorage.removeItem("__firebase_user");
-        document.cookie =
-          "__firebase_user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    syncAuthStateToClient(state.user);
+    
+    // Also make auth instance available to extension
+    if (state.user && typeof window !== "undefined") {
+      const auth = getAuthClient();
+      if (auth) {
+        (window as any).__firebase_auth = auth;
       }
-    } catch {
-      // Ignore storage errors
     }
-  }, [state.user]);
+  }, [state.user, syncAuthStateToClient]);
 
   // Auth methods
   const signIn = useCallback(
@@ -360,16 +409,25 @@ export function FirebaseAuthProvider({
   );
 
   const signInWithGoogle = useCallback(async () => {
-    try {
-      setError(null);
-      updateActivity();
-      const auth = getAuthClient();
-      const provider = getGoogleProvider();
-      if (!auth || !provider) throw new Error("Auth not available");
+    setError(null);
+    updateActivity();
+    const auth = getAuthClient();
+    const provider = getGoogleProvider();
 
-      await signInWithPopup(auth, provider);
-      showSuccess("Successfully signed in with Google!");
-    } catch (error) {
+    if (!auth || !provider) {
+      console.error("Auth or provider not available");
+      throw new Error("Auth not available");
+    }
+
+    console.log("Starting Google sign-in with redirect...");
+    try {
+      // Use redirect instead of popup to avoid popup closing issues
+      await signInWithRedirect(auth, provider);
+      console.log("Redirect initiated successfully");
+    } catch (error: any) {
+      console.error("Google sign-in redirect failed:", error);
+      console.error("Error code:", error.code);
+      console.error("Error message:", error.message);
       handleAuthError(error);
     }
   }, [handleAuthError, updateActivity]);

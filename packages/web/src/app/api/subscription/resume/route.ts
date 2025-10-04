@@ -87,18 +87,19 @@ export async function POST(request: NextRequest) {
     const subscriptionId = userData?.subscriptionId;
 
     if (!subscriptionId) {
-      return NextResponse.json({
+      const response = NextResponse.json({
         error: "No active subscription found for this user",
       }, { status: 404 });
+      return setSecurityHeaders(response);
     }
 
     const stripeSubscriptionResponse = await stripe.subscriptions.retrieve(subscriptionId, {
       expand: ["latest_invoice.payment_intent"],
     });
-  const stripeSubscription = stripeSubscriptionResponse as Stripe.Subscription;
+    const stripeSubscription = stripeSubscriptionResponse as Stripe.Subscription;
 
     if (!stripeSubscription.cancel_at_period_end) {
-      return NextResponse.json({
+      const response = NextResponse.json({
         success: true,
         subscription: {
           id: stripeSubscription.id,
@@ -108,12 +109,13 @@ export async function POST(request: NextRequest) {
         },
         message: "Subscription is not set to cancel",
       });
+      return setSecurityHeaders(response);
     }
 
     const updatedSubscriptionResponse = await stripe.subscriptions.update(subscriptionId, {
       cancel_at_period_end: false,
     });
-  const updatedSubscription = updatedSubscriptionResponse as Stripe.Subscription;
+    const updatedSubscription = updatedSubscriptionResponse as Stripe.Subscription;
 
     await upsertSubscriptionFromStripe({
       subscription: updatedSubscription,

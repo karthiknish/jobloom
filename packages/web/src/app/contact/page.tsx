@@ -29,6 +29,31 @@ export default function ContactPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Basic client-side validation
+    if (!name.trim() || !email.trim() || !message.trim()) {
+      toast.error("Please fill in all required fields.");
+      return;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+
+    // Message length validation
+    if (message.trim().length < 10) {
+      toast.error("Message must be at least 10 characters long.");
+      return;
+    }
+
+    if (message.trim().length > 1000) {
+      toast.error("Message must be less than 1000 characters.");
+      return;
+    }
+
     setLoading(true);
     try {
       await createContact({ name, email, message });
@@ -36,9 +61,17 @@ export default function ContactPage() {
       setName("");
       setEmail("");
       setMessage("");
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to send message. Please try again later.");
+    } catch (err: any) {
+      console.error("Contact form error:", err);
+      
+      // Provide more specific error messages
+      if (err?.message?.includes("400")) {
+        toast.error("Invalid form data. Please check your inputs and try again.");
+      } else if (err?.message?.includes("500")) {
+        toast.error("Server error. Please try again later.");
+      } else {
+        toast.error("Failed to send message. Please try again later.");
+      }
     } finally {
       setLoading(false);
     }
@@ -79,14 +112,26 @@ export default function ContactPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="message">Message</Label>
+              <Label htmlFor="message">
+                Message
+                <span className="text-sm text-muted-foreground ml-2">
+                  ({message.length}/1000 characters)
+                </span>
+              </Label>
               <Textarea
                 id="message"
                 required
                 rows={5}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
+                maxLength={1000}
+                placeholder="Please describe your question or feedback in detail..."
               />
+              {message.length > 900 && (
+                <p className="text-sm text-muted-foreground">
+                  {message.length > 1000 ? "Maximum length exceeded." : "Almost at character limit."}
+                </p>
+              )}
             </div>
 
             <Button

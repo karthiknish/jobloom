@@ -1,36 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminDb, verifyIdToken } from '@/firebase/admin';
-
-const RESERVED = new Set([
-  'www','app','admin','api','support','help','blog','cdn','static','assets','portal','hireall','dev','stage','test'
-]);
+import { normalizeSubdomain, validateSubdomain } from '@/lib/subdomain';
 
 function mask(error: string, debug?: any) {
   if (process.env.NODE_ENV === 'production') return { error };
   return { error, _debug: debug };
 }
 
-function normalize(name: string) {
-  return name.trim().toLowerCase();
-}
-
-function validateFormat(name: string): string | null {
-  if (!name) return 'Subdomain required';
-  if (name.length < 3 || name.length > 30) return 'Must be 3-30 characters';
-  if (!/^[a-z0-9-]+$/.test(name)) return 'Only lowercase letters, numbers, hyphen allowed';
-  if (name.startsWith('-') || name.endsWith('-')) return 'Cannot start or end with hyphen';
-  if (name.includes('--')) return 'Cannot contain consecutive hyphens';
-  if (/^[0-9]+$/.test(name)) return 'Cannot be only numbers';
-  if (RESERVED.has(name)) return 'Reserved name';
-  return null;
-}
-
 // GET /api/subdomain?name=foo  -> availability
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const name = normalize(searchParams.get('name') || '');
-    const formatErr = validateFormat(name);
+    const name = normalizeSubdomain(searchParams.get('name') || '');
+    const formatErr = validateSubdomain(name);
     if (formatErr) {
       return NextResponse.json({ available: false, reason: formatErr });
     }
@@ -58,8 +40,8 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json().catch(() => null) as { subdomain?: string } | null;
     if (!body?.subdomain) return NextResponse.json(mask('subdomain required'), { status: 400 });
-    const requested = normalize(body.subdomain);
-    const formatErr = validateFormat(requested);
+    const requested = normalizeSubdomain(body.subdomain);
+    const formatErr = validateSubdomain(requested);
     if (formatErr) return NextResponse.json(mask(formatErr), { status: 400 });
 
     const db = getAdminDb();

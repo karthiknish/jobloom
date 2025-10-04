@@ -1001,7 +1001,7 @@ export default function AdminUserDashboardClient() {
                     </p>
                   </div>
                   <div>
-                    <Label className="text-sm font-medium">Firebase UID</Label>
+                    <Label className="text-sm font-medium">Auth UID</Label>
                     <p className="text-sm text-muted-foreground font-mono">
                       {selectedUser.firebaseUid?.slice(0, 20)}...
                     </p>

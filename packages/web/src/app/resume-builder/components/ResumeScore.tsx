@@ -1,12 +1,15 @@
 "use client";
 
 import React from "react";
-import { CheckCircle, AlertCircle, Lightbulb } from "lucide-react";
+import { motion } from "framer-motion";
+import { CheckCircle, AlertCircle, Lightbulb, Crown } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { EnhancedAtsScore } from "@/components/EnhancedAtsScore";
-import type { ResumeScore } from "../types";
+import { useSubscription } from "@/hooks/useSubscription";
+import type { ResumeScore } from "@/lib/enhancedAts";
 
 interface ResumeScoreProps {
   score: ResumeScore;
@@ -14,6 +17,8 @@ interface ResumeScoreProps {
 }
 
 export function ResumeScore({ score, enhanced = true }: ResumeScoreProps) {
+  const { plan } = useSubscription();
+  
   // If enhanced mode is available and the score has enhanced data, use the enhanced component
   if (enhanced && score.breakdown) {
     return <EnhancedAtsScore score={score} />;
@@ -155,6 +160,40 @@ export function ResumeScore({ score, enhanced = true }: ResumeScoreProps) {
             </div>
           </CardContent>
         </Card>
+
+        {/* Upgrade Prompt for Low Scores */}
+        {plan === "free" && score.overall < 70 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <Card className="bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="p-3 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full">
+                      <Crown className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-amber-900">Boost Your Resume Score</h3>
+                      <p className="text-amber-700">
+                        Get AI-powered optimization, premium templates, and expert feedback to increase your resume score by 30+ points.
+                      </p>
+                    </div>
+                  </div>
+                  <Button 
+                    className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white"
+                    onClick={() => window.location.href = '/upgrade'}
+                  >
+                    <Crown className="h-4 w-4 mr-2" />
+                    Upgrade
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
       </motion.div>
     </div>
   );

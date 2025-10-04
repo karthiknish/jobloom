@@ -167,10 +167,18 @@ export interface Subscription {
   updatedAt: number | null;
   stripeSubscriptionId?: string;
   stripeCustomerId?: string;
-  billingCycle?: "monthly" | null;
+  billingCycle?: "monthly" | "annual" | null;
   price?: number | null;
   currency?: string | null;
   customerPortalUrl?: string | null;
+  trialStart?: number | null;
+  trialEnd?: number | null;
+  cancelAt?: number | null;
+  canceledAt?: number | null;
+  endedAt?: number | null;
+  latestInvoiceId?: string | null;
+  latestInvoiceStatus?: string | null;
+  collectionMethod?: string | null;
 }
 
 export const SUBSCRIPTION_LIMITS: Record<SubscriptionPlan, SubscriptionLimits> = {

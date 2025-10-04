@@ -87,9 +87,11 @@ export const dashboardApi = {
     const db = getDb();
     if (!db) throw new Error("Firestore not initialized");
     const userRef = doc(db, "users", uid);
-    const snap = await getDoc(userRef);
+
     type FireUser = { email?: string; name?: string; createdAt?: number };
-    if (snap.exists()) {
+
+    const mapSnapshot = (snap: { exists: () => boolean; id: string; data: () => FireUser }) => {
+      if (!snap.exists()) return null;
       const data = snap.data() as FireUser;
       return {
         _id: snap.id,
@@ -98,8 +100,110 @@ export const dashboardApi = {
         createdAt:
           typeof data.createdAt === "number" ? data.createdAt : Date.now(),
       };
+    };
+
+    const shouldFallbackToAdminApi = (error: any) => {
+      const code = typeof error?.code === "string" ? error.code.toLowerCase() : "";
+      const message = typeof error?.message === "string" ? error.message.toLowerCase() : "";
+      const isPermissionError = (
+        code.includes("permission") ||
+        code.includes("unauth") ||
+        code.includes("permission-denied") ||
+        code.includes("unauthenticated") ||
+        code.includes("forbidden") ||
+        message.includes("permission") ||
+        message.includes("unauthorized") ||
+        message.includes("insufficient permissions") ||
+        message.includes("missing or insufficient permissions") ||
+        message.includes("permission denied") ||
+        message.includes("access denied")
+      );
+
+      if (isPermissionError) {
+        console.error("Permission error detected in dashboard API:", {
+          code,
+          message,
+          error
+        });
+      }
+
+      return isPermissionError;
+    };
+
+    const tryLoadUser = async () => {
+      const snap = await getDoc(userRef);
+      return mapSnapshot(snap as unknown as { exists: () => boolean; id: string; data: () => FireUser });
+    };
+
+    const ensureViaAdminApi = async () => {
+      const auth = getAuthClient();
+      const currentUser = auth?.currentUser;
+      if (!currentUser) {
+        throw new Error("Not authenticated");
+      }
+      const token = await currentUser.getIdToken();
+      const response = await fetch("/api/cv/user", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) {
+        const bodyText = await response.text().catch(() => "");
+        const errorMessage = bodyText
+          ? `Failed to ensure user record: ${response.status} ${bodyText}`
+          : `Failed to ensure user record: ${response.status}`;
+
+        console.error("Dashboard API fallback error:", {
+          status: response.status,
+          statusText: response.statusText,
+          bodyText,
+          userId: currentUser.uid
+        });
+
+        throw new Error(errorMessage);
+      }
+
+      try {
+        const ensured = await tryLoadUser();
+        if (ensured) {
+          return ensured;
+        }
+      } catch (fallbackReadError) {
+        const fallbackError = fallbackReadError as { code?: string; message?: string };
+        console.error("Dashboard user fallback read failed:", {
+          error: fallbackError,
+          userId: currentUser.uid,
+          errorCode: fallbackError?.code,
+          errorMessage: fallbackError?.message
+        });
+
+        // If fallback read also fails with permission error, re-throw it
+        if (shouldFallbackToAdminApi(fallbackError)) {
+          throw fallbackError;
+        }
+      }
+
+      return {
+        _id: currentUser.uid,
+        email: currentUser.email ?? undefined,
+        name: currentUser.displayName ?? undefined,
+        createdAt: Date.now(),
+      };
+    };
+
+    try {
+      const existing = await tryLoadUser();
+      if (existing) {
+        return existing;
+      }
+    } catch (error) {
+      if (!shouldFallbackToAdminApi(error)) {
+        throw error;
+      }
+      return ensureViaAdminApi();
     }
-    // Create a minimal user record from current auth context if available
+
     const auth = getAuthClient();
     const currentUser = auth?.currentUser;
     const payload: Partial<FireUser> & {
@@ -113,13 +217,43 @@ export const dashboardApi = {
       isAdmin: false,
       provider: currentUser?.providerData?.[0]?.providerId ?? null,
     };
-    await updateDoc(userRef, payload).catch(async () => {
-      // If update failed because doc is missing, try creating via a sentinel addDoc to collection with explicit id unsupported; fallback to set via update is not allowed, use a tiny add flow
-      // Since addDoc can't set a custom ID, use a transaction-like pattern: use fetch API via REST? Simpler: try set by using updateDoc through merging via setDoc when available.
-    });
-    // Use setDoc to ensure creation
-    const { setDoc } = await import("firebase/firestore");
-    await setDoc(userRef, payload, { merge: true });
+
+    try {
+      await updateDoc(userRef, payload);
+    } catch (error) {
+      if (!shouldFallbackToAdminApi(error)) {
+        // Ignore failures due to missing doc; we'll attempt setDoc next
+        const err = error as { code?: string; message?: string } | undefined;
+        if (err?.code !== "not-found" && err?.message) {
+          console.warn("Dashboard user updateDoc warning", err?.message, err);
+        }
+      } else {
+        return ensureViaAdminApi();
+      }
+    }
+
+    try {
+      const { setDoc } = await import("firebase/firestore");
+      await setDoc(userRef, payload, { merge: true });
+    } catch (error) {
+      if (shouldFallbackToAdminApi(error)) {
+        return ensureViaAdminApi();
+      }
+      throw error;
+    }
+
+    try {
+      const created = await tryLoadUser();
+      if (created) {
+        return created;
+      }
+    } catch (error) {
+      if (shouldFallbackToAdminApi(error)) {
+        return ensureViaAdminApi();
+      }
+      throw error;
+    }
+
     return {
       _id: uid,
       email: payload.email ?? undefined,

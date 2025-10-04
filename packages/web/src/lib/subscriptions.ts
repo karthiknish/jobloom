@@ -1,10 +1,82 @@
-import Stripe from "stripe";
+import type Stripe from "stripe";
 import { getAdminDb } from "@/firebase/admin";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
+import { SubscriptionPlan } from "@/types/api";
 
 export type SubscriptionStatus = "active" | "inactive" | "cancelled" | "past_due";
 
 const db = getAdminDb();
+
+function normalizePlan(value?: string | null): SubscriptionPlan | null {
+  if (!value) return null;
+  const normalized = value.toLowerCase();
+  if (normalized === "free" || normalized === "premium") {
+    return normalized as SubscriptionPlan;
+  }
+  return null;
+}
+
+function inferPlan(subscription: Stripe.Subscription, fallback?: string): SubscriptionPlan {
+  const candidates = [
+    subscription.metadata?.plan,
+    subscription.items?.data?.[0]?.price?.metadata?.plan,
+    subscription.items?.data?.[0]?.price?.lookup_key,
+    subscription.items?.data?.[0]?.price?.nickname,
+    fallback,
+  ];
+
+  for (const candidate of candidates) {
+    const plan = normalizePlan(candidate ?? null);
+    if (plan) {
+      return plan;
+    }
+  }
+
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    const value = candidate.toLowerCase();
+    if (value.includes("premium")) {
+      return "premium";
+    }
+    if (value.includes("free")) {
+      return "free";
+    }
+  }
+
+  return "premium";
+}
+
+function inferBillingCycle(subscription: Stripe.Subscription): "monthly" | "annual" | null {
+  const interval = subscription.items?.data?.[0]?.price?.recurring?.interval;
+  if (interval === "month") return "monthly";
+  if (interval === "year") return "annual";
+  return null;
+}
+
+function stripeSecondsToTimestamp(value?: number | null): Timestamp | null {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return Timestamp.fromMillis(value * 1000);
+  }
+  return null;
+}
+
+function resolveLatestInvoiceInfo(latestInvoice: Stripe.Subscription["latest_invoice"]): {
+  id: string | null;
+  status: string | null;
+} {
+  if (!latestInvoice) {
+    return { id: null, status: null };
+  }
+
+  if (typeof latestInvoice === "string") {
+    return { id: latestInvoice, status: null };
+  }
+
+  return {
+    id: latestInvoice.id ?? null,
+    status: latestInvoice.status ?? null,
+  };
+}
 
 // Error classes for better error handling
 export class SubscriptionError extends Error {
@@ -99,13 +171,13 @@ function mapStripeStatus(status: Stripe.Subscription.Status): SubscriptionStatus
       return "past_due";
     case "canceled":
       return "cancelled";
+    case "incomplete":
+    case "incomplete_expired":
+    case "paused":
+      return "inactive";
     default:
       return "inactive";
   }
-}
-
-function detectBillingCycle(subscription: Stripe.Subscription): "monthly" {
-  return "monthly";
 }
 
 export async function upsertSubscriptionFromStripe(options: {
@@ -115,13 +187,14 @@ export async function upsertSubscriptionFromStripe(options: {
 }): Promise<void> {
   try {
     const { subscription, userId, plan } = options;
-    
-    // Validate inputs
+
     validateUserId(userId);
-    validatePlan(plan);
     validateSubscription(subscription);
-    
-    const price = subscription.items.data[0]?.price;
+
+    const resolvedPlan = inferPlan(subscription, plan);
+    validatePlan(resolvedPlan);
+
+    const price = subscription.items.data[0]?.price ?? null;
     const customerId = typeof subscription.customer === "string"
       ? subscription.customer
       : subscription.customer?.id;
@@ -132,8 +205,18 @@ export async function upsertSubscriptionFromStripe(options: {
 
     const subscriptionRef = db.collection("subscriptions").doc(subscription.id);
 
-    const periodStartSeconds = (subscription as Stripe.Subscription & { current_period_start?: number })["current_period_start"];
-    const periodEndSeconds = (subscription as Stripe.Subscription & { current_period_end?: number })["current_period_end"];
+    const currentPeriodStartTs = stripeSecondsToTimestamp((subscription as Stripe.Subscription & { current_period_start?: number }).current_period_start);
+    const currentPeriodEndTs = stripeSecondsToTimestamp((subscription as Stripe.Subscription & { current_period_end?: number }).current_period_end);
+    const createdTs = stripeSecondsToTimestamp(subscription.created ?? null);
+    const cancelAtTs = stripeSecondsToTimestamp(subscription.cancel_at ?? null);
+    const canceledAtTs = stripeSecondsToTimestamp(subscription.canceled_at ?? null);
+    const endedAtTs = stripeSecondsToTimestamp(subscription.ended_at ?? null);
+    const trialStartTs = stripeSecondsToTimestamp(subscription.trial_start ?? null);
+    const trialEndTs = stripeSecondsToTimestamp(subscription.trial_end ?? null);
+    const { id: latestInvoiceId, status: latestInvoiceStatus } = resolveLatestInvoiceInfo(subscription.latest_invoice);
+
+    const billingCycle = inferBillingCycle(subscription);
+    const subscriptionStatus = mapStripeStatus(subscription.status);
 
     // Use retry logic for database operations
     await withRetry(async () => {
@@ -141,25 +224,46 @@ export async function upsertSubscriptionFromStripe(options: {
         const snapshot = await txn.get(subscriptionRef);
         const data: Record<string, unknown> = {
           userId,
-          plan,
-          status: mapStripeStatus(subscription.status),
-          currentPeriodStart: periodStartSeconds
-            ? Timestamp.fromMillis(periodStartSeconds * 1000)
-            : FieldValue.serverTimestamp(),
-          currentPeriodEnd: periodEndSeconds
-            ? Timestamp.fromMillis(periodEndSeconds * 1000)
-            : FieldValue.serverTimestamp(),
+          plan: resolvedPlan,
+          status: subscriptionStatus,
           cancelAtPeriodEnd: subscription.cancel_at_period_end,
           stripeSubscriptionId: subscription.id,
           stripeCustomerId: customerId,
-          billingCycle: detectBillingCycle(subscription),
+          billingCycle,
           price: price?.unit_amount ? price.unit_amount / 100 : null,
           currency: price?.currency ?? null,
+          collectionMethod: subscription.collection_method ?? null,
+          cancelAt: cancelAtTs,
+          canceledAt: canceledAtTs,
+          endedAt: endedAtTs,
+          trialStart: trialStartTs,
+          trialEnd: trialEndTs,
+          latestInvoiceId,
+          latestInvoiceStatus,
           updatedAt: FieldValue.serverTimestamp(),
         };
 
+        if (currentPeriodStartTs) {
+          data.currentPeriodStart = currentPeriodStartTs;
+        } else if (!snapshot.exists) {
+          data.currentPeriodStart = FieldValue.serverTimestamp();
+        }
+
+        if (currentPeriodEndTs) {
+          data.currentPeriodEnd = currentPeriodEndTs;
+        } else if (!snapshot.exists) {
+          data.currentPeriodEnd = FieldValue.serverTimestamp();
+        }
+
         if (!snapshot.exists) {
-          data.createdAt = FieldValue.serverTimestamp();
+          data.createdAt = createdTs ?? FieldValue.serverTimestamp();
+        }
+
+        const portalUrl = subscription.metadata?.customerPortalUrl;
+        if (portalUrl) {
+          data.customerPortalUrl = portalUrl;
+        } else if (!snapshot.exists) {
+          data.customerPortalUrl = null;
         }
 
         txn.set(subscriptionRef, data, { merge: true });
@@ -173,7 +277,11 @@ export async function upsertSubscriptionFromStripe(options: {
         {
           subscriptionId: subscription.id,
           stripeCustomerId: customerId,
-          plan,
+          plan: resolvedPlan,
+          subscriptionStatus,
+          subscriptionCancelAtPeriodEnd: subscription.cancel_at_period_end,
+          subscriptionTrialEndsAt: trialEndTs ?? null,
+          billingCycle,
           updatedAt: FieldValue.serverTimestamp(),
         },
         { merge: true }

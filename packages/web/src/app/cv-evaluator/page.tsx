@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
+import { useSubscription } from "@/hooks/useSubscription";
 import { FeatureGate } from "../../components/UpgradePrompt";
 import { EnhancedAtsScore } from "../../components/EnhancedAtsScore";
 import { RealTimeAtsFeedback } from "../../components/RealTimeAtsFeedback";
@@ -46,7 +47,6 @@ import {
   FileCheck,
   FileSearch,
   Brain,
-  Targeted,
   LineChart,
   PieChart,
   Timer,
@@ -69,7 +69,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/loading-skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PreConfiguredTabs, TabContent } from "@/lib/tabs-utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -81,7 +81,8 @@ export default function CvEvaluatorPage() {
   ensureFirebaseApp();
 
   const { user, loading: authLoading } = useFirebaseAuth();
-  const [activeTab, setActiveTab] = useState<"upload" | "history" | "tracking" | "insights">("upload");
+  const { plan } = useSubscription();
+  const [activeTab, setActiveTab] = useState("upload");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [selectedAnalysis, setSelectedAnalysis] = useState<any>(null);
 
@@ -251,17 +252,24 @@ export default function CvEvaluatorPage() {
 
   return (
     <TooltipProvider>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      {/* Enhanced Header */}
-      <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="py-6">
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="flex items-center justify-between"
-            >
+      <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
+        {/* Premium background elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-20 right-20 w-96 h-96 bg-primary/2 rounded-full filter blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-20 left-20 w-80 h-80 bg-secondary/2 rounded-full filter blur-2xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+        </div>
+
+        <div className="relative z-10">
+          {/* Enhanced Header */}
+          <div className="surface-premium-elevated border-b border-border/50 bg-surface">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="py-6">
+                <motion.div
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6 }}
+                  className="flex items-center justify-between"
+                >
               <div className="flex items-center gap-4">
                 <motion.div
                   initial={{ scale: 0.8 }}
@@ -308,6 +316,40 @@ export default function CvEvaluatorPage() {
           </div>
         </div>
       </div>
+
+      {/* Premium Upgrade Banner */}
+      {plan === "free" && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-4"
+        >
+          <Card className="bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200 shadow-lg">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full">
+                    <Brain className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-amber-900">Unlock Advanced CV Analysis</h3>
+                    <p className="text-sm text-amber-700">Get unlimited CV scans, detailed feedback, and AI-powered optimization</p>
+                  </div>
+                </div>
+                <Button 
+                  size="sm" 
+                  className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white"
+                  onClick={() => window.location.href = '/upgrade'}
+                >
+                  <Zap className="h-4 w-4 mr-2" />
+                  Upgrade
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <FeatureGate>
@@ -466,55 +508,22 @@ export default function CvEvaluatorPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 p-1 mb-8"
+            className="mb-8"
           >
-            <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>
-              <TabsList className="grid w-full grid-cols-4 bg-transparent">
-                <TabsTrigger
-                  value="upload"
-                  className="data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-600 rounded-lg"
-                >
-                  <div className="flex items-center gap-2 py-2">
-                    <Upload className="w-4 h-4" />
-                    <span className="text-sm font-medium">Upload</span>
-                  </div>
-                </TabsTrigger>
-                <TabsTrigger
-                  value="history"
-                  className="data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-600 rounded-lg"
-                >
-                  <div className="flex items-center gap-2 py-2">
-                    <History className="w-4 h-4" />
-                    <span className="text-sm font-medium">History</span>
-                  </div>
-                </TabsTrigger>
-                <TabsTrigger
-                  value="tracking"
-                  className="data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-600 rounded-lg"
-                >
-                  <div className="flex items-center gap-2 py-2">
-                    <TrendingUp className="w-4 h-4" />
-                    <span className="text-sm font-medium">Progress</span>
-                  </div>
-                </TabsTrigger>
-                <TabsTrigger
-                  value="insights"
-                  className="data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-600 rounded-lg"
-                >
-                  <div className="flex items-center gap-2 py-2">
-                    <Lightbulb className="w-4 h-4" />
-                    <span className="text-sm font-medium">Insights</span>
-                  </div>
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
+            <PreConfiguredTabs
+              configKey="CV_MANAGER"
+              initialTab="upload"
+              onTabChange={setActiveTab}
+              variant="pills"
+              showIcons={true}
+              showDescriptions={true}
+            />
           </motion.div>
 
           {/* Tab Content */}
           <AnimatePresence mode="wait">
-            {activeTab === "upload" && (
+            <TabContent key="upload" value="upload" activeTab={activeTab}>
               <motion.div
-                key="upload"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
@@ -663,11 +672,10 @@ export default function CvEvaluatorPage() {
                   </Card>
                 </div>
               </motion.div>
-            )}
+            </TabContent>
 
-            {activeTab === "history" && (
+            <TabContent key="history" value="history" activeTab={activeTab}>
               <motion.div
-                key="history"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
@@ -717,9 +725,9 @@ export default function CvEvaluatorPage() {
                   </CardContent>
                 </Card>
               </motion.div>
-            )}
+            </TabContent>
 
-            {activeTab === "tracking" && (
+            <TabContent key="tracking" value="tracking" activeTab={activeTab}>
               <motion.div
                 key="tracking"
                 initial={{ opacity: 0, y: 10 }}
@@ -749,9 +757,9 @@ export default function CvEvaluatorPage() {
                   </CardContent>
                 </Card>
               </motion.div>
-            )}
+            </TabContent>
 
-            {activeTab === "insights" && (
+            <TabContent key="insights" value="insights" activeTab={activeTab}>
               <motion.div
                 key="insights"
                 initial={{ opacity: 0, y: 10 }}
@@ -858,10 +866,12 @@ export default function CvEvaluatorPage() {
                   </Card>
                 </div>
               </motion.div>
-            )}
-          </AnimatePresence>
+            </TabContent>
+            </AnimatePresence>
         </FeatureGate>
       </div>
+      </div>
     </div>
+    </TooltipProvider>
   );
 }

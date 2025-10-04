@@ -23,6 +23,16 @@ export function categorizeError(error: ApiError | EnhancedApiError): {
   shouldRetry: boolean;
   retryDelay?: number;
 } {
+  // Handle authentication-related messages first
+  if (error.message.includes('No user') || error.message.includes('Not authenticated')) {
+    return {
+      category: 'authentication',
+      severity: 'low', // Lower severity since this is expected during auth flow
+      userMessage: '',
+      shouldRetry: false
+    };
+  }
+
   if (error.status >= 500) {
     return {
       category: 'server',
@@ -120,6 +130,8 @@ function logApiError(error: EnhancedApiError, context?: {
   operation?: string;
   endpoint?: string;
   variables?: any;
+  retryCount?: number;
+  key?: string;
 }) {
   const logData = {
     error: {
@@ -151,9 +163,9 @@ export function useApiQuery<T>(
 ): UseQueryResult<T> {
   const {
     enabled = true,
-    retry = true,
-    retryCount = 3,
-    retryDelay = 1000,
+    retry: shouldRetry = true,
+    retryCount: maxRetries = 3,
+    retryDelay: retryDelayMs = 1000,
     onSuccess,
     onError
   } = options;
@@ -161,7 +173,7 @@ export function useApiQuery<T>(
   const [data, setData] = useState<T | undefined>(undefined);
   const [loading, setLoading] = useState<boolean>(enabled);
   const [error, setError] = useState<EnhancedApiError | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
+  const [currentRetryCount, setCurrentRetryCount] = useState(0);
 
   const fetchData = useCallback(async (isRetry = false) => {
     if (!enabled && !isRetry) return;
@@ -172,7 +184,7 @@ export function useApiQuery<T>(
 
       const result = await queryFn();
       setData(result);
-      setRetryCount(0);
+      setCurrentRetryCount(0);
       onSuccess?.(result);
     } catch (err: any) {
       const enhancedError: EnhancedApiError = err instanceof ApiError
@@ -185,25 +197,34 @@ export function useApiQuery<T>(
       enhancedError.requestId = enhancedError.requestId || `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
       setError(enhancedError);
-      logApiError(enhancedError, {
-        operation: 'query',
-        retryCount: isRetry ? retryCount + 1 : 0
-      });
+      
+      // Only log errors that are not authentication-related or are unexpected
+      if (!enhancedError.message.includes('No user') && 
+          !enhancedError.message.includes('Not authenticated') &&
+          enhancedError.status !== 401) {
+        logApiError(enhancedError, {
+          operation: 'query',
+          retryCount: isRetry ? currentRetryCount + 1 : 0
+        });
+      }
 
       onError?.(enhancedError);
 
-      // Auto-retry logic
-      if (retry && errorInfo.shouldRetry && retryCount < retryCount) {
-        const delay = errorInfo.retryDelay || retryDelay * Math.pow(2, retryCount);
+      // Auto-retry logic (don't retry authentication errors)
+      if (shouldRetry && errorInfo.shouldRetry && currentRetryCount < maxRetries && 
+          !enhancedError.message.includes('No user') && 
+          !enhancedError.message.includes('Not authenticated') &&
+          enhancedError.status !== 401) {
+        const delay = errorInfo.retryDelay || retryDelayMs * Math.pow(2, currentRetryCount);
         setTimeout(() => {
-          setRetryCount(prev => prev + 1);
+          setCurrentRetryCount(prev => prev + 1);
           fetchData(true);
         }, delay);
       }
     } finally {
       setLoading(false);
     }
-  }, [queryFn, enabled, retry, retryCount, retryDelay, onSuccess, onError]);
+  }, [queryFn, enabled, shouldRetry, currentRetryCount, maxRetries, retryDelayMs, onSuccess, onError]);
 
   useEffect(() => {
     if (!enabled) {
@@ -221,20 +242,21 @@ export function useApiQuery<T>(
   }, [fetchData, enabled]);
 
   const refetch = useCallback(() => {
-    setRetryCount(0);
+    setCurrentRetryCount(0);
     fetchData();
   }, [fetchData]);
 
-  const retry = useCallback(() => {
-    if (error && errorInfo?.shouldRetry) {
-      setRetryCount(0);
+  const retryFunction = useCallback(() => {
+    const errorInfo = error ? categorizeError(error) : null;
+    if (errorInfo?.shouldRetry) {
+      setCurrentRetryCount(0);
       fetchData(true);
     }
-  }, [error, errorInfo, fetchData]);
+  }, [error, fetchData]);
 
   const errorInfo = error ? categorizeError(error) : null;
 
-  return { data, loading, error, refetch, retry, errorInfo };
+  return { data, loading, error, refetch, retry: retryFunction, errorInfo };
 }
 
 // Enhanced custom hook for API mutations
@@ -307,7 +329,7 @@ export function useParallelQueries<T extends Record<string, () => Promise<any>>>
 
     try {
       setLoading(true);
-      setErrors({} as any);
+      setErrors({} as Record<keyof T, EnhancedApiError | null>);
 
       const promises = Object.entries(queries).map(async ([key, queryFn]) => {
         try {
@@ -325,21 +347,21 @@ export function useParallelQueries<T extends Record<string, () => Promise<any>>>
       });
 
       const results = await Promise.all(promises);
-      const newData: Record<string, any> = {};
-      const newErrors: Record<string, EnhancedApiError | null> = {};
+      const newData: Partial<Record<keyof T, any>> = {};
+      const newErrors: Partial<Record<keyof T, EnhancedApiError | null>> = {};
 
       results.forEach(({ key, result, error }) => {
         if (result !== null) {
-          newData[key] = result;
+          newData[key as keyof T] = result;
         }
         if (error !== null) {
-          newErrors[key] = error;
+          newErrors[key as keyof T] = error;
         }
       });
 
-      setData(newData);
-      setErrors(newErrors);
-      options.onSuccess?.(newData);
+      setData(newData as Record<keyof T, any>);
+      setErrors(newErrors as Record<keyof T, EnhancedApiError | null>);
+      options.onSuccess?.(newData as Record<string, any>);
     } catch (error) {
       console.error('Parallel query error:', error);
     } finally {

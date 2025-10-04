@@ -107,6 +107,14 @@ export async function GET(request: NextRequest) {
             price: typeof data.price === "number" ? data.price : null,
             currency: data.currency ?? null,
             customerPortalUrl: data.customerPortalUrl ?? null,
+            trialStart: toMillis(data.trialStart ?? null),
+            trialEnd: toMillis(data.trialEnd ?? null),
+            cancelAt: toMillis(data.cancelAt ?? null),
+            canceledAt: toMillis(data.canceledAt ?? null),
+            endedAt: toMillis(data.endedAt ?? null),
+            latestInvoiceId: data.latestInvoiceId ?? null,
+            latestInvoiceStatus: data.latestInvoiceStatus ?? null,
+            collectionMethod: data.collectionMethod ?? null,
           };
 
           if (subscription.plan in SUBSCRIPTION_LIMITS) {

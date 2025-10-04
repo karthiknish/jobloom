@@ -86,12 +86,7 @@ const sampleResume: ResumeData = {
       description: "Full-stack e-commerce solution with real-time inventory management",
       technologies: ["React", "Node.js", "MongoDB", "Stripe API"],
       link: "https://ecommerce-demo.com",
-      github: "https://github.com/johndoe/ecommerce",
-      metrics: {
-        users: "10,000+",
-        performance: "99.9% uptime",
-        revenue: "$500K+"
-      }
+      github: "https://github.com/johndoe/ecommerce"
     }
   ],
   certifications: [
@@ -112,7 +107,7 @@ const sampleResume: ResumeData = {
     {
       id: "2",
       language: "Spanish",
-      proficiency: "Professional"
+      proficiency: "Advanced"
     }
   ]
 };

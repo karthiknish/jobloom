@@ -46,7 +46,7 @@ export function DashboardHeader({
               animate={{ scale: 1, rotate: 0, opacity: 1 }}
               transition={{ type: "spring", stiffness: 260, damping: 18 }}
               whileHover={{ scale: 1.05, rotate: 2 }}
-              className="h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-600 flex items-center justify-center shadow-xl"
+              className="h-14 w-14 rounded-2xl bg-gradient-to-br from-emerald-600 via-green-600 to-emerald-700 flex items-center justify-center shadow-xl"
             >
               <LayoutDashboard className="h-7 w-7 text-white" />
             </motion.div>
@@ -55,7 +55,7 @@ export function DashboardHeader({
                 initial={{ opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.05, duration: 0.35 }}
-                className="text-4xl font-bold bg-gradient-to-r from-foreground via-sky-900 to-violet-900 bg-clip-text text-transparent"
+                className="text-4xl font-bold bg-gradient-to-r from-foreground via-emerald-900 to-emerald-800 bg-clip-text text-transparent"
               >
                 Job Dashboard
               </motion.h1>
@@ -97,7 +97,7 @@ export function DashboardHeader({
                   limits.cvAnalysesPerMonth !== -1 && (
                     <Badge
                       variant="outline"
-                      className="text-xs font-medium border-blue-200 text-blue-700 bg-blue-50/50"
+                      className="text-xs font-medium border-primary/30 text-primary bg-primary/10"
                     >
                       CV Analyses: {currentUsage.cvAnalyses}/
                       {limits.cvAnalysesPerMonth === -1
@@ -117,7 +117,7 @@ export function DashboardHeader({
                 onClick={onImportJobs}
                 variant="default"
                 size="sm"
-                className="shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-700 hover:to-sky-800 text-primary-foreground border-0"
+                className="shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-primary-foreground border-0"
               >
                 <UploadCloud className="mr-2 h-4 w-4" /> Import Jobs
               </Button>
@@ -130,7 +130,7 @@ export function DashboardHeader({
                 onClick={onAddJob}
                 variant="default"
                 size="sm"
-                className="shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-violet-600 to-violet-700 hover:from-violet-700 hover:to-violet-800 text-primary-foreground border-0"
+                className="shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-primary-foreground border-0"
               >
                 <FilePlus className="mr-2 h-4 w-4" /> Add Job
               </Button>

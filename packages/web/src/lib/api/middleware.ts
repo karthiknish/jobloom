@@ -31,7 +31,7 @@ export function createRateLimitMiddleware(options: {
   windowMs: number;
   keyGenerator?: (req: NextRequest) => string;
 }) {
-  const { limit, windowMs, keyGenerator = (req) => req.ip || 'unknown' } = options;
+  const { limit, windowMs, keyGenerator = (req) => getClientIp(req) } = options;
 
   return async (request: NextRequest): Promise<void> => {
     const key = keyGenerator(request);
@@ -128,7 +128,7 @@ export function logResponse(response: Response, context: RequestContext): void {
 function getClientIp(request: NextRequest): string {
   const forwardedFor = request.headers.get('x-forwarded-for');
   const realIp = request.headers.get('x-real-ip');
-  const ip = request.ip;
+  const cfConnectingIp = request.headers.get('cf-connecting-ip');
 
   if (forwardedFor) {
     return forwardedFor.split(',')[0].trim();
@@ -138,7 +138,11 @@ function getClientIp(request: NextRequest): string {
     return realIp;
   }
 
-  return ip || 'unknown';
+  if (cfConnectingIp) {
+    return cfConnectingIp;
+  }
+
+  return 'unknown';
 }
 
 // Create request context
@@ -216,7 +220,9 @@ export function healthCheck(): boolean {
 }
 
 // Compose multiple middleware functions
-export function compose(...middlewares: Array<(req: NextRequest, ctx: RequestContext) => Promise<void> | void>) {
+type MiddlewareFn = (req: NextRequest, ctx: RequestContext) => Promise<void> | void;
+
+export function compose(...middlewares: MiddlewareFn[]) {
   return async (request: NextRequest, context: RequestContext): Promise<void> => {
     for (const middleware of middlewares) {
       await middleware(request, context);
@@ -225,31 +231,29 @@ export function compose(...middlewares: Array<(req: NextRequest, ctx: RequestCon
 }
 
 // Common middleware combinations
-export const commonMiddleware = compose(
-  (req: NextRequest, ctx: RequestContext) => validateContentType(req),
-  (req: NextRequest, ctx: RequestContext) => validateRequestSize(req),
-  (req: NextRequest, ctx: RequestContext) => logRequest(req, ctx)
-);
+const baseMiddlewares: MiddlewareFn[] = [
+  (req, ctx) => validateContentType(req),
+  (req, ctx) => validateRequestSize(req),
+  (req, ctx) => logRequest(req, ctx)
+];
 
-export const authenticatedMiddleware = compose(
-  ...commonMiddleware,
-  async (req: NextRequest, ctx: RequestContext) => {
-    const auth = await authenticateRequest(req);
-    ctx.userId = auth.uid;
-    ctx.userRole = auth.isAdmin ? 'admin' : 'user';
+export const commonMiddleware = compose(...baseMiddlewares);
+
+const authMiddleware: MiddlewareFn = async (req, ctx) => {
+  const auth = await authenticateRequest(req);
+  ctx.userId = auth.uid;
+  ctx.userRole = auth.isAdmin ? 'admin' : 'user';
+};
+
+const adminCheckMiddleware: MiddlewareFn = async (_req, ctx) => {
+  if (ctx.userRole !== 'admin') {
+    throw new Error('Admin access required');
   }
-);
+};
 
-export const adminMiddleware = compose(
-  ...authenticatedMiddleware,
-  async (req: NextRequest, ctx: RequestContext) => {
-    if (ctx.userRole !== 'admin') {
-      throw new Error('Admin access required');
-    }
-  }
-);
+export const authenticatedMiddleware = compose(...baseMiddlewares, authMiddleware);
 
-export const rateLimitedMiddleware = (limit: number, windowMs: number) => compose(
-  ...commonMiddleware,
-  createRateLimitMiddleware({ limit, windowMs })
-);
+export const adminMiddleware = compose(...baseMiddlewares, authMiddleware, adminCheckMiddleware);
+
+export const rateLimitedMiddleware = (limit: number, windowMs: number) =>
+  compose(...baseMiddlewares, createRateLimitMiddleware({ limit, windowMs }));

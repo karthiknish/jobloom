@@ -8,16 +8,12 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Loader2, Wand2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-
-const RESERVED = ["www", "app", "admin", "beta", "api", "support"];
-
-const SUBDOMAIN_SUGGESTIONS: Array<(context: { email?: string | null; displayName?: string | null }) => string> = [
-  ({ displayName }) => displayName ? displayName.replace(/[^a-z0-9]+/gi, '').slice(0, 18).toLowerCase() : '',
-  ({ email }) => email ? email.split('@')[0].replace(/[^a-z0-9-]+/gi, '').slice(0, 18).toLowerCase() : '',
-  () => `hire-${Math.random().toString(36).slice(2, 8)}`,
-];
-
-const NORMALIZE = (val: string) => val.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-');
+import {
+  getSubdomainSuggestions,
+  hydrateSubdomain,
+  normalizeSubdomain,
+  validateSubdomain,
+} from '@/lib/subdomain';
 
 const FEEDBACK_VARIANTS = {
   neutral: 'text-muted-foreground',
@@ -27,15 +23,9 @@ const FEEDBACK_VARIANTS = {
 
 type FeedbackVariant = keyof typeof FEEDBACK_VARIANTS;
 
-const LENGTH_LIMIT = 32;
-
 const useSuggested = (userEmail?: string | null, displayName?: string | null) => {
   return useMemo(() => {
-    const base = SUBDOMAIN_SUGGESTIONS
-      .map((fn) => NORMALIZE(fn({ email: userEmail, displayName })))
-      .filter((val, idx, arr) => val && idx === arr.indexOf(val))
-      .filter((val) => val.length >= 3 && !RESERVED.includes(val));
-    return base.slice(0, 4);
+    return getSubdomainSuggestions({ email: userEmail, displayName });
   }, [userEmail, displayName]);
 };
 
@@ -61,28 +51,39 @@ export function SubdomainSettings({ initialSubdomain, onSubdomainAssigned }: Pro
       setInput('');
       setAvailable(null);
       setFeedback({ message: '', variant: 'neutral' });
+    } else if (!initialSubdomain && subdomain) {
+      setSubdomain('');
+      setInput('');
+      setAvailable(null);
+      setFeedback({ message: '', variant: 'neutral' });
     }
-  }, [initialSubdomain]);
+  }, [initialSubdomain, subdomain]);
 
-  const updateFeedback = (message: string, variant: FeedbackVariant) => {
+  const updateFeedback = useCallback((message: string, variant: FeedbackVariant) => {
     setFeedback({ message, variant });
-  };
+  }, []);
 
-  const validateLocal = (val: string) => {
-    if (!val) return 'Enter a subdomain';
-    if (val.length < 3) return 'Too short (min 3 characters)';
-    if (val.length > LENGTH_LIMIT) return `Too long (max ${LENGTH_LIMIT} characters)`;
-    if (!/^[a-z0-9-]+$/.test(val)) return 'Use lowercase letters, numbers, hyphen';
-    if (val.startsWith('-') || val.endsWith('-')) return 'Cannot start or end with hyphen';
-    if (val.includes('--')) return 'No consecutive hyphens';
-    if (RESERVED.includes(val)) return 'That name is reserved';
-    return null;
-  };
+  const handleInputChange = useCallback((value: string) => {
+    const { normalized, error } = hydrateSubdomain(value);
+    setInput(normalized);
+    setAvailable(null);
+
+    if (!normalized) {
+      updateFeedback('', 'neutral');
+      return;
+    }
+
+    if (error) {
+      updateFeedback(error, 'error');
+    } else {
+      updateFeedback('Looks good! Check availability to confirm.', 'neutral');
+    }
+  }, [updateFeedback]);
 
   const checkAvailability = useCallback(async () => {
-    const normalized = NORMALIZE(input);
+    const normalized = normalizeSubdomain(input);
     setInput(normalized);
-    const err = validateLocal(normalized);
+    const err = validateSubdomain(normalized);
     if (err) {
       updateFeedback(err, 'error');
       showError(err);
@@ -111,7 +112,7 @@ export function SubdomainSettings({ initialSubdomain, onSubdomainAssigned }: Pro
     } finally {
       setChecking(false);
     }
-  }, [input, validateLocal]);
+  }, [input, updateFeedback]);
 
   const claim = useCallback(async () => {
     if (!user) {
@@ -122,8 +123,8 @@ export function SubdomainSettings({ initialSubdomain, onSubdomainAssigned }: Pro
       showError('Subdomain already claimed');
       return;
     }
-    const normalized = NORMALIZE(input);
-    const err = validateLocal(normalized);
+    const normalized = normalizeSubdomain(input);
+    const err = validateSubdomain(normalized);
     if (err) {
       updateFeedback(err, 'error');
       showError(err);
@@ -153,6 +154,8 @@ export function SubdomainSettings({ initialSubdomain, onSubdomainAssigned }: Pro
         setSubdomain(json.subdomain);
         onSubdomainAssigned?.(json.subdomain);
         updateFeedback('Subdomain claimed! Your portfolio link is live.', 'success');
+        setInput('');
+        setAvailable(null);
         showSuccess('Subdomain claimed');
       }
     } catch {
@@ -162,7 +165,16 @@ export function SubdomainSettings({ initialSubdomain, onSubdomainAssigned }: Pro
     } finally {
       setClaiming(false);
     }
-  }, [user, available, input, subdomain, validateLocal]);
+  }, [user, available, input, subdomain, updateFeedback, onSubdomainAssigned]);
+
+  const handleCopy = useCallback(() => {
+    const url = `https://${subdomain}.hireall.app`;
+    navigator.clipboard.writeText(url);
+    showSuccess('Portfolio link copied');
+  }, [subdomain]);
+
+  const normalizedPreview = input ? `https://${input}.hireall.app` : '';
+  const disableCheck = checking || !input || Boolean(validateSubdomain(input));
 
   return (
     <Card>
@@ -180,7 +192,7 @@ export function SubdomainSettings({ initialSubdomain, onSubdomainAssigned }: Pro
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => navigator.clipboard.writeText(`https://${subdomain}.hireall.app`)}
+                onClick={handleCopy}
               >
                 Copy
               </Button>
@@ -199,12 +211,7 @@ export function SubdomainSettings({ initialSubdomain, onSubdomainAssigned }: Pro
                   <Input
                     placeholder="yourname"
                     value={input}
-                    onChange={e => {
-                      const normalized = NORMALIZE(e.target.value);
-                      setInput(normalized);
-                      setAvailable(null);
-                      updateFeedback('', 'neutral');
-                    }}
+                    onChange={e => handleInputChange(e.target.value)}
                     disabled={claiming}
                   />
                   <span className="text-sm text-muted-foreground">.hireall.app</span>
@@ -215,8 +222,7 @@ export function SubdomainSettings({ initialSubdomain, onSubdomainAssigned }: Pro
                     onClick={() => {
                       const suggestion = suggestions[0];
                       if (suggestion) {
-                        setInput(suggestion);
-                        setAvailable(null);
+                        handleInputChange(suggestion);
                         updateFeedback('Suggestion applied. Check availability to reserve it.', 'neutral');
                       }
                     }}
@@ -227,7 +233,7 @@ export function SubdomainSettings({ initialSubdomain, onSubdomainAssigned }: Pro
                     <Wand2 className="h-4 w-4" />
                     Suggest
                   </Button>
-                  <Button type="button" onClick={checkAvailability} disabled={checking || !input} className="gap-1">
+                  <Button type="button" onClick={checkAvailability} disabled={disableCheck} className="gap-1">
                     {checking ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -259,8 +265,7 @@ export function SubdomainSettings({ initialSubdomain, onSubdomainAssigned }: Pro
                         key={suggestion}
                         type="button"
                         onClick={() => {
-                          setInput(suggestion);
-                          setAvailable(null);
+                          handleInputChange(suggestion);
                           updateFeedback('Suggestion applied. Check availability to reserve it.', 'neutral');
                         }}
                         className={cn(
@@ -273,6 +278,12 @@ export function SubdomainSettings({ initialSubdomain, onSubdomainAssigned }: Pro
                     ))}
                   </div>
                 </div>
+              )}
+
+              {normalizedPreview && (
+                <p className="text-xs text-muted-foreground">
+                  Preview: <span className="font-mono text-foreground">{normalizedPreview}</span>
+                </p>
               )}
 
               {feedback.message && (

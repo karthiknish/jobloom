@@ -43,7 +43,29 @@ try {
     }
   }
 
-  // Method 3: Load from temp-key.json file (development fallback)
+  // Method 3: Create service account from individual env vars
+  if (!serviceAccount && process.env.FIREBASE_PRIVATE_KEY) {
+    try {
+      serviceAccount = {
+        type: "service_account",
+        project_id: process.env.FIREBASE_PROJECT_ID,
+        private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID,
+        private_key: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+        client_email: process.env.FIREBASE_CLIENT_EMAIL,
+        client_id: process.env.FIREBASE_CLIENT_ID,
+        auth_uri: "https://accounts.google.com/o/oauth2/auth",
+        token_uri: "https://oauth2.googleapis.com/token",
+        auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
+        client_x509_cert_url: `https://www.googleapis.com/robot/v1/metadata/x509/${process.env.FIREBASE_CLIENT_EMAIL}`,
+        universe_domain: "googleapis.com"
+      };
+      console.log('Loaded service account from individual environment variables');
+    } catch (error) {
+      console.warn('Failed to create service account from env vars:', error);
+    }
+  }
+
+  // Method 4: Load from temp-key.json file (development fallback)
   if (!serviceAccount) {
     try {
       const keyPath = join(process.cwd(), "temp-key.json");
@@ -56,7 +78,7 @@ try {
     }
   }
 
-  // Method 4: Load from hireall-4f106-firebase-adminsdk-fbsvc-2e91c28cd6.json
+  // Method 5: Load from hireall-4f106-firebase-adminsdk-fbsvc-2e91c28cd6.json
   if (!serviceAccount) {
     try {
       const keyPath = join(process.cwd(), "hireall-4f106-firebase-adminsdk-fbsvc-2e91c28cd6.json");
@@ -71,12 +93,17 @@ try {
 
   // Initialize with service account if available
   if (serviceAccount) {
-    adminApp = initializeApp({
-      credential: cert(serviceAccount),
-      projectId: serviceAccount.project_id || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-      storageBucket: process.env.FIREBASE_STORAGE_BUCKET || process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-    });
-    console.log('Firebase Admin initialized with service account');
+    try {
+      adminApp = initializeApp({
+        credential: cert(serviceAccount),
+        projectId: serviceAccount.project_id || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+        storageBucket: process.env.FIREBASE_STORAGE_BUCKET || process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+      });
+      console.log('Firebase Admin initialized with service account');
+    } catch (initError) {
+      console.error('Failed to initialize Firebase Admin with service account:', initError);
+      throw initError;
+    }
   } else {
     // Fallback to application default credentials (for Google Cloud environments)
     try {
@@ -89,11 +116,16 @@ try {
     } catch (adcError) {
       console.warn('Failed to initialize with application default credentials:', adcError);
       // Last resort: try without credentials (may work in some environments)
-      adminApp = initializeApp({
-        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-        storageBucket: process.env.FIREBASE_STORAGE_BUCKET || process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-      });
-      console.log('Firebase Admin initialized without explicit credentials');
+      try {
+        adminApp = initializeApp({
+          projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+          storageBucket: process.env.FIREBASE_STORAGE_BUCKET || process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+        });
+        console.log('Firebase Admin initialized without explicit credentials');
+      } catch (noCredError) {
+        console.error('Failed to initialize Firebase Admin without credentials:', noCredError);
+        throw noCredError;
+      }
     }
   }
 } catch (error) {
@@ -142,5 +174,9 @@ export async function isUserAdmin(userId: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+export function initializeAdmin(): App {
+  return initAdminApp();
 }
 

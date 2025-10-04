@@ -19,7 +19,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { ResumeScore } from "@/types/resume";
+import type { ResumeScore } from "@/lib/enhancedAts";
 
 interface EnhancedAtsScoreProps {
   score: ResumeScore;
@@ -176,11 +176,11 @@ export function EnhancedAtsScore({
             transition={{ duration: 0.6 }}
           >
             <CardTitle className="flex items-center justify-center gap-2 text-xl">
-              <Target className="w-6 h-6 text-blue-600" />
+              <Target className="w-6 h-6 text-emerald-600" />
               ATS Optimization Score
             </CardTitle>
             <CardDescription className="text-base">
-              Your resume's compatibility with Applicant Tracking Systems
+              Your resume&apos;s compatibility with Applicant Tracking Systems
             </CardDescription>
           </motion.div>
         </CardHeader>
@@ -200,7 +200,7 @@ export function EnhancedAtsScore({
               ) : score.overall >= 60 ? (
                 <TrendingUp className="w-5 h-5 text-green-500" />
               ) : score.overall >= 40 ? (
-                <Info className="w-5 h-5 text-blue-500" />
+                <Info className="w-5 h-5 text-emerald-500" />
               ) : (
                 <AlertTriangle className="w-5 h-5 text-red-500" />
               )}
@@ -228,7 +228,7 @@ export function EnhancedAtsScore({
                 Score Breakdown
               </CardTitle>
               <CardDescription>
-                Detailed analysis of your resume's performance across key areas
+                Detailed analysis of your resume&apos;s performance across key areas
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -237,7 +237,7 @@ export function EnhancedAtsScore({
                   label="Structure & Organization"
                   value={score.breakdown.structure}
                   icon={Target}
-                  color="text-blue-600"
+                  color="text-emerald-600"
                   max={50}
                   delay={0.2}
                 />
@@ -245,7 +245,7 @@ export function EnhancedAtsScore({
                   label="Content Quality"
                   value={score.breakdown.content}
                   icon={Star}
-                  color="text-purple-600"
+                  color="text-emerald-600"
                   max={50}
                   delay={0.3}
                 />
@@ -290,7 +290,7 @@ export function EnhancedAtsScore({
                       Strengths
                     </h4>
                     <div className="space-y-2">
-                      {score.strengths.map((strength, index) => (
+                      {score.strengths.map((strength: string, index: number) => (
                         <motion.div
                           key={index}
                           initial={{ opacity: 0, x: -20 }}
@@ -314,7 +314,7 @@ export function EnhancedAtsScore({
                       Critical Issues
                     </h4>
                     <div className="space-y-2">
-                      {score.criticalIssues.map((issue, index) => (
+                      {score.criticalIssues.map((issue: string, index: number) => (
                         <motion.div
                           key={index}
                           initial={{ opacity: 0, x: -20 }}
@@ -342,21 +342,21 @@ export function EnhancedAtsScore({
                   Improvement Recommendations
                 </CardTitle>
                 <CardDescription>
-                  Actionable suggestions to enhance your resume's ATS performance
+                  Actionable suggestions to enhance your resume&apos;s ATS performance
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {score.suggestions.slice(0, 6).map((suggestion, index) => (
+                  {score.suggestions.slice(0, 6).map((suggestion: string, index: number) => (
                     <motion.div
                       key={index}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.1 * index, duration: 0.5 }}
-                      className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg"
+                      className="flex items-start gap-3 p-3 bg-emerald-50 rounded-lg"
                     >
-                      <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                      <p className="text-sm text-blue-800">{suggestion}</p>
+                      <Info className="w-4 h-4 text-emerald-600 mt-0.5 flex-shrink-0" />
+                      <p className="text-sm text-emerald-800">{suggestion}</p>
                     </motion.div>
                   ))}
                 </div>
@@ -367,7 +367,7 @@ export function EnhancedAtsScore({
       )}
 
       {/* Call to Action */}
-      <Card className="border-0 shadow-lg bg-gradient-to-r from-blue-50 to-indigo-50">
+      <Card className="border-0 shadow-lg bg-gradient-to-r from-emerald-50 to-green-50">
         <CardContent className="pt-6">
           <div className="text-center space-y-4">
             <motion.div
@@ -382,7 +382,7 @@ export function EnhancedAtsScore({
                 </div>
               ) : (
                 <div className="flex items-center justify-center gap-2 mb-2">
-                  <Zap className="w-6 h-6 text-blue-600" />
+                  <Zap className="w-6 h-6 text-emerald-600" />
                   <span className="text-lg font-bold text-gray-800">Improve Your Score</span>
                 </div>
               )}
@@ -396,7 +396,7 @@ export function EnhancedAtsScore({
             >
               {score.overall >= 80
                 ? "Your resume is ready for ATS systems. Focus on tailoring it to specific job applications for best results."
-                : "Implement the suggested improvements to significantly enhance your resume's performance with ATS systems."
+                : "Implement the suggested improvements to significantly enhance your resume&apos;s performance with ATS systems."
               }
             </motion.p>
 
@@ -407,7 +407,7 @@ export function EnhancedAtsScore({
             >
               <Button
                 size="lg"
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                className="bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700"
               >
                 {score.overall >= 80 ? "Download ATS Report" : "View Detailed Analysis"}
               </Button>

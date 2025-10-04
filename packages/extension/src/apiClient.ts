@@ -18,12 +18,30 @@ export async function getBaseUrl(): Promise<string> {
 
 async function getIdToken(): Promise<string | null> {
   try {
+    // First try to get token from extension's Firebase auth
     const auth = getAuthInstance();
     const user = auth.currentUser;
-    if (!user) return null;
-    
-    // Force token refresh to ensure we have a valid token
-    return await user.getIdToken(true);
+    if (user) {
+      // Force token refresh to ensure we have a valid token
+      return await user.getIdToken(true);
+    }
+
+    // If extension doesn't have auth, try to get it from the web app
+    if (typeof chrome !== 'undefined' && chrome.tabs) {
+      try {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tab.id && tab.url?.includes('hireall.app')) {
+          const response = await chrome.tabs.sendMessage(tab.id, { action: "getAuthToken" });
+          if (response?.token) {
+            return response.token;
+          }
+        }
+      } catch (error) {
+        console.warn('Failed to get token from web app:', error);
+      }
+    }
+
+    return null;
   } catch (error) {
     console.warn('Failed to get ID token:', error);
     return null;

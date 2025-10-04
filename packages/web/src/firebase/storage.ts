@@ -62,7 +62,7 @@ export async function uploadFile(
 ): Promise<FileUploadResult> {
   const storage = getStorageClient();
   if (!storage) {
-    throw new Error('Firebase Storage is not available');
+  throw new Error('Storage service is not available');
   }
 
   const fileRef = ref(storage, path);
@@ -188,7 +188,7 @@ export async function uploadProfilePicture(
 export async function deleteFile(path: string): Promise<void> {
   const storage = getStorageClient();
   if (!storage) {
-    throw new Error('Firebase Storage is not available');
+  throw new Error('Storage service is not available');
   }
 
   try {
@@ -207,7 +207,7 @@ export async function deleteFile(path: string): Promise<void> {
 export async function getFileDownloadURL(path: string): Promise<string> {
   const storage = getStorageClient();
   if (!storage) {
-    throw new Error('Firebase Storage is not available');
+  throw new Error('Storage service is not available');
   }
 
   const fileRef = ref(storage, path);
@@ -218,7 +218,7 @@ export async function getFileDownloadURL(path: string): Promise<string> {
 export async function listFiles(path: string): Promise<ListResult> {
   const storage = getStorageClient();
   if (!storage) {
-    throw new Error('Firebase Storage is not available');
+  throw new Error('Storage service is not available');
   }
 
   const directoryRef = ref(storage, path);
@@ -229,7 +229,7 @@ export async function listFiles(path: string): Promise<ListResult> {
 export async function getFileMetadata(path: string): Promise<FullMetadata> {
   const storage = getStorageClient();
   if (!storage) {
-    throw new Error('Firebase Storage is not available');
+  throw new Error('Storage service is not available');
   }
 
   const fileRef = ref(storage, path);
@@ -243,7 +243,7 @@ export async function updateFileMetadata(
 ): Promise<FullMetadata> {
   const storage = getStorageClient();
   if (!storage) {
-    throw new Error('Firebase Storage is not available');
+  throw new Error('Storage service is not available');
   }
 
   const fileRef = ref(storage, path);

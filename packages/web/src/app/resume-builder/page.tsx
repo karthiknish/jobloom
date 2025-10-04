@@ -7,8 +7,11 @@ import {
   Download,
   Eye,
   CheckCircle,
+  Crown,
+  Zap,
 } from "lucide-react";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
+import { useSubscription } from "@/hooks/useSubscription";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -34,6 +37,7 @@ import { resumeTemplates } from "@/config/resumeTemplates";
 
 export default function ResumeBuilderPage() {
   const { user } = useFirebaseAuth();
+  const { plan } = useSubscription();
   const [activeTab, setActiveTab] = useState("personal");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -193,6 +197,40 @@ export default function ResumeBuilderPage() {
           </div>
         </div>
       </motion.div>
+
+      {/* Premium Upgrade Banner */}
+      {plan === "free" && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8"
+        >
+          <Card className="bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200 shadow-lg">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full">
+                    <Crown className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-amber-900">Unlock Premium Resume Templates</h3>
+                    <p className="text-sm text-amber-700">Get access to 20+ professional templates and AI-powered optimization</p>
+                  </div>
+                </div>
+                <Button 
+                  size="sm" 
+                  className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white"
+                  onClick={() => window.location.href = '/upgrade'}
+                >
+                  <Crown className="h-4 w-4 mr-2" />
+                  Upgrade
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
 
       <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">

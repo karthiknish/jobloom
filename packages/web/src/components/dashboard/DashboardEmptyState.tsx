@@ -33,13 +33,13 @@ export function DashboardEmptyState({
         animate="visible"
         transition={{ delay: 0.1 }}
       >
-        <div className="rounded-xl bg-gradient-to-br from-background via-sky-50/20 to-violet-50 p-12 text-center shadow-xl border border-border/50">
+        <div className="rounded-xl bg-gradient-to-br from-white via-blue-50 to-purple-50 p-12 text-center shadow-xl border border-gray-200">
           <motion.div
             variants={scaleIn}
             initial="hidden"
             animate="visible"
             transition={{ delay: 0.2 }}
-            className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-sky-500 to-violet-600 shadow-lg"
+            className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg"
           >
             <Inbox className="h-8 w-8 text-white" />
           </motion.div>
@@ -48,7 +48,7 @@ export function DashboardEmptyState({
             initial="hidden"
             animate="visible"
             transition={{ delay: 0.25 }}
-            className="mt-6 text-2xl font-bold bg-gradient-to-r from-foreground to-sky-900 bg-clip-text text-transparent"
+            className="mt-6 text-2xl font-bold bg-gradient-to-r from-gray-900 to-blue-900 bg-clip-text text-transparent"
           >
             No applications yet
           </motion.h3>
@@ -69,7 +69,7 @@ export function DashboardEmptyState({
               <Button
                 onClick={onImportJobs}
                 size="lg"
-                className="w-full sm:w-auto shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-700 hover:to-sky-800 text-primary-foreground border-0"
+                className="w-full sm:w-auto shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white border-0"
               >
                 <UploadCloud className="mr-2 h-5 w-5" /> Import Jobs
               </Button>
@@ -82,7 +82,7 @@ export function DashboardEmptyState({
                 onClick={onAddJob}
                 variant="secondary"
                 size="lg"
-                className="w-full sm:w-auto shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-violet-100 to-violet-200 hover:from-violet-200 hover:to-violet-300 text-violet-800 border-0"
+                className="w-full sm:w-auto shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-blue-100 to-blue-200 hover:from-blue-200 hover:to-blue-300 text-blue-900 border-0"
               >
                 <FilePlus className="mr-2 h-5 w-5" /> Add Job
               </Button>
@@ -95,7 +95,7 @@ export function DashboardEmptyState({
                 onClick={onAddApplication}
                 variant="outline"
                 size="lg"
-                className="w-full sm:w-auto shadow-lg hover:shadow-xl transition-all duration-300 border-border hover:border-border hover:bg-muted/50"
+                className="w-full sm:w-auto shadow-lg hover:shadow-xl transition-all duration-300 border-gray-300 hover:border-gray-400 hover:bg-gray-50"
               >
                 Add Application <ArrowRight className="ml-2 h-4 w-4" />
               </Button>

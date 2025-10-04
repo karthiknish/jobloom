@@ -22,7 +22,7 @@ function getClientIP(request: NextRequest): string {
   const forwarded = request.headers.get('x-forwarded-for');
   const realIP = request.headers.get('x-real-ip');
   const cfConnectingIP = request.headers.get('cf-connecting-ip');
-  
+
   return cfConnectingIP || realIP || forwarded?.split(',')[0] || 'unknown';
 }
 
@@ -32,14 +32,14 @@ function applySecurityHeaders(response: NextResponse): NextResponse {
   Object.entries(securityHeaders).forEach(([key, value]) => {
     response.headers.set(key, value);
   });
-  
+
   // Add CORS headers for API routes
   if (response.headers.get('content-type')?.includes('application/json')) {
     response.headers.set('Access-Control-Allow-Origin', process.env.NODE_ENV === 'production' ? 'https://hireall.app' : 'http://localhost:3000');
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   }
-  
+
   return response;
 }
 
@@ -68,15 +68,15 @@ export function middleware(request: NextRequest) {
   if (pathname.startsWith('/api/')) {
     const endpoint = getEndpointFromPath(pathname);
     const rateLimitResult = checkServerRateLimit(clientIP, endpoint);
-    
+
     if (!rateLimitResult.allowed) {
       return new NextResponse(
-        JSON.stringify({ 
+        JSON.stringify({
           error: `Too many requests. Please wait ${Math.ceil((rateLimitResult.resetIn || 0) / 1000)} seconds before trying again.`,
           endpoint,
           resetTime: rateLimitResult.resetIn
         }),
-        { 
+        {
           status: 429,
           headers: {
             'Content-Type': 'application/json',
@@ -109,8 +109,36 @@ export function middleware(request: NextRequest) {
     pathname.startsWith(route)
   );
 
-  // Check for authentication token in cookies
-  const hasAuthToken = request.cookies.has("__firebase_user");
+  // Strengthened auth token detection:
+  // 1. Parse the __firebase_user cookie (expected JSON: {"id":"<uid>"})
+  // 2. Fallback to Authorization: Bearer <token> header (e.g. server/API calls)
+  // 3. Guard against malformed / tampered cookie values
+  const authCookie = request.cookies.get("__firebase_user")?.value;
+  let hasAuthToken = false;
+  let _firebaseUid: string | null = null;
+
+  if (authCookie) {
+    try {
+      const parsed = JSON.parse(decodeURIComponent(authCookie));
+      if (parsed && typeof parsed.id === "string" && parsed.id.length > 0) {
+        _firebaseUid = parsed.id;
+        hasAuthToken = true;
+      }
+    } catch {
+      // Malformed cookie -> treat as unauthenticated (do NOT throw)
+      hasAuthToken = false;
+      _firebaseUid = null;
+    }
+  }
+
+  // Allow authenticated API usage via Authorization header as a secondary signal
+  const authHeader = request.headers.get("authorization") || request.headers.get("Authorization");
+  if (!hasAuthToken && authHeader && authHeader.startsWith("Bearer ")) {
+    hasAuthToken = true; // We don't parse the token here (edge runtime + no admin verify); downstream handlers should verify
+  }
+
+  // Explicit admin route flag (future enhancement: server-side admin verification)
+  const _isAdminRoute = pathname.startsWith("/admin");
 
   // Handle protected routes
   if (isProtectedRoute && !hasAuthToken) {
