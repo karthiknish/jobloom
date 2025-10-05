@@ -1,5 +1,6 @@
 import { DEFAULT_WEB_APP_URL, sanitizeBaseUrl } from "./constants";
 import { get, post, put } from "./apiClient";
+import { safeChromeStorageGet } from "./utils/safeStorage";
 // addToBoard.ts - Utility functions for adding jobs to the user's board
 
 interface JobData {
@@ -104,19 +105,34 @@ interface FollowUpData {
 
 export class JobBoardManager {
   private static async getWebAppUrl(): Promise<string> {
-    return new Promise((resolve) => {
-      chrome.storage.sync.get(["webAppUrl"], (result) => {
-        resolve(sanitizeBaseUrl(result.webAppUrl || DEFAULT_WEB_APP_URL));
-      });
-    });
+    const { webAppUrl } = await safeChromeStorageGet<{ webAppUrl: string }>(
+      "sync",
+      ["webAppUrl"],
+      { webAppUrl: DEFAULT_WEB_APP_URL },
+      "job board webAppUrl"
+    );
+
+    return sanitizeBaseUrl(typeof webAppUrl === "string" && webAppUrl.trim() ? webAppUrl : DEFAULT_WEB_APP_URL);
   }
 
   private static async getUserId(): Promise<string | null> {
-    return new Promise((resolve) => {
-      chrome.storage.sync.get(["firebaseUid", "userId"], (result) => {
-        resolve(result.firebaseUid || result.userId || null);
-      });
-    });
+    const { firebaseUid, userId } = await safeChromeStorageGet<{
+      firebaseUid: string | null;
+      userId: string | null;
+    }>(
+      "sync",
+      ["firebaseUid", "userId"],
+      { firebaseUid: null, userId: null },
+      "job board user id"
+    );
+
+    const resolvedId = typeof firebaseUid === "string" && firebaseUid.trim().length
+      ? firebaseUid
+      : typeof userId === "string" && userId.trim().length
+      ? userId
+      : null;
+
+    return resolvedId;
   }
 
   // Enhanced job validation and deduplication
@@ -325,12 +341,35 @@ export class JobBoardManager {
       }
 
       // Update local stats
-      chrome.storage.local.get(["jobBoardStats"], (result) => {
-        const stats = result.jobBoardStats || {
-          totalAdded: 0,
-          addedToday: 0,
-          lastResetDate: new Date().toDateString(),
-        };
+      (async () => {
+        const { jobBoardStats: existingStats } = await safeChromeStorageGet<{
+          jobBoardStats: Record<string, unknown> | undefined;
+        }>(
+          "local",
+          ["jobBoardStats"],
+          { jobBoardStats: undefined },
+          "job board stats"
+        );
+
+        const stats: {
+          totalAdded: number;
+          addedToday: number;
+          lastResetDate: string;
+        } = existingStats && typeof existingStats === "object"
+          ? {
+              totalAdded: Number((existingStats as Record<string, unknown>).totalAdded ?? 0),
+              addedToday: Number((existingStats as Record<string, unknown>).addedToday ?? 0),
+              lastResetDate:
+                typeof (existingStats as Record<string, unknown>).lastResetDate === "string" &&
+                (existingStats as Record<string, unknown>).lastResetDate
+                  ? String((existingStats as Record<string, unknown>).lastResetDate)
+                  : new Date().toDateString(),
+            }
+          : {
+              totalAdded: 0,
+              addedToday: 0,
+              lastResetDate: new Date().toDateString(),
+            };
 
         const today = new Date().toDateString();
         if (stats.lastResetDate !== today) {
@@ -338,11 +377,21 @@ export class JobBoardManager {
           stats.lastResetDate = today;
         }
 
-        stats.totalAdded++;
-        stats.addedToday++;
+        stats.totalAdded = (stats.totalAdded || 0) + 1;
+        stats.addedToday = (stats.addedToday || 0) + 1;
 
-        chrome.storage.local.set({ jobBoardStats: stats });
-      });
+        try {
+          if (chrome.storage?.local?.set) {
+            chrome.storage.local.set({ jobBoardStats: stats }, () => {
+              if (chrome.runtime?.lastError) {
+                console.warn("Hireall: job board stats update failed", chrome.runtime.lastError.message);
+              }
+            });
+          }
+        } catch (error) {
+          console.warn("Hireall: job board stats update threw", error);
+        }
+      })();
 
       // Show success notification with job score
       const scoreText = jobScore >= 80 ? "High Priority" : jobScore >= 60 ? "Medium Priority" : "Standard Priority";

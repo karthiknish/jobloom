@@ -2,6 +2,7 @@
 import { DEFAULT_WEB_APP_URL, sanitizeBaseUrl } from "./constants";
 import { getAuthInstance } from "./firebase";
 import { get } from "./apiClient";
+import { ExtensionMessageHandler } from "./components/ExtensionMessageHandler";
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -178,6 +179,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Initialize Firebase and check for errors
   let auth: any;
+  let syncedSiteUserId: string | null = null;
+  let syncedSiteUserEmail: string | null = null;
+  let attemptedSiteSync = false;
   try {
     auth = getAuthInstance();
     console.log("Firebase Auth initialized successfully");
@@ -202,20 +206,18 @@ document.addEventListener("DOMContentLoaded", () => {
   // Firebase auth state observer
   onAuthStateChanged(auth, (user) => {
     console.log("Auth state changed:", user ? `User: ${user.email}` : "No user");
+
+    if (user) {
+      syncedSiteUserId = user.uid;
+      syncedSiteUserEmail = user.email || null;
+    }
+
     updateAuthUI(!!user);
-    
-    if (user?.uid) {
-      // Persist uid and email to chrome storage for content scripts/background
-      chrome.storage.sync.set({ 
-        firebaseUid: user.uid,
-        userEmail: user.email || ""
-      }, () => {
-        console.log("Auth data saved to storage");
-      });
+
+    if (user) {
+      syncAuthState(); // Ensure storage reflects Firebase auth state
     } else {
-      chrome.storage.sync.remove(["firebaseUid", "userEmail"], () => {
-        console.log("Auth data cleared from storage");
-      });
+      void attemptSyncAuthFromSite();
     }
   });
 
@@ -234,7 +236,9 @@ document.addEventListener("DOMContentLoaded", () => {
       "auth-form-container"
     ) as HTMLElement | null;
 
-    if (!isAuthed) {
+    const effectiveAuthed = isAuthed || !!syncedSiteUserId;
+
+    if (!effectiveAuthed) {
       authStatus.className = "auth-status unauthenticated";
       statusDot.style.background = EXT_COLORS.warning;
       statusText.textContent = "Not signed in";
@@ -246,7 +250,13 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       authStatus.className = "auth-status authenticated";
       statusDot.style.background = EXT_COLORS.success;
-      statusText.textContent = "Signed in";
+      if (isAuthed && auth.currentUser?.email) {
+        statusText.textContent = `Signed in as ${auth.currentUser.email}`;
+      } else if (syncedSiteUserEmail) {
+        statusText.textContent = `Signed in via hireall.app (${syncedSiteUserEmail})`;
+      } else {
+        statusText.textContent = "Signed in via hireall.app";
+      }
       const allTabs = document.querySelectorAll(".nav-tab");
       allTabs.forEach((t) => ((t as HTMLElement).style.display = "flex"));
       if (signoutBtnEl) signoutBtnEl.style.display = "flex";
@@ -254,8 +264,72 @@ document.addEventListener("DOMContentLoaded", () => {
       loadJobs();
     }
     if (authSuccess) {
-      authSuccess.style.display = isAuthed ? "block" : "none";
-      authSuccess.textContent = isAuthed ? "Authenticated" : "";
+      authSuccess.style.display = effectiveAuthed ? "block" : "none";
+      authSuccess.textContent = effectiveAuthed ? "Authenticated" : "";
+    }
+  }
+
+  // Function to manually sync auth state with storage
+  function syncAuthState() {
+    const currentUser = auth.currentUser;
+    console.log("Manually syncing auth state:", currentUser ? `User: ${currentUser.email}` : "No user");
+
+    if (currentUser?.uid) {
+      syncedSiteUserId = currentUser.uid;
+      syncedSiteUserEmail = currentUser.email || null;
+      chrome.storage.sync.set({
+        firebaseUid: currentUser.uid,
+        userEmail: currentUser.email || ""
+      }, () => {
+        if (chrome.runtime.lastError) {
+          console.error("Failed to sync auth data to storage:", chrome.runtime.lastError);
+        } else {
+          console.log("Auth state synced to storage");
+        }
+      });
+    } else {
+      syncedSiteUserId = null;
+      syncedSiteUserEmail = null;
+      chrome.storage.sync.remove(["firebaseUid", "userEmail"], () => {
+        if (chrome.runtime.lastError) {
+          console.error("Failed to clear auth data from storage:", chrome.runtime.lastError);
+        } else {
+          console.log("Auth state cleared from storage");
+        }
+      });
+    }
+  }
+
+  async function attemptSyncAuthFromSite(): Promise<void> {
+    if (attemptedSiteSync) {
+      return;
+    }
+    attemptedSiteSync = true;
+
+    if (typeof chrome === "undefined" || !chrome.runtime?.sendMessage) {
+      return;
+    }
+
+    const sendMessage = async () => {
+      try {
+        return await ExtensionMessageHandler.sendMessage("syncAuthState");
+      } catch (error) {
+        console.debug("syncAuthState message failed", error);
+        return null;
+      }
+    };
+
+    const result = await sendMessage();
+
+    if (result?.userId) {
+      syncedSiteUserId = String(result.userId);
+      syncedSiteUserEmail = result.userEmail ? String(result.userEmail) : null;
+      updateAuthUI(!!auth.currentUser);
+    } else {
+      // Allow retry later if initial attempt fails
+      setTimeout(() => {
+        attemptedSiteSync = false;
+      }, 5000);
     }
   }
 
@@ -735,7 +809,13 @@ document.addEventListener("DOMContentLoaded", () => {
           showToast("Autofill activated! Switching to job page...", { type: "success" });
           
           setTimeout(() => {
-            chrome.tabs.sendMessage(tabs[0].id!, { action: "triggerAutofill" });
+            if (tabs[0].id) {
+              chrome.tabs.sendMessage(tabs[0].id, { action: "triggerAutofill" }, () => {
+                if (chrome.runtime.lastError) {
+                  console.debug("triggerAutofill message failed:", chrome.runtime.lastError.message);
+                }
+              });
+            }
             window.close();
           }, 500);
         });
@@ -817,7 +897,8 @@ document.addEventListener("DOMContentLoaded", () => {
               errorMessage = "Invalid email address";
               break;
             default:
-              errorMessage = createErr.message || errorMessage;
+              console.debug("Unhandled Firebase create account error", createErr);
+              errorMessage = "Unable to create account right now. Please try again.";
           }
           
           showAuthError(errorMessage);
@@ -839,8 +920,12 @@ document.addEventListener("DOMContentLoaded", () => {
           case "auth/invalid-email":
             errorMessage = "Invalid email address";
             break;
+          case "auth/invalid-credential":
+            errorMessage = "Invalid credentials. Please try again.";
+            break;
           default:
-            errorMessage = err.message || errorMessage;
+            console.debug("Unhandled Firebase sign-in error", err);
+            errorMessage = "Unable to sign in right now. Please try again.";
         }
         
         showAuthError(errorMessage);
@@ -913,6 +998,10 @@ document.addEventListener("DOMContentLoaded", () => {
       chrome.storage.sync.remove(["firebaseUid", "userId"], () => {
         console.log("Cleared auth storage");
       });
+
+      syncedSiteUserId = null;
+      syncedSiteUserEmail = null;
+      attemptedSiteSync = false;
       
       // Update UI immediately
       updateAuthUI(false);

@@ -47,6 +47,75 @@ function isLinkedInUrl(url?: string) {
   }
 }
 
+async function syncAuthStateFromSite(options: { tabId?: number; userIdOverride?: string; userEmailOverride?: string } = {}): Promise<{ updated: boolean; userId?: string; userEmail?: string }> {
+  const targetPatterns = [
+    "https://hireall.app/*",
+    "https://*.hireall.app/*",
+    "https://*.vercel.app/*",
+    "https://*.netlify.app/*",
+  ];
+
+  const tryUpdateStorage = (userId: string, userEmail?: string | null) => {
+    return new Promise<void>((resolve) => {
+      const payload: Record<string, string> = {
+        firebaseUid: userId,
+        userId,
+      };
+      if (userEmail) {
+        payload.userEmail = userEmail;
+      }
+      chrome.storage.sync.set(payload, () => resolve());
+    });
+  };
+
+  const resolveWithTab = async (tabId: number): Promise<{ updated: boolean; userId?: string; userEmail?: string }> => {
+    return new Promise((resolve) => {
+      chrome.tabs.sendMessage(tabId, { action: "getUserId" }, async (response) => {
+        if (chrome.runtime.lastError) {
+          const errorMessage = chrome.runtime.lastError.message || '';
+          console.debug(`Failed to get user ID from tab ${tabId}: ${errorMessage}`);
+          resolve({ updated: false });
+          return;
+        }
+
+        const userId = response?.userId ? String(response.userId) : undefined;
+        const userEmail = response?.userEmail ? String(response.userEmail) : undefined;
+
+        if (!userId) {
+          resolve({ updated: false });
+          return;
+        }
+
+        await tryUpdateStorage(userId, userEmail);
+        resolve({ updated: true, userId, userEmail });
+      });
+    });
+  };
+
+  if (options.userIdOverride) {
+    await tryUpdateStorage(options.userIdOverride, options.userEmailOverride);
+    return { updated: true, userId: options.userIdOverride, userEmail: options.userEmailOverride };
+  }
+
+  if (typeof options.tabId === "number") {
+    return resolveWithTab(options.tabId);
+  }
+
+  return new Promise((resolve) => {
+    chrome.tabs.query({ url: targetPatterns }, async (tabs) => {
+      for (const tab of tabs) {
+        if (!tab.id) continue;
+        const result = await resolveWithTab(tab.id);
+        if (result.updated) {
+          resolve(result);
+          return;
+        }
+      }
+      resolve({ updated: false });
+    });
+  });
+}
+
 // Handle messages from content script with security validation
 chrome.runtime.onMessage.addListener((request: any, sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void) => {
   // Validate message format
@@ -116,33 +185,51 @@ chrome.runtime.onMessage.addListener((request: any, sender: chrome.runtime.Messa
       ExtensionSecurityLogger.logValidationFailure('job_url', request.url);
       sendResponse({ error: 'Invalid URL' });
     }
+  } else if (request.action === "syncAuthState") {
+    syncAuthStateFromSite()
+      .then((result) => {
+        sendResponse({ success: result.updated, userId: result.userId, userEmail: result.userEmail });
+      })
+      .catch((error) => {
+        ExtensionSecurityLogger.log('Failed to sync auth state', error);
+        sendResponse({ success: false, error: error instanceof Error ? error.message : 'Unknown error' });
+      });
+    return true;
   } else if (request.action === "authSuccess") {
     // After web app login, capture Firebase UID and store
     console.log("Authentication successful, capturing Firebase uid");
-    if (sender.tab && sender.tab.id) {
-      try {
-        chrome.tabs.sendMessage(
-          sender.tab.id,
-          { action: "getUserId" },
-          (res) => {
-            if (chrome.runtime.lastError) {
-              console.warn(
-                "Could not retrieve userId:",
-                chrome.runtime.lastError.message
-              );
-              return;
-            }
-            const uid = res && res.userId ? String(res.userId) : null;
-            if (!uid) return;
-            chrome.storage.sync.set({ firebaseUid: uid }, () => {
-              console.log("Saved firebaseUid:", uid);
-            });
-          }
-        );
-      } catch (e) {
-        console.error("Error requesting userId", e);
-      }
-    }
+
+    const messageData = (request?.data ?? {}) as { userId?: string; userEmail?: string };
+    const overrideUid = messageData.userId ?? (typeof request.userId === "string" ? request.userId : undefined);
+    const overrideEmail = messageData.userEmail ?? (typeof request.userEmail === "string" ? request.userEmail : undefined);
+
+    const syncPromise = sender.tab?.id
+      ? syncAuthStateFromSite({ tabId: sender.tab.id, userIdOverride: overrideUid, userEmailOverride: overrideEmail })
+      : overrideUid
+        ? syncAuthStateFromSite({ userIdOverride: overrideUid, userEmailOverride: overrideEmail })
+        : Promise.resolve({ updated: false, userId: undefined, userEmail: undefined });
+
+    syncPromise
+      .then((result) => {
+        if (result.updated) {
+          console.log("Saved firebaseUid via authSuccess message:", result.userId);
+        }
+
+        sendResponse({
+          success: true,
+          userId: result.userId ?? overrideUid ?? null,
+          userEmail: result.userEmail ?? overrideEmail ?? null,
+        });
+      })
+      .catch((error) => {
+        console.error("Error syncing auth state from authSuccess", error);
+        sendResponse({
+          success: false,
+          error: error instanceof Error ? error.message : "Unknown error",
+        });
+      });
+
+    return true;
   }
 });
 

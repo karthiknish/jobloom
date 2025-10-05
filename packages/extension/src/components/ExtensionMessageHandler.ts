@@ -21,43 +21,77 @@ export class ExtensionMessageHandler {
 
   static handleMessage(request: ExtensionMessage, sender?: any, sendResponse?: any): boolean {
     const handler = this.handlers.get(request.action);
-    
+
     if (handler) {
       try {
-        handler(request);
+        const result = handler(request);
         if (sendResponse) {
-          sendResponse({ success: true });
+          sendResponse({ success: true, result });
         }
-        return true;
       } catch (error) {
         console.error(`Error handling message action ${request.action}:`, error);
         if (sendResponse) {
-          sendResponse({ success: false, error: error instanceof Error ? error.message : 'Unknown error' });
+          sendResponse({
+            success: false,
+            error: error instanceof Error ? error.message : "Unknown error",
+          });
         }
-        return false;
       }
+      return false;
     }
 
     // Handle built-in actions
     switch (request.action) {
       case "togglePeopleSearch":
         this.handleTogglePeopleSearch();
-        return true;
+        sendResponse?.({ success: true });
+        return false;
 
       case "triggerAutofill":
         this.handleTriggerAutofill();
-        return true;
+        sendResponse?.({ success: true });
+        return false;
 
       case "toggleHighlight":
         this.handleToggleHighlight();
-        return true;
+        sendResponse?.({ success: true });
+        return false;
 
       case "clearHighlights":
         this.handleClearHighlights();
-        return true;
+        sendResponse?.({ success: true });
+        return false;
+
+      case "getUserId":
+        if (sendResponse && typeof chrome !== "undefined" && chrome.storage?.sync) {
+          // Check if runtime is still valid before making storage call
+          if (!chrome.runtime?.id) {
+            sendResponse({ success: false, userId: null, error: "Extension context invalid" });
+            return false;
+          }
+
+          chrome.storage.sync.get(["firebaseUid", "userId"], (result: { firebaseUid?: string; userId?: string }) => {
+            if (chrome.runtime?.lastError) {
+              sendResponse({
+                success: false,
+                error: chrome.runtime.lastError.message,
+                userId: null,
+              });
+              return;
+            }
+
+            const userId = result.firebaseUid || result.userId || null;
+            sendResponse({ success: true, userId });
+          });
+          return true; // async response
+        }
+
+        sendResponse?.({ success: false, userId: null, error: "Storage unavailable" });
+        return false;
 
       default:
         console.log("Unhandled action:", request.action);
+        sendResponse?.({ success: false, error: "Unhandled action" });
         return false;
     }
   }
@@ -83,7 +117,7 @@ export class ExtensionMessageHandler {
   private static handleToggleHighlight(): void {
     const tracker = this.resolveJobTracker();
     if (tracker) {
-      void tracker.handleToggle();
+      // Toggle functionality removed - highlights are now automatic
       return;
     }
 
@@ -114,24 +148,62 @@ export class ExtensionMessageHandler {
   static initialize(): void {
     if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
       chrome.runtime.onMessage.addListener((request: any, sender: any, sendResponse: any) => {
-        return this.handleMessage(request, sender, sendResponse);
+        // Wrap handler in try-catch to prevent unhandled exceptions
+        try {
+          return this.handleMessage(request, sender, sendResponse);
+        } catch (error) {
+          console.error('Error in ExtensionMessageHandler:', error);
+          if (sendResponse) {
+            sendResponse({ 
+              success: false, 
+              error: error instanceof Error ? error.message : 'Unknown handler error' 
+            });
+          }
+          return false;
+        }
       });
     }
   }
 
+  static isExtensionContextValid(): boolean {
+    return typeof chrome !== 'undefined' && chrome.runtime && !!chrome.runtime.id;
+  }
+
   static sendMessage(action: string, data?: any): Promise<any> {
     return new Promise((resolve, reject) => {
-      if (typeof chrome !== 'undefined' && chrome.runtime) {
-        chrome.runtime.sendMessage({ action, data }, (response) => {
-          if (chrome.runtime.lastError) {
-            reject(new Error(chrome.runtime.lastError.message));
-          } else {
-            resolve(response);
-          }
-        });
-      } else {
-        reject(new Error('Chrome runtime not available'));
+      if (!this.isExtensionContextValid()) {
+        reject(new Error('Chrome extension context not available'));
+        return;
       }
+
+      chrome.runtime.sendMessage({ action, data }, (response) => {
+        if (chrome.runtime.lastError) {
+          const errorMessage = chrome.runtime.lastError.message || '';
+          // Check if it's a port closure error
+          if (errorMessage.includes('message port closed') || errorMessage.includes('Receiving end does not exist')) {
+            console.debug(`Message port closed for action ${action}, will retry`);
+            // Retry once after a short delay
+            setTimeout(() => {
+              if (!this.isExtensionContextValid()) {
+                reject(new Error('Chrome extension context not available on retry'));
+                return;
+              }
+              
+              chrome.runtime.sendMessage({ action, data }, (retryResponse) => {
+                if (chrome.runtime.lastError) {
+                  reject(new Error(chrome.runtime.lastError.message));
+                } else {
+                  resolve(retryResponse);
+                }
+              });
+            }, 100);
+          } else {
+            reject(new Error(errorMessage));
+          }
+        } else {
+          resolve(response);
+        }
+      });
     });
   }
 }

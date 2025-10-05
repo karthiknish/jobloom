@@ -1,4 +1,5 @@
 import { DEFAULT_WEB_APP_URL, sanitizeBaseUrl } from "../constants";
+import { safeChromeStorageGet } from "../utils/safeStorage";
 export interface UserVisaCriteria {
   ukFiltersEnabled: boolean;
   ageCategory: "under26" | "adult";
@@ -31,14 +32,17 @@ export class UserProfileManager {
   };
 
   static async getUserVisaCriteria(): Promise<UserVisaCriteria> {
-    return new Promise((resolve) => {
-      chrome.storage.sync.get(["userVisaCriteria"], (result: { userVisaCriteria?: UserVisaCriteria }) => {
-        resolve({
-          ...this.DEFAULT_VISA_CRITERIA,
-          ...(result.userVisaCriteria || {}),
-        });
-      });
-    });
+    const result = await safeChromeStorageGet<{ userVisaCriteria?: Partial<UserVisaCriteria> }>(
+      "sync",
+      ["userVisaCriteria"],
+      {},
+      "UserProfileManager.getUserVisaCriteria"
+    );
+
+    return {
+      ...this.DEFAULT_VISA_CRITERIA,
+      ...(result.userVisaCriteria || {}),
+    };
   }
 
   static async setUserVisaCriteria(criteria: Partial<UserVisaCriteria>): Promise<void> {
@@ -57,14 +61,20 @@ export class UserProfileManager {
   }
 
   static async getUserPreferences(): Promise<UserPreferences> {
-    return new Promise((resolve) => {
-      chrome.storage.sync.get(
-        ["defaultJobStatus", "webAppUrl", "enableAutoDetection", "enableSponsorshipChecks", "enableJobBoardIntegration"],
-        (result: UserPreferences) => {
-          resolve(result);
-        }
-      );
-    });
+    const result = await safeChromeStorageGet<Record<string, unknown>>(
+      "sync",
+      [
+        "defaultJobStatus",
+        "webAppUrl",
+        "enableAutoDetection",
+        "enableSponsorshipChecks",
+        "enableJobBoardIntegration",
+      ],
+      {},
+      "UserProfileManager.getUserPreferences"
+    );
+
+    return result as UserPreferences;
   }
 
   static async setUserPreferences(preferences: Partial<UserPreferences>): Promise<void> {
@@ -80,60 +90,81 @@ export class UserProfileManager {
   }
 
   static async isUserAuthenticated(): Promise<boolean> {
-    return new Promise((resolve) => {
-      chrome.storage.sync.get(["firebaseUid", "userId"], (result: { firebaseUid?: string; userId?: string }) => {
-        const uid = result.firebaseUid || result.userId;
-        resolve(!!uid);
-      });
-    });
+    const result = await safeChromeStorageGet<{ firebaseUid?: string; userId?: string }>(
+      "sync",
+      ["firebaseUid", "userId"],
+      {},
+      "UserProfileManager.isUserAuthenticated"
+    );
+
+    const uid = result.firebaseUid || result.userId;
+    return !!uid;
   }
 
   static async getUserId(): Promise<string | null> {
-    return new Promise((resolve) => {
-      chrome.storage.sync.get(["firebaseUid", "userId"], (result: { firebaseUid?: string; userId?: string }) => {
-        resolve(result.firebaseUid || result.userId || null);
-      });
-    });
+    const result = await safeChromeStorageGet<{ firebaseUid?: string; userId?: string }>(
+      "sync",
+      ["firebaseUid", "userId"],
+      {},
+      "UserProfileManager.getUserId"
+    );
+
+    return result.firebaseUid || result.userId || null;
   }
 
   static async getWebAppUrl(): Promise<string> {
-    return new Promise((resolve) => {
-      chrome.storage.sync.get(["webAppUrl"], (result: { webAppUrl?: string }) => {
-        resolve(sanitizeBaseUrl(result.webAppUrl || DEFAULT_WEB_APP_URL));
-      });
-    });
+    const result = await safeChromeStorageGet<{ webAppUrl?: string }>(
+      "sync",
+      ["webAppUrl"],
+      {},
+      "UserProfileManager.getWebAppUrl"
+    );
+
+    return sanitizeBaseUrl(result.webAppUrl || DEFAULT_WEB_APP_URL);
   }
 
   static async getDefaultJobStatus(): Promise<string> {
-    return new Promise((resolve) => {
-      chrome.storage.sync.get(["defaultJobStatus"], (result: { defaultJobStatus?: string }) => {
-        resolve(result.defaultJobStatus || "interested");
-      });
-    });
+    const result = await safeChromeStorageGet<{ defaultJobStatus?: string }>(
+      "sync",
+      ["defaultJobStatus"],
+      {},
+      "UserProfileManager.getDefaultJobStatus"
+    );
+
+    return result.defaultJobStatus || "interested";
   }
 
   static async isAutoDetectionEnabled(): Promise<boolean> {
-    return new Promise((resolve) => {
-      chrome.storage.sync.get(["enableAutoDetection"], (result: { enableAutoDetection?: boolean }) => {
-        resolve(result.enableAutoDetection !== false); // Default to true
-      });
-    });
+    const result = await safeChromeStorageGet<{ enableAutoDetection?: boolean }>(
+      "sync",
+      ["enableAutoDetection"],
+      {},
+      "UserProfileManager.isAutoDetectionEnabled"
+    );
+
+    return result.enableAutoDetection !== false;
   }
 
   static async isSponsorshipCheckEnabled(): Promise<boolean> {
-    return new Promise((resolve) => {
-      chrome.storage.sync.get(["enableSponsorshipChecks"], (result: { enableSponsorshipChecks?: boolean }) => {
-        resolve(result.enableSponsorshipChecks !== false); // Default to true
-      });
-    });
+    const result = await safeChromeStorageGet<{ enableSponsorshipChecks?: boolean }>(
+      "sync",
+      ["enableSponsorshipChecks"],
+      {},
+      "UserProfileManager.isSponsorshipCheckEnabled"
+    );
+
+    return result.enableSponsorshipChecks !== false;
   }
 
   static async isJobBoardIntegrationEnabled(): Promise<boolean> {
-    return new Promise((resolve) => {
-      chrome.storage.sync.get(["enableJobBoardIntegration"], (result: { enableJobBoardIntegration?: boolean }) => {
-        resolve(result.enableJobBoardIntegration !== false); // Default to true
-      });
-    });
+    const result = await safeChromeStorageGet<{ enableJobBoardIntegration?: boolean }>(
+      "sync",
+      ["enableJobBoardIntegration"],
+      {},
+      "UserProfileManager.isJobBoardIntegrationEnabled"
+    );
+
+    return result.enableJobBoardIntegration !== false;
   }
 
   static async updateUserProfile(profile: {

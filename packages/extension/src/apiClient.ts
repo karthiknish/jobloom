@@ -1,6 +1,7 @@
 import { acquireIdToken } from './authToken';
 import { DEFAULT_WEB_APP_URL, sanitizeBaseUrl } from './constants';
 import { checkRateLimit } from './rateLimiter';
+import { safeChromeStorageGet } from './utils/safeStorage';
 
 interface ApiOptions extends RequestInit {
   auth?: boolean; // whether to inject bearer token (defaults true for /api/app/*)
@@ -9,11 +10,18 @@ interface ApiOptions extends RequestInit {
 }
 
 export async function getBaseUrl(): Promise<string> {
-  return new Promise((resolve) => {
-    chrome.storage.sync.get(['webAppUrl'], (result) => {
-      resolve(sanitizeBaseUrl(result.webAppUrl ?? DEFAULT_WEB_APP_URL));
-    });
-  });
+  const storageValues = await safeChromeStorageGet(
+    "sync",
+    ["webAppUrl"],
+    { webAppUrl: DEFAULT_WEB_APP_URL },
+    "apiClient.getBaseUrl"
+  );
+
+  const url = typeof storageValues.webAppUrl === "string"
+    ? storageValues.webAppUrl
+    : DEFAULT_WEB_APP_URL;
+
+  return sanitizeBaseUrl(url);
 }
 
 function buildQuery(q?: ApiOptions['query']): string {

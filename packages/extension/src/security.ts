@@ -183,6 +183,7 @@ export function validateMessage(message: any): boolean {
     'getWebAppUrl',
     'openJobUrl',
     'authSuccess',
+    'syncAuthState',
     'getUserId',
     'checkSponsorStatus'
   ];
@@ -203,8 +204,42 @@ export function validateMessage(message: any): boolean {
       return isPlainObject(message.data);
     case 'openJobUrl':
       return typeof message.url === 'string' && validateUrl(message.url);
-    case 'authSuccess':
-      return message.userId === undefined || typeof message.userId === 'string';
+    case 'authSuccess': {
+      if (message.userId !== undefined && typeof message.userId !== 'string') {
+        return false;
+      }
+
+      if (message.data !== undefined) {
+        if (!isPlainObject(message.data)) {
+          return false;
+        }
+
+        const { userId, userEmail } = message.data as { userId?: unknown; userEmail?: unknown };
+        if (userId !== undefined && typeof userId !== 'string') {
+          return false;
+        }
+        if (userEmail !== undefined && typeof userEmail !== 'string') {
+          return false;
+        }
+      }
+
+      return true;
+    }
+    case 'syncAuthState':
+      if (message.data !== undefined) {
+        if (!isPlainObject(message.data)) {
+          return false;
+        }
+
+        const { userIdOverride, userEmailOverride } = message.data as { userIdOverride?: unknown; userEmailOverride?: unknown };
+        if (userIdOverride !== undefined && typeof userIdOverride !== 'string') {
+          return false;
+        }
+        if (userEmailOverride !== undefined && typeof userEmailOverride !== 'string') {
+          return false;
+        }
+      }
+      return true;
     default:
       return true;
   }

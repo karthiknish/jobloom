@@ -391,27 +391,82 @@ export class UKJobDescriptionParser {
 
   private static extractSalary(description: string): JobDescriptionData['salary'] {
     const salaryPatterns = [
-      // UK salary patterns
-      /£(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)\s*(?:-\s*£(\d{1,3}(?:,\d{3})*(?:\.\d{2})?))?\s*(?:per\s+)?(annum|year|annual|pa|hour|day|week|month)/i,
-      /(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)\s*(?:-\s*(\d{1,3}(?:,\d{3})*(?:\.\d{2})?))?\s*(?:per\s+)?(annum|year|annual|pa|hour|day|week|month)\s*GBP/i,
-      /GBP\s*(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)\s*(?:-\s*GBP\s*(\d{1,3}(?:,\d{3})*(?:\.\d{2})?))?/i,
+      // UK salary patterns - comprehensive
+      /£(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)\s*(?:to|-|–|—)\s*£(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)\s*(?:per\s+)?(annum|year|annual|pa|hour|day|week|month)/i,
+      /£(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)\s*(?:per\s+)?(annum|year|annual|pa|hour|day|week|month)/i,
+      /(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)\s*(?:to|-|–|—)\s*(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)\s*(?:per\s+)?(annum|year|annual|pa|hour|day|week|month)\s*GBP/i,
+      /(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)\s*(?:per\s+)?(annum|year|annual|pa|hour|day|week|month)\s*GBP/i,
+      /GBP\s*(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)\s*(?:to|-|–|—)\s*GBP\s*(\d{1,3}(?:,\d{3})?)/i,
+      /GBP\s*(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)/i,
+
+      // Salary ranges with different separators
+      /£(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)\s*-\s*£(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)/i,
+      /£(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)\s*–\s*£(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)/i,
+      /£(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)\s*—\s*£(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)/i,
+
+      // Salary with "up to" or "from"
+      /(?:from|starting(?:\s+at)?)\s*£(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)/i,
+      /(?:up\s+to)\s*£(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)/i,
+
       // International patterns that might appear on UK sites
-      /\$(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)\s*(?:-\s*\$(\d{1,3}(?:,\d{3})*(?:\.\d{2})?))?\s*(?:per\s+)?(annum|year|annual|hour|day|week|month)/i,
-      /€(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)\s*(?:-\s*€(\d{1,3}(?:,\d{3})*(?:\.\d{2})?))?\s*(?:per\s+)?(annum|year|annual|hour|day|week|month)/i
+      /\$(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)\s*(?:to|-|–|—)\s*\$(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)\s*(?:per\s+)?(annum|year|annual|hour|day|week|month)/i,
+      /€(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)\s*(?:to|-|–|—)\s*€(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)\s*(?:per\s+)?(annum|year|annual|hour|day|week|month)/i,
+
+      // Salary mentioned with "salary" or "pay" keywords
+      /(?:salary|pay|compensation|remuneration)(?:\s+of)?\s*[: -]?\s*£(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)/i,
+      /(?:salary|pay|compensation|remuneration)(?:\s+range)?\s*(?:of|between|from)?\s*£(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)\s*(?:to|-|–|—)\s*£(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)/i,
     ];
 
     for (const pattern of salaryPatterns) {
       const match = description.match(pattern);
       if (match) {
-        const min = match[1] ? parseFloat(match[1].replace(/,/g, '')) : undefined;
-        const max = match[2] ? parseFloat(match[2].replace(/,/g, '')) : min;
-        const period = match[3] || match[4] || 'annum';
+        let min: number | undefined;
+        let max: number | undefined;
+        let period = 'year';
+
+        // Extract values based on pattern groups
+        if (match[1] && match[2]) {
+          // Range pattern: min and max
+          min = parseFloat(match[1].replace(/,/g, ''));
+          max = parseFloat(match[2].replace(/,/g, ''));
+          period = match[3] || match[4] || 'year';
+        } else if (match[1]) {
+          // Single value pattern
+          min = parseFloat(match[1].replace(/,/g, ''));
+          period = match[2] || match[3] || 'year';
+        }
+
+        // Handle "up to" patterns (set as max only)
+        if (match[0].toLowerCase().includes('up to') && min && !max) {
+          max = min;
+          min = undefined;
+        }
+
+        // Normalize period
+        period = period.toLowerCase()
+          .replace(/annual|annum/gi, 'year')
+          .replace(/pa/gi, 'year');
+
+        // Convert to annual salary for consistency
+        if (period === 'month') {
+          if (min) min *= 12;
+          if (max) max *= 12;
+          period = 'year';
+        } else if (period === 'week') {
+          if (min) min *= 52;
+          if (max) max *= 52;
+          period = 'year';
+        } else if (period === 'day') {
+          if (min) min *= 260; // Approximate working days
+          if (max) max *= 260;
+          period = 'year';
+        }
 
         return {
           min,
           max,
-          currency: '£', // Default to GBP for UK sites
-          period: period.toLowerCase().replace(/annual|annum/gi, 'year')
+          currency: '£',
+          period
         };
       }
     }

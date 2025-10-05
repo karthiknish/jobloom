@@ -2,70 +2,103 @@
 
 import { ExtensionSecurityLogger } from "./security";
 import { put } from "./apiClient";
+import { ExtensionMessageHandler } from "./components/ExtensionMessageHandler";
 
 // Content script for the web app to handle authentication communication
 let authSuccessSent = false; // Prevent duplicate auth success messages
 let authCheckInterval: number | null = null;
 let lastUserId: string | null = null;
 
+interface UserInfo {
+  userId: string | null;
+  userEmail: string | null;
+}
+
+function extractUserInfo(): UserInfo {
+  let userId: string | null = null;
+  let userEmail: string | null = null;
+
+  const firebaseUser = (window as any).__firebase_user;
+  if (firebaseUser) {
+    if (firebaseUser.id) {
+      userId = String(firebaseUser.id);
+    }
+    if (firebaseUser.email) {
+      userEmail = String(firebaseUser.email);
+    }
+  }
+
+  if (!userId) {
+    try {
+      const stored = localStorage.getItem("__firebase_user");
+      if (stored) {
+        const data = JSON.parse(stored);
+        if (data?.id) {
+          userId = String(data.id);
+        }
+        if (data?.email) {
+          userEmail = String(data.email);
+        }
+      }
+    } catch (error) {
+      ExtensionSecurityLogger.log('Error parsing Firebase user data', error);
+    }
+  }
+
+  if (!userId) {
+    try {
+      const cookies = document.cookie.split(';');
+      for (const cookie of cookies) {
+        const [name, value] = cookie.trim().split('=');
+        if (name === '__firebase_user' && value) {
+          const data = JSON.parse(decodeURIComponent(value));
+          if (data?.id) {
+            userId = String(data.id);
+          }
+          if (data?.email) {
+            userEmail = String(data.email);
+          }
+          break;
+        }
+      }
+    } catch (error) {
+      ExtensionSecurityLogger.log('Error parsing Firebase user cookie', error);
+    }
+  }
+
+  if (!userEmail) {
+    // Attempt DOM fallback for email if available
+    const emailEl = document.querySelector('[data-user-email]');
+    const rawEmail = emailEl?.getAttribute('data-user-email');
+    if (rawEmail && rawEmail.includes('@')) {
+      userEmail = rawEmail;
+    }
+  }
+
+  return { userId, userEmail };
+}
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   // Only allow specific actions
   if (request.action === "getUserId") {
     try {
-      // Try to get user ID from various sources
-      let userId: string | null = null;
-
-      // Method 1: Firebase signal on window from app provider
-      if ((window as any).__firebase_user?.id) {
-        userId = String((window as any).__firebase_user.id);
-      }
-
-      // Method 2: Check localStorage for firebase user (with error handling)
-      if (!userId) {
-        try {
-          const firebaseUser = localStorage.getItem("__firebase_user");
-          if (firebaseUser) {
-            const data = JSON.parse(firebaseUser);
-            userId = data?.id ? String(data.id) : null;
-          }
-        } catch (error) {
-          ExtensionSecurityLogger.log('Error parsing Firebase user data', error);
-        }
-      }
-
-      // Method 3: Check for cookie-based auth
-      if (!userId) {
-        try {
-          const cookies = document.cookie.split(';');
-          for (const cookie of cookies) {
-            const [name, value] = cookie.trim().split('=');
-            if (name === '__firebase_user' && value) {
-              const data = JSON.parse(decodeURIComponent(value));
-              userId = data?.id ? String(data.id) : null;
-              break;
-            }
-          }
-        } catch (error) {
-          ExtensionSecurityLogger.log('Error parsing Firebase user cookie', error);
-        }
-      }
-
-      // Method 4: Fallback DOM attribute (sanitize input)
-      if (!userId) {
+      const info = extractUserInfo();
+      if (!info.userId) {
+        // Method 4: Fallback DOM attribute (sanitize input)
         const el = document.querySelector("[data-user-id]");
         if (el) {
           const rawUserId = el.getAttribute("data-user-id");
           if (rawUserId && typeof rawUserId === 'string' && rawUserId.length < 100) {
-            userId = rawUserId;
+            info.userId = rawUserId;
           }
         }
       }
 
-      sendResponse({ userId });
+      sendResponse({ userId: info.userId, userEmail: info.userEmail });
       return true; // Keep the message channel open for async response
     } catch (error) {
       ExtensionSecurityLogger.log('Error retrieving user ID', error);
-      sendResponse({ userId: null, error: 'Failed to retrieve user ID' });
+      sendResponse({ userId: null, userEmail: null, error: 'Failed to retrieve user ID' });
       return true;
     }
   }
@@ -107,9 +140,11 @@ function notifyAuthSuccess(userId: string) {
   authSuccessSent = true;
   lastUserId = userId;
 
+  const { userEmail } = extractUserInfo();
+
   console.log("Authentication successful, notifying extension with userId:", userId);
 
-  chrome.runtime.sendMessage({ action: "authSuccess", userId }).catch((error) => {
+  ExtensionMessageHandler.sendMessage("authSuccess", { userId, userEmail }).catch((error) => {
     console.debug("Auth success notification failed; extension context may be invalid", error);
     // Reset flag on failure so we can try again
     authSuccessSent = false;
@@ -228,25 +263,7 @@ window.addEventListener("message", (event) => {
 // Optimized auth checking function
 function checkForAuthSuccess(): Promise<void> {
   return new Promise((resolve) => {
-    let userId: string | null = null;
-
-    // Check Firebase user object first
-    if ((window as any).__firebase_user?.id) {
-      userId = String((window as any).__firebase_user.id);
-    }
-
-    // Check localStorage
-    if (!userId) {
-      try {
-        const firebaseUser = localStorage.getItem("__firebase_user");
-        if (firebaseUser) {
-          const data = JSON.parse(firebaseUser);
-          userId = data?.id ? String(data.id) : null;
-        }
-      } catch (error) {
-        // Ignore parsing errors
-      }
-    }
+    const { userId } = extractUserInfo();
 
     if (userId) {
       notifyAuthSuccess(userId);

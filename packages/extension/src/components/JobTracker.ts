@@ -35,7 +35,6 @@ export class JobTracker {
   private readonly sponsorCache = new Map<string, SponsorshipCheckResult>();
   private readonly processedCards = new WeakSet<Element>();
 
-  private toggleButton: HTMLButtonElement | null = null;
   private observer: MutationObserver | null = null;
   private mutationTimeout: number | null = null;
   private isChecking = false;
@@ -112,17 +111,6 @@ export class JobTracker {
   }
 
   initialize(): void {
-    if (this.toggleButton) return;
-
-    this.toggleButton = UIComponents.createFloatingButton({
-      id: "hireall-sponsor-toggle",
-      label: "Check Sponsored Jobs",
-      icon: UIComponents.createIcon("target", 16),
-      variant: "primary",
-      onClick: () => this.handleToggle(),
-      position: { top: 140, right: 24 },
-    });
-
     this.updateCards();
 
     this.observer = new MutationObserver(() => {
@@ -142,23 +130,10 @@ export class JobTracker {
     });
   }
 
-  async handleToggle(): Promise<void> {
-    if (this.isChecking) return;
-
-    if (this.isHighlighting) {
-      this.clearHighlights();
-      UIComponents.showToast("Sponsor highlights cleared", { type: "info" });
-      return;
-    }
-
-    await this.checkAndHighlightSponsoredJobs();
-  }
-
   async checkAndHighlightSponsoredJobs(): Promise<void> {
     if (this.isChecking) return;
 
     this.isChecking = true;
-    this.updateToggleState("Checking…", true);
 
     try {
       const cards = JobDataExtractor.findJobCards();
@@ -182,7 +157,6 @@ export class JobTracker {
 
       if (sponsoredCount === 0) {
         UIComponents.showToast("No sponsored roles detected", { type: "info" });
-        this.updateToggleState("Check Sponsored Jobs", false);
         this.isHighlighting = false;
         return;
       }
@@ -191,12 +165,10 @@ export class JobTracker {
         type: "success",
       });
 
-      this.updateToggleState("Clear Highlights", false, "danger");
       this.isHighlighting = true;
     } catch (error) {
       console.error("Hireall: sponsorship check failed", error);
       UIComponents.showToast("Unable to check sponsorship right now", { type: "error" });
-      this.updateToggleState("Check Sponsored Jobs", false);
       this.isHighlighting = false;
     } finally {
       this.isChecking = false;
@@ -206,13 +178,18 @@ export class JobTracker {
   clearHighlights(): void {
     this.trackedBadges.forEach(({ card, badge }) => {
       card.classList.remove(this.highlightClass);
+      // Remove border styling
+      if (card instanceof HTMLElement) {
+        card.style.border = '';
+        card.style.borderRadius = '';
+        card.style.boxShadow = '';
+      }
       if (badge.parentElement) {
         badge.parentElement.removeChild(badge);
       }
     });
 
     this.trackedBadges.clear();
-    this.updateToggleState("Check Sponsored Jobs", false);
     this.isHighlighting = false;
   }
 
@@ -235,13 +212,45 @@ export class JobTracker {
       const ukEligibility =
         sponsorRecord?.ukEligibility ?? (await SponsorshipManager.assessUkEligibility(jobContext));
 
+      // Determine sponsorship status more intelligently
+      let isSponsored = false;
+      let sponsorshipType: string | null = null;
+      let confidence = 0;
+
+      if (sponsorRecord?.isSponsored) {
+        // Company is a verified sponsor
+        isSponsored = true;
+        sponsorshipType = sponsorRecord.sponsorshipType ?? "Verified Sponsor";
+        confidence = 0.9;
+      } else if (ukEligibility?.eligible && jobContext?.visaSponsorship?.mentioned !== false) {
+        // Job is eligible and sponsorship isn't explicitly excluded
+        isSponsored = true;
+        sponsorshipType = "Eligible for Sponsorship";
+        confidence = 0.7;
+      } else if (ukEligibility?.eligible === false) {
+        // Job is not eligible
+        isSponsored = false;
+        sponsorshipType = null;
+        confidence = 0.8;
+      } else if (sponsorRecord && !sponsorRecord.isSponsored) {
+        // Company explicitly not a sponsor
+        isSponsored = false;
+        sponsorshipType = null;
+        confidence = 0.85;
+      } else {
+        // Unknown status
+        isSponsored = false;
+        sponsorshipType = null;
+        confidence = ukEligibility ? 0.4 : 0.1;
+      }
+
       const result: SponsorshipCheckResult = {
         company: jobData.company,
         source: jobData.source,
-        isSponsored: !!sponsorRecord?.isSponsored,
-        sponsorshipType: sponsorRecord?.sponsorshipType ?? null,
+        isSponsored,
+        sponsorshipType,
         status: "success",
-        confidence: sponsorRecord ? 0.85 : ukEligibility ? 0.4 : 0,
+        confidence,
         matchedName: sponsorRecord?.name ?? null,
         sponsorData: sponsorRecord ?? null,
         ukEligibility,
@@ -256,10 +265,10 @@ export class JobTracker {
       const fallback: SponsorshipCheckResult = {
         company: jobData.company,
         source: jobData.source,
-        isSponsored: false,
-        sponsorshipType: null,
+        isSponsored: ukEligibility?.eligible ? true : false,
+        sponsorshipType: ukEligibility?.eligible ? "Potentially Eligible" : null,
         status: "error",
-        confidence: ukEligibility ? 0.3 : 0,
+        confidence: ukEligibility?.eligible ? 0.3 : 0,
         ukEligibility,
         jobContext,
       };
@@ -273,6 +282,18 @@ export class JobTracker {
 
     card.classList.add(this.highlightClass);
     card.style.position = card.style.position || "relative";
+
+    // Add border styling based on sponsorship result
+    const borderColor = result.isSponsored ? EXT_COLORS.success : EXT_COLORS.destructive;
+    const borderWidth = '3px';
+    const borderStyle = 'solid';
+
+    // Apply border with some padding to make it visible
+    card.style.border = `${borderWidth} ${borderStyle} ${borderColor}`;
+    card.style.borderRadius = '8px';
+    card.style.padding = card.style.padding || '12px';
+    card.style.margin = card.style.margin || '4px';
+    card.style.boxShadow = `0 0 0 1px ${borderColor}20, 0 4px 12px rgba(0, 0, 0, 0.1)`;
 
     let badge = card.querySelector<HTMLElement>(`.${this.badgeClass}`);
     if (!badge) {
@@ -312,33 +333,6 @@ export class JobTracker {
     }
 
     this.trackedBadges.set(card, { card, badge });
-  }
-
-  private updateToggleState(label: string, disabled: boolean, variant: "primary" | "secondary" | "danger" = "primary"): void {
-    if (!this.toggleButton) return;
-
-    const iconName = disabled ? "clock" : label.includes("Clear") ? "xCircle" : "target";
-    this.toggleButton.innerHTML = `${UIComponents.createIcon(iconName, 16, "#fff")} <span>${label}</span>`;
-    this.toggleButton.disabled = disabled;
-    this.toggleButton.style.opacity = disabled ? "0.7" : "1";
-    this.toggleButton.style.pointerEvents = disabled ? "none" : "auto";
-
-    const background =
-      variant === "danger"
-        ? "linear-gradient(135deg, #dc2626, #991b1b)"
-        : variant === "secondary"
-        ? "linear-gradient(135deg, #334155, #1f2937)"
-        : "linear-gradient(135deg, #0f766e, #0d9488)";
-
-    const shadow =
-      variant === "danger"
-        ? "0 12px 30px rgba(220, 38, 38, 0.25)"
-        : variant === "secondary"
-        ? "0 12px 30px rgba(51, 65, 85, 0.3)"
-        : "0 12px 30px rgba(15, 118, 110, 0.25)";
-
-    this.toggleButton.style.background = background;
-    this.toggleButton.style.boxShadow = shadow;
   }
 
   private updateCards(): void {

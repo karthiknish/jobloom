@@ -148,30 +148,48 @@ function initHireallExtension() {
   
   // Check if user is authenticated
   UserProfileManager.isUserAuthenticated().then(async isAuthenticated => {
+    const initializeAuthenticatedFeatures = async () => {
+      const sponsorButtonsEnabled = await UserProfileManager.isSponsorshipCheckEnabled();
+      jobTracker.setSponsorButtonEnabled(sponsorButtonsEnabled);
+      jobTracker.initialize();
+
+      if (typeof chrome !== "undefined" && chrome.storage?.onChanged) {
+        chrome.storage.onChanged.addListener((changes, areaName) => {
+          if (areaName === "sync" && changes.enableSponsorshipChecks) {
+            const newValue = changes.enableSponsorshipChecks.newValue;
+            jobTracker.setSponsorButtonEnabled(newValue !== false);
+          }
+        });
+      }
+
+      // Initialize form detection if job board integration is enabled
+      UserProfileManager.isJobBoardIntegrationEnabled().then(enabled => {
+        if (enabled) {
+          AutofillManager.startFormDetection();
+        }
+      });
+    };
+
     if (!isAuthenticated) {
       console.log("Hireall: user not signed in, extension features disabled on this page.");
+
+      try {
+        const syncResult = await ExtensionMessageHandler.sendMessage("syncAuthState");
+        if (syncResult?.userId) {
+          const nowAuthenticated = await UserProfileManager.isUserAuthenticated();
+          if (nowAuthenticated) {
+            await initializeAuthenticatedFeatures();
+            console.log("Hireall: authenticated via site session sync.");
+            return;
+          }
+        }
+      } catch (syncError) {
+        console.debug("Hireall: syncAuthState request failed", syncError);
+      }
       return;
     }
 
-    const sponsorButtonsEnabled = await UserProfileManager.isSponsorshipCheckEnabled();
-    jobTracker.setSponsorButtonEnabled(sponsorButtonsEnabled);
-    jobTracker.initialize();
-
-    if (typeof chrome !== "undefined" && chrome.storage?.onChanged) {
-      chrome.storage.onChanged.addListener((changes, areaName) => {
-        if (areaName === "sync" && changes.enableSponsorshipChecks) {
-          const newValue = changes.enableSponsorshipChecks.newValue;
-          jobTracker.setSponsorButtonEnabled(newValue !== false);
-        }
-      });
-    }
-
-    // Initialize form detection if job board integration is enabled
-    UserProfileManager.isJobBoardIntegrationEnabled().then(enabled => {
-      if (enabled) {
-        AutofillManager.startFormDetection();
-      }
-    });
+    await initializeAuthenticatedFeatures();
     
     console.log("Hireall extension initialized successfully");
   });
