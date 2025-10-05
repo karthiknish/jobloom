@@ -1,4 +1,4 @@
-import { DEFAULT_WEB_APP_URL } from "./constants";
+import { DEFAULT_WEB_APP_URL, sanitizeBaseUrl } from "./constants";
 import { post } from "./apiClient";
 import { checkRateLimit, initRateLimitCleanup } from "./rateLimiter";
 import { startRateLimitMonitoring } from "./rateLimitStatus";
@@ -19,8 +19,13 @@ chrome.runtime.onInstalled.addListener(() => {
   chrome.storage.sync.get(["webAppUrl"], (result: { webAppUrl?: string }) => {
     if (!result.webAppUrl) {
       chrome.storage.sync.set({
-        webAppUrl: process.env.WEB_APP_URL || DEFAULT_WEB_APP_URL,
+        webAppUrl: DEFAULT_WEB_APP_URL,
       });
+    } else {
+      const sanitized = sanitizeBaseUrl(result.webAppUrl);
+      if (sanitized !== result.webAppUrl) {
+        chrome.storage.sync.set({ webAppUrl: sanitized });
+      }
     }
   });
 
@@ -93,9 +98,9 @@ chrome.runtime.onMessage.addListener((request: any, sender: chrome.runtime.Messa
     sendResponse({ success: true });
   } else if (request.action === "getWebAppUrl") {
     // Respond with webAppUrl
-    SecureStorage.get("webAppUrl").then(webAppUrl => {
+    SecureStorage.get<string>("webAppUrl").then(webAppUrl => {
       sendResponse({
-        webAppUrl: webAppUrl || DEFAULT_WEB_APP_URL,
+        webAppUrl: sanitizeBaseUrl(webAppUrl || DEFAULT_WEB_APP_URL),
       });
     }).catch(error => {
       ExtensionSecurityLogger.log('Error retrieving web app URL', error);

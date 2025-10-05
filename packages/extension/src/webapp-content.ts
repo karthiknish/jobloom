@@ -1,6 +1,7 @@
 /// <reference types="chrome" />
 
 import { ExtensionSecurityLogger } from "./security";
+import { put } from "./apiClient";
 
 // Content script for the web app to handle authentication communication
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -186,7 +187,6 @@ window.addEventListener("message", (event) => {
       ], async (res) => {
         const uid = res.firebaseUid || res.userId;
         if (!uid) return;
-        const base = (res.webAppUrl || window.location.origin).replace(/\/$/, "");
         const body = {
           defaultKeywords: res.defaultKeywords,
           defaultConnectionLevel: res.defaultConnectionLevel,
@@ -196,11 +196,7 @@ window.addEventListener("message", (event) => {
           autofillProfile: res.autofillProfile,
         };
         try {
-          await fetch(`${base}/api/app/users/${encodeURIComponent(uid)}/settings`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body),
-          });
+          await put(`/api/app/users/${encodeURIComponent(uid)}/settings`, body);
         } catch (syncError) {
           ExtensionSecurityLogger.log('Failed to sync web settings from extension', syncError);
         }

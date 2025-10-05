@@ -35,7 +35,7 @@ function SignUpInner() {
   const [nameError, setNameError] = useState<string | null>(null);
   const [passwordStrength, setPasswordStrength] = useState<number>(0);
 
-  const redirectUrlComplete = search.get("redirect_url") || "/dashboard";
+  const redirectUrlComplete = search.get("redirect_url") || "/welcome";
 
   // Validation functions
   const validateName = (name: string) => {
@@ -179,7 +179,7 @@ function SignUpInner() {
         // Don't fail the signup if verification email fails
       }
       // Redirect to email verification page instead of dashboard
-      router.replace(`/verify-email?redirect_url=${encodeURIComponent(redirectUrlComplete)}`);
+      router.replace(`/verify-email?redirect_url=${encodeURIComponent('/dashboard')}`);
     } catch (err: unknown) {
       const e = err as { message?: string };
       setError(e?.message || "Sign up failed");

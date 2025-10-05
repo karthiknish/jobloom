@@ -1,7 +1,7 @@
 "use client";
 
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { showError, showSuccess } from "@/components/ui/Toast";
 import { useRateLimit } from "../../hooks/useRateLimit";
 import { useApiQuery, useApiMutation } from "../../hooks/useApi";
@@ -16,7 +16,7 @@ import { UserManagement } from "../../components/admin/UserManagement";
 import { SponsorshipRules } from "../../components/admin/SponsorshipRules";
 
 export default function AdminPage() {
-  const { user } = useFirebaseAuth();
+  const { user, isInitialized, loading } = useFirebaseAuth();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [activeTab, setActiveTab] = useState<"companies" | "users" | "rules">(
     "companies"
@@ -24,12 +24,17 @@ export default function AdminPage() {
   const [showAddForm, setShowAddForm] = useState(false);
 
   // Check if user is admin
+  const loadUserRecord = useCallback(() => {
+    if (user && user.uid) {
+      return adminApi.getUserByFirebaseUid(user.uid);
+    }
+    return Promise.reject(new Error("No user"));
+  }, [user?.uid]);
+
   const { data: userRecord, refetch: refetchUserRecord } = useApiQuery(
-    () =>
-      user && user.uid
-        ? adminApi.getUserByFirebaseUid(user.uid)
-        : Promise.reject(new Error("No user")),
-    [user?.uid]
+    loadUserRecord,
+    [user?.uid],
+    { enabled: !!user?.uid }
   );
 
   // Check admin status
@@ -46,19 +51,39 @@ export default function AdminPage() {
     endpoint: "addSponsoredCompany",
   });
 
-  const { data: sponsoredCompanies, refetch: refetchCompanies } = useApiQuery(
+  const canLoadAdminData = !!user && isAdmin === true;
+
+  const loadSponsoredCompanies = useCallback(
     () => adminApi.getAllSponsoredCompanies(),
     []
   );
 
-  const { data: sponsorshipStats } = useApiQuery(
+  const loadSponsorshipStats = useCallback(
     () => adminApi.getSponsorshipStats(),
     []
   );
 
-  const { data: allUsers, refetch: refetchUsers } = useApiQuery(
-    () => adminApi.getAllUsers().then(result => result.users),
+  const loadAllUsers = useCallback(
+    () => adminApi.getAllUsers().then((result) => result.users),
     []
+  );
+
+  const { data: sponsoredCompanies, refetch: refetchCompanies } = useApiQuery(
+    loadSponsoredCompanies,
+    [user?.uid, isAdmin],
+    { enabled: canLoadAdminData }
+  );
+
+  const { data: sponsorshipStats } = useApiQuery(
+    loadSponsorshipStats,
+    [user?.uid, isAdmin],
+    { enabled: canLoadAdminData }
+  );
+
+  const { data: allUsers, refetch: refetchUsers } = useApiQuery(
+    loadAllUsers,
+    [user?.uid, isAdmin],
+    { enabled: canLoadAdminData }
   );
 
   const { mutate: addSponsoredCompany } = useApiMutation(
@@ -123,14 +148,47 @@ export default function AdminPage() {
   };
 
   const handleUsersUpdate = () => {
+    adminApi.invalidateCache("admin-users");
     refetchUsers();
     refetchUserRecord();
   };
 
+  // Show loading state while authentication is initializing
+  if (loading || !isInitialized) {
+    return (
+      <AdminLayout title="Admin Panel">
+        <div className="flex flex-col items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
+          <p className="text-muted-foreground">Loading authentication...</p>
+        </div>
+      </AdminLayout>
+    );
+  }
+
   if (!user) {
     return (
       <AdminLayout title="Admin Panel">
-        <div>Please sign in to access the admin panel.</div>
+        <div className="flex flex-col items-center justify-center py-12">
+          <div className="text-red-500 text-5xl mb-4">🔐</div>
+          <h2 className="text-2xl font-bold text-foreground mb-2">Authentication Required</h2>
+          <p className="text-muted-foreground mb-6 text-center max-w-md">
+            Please sign in to access the admin panel. You need administrator privileges to access this page.
+          </p>
+          <div className="space-y-3">
+            <a
+              href="/sign-in?redirect_url=/admin"
+              className="inline-block bg-primary text-white px-6 py-3 rounded-md text-sm font-medium hover:bg-primary/90 transition-colors w-full text-center"
+            >
+              Sign In
+            </a>
+            <a
+              href="/"
+              className="inline-block bg-secondary text-secondary-foreground px-6 py-3 rounded-md text-sm font-medium hover:bg-secondary/90 transition-colors w-full text-center"
+            >
+              Return to Home
+            </a>
+          </div>
+        </div>
       </AdminLayout>
     );
   }
@@ -139,7 +197,10 @@ export default function AdminPage() {
   if (isAdmin === null) {
     return (
       <AdminLayout title="Admin Panel">
-        <div>Checking admin permissions...</div>
+        <div className="flex flex-col items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
+          <p className="text-muted-foreground">Checking admin permissions...</p>
+        </div>
       </AdminLayout>
     );
   }

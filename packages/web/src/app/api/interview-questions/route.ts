@@ -1,19 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb, verifyIdToken } from "@/firebase/admin";
+import { verifySessionFromRequest } from "@/lib/auth/session";
 
 export async function GET(request: NextRequest) {
   try {
-    // Check authentication
-    const authHeader = request.headers.get("authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const token = authHeader.substring(7);
-    const decodedToken = await verifyIdToken(token);
+    let decodedToken = await verifySessionFromRequest(request);
 
     if (!decodedToken) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+      const authHeader = request.headers.get("authorization");
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      const token = authHeader.substring(7);
+      decodedToken = await verifyIdToken(token);
+
+      if (!decodedToken) {
+        return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+      }
     }
 
     const db = getAdminDb();

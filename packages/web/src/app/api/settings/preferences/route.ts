@@ -1,19 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyIdToken, getAdminDb } from "@/firebase/admin";
+import { getAdminDb } from "@/firebase/admin";
+import { verifySessionFromRequest } from "@/lib/auth/session";
 
 const db = getAdminDb();
 
 export async function GET(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const token = authHeader.substring(7);
-    const decodedToken = await verifyIdToken(token);
+    const decodedToken = await verifySessionFromRequest(request);
     if (!decodedToken) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const userId = decodedToken.uid;
 
@@ -57,15 +52,9 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const token = authHeader.substring(7);
-    const decodedToken = await verifyIdToken(token);
+    const decodedToken = await verifySessionFromRequest(request);
     if (!decodedToken) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const userId = decodedToken.uid;
 

@@ -1,3 +1,5 @@
+import { get } from "./apiClient";
+
 // Enhanced rate limiting configuration and utilities for the extension
 export interface RateLimitConfig {
   maxRequests: number;
@@ -99,6 +101,18 @@ let currentUserTier: UserTier = 'free';
 let tierCheckTime = 0;
 const TIER_CACHE_DURATION = 5 * 60 * 1000; // Cache tier for 5 minutes
 
+async function fetchSubscriptionStatus(): Promise<any | null> {
+  try {
+    return await get<any>("/api/subscription/status");
+  } catch (error: any) {
+    if (error?.status === 401 || error?.status === 403) {
+      chrome.storage.local.remove(["userTier"]);
+    }
+    console.warn("Failed to fetch subscription status:", error);
+    return null;
+  }
+}
+
 // Get current user tier from storage or server
 async function getCurrentUserTier(): Promise<UserTier> {
   const now = Date.now();
@@ -118,32 +132,23 @@ async function getCurrentUserTier(): Promise<UserTier> {
     }
 
     // Check with server if we have auth
-    const authResult = await chrome.storage.local.get(['authToken']);
-    if (authResult.authToken) {
-      const response = await fetch(`${chrome.runtime.getURL('')}/api/subscription/status`, {
-        headers: {
-          'Authorization': `Bearer ${authResult.authToken}`,
-        },
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        if (data.plan === 'premium' || data.subscriptionStatus === 'active') {
-          currentUserTier = 'premium';
-        } else if (data.isAdmin) {
-          currentUserTier = 'admin';
-        } else {
-          currentUserTier = 'free';
-        }
-        
-        // Cache the tier
-        await chrome.storage.local.set({ userTier: currentUserTier });
-        tierCheckTime = now;
-        return currentUserTier;
+    const status = await fetchSubscriptionStatus();
+    if (status) {
+      if (status.plan === 'premium' || status.subscriptionStatus === 'active') {
+        currentUserTier = 'premium';
+      } else if (status.subscription?.plan === 'premium' || status.subscription?.status === 'active') {
+        currentUserTier = 'premium';
+      } else if (status.isAdmin || status.subscription?.plan === 'admin') {
+        currentUserTier = 'admin';
+      } else {
+        currentUserTier = 'free';
       }
+
+      await chrome.storage.local.set({ userTier: currentUserTier });
+      tierCheckTime = now;
+      return currentUserTier;
     }
 
-    // Default to free tier
     currentUserTier = 'free';
     tierCheckTime = now;
     await chrome.storage.local.set({ userTier: currentUserTier });
@@ -346,7 +351,7 @@ export function createRateLimitedFunction<T extends any[], R>(
   config?: Partial<RateLimitConfig>
 ) {
   return async (...args: T): Promise<R> => {
-    const rateCheck = checkRateLimit(endpoint, config);
+    const rateCheck = await checkRateLimit(endpoint, config);
 
     if (!rateCheck.allowed) {
       const error = new Error(

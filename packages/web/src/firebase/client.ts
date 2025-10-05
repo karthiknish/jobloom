@@ -4,6 +4,11 @@ import {
   type Auth,
   GoogleAuthProvider,
   connectAuthEmulator,
+  initializeAuth,
+  browserLocalPersistence,
+  indexedDBLocalPersistence,
+  inMemoryPersistence,
+  browserPopupRedirectResolver,
 } from "firebase/auth";
 import {
   getFirestore,
@@ -58,8 +63,10 @@ export interface FirebaseConnectionState {
 
 // Validate Firebase config
 function validateFirebaseConfig(): FirebaseConfig {
-  // For Google Auth to work properly, we need the correct auth domain
-  const authDomain = process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN;
+  // Prefer custom auth domain when provided
+  const authDomain =
+    process.env.NEXT_PUBLIC_FIREBASE_CUSTOM_AUTH_DOMAIN ||
+    process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN;
 
   const config = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -116,9 +123,30 @@ export function ensureFirebaseApp(): FirebaseApp | undefined {
         : initializeApp(firebaseConfig);
 
       // Initialize all services
+      let auth: Auth;
+
+      try {
+        auth = initializeAuth(app, {
+          persistence: [
+            indexedDBLocalPersistence,
+            browserLocalPersistence,
+            inMemoryPersistence,
+          ],
+          popupRedirectResolver: browserPopupRedirectResolver,
+        });
+      } catch (authInitError) {
+        auth = getAuth(app);
+        if (process.env.NODE_ENV === "development") {
+          console.info(
+            "[FirebaseClient] Falling back to existing auth instance",
+            authInitError
+          );
+        }
+      }
+
       services = {
         app,
-        auth: getAuth(app),
+        auth,
         db: getFirestore(app),
         storage: getStorage(app),
         analytics: undefined, // Will be initialized asynchronously

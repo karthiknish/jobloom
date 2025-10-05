@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   Mail,
@@ -96,12 +96,24 @@ export default function AdminContactDashboard() {
   const [showContactDetails, setShowContactDetails] = useState(false);
   const [responseDraft, setResponseDraft] = useState("");
 
+  const loadUserRecord = useCallback(() => {
+    if (user && user.uid) {
+      return adminApi.getUserByFirebaseUid(user.uid);
+    }
+    return Promise.reject(new Error("No user"));
+  }, [user?.uid]);
+
   const { data: userRecord } = useApiQuery(
-    () =>
-      user && user.uid
-        ? adminApi.getUserByFirebaseUid(user.uid)
-        : Promise.reject(new Error("No user")),
-    [user?.uid]
+    loadUserRecord,
+    [user?.uid],
+    { enabled: !!user?.uid }
+  );
+
+  const canFetchAdminData = userRecord?.isAdmin === true;
+
+  const loadContacts = useCallback(
+    () => adminApi.getAllContactSubmissions(),
+    []
   );
 
   const {
@@ -109,7 +121,11 @@ export default function AdminContactDashboard() {
     loading: contactsLoading,
     error: contactsError,
     refetch: refetchContacts,
-  } = useApiQuery(() => adminApi.getAllContactSubmissions(), []);
+  } = useApiQuery(
+    loadContacts,
+    [userRecord?._id, userRecord?.isAdmin],
+    { enabled: canFetchAdminData }
+  );
 
   useEffect(() => {
     if (userRecord) {

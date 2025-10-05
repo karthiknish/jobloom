@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   Building2,
@@ -100,24 +100,43 @@ export default function AdminSponsorsDashboard() {
   const [showAddSponsor, setShowAddSponsor] = useState(false);
 
   // Check admin status
+  const loadUserRecord = useCallback(() => {
+    if (user && user.uid) {
+      return adminApi.getUserByFirebaseUid(user.uid);
+    }
+    return Promise.reject(new Error("No user"));
+  }, [user?.uid]);
+
   const { data: userRecord } = useApiQuery(
-    () =>
-      user && user.uid
-        ? adminApi.getUserByFirebaseUid(user.uid)
-        : Promise.reject(new Error("No user")),
-    [user?.uid]
+    loadUserRecord,
+    [user?.uid],
+    { enabled: !!user?.uid }
   );
 
+  const canFetchAdminData = userRecord?.isAdmin === true;
+
   // Fetch sponsor stats
-  const { data: sponsorStats, refetch: refetchStats } = useApiQuery(
+  const loadSponsorStats = useCallback(
     () => adminApi.getSponsorshipStats(),
     []
   );
 
+  const { data: sponsorStats, refetch: refetchStats } = useApiQuery(
+    loadSponsorStats,
+    [userRecord?._id, userRecord?.isAdmin],
+    { enabled: canFetchAdminData }
+  );
+
   // Fetch all sponsored companies
-  const { data: sponsoredCompanies, refetch: refetchCompanies } = useApiQuery(
+  const loadSponsoredCompanies = useCallback(
     () => adminApi.getAllSponsoredCompanies(),
     []
+  );
+
+  const { data: sponsoredCompanies, refetch: refetchCompanies } = useApiQuery(
+    loadSponsoredCompanies,
+    [userRecord?._id, userRecord?.isAdmin],
+    { enabled: canFetchAdminData }
   );
 
   useEffect(() => {

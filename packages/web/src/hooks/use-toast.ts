@@ -159,9 +159,9 @@ export const TOAST_MESSAGES = {
 } as const;
 
 // Helper functions for common toast patterns
-export const createToastHelpers = () => {
-  const { success, error, info, warning, loading } = useToast();
-
+export const createToastHelpers = (
+  { success, error, loading }: Pick<ToastHook, "success" | "error" | "loading">
+) => {
   return {
     // Auth helpers
     showAuthSuccess: (action: 'signin' | 'signup' | 'signout') => {
@@ -222,4 +222,9 @@ export const createToastHelpers = () => {
       success(message);
     },
   };
+};
+
+export const useToastHelpers = () => {
+  const toast = useToast();
+  return createToastHelpers(toast);
 };

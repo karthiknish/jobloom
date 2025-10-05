@@ -38,8 +38,7 @@ module.exports = {
         if (process.env[k] === undefined) process.env[k] = v;
       }
     }
-    const envKeys = [
-      "WEB_APP_URL",
+    const REQUIRED_ENV_KEYS = [
       "NEXT_PUBLIC_FIREBASE_API_KEY",
       "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN",
       "NEXT_PUBLIC_FIREBASE_PROJECT_ID",
@@ -48,31 +47,40 @@ module.exports = {
       "NEXT_PUBLIC_FIREBASE_APP_ID",
     ];
 
-    const defined = envKeys.reduce((acc, key) => {
-      const full = `process.env.${key}`;
-      acc[full] = JSON.stringify(process.env[key] || (key === 'WEB_APP_URL' ? 'https://hireall.app' : ''));
-      return acc;
-    }, {});
+    const OPTIONAL_DEFAULTS = {
+      WEB_APP_URL: "https://hireall.app",
+      NEXT_PUBLIC_FIREBASE_CUSTOM_AUTH_DOMAIN: "",
+    };
+
+    const missingRequired = REQUIRED_ENV_KEYS.filter((key) => {
+      const value = process.env[key];
+      return !value || value.trim().length === 0;
+    });
+
+    if (missingRequired.length) {
+      throw new Error(
+        `Missing required extension environment variables: ${missingRequired.join(", ")}`
+      );
+    }
+
+    const allKeys = new Set([
+      ...REQUIRED_ENV_KEYS,
+      ...Object.keys(OPTIONAL_DEFAULTS),
+    ]);
+
+    const defined = {};
+    for (const key of allKeys) {
+      const raw = process.env[key];
+      const fallback = OPTIONAL_DEFAULTS[key];
+      const value = raw && raw.trim().length > 0 ? raw : fallback ?? "";
+      defined[`process.env.${key}`] = JSON.stringify(value);
+    }
 
     return [
       new webpack.DefinePlugin(defined),
       new CopyPlugin({
         patterns: [
-          {
-            from: "manifest.json",
-            to: "manifest.json",
-            transform(content) {
-              return content
-                .toString()
-                .replace(
-                  /"OAUTH_CLIENT_ID_PLACEHOLDER"/g,
-                  JSON.stringify(
-                    process.env.OAUTH_CLIENT_ID ||
-                      "575119663017-s0bf9hfbc4suitbnp12kuvne4gsnkedr.apps.googleusercontent.com"
-                  )
-                );
-            },
-          },
+          { from: "manifest.json", to: "manifest.json" },
           { from: "src/popup.html", to: "popup.html" },
           { from: "public", to: ".", noErrorOnMissing: true },
           { from: "src/styles.css", to: "styles.css", noErrorOnMissing: true },

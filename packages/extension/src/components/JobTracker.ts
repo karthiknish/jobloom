@@ -291,7 +291,7 @@ export class JobTracker {
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        box-shadow: 0 8px 18px rgba(16, 185, 129, 0.25);
+        box-shadow: 0 8px 18px rgba(5, 150, 105, 0.25);
         z-index: 2;
       `;
       card.appendChild(badge);
@@ -325,17 +325,17 @@ export class JobTracker {
 
     const background =
       variant === "danger"
-        ? "linear-gradient(135deg, #ef4444, #b91c1c)"
+        ? "linear-gradient(135deg, #dc2626, #991b1b)"
         : variant === "secondary"
-        ? "linear-gradient(135deg, #6366f1, #4338ca)"
-        : "linear-gradient(135deg, #2563eb, #1d4ed8)";
+        ? "linear-gradient(135deg, #334155, #1f2937)"
+        : "linear-gradient(135deg, #0f766e, #0d9488)";
 
     const shadow =
       variant === "danger"
-        ? "0 12px 30px rgba(239, 68, 68, 0.25)"
+        ? "0 12px 30px rgba(220, 38, 38, 0.25)"
         : variant === "secondary"
-        ? "0 12px 30px rgba(79, 70, 229, 0.25)"
-        : "0 12px 30px rgba(37, 99, 235, 0.25)";
+        ? "0 12px 30px rgba(51, 65, 85, 0.3)"
+        : "0 12px 30px rgba(15, 118, 110, 0.25)";
 
     this.toggleButton.style.background = background;
     this.toggleButton.style.boxShadow = shadow;
@@ -396,7 +396,7 @@ export class JobTracker {
       cursor: pointer;
       background: linear-gradient(135deg, ${EXT_COLORS.info}, ${EXT_COLORS.brandBlue});
       color: #fff;
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.28);
     `;
     sponsorButton.innerHTML = `${UIComponents.createIcon("flag", 12, "#fff")} <span>Check Sponsor</span>`;
     sponsorButton.addEventListener("click", (event) => {
@@ -422,7 +422,7 @@ export class JobTracker {
       cursor: pointer;
       background: linear-gradient(135deg, ${EXT_COLORS.success}, ${EXT_COLORS.greenDark});
       color: #fff;
-      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+      box-shadow: 0 4px 12px rgba(5, 150, 105, 0.28);
     `;
     addButton.innerHTML = `${UIComponents.createIcon("clipboardPlus", 12, "#fff")} <span>Add to Board</span>`;
     addButton.addEventListener("click", (event) => {
@@ -590,7 +590,7 @@ export class JobTracker {
     style.textContent = `
       .${this.highlightClass} {
         outline: 2px solid ${EXT_COLORS.success} !important;
-        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25) !important;
+        box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.25) !important;
         border-radius: 12px;
       }
     `;

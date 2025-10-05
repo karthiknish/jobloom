@@ -1,9 +1,16 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { verifySessionFromRequest } from "@/lib/auth/session";
 
-// Public endpoint for interview questions - no authentication required
-export async function GET() {
+// Protected endpoint for interview questions - authentication required
+export async function GET(request: NextRequest) {
   try {
-    // Mock interview questions data for public access
+    // Verify session
+    const decodedToken = await verifySessionFromRequest(request);
+    if (!decodedToken) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Mock interview questions data for authenticated access
     const interviewQuestions = {
       behavioral: [
         {
@@ -144,7 +151,7 @@ export async function GET() {
       message: "Sample interview questions for reference"
     });
   } catch (error) {
-    console.error("Error fetching public interview questions:", error);
+    console.error("Error fetching interview questions:", error);
     return NextResponse.json(
       { error: "Failed to fetch interview questions" },
       { status: 500 }

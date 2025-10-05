@@ -3,11 +3,11 @@
  */
 export class RateLimitStatus {
   private element: HTMLElement;
-  private updateInterval: NodeJS.Timeout | null = null;
+  private updateInterval: ReturnType<typeof setInterval> | null = null;
   private lastUpdate = 0;
 
   constructor(containerSelector: string) {
-    const container = document.querySelector(containerSelector);
+  const container = document.querySelector<HTMLElement>(containerSelector);
     if (!container) {
       console.warn('Rate limit status container not found:', containerSelector);
       throw new Error(`Container ${containerSelector} not found`);
@@ -133,7 +133,7 @@ export class RateLimitStatus {
       }
 
       .rate-limit-fill.danger {
-        background: #ef4444;
+        background: #dc2626;
       }
 
       .rate-limit-message {
@@ -254,37 +254,33 @@ export class RateLimitStatus {
   }
 
   startAutoUpdate(getStatus: () => {
-    {
-      remaining: number;
-      maxRequests: number;
-      resetIn: number;
-      tier?: string;
-    }) {
-    {
-      // Clear existing interval
-      if (this.updateInterval) {
-        clearInterval(this.updateInterval);
-      }
-
-      // Update immediately
-      const status = getStatus();
-      this.update(status);
-
-      // Set up auto-update
-      this.updateInterval = setInterval(() => {
-        const currentStatus = getStatus();
-        
-        // Update if status changed
-        if (
-          currentStatus.remaining !== status.remaining ||
-          currentStatus.maxRequests !== status.maxRequests ||
-          currentStatus.resetIn !== status.resetIn ||
-          currentStatus.tier !== status.tier
-        ) {
-          this.update(currentStatus);
-        }
-      }, 1000);
+    remaining: number;
+    maxRequests: number;
+    resetIn: number;
+    tier?: string;
+  }): void {
+    if (this.updateInterval) {
+      clearInterval(this.updateInterval);
     }
+
+    const initialStatus = getStatus();
+    this.update(initialStatus);
+
+    let previousStatus = initialStatus;
+
+    this.updateInterval = setInterval(() => {
+      const currentStatus = getStatus();
+
+      if (
+        currentStatus.remaining !== previousStatus.remaining ||
+        currentStatus.maxRequests !== previousStatus.maxRequests ||
+        currentStatus.resetIn !== previousStatus.resetIn ||
+        currentStatus.tier !== previousStatus.tier
+      ) {
+        this.update(currentStatus);
+        previousStatus = currentStatus;
+      }
+    }, 1000);
   }
 
   stopAutoUpdate() {
@@ -301,5 +297,3 @@ export class RateLimitStatus {
     }
   }
 }
-
-export { RateLimitStatus } from './RateLimitStatus';

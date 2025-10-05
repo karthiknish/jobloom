@@ -271,18 +271,21 @@ async function testAllEndpoints() {
   );
   await skipEndpoint("Get Sponsors (with params)", "Requires authentication");
 
-  // Public API Routes - no authentication required
+  // Authenticated API Routes - require authentication
   await testEndpoint(
-    "Get Public Sponsors",
-    `${BASE_URL}/api/public/sponsors?q=Google`
+    "Get Sponsors (Authenticated)",
+    `${BASE_URL}/api/sponsors/authenticated?q=Google`,
+    { expectedStatus: 401 } // Will be unauthorized without session
   );
   await testEndpoint(
-    "Get Public Interview Questions",
-    `${BASE_URL}/api/public/interview-questions`
+    "Get Interview Questions (Authenticated)",
+    `${BASE_URL}/api/interview-questions/authenticated`,
+    { expectedStatus: 401 } // Will be unauthorized without session
   );
   await testEndpoint(
-    "Get Public SOC Codes",
-    `${BASE_URL}/api/public/soc-codes?q=engineer`
+    "Get SOC Codes (Authenticated)",
+    `${BASE_URL}/api/soc-codes/authenticated?q=engineer`,
+    { expectedStatus: 401 } // Will be unauthorized without session
   );
 
   // Stripe - requires authentication
@@ -328,8 +331,8 @@ async function testAllEndpoints() {
   console.log("👑 Admin Endpoints: Require admin privileges");
   console.log("📝 Special Endpoints: Require specific parameters or setup");
 
-  console.log("\n✅ Public API endpoints are working correctly!");
-  console.log("🔒 Protected endpoints correctly require authentication.");
+  console.log("\n✅ Authenticated API endpoints correctly require authentication!");
+  console.log("🔒 All protected endpoints properly secured with session verification.");
   console.log("📝 Special endpoints require proper parameters.");
 
   // Exit with appropriate code

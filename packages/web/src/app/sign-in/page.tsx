@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { Skeleton, SkeletonInput, SkeletonButton } from "@/components/ui/loading-skeleton";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
+import { useFirebaseAuth, getLastAuthMethod } from "@/providers/firebase-auth-provider";
 import { motion } from "framer-motion";
 import { Eye, EyeOff, Loader2, Mail, Lock, Chrome, X as XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ function SignInInner() {
     loading: authLoading,
     user,
     isInitialized,
+    refreshToken,
   } = useFirebaseAuth();
 
   const [email, setEmail] = useState("");
@@ -30,8 +31,27 @@ function SignInInner() {
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [lastAuthMethod, setLastAuthMethod] = useState<string | null>(null);
 
   const redirectUrlComplete = search.get("redirect_url") || "/dashboard";
+
+  // Get last used auth method
+  useEffect(() => {
+    const lastMethod = getLastAuthMethod();
+    setLastAuthMethod(lastMethod);
+  }, []);
+
+  // Get auth method display info
+  const getAuthMethodInfo = (method: string) => {
+    switch (method) {
+      case "google":
+        return { icon: Chrome, label: "Google", color: "text-blue-600" };
+      case "email":
+        return { icon: Mail, label: "Email", color: "text-gray-600" };
+      default:
+        return { icon: Chrome, label: "Google", color: "text-blue-600" };
+    }
+  };
 
   // Validation functions
   const validateEmail = (email: string) => {
@@ -70,6 +90,7 @@ function SignInInner() {
       (async () => {
         try {
           await signInWithGoogle();
+          await refreshToken();
           router.replace(redirectUrlComplete);
         } catch {
           // Ignore; user can use the button manually
@@ -135,6 +156,7 @@ function SignInInner() {
     setLoading(true);
     try {
       await signIn(email, password);
+      await refreshToken();
       router.replace(redirectUrlComplete);
     } catch (err: unknown) {
       const e = err as { message?: string };
@@ -149,11 +171,12 @@ function SignInInner() {
     setLoading(true);
     try {
       await signInWithGoogle();
-      // For redirect flow, the page will reload and auth state will be handled automatically
-      // Don't set loading to false here as the redirect will happen
+      await refreshToken();
+      router.replace(redirectUrlComplete);
     } catch (err: unknown) {
       const e = err as { message?: string };
       setError(e?.message || "Google sign-in failed");
+    } finally {
       setLoading(false);
     }
   }
@@ -301,7 +324,19 @@ function SignInInner() {
                       animate={{ opacity: 1 }}
                       className="flex items-center justify-center"
                     >
-                      <span>Sign in</span>
+                      <div className="flex items-center">
+                        <span>Sign in</span>
+                        {lastAuthMethod === "email" && (
+                          <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className="ml-2 flex items-center text-xs text-muted-foreground"
+                          >
+                            <div className="w-2 h-2 bg-green-500 rounded-full mr-1" />
+                            <span>Last used</span>
+                          </motion.div>
+                        )}
+                      </div>
                     </motion.div>
                   )}
                 </Button>
@@ -340,8 +375,18 @@ function SignInInner() {
                     animate={{ opacity: 1 }}
                     className="flex items-center justify-center"
                   >
-                    <Chrome className="mr-2 h-5 w-5" />
-                    <span>Continue with Google</span>
+                    <div className="relative">
+                      <Chrome className="mr-2 h-5 w-5" />
+                      {lastAuthMethod === "google" && (
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full"
+                          title="Last used method"
+                        />
+                      )}
+                    </div>
+                    <span>{lastAuthMethod === "google" ? "Continue with Google (Last used)" : "Continue with Google"}</span>
                   </motion.div>
                 )}
               </Button>

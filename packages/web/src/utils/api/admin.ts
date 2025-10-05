@@ -7,12 +7,12 @@ import type {
 import {
   collection,
   doc,
-  getDoc,
   getDocs,
   addDoc,
   updateDoc,
 } from "firebase/firestore";
 import { getDb, getAuthClient } from "@/firebase/client";
+import { ApiError } from "../../services/api/appApi";
 
 export interface UserRecord {
   _id: string;
@@ -20,6 +20,12 @@ export interface UserRecord {
   email: string;
   name: string;
   createdAt: number;
+  updatedAt?: number;
+  lastLoginAt?: number;
+  emailVerified?: boolean;
+  subscriptionPlan?: string;
+  subscriptionStatus?: string | null;
+  provider?: string | null;
 }
 
 export interface SponsorshipRule {
@@ -33,15 +39,6 @@ export interface SponsorshipRule {
   createdAt: number;
   updatedAt: number;
 }
-
-type FireUser = {
-  email?: string;
-  name?: string;
-  isAdmin?: boolean;
-  createdAt?: number;
-  updatedAt?: number;
-  subscriptionPlan?: string;
-};
 
 type FireCompany = {
   name: string;
@@ -79,15 +76,198 @@ type FireContact = {
   respondedBy?: string;
 };
 
+type AdminUsersResponse = {
+  users?: Array<{
+    _id: string;
+    email?: string;
+    name?: string;
+    isAdmin?: boolean;
+    createdAt?: number;
+    updatedAt?: number;
+    lastLoginAt?: number;
+    emailVerified?: boolean;
+    subscriptionPlan?: string;
+    subscriptionStatus?: string | null;
+    provider?: string | null;
+  }>;
+  count?: number;
+  total?: number;
+  message?: string;
+  error?: string;
+  code?: string;
+};
+
+const ADMIN_STATUS_CACHE_TTL = 60 * 1000; // 1 minute
+
+type CachedAdminRecord = {
+  record: UserRecord;
+  expiresAt: number;
+};
+
+const adminStatusCache = new Map<string, CachedAdminRecord>();
+const adminStatusPromises = new Map<string, Promise<UserRecord>>();
+
+type FetchCacheEntry = {
+  data: unknown;
+  expiresAt: number;
+};
+
+const adminFetchCache = new Map<string, FetchCacheEntry>();
+const adminFetchPromises = new Map<string, Promise<unknown>>();
+
+function getCachedAdminRecord(uid: string): UserRecord | null {
+  const cached = adminStatusCache.get(uid);
+  if (!cached) return null;
+
+  if (cached.expiresAt > Date.now()) {
+    return cached.record;
+  }
+
+  adminStatusCache.delete(uid);
+  return null;
+}
+
+function setCachedAdminRecord(uid: string, record: UserRecord): void {
+  adminStatusCache.set(uid, {
+    record,
+    expiresAt: Date.now() + ADMIN_STATUS_CACHE_TTL,
+  });
+}
+
+function invalidateAdminRecord(uid?: string): void {
+  if (uid) {
+    adminStatusCache.delete(uid);
+    adminStatusPromises.delete(uid);
+    return;
+  }
+
+  adminStatusCache.clear();
+  adminStatusPromises.clear();
+}
+
+function invalidateFetchCache(cacheKey?: string): void {
+  if (cacheKey) {
+    adminFetchCache.delete(cacheKey);
+    adminFetchPromises.delete(cacheKey);
+    return;
+  }
+
+  adminFetchCache.clear();
+  adminFetchPromises.clear();
+}
+
+async function fetchWithAdminAuth<T = unknown>(
+  path: string,
+  options: RequestInit = {},
+  cacheOptions: {
+    cacheKey?: string;
+    cacheTtlMs?: number;
+    forceRefresh?: boolean;
+  } = {}
+): Promise<T> {
+  const auth = getAuthClient();
+  const currentUser = auth?.currentUser;
+
+  if (!currentUser) {
+    throw new ApiError("Authentication required", 401, "AUTH_REQUIRED");
+  }
+
+  const token = await currentUser.getIdToken();
+  if (!token) {
+    throw new ApiError("Unable to retrieve authentication token", 401, "TOKEN_UNAVAILABLE");
+  }
+
+  const headers = new Headers(options.headers ?? {});
+  headers.set("Authorization", `Bearer ${token}`);
+
+  if (options.method && options.method !== "GET" && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  const { cacheKey, cacheTtlMs = 0, forceRefresh = false } = cacheOptions;
+
+  if (cacheKey && cacheTtlMs > 0 && !forceRefresh) {
+    const cached = adminFetchCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.data as T;
+    }
+
+    const pending = adminFetchPromises.get(cacheKey);
+    if (pending) {
+      return pending as Promise<T>;
+    }
+  }
+
+  const fetchPromise = fetch(path, {
+    ...options,
+    headers,
+    cache: options.cache ?? "no-store",
+  }).then(async (response) => {
+    const rawBody = await response.text();
+    let parsedBody: unknown = null;
+
+    if (rawBody) {
+      try {
+        parsedBody = JSON.parse(rawBody);
+      } catch {
+        parsedBody = rawBody;
+      }
+    }
+
+    if (!response.ok) {
+      const bodyObject = typeof parsedBody === "object" && parsedBody !== null ? (parsedBody as Record<string, unknown>) : undefined;
+      const message =
+        (bodyObject?.error as string | undefined) ||
+        (bodyObject?.message as string | undefined) ||
+        (typeof parsedBody === "string" && parsedBody) ||
+        `Request failed with status ${response.status}`;
+      const code = typeof bodyObject?.code === "string" ? (bodyObject?.code as string) : undefined;
+
+      throw new ApiError(message, response.status, code);
+    }
+
+    return parsedBody ?? ({} as unknown);
+  });
+
+  if (cacheKey && cacheTtlMs > 0) {
+    adminFetchPromises.set(cacheKey, fetchPromise);
+  }
+
+  try {
+    const data = await fetchPromise;
+
+    if (cacheKey && cacheTtlMs > 0) {
+      adminFetchCache.set(cacheKey, {
+        data,
+        expiresAt: Date.now() + cacheTtlMs,
+      });
+      adminFetchPromises.delete(cacheKey);
+    }
+
+    return data as T;
+  } catch (error) {
+    if (cacheKey) {
+      adminFetchPromises.delete(cacheKey);
+    }
+    throw error;
+  }
+}
+
 export const adminApi = {
   // Verify if current user is an admin
-  verifyAdminAccess: async (): Promise<UserRecord> => {
+  verifyAdminAccess: async (
+    options: { forceRefresh?: boolean } = {}
+  ): Promise<UserRecord> => {
     const auth = getAuthClient();
     if (!auth?.currentUser) {
       throw new Error("Authentication required for admin access");
     }
 
-    const currentUser = await adminApi.getUserByFirebaseUid(auth.currentUser.uid);
+    const currentUser = await adminApi.getUserByFirebaseUid(
+      auth.currentUser.uid,
+      options,
+    );
+
     if (!currentUser.isAdmin) {
       throw new Error("Admin access required. User does not have admin privileges.");
     }
@@ -95,39 +275,110 @@ export const adminApi = {
     return currentUser;
   },
 
-  // Fetch user doc by Firebase UID; create minimal doc if missing
-  getUserByFirebaseUid: async (firebaseUid: string): Promise<UserRecord> => {
-    const db = getDb();
-    if (!db) throw new Error("Firestore not initialized");
-    const userRef = doc(db, "users", firebaseUid);
-    const snap = await getDoc(userRef);
-    if (snap.exists()) {
-      const d = snap.data() as FireUser;
+  // Fetch user doc by Firebase UID using server API with caching
+  getUserByFirebaseUid: async (
+    firebaseUid: string,
+    options: { forceRefresh?: boolean } = {}
+  ): Promise<UserRecord> => {
+    const { forceRefresh = false } = options;
+
+    if (!firebaseUid) {
       return {
-        _id: snap.id,
-        email: d.email ?? "",
-        name: d.name ?? "",
-        isAdmin: d.isAdmin ?? false,
-        createdAt: typeof d.createdAt === "number" ? d.createdAt : Date.now(),
+        _id: firebaseUid,
+        email: "",
+        name: "",
+        isAdmin: false,
+        createdAt: Date.now(),
       };
     }
+
+    if (forceRefresh) {
+      invalidateAdminRecord(firebaseUid);
+    } else {
+      const cached = getCachedAdminRecord(firebaseUid);
+      if (cached) {
+        return cached;
+      }
+
+      const pending = adminStatusPromises.get(firebaseUid);
+      if (pending) {
+        return pending;
+      }
+    }
+
     const auth = getAuthClient();
-    const u = auth?.currentUser;
-    const payload: FireUser = {
-      email: u?.email ?? "",
-      name: u?.displayName ?? "",
-      createdAt: Date.now(),
-      isAdmin: false,
-    };
-    const { setDoc } = await import("firebase/firestore");
-    await setDoc(userRef, payload, { merge: true });
-    return {
+    if (!auth?.currentUser) {
+      return {
+        _id: firebaseUid,
+        email: "",
+        name: "",
+        isAdmin: false,
+        createdAt: Date.now(),
+      };
+    }
+
+    const defaultRecord: UserRecord = {
       _id: firebaseUid,
-      email: payload.email ?? "",
-      name: payload.name ?? "",
+      email: auth.currentUser.email || "",
+      name: auth.currentUser.displayName || "",
       isAdmin: false,
-      createdAt: payload.createdAt ?? Date.now(),
+      createdAt: Date.now(),
     };
+
+    const fetchPromise = (async (): Promise<UserRecord> => {
+      try {
+        const token = await auth.currentUser!.getIdToken();
+        if (!token) {
+          return defaultRecord;
+        }
+
+        const response = await fetch("/api/admin/check", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data: {
+          userId?: string;
+          email?: string;
+          isAdmin?: boolean;
+        } = await response.json();
+
+        const userRecord: UserRecord = {
+          _id: data.userId || firebaseUid,
+          email: data.email || defaultRecord.email,
+          name: auth.currentUser!.displayName || defaultRecord.name,
+          isAdmin: data.isAdmin === true,
+          createdAt: defaultRecord.createdAt,
+        };
+
+        setCachedAdminRecord(userRecord._id, userRecord);
+        return userRecord;
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+
+        const fallback = getCachedAdminRecord(firebaseUid);
+        if (fallback) {
+          return fallback;
+        }
+
+        return defaultRecord;
+      }
+    })();
+
+    adminStatusPromises.set(firebaseUid, fetchPromise);
+
+    try {
+      const result = await fetchPromise;
+      return result;
+    } finally {
+      adminStatusPromises.delete(firebaseUid);
+    }
   },
 
   // Use getUserByFirebaseUid for user operations
@@ -246,11 +497,18 @@ export const adminApi = {
   },
 
   isUserAdmin: async (userId: string): Promise<boolean> => {
-    const db = getDb();
-    if (!db) throw new Error("Firestore not initialized");
-    const snap = await getDoc(doc(db, "users", userId));
-    const data = snap.exists() ? (snap.data() as FireUser) : undefined;
-    return !!(data && data.isAdmin === true);
+    const auth = getAuthClient();
+    if (!auth?.currentUser || auth.currentUser.uid !== userId) {
+      return false;
+    }
+
+    try {
+      const record = await adminApi.getUserByFirebaseUid(userId);
+      return record.isAdmin === true;
+    } catch (error) {
+      console.error("Error checking admin status:", error);
+      return false;
+    }
   },
 
   setAdminUser: async (userId: string, _requesterId: string): Promise<void> => {
@@ -281,6 +539,9 @@ export const adminApi = {
         { merge: true }
       );
     });
+
+    invalidateAdminRecord(userId);
+    invalidateFetchCache("admin-users");
   },
 
   removeAdminUser: async (
@@ -314,27 +575,49 @@ export const adminApi = {
         { merge: true }
       );
     });
+
+    invalidateAdminRecord(userId);
+    invalidateFetchCache("admin-users");
   },
 
   // User management
-  getAllUsers: async (): Promise<{ users: UserRecord[]; total: number }> => {
+  getAllUsers: async (
+    options: { forceRefresh?: boolean } = {}
+  ): Promise<{ users: UserRecord[]; total: number }> => {
     // Verify admin access before fetching all users
     await adminApi.verifyAdminAccess();
+    const response = await fetchWithAdminAuth<AdminUsersResponse>(
+      "/api/app/users",
+      {},
+      {
+        cacheKey: "admin-users",
+        cacheTtlMs: 60_000,
+        forceRefresh: options.forceRefresh === true,
+      }
+    );
 
-    const db = getDb();
-    if (!db) throw new Error("Firestore not initialized");
-    const snap = await getDocs(collection(db, "users"));
-    const users = snap.docs.map((d) => {
-      const data = d.data() as FireUser;
-      return {
-        _id: d.id,
-        email: data.email ?? "",
-        name: data.name ?? "",
-        isAdmin: !!data.isAdmin,
-        createdAt: data.createdAt ?? Date.now(),
-      } as UserRecord;
-    });
-    return { users, total: users.length };
+    const rawUsers = Array.isArray(response?.users) ? response.users : [];
+    const users: UserRecord[] = rawUsers.map((data) => ({
+      _id: data._id,
+      email: data.email ?? "",
+      name: data.name ?? "",
+      isAdmin: data.isAdmin === true,
+      createdAt: typeof data.createdAt === "number" ? data.createdAt : Date.now(),
+      updatedAt: typeof data.updatedAt === "number" ? data.updatedAt : undefined,
+      lastLoginAt: typeof data.lastLoginAt === "number" ? data.lastLoginAt : undefined,
+      emailVerified: data.emailVerified === true,
+      subscriptionPlan: data.subscriptionPlan ?? undefined,
+      subscriptionStatus: data.subscriptionStatus ?? null,
+      provider: data.provider ?? null,
+    }));
+
+    const total = typeof response?.count === "number"
+      ? response.count
+      : typeof response?.total === "number"
+        ? response.total
+        : users.length;
+
+    return { users, total };
   },
 
   getUserStats: async (): Promise<{
@@ -345,14 +628,7 @@ export const adminApi = {
     usersByPlan: Record<string, number>;
     recentLogins: number;
   }> => {
-    // Verify admin access before fetching user stats
-    await adminApi.verifyAdminAccess();
-
-    const db = getDb();
-    if (!db) throw new Error("Firestore not initialized");
-
-    const snap = await getDocs(collection(db, "users"));
-    const users = snap.docs.map((d) => d.data() as FireUser);
+    const { users } = await adminApi.getAllUsers();
 
     const now = Date.now();
     const oneMonthAgo = now - (30 * 24 * 60 * 60 * 1000);
@@ -360,15 +636,15 @@ export const adminApi = {
 
     const stats = {
       totalUsers: users.length,
-      activeUsers: users.filter(u => u.updatedAt && u.updatedAt > oneWeekAgo).length,
-      adminUsers: users.filter(u => u.isAdmin === true).length,
-      newUsersThisMonth: users.filter(u => u.createdAt && u.createdAt > oneMonthAgo).length,
+      activeUsers: users.filter((u) => (u.updatedAt ?? u.lastLoginAt ?? 0) > oneWeekAgo).length,
+      adminUsers: users.filter((u) => u.isAdmin === true).length,
+      newUsersThisMonth: users.filter((u) => u.createdAt && u.createdAt > oneMonthAgo).length,
       usersByPlan: {
-        free: users.filter(u => !u.subscriptionPlan || u.subscriptionPlan === 'free').length,
-        premium: users.filter(u => u.subscriptionPlan === 'premium').length,
-        enterprise: users.filter(u => u.subscriptionPlan === 'enterprise').length,
+        free: users.filter((u) => !u.subscriptionPlan || u.subscriptionPlan === "free").length,
+        premium: users.filter((u) => u.subscriptionPlan === "premium").length,
+        enterprise: users.filter((u) => u.subscriptionPlan === "enterprise").length,
       },
-      recentLogins: users.filter(u => u.updatedAt && u.updatedAt > oneWeekAgo).length,
+      recentLogins: users.filter((u) => (u.lastLoginAt ?? u.updatedAt ?? 0) > oneWeekAgo).length,
     };
 
     return stats;
@@ -388,6 +664,9 @@ export const adminApi = {
 
     const { deleteDoc } = await import("firebase/firestore");
     await deleteDoc(doc(db, "users", userId));
+
+    invalidateFetchCache("admin-users");
+    invalidateAdminRecord(userId);
   },
 
   // Contact submissions
@@ -531,5 +810,9 @@ export const adminApi = {
       updatedAt: Date.now(),
       updatedBy: adminUser._id, // Track who made the change
     });
+  },
+
+  invalidateCache: (cacheKey?: string) => {
+    invalidateFetchCache(cacheKey);
   },
 };

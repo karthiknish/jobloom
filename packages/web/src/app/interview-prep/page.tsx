@@ -118,7 +118,7 @@ export default function InterviewPrepPage() {
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
-        const response = await fetch("/api/interview-questions");
+        const response = await fetch("/api/interview-questions/authenticated");
         if (response.ok) {
           const data = await response.json();
           setInterviewQuestions(data.data);

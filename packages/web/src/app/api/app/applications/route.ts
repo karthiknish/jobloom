@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyIdToken } from "@/firebase/admin";
+import { verifySessionFromRequest } from "@/lib/auth/session";
 import { createFirestoreCollection } from "@/firebase/firestore";
 import { getFirestore } from "firebase-admin/firestore";
 import {
   withErrorHandling,
-  validateAuthHeader,
   validateRequiredFields,
   validateId,
   createValidationError,
@@ -19,8 +19,7 @@ export async function POST(request: NextRequest) {
 
   return withErrorHandling(async () => {
     // Validate authorization
-    const token = validateAuthHeader(request);
-    const decodedToken = await verifyIdToken(token);
+    const decodedToken = await verifySessionFromRequest(request);
     if (!decodedToken) {
       throw createAuthorizationError("Invalid authentication token", 'INVALID_TOKEN');
     }
@@ -74,8 +73,7 @@ export async function GET(request: NextRequest) {
 
   return withErrorHandling(async () => {
     // Validate authorization
-    const token = validateAuthHeader(request);
-    const decodedToken = await verifyIdToken(token);
+    const decodedToken = await verifySessionFromRequest(request);
     if (!decodedToken) {
       throw createAuthorizationError("Invalid authentication token", 'INVALID_TOKEN');
     }

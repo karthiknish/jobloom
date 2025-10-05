@@ -1,5 +1,5 @@
 /// <reference types="chrome" />
-import { DEFAULT_WEB_APP_URL } from "./constants";
+import { DEFAULT_WEB_APP_URL, sanitizeBaseUrl } from "./constants";
 import { getAuthInstance, getGoogleProvider } from "./firebase";
 import { get } from "./apiClient";
 import {
@@ -27,19 +27,32 @@ function createSVGString(iconName: string, size: number = 16): string {
   return svgIcons[iconName] || "";
 }
 
-// Toast helper (top-level so all functions can use it)
+// Enhanced Toast helper with better animations and interactions
 function showToast(
   message: string,
   opts: {
     type?: "success" | "info" | "warning" | "error";
     duration?: number;
+    action?: {
+      text: string;
+      handler: () => void;
+    };
   } = {}
 ) {
-  const { type = "info", duration = 2500 } = opts;
+  const { type = "info", duration = 3000, action } = opts;
   const root = document.getElementById("toast-root");
   if (!root) return;
+  
+  // Remove existing toasts of the same type to avoid stacking
+  const existingToasts = root.querySelectorAll(`.toast.${type}`);
+  existingToasts.forEach(toast => {
+    toast.style.animation = "toast-out 150ms ease-in forwards";
+    setTimeout(() => toast.remove(), 160);
+  });
+  
   const el = document.createElement("div");
-  el.className = `toast ${type}`;
+  el.className = `toast ${type} animate-slide-in-down`;
+  
   const icon =
     type === "success"
       ? createSVGString("checkCircle")
@@ -48,18 +61,95 @@ function showToast(
       : type === "error"
       ? createSVGString("xCircle")
       : createSVGString("bell");
+      
+  const actionHtml = action ? `<button class="toast-action" data-action="true">${action.text}</button>` : '';
+  
   el.innerHTML = `
     <span class="icon">${icon}</span>
     <div class="message">${message}</div>
+    ${actionHtml}
     <button class="close" aria-label="Close">×</button>
   `;
+  
   const remove = () => {
-    el.style.animation = "toast-out 150ms ease-in forwards";
-    setTimeout(() => el.remove(), 160);
+    el.classList.remove('animate-slide-in-down');
+    el.classList.add('animate-slide-out-up');
+    setTimeout(() => el.remove(), 300);
   };
+  
   el.querySelector(".close")?.addEventListener("click", remove);
+  
+  if (action) {
+    el.querySelector(".toast-action")?.addEventListener("click", () => {
+      action.handler();
+      remove();
+    });
+  }
+  
   root.appendChild(el);
   setTimeout(remove, duration);
+}
+
+// Helper function to add micro-interactions to elements
+function addMicroInteractions() {
+  // Add ripple effect to buttons
+  document.querySelectorAll('.action-btn, .auth-btn, .job-action-btn').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+      const ripple = document.createElement('span');
+      const rect = this.getBoundingClientRect();
+      const size = Math.max(rect.width, rect.height);
+      const x = e.clientX - rect.left - size / 2;
+      const y = e.clientY - rect.top - size / 2;
+      
+      ripple.style.cssText = `
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.5);
+        transform: scale(0);
+        animation: ripple 0.6s linear;
+        left: ${x}px;
+        top: ${y}px;
+        width: ${size}px;
+        height: ${size}px;
+        pointer-events: none;
+      `;
+      
+      this.style.position = 'relative';
+      this.style.overflow = 'hidden';
+      this.appendChild(ripple);
+      
+      setTimeout(() => ripple.remove(), 600);
+    });
+  });
+  
+  // Add hover effects to stat cards
+  document.querySelectorAll('.stat-card').forEach(card => {
+    card.addEventListener('mouseenter', function() {
+      this.classList.add('pulse-once');
+    });
+  });
+  
+  // Add focus styles for better accessibility
+  document.querySelectorAll('button, input, select').forEach(element => {
+    element.classList.add('focus-ring');
+  });
+}
+
+// Add ripple animation CSS if not already present
+function addRippleAnimation() {
+  if (document.getElementById('ripple-styles')) return;
+  
+  const style = document.createElement('style');
+  style.id = 'ripple-styles';
+  style.textContent = `
+    @keyframes ripple {
+      to {
+        transform: scale(4);
+        opacity: 0;
+      }
+    }
+  `;
+  document.head.appendChild(style);
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -242,7 +332,7 @@ document.addEventListener("DOMContentLoaded", () => {
     configureProfileBtn?.addEventListener("click", () => {
       // Open web app settings page
       chrome.storage.sync.get(["webAppUrl"], (result) => {
-        const url = result.webAppUrl || DEFAULT_WEB_APP_URL;
+        const url = sanitizeBaseUrl(result.webAppUrl || DEFAULT_WEB_APP_URL);
         chrome.tabs.create({ url: `${url}/account` });
       });
     });
@@ -251,7 +341,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const configureUkFiltersBtn = document.getElementById("configure-uk-filters");
     configureUkFiltersBtn?.addEventListener("click", () => {
       chrome.storage.sync.get(["webAppUrl"], (result) => {
-        const url = result.webAppUrl || DEFAULT_WEB_APP_URL;
+        const url = sanitizeBaseUrl(result.webAppUrl || DEFAULT_WEB_APP_URL);
         chrome.tabs.create({ url: `${url}/settings` });
       });
     });
@@ -384,7 +474,7 @@ document.addEventListener("DOMContentLoaded", () => {
             interviewing: EXT_COLORS.warning,
             offered: EXT_COLORS.success,
             rejected: EXT_COLORS.destructive,
-            withdrawn: "EXT_COLORS.violet",
+            withdrawn: EXT_COLORS.violet,
           };
 
           const statusColor = statusColors[job.status] || EXT_COLORS.muted;
@@ -439,9 +529,9 @@ document.addEventListener("DOMContentLoaded", () => {
               }
               ${
                 job.ukEligibility
-                  ? `<span class="job-badge badge-uk-eligible" style="background: rgba(34, 197, 94, 0.1); color: #22c55e;">🇬🇧 UK Eligible</span>`
+              ? `<span class="job-badge badge-uk-eligible" style="background: rgba(5, 150, 105, 0.1); color: #059669;">🇬🇧 UK Eligible</span>`
                   : job.ukEligibility === false
-                  ? `<span class="job-badge badge-uk-ineligible" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">🇬🇧 Not Eligible</span>`
+                  ? `<span class="job-badge badge-uk-ineligible" style="background: rgba(220, 38, 38, 0.1); color: #dc2626;">🇬🇧 Not Eligible</span>`
                   : ""
               }
               ${
@@ -606,7 +696,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   openBoardBtn?.addEventListener("click", () => {
     chrome.storage.sync.get(["webAppUrl"], (result) => {
-      const url = result.webAppUrl || DEFAULT_WEB_APP_URL;
+      const url = sanitizeBaseUrl(result.webAppUrl || DEFAULT_WEB_APP_URL);
       chrome.tabs.create({ url });
     });
   });
@@ -889,7 +979,7 @@ function loadSettings() {
       ) as HTMLSelectElement;
 
       if (webAppUrlInput) {
-        webAppUrlInput.value = result.webAppUrl || DEFAULT_WEB_APP_URL;
+        webAppUrlInput.value = sanitizeBaseUrl(result.webAppUrl || DEFAULT_WEB_APP_URL);
       }
       if (syncFrequencySelect) {
         syncFrequencySelect.value = result.syncFrequency || "realtime";
@@ -918,7 +1008,7 @@ function saveSettings() {
     autoSaveProfile:
       autoSaveProfileToggle?.classList.contains("active") ?? true,
     ukFiltersEnabled: ukFiltersToggle?.classList.contains("active") ?? false,
-    webAppUrl: webAppUrlInput?.value || DEFAULT_WEB_APP_URL,
+    webAppUrl: sanitizeBaseUrl(webAppUrlInput?.value || DEFAULT_WEB_APP_URL),
     syncFrequency: syncFrequencySelect?.value || "realtime",
   };
 
@@ -946,11 +1036,13 @@ async function checkUKEligibility(job: any): Promise<boolean | null> {
     }
 
     const token = await auth.currentUser.getIdToken();
-    const response = await fetch(`${result.webAppUrl || DEFAULT_WEB_APP_URL}/api/user/uk-sponsorship-criteria`, {
+    const baseUrl = sanitizeBaseUrl(result.webAppUrl || DEFAULT_WEB_APP_URL);
+    const response = await fetch(`${baseUrl}/api/user/uk-sponsorship-criteria`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
-      }
+      },
+      credentials: 'include'
     });
 
     if (!response.ok) {

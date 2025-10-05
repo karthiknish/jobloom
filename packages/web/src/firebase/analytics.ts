@@ -75,6 +75,7 @@ export const ANALYTICS_EVENTS = {
 class FirebaseAnalyticsService {
   private analytics: Analytics | null = null;
   private isInitialized = false;
+  private hasLoggedUnavailable = false;
 
   async initialize(): Promise<void> {
     if (this.isInitialized) return;
@@ -89,9 +90,10 @@ class FirebaseAnalyticsService {
         }
       } else {
         this.isInitialized = false;
-        if (process.env.NODE_ENV === 'development') {
-          console.warn('[Analytics] Firebase Analytics not available - client returned null');
+        if (!this.hasLoggedUnavailable && process.env.NODE_ENV === 'development') {
+          console.info('[Analytics] Firebase Analytics unavailable in this environment (client returned null)');
         }
+        this.hasLoggedUnavailable = true;
       }
     } catch (error) {
       this.isInitialized = false;

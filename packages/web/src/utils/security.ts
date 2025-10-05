@@ -213,7 +213,13 @@ export function validateAndSanitizeFormData(data: Record<string, any>): {
 // Security audit logging
 export class SecurityLogger {
   static logSecurityEvent(event: {
-    type: 'suspicious_request' | 'rate_limit_exceeded' | 'invalid_input' | 'auth_failure';
+    type:
+      | 'suspicious_request'
+      | 'rate_limit_exceeded'
+      | 'invalid_input'
+      | 'auth_failure'
+      | 'admin_access_denied'
+      | 'auth_required';
     ip?: string;
     userId?: string;
     details: Record<string, any>;

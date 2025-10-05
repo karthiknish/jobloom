@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -18,10 +18,11 @@ import {
 } from "@/components/ui/sheet";
 
 export default function Header() {
-  const { user } = useFirebaseAuth();
+  const { user, signOut } = useFirebaseAuth();
   const isSignedIn = !!user;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const isDev = process.env.NODE_ENV === "development";
 
   useEffect(() => {
     if (user?.uid) {
@@ -40,6 +41,11 @@ export default function Header() {
       setIsAdmin(false);
     }
   }, [user?.uid]);
+
+  const handleDevLogout = useCallback(() => {
+    setIsMobileMenuOpen(false);
+    void signOut();
+  }, [signOut]);
 
   const navLinks = [
     { href: "#how-it-works", label: "How it Works" },
@@ -173,6 +179,21 @@ export default function Header() {
             </Link>
           </motion.div>
         </div>
+      )}
+      {isSignedIn && isDev && (
+        <motion.div
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <Button
+            variant="outline"
+            size="sm"
+            className="rounded-xl"
+            onClick={handleDevLogout}
+          >
+            Dev Logout
+          </Button>
+        </motion.div>
       )}
     </>
   );

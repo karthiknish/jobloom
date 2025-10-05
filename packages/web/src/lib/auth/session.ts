@@ -1,10 +1,35 @@
 import { cookies } from "next/headers";
 import type { NextRequest, NextResponse } from "next/server";
 import { getAuth } from "firebase-admin/auth";
-import { randomUUID } from "node:crypto";
+// Use Web Crypto API for edge runtime compatibility
+function randomUUID(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  
+  // Fallback for environments without crypto.randomUUID
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
 import { getAdminApp, getAdminDb } from "@/firebase/admin";
 import { hashSessionToken } from "@/lib/security/csrf";
 import { SecurityLogger } from "@/utils/security";
+
+function getClientIp(request: NextRequest): string {
+  const forwarded = request.headers.get("x-forwarded-for");
+  if (forwarded) {
+    return forwarded.split(",")[0]?.trim() || "unknown";
+  }
+
+  return (
+    request.headers.get("cf-connecting-ip") ||
+    request.headers.get("x-real-ip") ||
+    "unknown"
+  );
+}
 
 export const SESSION_COOKIE_NAME = "__session";
 const SESSION_COLLECTION = "userSessions";
@@ -14,6 +39,86 @@ type SessionMetadata = {
   userAgent?: string | null;
   ip?: string | null;
 };
+
+type SessionVerificationContext = {
+  ip?: string;
+};
+
+type HeaderGetter = {
+  get(name: string): string | null | undefined;
+};
+
+function getClientIpFromHeaderLike(headers?: HeaderGetter | null): string | undefined {
+  if (!headers) {
+    return undefined;
+  }
+
+  const forwarded = headers.get("x-forwarded-for");
+  if (forwarded) {
+    const first = forwarded.split(",")[0]?.trim();
+    if (first) {
+      return first;
+    }
+  }
+
+  const realIp = headers.get("x-real-ip");
+  if (realIp) {
+    return realIp;
+  }
+
+  const cfIp = headers.get("cf-connecting-ip");
+  if (cfIp) {
+    return cfIp;
+  }
+
+  return undefined;
+}
+
+async function verifySessionCookieValue(
+  sessionCookie: string,
+  context: SessionVerificationContext = {},
+) {
+  try {
+    const auth = getAuth(getAdminApp());
+    const decoded = await auth.verifySessionCookie(sessionCookie, true);
+    const hash = await hashSessionToken(sessionCookie);
+    const db = getAdminDb();
+    const doc = await db
+      .collection(SESSION_COLLECTION)
+      .doc(decoded.uid)
+      .collection("sessions")
+      .doc(hash)
+      .get();
+
+    if (!doc.exists) {
+      SecurityLogger.logSecurityEvent({
+        type: "suspicious_request",
+        severity: "medium",
+        details: {
+          reason: "Session cookie not found in store",
+        },
+        userId: decoded.uid,
+        ip: context.ip ?? "unknown",
+      });
+      return null;
+    }
+
+    await doc.ref.update({ lastSeenAt: new Date().toISOString() });
+
+    return decoded;
+  } catch (error) {
+    SecurityLogger.logSecurityEvent({
+      type: "auth_failure",
+      severity: "medium",
+      details: {
+        reason: "Session verification failed",
+        error: error instanceof Error ? error.message : "unknown",
+      },
+      ip: context.ip ?? "unknown",
+    });
+    return null;
+  }
+}
 
 export async function createSessionCookie(
   idToken: string,
@@ -26,7 +131,7 @@ export async function createSessionCookie(
   });
 
   const decoded = await auth.verifySessionCookie(sessionCookie, true);
-  const hash = hashSessionToken(sessionCookie);
+  const hash = await hashSessionToken(sessionCookie);
   const db = getAdminDb();
   const sessionDoc = db
     .collection(SESSION_COLLECTION)
@@ -50,48 +155,50 @@ export async function createSessionCookie(
 
 export async function verifySessionFromRequest(request: NextRequest) {
   const sessionCookie = request.cookies.get(SESSION_COOKIE_NAME)?.value;
-  if (!sessionCookie) {
-    return null;
+  if (sessionCookie) {
+    const session = await verifySessionCookieValue(sessionCookie, { ip: getClientIp(request) });
+    if (session) {
+      return session;
+    }
   }
 
-  try {
-    const auth = getAuth(getAdminApp());
-    const decoded = await auth.verifySessionCookie(sessionCookie, true);
-    const hash = hashSessionToken(sessionCookie);
-    const db = getAdminDb();
-    const doc = await db
-      .collection(SESSION_COLLECTION)
-      .doc(decoded.uid)
-      .collection("sessions")
-      .doc(hash)
-      .get();
+  const authHeader = request.headers.get("authorization");
+  if (authHeader?.startsWith("Bearer ")) {
+    const token = authHeader.substring(7).trim();
+    if (token) {
+      try {
+        const auth = getAuth(getAdminApp());
+        return await auth.verifyIdToken(token);
+      } catch (error) {
+        SecurityLogger.logSecurityEvent({
+          type: "auth_failure",
+          severity: "medium",
+          details: {
+            reason: "Bearer token verification failed",
+            error: error instanceof Error ? error.message : "unknown",
+          },
+          ip: getClientIp(request),
+        });
+      }
+    }
+  }
 
-    if (!doc.exists) {
-      SecurityLogger.logSecurityEvent({
-        type: "suspicious_request",
-        severity: "medium",
-        details: {
-          reason: "Session cookie not found in store",
-        },
-        userId: decoded.uid,
-        ip: request.ip ?? undefined,
-      });
+  return null;
+}
+
+export async function verifySessionFromCookies(options: {
+  headers?: HeaderGetter | null;
+} = {}) {
+  try {
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+    if (!sessionCookie) {
       return null;
     }
 
-    await doc.ref.update({ lastSeenAt: new Date().toISOString() });
-
-    return decoded;
-  } catch (error) {
-    SecurityLogger.logSecurityEvent({
-      type: "auth_failure",
-      severity: "medium",
-      details: {
-        reason: "Session verification failed",
-        error: error instanceof Error ? error.message : "unknown",
-      },
-      ip: request.ip ?? undefined,
-    });
+    const ip = getClientIpFromHeaderLike(options.headers ?? null);
+    return verifySessionCookieValue(sessionCookie, { ip });
+  } catch {
     return null;
   }
 }
@@ -109,7 +216,7 @@ export async function revokeSessionCookie(
   try {
     const auth = getAuth(getAdminApp());
     const decoded = await auth.verifySessionCookie(sessionCookie, true);
-    const hash = hashSessionToken(sessionCookie);
+    const hash = await hashSessionToken(sessionCookie);
     const db = getAdminDb();
     await db
       .collection(SESSION_COLLECTION)
@@ -128,7 +235,7 @@ export async function revokeSessionCookie(
         reason: "Failed to revoke session",
         error: error instanceof Error ? error.message : "unknown",
       },
-      ip: request.ip ?? undefined,
+      ip: getClientIp(request),
     });
   }
 }
@@ -161,9 +268,10 @@ export function clearSessionCookieInResponse(response: NextResponse): void {
   });
 }
 
-export function getSessionCookieValue(): string | undefined {
+export async function getSessionCookieValue(): Promise<string | undefined> {
   try {
-    return cookies().get(SESSION_COOKIE_NAME)?.value;
+    const cookieStore = await cookies();
+    return cookieStore.get(SESSION_COOKIE_NAME)?.value;
   } catch {
     return undefined;
   }

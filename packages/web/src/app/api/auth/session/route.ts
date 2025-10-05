@@ -6,7 +6,32 @@ import {
   revokeSessionCookie,
   setSessionCookie,
 } from "@/lib/auth/session";
-import { CSRF_HEADER_NAME, validateCsrf } from "@/lib/security/csrf";
+import {
+  CSRF_HEADER_NAME,
+  ensureCsrfCookie,
+  validateCsrf,
+} from "@/lib/security/csrf";
+
+function getClientIp(request: NextRequest): string {
+  const forwarded = request.headers.get("x-forwarded-for");
+  if (forwarded) {
+    return forwarded.split(",")[0]?.trim() || "unknown";
+  }
+
+  return (
+    request.headers.get("cf-connecting-ip") ||
+    request.headers.get("x-real-ip") ||
+    "unknown"
+  );
+}
+
+export async function GET(request: NextRequest) {
+  const response = NextResponse.json({ ok: true });
+  await ensureCsrfCookie(request, response);
+  response.headers.set("Cache-Control", "no-store");
+  response.headers.set("Pragma", "no-cache");
+  return response;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,7 +51,7 @@ export async function POST(request: NextRequest) {
 
     const { sessionCookie, expiresAt } = await createSessionCookie(idToken, {
       userAgent: request.headers.get("user-agent"),
-      ip: request.ip,
+      ip: getClientIp(request),
     });
 
     setSessionCookie(response, sessionCookie, expiresAt);

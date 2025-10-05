@@ -4,15 +4,17 @@ import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 // Lightweight Firebase bootstrap for the extension popup only.
 // Relies on env vars injected at build time via webpack DefinePlugin.
 
+import { getEnv } from "./env";
+
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  apiKey: getEnv("NEXT_PUBLIC_FIREBASE_API_KEY", ""),
   authDomain:
-    process.env.NEXT_PUBLIC_FIREBASE_CUSTOM_AUTH_DOMAIN ||
-    process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+    getEnv("NEXT_PUBLIC_FIREBASE_CUSTOM_AUTH_DOMAIN") ||
+    getEnv("NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN", ""),
+  projectId: getEnv("NEXT_PUBLIC_FIREBASE_PROJECT_ID", ""),
+  storageBucket: getEnv("NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET", ""),
+  messagingSenderId: getEnv("NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID", ""),
+  appId: getEnv("NEXT_PUBLIC_FIREBASE_APP_ID", ""),
 };
 
 function validateConfig(cfg: Record<string, any>) {

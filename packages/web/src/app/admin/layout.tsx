@@ -2,8 +2,8 @@
  * Server-side admin route protection layout.
  *
  * This layout wraps every /admin/* page and:
- * 1. Extracts the Firebase user id from the cookie (__firebase_user) set by the client auth provider
- * 2. Uses the Firebase Admin SDK (via firebase/admin module) to load the user document
+ * 1. Verifies the secure session cookie (__session) that the server trusts
+ * 2. Uses the Firebase Admin SDK (via firebase/admin module) to load the user document when claims are missing
  * 3. Checks the isAdmin flag
  * 4. If not authenticated -> redirect to sign-in (with redirect back)
  * 5. If authenticated but not admin -> show access denied component (no client fetch flash)
@@ -12,30 +12,14 @@
  */
 
 import { ReactNode } from "react";
-import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 // Reuse existing client component for consistent styling if available
 // (Safe to import a client component inside a server component tree)
 import { AdminAccessDenied } from "@/components/admin/AdminAccessDenied";
+import { verifySessionFromCookies } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
-
-// Helper to extract UID from the lightweight cookie the client auth provider sets.
-// The cookie only contains {"id":"<uid>"} — no token. For stronger security you may
-// want to add a signed or verified ID token cookie and verify it here.
-async function getUidFromCookie(): Promise<string | null> {
-  const store = await cookies();
-  const raw = store.get("__firebase_user")?.value;
-  if (!raw) return null;
-  try {
-    const parsed = JSON.parse(decodeURIComponent(raw));
-    const uid = typeof parsed?.id === "string" ? parsed.id : null;
-    return uid || null;
-  } catch {
-    return null;
-  }
-}
 
 // Attempt to obtain a Firestore Admin instance from the firebase/admin module.
 // This is defensive: it tries multiple common export names to reduce coupling.
@@ -100,27 +84,32 @@ export default async function AdminLayout({
 }: {
   children: ReactNode;
 }) {
-  const uid = await getUidFromCookie();
+  const session = await verifySessionFromCookies();
 
-  // No UID -> not signed in
-  if (!uid) {
+  if (!session) {
     const currentPath = "/admin";
     redirect(`/sign-in?redirect_url=${encodeURIComponent(currentPath)}`);
   }
 
-  // Load user record from Firestore (server-side)
-  const userRecord = await loadUserRecord(uid);
+  const uid = session.uid;
+  const hasAdminClaim =
+    (session as Record<string, unknown>).admin === true ||
+    (session as Record<string, unknown>).role === "admin";
 
-  // If we cannot load user OR user record missing, push them to dashboard (or sign-in)
-  if (!userRecord) {
-    // Could also redirect to /sign-in, but a silent redirect to dashboard is friendlier
-    redirect("/dashboard");
-  }
+  if (!hasAdminClaim) {
+    const userRecord = await loadUserRecord(uid);
 
-  // If user doc exists but not admin -> show access denied UI (no client flicker)
-  if (!userRecord.isAdmin) {
-    // Optionally: redirect("/dashboard"); instead of rendering a component.
-    return <AdminAccessDenied />;
+    if (!userRecord) {
+      redirect("/dashboard");
+    }
+
+    if (!userRecord.exists) {
+      redirect("/dashboard");
+    }
+
+    if (!userRecord.isAdmin) {
+      return <AdminAccessDenied />;
+    }
   }
 
   // All good — render children (admin pages)

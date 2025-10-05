@@ -1,3 +1,5 @@
+import { get } from "../apiClient";
+
 export interface AutofillProfile {
   personalInfo: {
     firstName: string;
@@ -102,14 +104,14 @@ export class AutofillManager {
       const userId = await this.getUserId();
       if (userId) {
         try {
-          const response = await fetch(`/api/app/autofill/profile/${userId}`);
-          if (response.ok) {
-            const result = await response.json();
-            if (result.success && result.data) {
-              // Cache the profile in local storage for offline use
-              chrome.storage.sync.set({ autofillProfile: result.data });
-              return result.data;
-            }
+          const response = await get<{ success?: boolean; data?: AutofillProfile | null }>(
+            `/api/app/autofill/profile/${encodeURIComponent(userId)}`
+          );
+
+          const profile = response?.data ?? null;
+          if (response?.success && profile) {
+            chrome.storage.sync.set({ autofillProfile: profile });
+            return profile;
           }
         } catch (error) {
           console.warn("Failed to load autofill profile from web app, using local storage:", error);

@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { verifySessionFromRequest } from "@/lib/auth/session";
 
-// Public endpoint for sponsors search - no authentication required
+// Protected endpoint for sponsors search - authentication required
 export async function GET(request: NextRequest) {
   try {
+    // Verify session
+    const decodedToken = await verifySessionFromRequest(request);
+    if (!decodedToken) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q')?.toLowerCase().trim();
     const route = searchParams.get('route')?.toLowerCase().trim();
@@ -15,7 +22,7 @@ export async function GET(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Mock sponsors data for public access
+    // Mock sponsors data for authenticated access
     const mockSponsors = [
       {
         id: "1",
@@ -130,7 +137,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Error searching public sponsors:', error);
+    console.error('Error searching sponsors:', error);
     return NextResponse.json({
       error: 'Internal server error'
     }, { status: 500 });

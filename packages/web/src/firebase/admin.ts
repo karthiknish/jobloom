@@ -3,8 +3,8 @@ import { initializeApp, getApps, cert, applicationDefault, type App } from "fire
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore, type Firestore } from "firebase-admin/firestore";
 import { getStorage, type Storage } from "firebase-admin/storage";
-import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, readFileSync } from "fs";
+import { join } from "path";
 
 let adminApp: App | undefined;
 

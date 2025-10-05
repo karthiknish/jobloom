@@ -47,7 +47,7 @@ function VerifyEmailInner() {
   };
 
   const handleContinue = () => {
-    router.replace(redirectUrlComplete);
+    router.replace(`/welcome?redirect_url=${encodeURIComponent(redirectUrlComplete)}`);
   };
 
   if (verificationStatus === 'checking') {
@@ -100,7 +100,7 @@ function VerifyEmailInner() {
               </div>
 
               <Button onClick={handleContinue} className="w-full" size="lg">
-                Continue to Dashboard
+                Continue to Welcome
               </Button>
             </CardContent>
           </Card>
@@ -173,7 +173,7 @@ function VerifyEmailInner() {
                 )}
               </Button>
               <Button onClick={handleContinue} className="flex-1">
-                Continue anyway
+                Continue to Welcome
               </Button>
             </div>
           </CardContent>

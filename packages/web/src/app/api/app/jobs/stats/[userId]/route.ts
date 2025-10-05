@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyIdToken, getAdminDb } from "@/firebase/admin";
+import { verifySessionFromRequest } from "@/lib/auth/session";
 import {
   withErrorHandling,
-  validateAuthHeader,
   createAuthorizationError,
   generateRequestId
 } from "@/lib/api/errors";
@@ -17,8 +17,7 @@ export async function GET(
 
   return withErrorHandling(async () => {
     // Validate authorization
-    const token = validateAuthHeader(request);
-    const decodedToken = await verifyIdToken(token);
+    const decodedToken = await verifySessionFromRequest(request);
     if (!decodedToken) {
       throw createAuthorizationError("Invalid authentication token", 'INVALID_TOKEN');
     }

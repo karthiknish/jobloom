@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb } from "@/firebase/admin";
-import { verifyIdToken } from "@/firebase/admin";
+import { verifySessionFromRequest } from "@/lib/auth/session";
 
 interface Contact {
   id: string;
@@ -68,16 +68,10 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const token = authHeader.substring(7);
-    const decodedToken = await verifyIdToken(token);
+    const decodedToken = await verifySessionFromRequest(request);
 
     if (!decodedToken?.uid) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Check if user is admin

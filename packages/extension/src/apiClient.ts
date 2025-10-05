@@ -1,5 +1,5 @@
-import { getAuthInstance } from './firebase';
-import { DEFAULT_WEB_APP_URL } from './constants';
+import { acquireIdToken } from './authToken';
+import { DEFAULT_WEB_APP_URL, sanitizeBaseUrl } from './constants';
 import { checkRateLimit } from './rateLimiter';
 
 interface ApiOptions extends RequestInit {
@@ -11,41 +11,9 @@ interface ApiOptions extends RequestInit {
 export async function getBaseUrl(): Promise<string> {
   return new Promise((resolve) => {
     chrome.storage.sync.get(['webAppUrl'], (result) => {
-      resolve((result.webAppUrl || DEFAULT_WEB_APP_URL).replace(/\/$/, ''));
+      resolve(sanitizeBaseUrl(result.webAppUrl ?? DEFAULT_WEB_APP_URL));
     });
   });
-}
-
-async function getIdToken(): Promise<string | null> {
-  try {
-    // First try to get token from extension's Firebase auth
-    const auth = getAuthInstance();
-    const user = auth.currentUser;
-    if (user) {
-      // Force token refresh to ensure we have a valid token
-      return await user.getIdToken(true);
-    }
-
-    // If extension doesn't have auth, try to get it from the web app
-    if (typeof chrome !== 'undefined' && chrome.tabs) {
-      try {
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        if (tab.id && tab.url?.includes('hireall.app')) {
-          const response = await chrome.tabs.sendMessage(tab.id, { action: "getAuthToken" });
-          if (response?.token) {
-            return response.token;
-          }
-        }
-      } catch (error) {
-        console.warn('Failed to get token from web app:', error);
-      }
-    }
-
-    return null;
-  } catch (error) {
-    console.warn('Failed to get ID token:', error);
-    return null;
-  }
 }
 
 function buildQuery(q?: ApiOptions['query']): string {
@@ -62,7 +30,7 @@ function buildQuery(q?: ApiOptions['query']): string {
 export async function apiRequest<T = any>(opts: ApiOptions): Promise<T> {
   const { path, query, auth, headers, ...rest } = opts;
   const base = await getBaseUrl();
-  const needsAuth = auth === false ? false : path.startsWith('/api/app/');
+  const requiresAuth = auth === true || (auth === undefined && path.startsWith('/api/app/'));
   const url = `${base}${path}${buildQuery(query)}`;
 
   // Determine rate limit endpoint based on path
@@ -92,8 +60,8 @@ export async function apiRequest<T = any>(opts: ApiOptions): Promise<T> {
     ...(headers as any),
   };
 
-  if (needsAuth) {
-    const token = await getIdToken();
+  if (requiresAuth) {
+    const token = await acquireIdToken();
     if (!token) {
       throw new Error('Authentication required. Please sign in to the extension.');
     }
@@ -103,6 +71,7 @@ export async function apiRequest<T = any>(opts: ApiOptions): Promise<T> {
   const res = await fetch(url, {
     ...rest,
     headers: finalHeaders,
+    credentials: 'include',
   });
 
   if (!res.ok) {

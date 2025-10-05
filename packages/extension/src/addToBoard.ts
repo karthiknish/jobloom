@@ -1,4 +1,4 @@
-import { DEFAULT_WEB_APP_URL } from "./constants";
+import { DEFAULT_WEB_APP_URL, sanitizeBaseUrl } from "./constants";
 import { get, post, put } from "./apiClient";
 // addToBoard.ts - Utility functions for adding jobs to the user's board
 
@@ -106,7 +106,7 @@ export class JobBoardManager {
   private static async getWebAppUrl(): Promise<string> {
     return new Promise((resolve) => {
       chrome.storage.sync.get(["webAppUrl"], (result) => {
-        resolve(result.webAppUrl || DEFAULT_WEB_APP_URL);
+        resolve(sanitizeBaseUrl(result.webAppUrl || DEFAULT_WEB_APP_URL));
       });
     });
   }
@@ -370,21 +370,17 @@ export class JobBoardManager {
       const userId = await this.getUserId();
       if (!userId) return false;
 
-  const base = (await this.getWebAppUrl()).replace(/\/$/, "");
-
       // Check if job already exists in user's job board
-      const response = await fetch(
-        `${base}/api/app/jobs/user/${encodeURIComponent(userId)}`
+      const userJobs = await get<any[]>(
+        `/api/app/jobs/user/${encodeURIComponent(userId)}`
       );
 
-      if (response.ok) {
-        const userJobs = await response.json();
-
-        // Check for duplicates (same company and similar title)
+      if (Array.isArray(userJobs)) {
         return userJobs.some(
           (job: any) =>
+            typeof job?.company === "string" &&
             job.company.toLowerCase() === jobData.company.toLowerCase() &&
-            this.similarTitles(job.title, jobData.title)
+            this.similarTitles(String(job.title ?? ""), jobData.title)
         );
       }
 

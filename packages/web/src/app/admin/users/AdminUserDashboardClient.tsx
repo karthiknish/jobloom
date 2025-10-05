@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   Users,
@@ -109,24 +109,43 @@ export default function AdminUserDashboardClient() {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Check admin status
+  const loadUserRecord = useCallback(() => {
+    if (user && user.uid) {
+      return adminApi.getUserByFirebaseUid(user.uid);
+    }
+    return Promise.reject(new Error("No user"));
+  }, [user?.uid]);
+
   const { data: userRecord } = useApiQuery(
-    () =>
-      user && user.uid
-        ? adminApi.getUserByFirebaseUid(user.uid)
-        : Promise.reject(new Error("No user")),
-    [user?.uid]
+    loadUserRecord,
+    [user?.uid],
+    { enabled: !!user?.uid }
   );
 
+  const canFetchAdminData = userRecord?.isAdmin === true;
+
   // Fetch user stats
-  const { data: userStats, refetch: refetchStats } = useApiQuery(
+  const loadUserStats = useCallback(
     () => adminApi.getUserStats(),
     []
   );
 
+  const { data: userStats, refetch: refetchStats } = useApiQuery(
+    loadUserStats,
+    [userRecord?._id, userRecord?.isAdmin],
+    { enabled: canFetchAdminData }
+  );
+
   // Fetch all users with pagination
-  const { data: usersData, refetch: refetchUsers } = useApiQuery(
+  const loadAllUsers = useCallback(
     () => adminApi.getAllUsers(),
     []
+  );
+
+  const { data: usersData, refetch: refetchUsers } = useApiQuery(
+    loadAllUsers,
+    [userRecord?._id, userRecord?.isAdmin],
+    { enabled: canFetchAdminData }
   );
 
   useEffect(() => {
@@ -312,6 +331,7 @@ export default function AdminUserDashboardClient() {
     if (isRefreshing) return;
     setIsRefreshing(true);
     try {
+      adminApi.invalidateCache("admin-users");
       await Promise.allSettled([refetchUsers(), refetchStats()]);
       showSuccess("User dashboard refreshed");
     } catch (error) {
@@ -326,6 +346,7 @@ export default function AdminUserDashboardClient() {
     try {
       await setAdminUser(userId);
       showSuccess("User granted admin privileges");
+      adminApi.invalidateCache("admin-users");
       refetchUsers();
       refetchStats();
     } catch (error) {
@@ -339,6 +360,7 @@ export default function AdminUserDashboardClient() {
     try {
       await removeAdminUser(userId);
       showSuccess("Admin privileges removed");
+      adminApi.invalidateCache("admin-users");
       refetchUsers();
       refetchStats();
     } catch (error) {
@@ -352,6 +374,7 @@ export default function AdminUserDashboardClient() {
     try {
       await deleteUser(userId);
       showSuccess("User deleted successfully");
+      adminApi.invalidateCache("admin-users");
       refetchUsers();
       refetchStats();
     } catch (error) {

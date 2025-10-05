@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore } from 'firebase-admin/firestore';
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
-import { verifyIdToken } from '@/firebase/admin';
+import { verifySessionFromRequest } from '@/lib/auth/session';
 
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY || '{}');
 
@@ -16,17 +16,11 @@ const db = getFirestore();
 
 export async function GET(request: NextRequest) {
   try {
-    // Check authentication
-    const authHeader = request.headers.get("authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const token = authHeader.substring(7);
-    const decodedToken = await verifyIdToken(token);
+    // Verify session
+    const decodedToken = await verifySessionFromRequest(request);
 
     if (!decodedToken) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);

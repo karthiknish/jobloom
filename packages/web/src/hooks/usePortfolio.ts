@@ -1,43 +1,31 @@
 "use client";
 
 import { useState, useCallback, useEffect, useMemo } from "react";
+import { Eye, Users, Briefcase, Code2, GraduationCap, BarChart3, MessageSquare, Layout, FileText, Camera } from "lucide-react";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
-import type { 
-  PortfolioData, 
-  PortfolioSection, 
+import type {
+  PortfolioData,
+  PortfolioSection,
   ChecklistItem,
-  SectionType 
+  SectionType
 } from "@/types/portfolio";
+import { sectionDefaults } from "@/types/portfolio";
 import { showSuccess, showError } from "@/components/ui/Toast";
 
-// Available section types with imports deferred to avoid SSR issues
+// Available section types with deferred creation to keep hook synchronous
 const getSectionTypes = (): SectionType[] => {
-  // Dynamic imports to avoid SSR issues with lucide-react
-  const icons = {
-    Eye: require('lucide-react').Eye,
-    Users: require('lucide-react').Users,
-    Briefcase: require('lucide-react').Briefcase,
-    Code2: require('lucide-react').Code2,
-    GraduationCap: require('lucide-react').GraduationCap,
-    BarChart3: require('lucide-react').BarChart3,
-    MessageSquare: require('lucide-react').MessageSquare,
-    Layout: require('lucide-react').Layout,
-    FileText: require('lucide-react').FileText,
-    Camera: require('lucide-react').Camera,
-  };
-
   return [
-    { id: 'hero', type: 'hero' as const, name: 'Hero Section', icon: icons.Eye, description: 'Main banner with headline and CTA' },
-    { id: 'about', type: 'about' as const, name: 'About Me', icon: icons.Users, description: 'Personal introduction and background' },
-    { id: 'experience', type: 'experience' as const, name: 'Experience', icon: icons.Briefcase, description: 'Work history and achievements' },
-    { id: 'projects', type: 'projects' as const, name: 'Projects', icon: icons.Code2, description: 'Portfolio of work and case studies' },
-    { id: 'education', type: 'education' as const, name: 'Education', icon: icons.GraduationCap, description: 'Academic background' },
-    { id: 'skills', type: 'skills' as const, name: 'Skills', icon: icons.BarChart3, description: 'Technical and soft skills' },
-    { id: 'testimonials', type: 'testimonials' as const, name: 'Testimonials', icon: icons.MessageSquare, description: 'Client reviews and feedback' },
-    { id: 'contact', type: 'contact' as const, name: 'Contact', icon: icons.MessageSquare, description: 'Contact information and form' },
-    { id: 'blog', type: 'blog' as const, name: 'Blog', icon: icons.FileText, description: 'Articles and insights' },
-    { id: 'gallery', type: 'gallery' as const, name: 'Gallery', icon: icons.Camera, description: 'Photo and media gallery' },
-    { id: 'custom', type: 'custom' as const, name: 'Custom Section', icon: icons.Layout, description: 'Fully customizable content' }
+    { id: "hero", type: "hero" as const, name: "Hero Section", icon: Eye, description: "Main banner with headline and CTA" },
+    { id: "about", type: "about" as const, name: "About Me", icon: Users, description: "Personal introduction and background" },
+    { id: "experience", type: "experience" as const, name: "Experience", icon: Briefcase, description: "Work history and achievements" },
+    { id: "projects", type: "projects" as const, name: "Projects", icon: Code2, description: "Portfolio of work and case studies" },
+    { id: "education", type: "education" as const, name: "Education", icon: GraduationCap, description: "Academic background" },
+    { id: "skills", type: "skills" as const, name: "Skills", icon: BarChart3, description: "Technical and soft skills" },
+    { id: "testimonials", type: "testimonials" as const, name: "Testimonials", icon: MessageSquare, description: "Client reviews and feedback" },
+    { id: "contact", type: "contact" as const, name: "Contact", icon: MessageSquare, description: "Contact information and form" },
+    { id: "blog", type: "blog" as const, name: "Blog", icon: FileText, description: "Articles and insights" },
+    { id: "gallery", type: "gallery" as const, name: "Gallery", icon: Camera, description: "Photo and media gallery" },
+    { id: "custom", type: "custom" as const, name: "Custom Section", icon: Layout, description: "Fully customizable content" }
   ];
 };
 
@@ -231,7 +219,6 @@ export const usePortfolio = () => {
 
   // Add new section
   const addSection = useCallback((type: PortfolioSection['type']) => {
-    const sectionDefaults = require('@/types/portfolio').sectionDefaults;
     const sectionTypes = getSectionTypes();
     
     const newSection: PortfolioSection = {

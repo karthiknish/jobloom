@@ -1,15 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { verifySessionFromRequest } from "@/lib/auth/session";
 
-// Public endpoint for SOC codes - no authentication required
+// Protected endpoint for SOC codes - authentication required
 export async function GET(request: NextRequest) {
   try {
+    // Verify session
+    const decodedToken = await verifySessionFromRequest(request);
+    if (!decodedToken) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q')?.toLowerCase().trim();
     const code = searchParams.get('code')?.trim();
     const eligibility = searchParams.get('eligibility')?.toLowerCase().trim();
     const limit = parseInt(searchParams.get('limit') || '20');
 
-    // Mock SOC codes data for public access
+    // Mock SOC codes data for authenticated access
     const mockSocCodes = [
       {
         id: "1111",
@@ -169,7 +176,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Error searching public SOC codes:', error);
+    console.error('Error searching SOC codes:', error);
     return NextResponse.json({
       error: 'Internal server error'
     }, { status: 500 });

@@ -162,23 +162,23 @@ export class UIComponents {
   private static toastBackground(type: ToastType): string {
     switch (type) {
       case "success":
-        return "linear-gradient(135deg, #10b981, #047857)";
+        return "linear-gradient(135deg, #059669, #047857)";
       case "warning":
-        return "linear-gradient(135deg, #f59e0b, #b45309)";
+        return "linear-gradient(135deg, #d97706, #92400e)";
       case "error":
-        return "linear-gradient(135deg, #ef4444, #b91c1c)";
+        return "linear-gradient(135deg, #dc2626, #991b1b)";
       default:
-        return "linear-gradient(135deg, #3b82f6, #1d4ed8)";
+        return "linear-gradient(135deg, #0284c7, #0369a1)";
     }
   }
 
   private static floatingButtonStyle(variant: "primary" | "secondary" | "danger" = "primary"): string {
     const background =
       variant === "secondary"
-        ? "linear-gradient(135deg, #6366f1, #4338ca)"
+        ? "linear-gradient(135deg, #334155, #1f2937)"
         : variant === "danger"
-        ? "linear-gradient(135deg, #ef4444, #b91c1c)"
-        : "linear-gradient(135deg, #2563eb, #1d4ed8)";
+        ? "linear-gradient(135deg, #dc2626, #991b1b)"
+        : "linear-gradient(135deg, #0f766e, #0d9488)";
 
     return `
       display: inline-flex;
@@ -191,7 +191,7 @@ export class UIComponents {
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
-      box-shadow: 0 12px 30px rgba(37, 99, 235, 0.25);
+      box-shadow: 0 12px 30px rgba(15, 118, 110, 0.25);
       background: ${background};
       transition: transform 150ms ease, box-shadow 150ms ease;
     `;
@@ -199,11 +199,11 @@ export class UIComponents {
 
   private static badgeStyle(variant: "default" | "success" | "warning" | "error" | "info"): string {
     const colors: Record<typeof variant, { bg: string; color: string; border: string }> = {
-      default: { bg: "#e2e8f0", color: "#1e293b", border: "rgba(15, 23, 42, 0.12)" },
-      success: { bg: "rgba(16, 185, 129, 0.15)", color: "#047857", border: "rgba(5, 150, 105, 0.2)" },
-      warning: { bg: "rgba(245, 158, 11, 0.18)", color: "#b45309", border: "rgba(180, 83, 9, 0.25)" },
-      error: { bg: "rgba(239, 68, 68, 0.18)", color: "#b91c1c", border: "rgba(185, 28, 28, 0.25)" },
-      info: { bg: "rgba(59, 130, 246, 0.18)", color: "#1d4ed8", border: "rgba(29, 78, 216, 0.25)" },
+      default: { bg: "rgba(226, 232, 240, 0.7)", color: "#1f2937", border: "rgba(15, 23, 42, 0.12)" },
+      success: { bg: "rgba(5, 150, 105, 0.15)", color: "#047857", border: "rgba(4, 120, 87, 0.25)" },
+      warning: { bg: "rgba(217, 119, 6, 0.18)", color: "#92400e", border: "rgba(146, 64, 14, 0.25)" },
+      error: { bg: "rgba(220, 38, 38, 0.18)", color: "#991b1b", border: "rgba(153, 27, 27, 0.25)" },
+      info: { bg: "rgba(2, 132, 199, 0.18)", color: "#0369a1", border: "rgba(3, 105, 161, 0.25)" },
     };
 
     const palette = colors[variant];

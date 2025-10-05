@@ -10,6 +10,7 @@ import Chatbot from "@/components/Chatbot";
 import MobileNavigation from "@/components/MobileNavigation";
 import { AnalyticsProvider } from "@/providers/analytics-provider";
 import { SeoHead } from "@/components/SeoHead";
+import EmailVerificationBanner from "@/components/EmailVerificationBanner";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -33,6 +34,7 @@ export default function RootLayout({
         <FirebaseAuthProvider>
           <AnalyticsProvider>
             <Header />
+            <EmailVerificationBanner />
             {children}
             <Footer />
             <MobileNavigation />

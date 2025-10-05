@@ -1,3 +1,4 @@
+import { DEFAULT_WEB_APP_URL, sanitizeBaseUrl } from "../constants";
 export interface UserVisaCriteria {
   ukFiltersEnabled: boolean;
   ageCategory: "under26" | "adult";
@@ -98,7 +99,7 @@ export class UserProfileManager {
   static async getWebAppUrl(): Promise<string> {
     return new Promise((resolve) => {
       chrome.storage.sync.get(["webAppUrl"], (result: { webAppUrl?: string }) => {
-        resolve(result.webAppUrl || process.env.DEFAULT_WEB_APP_URL || "https://hireall.app");
+        resolve(sanitizeBaseUrl(result.webAppUrl || DEFAULT_WEB_APP_URL));
       });
     });
   }

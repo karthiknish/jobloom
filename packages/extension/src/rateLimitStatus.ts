@@ -168,28 +168,30 @@ export function startRateLimitMonitoring(): void {
   }
 
   monitorIntervalId = setInterval(() => {
-    const warnings: RateLimitWarning[] = checkRateLimitWarnings();
-    const now = Date.now();
+    void (async () => {
+      const warnings = await checkRateLimitWarnings();
+      const now = Date.now();
 
-    warnings.forEach((warning) => {
-      const key = `${warning.endpoint}:${warning.level}`;
-      const expiresAt = now + Math.max(warning.resetIn, 15000);
+      warnings.forEach((warning) => {
+        const key = `${warning.endpoint}:${warning.level}`;
+        const expiresAt = now + Math.max(warning.resetIn, 15000);
 
-      if ((displayedWarnings.get(key) ?? 0) > now) {
-        return;
+        if ((displayedWarnings.get(key) ?? 0) > now) {
+          return;
+        }
+
+        console.warn('Rate limit warning:', warning.message);
+        showRateLimitNotification(warning.endpoint, warning.message, warning.level);
+        displayedWarnings.set(key, expiresAt);
+      });
+
+      // Clean up expired warning markers
+      for (const [key, expiry] of displayedWarnings.entries()) {
+        if (expiry <= now) {
+          displayedWarnings.delete(key);
+        }
       }
-
-      console.warn('Rate limit warning:', warning.message);
-      showRateLimitNotification(warning.endpoint, warning.message, warning.level);
-      displayedWarnings.set(key, expiresAt);
-    });
-
-    // Clean up expired warning markers
-    for (const [key, expiry] of displayedWarnings.entries()) {
-      if (expiry <= now) {
-        displayedWarnings.delete(key);
-      }
-    }
+    })();
   }, 30000);
   
   // Ensure interval keeps running in background contexts

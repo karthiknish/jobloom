@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyIdToken, getAdminDb } from "@/firebase/admin";
+import { verifySessionFromRequest } from "@/lib/auth/session";
 import {
   withErrorHandling,
-  validateAuthHeader,
   createAuthorizationError,
   generateRequestId
 } from "@/lib/api/errors";
@@ -13,8 +13,7 @@ export async function GET(request: NextRequest) {
 
   return withErrorHandling(async () => {
     // Validate authorization
-    const token = validateAuthHeader(request);
-    const decodedToken = await verifyIdToken(token);
+    const decodedToken = await verifySessionFromRequest(request);
     if (!decodedToken) {
       throw createAuthorizationError("Invalid authentication token", 'INVALID_TOKEN');
     }
@@ -28,17 +27,40 @@ export async function GET(request: NextRequest) {
 
     // Fetch all users from Firestore
     const usersSnapshot = await db.collection("users").get();
+    const toMillis = (value: unknown): number | undefined => {
+      if (typeof value === "number") {
+        return value;
+      }
+      if (value instanceof Date) {
+        return value.getTime();
+      }
+      if (value && typeof (value as { toMillis?: () => number }).toMillis === "function") {
+        try {
+          return (value as { toMillis: () => number }).toMillis();
+        } catch {
+          return undefined;
+        }
+      }
+      return undefined;
+    };
+
     const users = usersSnapshot.docs.map(doc => {
       const data = doc.data();
+      const createdAt = toMillis(data.createdAt) ?? Date.now();
+      const updatedAt = toMillis(data.updatedAt);
+      const lastLoginAt = toMillis(data.lastLoginAt);
       return {
         _id: doc.id,
         email: data.email || "",
         name: data.name || "",
         isAdmin: data.isAdmin || false,
-        createdAt: data.createdAt || Date.now(),
-        updatedAt: data.updatedAt,
-        lastLoginAt: data.lastLoginAt,
-        emailVerified: data.emailVerified || false
+        createdAt,
+        updatedAt,
+        lastLoginAt,
+        emailVerified: data.emailVerified || false,
+        subscriptionPlan: data.subscriptionPlan || undefined,
+        subscriptionStatus: data.subscriptionStatus || null,
+        provider: data.provider || null
       };
     });
 

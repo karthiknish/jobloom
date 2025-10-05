@@ -277,7 +277,7 @@ export class SponsorshipManager {
     }
 
     try {
-      const response = await get<any>("/api/soc-codes", { code: normalized, limit: 1 }, true);
+      const response = await get<any>("/api/soc-codes/authenticated", { code: normalized, limit: 1 }, true);
       const details = response.results?.[0];
       if (details) {
         const mapped: SocCodeDetails = {

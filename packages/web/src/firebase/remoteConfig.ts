@@ -1,8 +1,6 @@
 // Firebase Remote Config for feature flags and dynamic configuration
 import {
-  getRemoteConfig,
   fetchAndActivate,
-  getValue,
   getAll,
   type RemoteConfig,
   type Value,
@@ -15,6 +13,7 @@ class FirebaseRemoteConfigService {
   private isInitialized = false;
   private configValues = new Map<string, any>();
   private listeners = new Set<(config: Map<string, any>) => void>();
+  private hasLoggedUnavailable = false;
 
   async initialize(): Promise<void> {
     if (this.isInitialized) return;
@@ -37,7 +36,10 @@ class FirebaseRemoteConfigService {
         this.isInitialized = true;
         console.log('Firebase Remote Config initialized');
       } else {
-        console.warn('Firebase Remote Config not available');
+        if (!this.hasLoggedUnavailable && process.env.NODE_ENV === 'development') {
+          console.info('Firebase Remote Config not available; using defaults');
+        }
+        this.hasLoggedUnavailable = true;
         // Use default values when Remote Config is not available
         this.setDefaultValues();
         this.isInitialized = true;

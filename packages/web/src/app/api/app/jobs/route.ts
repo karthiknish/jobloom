@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyIdToken } from "@/firebase/admin";
+import { verifySessionFromRequest } from "@/lib/auth/session";
 import { createFirestoreCollection } from "@/firebase/firestore";
 import { getFirestore } from "firebase-admin/firestore";
 
@@ -133,15 +134,8 @@ function handleError(error: unknown): NextResponse {
 // POST /api/app/jobs - Create a new job
 export async function POST(request: NextRequest) {
   try {
-    // Validate authorization header
-    const authHeader = request.headers.get("authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      throw new AuthorizationError("Missing or invalid authorization header");
-    }
-
-    // Verify token
-    const token = authHeader.substring(7);
-    const decodedToken = await verifyIdToken(token);
+    // Verify session
+    const decodedToken = await verifySessionFromRequest(request);
     if (!decodedToken) {
       throw new AuthorizationError("Invalid authentication token");
     }
@@ -210,15 +204,8 @@ export async function POST(request: NextRequest) {
 // GET /api/app/jobs - Get all jobs (admin only)
 export async function GET(request: NextRequest) {
   try {
-    // Validate authorization header
-    const authHeader = request.headers.get("authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      throw new AuthorizationError("Missing or invalid authorization header");
-    }
-
-    // Verify token
-    const token = authHeader.substring(7);
-    const decodedToken = await verifyIdToken(token);
+    // Verify session
+    const decodedToken = await verifySessionFromRequest(request);
     if (!decodedToken) {
       throw new AuthorizationError("Invalid authentication token");
     }

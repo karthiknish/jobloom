@@ -1,4 +1,3 @@
-import { randomBytes, timingSafeEqual, createHash } from "node:crypto";
 import type { NextRequest, NextResponse } from "next/server";
 
 export const CSRF_COOKIE_NAME = "__csrf-token";
@@ -6,14 +5,27 @@ export const CSRF_HEADER_NAME = "x-csrf-token";
 const CSRF_TOKEN_LENGTH = 32;
 const CSRF_MAX_AGE_SECONDS = 60 * 60 * 2; // 2 hours
 
-function generateToken(): string {
-  return randomBytes(CSRF_TOKEN_LENGTH).toString("hex");
+async function generateToken(): Promise<string> {
+  // Use Web Crypto API for edge runtime compatibility
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    const array = new Uint8Array(CSRF_TOKEN_LENGTH);
+    crypto.getRandomValues(array);
+    return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+  }
+  
+  // Fallback for environments without crypto API
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < CSRF_TOKEN_LENGTH * 2; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
 }
 
-export function ensureCsrfCookie(
+export async function ensureCsrfCookie(
   request: NextRequest,
   response: NextResponse,
-): string {
+): Promise<string> {
   const existing = request.cookies.get(CSRF_COOKIE_NAME)?.value;
   if (existing) {
     response.cookies.set({
@@ -28,7 +40,7 @@ export function ensureCsrfCookie(
     return existing;
   }
 
-  const token = generateToken();
+  const token = await generateToken();
   response.cookies.set({
     name: CSRF_COOKIE_NAME,
     value: token,
@@ -69,14 +81,37 @@ export function validateCsrf(request: NextRequest): void {
     throw new Error("Missing CSRF token");
   }
 
-  const cookieBuffer = Buffer.from(cookieToken);
-  const providedBuffer = Buffer.from(providedToken);
-
-  if (cookieBuffer.length !== providedBuffer.length || !timingSafeEqual(cookieBuffer, providedBuffer)) {
+  // Simple timing-safe comparison for edge runtime compatibility
+  if (cookieToken.length !== providedToken.length) {
+    throw new Error("Invalid CSRF token");
+  }
+  
+  let result = 0;
+  for (let i = 0; i < cookieToken.length; i++) {
+    result |= cookieToken.charCodeAt(i) ^ providedToken.charCodeAt(i);
+  }
+  
+  if (result !== 0) {
     throw new Error("Invalid CSRF token");
   }
 }
 
-export function hashSessionToken(token: string): string {
-  return createHash("sha256").update(token).digest("hex");
+export async function hashSessionToken(token: string): Promise<string> {
+  // Use Web Crypto API for edge runtime compatibility
+  if (typeof crypto !== 'undefined' && crypto.subtle) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(token);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+  
+  // Fallback for environments without crypto.subtle
+  let hash = 0;
+  for (let i = 0; i < token.length; i++) {
+    const char = token.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return Math.abs(hash).toString(16);
 }
