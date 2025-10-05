@@ -97,7 +97,8 @@ export default function CvEvaluatorPage() {
   const userRecordQuery = useApiQuery(
     userRecordQueryFn,
     [user?.uid],
-    { enabled: !!user?.uid }
+    { enabled: !!user?.uid },
+    "cv-evaluator-user-record"
   );
   const userRecord = userRecordQuery.data;
 
@@ -112,7 +113,8 @@ export default function CvEvaluatorPage() {
   const cvAnalysesQuery = useApiQuery(
     cvAnalysesQueryFn,
     [userRecord?._id],
-    { enabled: !!userRecord }
+    { enabled: !!userRecord },
+    "cv-evaluator-cv-analyses"
   );
   const cvAnalyses = cvAnalysesQuery.data;
 
@@ -127,7 +129,8 @@ export default function CvEvaluatorPage() {
   const cvStatsQuery = useApiQuery(
     cvStatsQueryFn,
     [userRecord?._id],
-    { enabled: !!userRecord }
+    { enabled: !!userRecord },
+    "cv-evaluator-cv-stats"
   );
   const cvStats = cvStatsQuery.data;
 
@@ -252,24 +255,17 @@ export default function CvEvaluatorPage() {
 
   return (
     <TooltipProvider>
-      <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
-        {/* Premium background elements */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-20 right-20 w-96 h-96 bg-primary/2 rounded-full filter blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-20 left-20 w-80 h-80 bg-secondary/2 rounded-full filter blur-2xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-        </div>
-
-        <div className="relative z-10">
-          {/* Enhanced Header */}
-          <div className="surface-premium-elevated border-b border-border/50 bg-surface">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="py-6">
-                <motion.div
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6 }}
-                  className="flex items-center justify-between"
-                >
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      {/* Enhanced Header */}
+      <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="py-6">
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="flex items-center justify-between"
+            >
               <div className="flex items-center gap-4">
                 <motion.div
                   initial={{ scale: 0.8 }}
@@ -316,40 +312,6 @@ export default function CvEvaluatorPage() {
           </div>
         </div>
       </div>
-
-      {/* Premium Upgrade Banner */}
-      {plan === "free" && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-4"
-        >
-          <Card className="bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200 shadow-lg">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full">
-                    <Brain className="h-5 w-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-amber-900">Unlock Advanced CV Analysis</h3>
-                    <p className="text-sm text-amber-700">Get unlimited CV scans, detailed feedback, and AI-powered optimization</p>
-                  </div>
-                </div>
-                <Button 
-                  size="sm" 
-                  className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white"
-                  onClick={() => window.location.href = '/upgrade'}
-                >
-                  <Zap className="h-4 w-4 mr-2" />
-                  Upgrade
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      )}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <FeatureGate>
@@ -865,11 +827,14 @@ export default function CvEvaluatorPage() {
                     </CardContent>
                   </Card>
                 </div>
-              </motion.div>
+              </motion.div>k abd268ˀ
+                    +
+
+
+                      
             </TabContent>
             </AnimatePresence>
         </FeatureGate>
-      </div>
       </div>
     </div>
     </TooltipProvider>

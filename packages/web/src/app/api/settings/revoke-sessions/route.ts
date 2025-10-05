@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAuth } from "firebase-admin/auth";
-import { getAdminApp, verifyIdToken } from "@/firebase/admin";
+import { getAdminApp, verifyIdToken, getAdminAuth } from "@/firebase/admin";
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,7 +15,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 });
     }
 
-    const auth = getAuth(getAdminApp());
+    const auth = getAdminAuth();
     await auth.revokeRefreshTokens(decodedToken.uid);
 
     return NextResponse.json({

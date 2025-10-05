@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb } from "../../../../../firebase/admin";
-import { FieldValue } from "firebase-admin/firestore";
+import { FieldValue } from "@/firebase/admin";
 
 // Get Firestore instance using the centralized admin initialization
 const db = getAdminDb();

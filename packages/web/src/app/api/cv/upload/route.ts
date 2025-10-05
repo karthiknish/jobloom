@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyIdToken, getAdminDb, getAdminStorage } from "@/firebase/admin";
-import { getStorage } from "firebase-admin/storage";
-import * as admin from "firebase-admin";
+import { verifyIdToken, getAdminDb, getAdminStorage, Timestamp, FieldValue } from "@/firebase/admin";
 import { SUBSCRIPTION_LIMITS } from "@/types/api";
 import {
   validateFileUpload,
@@ -59,7 +57,7 @@ async function checkSubscriptionLimits(
       .where(
         "createdAt",
         ">=",
-        admin.firestore.Timestamp.fromDate(startOfMonth)
+        Timestamp.fromDate(startOfMonth)
       )
       .get();
 
@@ -233,8 +231,8 @@ export async function POST(request: NextRequest) {
       storagePath: `cv-uploads/${userId}/${fileName}`,
       targetRole: sanitizedTargetRole || null,
       industry: sanitizedIndustry || null,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
       analysisStatus: "pending",
       overallScore: null,
       strengths: [],
@@ -304,7 +302,7 @@ async function performCvAnalysis(
     await db.collection("cvAnalyses").doc(analysisId).update({
       ...analysis,
       analysisStatus: "completed",
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     });
 
   } catch (error) {
@@ -312,7 +310,7 @@ async function performCvAnalysis(
     await db.collection("cvAnalyses").doc(analysisId).update({
       analysisStatus: "failed",
       errorMessage: "Analysis failed due to technical error",
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     });
   }
 }

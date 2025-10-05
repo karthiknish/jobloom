@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   Building2,
@@ -18,7 +18,6 @@ import {
   CheckCircle2,
   Ban,
 } from "lucide-react";
-import { format } from "date-fns";
 
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { useApiQuery, useApiMutation } from "@/hooks/useApi";
@@ -68,8 +67,11 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { showError, showSuccess, showWarning } from "@/components/ui/Toast";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { showError, showSuccess, showWarning, showInfo } from "@/components/ui/Toast";
 import { exportToCsv } from "@/utils/exportToCsv";
+import { SkeletonTable } from "@/components/ui/loading-skeleton";
 
 interface SponsoredCompany {
   _id: string;
@@ -85,6 +87,163 @@ interface SponsoredCompany {
   updatedAt?: number;
 }
 
+// Edit Sponsor Form Component
+interface EditSponsorFormProps {
+  sponsor: SponsoredCompany;
+  onSave: (updates: Partial<SponsoredCompany>) => Promise<void> | void;
+  onCancel: () => void;
+}
+
+function EditSponsorForm({ sponsor, onSave, onCancel }: EditSponsorFormProps) {
+  const [formData, setFormData] = useState<SponsoredCompany>({
+    ...sponsor,
+    aliases: Array.isArray(sponsor.aliases) ? [...sponsor.aliases] : [],
+    isActive: sponsor.isActive !== false,
+  });
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const normalizedAliases = Array.isArray(formData.aliases)
+        ? formData.aliases.filter((alias) => alias.trim().length > 0)
+        : [];
+
+      await onSave({
+        name: formData.name,
+        website: formData.website,
+        industry: formData.industry,
+        sponsorshipType: formData.sponsorshipType,
+        description: formData.description,
+        aliases: normalizedAliases,
+        isActive: formData.isActive !== false,
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  useEffect(() => {
+    setFormData({
+      ...sponsor,
+      aliases: Array.isArray(sponsor.aliases) ? [...sponsor.aliases] : [],
+      isActive: sponsor.isActive !== false,
+    });
+  }, [sponsor]);
+
+  const handleChange = (field: keyof SponsoredCompany, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleAliasesChange = (value: string) => {
+    const aliases = value.split(',').map(alias => alias.trim()).filter(alias => alias.length > 0);
+    handleChange('aliases', aliases);
+  };
+
+  return (
+    <div className="space-y-4 py-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="name">Company Name</Label>
+          <Input
+            id="name"
+            value={formData.name || ''}
+            onChange={(e) => handleChange('name', e.target.value)}
+            placeholder="Enter company name"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="website">Website</Label>
+          <Input
+            id="website"
+            value={formData.website || ''}
+            onChange={(e) => handleChange('website', e.target.value)}
+            placeholder="https://example.com"
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="aliases">Aliases (comma-separated)</Label>
+        <Input
+          id="aliases"
+          value={formData.aliases?.join(', ') || ''}
+          onChange={(e) => handleAliasesChange(e.target.value)}
+          placeholder="e.g., Google LLC, Alphabet Inc."
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="industry">Industry</Label>
+          <Input
+            id="industry"
+            value={formData.industry || ''}
+            onChange={(e) => handleChange('industry', e.target.value)}
+            placeholder="e.g., Technology, Finance"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="sponsorshipType">Sponsorship Type</Label>
+          <Select
+            value={formData.sponsorshipType || "sponsored"}
+            onValueChange={(value) => handleChange('sponsorshipType', value)}
+          >
+            <SelectTrigger id="sponsorshipType">
+              <SelectValue placeholder="Select sponsorship type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="sponsored">Sponsored</SelectItem>
+              <SelectItem value="promoted">Promoted</SelectItem>
+              <SelectItem value="featured">Featured</SelectItem>
+              <SelectItem value="premium">Premium</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="description">Description</Label>
+        <Textarea
+          id="description"
+          value={formData.description || ''}
+          onChange={(e) => handleChange('description', e.target.value)}
+          placeholder="Brief description of the company and sponsorship"
+          rows={3}
+        />
+      </div>
+
+      <div className="rounded-md border p-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-1">
+          <Label htmlFor="isActive">Active status</Label>
+          <p className="text-sm text-muted-foreground">
+            Toggle to mark this sponsor as active or inactive.
+          </p>
+        </div>
+        <Switch
+          id="isActive"
+          checked={formData.isActive !== false}
+          onCheckedChange={(checked) => handleChange('isActive', checked)}
+        />
+      </div>
+
+      <DialogFooter>
+        <Button variant="outline" onClick={onCancel} disabled={isSaving}>
+          Cancel
+        </Button>
+        <Button onClick={handleSave} disabled={isSaving}>
+          {isSaving ? "Saving..." : "Save Changes"}
+        </Button>
+      </DialogFooter>
+    </div>
+  );
+}
+
 
 
 export default function AdminSponsorsDashboard() {
@@ -93,11 +252,16 @@ export default function AdminSponsorsDashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [industryFilter, setIndustryFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
   const [selectedSponsor, setSelectedSponsor] =
     useState<SponsoredCompany | null>(null);
   const [showSponsorDetails, setShowSponsorDetails] = useState(false);
   const [showAddSponsor, setShowAddSponsor] = useState(false);
+  const [showEditSponsor, setShowEditSponsor] = useState(false);
+  const [editingSponsor, setEditingSponsor] = useState<SponsoredCompany | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Check admin status
   const loadUserRecord = useCallback(() => {
@@ -121,23 +285,35 @@ export default function AdminSponsorsDashboard() {
     []
   );
 
-  const { data: sponsorStats, refetch: refetchStats } = useApiQuery(
+  const { data: sponsorStats, refetch: refetchStats, loading: isLoadingStats } = useApiQuery(
     loadSponsorStats,
     [userRecord?._id, userRecord?.isAdmin],
     { enabled: canFetchAdminData }
   );
 
-  // Fetch all sponsored companies
+  // Fetch all sponsored companies with pagination
   const loadSponsoredCompanies = useCallback(
-    () => adminApi.getAllSponsoredCompanies(),
-    []
+    () => adminApi.getAllSponsoredCompanies({
+      page: currentPage,
+      limit: pageSize,
+      search: searchTerm || undefined,
+      industry: industryFilter !== "all" ? industryFilter : undefined,
+      sponsorshipType: typeFilter !== "all" ? typeFilter : undefined,
+      status: statusFilter !== "all" ? statusFilter : undefined,
+    }),
+    [currentPage, pageSize, searchTerm, industryFilter, typeFilter, statusFilter]
   );
 
-  const { data: sponsoredCompanies, refetch: refetchCompanies } = useApiQuery(
+  const { data: sponsorsData, refetch: refetchCompanies, loading: isLoadingSponsors } = useApiQuery(
     loadSponsoredCompanies,
-    [userRecord?._id, userRecord?.isAdmin],
+    [userRecord?._id, userRecord?.isAdmin, currentPage, pageSize, searchTerm, industryFilter, typeFilter, statusFilter],
     { enabled: canFetchAdminData }
   );
+
+  // Extract data from the paginated response
+  const sponsoredCompanies = sponsorsData?.companies || [];
+  const totalCount = sponsorsData?.total || 0;
+  const hasMorePages = sponsorsData?.hasMore || false;
 
   useEffect(() => {
     if (userRecord) {
@@ -155,63 +331,59 @@ export default function AdminSponsorsDashboard() {
       adminApi.updateSponsoredCompany(companyId, { isActive })
   );
 
-  // Filter sponsors based on search and filters
-  const filteredSponsors =
-    sponsoredCompanies?.filter((sponsor: SponsoredCompany) => {
-      const matchesSearch =
-        sponsor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        sponsor.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        sponsor.aliases.some((alias) =>
-          alias.toLowerCase().includes(searchTerm.toLowerCase())
-        );
+  const { mutate: updateSponsor } = useApiMutation(
+    ({ companyId, updates }: { companyId: string; updates: Partial<SponsoredCompany> }) =>
+      adminApi.updateSponsoredCompany(companyId, updates)
+  );
 
-      const matchesIndustry =
-        industryFilter === "all" || sponsor.industry === industryFilter;
+  // Since filtering is now done server-side, filteredSponsors is just the companies
+  const filteredSponsors = sponsoredCompanies;
 
-      const matchesType =
-        typeFilter === "all" || sponsor.sponsorshipType === typeFilter;
+  const handleExportSponsors = async () => {
+    try {
+      setIsExporting(true);
+      showInfo("Exporting sponsors...");
 
-      const matchesStatus =
-        statusFilter === "all" ||
-        (statusFilter === "active" && sponsor.isActive !== false) ||
-        (statusFilter === "inactive" && sponsor.isActive === false);
+      const allSponsors = await adminApi.getAllSponsoredCompaniesForExport({
+        search: searchTerm || undefined,
+        industry: industryFilter !== "all" ? industryFilter : undefined,
+        sponsorshipType: typeFilter !== "all" ? typeFilter : undefined,
+        status: statusFilter,
+      });
 
-      return matchesSearch && matchesIndustry && matchesType && matchesStatus;
-    }) || [];
+      if (!allSponsors.length) {
+        showWarning("No sponsors match the current filters.");
+        return;
+      }
 
-  const recentSponsors = useMemo(() => {
-    const sponsors = sponsoredCompanies ?? [];
-    return [...sponsors]
-      .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))
-      .slice(0, 5);
-  }, [sponsoredCompanies]);
+      const rows = allSponsors.map((sponsor) => ({
+        ID: sponsor._id,
+        Name: sponsor.name,
+        Type: sponsor.sponsorshipType,
+        Industry: sponsor.industry || "",
+        Website: sponsor.website || "",
+        Status: sponsor.isActive !== false ? "Active" : "Inactive",
+        Aliases: sponsor.aliases.join(", "),
+        "Created At": sponsor.createdAt && !isNaN(new Date(sponsor.createdAt).getTime())
+          ? new Date(sponsor.createdAt).toISOString()
+          : "",
+        "Updated At": sponsor.updatedAt
+          ? new Date(sponsor.updatedAt).toISOString()
+          : "",
+      }));
 
-  const handleExportSponsors = () => {
-    if (!filteredSponsors.length) {
-      showWarning("No sponsors match the current filters.");
-      return;
+      exportToCsv(
+        `hireall-sponsors-${new Date().toISOString().slice(0, 10)}`,
+        rows
+      );
+
+      showSuccess(`Exported ${allSponsors.length} sponsors to CSV`);
+    } catch (error) {
+      console.error("Failed to export sponsors", error);
+      showError("Failed to export sponsors. Please try again.");
+    } finally {
+      setIsExporting(false);
     }
-
-    const rows = filteredSponsors.map((sponsor) => ({
-      ID: sponsor._id,
-      Name: sponsor.name,
-      Type: sponsor.sponsorshipType,
-      Industry: sponsor.industry || "",
-      Website: sponsor.website || "",
-      Status: sponsor.isActive !== false ? "Active" : "Inactive",
-      Aliases: sponsor.aliases.join(", "),
-      "Created At": new Date(sponsor.createdAt).toISOString(),
-      "Updated At": sponsor.updatedAt
-        ? new Date(sponsor.updatedAt).toISOString()
-        : "",
-    }));
-
-    exportToCsv(
-      `hireall-sponsors-${new Date().toISOString().slice(0, 10)}`,
-      rows
-    );
-
-    showSuccess(`Exported ${filteredSponsors.length} sponsors to CSV`);
   };
 
   const handleRefreshData = async () => {
@@ -286,6 +458,30 @@ export default function AdminSponsorsDashboard() {
     }
   };
 
+  const handleEditSponsor = (sponsor: SponsoredCompany) => {
+    setEditingSponsor(sponsor);
+    setShowEditSponsor(true);
+  };
+
+  const handleSaveEdit = async (updatedSponsor: Partial<SponsoredCompany>) => {
+    if (!editingSponsor) return;
+
+    try {
+      await updateSponsor({
+        companyId: editingSponsor._id,
+        updates: updatedSponsor,
+      });
+      showSuccess(`${editingSponsor.name} has been updated`);
+      setShowEditSponsor(false);
+      setEditingSponsor(null);
+      refetchCompanies();
+      refetchStats();
+    } catch (error) {
+      console.error("Failed to update sponsor", error);
+      showError(`Failed to update ${editingSponsor.name}`);
+    }
+  };
+
   if (!user) {
     return (
       <AdminLayout title="Sponsors Dashboard">
@@ -336,87 +532,103 @@ export default function AdminSponsorsDashboard() {
         </motion.div>
 
         {/* Stats Cards */}
-        {sponsorStats && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4"
-          >
-            <Card className="card-depth-2">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Total Sponsors
-                </CardTitle>
-                <Building2 className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {sponsorStats.totalSponsoredCompanies}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Active sponsored companies
-                </p>
-              </CardContent>
-            </Card>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4"
+        >
+          {isLoadingStats ? (
+            // Loading skeleton for stats cards
+            Array.from({ length: 4 }).map((_, i) => (
+              <Card key={i} className="card-depth-2">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <div className="h-4 w-24 bg-muted animate-pulse rounded" />
+                  <div className="h-4 w-4 bg-muted animate-pulse rounded" />
+                </CardHeader>
+                <CardContent>
+                  <div className="h-8 w-16 bg-muted animate-pulse rounded mb-2" />
+                  <div className="h-3 w-32 bg-muted animate-pulse rounded" />
+                </CardContent>
+              </Card>
+            ))
+          ) : sponsorStats ? (
+            <>
+              <Card className="card-depth-2">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Total Sponsors
+                  </CardTitle>
+                  <Building2 className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {sponsorStats.totalSponsoredCompanies}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Active sponsored companies
+                  </p>
+                </CardContent>
+              </Card>
 
-            <Card className="card-depth-2">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Top Industry
-                </CardTitle>
-                <BarChart3 className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {Object.entries(sponsorStats.industryStats).length > 0
-                    ? Object.entries(sponsorStats.industryStats).sort(
-                        ([, a], [, b]) => b - a
-                      )[0][0]
-                    : "None"}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Most represented industry
-                </p>
-              </CardContent>
-            </Card>
+              <Card className="card-depth-2">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Top Industry
+                  </CardTitle>
+                  <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {Object.entries(sponsorStats.industryStats).length > 0
+                      ? Object.entries(sponsorStats.industryStats).sort(
+                          ([, a], [, b]) => b - a
+                        )[0][0]
+                      : "None"}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Most represented industry
+                  </p>
+                </CardContent>
+              </Card>
 
-            <Card className="card-depth-2">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Sponsorship Types
-                </CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {Object.keys(sponsorStats.sponsorshipTypeStats).length}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Different sponsorship levels
-                </p>
-              </CardContent>
-            </Card>
+              <Card className="card-depth-2">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Sponsorship Types
+                  </CardTitle>
+                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {Object.keys(sponsorStats.sponsorshipTypeStats).length}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Different sponsorship levels
+                  </p>
+                </CardContent>
+              </Card>
 
-            <Card className="card-depth-2">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Active Sponsors
-                </CardTitle>
-                <Activity className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {sponsoredCompanies?.filter((c) => c.isActive !== false)
-                    .length || 0}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Currently active
-                </p>
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
+              <Card className="card-depth-2">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Active Sponsors
+                  </CardTitle>
+                  <Activity className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {sponsoredCompanies.filter((c) => c.isActive !== false)
+                      .length || 0}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Currently active
+                  </p>
+                </CardContent>
+              </Card>
+            </>
+          ) : null}
+        </motion.div>
 
         {/* Sponsorship Type Distribution */}
         {sponsorStats?.sponsorshipTypeStats && (
@@ -524,12 +736,12 @@ export default function AdminSponsorsDashboard() {
           </motion.div>
         )}
 
-        {/* Quick Actions & Recent Activity */}
+        {/* Quick Actions */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
-          className="grid grid-cols-1 gap-6 lg:grid-cols-3"
+          className="grid grid-cols-1 gap-6"
         >
           <Card className="card-depth-2">
             <CardHeader>
@@ -546,9 +758,10 @@ export default function AdminSponsorsDashboard() {
                 variant="secondary"
                 className="w-full justify-start"
                 onClick={handleExportSponsors}
+                disabled={isExporting}
               >
                 <Download className="h-4 w-4 mr-2" />
-                Export sponsors to CSV
+                {isExporting ? "Exporting..." : "Export sponsors to CSV"}
               </Button>
               <Button
                 variant="outline"
@@ -564,80 +777,6 @@ export default function AdminSponsorsDashboard() {
               </p>
             </CardContent>
           </Card>
-
-          {recentSponsors.length > 0 && (
-            <Card className="card-depth-2 lg:col-span-2">
-              <CardHeader>
-                <CardTitle className="text-lg">Recent sponsor additions</CardTitle>
-                <CardDescription>
-                  Latest companies added to the sponsored list
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="rounded-md border overflow-hidden">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Company</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Added on</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {recentSponsors.map((sponsor) => (
-                        <TableRow key={sponsor._id}>
-                          <TableCell className="flex items-center gap-3">
-                            <Avatar className="h-8 w-8">
-                              <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                                {getCompanyInitials(sponsor.name)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="min-w-0">
-                              <p className="font-medium truncate">
-                                {sponsor.name}
-                              </p>
-                              {sponsor.website && (
-                                <p className="text-xs text-muted-foreground truncate">
-                                  {sponsor.website}
-                                </p>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={getSponsorshipTypeBadge(
-                                sponsor.sponsorshipType
-                              )}
-                              className="capitalize"
-                            >
-                              {sponsor.sponsorshipType}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={
-                                sponsor.isActive !== false
-                                  ? "default"
-                                  : "secondary"
-                              }
-                            >
-                              {sponsor.isActive !== false
-                                ? "Active"
-                                : "Inactive"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right text-sm text-muted-foreground">
-                            {format(new Date(sponsor.createdAt), "PP")}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-          )}
         </motion.div>
 
         {/* Filters and Search */}
@@ -651,7 +790,7 @@ export default function AdminSponsorsDashboard() {
             <CardTitle>Sponsor Management</CardTitle>
             <CardDescription>
               Search and manage all sponsored companies (
-              {filteredSponsors.length} sponsors)
+              {totalCount} sponsors)
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -661,12 +800,21 @@ export default function AdminSponsorsDashboard() {
                 <Input
                   placeholder="Search sponsors by name, description, or aliases..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setCurrentPage(1);
+                  }}
                   className="pl-9"
                 />
               </div>
 
-              <Select value={industryFilter} onValueChange={setIndustryFilter}>
+              <Select
+                value={industryFilter}
+                onValueChange={(value) => {
+                  setIndustryFilter(value);
+                  setCurrentPage(1);
+                }}
+              >
                 <SelectTrigger className="w-[150px]">
                   <SelectValue placeholder="Industry" />
                 </SelectTrigger>
@@ -681,7 +829,13 @@ export default function AdminSponsorsDashboard() {
                 </SelectContent>
               </Select>
 
-              <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <Select
+                value={typeFilter}
+                onValueChange={(value) => {
+                  setTypeFilter(value);
+                  setCurrentPage(1);
+                }}
+              >
                 <SelectTrigger className="w-[150px]">
                   <SelectValue placeholder="Type" />
                 </SelectTrigger>
@@ -702,7 +856,13 @@ export default function AdminSponsorsDashboard() {
                 </SelectContent>
               </Select>
 
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <Select
+                value={statusFilter}
+                onValueChange={(value) => {
+                  setStatusFilter(value as "all" | "active" | "inactive");
+                  setCurrentPage(1);
+                }}
+              >
                 <SelectTrigger className="w-[120px]">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
@@ -716,39 +876,42 @@ export default function AdminSponsorsDashboard() {
 
             {/* Sponsors Table */}
             <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Company</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Industry</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Aliases</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredSponsors.map((sponsor: SponsoredCompany) => (
-                    <TableRow key={sponsor._id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                              {getCompanyInitials(sponsor.name)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="min-w-0 flex-1">
-                            <div className="font-medium truncate">
-                              {sponsor.name}
-                            </div>
-                            {sponsor.website && (
-                              <div className="text-sm text-muted-foreground truncate">
-                                {sponsor.website}
+              {isLoadingSponsors ? (
+                <SkeletonTable rows={10} columns={6} />
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Company</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Industry</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Aliases</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredSponsors.map((sponsor: SponsoredCompany) => (
+                      <TableRow key={sponsor._id}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                                {getCompanyInitials(sponsor.name)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0 flex-1">
+                              <div className="font-medium truncate">
+                                {sponsor.name}
                               </div>
-                            )}
+                              {sponsor.website && (
+                                <div className="text-sm text-muted-foreground truncate">
+                                  {sponsor.website}
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      </TableCell>
+                        </TableCell>
                       <TableCell>
                         <Badge
                           variant={getSponsorshipTypeBadge(
@@ -813,7 +976,9 @@ export default function AdminSponsorsDashboard() {
                                 </>
                               )}
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleEditSponsor(sponsor)}
+                            >
                               <Edit className="h-4 w-4 mr-2" />
                               Edit Sponsor
                             </DropdownMenuItem>
@@ -834,6 +999,7 @@ export default function AdminSponsorsDashboard() {
                   ))}
                 </TableBody>
               </Table>
+              )}
 
               {filteredSponsors.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
@@ -846,6 +1012,38 @@ export default function AdminSponsorsDashboard() {
                 </div>
               )}
             </div>
+
+            {/* Pagination Controls */}
+            {totalCount > pageSize && (
+              <div className="flex items-center justify-between px-2 py-4">
+                <div className="flex items-center space-x-2">
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalCount)} of {totalCount} sponsors
+                  </p>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    Previous
+                  </Button>
+                  <span className="text-sm text-muted-foreground">
+                    Page {currentPage} of {Math.ceil(totalCount / pageSize)}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => prev + 1)}
+                    disabled={!hasMorePages}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </motion.div>
 
@@ -986,6 +1184,29 @@ export default function AdminSponsorsDashboard() {
               </Button>
               <Button disabled>Add Sponsor (Coming Soon)</Button>
             </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Sponsor Dialog */}
+        <Dialog open={showEditSponsor} onOpenChange={setShowEditSponsor}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Edit Sponsor</DialogTitle>
+              <DialogDescription>
+                Update sponsor information and settings.
+              </DialogDescription>
+            </DialogHeader>
+
+            {editingSponsor && (
+              <EditSponsorForm
+                sponsor={editingSponsor}
+                onSave={handleSaveEdit}
+                onCancel={() => {
+                  setShowEditSponsor(false);
+                  setEditingSponsor(null);
+                }}
+              />
+            )}
           </DialogContent>
         </Dialog>
       </div>

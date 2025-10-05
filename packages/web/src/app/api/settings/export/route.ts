@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyIdToken, getAdminDb, getAdminStorage } from "@/firebase/admin";
-import { getStorage } from "firebase-admin/storage";
 
 const db = getAdminDb();
 

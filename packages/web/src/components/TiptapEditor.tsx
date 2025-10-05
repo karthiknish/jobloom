@@ -463,6 +463,7 @@ export function TiptapEditor({
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
+    immediatelyRender: false,
     editorProps: {
       attributes: {
         class: "prose prose-sm sm:prose-base lg:prose-lg xl:prose-xl mx-auto focus:outline-none min-h-[200px] p-4",

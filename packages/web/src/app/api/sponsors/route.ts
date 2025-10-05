@@ -1,18 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getFirestore } from 'firebase-admin/firestore';
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { getAdminDb } from '@/firebase/admin';
 import { verifySessionFromRequest } from '@/lib/auth/session';
 
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY || '{}');
-
-if (!getApps().length) {
-  initializeApp({
-    credential: cert(serviceAccount),
-    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
-  });
-}
-
-const db = getFirestore();
+const db = getAdminDb();
 
 export async function GET(request: NextRequest) {
   try {

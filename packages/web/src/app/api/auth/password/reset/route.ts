@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAuth } from "firebase-admin/auth";
-
-import { getAdminApp } from "@/firebase/admin";
+import { getAdminApp, getAdminAuth, getAdminDb } from "@/firebase/admin";
 
 interface ResetPayload {
   token?: string;
@@ -27,7 +25,7 @@ export async function POST(request: Request) {
     }
 
     const admin = getAdminApp();
-    const db = (await import("firebase-admin/firestore")).getFirestore(admin);
+    const db = getAdminDb();
     const tokenDoc = await db.collection("passwordResets").doc(token).get();
 
     if (!tokenDoc.exists) {
@@ -60,7 +58,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const auth = getAuth(admin);
+    const auth = getAdminAuth();
     await auth.updateUser(tokenData.userId, { password });
     await tokenDoc.ref.update({ used: true, consumedAt: new Date() });
 

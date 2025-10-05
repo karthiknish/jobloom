@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb } from "@/firebase/admin";
-import { getAuth } from "firebase-admin/auth";
+import { getAdminAuth } from "@/firebase/admin";
 
 export async function GET(
   request: NextRequest,
@@ -14,7 +14,7 @@ export async function GET(
     }
 
     const token = authHeader.substring(7);
-    const decodedToken = await getAuth().verifyIdToken(token);
+    const decodedToken = await getAdminAuth().verifyIdToken(token);
     
     // Check if user is admin
     const db = getAdminDb();
@@ -57,7 +57,7 @@ export async function PUT(
     }
 
     const token = authHeader.substring(7);
-    const decodedToken = await getAuth().verifyIdToken(token);
+    const decodedToken = await getAdminAuth().verifyIdToken(token);
     
     // Check if user is admin
     const db = getAdminDb();
@@ -110,7 +110,7 @@ export async function DELETE(
     }
 
     const token = authHeader.substring(7);
-    const decodedToken = await getAuth().verifyIdToken(token);
+    const decodedToken = await getAdminAuth().verifyIdToken(token);
     
     // Check if user is admin
     const db = getAdminDb();

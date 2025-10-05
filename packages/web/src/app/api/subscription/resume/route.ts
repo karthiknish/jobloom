@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyIdToken, getAdminDb } from "@/firebase/admin";
 import { getStripeClient } from "@/lib/stripe";
 import { upsertSubscriptionFromStripe, ValidationError, DatabaseError } from "@/lib/subscriptions";
-import { FieldValue } from "firebase-admin/firestore";
+import { FieldValue } from "@/firebase/admin";
 import { checkServerRateLimit } from "@/lib/rateLimiter";
 import type Stripe from "stripe";
 

@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getStripeClient } from "@/lib/stripe";
-import { getAdminDb } from "@/firebase/admin";
-import { FieldValue } from "firebase-admin/firestore";
+import { getAdminDb, FieldValue } from "@/firebase/admin";
 import { upsertSubscriptionFromStripe, ValidationError, DatabaseError } from "@/lib/subscriptions";
 
 export const runtime = "nodejs";

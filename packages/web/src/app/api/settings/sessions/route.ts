@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAuth } from "firebase-admin/auth";
-import { getAdminApp, verifyIdToken } from "@/firebase/admin";
+import { getAdminApp, verifyIdToken, getAdminAuth } from "@/firebase/admin";
 
 interface SessionInfo {
   id: string;
@@ -26,7 +25,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user info from Firebase Auth
-    const auth = getAuth(getAdminApp());
+    const auth = getAdminAuth();
     const user = await auth.getUser(decodedToken.uid);
 
     // Extract session information from user metadata and tokens

@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyIdToken, isUserAdmin, getAdminDb } from "@/firebase/admin";
-import {
-  Query,
-  CollectionReference,
-  FieldValue,
-} from "firebase-admin/firestore";
+import { verifyIdToken, isUserAdmin, getAdminDb, Query, CollectionReference, FieldValue } from "@/firebase/admin";
 
 // Get Firestore instance using the centralized admin initialization
 const db = getAdminDb();

@@ -1,12 +1,11 @@
 import { cookies } from "next/headers";
 import type { NextRequest, NextResponse } from "next/server";
-import { getAuth } from "firebase-admin/auth";
 // Use Web Crypto API for edge runtime compatibility
 function randomUUID(): string {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID();
   }
-  
+
   // Fallback for environments without crypto.randomUUID
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
     const r = Math.random() * 16 | 0;
@@ -14,7 +13,7 @@ function randomUUID(): string {
     return v.toString(16);
   });
 }
-import { getAdminApp, getAdminDb } from "@/firebase/admin";
+import { getAdminApp, getAdminDb, getAdminAuth } from "@/firebase/admin";
 import { hashSessionToken } from "@/lib/security/csrf";
 import { SecurityLogger } from "@/utils/security";
 
@@ -79,7 +78,7 @@ async function verifySessionCookieValue(
   context: SessionVerificationContext = {},
 ) {
   try {
-    const auth = getAuth(getAdminApp());
+    const auth = getAdminAuth();
     const decoded = await auth.verifySessionCookie(sessionCookie, true);
     const hash = await hashSessionToken(sessionCookie);
     const db = getAdminDb();
@@ -124,7 +123,7 @@ export async function createSessionCookie(
   idToken: string,
   metadata: SessionMetadata,
 ): Promise<{ sessionCookie: string; expiresAt: number }> {
-  const auth = getAuth(getAdminApp());
+  const auth = getAdminAuth();
   const expiresAt = Date.now() + SESSION_EXPIRY_SECONDS * 1000;
   const sessionCookie = await auth.createSessionCookie(idToken, {
     expiresIn: SESSION_EXPIRY_SECONDS * 1000,
@@ -167,7 +166,7 @@ export async function verifySessionFromRequest(request: NextRequest) {
     const token = authHeader.substring(7).trim();
     if (token) {
       try {
-        const auth = getAuth(getAdminApp());
+        const auth = getAdminAuth();
         return await auth.verifyIdToken(token);
       } catch (error) {
         SecurityLogger.logSecurityEvent({
@@ -214,7 +213,7 @@ export async function revokeSessionCookie(
   }
 
   try {
-    const auth = getAuth(getAdminApp());
+    const auth = getAdminAuth();
     const decoded = await auth.verifySessionCookie(sessionCookie, true);
     const hash = await hashSessionToken(sessionCookie);
     const db = getAdminDb();

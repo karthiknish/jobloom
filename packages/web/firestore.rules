@@ -130,6 +130,14 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    // ------------- Sponsors (Public data) -------------
+    match /sponsors/{sponsorId} {
+      // Public read to allow client-side sponsor data access
+      allow read: if true;
+      // Only admins can create/update/delete
+      allow create, update, delete: if isAdmin();
+    }
+
     // ------------- Sponsorship Rules (Admin-managed scraping / detection logic) -------------
     match /sponsorshipRules/{ruleId} {
       allow read: if true; // Public read if client extension or UI needs selectors

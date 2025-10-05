@@ -133,10 +133,22 @@ function logApiError(error: EnhancedApiError, context?: {
   retryCount?: number;
   key?: string;
 }) {
+  // Add contextual information to the error message for better debugging
+  let enhancedMessage = error.message;
+  
+  if (error.message.includes('Missing or insufficient permissions')) {
+    enhancedMessage = `Firebase permission error: ${error.message}. This usually means the service account lacks access to the requested resource, or the user doesn't have proper permissions. Check Firestore security rules and service account configuration.`;
+  } else if (error.status === 403) {
+    enhancedMessage = `Access forbidden: ${error.message}. The user or service account may not have permission to access this resource.`;
+  } else if (error.status === 401) {
+    enhancedMessage = `Authentication required: ${error.message}. The user needs to be authenticated to access this resource.`;
+  }
+
   const logData = {
     error: {
       name: error.name,
-      message: error.message,
+      message: enhancedMessage,
+      originalMessage: error.message,
       status: error.status,
       code: error.code,
       requestId: error.requestId,
@@ -159,7 +171,8 @@ function logApiError(error: EnhancedApiError, context?: {
 export function useApiQuery<T>(
   queryFn: () => Promise<T>,
   deps: unknown[] = [],
-  options: UseQueryOptions = {}
+  options: UseQueryOptions = {},
+  key?: string
 ): UseQueryResult<T> {
   const {
     enabled = true,
@@ -176,7 +189,7 @@ export function useApiQuery<T>(
   const [currentRetryCount, setCurrentRetryCount] = useState(0);
 
   const fetchData = useCallback(async (isRetry = false) => {
-    if (!enabled && !isRetry) return;
+    if (!enabled) return;
 
     try {
       setLoading(true);
@@ -204,7 +217,8 @@ export function useApiQuery<T>(
           enhancedError.status !== 401) {
         logApiError(enhancedError, {
           operation: 'query',
-          retryCount: isRetry ? currentRetryCount + 1 : 0
+          retryCount: isRetry ? currentRetryCount + 1 : 0,
+          key
         });
       }
 
@@ -239,7 +253,7 @@ export function useApiQuery<T>(
     return () => {
       isMounted = false;
     };
-  }, [fetchData, enabled]);
+  }, [fetchData, enabled, ...deps]);
 
   const refetch = useCallback(() => {
     setCurrentRetryCount(0);
@@ -265,7 +279,8 @@ export function useApiMutation<T, V = Record<string, unknown>>(
   options: {
     onSuccess?: (data: T, variables: V) => void;
     onError?: (error: EnhancedApiError, variables: V) => void;
-  } = {}
+  } = {},
+  key?: string
 ): UseMutationResult<T, V> {
   const { onSuccess, onError } = options;
 
@@ -293,7 +308,8 @@ export function useApiMutation<T, V = Record<string, unknown>>(
       setError(enhancedError);
       logApiError(enhancedError, {
         operation: 'mutation',
-        variables
+        variables,
+        key
       });
 
       onError?.(enhancedError, variables);

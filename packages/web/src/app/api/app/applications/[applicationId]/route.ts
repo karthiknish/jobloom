@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyIdToken } from "@/firebase/admin";
 import { createFirestoreCollection } from "@/firebase/firestore";
-import { getFirestore } from "firebase-admin/firestore";
+import { getAdminFirestore } from "@/firebase/admin";
 
 // GET /api/app/applications/[applicationId] - Get a specific application
 export async function GET(

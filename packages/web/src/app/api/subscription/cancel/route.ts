@@ -3,7 +3,7 @@ import { verifyIdToken, getAdminDb } from "@/firebase/admin";
 import { getStripeClient } from "@/lib/stripe";
 import Stripe from "stripe";
 import { upsertSubscriptionFromStripe, ValidationError, DatabaseError } from "@/lib/subscriptions";
-import { FieldValue } from "firebase-admin/firestore";
+import { FieldValue } from "@/firebase/admin";
 import { checkServerRateLimit } from "@/lib/rateLimiter";
 
 const stripe = getStripeClient();

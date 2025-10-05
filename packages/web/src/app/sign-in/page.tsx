@@ -97,22 +97,15 @@ function SignInInner() {
 
     (async () => {
       try {
-        if (fromExtension) {
-          await signInWithGoogleRedirect();
-        } else {
-          await signInWithGoogle();
-          await refreshToken();
-          router.replace(redirectUrlComplete);
-        }
+        // Use popup auth for both extension and regular flows for smoother experience
+        await signInWithGoogle();
+        await refreshToken();
+        router.replace(redirectUrlComplete);
       } catch {
         setLoading(false);
-      } finally {
-        if (!fromExtension) {
-          setLoading(false);
-        }
       }
     })();
-  }, [fromExtension, redirectUrlComplete, refreshToken, router, search, signInWithGoogle, signInWithGoogleRedirect]);
+  }, [redirectUrlComplete, refreshToken, router, search, signInWithGoogle]);
 
   useEffect(() => {
     if (!isInitialized) return;
@@ -184,23 +177,13 @@ function SignInInner() {
     setError(null);
     setLoading(true);
     try {
-      if (fromExtension) {
-        await signInWithGoogleRedirect();
-      } else {
-        await signInWithGoogle();
-        await refreshToken();
-        router.replace(redirectUrlComplete);
-      }
+      await signInWithGoogle();
+      await refreshToken();
+      router.replace(redirectUrlComplete);
     } catch (err: unknown) {
       const e = err as { message?: string };
       setError(e?.message || "Google sign-in failed");
-      if (fromExtension) {
-        setLoading(false);
-      }
-    } finally {
-      if (!fromExtension) {
-        setLoading(false);
-      }
+      setLoading(false);
     }
   }
 

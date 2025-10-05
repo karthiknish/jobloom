@@ -1,5 +1,4 @@
-import { getAuth } from "firebase-admin/auth";
-import { getAdminApp } from "@/firebase/admin";
+import { getAdminApp, getAdminAuth } from "@/firebase/admin";
 import { hashSessionToken } from "@/lib/security/csrf";
 import { SecurityLogger } from "@/utils/security";
 
@@ -15,7 +14,7 @@ export async function verifySessionCookieForMiddleware(
   token: string,
 ): Promise<VerifiedSessionClaims | null> {
   try {
-    const auth = getAuth(getAdminApp());
+    const auth = getAdminAuth();
     const decoded = await auth.verifySessionCookie(token, true);
     
     if (!decoded || !decoded.uid) {

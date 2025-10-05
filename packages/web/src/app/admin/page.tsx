@@ -2,26 +2,14 @@
 
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { useState, useEffect, useCallback } from "react";
-import { showError, showSuccess } from "@/components/ui/Toast";
-import { useRateLimit } from "../../hooks/useRateLimit";
-import { useApiQuery, useApiMutation } from "../../hooks/useApi";
+import { useApiQuery } from "../../hooks/useApi";
 import { adminApi } from "../../utils/api/admin";
 import { AdminLayout } from "../../components/admin/AdminLayout";
 import { AdminAccessDenied } from "../../components/admin/AdminAccessDenied";
-import { AdminStats } from "../../components/admin/AdminStats";
-import { AddCompanyForm } from "../../components/admin/AddCompanyForm";
-import { CompanyList } from "../../components/admin/CompanyList";
-import { RateLimitInfo } from "../../components/admin/RateLimitInfo";
-import { UserManagement } from "../../components/admin/UserManagement";
-import { SponsorshipRules } from "../../components/admin/SponsorshipRules";
 
 export default function AdminPage() {
   const { user, isInitialized, loading } = useFirebaseAuth();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-  const [activeTab, setActiveTab] = useState<"companies" | "users" | "rules">(
-    "companies"
-  );
-  const [showAddForm, setShowAddForm] = useState(false);
 
   // Check if user is admin
   const loadUserRecord = useCallback(() => {
@@ -34,7 +22,8 @@ export default function AdminPage() {
   const { data: userRecord, refetch: refetchUserRecord } = useApiQuery(
     loadUserRecord,
     [user?.uid],
-    { enabled: !!user?.uid }
+    { enabled: !!user?.uid },
+    "admin-user-record"
   );
 
   // Check admin status
@@ -44,114 +33,7 @@ export default function AdminPage() {
     }
   }, [userRecord]);
 
-  // Rate limiting for admin operations
-  const addCompanyRateLimit = useRateLimit({
-    maxRequests: 5,
-    windowMs: 60000, // 1 minute
-    endpoint: "addSponsoredCompany",
-  });
-
   const canLoadAdminData = !!user && isAdmin === true;
-
-  const loadSponsoredCompanies = useCallback(
-    () => adminApi.getAllSponsoredCompanies(),
-    []
-  );
-
-  const loadSponsorshipStats = useCallback(
-    () => adminApi.getSponsorshipStats(),
-    []
-  );
-
-  const loadAllUsers = useCallback(
-    () => adminApi.getAllUsers().then((result) => result.users),
-    []
-  );
-
-  const { data: sponsoredCompanies, refetch: refetchCompanies } = useApiQuery(
-    loadSponsoredCompanies,
-    [user?.uid, isAdmin],
-    { enabled: canLoadAdminData }
-  );
-
-  const { data: sponsorshipStats } = useApiQuery(
-    loadSponsorshipStats,
-    [user?.uid, isAdmin],
-    { enabled: canLoadAdminData }
-  );
-
-  const { data: allUsers, refetch: refetchUsers } = useApiQuery(
-    loadAllUsers,
-    [user?.uid, isAdmin],
-    { enabled: canLoadAdminData }
-  );
-
-  const { mutate: addSponsoredCompany } = useApiMutation(
-    (variables: Record<string, unknown>) => {
-      const {
-        name,
-        aliases,
-        sponsorshipType,
-        description,
-        website,
-        industry,
-        createdBy,
-      } = variables;
-      return adminApi.addSponsoredCompany({
-        name: name as string,
-        aliases: aliases as string[],
-        sponsorshipType: sponsorshipType as string,
-        description: description as string | undefined,
-        website: website as string | undefined,
-        industry: industry as string | undefined,
-        createdBy: createdBy as string,
-      });
-    }
-  );
-
-  const handleAddCompany = async (data: {
-    name: string;
-    aliases: string[];
-    sponsorshipType: string;
-    description?: string;
-    website?: string;
-    industry?: string;
-    isActive: boolean;
-  }) => {
-    if (!userRecord) return;
-
-    // Check rate limit before making request
-    if (!addCompanyRateLimit.checkRateLimit()) {
-      return; // Rate limit error already shown by hook
-    }
-
-    try {
-      await addSponsoredCompany({
-        ...data,
-        createdBy: userRecord._id,
-      });
-
-      showSuccess("Company added!", "Sponsored company has been added successfully.");
-      setShowAddForm(false);
-      refetchCompanies();
-    } catch (error: unknown) {
-      if (
-        error instanceof Error &&
-        error.message.includes("Rate limit exceeded")
-      ) {
-        showError("Too many requests", "Please wait before adding another company.");
-      } else {
-        showError("Add failed", "Unable to add company. Please try again later.");
-      }
-      console.error("Error adding company:", error);
-    }
-  };
-
-  const handleUsersUpdate = () => {
-    adminApi.invalidateCache("admin-users");
-    refetchUsers();
-    refetchUserRecord();
-  };
 
   // Show loading state while authentication is initializing
   if (loading || !isInitialized) {
@@ -212,121 +94,111 @@ export default function AdminPage() {
 
   return (
     <AdminLayout title="Admin Panel">
-      {/* Tab Navigation */}
-      <div className="mb-6">
-        <div className="border-b border-border">
-          <nav className="-mb-px flex space-x-8">
-            <button
-              onClick={() => setActiveTab("companies")}
-              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === "companies"
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
-              }`}
-            >
-              Sponsored Companies
-            </button>
-            <button
-              onClick={() => setActiveTab("users")}
-              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === "users"
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
-              }`}
-            >
-              User Management
-            </button>
-            <button
-              onClick={() => setActiveTab("rules")}
-              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === "rules"
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
-              }`}
-            >
-              Sponsorship Rules
-            </button>
-          </nav>
-        </div>
+      {/* Quick Access Links */}
+      <div className="mt-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <a
+            href="/admin/users"
+            className="group block p-6 bg-card border border-border rounded-lg hover:border-primary/50 transition-all duration-200 hover:shadow-lg"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
+                <svg className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                </svg>
+              </div>
+              <svg className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-foreground mb-2">User Management</h3>
+            <p className="text-sm text-muted-foreground">
+              Manage user accounts, view analytics, and handle user permissions across the platform.
+            </p>
+          </a>
 
-        {/* Quick Access Links */}
-        <div className="mt-4 flex items-center justify-between">
-          <div className="flex gap-6">
+          <a
+            href="/admin/sponsors"
+            className="group block p-6 bg-card border border-border rounded-lg hover:border-primary/50 transition-all duration-200 hover:shadow-lg"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-lg">
+                <svg className="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+              </div>
+              <svg className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-foreground mb-2">Sponsor Management</h3>
             <p className="text-sm text-muted-foreground">
-              For comprehensive user analytics and management, visit the{" "}
-              <a
-                href="/admin/users"
-                className="text-primary hover:text-primary/80 font-medium"
-              >
-                User Dashboard →
-              </a>
+              Manage sponsored companies, view sponsorship analytics, and handle partnership data.
             </p>
+          </a>
+
+          <a
+            href="/admin/blog"
+            className="group block p-6 bg-card border border-border rounded-lg hover:border-primary/50 transition-all duration-200 hover:shadow-lg"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
+                <svg className="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </div>
+              <svg className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-foreground mb-2">Blog Management</h3>
             <p className="text-sm text-muted-foreground">
-              For detailed sponsor analytics and management, visit the{" "}
-              <a
-                href="/admin/sponsors"
-                className="text-primary hover:text-primary/80 font-medium"
-              >
-                Sponsor Dashboard →
-              </a>
+              Create, edit, and manage blog posts, articles, and content across the platform.
             </p>
-          </div>
+          </a>
+
+          <a
+            href="/admin/contact"
+            className="group block p-6 bg-card border border-border rounded-lg hover:border-primary/50 transition-all duration-200 hover:shadow-lg"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-orange-100 dark:bg-orange-900/20 rounded-lg">
+                <svg className="w-6 h-6 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <svg className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-foreground mb-2">Contact Management</h3>
+            <p className="text-sm text-muted-foreground">
+              View and manage contact form submissions, inquiries, and customer support messages.
+            </p>
+          </a>
+
+          <a
+            href="/admin/email-marketing"
+            className="group block p-6 bg-card border border-border rounded-lg hover:border-primary/50 transition-all duration-200 hover:shadow-lg"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-red-100 dark:bg-red-900/20 rounded-lg">
+                <svg className="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12l4-4m0 0l-4-4m4 4H12" />
+                </svg>
+              </div>
+              <svg className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-foreground mb-2">Email Marketing</h3>
+            <p className="text-sm text-muted-foreground">
+              Create and manage email campaigns, newsletters, and marketing automation workflows.
+            </p>
+          </a>
         </div>
       </div>
-
-      {/* Stats Cards - Show on all tabs */}
-      {sponsorshipStats && <AdminStats stats={sponsorshipStats} />}
-
-      {/* Companies Tab */}
-      {activeTab === "companies" && (
-        <div>
-          {/* Add New Company Button */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between">
-              <button
-                onClick={() => setShowAddForm(!showAddForm)}
-                className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-md text-sm font-medium"
-              >
-                {showAddForm ? "Cancel" : "Add Sponsored Company"}
-              </button>
-
-              {/* Rate limit status */}
-              <RateLimitInfo rateLimit={addCompanyRateLimit} />
-            </div>
-          </div>
-
-          {/* Add Company Form */}
-          {showAddForm && (
-            <AddCompanyForm
-              onSubmit={handleAddCompany}
-              onCancel={() => setShowAddForm(false)}
-            />
-          )}
-
-          {/* Sponsored Companies List */}
-          {sponsoredCompanies && <CompanyList companies={sponsoredCompanies} />}
-        </div>
-      )}
-
-      {/* Users Tab */}
-      {activeTab === "users" && (
-        <div>
-          {allUsers && userRecord && (
-            <UserManagement
-              users={allUsers}
-              currentUser={userRecord}
-              onUsersUpdate={handleUsersUpdate}
-            />
-          )}
-        </div>
-      )}
-
-      {/* Rules Tab */}
-      {activeTab === "rules" && (
-        <div>
-          <SponsorshipRules />
-        </div>
-      )}
     </AdminLayout>
   );
 }

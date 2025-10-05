@@ -1,7 +1,6 @@
-import { getAdminDb } from "@/firebase/admin";
+import { getAdminDb, FieldValue, Timestamp } from "@/firebase/admin";
 import { getStripeClient } from "@/lib/stripe";
 import { upsertSubscriptionFromStripe, ValidationError, DatabaseError } from "@/lib/subscriptions";
-import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import Stripe from "stripe";
 
 const db = getAdminDb();

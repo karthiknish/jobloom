@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   Plus,
@@ -13,6 +13,11 @@ import {
   Search,
 } from "lucide-react";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
+import { showError, showSuccess } from "@/components/ui/Toast";
+import { useApiQuery, useApiMutation } from "@/hooks/useApi";
+import { adminApi } from "@/utils/api/admin";
+import { AdminLayout } from "@/components/admin/AdminLayout";
+import { AdminAccessDenied } from "@/components/admin/AdminAccessDenied";
 import { FeatureGate } from "../../../components/UpgradePrompt";
 import { Button } from "@/components/ui/button";
 import {
@@ -51,8 +56,6 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { TiptapEditor } from "@/components/TiptapEditor";
-import { showSuccess, showError } from "@/components/ui/Toast";
-import { useApiQuery, useApiMutation } from "../../../hooks/useApi";
 import type { BlogPost } from "../../../types/api";
 
 type BlogPostPayload = {
@@ -65,7 +68,8 @@ type BlogPostPayload = {
 };
 
 export default function AdminBlogPage() {
-  const { user } = useFirebaseAuth();
+  const { user, isInitialized, loading } = useFirebaseAuth();
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -86,6 +90,27 @@ export default function AdminBlogPage() {
     status: "draft",
   });
 
+  // Check if user is admin
+  const loadUserRecord = useCallback(() => {
+    if (user && user.uid) {
+      return adminApi.getUserByFirebaseUid(user.uid);
+    }
+    return Promise.reject(new Error("No user"));
+  }, [user?.uid]);
+
+  const { data: userRecord, refetch: refetchUserRecord } = useApiQuery(
+    loadUserRecord,
+    [user?.uid],
+    { enabled: !!user?.uid }
+  );
+
+  // Check admin status
+  useEffect(() => {
+    if (userRecord) {
+      setIsAdmin(userRecord.isAdmin === true);
+    }
+  }, [userRecord]);
+
   // Helper function to get auth headers
   const getAuthHeaders = async (): Promise<Record<string, string>> => {
     if (!user) return {};
@@ -100,61 +125,85 @@ export default function AdminBlogPage() {
   const { data: posts, refetch: refetchPosts } = useApiQuery(
     async () => {
       const headers = await getAuthHeaders();
-      return fetch("/api/blog/admin/posts", { headers }).then((res) => res.json());
+      const res = await fetch("/api/blog/admin/posts", { headers });
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      return res.json();
     },
     [],
-    { enabled: !!user }
+    { enabled: !!user && isAdmin === true },
+    "admin-blog-posts"
   );
 
   const { data: stats } = useApiQuery(
     async () => {
       const headers = await getAuthHeaders();
-      return fetch("/api/blog/admin/stats", { headers }).then((res) => res.json());
+      const res = await fetch("/api/blog/admin/stats", { headers });
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      return res.json();
     },
     [],
-    { enabled: !!user }
+    { enabled: !!user && isAdmin === true },
+    "admin-blog-stats"
   );
 
   const createPostMutation = useApiMutation(async (data: BlogPostPayload) => {
     const headers = await getAuthHeaders();
-    return fetch("/api/blog/admin/posts", {
+    const res = await fetch("/api/blog/admin/posts", {
       method: "POST",
       headers,
       body: JSON.stringify(data),
-    }).then((res) => res.json());
+    });
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
+    }
+    return res.json();
   });
 
   const updatePostMutation = useApiMutation(
     async ({ postId, data }: { postId: string; data: Partial<BlogPostPayload> }) => {
       const headers = await getAuthHeaders();
-      return fetch(`/api/blog/admin/posts/${postId}`, {
+      const res = await fetch(`/api/blog/admin/posts/${postId}`, {
         method: "PUT",
         headers,
         body: JSON.stringify(data),
-      }).then((res) => res.json());
+      });
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      return res.json();
     }
   );
 
   const deletePostMutation = useApiMutation(async (postId: string) => {
     const headers = await getAuthHeaders();
-    return fetch(`/api/blog/admin/posts/${postId}`, {
+    const res = await fetch(`/api/blog/admin/posts/${postId}`, {
       method: "DELETE",
       headers,
-    }).then((res) => res.json());
+    });
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
+    }
+    return res.json();
   });
 
   // Filter posts based on search and status
   const filteredPosts =
-    posts?.filter((post: BlogPost) => {
-      const matchesSearch =
-        post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        post.excerpt.toLowerCase().includes(searchTerm.toLowerCase());
+    Array.isArray(posts)
+      ? posts.filter((post: BlogPost) => {
+          const matchesSearch =
+            post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            post.excerpt.toLowerCase().includes(searchTerm.toLowerCase());
 
-      const matchesStatus =
-        statusFilter === "all" || post.status === statusFilter;
+          const matchesStatus =
+            statusFilter === "all" || post.status === statusFilter;
 
-      return matchesSearch && matchesStatus;
-    }) || [];
+          return matchesSearch && matchesStatus;
+        })
+      : [];
 
   const handleCreatePost = async () => {
     try {
@@ -264,6 +313,21 @@ export default function AdminBlogPage() {
         </Card>
       </div>
     );
+  }
+
+  if (isAdmin === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Checking admin access...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return <AdminAccessDenied />;
   }
 
   return (

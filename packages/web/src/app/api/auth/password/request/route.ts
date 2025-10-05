@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 
-import { getAdminApp } from "@/firebase/admin";
+import { getAdminApp, getAdminAuth, getAdminDb, type UserRecord } from "@/firebase/admin";
 import { PASSWORD_RESET_SUBJECT, renderPasswordResetEmailHtml, renderPasswordResetEmailText } from "@/emails/passwordResetEmail";
 
 const resendApiKey = process.env.RESEND_API_KEY;
@@ -30,8 +30,8 @@ export async function POST(request: Request) {
     }
 
     const admin = getAdminApp();
-    const adminAuth = (await import("firebase-admin/auth")).getAuth(admin);
-    let userRecord: import("firebase-admin/auth").UserRecord | null = null;
+    const adminAuth = getAdminAuth();
+    let userRecord: UserRecord | null = null;
     try {
       userRecord = await adminAuth.getUserByEmail(email);
     } catch (error: any) {
@@ -56,7 +56,7 @@ export async function POST(request: Request) {
 
     const expiresAt = new Date(Date.now() + 1000 * 60 * 30);
 
-    const db = (await import("firebase-admin/firestore")).getFirestore(admin);
+    const db = getAdminDb();
     await db
       .collection("passwordResets")
       .doc(randomToken)

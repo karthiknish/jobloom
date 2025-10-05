@@ -1,7 +1,6 @@
-// Server-side Firebase Admin initialization and helpers
 import { initializeApp, getApps, cert, applicationDefault, type App } from "firebase-admin/app";
-import { getAuth } from "firebase-admin/auth";
-import { getFirestore, type Firestore } from "firebase-admin/firestore";
+import { getAuth, type DecodedIdToken, type UserRecord } from "firebase-admin/auth";
+import { getFirestore, type Firestore, type Query, type CollectionReference, FieldValue, Timestamp, FieldPath } from "firebase-admin/firestore";
 import { getStorage, type Storage } from "firebase-admin/storage";
 import { existsSync, readFileSync } from "fs";
 import { join } from "path";
@@ -9,12 +8,19 @@ import { join } from "path";
 let adminApp: App | undefined;
 
 function initAdminApp(): App {
-  if (adminApp) return adminApp;
+  if (adminApp) {
+    console.log('Returning existing admin app');
+    return adminApp;
+  }
+
   const existing = getApps();
   if (existing.length) {
+    console.log('Using existing Firebase app from getApps()');
     adminApp = existing[0]!;
     return adminApp;
   }
+
+  console.log('Initializing new admin app...');
 
 // Try different service account loading methods in order of preference
 const svcJson = process.env.FIREBASE_SERVICE_ACCOUNT;
@@ -23,8 +29,19 @@ const svcB64 = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64;
 try {
   let serviceAccount = null;
 
-  // Method 1: Base64 encoded service account JSON from env
-  if (svcB64) {
+  // Method 1: Load from hireall-4f106-firebase-adminsdk-fbsvc-2e91c28cd6.json (prioritize this)
+  try {
+    const keyPath = join(process.cwd(), "hireall-4f106-firebase-adminsdk-fbsvc-2e91c28cd6.json");
+    if (existsSync(keyPath)) {
+      serviceAccount = JSON.parse(readFileSync(keyPath, "utf8"));
+      console.log("Loaded service account from hireall-4f106-firebase-adminsdk-fbsvc-2e91c28cd6.json");
+    }
+  } catch (error) {
+    console.warn("Failed to load hireall-4f106-firebase-adminsdk-fbsvc-2e91c28cd6.json:", error);
+  }
+
+  // Method 2: Base64 encoded service account JSON from env
+  if (!serviceAccount && svcB64) {
     try {
       serviceAccount = JSON.parse(Buffer.from(svcB64, "base64").toString("utf8"));
       console.log('Loaded service account from FIREBASE_SERVICE_ACCOUNT_BASE64');
@@ -33,7 +50,7 @@ try {
     }
   }
 
-  // Method 2: Raw service account JSON from env
+  // Method 3: Raw service account JSON from env
   if (!serviceAccount && svcJson) {
     try {
       serviceAccount = JSON.parse(svcJson);
@@ -43,7 +60,7 @@ try {
     }
   }
 
-  // Method 3: Create service account from individual env vars
+  // Method 4: Create service account from individual env vars
   if (!serviceAccount && process.env.FIREBASE_PRIVATE_KEY) {
     try {
       serviceAccount = {
@@ -65,7 +82,7 @@ try {
     }
   }
 
-  // Method 4: Load from temp-key.json file (development fallback)
+  // Method 5: Load from temp-key.json file (development fallback)
   if (!serviceAccount) {
     try {
       const keyPath = join(process.cwd(), "temp-key.json");
@@ -78,21 +95,15 @@ try {
     }
   }
 
-  // Method 5: Load from hireall-4f106-firebase-adminsdk-fbsvc-2e91c28cd6.json
-  if (!serviceAccount) {
-    try {
-      const keyPath = join(process.cwd(), "hireall-4f106-firebase-adminsdk-fbsvc-2e91c28cd6.json");
-      if (existsSync(keyPath)) {
-        serviceAccount = JSON.parse(readFileSync(keyPath, "utf8"));
-        console.log("Loaded service account from hireall-4f106-firebase-adminsdk-fbsvc-2e91c28cd6.json");
-      }
-    } catch (error) {
-      console.warn("Failed to load hireall-4f106-firebase-adminsdk-fbsvc-2e91c28cd6.json:", error);
-    }
-  }
-
   // Initialize with service account if available
   if (serviceAccount) {
+    console.log('Service account loaded successfully:', {
+      projectId: serviceAccount.project_id,
+      clientEmail: serviceAccount.client_email,
+      hasPrivateKey: !!serviceAccount.private_key,
+      privateKeyLength: serviceAccount.private_key ? serviceAccount.private_key.length : 0,
+    });
+
     try {
       adminApp = initializeApp({
         credential: cert(serviceAccount),
@@ -164,19 +175,71 @@ export async function verifyIdToken(token: string): Promise<import("firebase-adm
 }
 
 export async function isUserAdmin(userId: string): Promise<boolean> {
+  // Validate input
+  if (!userId || typeof userId !== 'string' || userId.trim() === '') {
+    console.error('Invalid userId provided to isUserAdmin:', userId);
+    return false;
+  }
+
   try {
     const db = getAdminDb();
-    const userDoc = await db.collection("users").doc(userId).get();
-    if (!userDoc.exists) return false;
+    if (!db) {
+      console.error('Failed to get admin database instance');
+      return false;
+    }
 
+    const userDocRef = db.collection("users").doc(userId.trim());
+    const userDoc = await userDocRef.get();
+
+    // Check if document exists
+    if (!userDoc.exists) {
+      console.log(`User document does not exist for userId: ${userId}`);
+      return false;
+    }
+
+    // Get document data
     const userData = userDoc.data();
-    return userData?.isAdmin === true;
-  } catch {
+    if (!userData) {
+      console.log(`User document exists but has no data for userId: ${userId}`);
+      return false;
+    }
+
+    // Check admin status
+    const isAdmin = userData.isAdmin === true;
+    console.log(`User ${userId} admin status: ${isAdmin}`);
+    return isAdmin;
+
+  } catch (error) {
+    console.error("Error checking admin status for user", userId, ":", error);
+
+    // If it's a permission error, log more details
+    if (error && typeof error === 'object' && 'code' in error) {
+      const firebaseError = error as { code: string; message: string };
+      console.error("Firebase error details:", {
+        code: firebaseError.code,
+        message: firebaseError.message,
+        userId
+      });
+    }
+
     return false;
   }
 }
 
 export function initializeAdmin(): App {
   return initAdminApp();
+}
+
+// Re-export commonly used Firebase Admin SDK functions for centralized access
+export { FieldValue, Timestamp, FieldPath };
+export type { DecodedIdToken, Firestore, UserRecord, Query, CollectionReference };
+
+// Convenience functions for getting Firebase Admin services
+export function getAdminAuth() {
+  return getAuth(getAdminApp());
+}
+
+export function getAdminFirestore() {
+  return getFirestore(getAdminApp());
 }
 

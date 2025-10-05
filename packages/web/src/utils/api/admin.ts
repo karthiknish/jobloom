@@ -10,6 +10,10 @@ import {
   getDocs,
   addDoc,
   updateDoc,
+  query,
+  limit,
+  where,
+  orderBy,
 } from "firebase/firestore";
 import { getDb, getAuthClient } from "@/firebase/client";
 import { ApiError } from "../../services/api/appApi";
@@ -383,14 +387,70 @@ export const adminApi = {
 
   // Use getUserByFirebaseUid for user operations
 
-  getAllSponsoredCompanies: async (): Promise<SponsoredCompany[]> => {
+  getAllSponsoredCompanies: async (options?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    industry?: string;
+    sponsorshipType?: string;
+    status?: 'active' | 'inactive' | 'all';
+  }): Promise<{ companies: SponsoredCompany[]; total: number; hasMore: boolean }> => {
     // Verify admin access before fetching sponsored companies
     await adminApi.verifyAdminAccess();
 
     const db = getDb();
     if (!db) throw new Error("Firestore not initialized");
-    const snap = await getDocs(collection(db, "sponsoredCompanies"));
-    return snap.docs.map((d) => {
+
+    const { page = 1, limit: pageLimit = 50, search, industry, sponsorshipType, status } = options || {};
+
+    // Build query
+    let queryRef = collection(db, "sponsors");
+
+    // Apply filters
+    const constraints: any[] = [];
+
+    if (search && search.trim()) {
+      // For search, we'll need to filter client-side since Firestore doesn't support full-text search easily
+      // But we can still apply other filters server-side
+    }
+
+    if (industry && industry !== 'all') {
+      constraints.push(where('industry', '==', industry));
+    }
+
+    if (sponsorshipType && sponsorshipType !== 'all') {
+      constraints.push(where('sponsorshipType', '==', sponsorshipType));
+    }
+
+    if (status && status !== 'all') {
+      if (status === 'active') {
+        constraints.push(where('isActive', '!=', false));
+      } else if (status === 'inactive') {
+        constraints.push(where('isActive', '==', false));
+      }
+    }
+
+    // Add ordering and pagination
+    constraints.push(orderBy('createdAt', 'desc'));
+
+    // If search is involved, we need to load more data for client-side filtering
+    // Firestore has a default limit of ~1000 documents, but we want to ensure we can search effectively
+    const effectiveLimit = search && search.trim()
+      ? Math.max(1000, page * pageLimit) // Load at least 1000 or enough for pagination
+      : pageLimit;
+
+    constraints.push(limit(effectiveLimit));
+
+    if (page > 1 && !search) {
+      // For pagination without search, we can optimize by loading exactly what's needed
+      constraints.pop(); // Remove limit
+      constraints.push(limit(page * pageLimit));
+    }
+
+    const q = query(queryRef, ...constraints);
+    const snap = await getDocs(q);
+
+    let companies = snap.docs.map((d) => {
       const data = d.data() as FireCompany;
       return {
         _id: d.id,
@@ -405,28 +465,122 @@ export const adminApi = {
         isActive: data.isActive ?? true,
       } as unknown as SponsoredCompany;
     });
+
+    // Apply client-side search if needed
+    if (search && search.trim()) {
+      const searchLower = search.toLowerCase();
+      companies = companies.filter(company =>
+        company.name.toLowerCase().includes(searchLower) ||
+        company.description?.toLowerCase().includes(searchLower) ||
+        company.aliases.some(alias => alias.toLowerCase().includes(searchLower))
+      );
+    }
+
+    // Apply pagination slicing for client-side pagination
+    const startIndex = (page - 1) * pageLimit;
+    const endIndex = startIndex + pageLimit;
+    const paginatedCompanies = companies.slice(startIndex, endIndex);
+
+    return {
+      companies: paginatedCompanies,
+      total: companies.length,
+      hasMore: endIndex < companies.length
+    };
+  },
+
+  getAllSponsoredCompaniesForExport: async (options?: {
+    search?: string;
+    industry?: string;
+    sponsorshipType?: string;
+    status?: 'active' | 'inactive' | 'all';
+  }): Promise<SponsoredCompany[]> => {
+    // Verify admin access before fetching sponsored companies
+    await adminApi.verifyAdminAccess();
+
+    const db = getDb();
+    if (!db) throw new Error("Firestore not initialized");
+
+    const { search, industry, sponsorshipType, status } = options || {};
+
+    // Build query
+    let queryRef = collection(db, "sponsors");
+
+    // Apply filters
+    const constraints: any[] = [];
+
+    if (industry && industry !== 'all') {
+      constraints.push(where('industry', '==', industry));
+    }
+
+    if (sponsorshipType && sponsorshipType !== 'all') {
+      constraints.push(where('sponsorshipType', '==', sponsorshipType));
+    }
+
+    if (status && status !== 'all') {
+      if (status === 'active') {
+        constraints.push(where('isActive', '!=', false));
+      } else if (status === 'inactive') {
+        constraints.push(where('isActive', '==', false));
+      }
+    }
+
+    // Add ordering (no pagination for export)
+    constraints.push(orderBy('createdAt', 'desc'));
+
+    const q = query(queryRef, ...constraints);
+    const snap = await getDocs(q);
+
+    let companies = snap.docs.map((d) => {
+      const data = d.data() as FireCompany;
+      return {
+        _id: d.id,
+        name: data.name,
+        aliases: Array.isArray(data.aliases) ? data.aliases : [],
+        sponsorshipType: data.sponsorshipType ?? "sponsored",
+        description: data.description ?? "",
+        website: data.website ?? "",
+        industry: data.industry ?? "",
+        createdAt: data.createdAt ?? Date.now(),
+        updatedAt: data.updatedAt ?? Date.now(),
+        isActive: data.isActive ?? true,
+      } as unknown as SponsoredCompany;
+    });
+
+    // Apply client-side search if needed
+    if (search && search.trim()) {
+      const searchLower = search.toLowerCase();
+      companies = companies.filter(company =>
+        company.name.toLowerCase().includes(searchLower) ||
+        company.description?.toLowerCase().includes(searchLower) ||
+        company.aliases.some(alias => alias.toLowerCase().includes(searchLower))
+      );
+    }
+
+    return companies;
   },
 
   getSponsorshipStats: async (): Promise<SponsorshipStats> => {
     // Verify admin access before fetching sponsorship stats
     await adminApi.verifyAdminAccess();
 
-    const companies = await adminApi.getAllSponsoredCompanies();
-    const industryStats: Record<string, number> = {};
-    const sponsorshipTypeStats: Record<string, number> = {};
-    type MinimalCompany = { industry?: string; sponsorshipType?: string };
-    companies.forEach((c) => {
-      const mc = c as unknown as MinimalCompany;
-      const ind = mc.industry || "Unknown";
-      industryStats[ind] = (industryStats[ind] ?? 0) + 1;
-      const type = mc.sponsorshipType || "sponsored";
-      sponsorshipTypeStats[type] = (sponsorshipTypeStats[type] ?? 0) + 1;
+    // Call server-side API for efficient stats calculation
+    const auth = getAuthClient();
+    if (!auth?.currentUser) {
+      throw new Error("Authentication required");
+    }
+
+    const token = await auth.currentUser.getIdToken();
+    const response = await fetch("/api/app/sponsorship/stats", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     });
-    return {
-      totalSponsoredCompanies: companies.length,
-      industryStats,
-      sponsorshipTypeStats,
-    };
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return response.json();
   },
 
   addSponsoredCompany: async (data: {

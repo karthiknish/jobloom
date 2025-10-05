@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyIdToken, getAdminDb } from "@/firebase/admin";
-import * as admin from "firebase-admin";
+import { verifyIdToken, getAdminDb, Timestamp } from "@/firebase/admin";
 import { SUBSCRIPTION_LIMITS, Subscription, SubscriptionPlan } from "@/types/api";
 import { ValidationError, DatabaseError } from "@/lib/subscriptions";
 import { checkServerRateLimit } from "@/lib/rateLimiter";
@@ -84,8 +83,8 @@ export async function GET(request: NextRequest) {
         const data = subscriptionDoc.data() as Record<string, any> | undefined;
 
         if (data) {
-          const toMillis = (value: admin.firestore.Timestamp | number | null | undefined) => {
-            if (value instanceof admin.firestore.Timestamp) {
+          const toMillis = (value: Timestamp | number | null | undefined) => {
+            if (value instanceof Timestamp) {
               return value.toMillis();
             }
             return typeof value === "number" ? value : null;
@@ -138,7 +137,7 @@ export async function GET(request: NextRequest) {
     // CV analyses usage
     const cvAnalysesQuery = await db.collection("cvAnalyses")
       .where("userId", "==", userId)
-      .where("createdAt", ">=", admin.firestore.Timestamp.fromDate(startOfMonth))
+      .where("createdAt", ">=", Timestamp.fromDate(startOfMonth))
       .get();
 
     // Application usage (simplified - just count total for now)

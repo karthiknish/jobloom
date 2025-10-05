@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getStripeClient, getPriceIdForPlan, getStripeSuccessUrl, getStripeCancelUrl } from "@/lib/stripe";
-import { verifyIdToken, getAdminDb } from "@/firebase/admin";
+import { verifyIdToken, getAdminDb, FieldValue, Timestamp, type Firestore } from "@/firebase/admin";
 import { verifySessionFromRequest } from "@/lib/auth/session";
-import { Firestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 
 const db: Firestore = getAdminDb();
 

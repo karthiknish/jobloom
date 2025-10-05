@@ -4,6 +4,10 @@ import { ExtensionSecurityLogger } from "./security";
 import { put } from "./apiClient";
 
 // Content script for the web app to handle authentication communication
+let authSuccessSent = false; // Prevent duplicate auth success messages
+let authCheckInterval: number | null = null;
+let lastUserId: string | null = null;
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   // Only allow specific actions
   if (request.action === "getUserId") {
@@ -94,29 +98,46 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   return false;
 });
 
-// Also try to detect successful authentication by monitoring URL changes
-let lastUrl = location.href;
-new MutationObserver(() => {
-  const url = location.href;
-  if (url !== lastUrl) {
-    lastUrl = url;
-
-    // If we're on a dashboard or account page, try to get user ID and notify extension
-    if (url.includes("/dashboard") || url.includes("/account")) {
-      setTimeout(() => {
-        // Give the page time to load user data
-        chrome.runtime
-          .sendMessage({
-            action: "authSuccess",
-            url: url,
-          })
-          .catch((error) => {
-            console.debug("Auth success notification failed; extension context may be invalid", error);
-          });
-      }, 1000);
-    }
+// Optimized auth success detection with debouncing
+function notifyAuthSuccess(userId: string) {
+  if (authSuccessSent || lastUserId === userId) {
+    return; // Already sent or same user
   }
-}).observe(document, { subtree: true, childList: true });
+
+  authSuccessSent = true;
+  lastUserId = userId;
+
+  console.log("Authentication successful, notifying extension with userId:", userId);
+
+  chrome.runtime.sendMessage({ action: "authSuccess", userId }).catch((error) => {
+    console.debug("Auth success notification failed; extension context may be invalid", error);
+    // Reset flag on failure so we can try again
+    authSuccessSent = false;
+  });
+
+  // Also persist directly to storage
+  chrome.storage.sync.set({ userId }).catch((error) => {
+    console.debug("Failed to persist userId to storage", error);
+  });
+}
+
+// Single URL change observer with debouncing
+let urlCheckTimeout: number | null = null;
+const observer = new MutationObserver(() => {
+  if (urlCheckTimeout) {
+    clearTimeout(urlCheckTimeout);
+  }
+
+  urlCheckTimeout = window.setTimeout(() => {
+    const url = location.href;
+    // Only check for auth success on relevant pages
+    if (url.includes("/dashboard") || url.includes("/account") || url.includes("/sign-in")) {
+      checkForAuthSuccess();
+    }
+  }, 500); // Debounce URL checks
+});
+
+observer.observe(document, { subtree: true, childList: true });
 
 // Listen for messages from the web app
 window.addEventListener("message", (event) => {
@@ -125,7 +146,6 @@ window.addEventListener("message", (event) => {
 
   // Handle Firebase authentication success message
   if (event.data.type === "FIREBASE_AUTH_SUCCESS") {
-    // Try to get user ID and notify extension
     setTimeout(() => {
       let userId: string | null = null;
       if ((window as any).__firebase_user?.id) {
@@ -140,9 +160,7 @@ window.addEventListener("message", (event) => {
       }
 
       if (userId) {
-        chrome.runtime.sendMessage({ action: "authSuccess", userId });
-        // Also persist directly
-        chrome.storage.sync.set({ userId });
+        notifyAuthSuccess(userId);
       }
     }, 1000);
   }
@@ -207,41 +225,70 @@ window.addEventListener("message", (event) => {
   }
 });
 
-// After existing listener for onMessage, add auto-detection
+// Optimized auth checking function
+function checkForAuthSuccess(): Promise<void> {
+  return new Promise((resolve) => {
+    let userId: string | null = null;
 
-// --- Auto-detect Firebase user and notify background ---
-function trySendUserId() {
-  let userId: string | null = null;
-  const w: any = window;
-  if (w.__firebase_user?.id) {
-    userId = String(w.__firebase_user.id);
-  } else {
-    try {
-      const s = localStorage.getItem("__firebase_user");
-      if (s) userId = JSON.parse(s)?.id ?? null;
-    } catch (parseError) {
-      ExtensionSecurityLogger.log('Error parsing Firebase user data during auto-sync', parseError);
+    // Check Firebase user object first
+    if ((window as any).__firebase_user?.id) {
+      userId = String((window as any).__firebase_user.id);
     }
-  }
-  if (userId) {
-    chrome.runtime.sendMessage({ action: "authSuccess", userId });
-    // Also persist directly
-    chrome.storage.sync.set({ userId });
-    return true;
-  }
-  return false;
+
+    // Check localStorage
+    if (!userId) {
+      try {
+        const firebaseUser = localStorage.getItem("__firebase_user");
+        if (firebaseUser) {
+          const data = JSON.parse(firebaseUser);
+          userId = data?.id ? String(data.id) : null;
+        }
+      } catch (error) {
+        // Ignore parsing errors
+      }
+    }
+
+    if (userId) {
+      notifyAuthSuccess(userId);
+    }
+
+    resolve();
+  });
 }
 
-// initial attempt after load
-setTimeout(() => {
-  if (!trySendUserId()) {
-    // fallback polling for 5s
-    let attempts = 0;
-    const interval = setInterval(() => {
-      attempts++;
-      if (trySendUserId() || attempts > 10) {
-        clearInterval(interval);
-      }
-    }, 500);
+// Single initialization check with reduced polling
+function initializeAuthDetection() {
+  // Initial check
+  checkForAuthSuccess();
+
+  // Reduced polling frequency - only check every 2 seconds instead of every 500ms
+  authCheckInterval = window.setInterval(() => {
+    checkForAuthSuccess();
+  }, 2000);
+
+  // Stop polling after 30 seconds to avoid unnecessary checks
+  setTimeout(() => {
+    if (authCheckInterval) {
+      clearInterval(authCheckInterval);
+      authCheckInterval = null;
+    }
+  }, 30000);
+}
+
+// Initialize when DOM is ready
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initializeAuthDetection);
+} else {
+  initializeAuthDetection();
+}
+
+// Cleanup on page unload
+window.addEventListener("beforeunload", () => {
+  if (authCheckInterval) {
+    clearInterval(authCheckInterval);
   }
-}, 1000);
+  if (urlCheckTimeout) {
+    clearTimeout(urlCheckTimeout);
+  }
+  observer.disconnect();
+});

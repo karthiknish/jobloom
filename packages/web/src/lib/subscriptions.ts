@@ -1,6 +1,5 @@
 import type Stripe from "stripe";
-import { getAdminDb } from "@/firebase/admin";
-import { FieldValue, Timestamp } from "firebase-admin/firestore";
+import { getAdminDb, FieldValue, Timestamp } from "@/firebase/admin";
 import { SubscriptionPlan } from "@/types/api";
 
 export type SubscriptionStatus = "active" | "inactive" | "cancelled" | "past_due";

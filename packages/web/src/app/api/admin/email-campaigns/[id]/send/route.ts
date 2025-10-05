@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb } from "@/firebase/admin";
-import { getAuth } from "firebase-admin/auth";
+import { getAdminAuth } from "@/firebase/admin";
 import { sendBulkEmails, personalizeTemplate, personalizeSubject } from "@/lib/resend";
 
 export async function POST(
@@ -15,7 +15,7 @@ export async function POST(
     }
 
     const token = authHeader.substring(7);
-    const decodedToken = await getAuth().verifyIdToken(token);
+    const decodedToken = await getAdminAuth().verifyIdToken(token);
     
     // Check if user is admin
     const db = getAdminDb();

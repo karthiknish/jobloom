@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyIdToken, getAdminDb, getAdminStorage } from "@/firebase/admin";
-import { getAuth } from "firebase-admin/auth";
+import { verifyIdToken, getAdminDb, getAdminStorage, getAdminAuth } from "@/firebase/admin";
 
 const db = getAdminDb();
-const auth = getAuth();
+const auth = getAdminAuth();
 const storageBucketName = process.env.FIREBASE_STORAGE_BUCKET || process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
 
 function getStorageBucket() {

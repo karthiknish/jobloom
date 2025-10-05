@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   Mail,
@@ -12,6 +12,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { showSuccess, showError } from "@/components/ui/Toast";
+import { useApiQuery } from "@/hooks/useApi";
+import { adminApi } from "@/utils/api/admin";
+import { AdminAccessDenied } from "@/components/admin/AdminAccessDenied";
 import { EmailTemplate, EmailCampaign } from "@/config/emailTemplates";
 
 // Import components
@@ -22,12 +25,34 @@ import { EmailList } from "@/components/admin/email-marketing/EmailList";
 
 export default function EmailMarketingPage() {
   const { user } = useFirebaseAuth();
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [activeTab, setActiveTab] = useState("templates");
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [campaigns, setCampaigns] = useState<EmailCampaign[]>([]);
   const [emailList, setEmailList] = useState<any[]>([]);
   const [emailListStats, setEmailListStats] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
+
+  // Check if user is admin
+  const loadUserRecord = useCallback(() => {
+    if (user && user.uid) {
+      return adminApi.getUserByFirebaseUid(user.uid);
+    }
+    return Promise.reject(new Error("No user"));
+  }, [user?.uid]);
+
+  const { data: userRecord } = useApiQuery(
+    loadUserRecord,
+    [user?.uid],
+    { enabled: !!user?.uid }
+  );
+
+  // Check admin status
+  useEffect(() => {
+    if (userRecord) {
+      setIsAdmin(userRecord.isAdmin === true);
+    }
+  }, [userRecord]);
 
   // Fetch data
   useEffect(() => {
@@ -151,6 +176,21 @@ export default function EmailMarketingPage() {
         </div>
       </div>
     );
+  }
+
+  if (isAdmin === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Checking admin access...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return <AdminAccessDenied />;
   }
 
   return (

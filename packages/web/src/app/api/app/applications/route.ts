@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyIdToken } from "@/firebase/admin";
 import { verifySessionFromRequest } from "@/lib/auth/session";
 import { createFirestoreCollection } from "@/firebase/firestore";
-import { getFirestore } from "firebase-admin/firestore";
+import { getAdminFirestore } from "@/firebase/admin";
 import {
   withErrorHandling,
   validateRequiredFields,
