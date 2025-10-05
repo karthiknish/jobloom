@@ -1,11 +1,10 @@
 /// <reference types="chrome" />
 import { DEFAULT_WEB_APP_URL, sanitizeBaseUrl } from "./constants";
-import { getAuthInstance, getGoogleProvider } from "./firebase";
+import { getAuthInstance } from "./firebase";
 import { get } from "./apiClient";
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  signInWithPopup,
   onAuthStateChanged,
   signOut as firebaseSignOut,
 } from "firebase/auth";
@@ -44,8 +43,8 @@ function showToast(
   if (!root) return;
   
   // Remove existing toasts of the same type to avoid stacking
-  const existingToasts = root.querySelectorAll(`.toast.${type}`);
-  existingToasts.forEach(toast => {
+  const existingToasts = root.querySelectorAll<HTMLElement>(`.toast.${type}`);
+  existingToasts.forEach((toast) => {
     toast.style.animation = "toast-out 150ms ease-in forwards";
     setTimeout(() => toast.remove(), 160);
   });
@@ -93,13 +92,14 @@ function showToast(
 // Helper function to add micro-interactions to elements
 function addMicroInteractions() {
   // Add ripple effect to buttons
-  document.querySelectorAll('.action-btn, .auth-btn, .job-action-btn').forEach(btn => {
-    btn.addEventListener('click', function(e) {
+  document.querySelectorAll<HTMLButtonElement>('.action-btn, .auth-btn, .job-action-btn').forEach((button) => {
+    button.addEventListener('click', (event) => {
+      const mouseEvent = event as MouseEvent;
       const ripple = document.createElement('span');
-      const rect = this.getBoundingClientRect();
+      const rect = button.getBoundingClientRect();
       const size = Math.max(rect.width, rect.height);
-      const x = e.clientX - rect.left - size / 2;
-      const y = e.clientY - rect.top - size / 2;
+      const x = mouseEvent.clientX - rect.left - size / 2;
+      const y = mouseEvent.clientY - rect.top - size / 2;
       
       ripple.style.cssText = `
         position: absolute;
@@ -114,23 +114,23 @@ function addMicroInteractions() {
         pointer-events: none;
       `;
       
-      this.style.position = 'relative';
-      this.style.overflow = 'hidden';
-      this.appendChild(ripple);
+      button.style.position = 'relative';
+      button.style.overflow = 'hidden';
+      button.appendChild(ripple);
       
       setTimeout(() => ripple.remove(), 600);
     });
   });
   
   // Add hover effects to stat cards
-  document.querySelectorAll('.stat-card').forEach(card => {
-    card.addEventListener('mouseenter', function() {
-      this.classList.add('pulse-once');
+  document.querySelectorAll<HTMLElement>('.stat-card').forEach((card) => {
+    card.addEventListener('mouseenter', () => {
+      card.classList.add('pulse-once');
     });
   });
   
   // Add focus styles for better accessibility
-  document.querySelectorAll('button, input, select').forEach(element => {
+  document.querySelectorAll<HTMLElement>('button, input, select').forEach((element) => {
     element.classList.add('focus-ring');
   });
 }
@@ -193,6 +193,10 @@ document.addEventListener("DOMContentLoaded", () => {
   setupTabNavigation();
   setupJobFilters();
   setupSettingsControls();
+  
+  // Initialize micro-interactions
+  addRippleAnimation();
+  setTimeout(addMicroInteractions, 100); // Delay to ensure DOM is ready
 
   // Check authentication status (throttled to prevent flickering)
   // Firebase auth state observer
@@ -628,8 +632,14 @@ document.addEventListener("DOMContentLoaded", () => {
     return icons[status] || createSVGString("clipboardPlus", 12);
   }
 
-  // Enhanced job status update function
+  // Enhanced job status update function with better feedback
   async function changeJobStatus(jobId: string, newStatus: string) {
+    const btn = document.getElementById(`status-btn-${jobId}`) as HTMLButtonElement | null;
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Updating...';
+    }
+    
     try {
       const { JobBoardManager } = await import("./addToBoard");
       const result = await JobBoardManager.updateJobStatus(
@@ -638,7 +648,19 @@ document.addEventListener("DOMContentLoaded", () => {
       );
 
       if (result.success) {
-        showToast(`Job marked as ${newStatus}!`, { type: "success" });
+        showToast(
+          `Job marked as ${newStatus}!`, 
+          { 
+            type: "success",
+            action: {
+              text: "View Jobs",
+              handler: () => {
+                const jobsTab = document.querySelector('.nav-tab[data-tab="jobs"]') as HTMLElement;
+                jobsTab?.click();
+              }
+            }
+          }
+        );
         // Reload jobs to reflect changes
         setTimeout(() => loadJobs(), 500);
       } else {
@@ -647,6 +669,11 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (error) {
       console.error("Error updating job status:", error);
       showToast("Unable to update job status", { type: "error" });
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
+      }
     }
   }
 
@@ -673,20 +700,44 @@ document.addEventListener("DOMContentLoaded", () => {
   (window as any).switchToDashboard = switchToDashboard;
 
   autofillBtn?.addEventListener("click", () => {
+    // Add loading state
+    const originalContent = autofillBtn.innerHTML;
+    autofillBtn.classList.add('loading');
+    autofillBtn.querySelector('.action-content h3')!.textContent = 'Preparing Autofill...';
+    
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs[0]?.id) {
         chrome.storage.sync.get(["autofillProfile"], (result) => {
           if (!result.autofillProfile) {
-            // Show toast to configure profile first
-            showToast("Please set up your profile information in Settings first.", {
-              type: "warning",
-              duration: 3000,
-            });
+            // Restore button state
+            autofillBtn.innerHTML = originalContent;
+            autofillBtn.classList.remove('loading');
+            
+            // Show enhanced toast with action
+            showToast(
+              "Please set up your profile information in Settings first.",
+              {
+                type: "warning",
+                duration: 4000,
+                action: {
+                  text: "Open Settings",
+                  handler: () => {
+                    const settingsTab = document.querySelector('.nav-tab[data-tab="settings"]') as HTMLElement;
+                    settingsTab?.click();
+                  }
+                }
+              }
+            );
             return;
           }
 
-          chrome.tabs.sendMessage(tabs[0].id!, { action: "triggerAutofill" });
-          window.close();
+          // Show success feedback
+          showToast("Autofill activated! Switching to job page...", { type: "success" });
+          
+          setTimeout(() => {
+            chrome.tabs.sendMessage(tabs[0].id!, { action: "triggerAutofill" });
+            window.close();
+          }, 500);
         });
       }
     });
@@ -800,43 +851,29 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  googleBtn?.addEventListener("click", async () => {
+  googleBtn?.addEventListener("click", () => {
     clearAuthMessages();
     googleBtn.disabled = true;
     googleBtn.textContent = "Opening Google...";
-    
-    try {
-      const result = await signInWithPopup(auth, getGoogleProvider());
-      console.log("Google sign-in successful:", result.user?.email);
-      showAuthSuccess("Signed in with Google successfully");
-    } catch (err: any) {
-      console.error("Google sign-in error:", err);
-      
-      let errorMessage = "Google sign-in failed";
-      
-      // Handle specific Google sign-in errors
-      switch (err.code) {
-        case "auth/popup-closed-by-user":
-          errorMessage = "Sign-in popup was closed before completion";
-          break;
-        case "auth/popup-blocked":
-          errorMessage = "Sign-in popup was blocked by the browser";
-          break;
-        case "auth/cancelled-popup-request":
-          errorMessage = "Sign-in was cancelled";
-          break;
-        case "auth/network-request-failed":
-          errorMessage = "Network error. Please check your connection";
-          break;
-        default:
-          errorMessage = err.message || errorMessage;
-      }
-      
-      showAuthError(errorMessage);
-    } finally {
-      googleBtn.textContent = "Continue with Google";
-      googleBtn.disabled = false;
-    }
+
+    chrome.storage.sync.get(["webAppUrl"], (result) => {
+      const baseUrl = sanitizeBaseUrl(result.webAppUrl || DEFAULT_WEB_APP_URL);
+      const targetUrl = `${baseUrl}/sign-in?from=extension&provider=google`;
+
+      chrome.tabs.create({ url: targetUrl }, () => {
+        if (chrome.runtime.lastError) {
+          console.error("Failed to open Google sign-in tab:", chrome.runtime.lastError);
+          showAuthError("Unable to open Google sign-in tab. Please try again.");
+        } else {
+          showToast("Complete Google sign-in in the newly opened tab", {
+            type: "info",
+          });
+        }
+
+        googleBtn.textContent = "Continue with Google";
+        googleBtn.disabled = false;
+      });
+    });
   });
 
   function showAuthError(msg: string) {
@@ -1085,7 +1122,7 @@ async function checkUKEligibility(job: any): Promise<boolean | null> {
 async function checkJobSponsor(jobId: string, companyName: string) {
   const sponsorBtn = document.getElementById(
     `sponsor-btn-${jobId}`
-  ) as HTMLButtonElement;
+  ) as HTMLButtonElement | null;
   const sponsorStatus = document.getElementById(
     `sponsor-status-${jobId}`
   ) as HTMLDivElement;

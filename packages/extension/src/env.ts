@@ -1,5 +1,10 @@
 type EnvRecord = Record<string, string | undefined>;
 
+declare const __EXTENSION_BUILD_ENV__: EnvRecord | undefined;
+
+const buildTimeEnv: EnvRecord =
+  typeof __EXTENSION_BUILD_ENV__ !== "undefined" ? __EXTENSION_BUILD_ENV__ : {};
+
 const FALLBACKS: EnvRecord = {
   WEB_APP_URL: "https://hireall.app",
 };
@@ -31,7 +36,8 @@ function normalizeValue(value: string | undefined): string | undefined {
 }
 
 export function getEnv(key: string, fallback?: string): string | undefined {
-  const value = normalizeValue(runtimeEnv[key]);
+  const candidates = [runtimeEnv[key], buildTimeEnv[key]];
+  const value = normalizeValue(candidates.find((v) => normalizeValue(v) !== undefined));
   if (value) {
     return value;
   }

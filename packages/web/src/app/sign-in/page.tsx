@@ -18,6 +18,7 @@ function SignInInner() {
   const {
     signIn,
     signInWithGoogle,
+    signInWithGoogleRedirect,
     loading: authLoading,
     user,
     isInitialized,
@@ -33,6 +34,7 @@ function SignInInner() {
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [lastAuthMethod, setLastAuthMethod] = useState<string | null>(null);
 
+  const fromExtension = search.get("from") === "extension";
   const redirectUrlComplete = search.get("redirect_url") || "/dashboard";
 
   // Get last used auth method
@@ -80,25 +82,37 @@ function SignInInner() {
 
   // Auto-trigger Google sign-in if requested via query
   useEffect(() => {
-    const qp = search;
-    const provider = qp.get("provider");
-    const googleFlag = qp.get("google");
-    if (
-      (provider === "google" || googleFlag === "1") &&
-      typeof window !== "undefined"
-    ) {
-      (async () => {
-        try {
+    if (typeof window === "undefined") return;
+
+    const providerParam = search.get("provider");
+    const googleFlag = search.get("google");
+    const shouldTriggerGoogle =
+      providerParam === "google" || googleFlag === "1";
+
+    if (!shouldTriggerGoogle) {
+      return;
+    }
+
+    setLoading(true);
+
+    (async () => {
+      try {
+        if (fromExtension) {
+          await signInWithGoogleRedirect();
+        } else {
           await signInWithGoogle();
           await refreshToken();
           router.replace(redirectUrlComplete);
-        } catch {
-          // Ignore; user can use the button manually
         }
-      })();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+      } catch {
+        setLoading(false);
+      } finally {
+        if (!fromExtension) {
+          setLoading(false);
+        }
+      }
+    })();
+  }, [fromExtension, redirectUrlComplete, refreshToken, router, search, signInWithGoogle, signInWithGoogleRedirect]);
 
   useEffect(() => {
     if (!isInitialized) return;
@@ -170,14 +184,23 @@ function SignInInner() {
     setError(null);
     setLoading(true);
     try {
-      await signInWithGoogle();
-      await refreshToken();
-      router.replace(redirectUrlComplete);
+      if (fromExtension) {
+        await signInWithGoogleRedirect();
+      } else {
+        await signInWithGoogle();
+        await refreshToken();
+        router.replace(redirectUrlComplete);
+      }
     } catch (err: unknown) {
       const e = err as { message?: string };
       setError(e?.message || "Google sign-in failed");
+      if (fromExtension) {
+        setLoading(false);
+      }
     } finally {
-      setLoading(false);
+      if (!fromExtension) {
+        setLoading(false);
+      }
     }
   }
 

@@ -68,16 +68,19 @@ module.exports = {
       ...Object.keys(OPTIONAL_DEFAULTS),
     ]);
 
-    const defined = {};
+    const envValues = {};
     for (const key of allKeys) {
       const raw = process.env[key];
       const fallback = OPTIONAL_DEFAULTS[key];
       const value = raw && raw.trim().length > 0 ? raw : fallback ?? "";
-      defined[`process.env.${key}`] = JSON.stringify(value);
+      envValues[key] = value;
     }
 
     return [
-      new webpack.DefinePlugin(defined),
+      new webpack.DefinePlugin({
+        "process.env": JSON.stringify(envValues),
+        __EXTENSION_BUILD_ENV__: JSON.stringify(envValues),
+      }),
       new CopyPlugin({
         patterns: [
           { from: "manifest.json", to: "manifest.json" },

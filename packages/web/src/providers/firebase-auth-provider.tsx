@@ -31,6 +31,8 @@ import {
   updateEmail,
   deleteUser,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   type AuthProvider,
 } from "firebase/auth";
 import { showError, showSuccess } from "@/components/ui/Toast";
@@ -53,6 +55,7 @@ type AuthContextType = AuthState & {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, name?: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
+  signInWithGoogleRedirect: () => Promise<void>;
   signInWithGitHub: () => Promise<void>;
   signInWithMicrosoft: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -207,6 +210,7 @@ export function FirebaseAuthProvider({
   const lastSessionTokenRef = useRef<string | null>(null);
   const sessionSyncPromiseRef = useRef<Promise<void> | null>(null);
   const sessionClearPromiseRef = useRef<Promise<void> | null>(null);
+  const redirectResultHandledRef = useRef(false);
   const popupStatesRef = useRef<Record<PopupProviderKey, { locked: boolean; retryCount: number }>>({
     google: { locked: false, retryCount: 0 },
     github: { locked: false, retryCount: 0 },
@@ -488,6 +492,36 @@ export function FirebaseAuthProvider({
     throw authError;
   }, []);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (redirectResultHandledRef.current) return;
+
+    redirectResultHandledRef.current = true;
+
+    const auth = getAuthClient();
+    if (!auth) return;
+
+    (async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (!result || !result.user) {
+          return;
+        }
+
+        showSuccess("Successfully signed in with Google!");
+        await syncSessionCookieWithServer(result.user);
+        updateActivity();
+      } catch (error: any) {
+        if (error?.code === "auth/no-auth-event") {
+          return;
+        }
+
+        console.error("Google redirect sign-in error:", error);
+        handleAuthError(error);
+      }
+    })();
+  }, [handleAuthError, syncSessionCookieWithServer, updateActivity]);
+
   // Clear session timeouts
   const clearSessionTimeouts = useCallback(() => {
     if ((window as any).__sessionWarningTimeout) {
@@ -713,6 +747,48 @@ export function FirebaseAuthProvider({
     },
     [handleAuthError, syncSessionCookieWithServer, updateActivity]
   );
+
+  const signInWithGoogleRedirect = useCallback(async () => {
+    setError(null);
+    updateActivity();
+
+    try {
+      ensureFirebaseApp();
+      const auth = getAuthClient();
+      if (!auth) {
+        throw new Error("Auth not available");
+      }
+
+      const provider = getGoogleProvider();
+      if (!provider) {
+        throw new Error("Google auth provider not available");
+      }
+
+      storeLastAuthMethod("google");
+      await signInWithRedirect(auth, provider);
+    } catch (error: any) {
+      const code: string | undefined = error?.code;
+
+      if (code === "auth/operation-not-supported-in-this-environment") {
+        const message =
+          "This browser cannot complete Google sign-in automatically. Please use email sign-in instead.";
+        showError(message);
+        throw new Error(message);
+      }
+
+      if (
+        error?.message?.includes("storage-partitioned") ||
+        error?.message?.includes("sessionStorage is inaccessible")
+      ) {
+        const errorMessage =
+          "Browser storage is restricted. Enable third-party cookies or use a normal browsing window before trying again.";
+        showError(errorMessage);
+        throw new Error(errorMessage);
+      }
+
+      handleAuthError(error);
+    }
+  }, [handleAuthError, updateActivity]);
 
   const signInWithGoogle = useCallback(async () => {
     setError(null);
@@ -1039,6 +1115,7 @@ export function FirebaseAuthProvider({
     signIn,
     signUp,
     signInWithGoogle,
+    signInWithGoogleRedirect,
     signInWithGitHub,
     signInWithMicrosoft,
     signOut: signOutUser,
