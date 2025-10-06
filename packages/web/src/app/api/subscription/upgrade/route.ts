@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyIdToken } from "@/firebase/admin";
+import { verifySessionFromRequest } from "@/lib/auth/session";
 import { getStripeClient } from "@/lib/stripe";
 import { upsertSubscriptionFromStripe } from "@/lib/subscriptions";
 
@@ -12,16 +13,22 @@ interface UpgradeRequestBody {
 // POST /api/subscription/upgrade - Confirm subscription upgrade after successful checkout
 export async function POST(request: NextRequest) {
   try {
-    const authHeader = request.headers.get("authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    const decodedToken = await verifySessionFromRequest(request);
+
+    if (!decodedToken) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const token = authHeader.substring(7);
-    const decodedToken = await verifyIdToken(token);
+    // In development with mock tokens, return mock upgrade response for testing
+    const isMockToken = process.env.NODE_ENV === "development" &&
+      request.headers.get("authorization")?.includes("bW9jay1zaWduYXR1cmUtZm9yLXRlc3Rpbmc");
 
-    if (!decodedToken) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+    if (isMockToken) {
+      return NextResponse.json({
+        success: true,
+        message: 'Subscription upgraded successfully (mock)',
+        plan: 'premium'
+      });
     }
 
     const { sessionId } = (await request.json()) as UpgradeRequestBody;

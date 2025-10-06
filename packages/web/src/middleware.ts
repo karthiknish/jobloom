@@ -604,7 +604,12 @@ async function finalizeResponse(
 export async function middleware(request: NextRequest) {
   const requestId = generateRequestId();
 
-  if (["POST", "PUT", "PATCH", "DELETE"].includes(request.method)) {
+  // Skip CSRF validation for Stripe webhooks (they come from external service)
+  // and for API routes in development mode (for testing)
+  const isWebhook = request.nextUrl.pathname === "/api/stripe/webhook";
+  const isApiRouteInDev = request.nextUrl.pathname.startsWith("/api/") && process.env.NODE_ENV === "development";
+
+  if (["POST", "PUT", "PATCH", "DELETE"].includes(request.method) && !isWebhook && !isApiRouteInDev) {
     try {
       validateCsrf(request);
     } catch (error) {

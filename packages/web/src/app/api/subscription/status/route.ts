@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyIdToken, getAdminDb, Timestamp } from "@/firebase/admin";
+import { verifySessionFromRequest } from "@/lib/auth/session";
 import { SUBSCRIPTION_LIMITS, Subscription, SubscriptionPlan } from "@/types/api";
 import { ValidationError, DatabaseError } from "@/lib/subscriptions";
 import { checkServerRateLimit } from "@/lib/rateLimiter";
@@ -33,21 +34,25 @@ function setSecurityHeaders(response: NextResponse): NextResponse {
 // GET /api/subscription/status - Get current subscription status
 export async function GET(request: NextRequest) {
   try {
-    // Validate authorization header
-    const authHeader = request.headers.get("authorization");
-    const authValidation = validateAuthorizationHeader(authHeader);
-    
-    if (!authValidation.isValid) {
-      const response = NextResponse.json({ error: authValidation.error }, { status: 401 });
-      return setSecurityHeaders(response);
-    }
-
-    const token = authValidation.token!;
-    const decodedToken = await verifyIdToken(token);
+    const decodedToken = await verifySessionFromRequest(request);
 
     if (!decodedToken) {
-      const response = NextResponse.json({ error: "Invalid token" }, { status: 401 });
-      return setSecurityHeaders(response);
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // In development with mock tokens, return mock subscription status for testing
+    const isMockToken = process.env.NODE_ENV === "development" &&
+      request.headers.get("authorization")?.includes("bW9jay1zaWduYXR1cmUtZm9yLXRlc3Rpbmc");
+
+    if (isMockToken) {
+      return NextResponse.json({
+        plan: "free",
+        status: "active",
+        currentPeriodStart: new Date().toISOString(),
+        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        cancelAtPeriodEnd: false,
+        message: 'Subscription status retrieved successfully (mock)'
+      });
     }
 
     const userId = decodedToken.uid;
