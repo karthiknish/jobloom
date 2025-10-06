@@ -11,7 +11,14 @@ export async function GET(request: NextRequest) {
     }
 
     const token = authHeader.substring(7);
-    const decodedToken = await getAdminAuth().verifyIdToken(token);
+    
+    let decodedToken;
+    try {
+      decodedToken = await getAdminAuth().verifyIdToken(token);
+    } catch (error) {
+      console.error('Token verification failed:', error);
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+    }
     
     // Check if user is admin
     const db = getAdminDb();

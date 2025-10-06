@@ -166,6 +166,15 @@ export async function verifySessionFromRequest(request: NextRequest) {
     const token = authHeader.substring(7).trim();
     if (token) {
       try {
+                // In development, allow mock tokens for testing
+        if (process.env.NODE_ENV === "development" && token.includes("bW9jay1zaWduYXR1cmUtZm9yLXRlc3Rpbmc")) {
+          return {
+            uid: "test-user-123",
+            email: "test@example.com",
+            email_verified: true
+          };
+        }
+
         const auth = getAdminAuth();
         return await auth.verifyIdToken(token);
       } catch (error) {

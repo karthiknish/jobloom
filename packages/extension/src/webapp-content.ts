@@ -151,8 +151,11 @@ function notifyAuthSuccess(userId: string) {
   });
 
   // Also persist directly to storage
-  chrome.storage.sync.set({ userId }).catch((error) => {
-    console.debug("Failed to persist userId to storage", error);
+  chrome.storage.sync.set({ 
+    userId,
+    firebaseUid: userId // Set both for compatibility
+  }).catch((error) => {
+    console.debug("Failed to persist user auth data to storage", error);
   });
 }
 
@@ -198,6 +201,19 @@ window.addEventListener("message", (event) => {
         notifyAuthSuccess(userId);
       }
     }, 1000);
+  }
+
+  // Handle Firebase authentication logout message
+  if (event.data.type === "FIREBASE_AUTH_LOGOUT") {
+    console.log("Received logout message from web app");
+    // Clear auth data from chrome storage
+    chrome.storage.sync.remove(["firebaseUid", "userId"], () => {
+      if (chrome.runtime?.lastError) {
+        ExtensionSecurityLogger.log('Failed to clear auth storage on logout', chrome.runtime.lastError.message);
+      } else {
+        console.log("Cleared auth storage on logout");
+      }
+    });
   }
 
   if (event.data.type === "HIREALL_EXTENSION_UPDATE_PREFS") {

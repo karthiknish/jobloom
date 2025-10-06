@@ -245,6 +245,10 @@ export function FirebaseAuthProvider({
         localStorage.removeItem("__firebase_user");
         document.cookie =
           "__firebase_user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        window.postMessage(
+          { type: "FIREBASE_AUTH_LOGOUT" },
+          window.location.origin
+        );
       }
     } catch (storageError) {
       console.warn("Failed to sync auth state to client:", storageError);

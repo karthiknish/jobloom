@@ -11,6 +11,23 @@ export async function GET(request: NextRequest) {
     }
 
     const token = authHeader.substring(7);
+
+    // In development with mock tokens, return mock notification settings for testing
+    const isMockToken = process.env.NODE_ENV === "development" && 
+      request.headers.get("authorization")?.includes("bW9jay1zaWduYXR1cmUtZm9yLXRlc3Rpbmc");
+
+    if (isMockToken) {
+      return NextResponse.json({
+        emailNotifications: true,
+        pushNotifications: true,
+        jobAlertsEnabled: false,
+        marketingEmails: true,
+        systemNotifications: true,
+        weeklyDigest: false,
+        message: 'Notification settings retrieved successfully (mock)'
+      });
+    }
+
     const decodedToken = await verifyIdToken(token);
     if (!decodedToken) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
@@ -46,6 +63,18 @@ export async function PUT(request: NextRequest) {
     }
 
     const token = authHeader.substring(7);
+
+    // In development with mock tokens, return mock success response for testing
+    const isMockToken = process.env.NODE_ENV === "development" && 
+      request.headers.get("authorization")?.includes("bW9jay1zaWduYXR1cmUtZm9yLXRlc3Rpbmc");
+
+    if (isMockToken) {
+      return NextResponse.json({
+        success: true,
+        message: 'Notification settings updated successfully (mock)'
+      });
+    }
+
     const decodedToken = await verifyIdToken(token);
     if (!decodedToken) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });

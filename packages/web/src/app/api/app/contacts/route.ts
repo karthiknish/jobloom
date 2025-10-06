@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminDb } from "../../../../firebase/admin";
+import { getAdminDb, isUserAdmin } from "../../../../firebase/admin";
+import { verifySessionFromRequest } from "../../../../lib/auth/session";
 import type { ContactSubmission } from "../../../../types/api";
 
 // Get Firestore instance using the centralized admin initialization
@@ -108,10 +109,19 @@ export async function POST(request: NextRequest) {
 }
 
 // GET /api/app/contacts - Get all contact submissions (admin only)
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
-    // TODO: Add admin authentication check here
-    // For now, this endpoint is not protected
+    // Verify authentication
+    const decodedToken = await verifySessionFromRequest(request);
+    if (!decodedToken?.uid) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Check if user is admin
+    const isAdmin = await isUserAdmin(decodedToken.uid);
+    if (!isAdmin) {
+      return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+    }
 
     // Fetch from Firestore
     const snapshot = await db

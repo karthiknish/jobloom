@@ -243,3 +243,9 @@ export function getAdminFirestore() {
   return getFirestore(getAdminApp());
 }
 
+// Create custom token for testing purposes
+export async function createCustomToken(uid: string, additionalClaims?: any): Promise<string> {
+  const auth = getAdminAuth();
+  return await auth.createCustomToken(uid, additionalClaims);
+}
+

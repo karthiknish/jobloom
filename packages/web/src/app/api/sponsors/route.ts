@@ -6,23 +6,37 @@ const db = getAdminDb();
 
 export async function GET(request: NextRequest) {
   try {
-    // Verify session
-    const decodedToken = await verifySessionFromRequest(request);
-
-    if (!decodedToken) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q')?.toLowerCase().trim();
     const route = searchParams.get('route')?.toLowerCase().trim();
     const city = searchParams.get('city')?.toLowerCase().trim();
     const limit = parseInt(searchParams.get('limit') || '20');
 
+    // If no search parameters provided, return a basic public response
     if (!query && !route && !city) {
-      return NextResponse.json({
-        error: 'At least one search parameter (q, route, or city) is required'
-      }, { status: 400 });
+      // Public access - return basic sponsor count or summary
+      try {
+        const totalSnapshot = await db.collection('sponsors').where('isActive', '==', true).count().get();
+        return NextResponse.json({
+          success: true,
+          message: "Sponsors API - use search parameters for detailed results",
+          totalActiveSponsors: totalSnapshot.data().count,
+          requiresAuth: false
+        });
+      } catch (error) {
+        console.error('Error getting sponsor count:', error);
+        return NextResponse.json({
+          success: true,
+          message: "Sponsors API available",
+          requiresAuth: false
+        });
+      }
+    }
+
+    // For search queries, require authentication
+    const decodedToken = await verifySessionFromRequest(request);
+    if (!decodedToken) {
+      return NextResponse.json({ error: "Authentication required for search" }, { status: 401 });
     }
 
     let firestoreQuery = db.collection('sponsors').where('isActive', '==', true);

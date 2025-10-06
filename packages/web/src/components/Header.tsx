@@ -51,7 +51,6 @@ export default function Header() {
     { href: "/dashboard", label: "Dashboard" },
     { href: "/portfolio", label: "Portfolio Builder" },
         { href: "/templates", label: "Application Templates" },
-    { href: "/companies", label: "Company Research" },
     { href: "/interview-prep", label: "Interview Prep" },
     { href: "/cv-evaluator", label: "CV Evaluator" },
 

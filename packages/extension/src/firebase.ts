@@ -1,5 +1,5 @@
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+import { getAuth, initializeAuth, browserLocalPersistence, indexedDBLocalPersistence, inMemoryPersistence, browserPopupRedirectResolver, GoogleAuthProvider } from 'firebase/auth';
 
 // Lightweight Firebase bootstrap for the extension popup only.
 // Relies on env vars injected at build time via webpack DefinePlugin.
@@ -37,7 +37,23 @@ export function ensureFirebase() {
 }
 
 export function getAuthInstance() {
-  return getAuth(ensureFirebase());
+  const app = ensureFirebase();
+  
+  // Try to initialize auth with persistence for session sharing with web app
+  try {
+    return initializeAuth(app, {
+      persistence: [
+        indexedDBLocalPersistence,
+        browserLocalPersistence,
+        inMemoryPersistence,
+      ],
+      popupRedirectResolver: browserPopupRedirectResolver,
+    });
+  } catch (error) {
+    // Fall back to regular getAuth if initializeAuth fails
+    console.warn('Failed to initialize auth with persistence, falling back to getAuth:', error);
+    return getAuth(app);
+  }
 }
 
 export function getGoogleProvider() {

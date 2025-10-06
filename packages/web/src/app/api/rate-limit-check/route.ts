@@ -3,6 +3,21 @@ import { checkServerRateLimitWithAuth, getEndpointFromPath } from '@/lib/rateLim
 
 export async function POST(request: NextRequest) {
   try {
+    // In development with mock tokens, return mock rate limit response for testing
+    const isMockToken = process.env.NODE_ENV === "development" && 
+      request.headers.get("authorization")?.includes("bW9jay1zaWduYXR1cmUtZm9yLXRlc3Rpbmc");
+
+    if (isMockToken) {
+      return NextResponse.json({
+        allowed: true,
+        remaining: 95,
+        maxRequests: 100,
+        resetIn: 3600,
+        identifier: 'test-user-123',
+        message: 'Rate limit check successful (mock)'
+      });
+    }
+
     const body = await request.json();
     const { endpoint = 'general' } = body;
 

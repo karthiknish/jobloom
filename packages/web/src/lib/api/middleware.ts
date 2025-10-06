@@ -73,8 +73,8 @@ export async function authenticateRequest(request: NextRequest): Promise<{
     return {
       uid: sessionClaims.uid,
       email: sessionClaims.email,
-      name: sessionClaims.name,
-      isAdmin: sessionClaims.admin === true,
+      name: (sessionClaims as any).name,
+      isAdmin: (sessionClaims as any).admin === true,
     };
   }
 
