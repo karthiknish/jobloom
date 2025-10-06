@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyIdToken, getAdminDb } from "@/firebase/admin";
 import { verifySessionFromRequest } from "@/lib/auth/session";
-import {
 
 // CORS helper function for LinkedIn extension
-function addCorsHeaders(response, origin) {
+function addCorsHeaders(response: NextResponse, origin?: string): NextResponse {
   const allowedOrigins = [
     'https://www.linkedin.com',
     'https://linkedin.com',
@@ -31,10 +30,14 @@ function addCorsHeaders(response, origin) {
 
   return response;
 }
+
+import {
   withErrorHandling,
   createAuthorizationError,
   generateRequestId
 } from "@/lib/api/errors";
+
+// GET /api/app/applications/user/[userId] - Get applications for a user
 
 interface ApplicationWithJob {
   _id: string;
@@ -177,7 +180,8 @@ export async function GET(
       return (b.updatedAt || 0) - (a.updatedAt || 0);
     });
 
-    return NextResponse.json(applications);
+    const response = NextResponse.json(applications);
+    return addCorsHeaders(response, request.headers.get('origin') || undefined);
   }, {
     endpoint: '/api/app/applications/user/[userId]',
     method: 'GET',

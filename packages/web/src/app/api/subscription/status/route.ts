@@ -6,7 +6,7 @@ import { ValidationError, DatabaseError } from "@/lib/subscriptions";
 import { checkServerRateLimit } from "@/lib/rateLimiter";
 
 // CORS helper function for LinkedIn extension
-function addCorsHeaders(response, origin) {
+function addCorsHeaders(response: NextResponse, origin: string | undefined) {
   const allowedOrigins = [
     'https://www.linkedin.com',
     'https://linkedin.com',

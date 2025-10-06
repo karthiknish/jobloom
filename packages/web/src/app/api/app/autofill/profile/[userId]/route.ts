@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb } from "@/firebase/admin";
 
 // CORS helper function for LinkedIn extension
-function addCorsHeaders(response, origin) {
+function addCorsHeaders(response: NextResponse, origin: string | undefined) {
   const allowedOrigins = [
     'https://www.linkedin.com',
     'https://linkedin.com',

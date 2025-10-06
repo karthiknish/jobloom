@@ -4,7 +4,7 @@ import { createFirestoreCollection } from "@/firebase/firestore";
 import { getAdminFirestore } from "@/firebase/admin";
 
 // CORS helper function for LinkedIn extension
-function addCorsHeaders(response, origin) {
+function addCorsHeaders(response: NextResponse, origin: string | undefined) {
   const allowedOrigins = [
     'https://www.linkedin.com',
     'https://linkedin.com',

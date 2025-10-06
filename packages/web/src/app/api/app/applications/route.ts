@@ -4,9 +4,16 @@ import { verifySessionFromRequest } from "@/lib/auth/session";
 import { createFirestoreCollection } from "@/firebase/firestore";
 import { getAdminFirestore } from "@/firebase/admin";
 import {
+  withErrorHandling,
+  validateRequiredFields,
+  validateId,
+  createValidationError,
+  createAuthorizationError,
+  generateRequestId
+} from "@/lib/api/errors";
 
 // CORS helper function for LinkedIn extension
-function addCorsHeaders(response, origin) {
+function addCorsHeaders(response: any, origin?: string) {
   const allowedOrigins = [
     'https://www.linkedin.com',
     'https://linkedin.com',
@@ -16,9 +23,9 @@ function addCorsHeaders(response, origin) {
 
   const requestOrigin = origin;
 
-  if (requestOrigin && (allowedOrigins.includes(requestOrigin) || 
-      requestOrigin.includes('hireall.app') || 
-      requestOrigin.includes('vercel.app') || 
+  if (requestOrigin && (allowedOrigins.includes(requestOrigin) ||
+      requestOrigin.includes('hireall.app') ||
+      requestOrigin.includes('vercel.app') ||
       requestOrigin.includes('netlify.app'))) {
     response.headers.set('Access-Control-Allow-Origin', requestOrigin);
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
@@ -33,13 +40,10 @@ function addCorsHeaders(response, origin) {
 
   return response;
 }
-  withErrorHandling,
-  validateRequiredFields,
-  validateId,
-  createValidationError,
-  createAuthorizationError,
-  generateRequestId
-} from "@/lib/api/errors";
+
+// POST /api/app/applications - Create a new application
+
+// CORS helper function for LinkedIn extension
 
 // POST /api/app/applications - Create a new application
 export async function POST(request: NextRequest) {
