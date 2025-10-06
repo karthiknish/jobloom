@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "HireAll - Job Tracker",
-  "version": "1.0.0",
+  "name": "HireAll Extension v1.0.2",
+  "version": "1.0.2",
   "description": "Highlight sponsored job roles and track applications",
-  "permissions": ["activeTab", "storage"],
+  "permissions": ["activeTab", "storage", "tabs"],
   "host_permissions": [
     "https://*.linkedin.com/*",
     "https://*.indeed.com/*",
@@ -14,7 +14,8 @@
     "https://*.seek.com/*",
     "https://*.totaljobs.com/*",
     "https://*.reed.co.uk/*",
-    "https://*.jobsite.co.uk/*"
+    "https://*.jobsite.co.uk/*",
+    "http://localhost:3000/*"
   ],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self';",

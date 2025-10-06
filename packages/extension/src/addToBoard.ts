@@ -116,23 +116,45 @@ export class JobBoardManager {
   }
 
   private static async getUserId(): Promise<string | null> {
-    const { firebaseUid, userId } = await safeChromeStorageGet<{
-      firebaseUid: string | null;
-      userId: string | null;
-    }>(
-      "sync",
-      ["firebaseUid", "userId"],
-      { firebaseUid: null, userId: null },
-      "job board user id"
-    );
+    // Check if extension context is still valid
+    if (typeof chrome === "undefined" || !chrome.storage) {
+      console.debug("Hireall: Extension context invalidated during getUserId");
+      return null;
+    }
 
-    const resolvedId = typeof firebaseUid === "string" && firebaseUid.trim().length
-      ? firebaseUid
-      : typeof userId === "string" && userId.trim().length
-      ? userId
-      : null;
+    try {
+      const result = await Promise.race([
+        safeChromeStorageGet<{
+          firebaseUid: string | null;
+          userId: string | null;
+        }>(
+          "sync",
+          ["firebaseUid", "userId"],
+          { firebaseUid: null, userId: null },
+          "job board user id"
+        ),
+        new Promise<null>((_, reject) => 
+          setTimeout(() => reject(new Error("Storage timeout")), 5000)
+        )
+      ]);
 
-    return resolvedId;
+      if (!result) {
+        console.debug("Hireall: Storage result is null");
+        return null;
+      }
+
+      const { firebaseUid, userId } = result;
+      const resolvedId = typeof firebaseUid === "string" && firebaseUid.trim().length
+        ? firebaseUid
+        : typeof userId === "string" && userId.trim().length
+        ? userId
+        : null;
+
+      return resolvedId;
+    } catch (error) {
+      console.debug("Hireall: getUserId failed", error);
+      return null;
+    }
   }
 
   // Enhanced job validation and deduplication
@@ -243,6 +265,15 @@ export class JobBoardManager {
       | "withdrawn" = "interested"
   ): Promise<{ success: boolean; message: string; jobScore?: number }> {
     try {
+      // Check if extension context is still valid
+      if (typeof chrome === "undefined" || !chrome.storage) {
+        console.debug("Hireall: Extension context invalidated, cannot add job to board");
+        return {
+          success: false,
+          message: "Extension context invalidated. Please refresh the page and try again.",
+        };
+      }
+
       // Get user ID and verify authentication
       const userId = await this.getUserId();
       if (!userId) {
@@ -269,7 +300,8 @@ export class JobBoardManager {
       // Create job via API client with enhanced data
       let createdJobId: string | null = null;
       try {
-        createdJobId = await post<string>("/api/app/jobs", {
+        createdJobId = await Promise.race([
+          post<string>("/api/app/jobs", {
           title: jobData.title,
           company: jobData.company,
           location: jobData.location,
@@ -293,7 +325,11 @@ export class JobBoardManager {
           source: jobData.source || "extension",
           userId: userId,
           jobScore: jobScore, // Add the calculated score
-        });
+          }),
+          new Promise<null>((_, reject) => 
+            setTimeout(() => reject(new Error("API timeout")), 10000)
+          )
+        ]);
       } catch (e: any) {
         const msg = e?.message || "";
         

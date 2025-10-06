@@ -185,7 +185,8 @@ export function validateMessage(message: any): boolean {
     'authSuccess',
     'syncAuthState',
     'getUserId',
-    'checkSponsorStatus'
+    'checkSponsorStatus',
+    'extractHireallSession'
   ];
 
   if (!allowedActions.includes(message.action)) {

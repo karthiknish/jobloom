@@ -40,7 +40,13 @@ export async function safeChromeStorageGet<T extends Record<string, unknown>>(
       ) => any).call(storageArea, keys, (items: Record<string, unknown>) => {
         if (settled) return;
         if (chrome.runtime?.lastError) {
-          console.warn(`Hireall: ${logContext} storage read failed`, chrome.runtime.lastError.message);
+          const errorMessage = chrome.runtime.lastError.message || '';
+          // Handle extension context invalidation gracefully
+          if (errorMessage.includes('Extension context invalidated')) {
+            console.debug(`Hireall: ${logContext} - extension context invalidated, returning fallback`);
+          } else {
+            console.warn(`Hireall: ${logContext} storage read failed`, errorMessage);
+          }
           settled = true;
           resolve(cloneFallback(fallback));
           return;
@@ -58,14 +64,26 @@ export async function safeChromeStorageGet<T extends Record<string, unknown>>(
           },
           (error: unknown) => {
             if (settled) return;
-            console.warn(`Hireall: ${logContext} storage promise rejected`, error);
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            // Handle extension context invalidation gracefully
+            if (errorMessage.includes('Extension context invalidated')) {
+              console.debug(`Hireall: ${logContext} - extension context invalidated, returning fallback`);
+            } else {
+              console.warn(`Hireall: ${logContext} storage promise rejected`, error);
+            }
             settled = true;
             resolve(cloneFallback(fallback));
           }
         );
       }
     } catch (error) {
-      console.warn(`Hireall: ${logContext} storage access threw`, error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      // Handle extension context invalidation gracefully
+      if (errorMessage.includes('Extension context invalidated')) {
+        console.debug(`Hireall: ${logContext} - extension context invalidated, returning fallback`);
+      } else {
+        console.warn(`Hireall: ${logContext} storage access threw`, error);
+      }
       resolve(cloneFallback(fallback));
     }
   });

@@ -19,6 +19,16 @@ async function authenticate(request: NextRequest) {
     return null;
   }
   const token = authHeader.substring(7);
+
+  // In development, allow mock tokens for testing
+  if (process.env.NODE_ENV === "development" && token.includes("bW9jay1zaWduYXR1cmUtZm9yLXRlc3Rpbmc")) {
+    return {
+      uid: "test-user-123",
+      email: "test@example.com",
+      email_verified: true
+    };
+  }
+
   try {
     const decoded = await verifyIdToken(token);
     return decoded || null;

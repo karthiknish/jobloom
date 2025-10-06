@@ -1,6 +1,6 @@
 {
   "name": "@hireall/extension",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Chrome extension for highlighting sponsored job roles",
   "main": "dist/background.js",
   "scripts": {

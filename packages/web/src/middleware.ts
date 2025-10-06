@@ -168,6 +168,13 @@ function applySecurityHeaders(response: NextResponse, requestId: string) {
   response.headers.set("Content-Security-Policy", CONTENT_SECURITY_POLICY);
   response.headers.set("X-Request-ID", requestId);
 
+  // Add CORS headers for API routes in development
+  if (process.env.NODE_ENV === "development") {
+    response.headers.set("Access-Control-Allow-Origin", "*");
+    response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
+    response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Request-ID");
+  }
+
   if (process.env.NODE_ENV !== "development") {
     response.headers.set(
       "Strict-Transport-Security",

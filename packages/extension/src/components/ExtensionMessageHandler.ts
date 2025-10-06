@@ -146,64 +146,82 @@ export class ExtensionMessageHandler {
   }
 
   static initialize(): void {
+    // Remove existing listener if present to avoid duplicates
+    if (this.messageListener) {
+      chrome.runtime.onMessage.removeListener(this.messageListener);
+    }
+
     if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
-      chrome.runtime.onMessage.addListener((request: any, sender: any, sendResponse: any) => {
-        // Wrap handler in try-catch to prevent unhandled exceptions
-        try {
-          return this.handleMessage(request, sender, sendResponse);
-        } catch (error) {
-          console.error('Error in ExtensionMessageHandler:', error);
-          if (sendResponse) {
-            sendResponse({ 
-              success: false, 
-              error: error instanceof Error ? error.message : 'Unknown handler error' 
-            });
+      this.messageListener = (request: any, sender: any, sendResponse: any) => {
+        // Check if this is a message meant for this handler
+        if (!request.target || request.target === 'ExtensionMessageHandler') {
+          try {
+            return this.handleMessage(request, sender, sendResponse);
+          } catch (error) {
+            console.error('Error in ExtensionMessageHandler:', error);
+            if (sendResponse) {
+              sendResponse({ 
+                success: false, 
+                error: error instanceof Error ? error.message : 'Unknown handler error' 
+              });
+            }
+            return false;
           }
-          return false;
         }
-      });
+        // Return undefined to let other handlers process the message
+        return undefined;
+      };
+      chrome.runtime.onMessage.addListener(this.messageListener);
     }
   }
+
+  private static messageListener?: (request: any, sender: any, sendResponse: any) => boolean | undefined;
 
   static isExtensionContextValid(): boolean {
     return typeof chrome !== 'undefined' && chrome.runtime && !!chrome.runtime.id;
   }
 
-  static sendMessage(action: string, data?: any): Promise<any> {
+  static sendMessage(action: string, data?: any, retries = 2): Promise<any> {
     return new Promise((resolve, reject) => {
       if (!this.isExtensionContextValid()) {
         reject(new Error('Chrome extension context not available'));
         return;
       }
 
-      chrome.runtime.sendMessage({ action, data }, (response) => {
-        if (chrome.runtime.lastError) {
-          const errorMessage = chrome.runtime.lastError.message || '';
-          // Check if it's a port closure error
-          if (errorMessage.includes('message port closed') || errorMessage.includes('Receiving end does not exist')) {
-            console.debug(`Message port closed for action ${action}, will retry`);
-            // Retry once after a short delay
-            setTimeout(() => {
-              if (!this.isExtensionContextValid()) {
-                reject(new Error('Chrome extension context not available on retry'));
-                return;
-              }
+      const attemptSend = (attempt = 0) => {
+        chrome.runtime.sendMessage({ action, data }, (response) => {
+          if (chrome.runtime.lastError) {
+            const errorMessage = chrome.runtime.lastError.message || '';
+            
+            // Check if it's a port closure or context invalidation error
+            if (errorMessage.includes('message port closed') || 
+                errorMessage.includes('Receiving end does not exist') ||
+                errorMessage.includes('Extension context invalidated')) {
               
-              chrome.runtime.sendMessage({ action, data }, (retryResponse) => {
-                if (chrome.runtime.lastError) {
-                  reject(new Error(chrome.runtime.lastError.message));
-                } else {
-                  resolve(retryResponse);
-                }
-              });
-            }, 100);
+              if (attempt < retries) {
+                const delay = Math.min(100 * Math.pow(2, attempt), 1000); // Exponential backoff
+                console.debug(`Message port closed for action ${action}, retry ${attempt + 1}/${retries} in ${delay}ms`);
+                setTimeout(() => {
+                  if (!this.isExtensionContextValid()) {
+                    reject(new Error('Chrome extension context invalidated during retry'));
+                    return;
+                  }
+                  attemptSend(attempt + 1);
+                }, delay);
+              } else {
+                console.debug(`All retries failed for action ${action}: ${errorMessage}`);
+                reject(new Error(`Extension communication failed after ${retries} retries: ${errorMessage}`));
+              }
+            } else {
+              reject(new Error(errorMessage));
+            }
           } else {
-            reject(new Error(errorMessage));
+            resolve(response);
           }
-        } else {
-          resolve(response);
-        }
-      });
+        });
+      };
+
+      attemptSend();
     });
   }
 }

@@ -118,6 +118,18 @@ async function syncAuthStateFromSite(options: { tabId?: number; userIdOverride?:
 
 // Handle messages from content script with security validation
 chrome.runtime.onMessage.addListener((request: any, sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void) => {
+  // Check if extension context is still valid
+  if (typeof chrome === "undefined" || !chrome.storage) {
+    console.debug("Hireall: Extension context invalidated, cannot process message");
+    sendResponse({ error: 'Extension context invalidated' });
+    return false;
+  }
+
+  // Only process messages that are meant for the background script
+  if (request.target && request.target !== 'background') {
+    return undefined; // Let other handlers process this message
+  }
+
   // Validate message format
   if (!validateMessage(request)) {
     ExtensionSecurityLogger.logSuspiciousActivity('invalid_message_format', request);
@@ -194,6 +206,42 @@ chrome.runtime.onMessage.addListener((request: any, sender: chrome.runtime.Messa
         ExtensionSecurityLogger.log('Failed to sync auth state', error);
         sendResponse({ success: false, error: error instanceof Error ? error.message : 'Unknown error' });
       });
+    return true;
+  } else if (request.action === "extractHireallSession") {
+    // Extract session from Hireall web app
+    if (sender.tab?.id) {
+      chrome.tabs.sendMessage(sender.tab.id, { action: "extractHireallSession" }, (response) => {
+        if (chrome.runtime.lastError) {
+          console.error("Failed to extract Hireall session:", chrome.runtime.lastError);
+          sendResponse({ success: false, error: "Failed to extract session" });
+          return;
+        }
+
+        if (response && response.sessionToken) {
+          // Store the session token and user info
+          const payload: Record<string, string> = {
+            sessionToken: response.sessionToken,
+          };
+
+          if (response.userId) payload.firebaseUid = response.userId;
+          if (response.userEmail) payload.userEmail = response.userEmail;
+
+          chrome.storage.sync.set(payload, () => {
+            console.log("Hireall session extracted and stored:", response.userId);
+            sendResponse({
+              success: true,
+              userId: response.userId,
+              userEmail: response.userEmail,
+              isAuthenticated: response.isAuthenticated
+            });
+          });
+        } else {
+          sendResponse({ success: false, error: "No session found" });
+        }
+      });
+    } else {
+      sendResponse({ success: false, error: "No tab ID available" });
+    }
     return true;
   } else if (request.action === "authSuccess") {
     // After web app login, capture Firebase UID and store

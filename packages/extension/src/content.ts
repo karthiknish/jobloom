@@ -7,6 +7,9 @@ import { JobDataExtractor } from "./components/JobDataExtractor";
 // Import sponsorship management
 import { SponsorshipManager } from "./components/SponsorshipManager";
 
+// Import LinkedIn session extractor
+import { LinkedInSessionExtractor } from "./components/LinkedInSessionExtractor";
+
 // Import types from other components
 import { JobTracker, JobData, SponsorshipCheckResult } from "./components/JobTracker";
 import { AutofillProfile } from "./components/AutofillManager";
@@ -143,9 +146,34 @@ export function checkJobSponsorshipFromButton(card: Element, button: HTMLButtonE
 */
 
 // Simple initialization for the extension
-function initHireallExtension() {
+async function initHireallExtension() {
   console.log("Hireall content script loaded - using modular components");
-  
+
+  // Check if extension context is valid before proceeding
+  if (typeof chrome === "undefined" || !chrome.runtime?.id) {
+    console.debug("Hireall: Extension context invalid, skipping initialization");
+    return;
+  }
+
+  // Check if we're on Hireall web app and attempt to extract session
+  if (window.location.hostname.includes('hireall.app') ||
+      window.location.hostname.includes('vercel.app') ||
+      window.location.hostname.includes('netlify.app')) {
+    try {
+      console.log("Hireall: Web app detected, attempting session extraction...");
+      const sessionResult = await ExtensionMessageHandler.sendMessage("extractHireallSession", {}, 3);
+
+      if (sessionResult?.success && sessionResult?.userId) {
+        console.log("Hireall: Session extracted successfully, user authenticated:", sessionResult.userId);
+        // The session is now stored in chrome.storage.sync
+      } else {
+        console.debug("Hireall: Session extraction returned no user data");
+      }
+    } catch (error) {
+      console.debug("Hireall: Session extraction failed", error);
+    }
+  }
+
   // Check if user is authenticated
   UserProfileManager.isUserAuthenticated().then(async isAuthenticated => {
     const initializeAuthenticatedFeatures = async () => {
@@ -174,7 +202,7 @@ function initHireallExtension() {
       console.log("Hireall: user not signed in, extension features disabled on this page.");
 
       try {
-        const syncResult = await ExtensionMessageHandler.sendMessage("syncAuthState");
+        const syncResult = await ExtensionMessageHandler.sendMessage("syncAuthState", {}, 3);
         if (syncResult?.userId) {
           const nowAuthenticated = await UserProfileManager.isUserAuthenticated();
           if (nowAuthenticated) {
@@ -194,6 +222,14 @@ function initHireallExtension() {
     console.log("Hireall extension initialized successfully");
   });
 }
+
+// Cleanup on page unload to prevent memory leaks
+window.addEventListener("beforeunload", () => {
+  const tracker = (window as unknown as { hireallJobTracker?: JobTracker }).hireallJobTracker;
+  if (tracker && typeof tracker.cleanup === "function") {
+    tracker.cleanup();
+  }
+});
 
 // Initialize when DOM is ready
 if (document.readyState === "loading") {

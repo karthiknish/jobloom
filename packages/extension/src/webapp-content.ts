@@ -14,6 +14,13 @@ interface UserInfo {
   userEmail: string | null;
 }
 
+interface HireallSessionInfo {
+  sessionToken: string | null;
+  userId: string | null;
+  userEmail: string | null;
+  isAuthenticated: boolean;
+}
+
 function extractUserInfo(): UserInfo {
   let userId: string | null = null;
   let userEmail: string | null = null;
@@ -78,7 +85,90 @@ function extractUserInfo(): UserInfo {
   return { userId, userEmail };
 }
 
+/**
+ * Extract full Hireall session information including session token
+ */
+function extractHireallSession(): HireallSessionInfo {
+  const result: HireallSessionInfo = {
+    sessionToken: null,
+    userId: null,
+    userEmail: null,
+    isAuthenticated: false
+  };
+
+  try {
+    // Extract session token from cookies
+    const sessionCookie = getCookie("__session");
+    if (sessionCookie) {
+      result.sessionToken = sessionCookie;
+      result.isAuthenticated = true;
+    }
+
+    // Extract user information using existing logic
+    const userInfo = extractUserInfo();
+    result.userId = userInfo.userId;
+    result.userEmail = userInfo.userEmail;
+
+    // Additional check: if we have a session token but no user info,
+    // try to extract from other sources
+    if (result.sessionToken && !result.userId) {
+      // Check for user data in sessionStorage
+      const sessionUserData = sessionStorage.getItem('hireall_user');
+      if (sessionUserData) {
+        try {
+          const userData = JSON.parse(sessionUserData);
+          if (userData.id) result.userId = userData.id;
+          if (userData.email) result.userEmail = userData.email;
+        } catch (e) {
+          console.debug('Failed to parse Hireall user data from sessionStorage');
+        }
+      }
+
+      // Check for user data in localStorage
+      const localUserData = localStorage.getItem('hireall_user');
+      if (localUserData) {
+        try {
+          const userData = JSON.parse(localUserData);
+          if (userData.id && !result.userId) result.userId = userData.id;
+          if (userData.email && !result.userEmail) result.userEmail = userData.email;
+        } catch (e) {
+          console.debug('Failed to parse Hireall user data from localStorage');
+        }
+      }
+    }
+
+  } catch (error) {
+    ExtensionSecurityLogger.log('Error extracting Hireall session', error);
+  }
+
+  return result;
+}
+
+/**
+ * Get a cookie value by name
+ */
+function getCookie(name: string): string | null {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) {
+    return parts.pop()?.split(';').shift() || null;
+  }
+  return null;
+}
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  // Check if extension context is still valid
+  if (typeof chrome === "undefined" || !chrome.storage) {
+    console.debug("Hireall: Extension context invalidated, cannot process message");
+    sendResponse({ error: 'Extension context invalidated' });
+    return false;
+  }
+
+  // Only process messages that are meant for the webapp content script
+  if (request.target && request.target !== 'webapp-content') {
+    return undefined; // Let other handlers process this message
+  }
+
   // Only allow specific actions
   if (request.action === "getUserId") {
     try {
@@ -99,6 +189,30 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     } catch (error) {
       ExtensionSecurityLogger.log('Error retrieving user ID', error);
       sendResponse({ userId: null, userEmail: null, error: 'Failed to retrieve user ID' });
+      return true;
+    }
+  }
+
+  // Extract full Hireall session information
+  if (request.action === "extractHireallSession") {
+    try {
+      const sessionInfo = extractHireallSession();
+      sendResponse({
+        sessionToken: sessionInfo.sessionToken,
+        userId: sessionInfo.userId,
+        userEmail: sessionInfo.userEmail,
+        isAuthenticated: sessionInfo.isAuthenticated
+      });
+      return true; // Keep the message channel open for async response
+    } catch (error) {
+      ExtensionSecurityLogger.log('Error extracting Hireall session', error);
+      sendResponse({
+        sessionToken: null,
+        userId: null,
+        userEmail: null,
+        isAuthenticated: false,
+        error: 'Failed to extract session'
+      });
       return true;
     }
   }
@@ -144,7 +258,7 @@ function notifyAuthSuccess(userId: string) {
 
   console.log("Authentication successful, notifying extension with userId:", userId);
 
-  ExtensionMessageHandler.sendMessage("authSuccess", { userId, userEmail }).catch((error) => {
+  ExtensionMessageHandler.sendMessage("authSuccess", { userId, userEmail }, 2).catch((error) => {
     console.debug("Auth success notification failed; extension context may be invalid", error);
     // Reset flag on failure so we can try again
     authSuccessSent = false;

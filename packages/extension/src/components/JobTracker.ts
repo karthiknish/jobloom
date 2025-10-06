@@ -33,16 +33,25 @@ export class JobTracker {
   private readonly controlsClass = "hireall-job-controls";
   private readonly trackedBadges = new Map<Element, HighlightEntry>();
   private readonly sponsorCache = new Map<string, SponsorshipCheckResult>();
-  private readonly processedCards = new WeakSet<Element>();
+  private processedCards = new WeakSet<Element>();
 
   private observer: MutationObserver | null = null;
   private mutationTimeout: number | null = null;
+  private updateCardsTimeout: number | null = null;
+  private cleanupInterval: number | null = null;
   private isChecking = false;
   private isHighlighting = false;
   private sponsorButtonsEnabled = true;
 
   constructor() {
     this.ensureStyles();
+  }
+
+  /**
+   * Check if the extension context is still valid
+   */
+  private isExtensionValid(): boolean {
+    return typeof chrome !== "undefined" && !!chrome.runtime?.id && !!chrome.storage;
   }
 
   private buildSponsorshipCacheKey(company: string, jobContext?: JobDescriptionData): string {
@@ -111,10 +120,22 @@ export class JobTracker {
   }
 
   initialize(): void {
+    // Check if extension context is valid
+    if (typeof chrome === "undefined" || !chrome.runtime?.id) {
+      console.debug("Hireall: Extension context invalid, skipping JobTracker initialization");
+      return;
+    }
+
     this.updateCards();
 
     this.observer = new MutationObserver(() => {
-      this.updateCards();
+      // Throttle updateCards calls to prevent excessive processing
+      if (this.updateCardsTimeout) window.clearTimeout(this.updateCardsTimeout);
+      this.updateCardsTimeout = window.setTimeout(() => {
+        this.updateCards();
+        this.updateCardsTimeout = null;
+      }, 100);
+
       if (!this.isHighlighting || this.isChecking) return;
       if (this.mutationTimeout) window.clearTimeout(this.mutationTimeout);
       this.mutationTimeout = window.setTimeout(() => {
@@ -128,6 +149,14 @@ export class JobTracker {
       childList: true,
       subtree: true,
     });
+
+    // Periodic cleanup to prevent memory leaks
+    this.cleanupInterval = window.setInterval(() => {
+      // WeakSet automatically cleans up, but we can recreate it periodically
+      // to ensure we don't hold references to detached DOM elements
+      this.processedCards = new WeakSet<Element>();
+      console.debug("Hireall: Periodic WeakSet cleanup performed");
+    }, 300000); // Every 5 minutes
   }
 
   async checkAndHighlightSponsoredJobs(): Promise<void> {
@@ -208,9 +237,25 @@ export class JobTracker {
     }
 
     try {
-      const sponsorRecord = await SponsorshipManager.fetchSponsorRecord(jobData.company, jobContext);
-      const ukEligibility =
-        sponsorRecord?.ukEligibility ?? (await SponsorshipManager.assessUkEligibility(jobContext));
+      const sponsorRecord = await Promise.race([
+        SponsorshipManager.fetchSponsorRecord(jobData.company, jobContext),
+        new Promise<null>((_, reject) => 
+          setTimeout(() => reject(new Error("Sponsorship lookup timeout")), 15000)
+        )
+      ]);
+
+      let ukEligibility;
+      try {
+        ukEligibility = await Promise.race([
+          sponsorRecord?.ukEligibility || SponsorshipManager.assessUkEligibility(jobContext),
+          new Promise<null>((_, reject) => 
+            setTimeout(() => reject(new Error("UK eligibility assessment timeout")), 10000)
+          )
+        ]);
+      } catch (ukError) {
+        console.debug("UK eligibility assessment failed:", ukError);
+        ukEligibility = sponsorRecord?.ukEligibility || null;
+      }
 
       // Determine sponsorship status more intelligently
       let isSponsored = false;
@@ -253,7 +298,7 @@ export class JobTracker {
         confidence,
         matchedName: sponsorRecord?.name ?? null,
         sponsorData: sponsorRecord ?? null,
-        ukEligibility,
+        ukEligibility: ukEligibility || undefined,
         jobContext,
       };
 
@@ -452,6 +497,13 @@ export class JobTracker {
   }
 
   public async checkJobSponsorshipFromButton(card: Element, button: HTMLButtonElement): Promise<void> {
+    // Check if extension context is still valid
+    if (!this.isExtensionValid()) {
+      console.debug("Hireall: Extension context invalidated, cannot check sponsorship");
+      UIComponents.showToast("Extension context invalidated. Please refresh the page.", { type: "error" });
+      return;
+    }
+
     const originalLabel = button.innerHTML;
     const jobData = JobDataExtractor.extractJobData(card);
 
@@ -481,6 +533,13 @@ export class JobTracker {
   }
 
   public async addJobToBoardFromButton(card: Element, button: HTMLButtonElement): Promise<void> {
+    // Check if extension context is still valid
+    if (!this.isExtensionValid()) {
+      console.debug("Hireall: Extension context invalidated, cannot add job to board");
+      UIComponents.showToast("Extension context invalidated. Please refresh the page.", { type: "error" });
+      return;
+    }
+
     const originalLabel = button.innerHTML;
     const jobData = JobDataExtractor.extractJobData(card);
 
@@ -574,6 +633,46 @@ export class JobTracker {
 
   private formatSalary(value: number): string {
     return new Intl.NumberFormat("en-GB", { maximumFractionDigits: 0 }).format(value);
+  }
+
+  /**
+   * Cleanup method to prevent memory leaks and crashes
+   * Should be called when the extension is unloaded or page changes
+   */
+  public cleanup(): void {
+    // Disconnect MutationObserver
+    if (this.observer) {
+      this.observer.disconnect();
+      this.observer = null;
+    }
+
+    // Clear any pending timeouts
+    if (this.mutationTimeout) {
+      window.clearTimeout(this.mutationTimeout);
+      this.mutationTimeout = null;
+    }
+
+    if (this.updateCardsTimeout) {
+      window.clearTimeout(this.updateCardsTimeout);
+      this.updateCardsTimeout = null;
+    }
+
+    if (this.cleanupInterval) {
+      window.clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
+    }
+
+    // Clear highlights and badges
+    this.clearHighlights();
+
+    // Clear processed cards (though WeakSet should auto-cleanup)
+    // Note: WeakSet doesn't have a clear method, but we can recreate it
+    this.processedCards = new WeakSet<Element>();
+
+    // Clear sponsor cache to free memory
+    this.sponsorCache.clear();
+
+    console.debug("Hireall: JobTracker cleanup completed");
   }
 
   private ensureStyles(): void {

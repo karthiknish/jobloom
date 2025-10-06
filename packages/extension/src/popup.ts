@@ -204,6 +204,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Check authentication status (throttled to prevent flickering)
   // Firebase auth state observer
+  // Debounce auth UI updates to prevent flickering
+  let authUpdateTimeout: number | null = null;
+  
   onAuthStateChanged(auth, (user) => {
     console.log("Auth state changed:", user ? `User: ${user.email}` : "No user");
 
@@ -212,13 +215,18 @@ document.addEventListener("DOMContentLoaded", () => {
       syncedSiteUserEmail = user.email || null;
     }
 
-    updateAuthUI(!!user);
-
-    if (user) {
-      syncAuthState(); // Ensure storage reflects Firebase auth state
-    } else {
-      void attemptSyncAuthFromSite();
+    // Debounce UI updates to prevent flickering
+    if (authUpdateTimeout) {
+      clearTimeout(authUpdateTimeout);
     }
+    authUpdateTimeout = window.setTimeout(() => {
+      updateAuthUI(!!user);
+      if (user) {
+        syncAuthState(); // Ensure storage reflects Firebase auth state
+      } else {
+        void attemptSyncAuthFromSite();
+      }
+    }, 100);
   });
 
   function updateAuthUI(isAuthed: boolean) {
@@ -235,6 +243,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const formContainer = document.getElementById(
       "auth-form-container"
     ) as HTMLElement | null;
+    const logoutSection = document.getElementById(
+      "logout-section"
+    ) as HTMLElement | null;
 
     const effectiveAuthed = isAuthed || !!syncedSiteUserId;
 
@@ -245,7 +256,7 @@ document.addEventListener("DOMContentLoaded", () => {
       mainTabs.forEach((t) => ((t as HTMLElement).style.display = "none"));
       if (authTab) authTab.style.display = "flex";
       if (authTab && !authTab.classList.contains("active")) authTab.click();
-      if (signoutBtnEl) signoutBtnEl.style.display = "none";
+      if (logoutSection) logoutSection.style.display = "none";
       if (formContainer) formContainer.style.display = "flex";
     } else {
       authStatus.className = "auth-status authenticated";
@@ -259,7 +270,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       const allTabs = document.querySelectorAll(".nav-tab");
       allTabs.forEach((t) => ((t as HTMLElement).style.display = "flex"));
-      if (signoutBtnEl) signoutBtnEl.style.display = "flex";
+      if (logoutSection) logoutSection.style.display = "block";
       if (formContainer) formContainer.style.display = "none";
       loadJobs();
     }
@@ -458,6 +469,10 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Cache for job data to prevent unnecessary re-renders
+  let lastJobsData: any[] | null = null;
+  let lastJobsFilter: string | null = null;
+
   // Load jobs from storage
   // Load jobs from JobBoardManager (enhanced dashboard integration)
   async function loadJobs() {
@@ -465,17 +480,37 @@ document.addEventListener("DOMContentLoaded", () => {
     const jobCount = document.getElementById("jobs-count")!;
 
     try {
-      // Show loading state
-      jobList.innerHTML = `
-        <div class="loading">
-          <div class="spinner"></div>
-          <span>Fetching your latest job opportunities...</span>
-        </div>
-      `;
-
       // Import JobBoardManager and get all jobs
       const { JobBoardManager } = await import("./addToBoard");
       const jobs = await JobBoardManager.getAllJobs();
+
+      // Get current filter
+      const currentFilter =
+        document
+          .querySelector(".filter-btn.active")
+          ?.getAttribute("data-filter") || "all";
+
+      // Check if data has actually changed
+      const jobsDataChanged = !lastJobsData || 
+        JSON.stringify(jobs) !== JSON.stringify(lastJobsData) ||
+        currentFilter !== lastJobsFilter;
+
+      if (!jobsDataChanged) {
+        return; // No changes, skip update
+      }
+
+      lastJobsData = [...jobs];
+      lastJobsFilter = currentFilter;
+
+      // Show loading state only if we have jobs to show
+      if (jobs.length > 0) {
+        jobList.innerHTML = `
+          <div class="loading">
+            <div class="spinner"></div>
+            <span>Fetching your latest job opportunities...</span>
+          </div>
+        `;
+      }
 
       jobCount.textContent = `${jobs.length} jobs`;
 
@@ -511,11 +546,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Filter jobs
       let filteredJobs = jobs;
-      if (activeFilter !== "all") {
-        if (activeFilter === "sponsored") {
+      if (currentFilter !== "all") {
+        if (currentFilter === "sponsored") {
           filteredJobs = jobs.filter((job) => job.sponsorshipInfo?.isSponsored);
         } else {
-          filteredJobs = jobs.filter((job) => job.status === activeFilter);
+          filteredJobs = jobs.filter((job) => job.status === currentFilter);
         }
       }
 
@@ -945,18 +980,22 @@ document.addEventListener("DOMContentLoaded", () => {
       const baseUrl = sanitizeBaseUrl(result.webAppUrl || DEFAULT_WEB_APP_URL);
       const targetUrl = `${baseUrl}/sign-in?from=extension&provider=google`;
 
-      chrome.tabs.create({ url: targetUrl }, () => {
+      chrome.tabs.create({ url: targetUrl }, (tab) => {
         if (chrome.runtime.lastError) {
           console.error("Failed to open Google sign-in tab:", chrome.runtime.lastError);
-          showAuthError("Unable to open Google sign-in tab. Please try again.");
+          showAuthError("Your browser blocked the Google sign-in window. Please allow popups for this site and try again, or manually visit the sign-in page.");
+          googleBtn.textContent = "Continue with Google";
+          googleBtn.disabled = false;
         } else {
           showToast("Complete Google sign-in in the newly opened tab", {
             type: "info",
+            duration: 5000,
           });
+          // Close the popup after a short delay to let the user see the message
+          setTimeout(() => {
+            window.close();
+          }, 2000);
         }
-
-        googleBtn.textContent = "Continue with Google";
-        googleBtn.disabled = false;
       });
     });
   });
@@ -1025,9 +1064,18 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function loadStats() {
+  // Cache for stats to prevent unnecessary re-renders
+  let lastStatsData: any = null;
+  
   chrome.storage.local.get(
     ["jobsToday", "sponsoredJobs", "applications", "jobBoardData"],
-    (result) => {
+    (result: any) => {
+      // Check if stats have actually changed
+      if (lastStatsData && JSON.stringify(result) === JSON.stringify(lastStatsData)) {
+        return; // No changes, skip update
+      }
+      lastStatsData = { ...result };
+      
       document.getElementById("jobs-today")!.textContent =
         result.jobsToday || "0";
       document.getElementById("sponsored-jobs")!.textContent =
@@ -1047,16 +1095,24 @@ function loadStats() {
 }
 
 function loadSettings() {
+  // Cache for settings to prevent unnecessary re-renders
+  let lastSettingsData: any = null;
+  
   chrome.storage.sync.get(
     [
       "autoDetectJobs",
       "showJobBadges",
       "autoSaveProfile",
-      "webAppUrl",
-      "syncFrequency",
       "ukFiltersEnabled",
+      // Integration settings removed
     ],
-    (result) => {
+    (result: any) => {
+      // Check if settings have actually changed
+      if (lastSettingsData && JSON.stringify(result) === JSON.stringify(lastSettingsData)) {
+        return; // No changes, skip update
+      }
+      lastSettingsData = { ...result };
+      
       // Load toggle states
       const autoDetectToggle = document.getElementById("auto-detect-toggle");
       const showBadgesToggle = document.getElementById("show-badges-toggle");
@@ -1097,19 +1153,7 @@ function loadSettings() {
       }
 
       // Load input values
-      const webAppUrlInput = document.getElementById(
-        "web-app-url"
-      ) as HTMLInputElement;
-      const syncFrequencySelect = document.getElementById(
-        "sync-frequency"
-      ) as HTMLSelectElement;
-
-      if (webAppUrlInput) {
-        webAppUrlInput.value = sanitizeBaseUrl(result.webAppUrl || DEFAULT_WEB_APP_URL);
-      }
-      if (syncFrequencySelect) {
-        syncFrequencySelect.value = result.syncFrequency || "realtime";
-      }
+      // Integration settings removed
     }
   );
 }
@@ -1121,12 +1165,7 @@ function saveSettings() {
     "auto-save-profile-toggle"
   );
   const ukFiltersToggle = document.getElementById("uk-filters-toggle");
-  const webAppUrlInput = document.getElementById(
-    "web-app-url"
-  ) as HTMLInputElement;
-  const syncFrequencySelect = document.getElementById(
-    "sync-frequency"
-  ) as HTMLSelectElement;
+  // Integration settings removed
 
   const settings = {
     autoDetectJobs: autoDetectToggle?.classList.contains("active") ?? true,
@@ -1134,8 +1173,7 @@ function saveSettings() {
     autoSaveProfile:
       autoSaveProfileToggle?.classList.contains("active") ?? true,
     ukFiltersEnabled: ukFiltersToggle?.classList.contains("active") ?? false,
-    webAppUrl: sanitizeBaseUrl(webAppUrlInput?.value || DEFAULT_WEB_APP_URL),
-    syncFrequency: syncFrequencySelect?.value || "realtime",
+    // Integration settings removed
   };
 
   chrome.storage.sync.set(settings, () => {
