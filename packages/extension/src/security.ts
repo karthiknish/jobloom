@@ -186,7 +186,10 @@ export function validateMessage(message: any): boolean {
     'syncAuthState',
     'getUserId',
     'checkSponsorStatus',
-    'extractHireallSession'
+    'extractHireallSession',
+    'fetchSubscriptionStatus',
+    'getAuthToken',
+    'acquireAuthToken'
   ];
 
   if (!allowedActions.includes(message.action)) {
@@ -194,7 +197,7 @@ export function validateMessage(message: any): boolean {
   }
 
   // Restrict unexpected properties
-  const allowedKeys = new Set(['action', 'data', 'url', 'requestId', 'userId']);
+  const allowedKeys = new Set(['action', 'data', 'url', 'requestId', 'userId', 'target', 'token', 'userEmail', 'forceRefresh']);
   if (!Object.keys(message).every((key) => allowedKeys.has(key))) {
     return false;
   }
@@ -215,11 +218,14 @@ export function validateMessage(message: any): boolean {
           return false;
         }
 
-        const { userId, userEmail } = message.data as { userId?: unknown; userEmail?: unknown };
+        const { userId, userEmail, token } = message.data as { userId?: unknown; userEmail?: unknown; token?: unknown };
         if (userId !== undefined && typeof userId !== 'string') {
           return false;
         }
         if (userEmail !== undefined && typeof userEmail !== 'string') {
+          return false;
+        }
+        if (token !== undefined && typeof token !== 'string') {
           return false;
         }
       }
@@ -239,6 +245,11 @@ export function validateMessage(message: any): boolean {
         if (userEmailOverride !== undefined && typeof userEmailOverride !== 'string') {
           return false;
         }
+      }
+      return true;
+    case 'acquireAuthToken':
+      if (message.forceRefresh !== undefined && typeof message.forceRefresh !== 'boolean') {
+        return false;
       }
       return true;
     default:

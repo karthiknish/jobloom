@@ -1,4 +1,19 @@
 import { get } from "./apiClient";
+import { clearCachedAuthToken } from "./authToken";
+
+export interface SubscriptionDetails {
+  plan?: string;
+  status?: string;
+  [key: string]: unknown;
+}
+
+export interface SubscriptionStatus {
+  plan?: string;
+  subscriptionStatus?: string;
+  subscription?: SubscriptionDetails;
+  isAdmin?: boolean;
+  [key: string]: unknown;
+}
 
 // Enhanced rate limiting configuration and utilities for the extension
 export interface RateLimitConfig {
@@ -46,9 +61,9 @@ export const TIERED_RATE_LIMITS: Record<string, UserTierLimits> = {
 
   // Sponsor lookups (core feature)
   'sponsor-lookup': {
-    free: { maxRequests: 15, windowMs: 60000 },    // 15 lookups per minute for free users
-    premium: { maxRequests: 100, windowMs: 60000 },  // 100 lookups per minute for premium users
-    admin: { maxRequests: 500, windowMs: 60000 },    // 500 lookups per minute for admins
+    free: { maxRequests: 50, windowMs: 60000 },    // 50 lookups per minute for free users (increased from 15)
+    premium: { maxRequests: 200, windowMs: 60000 }, // 200 lookups per minute for premium users (increased from 100)
+    admin: { maxRequests: 1000, windowMs: 60000 },  // 1000 lookups per minute for admins (increased from 500)
   },
   'sponsor-batch': {
     free: { maxRequests: 2, windowMs: 60000 },
@@ -99,14 +114,46 @@ let cleanupIntervalId: ReturnType<typeof setInterval> | null = null;
 // Extension storage for user tier
 let currentUserTier: UserTier = 'free';
 let tierCheckTime = 0;
+let tierLookupDepth = 0;
 const TIER_CACHE_DURATION = 5 * 60 * 1000; // Cache tier for 5 minutes
 
-async function fetchSubscriptionStatus(): Promise<any | null> {
+export async function fetchSubscriptionStatus(): Promise<SubscriptionStatus | null> {
+  const shouldProxyThroughBackground =
+    typeof window !== "undefined" && window.location?.protocol !== "chrome-extension:";
+
+  if (shouldProxyThroughBackground && typeof chrome !== "undefined" && chrome.runtime?.id) {
+    return new Promise<SubscriptionStatus | null>((resolve) => {
+      chrome.runtime.sendMessage(
+        { action: "fetchSubscriptionStatus", target: "background" },
+        (response) => {
+          if (chrome.runtime.lastError) {
+            console.warn("Proxy subscription status fetch failed:", chrome.runtime.lastError);
+            resolve(null);
+            return;
+          }
+
+          if (response?.success) {
+            resolve(response.status as SubscriptionStatus | null);
+          } else {
+            console.warn("Subscription status proxy returned error:", response?.error);
+            resolve(null);
+          }
+        }
+      );
+    });
+  }
+
   try {
-    return await get<any>("/api/subscription/status");
-  } catch (error: any) {
-    if (error?.status === 401 || error?.status === 403) {
+    return await get<SubscriptionStatus>("/api/subscription/status");
+  } catch (error: unknown) {
+    const statusCode =
+      typeof error === "object" && error !== null && "status" in error
+        ? (error as { status?: number }).status
+        : undefined;
+
+    if (statusCode === 401 || statusCode === 403) {
       chrome.storage.local.remove(["userTier"]);
+      await clearCachedAuthToken();
     }
     console.warn("Failed to fetch subscription status:", error);
     return null;
@@ -115,14 +162,15 @@ async function fetchSubscriptionStatus(): Promise<any | null> {
 
 // Get current user tier from storage or server
 async function getCurrentUserTier(): Promise<UserTier> {
-  const now = Date.now();
-  
-  // Return cached tier if still valid
-  if (now - tierCheckTime < TIER_CACHE_DURATION) {
-    return currentUserTier;
-  }
-
+  tierLookupDepth++;
   try {
+    const now = Date.now();
+
+    // Return cached tier if still valid
+    if (now - tierCheckTime < TIER_CACHE_DURATION) {
+      return currentUserTier;
+    }
+
     // Try to get from local storage first
     const result = await chrome.storage.local.get(['userTier']);
     if (result.userTier) {
@@ -156,6 +204,8 @@ async function getCurrentUserTier(): Promise<UserTier> {
   } catch (error) {
     console.warn('Failed to get user tier:', error);
     return 'free';
+  } finally {
+    tierLookupDepth = Math.max(0, tierLookupDepth - 1);
   }
 }
 
@@ -218,7 +268,7 @@ export async function checkRateLimit(
   endpoint: string,
   config?: Partial<RateLimitConfig>
 ): Promise<{ allowed: boolean; resetIn?: number; remaining?: number; retryAfter?: number }> {
-  const userTier = await getCurrentUserTier();
+  const userTier = tierLookupDepth > 0 ? currentUserTier : await getCurrentUserTier();
   const rateLimitConfig = resolveRateLimitConfig(endpoint, config, userTier);
   const now = Date.now();
   const stateKey = `${endpoint}:${userTier}`;
@@ -424,4 +474,4 @@ export class BatchRateLimiter {
 /**
  * Global batch rate limiter instance for sponsor lookups
  */
-export const sponsorBatchLimiter = new BatchRateLimiter('sponsor-lookup', 3, 200);
+export const sponsorBatchLimiter = new BatchRateLimiter('sponsor-lookup', 5, 50);

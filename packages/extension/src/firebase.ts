@@ -22,7 +22,7 @@ function validateConfig(cfg: Record<string, any>) {
     .filter(([, value]) => !value)
     .map(([key]) => key);
   if (missing.length) {
-    throw new Error(`Missing Firebase config values for extension: ${missing.join(', ')}`);
+    throw new Error(`Missing authentication configuration values for extension: ${missing.join(', ')}`);
   }
 }
 

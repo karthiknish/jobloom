@@ -346,8 +346,8 @@ export function handleApiError(error: unknown, context?: {
       default:
         return new Response(JSON.stringify({
           error: 'The service encountered an unexpected issue. Please try again shortly.',
-          code: 'FIREBASE_ERROR',
-          details: { firebaseCode: firebaseError.code },
+          code: 'SERVICE_ERROR',
+          details: { originalCode: firebaseError.code },
           timestamp: Date.now(),
           requestId
         }), {

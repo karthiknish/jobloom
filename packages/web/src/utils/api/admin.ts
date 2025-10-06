@@ -404,7 +404,7 @@ export const adminApi = {
     const { page = 1, limit: pageLimit = 50, search, industry, sponsorshipType, status } = options || {};
 
     // Build query
-    let queryRef = collection(db, "sponsors");
+    const queryRef = collection(db, "sponsors");
 
     // Apply filters
     const constraints: any[] = [];
@@ -503,7 +503,7 @@ export const adminApi = {
     const { search, industry, sponsorshipType, status } = options || {};
 
     // Build query
-    let queryRef = collection(db, "sponsors");
+    const queryRef = collection(db, "sponsors");
 
     // Apply filters
     const constraints: any[] = [];

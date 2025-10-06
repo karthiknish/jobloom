@@ -1,7 +1,9 @@
 import { DEFAULT_WEB_APP_URL, sanitizeBaseUrl } from "./constants";
 import { post } from "./apiClient";
-import { checkRateLimit, initRateLimitCleanup } from "./rateLimiter";
+import { checkRateLimit, initRateLimitCleanup, fetchSubscriptionStatus } from "./rateLimiter";
+import type { SubscriptionStatus } from "./rateLimiter";
 import { startRateLimitMonitoring } from "./rateLimitStatus";
+import { cacheAuthToken, acquireIdToken } from "./authToken";
 import {
   validateMessage,
   validateUrl,
@@ -12,18 +14,26 @@ import {
   ExtensionSecurityLogger
 } from "./security";
 
+// Import logging utility
+import { logger, log } from "./utils/logger";
+
 chrome.runtime.onInstalled.addListener(() => {
-  console.log("HireallMonorepo extension installed");
+  log.extension("Extension installed");
 
   // Ensure web app URL exists for API calls
   chrome.storage.sync.get(["webAppUrl"], (result: { webAppUrl?: string }) => {
     if (!result.webAppUrl) {
+      logger.info("Background", "Setting default web app URL", { url: DEFAULT_WEB_APP_URL });
       chrome.storage.sync.set({
         webAppUrl: DEFAULT_WEB_APP_URL,
       });
     } else {
       const sanitized = sanitizeBaseUrl(result.webAppUrl);
       if (sanitized !== result.webAppUrl) {
+        logger.info("Background", "Sanitizing web app URL", {
+          original: result.webAppUrl,
+          sanitized
+        });
         chrome.storage.sync.set({ webAppUrl: sanitized });
       }
     }
@@ -32,6 +42,7 @@ chrome.runtime.onInstalled.addListener(() => {
   // Initialize rate limiting cleanup and monitoring
   initRateLimitCleanup();
   startRateLimitMonitoring();
+  logger.info("Background", "Rate limiting and monitoring initialized");
 });
 
 // Initialize security components
@@ -48,6 +59,11 @@ function isLinkedInUrl(url?: string) {
 }
 
 async function syncAuthStateFromSite(options: { tabId?: number; userIdOverride?: string; userEmailOverride?: string } = {}): Promise<{ updated: boolean; userId?: string; userEmail?: string }> {
+  logger.debug("Background", "Syncing auth state from site", {
+    hasTabId: !!options.tabId,
+    hasUserIdOverride: !!options.userIdOverride
+  });
+
   const targetPatterns = [
     "https://hireall.app/*",
     "https://*.hireall.app/*",
@@ -68,12 +84,41 @@ async function syncAuthStateFromSite(options: { tabId?: number; userIdOverride?:
     });
   };
 
+  const cacheTokenFromTab = async (tabId: number): Promise<void> => {
+    return new Promise((resolve) => {
+      chrome.tabs.sendMessage(tabId, { action: "getAuthToken" }, async (tokenResponse) => {
+        if (chrome.runtime.lastError) {
+          resolve();
+          return;
+        }
+
+        if (tokenResponse?.token && typeof tokenResponse.token === "string") {
+          try {
+            await cacheAuthToken({
+              token: tokenResponse.token,
+              userId: tokenResponse.userId,
+              source: "background"
+            });
+          } catch (error) {
+            logger.warn("Background", "Failed to cache auth token from tab", {
+              error: error instanceof Error ? error.message : String(error)
+            });
+          }
+        }
+
+        resolve();
+      });
+    });
+  };
+
   const resolveWithTab = async (tabId: number): Promise<{ updated: boolean; userId?: string; userEmail?: string }> => {
     return new Promise((resolve) => {
       chrome.tabs.sendMessage(tabId, { action: "getUserId" }, async (response) => {
         if (chrome.runtime.lastError) {
           const errorMessage = chrome.runtime.lastError.message || '';
-          console.debug(`Failed to get user ID from tab ${tabId}: ${errorMessage}`);
+          logger.debug("Background", `Failed to get user ID from tab ${tabId}`, {
+            error: errorMessage
+          });
           resolve({ updated: false });
           return;
         }
@@ -82,17 +127,29 @@ async function syncAuthStateFromSite(options: { tabId?: number; userIdOverride?:
         const userEmail = response?.userEmail ? String(response.userEmail) : undefined;
 
         if (!userId) {
+          logger.debug("Background", `No user ID found in tab ${tabId}`);
           resolve({ updated: false });
           return;
         }
 
+        logger.info("Background", "Updating auth state from tab", {
+          tabId,
+          userId,
+          hasEmail: !!userEmail
+        });
+
         await tryUpdateStorage(userId, userEmail);
+        await cacheTokenFromTab(tabId);
         resolve({ updated: true, userId, userEmail });
       });
     });
   };
 
   if (options.userIdOverride) {
+    logger.info("Background", "Using user ID override", {
+      userId: options.userIdOverride,
+      hasEmail: !!options.userEmailOverride
+    });
     await tryUpdateStorage(options.userIdOverride, options.userEmailOverride);
     return { updated: true, userId: options.userIdOverride, userEmail: options.userEmailOverride };
   }
@@ -103,6 +160,8 @@ async function syncAuthStateFromSite(options: { tabId?: number; userIdOverride?:
 
   return new Promise((resolve) => {
     chrome.tabs.query({ url: targetPatterns }, async (tabs) => {
+      logger.debug("Background", `Found ${tabs.length} matching tabs for auth sync`);
+
       for (const tab of tabs) {
         if (!tab.id) continue;
         const result = await resolveWithTab(tab.id);
@@ -111,6 +170,7 @@ async function syncAuthStateFromSite(options: { tabId?: number; userIdOverride?:
           return;
         }
       }
+      logger.debug("Background", "No valid auth state found in any tabs");
       resolve({ updated: false });
     });
   });
@@ -118,35 +178,51 @@ async function syncAuthStateFromSite(options: { tabId?: number; userIdOverride?:
 
 // Handle messages from content script with security validation
 chrome.runtime.onMessage.addListener((request: any, sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void) => {
+  const startTime = Date.now();
+  const senderId = sender.tab?.id?.toString() || 'unknown';
+
+  logger.debug("Background", "Received message", {
+    action: request?.action,
+    senderId,
+    hasData: !!request?.data
+  });
+
   // Check if extension context is still valid
   if (typeof chrome === "undefined" || !chrome.storage) {
-    console.debug("Hireall: Extension context invalidated, cannot process message");
+    logger.error("Background", "Extension context invalidated, cannot process message");
     sendResponse({ error: 'Extension context invalidated' });
     return false;
   }
 
   // Only process messages that are meant for the background script
   if (request.target && request.target !== 'background') {
+    logger.debug("Background", "Message not for background script", {
+      target: request.target
+    });
     return undefined; // Let other handlers process this message
   }
 
   // Validate message format
   if (!validateMessage(request)) {
     ExtensionSecurityLogger.logSuspiciousActivity('invalid_message_format', request);
+    logger.warn("Background", "Invalid message format", { action: request?.action });
     sendResponse({ error: 'Invalid message format' });
     return;
   }
 
   // Rate limiting
-  const senderId = sender.tab?.id?.toString() || 'unknown';
   if (!messageRateLimiter.isAllowed(senderId)) {
     ExtensionSecurityLogger.logSuspiciousActivity('rate_limit_exceeded', { senderId });
+    logger.warn("Background", "Rate limit exceeded", { senderId });
     sendResponse({ error: 'Rate limit exceeded' });
     return;
   }
 
   if (request.action === "addJob") {
     if (!isLinkedInUrl(request.data?.url)) {
+      logger.warn("Background", "Unsupported job source for addJob", {
+        url: request.data?.url
+      });
       sendResponse({ error: 'Unsupported job source' });
       return;
     }
@@ -154,15 +230,28 @@ chrome.runtime.onMessage.addListener((request: any, sender: chrome.runtime.Messa
     const validation = validateJobData(request.data);
     if (!validation.valid) {
       ExtensionSecurityLogger.logValidationFailure('job_data', request.data);
+      logger.warn("Background", "Invalid job data for addJob", {
+        errors: validation.errors,
+        company: request.data?.company
+      });
       sendResponse({ error: 'Invalid job data', details: validation.errors });
       return;
     }
 
     const sanitizedData = sanitizeJobData(request.data);
+    logger.info("Background", "Processing addJob request", {
+      company: sanitizedData.company,
+      title: sanitizedData.title,
+      url: sanitizedData.url
+    });
+
     handleJobData(sanitizedData);
     sendResponse({ success: true });
   } else if (request.action === "jobAddedToBoard") {
     if (!isLinkedInUrl(request.data?.url)) {
+      logger.warn("Background", "Unsupported job source for jobAddedToBoard", {
+        url: request.data?.url
+      });
       sendResponse({ error: 'Unsupported job source' });
       return;
     }
@@ -170,49 +259,95 @@ chrome.runtime.onMessage.addListener((request: any, sender: chrome.runtime.Messa
     const validation = validateJobData(request.data);
     if (!validation.valid) {
       ExtensionSecurityLogger.logValidationFailure('job_board_data', request.data);
+      logger.warn("Background", "Invalid job data for jobAddedToBoard", {
+        errors: validation.errors,
+        company: request.data?.company
+      });
       sendResponse({ error: 'Invalid job data', details: validation.errors });
       return;
     }
 
     const sanitizedData = sanitizeJobData(request.data);
+    logger.info("Background", "Processing jobAddedToBoard request", {
+      company: sanitizedData.company,
+      title: sanitizedData.title,
+      url: sanitizedData.url
+    });
+
     handleJobBoardAddition(sanitizedData);
     sendResponse({ success: true });
   } else if (request.action === "getWebAppUrl") {
     // Respond with webAppUrl
     SecureStorage.get<string>("webAppUrl").then(webAppUrl => {
+      const finalUrl = sanitizeBaseUrl(webAppUrl || DEFAULT_WEB_APP_URL);
+      logger.debug("Background", "Retrieved web app URL", { url: finalUrl });
       sendResponse({
-        webAppUrl: sanitizeBaseUrl(webAppUrl || DEFAULT_WEB_APP_URL),
+        webAppUrl: finalUrl,
       });
     }).catch(error => {
       ExtensionSecurityLogger.log('Error retrieving web app URL', error);
+      logger.error("Background", "Failed to retrieve web app URL", {
+        error: error instanceof Error ? error.message : String(error)
+      });
       sendResponse({ error: 'Failed to retrieve web app URL' });
     });
+    return true;
+  } else if (request.action === "fetchSubscriptionStatus") {
+    logger.debug("Background", "Fetching subscription status on behalf of content script");
+    fetchSubscriptionStatus()
+      .then((status: SubscriptionStatus | null) => {
+        logger.debug("Background", "Subscription status retrieved", {
+          hasStatus: !!status,
+          plan: status?.plan || status?.subscription?.plan
+        });
+        sendResponse({ success: true, status });
+      })
+      .catch((error: unknown) => {
+        ExtensionSecurityLogger.log('Failed to fetch subscription status proxy', error);
+        logger.error("Background", "Subscription status proxy failed", {
+          error: error instanceof Error ? error.message : String(error)
+        });
+        sendResponse({ success: false, error: error instanceof Error ? error.message : 'Unknown error' });
+      });
     return true;
   } else if (request.action === "openJobUrl") {
     // Validate URL before opening
     if (request.url && validateUrl(request.url)) {
+      logger.info("Background", "Opening job URL", { url: request.url });
       chrome.tabs.create({ url: request.url });
       sendResponse({ success: true });
     } else {
       ExtensionSecurityLogger.logValidationFailure('job_url', request.url);
+      logger.warn("Background", "Invalid URL for openJobUrl", { url: request.url });
       sendResponse({ error: 'Invalid URL' });
     }
   } else if (request.action === "syncAuthState") {
+    logger.debug("Background", "Syncing auth state");
     syncAuthStateFromSite()
       .then((result) => {
+        logger.info("Background", "Auth state sync completed", {
+          success: result.updated,
+          hasUserId: !!result.userId
+        });
         sendResponse({ success: result.updated, userId: result.userId, userEmail: result.userEmail });
       })
       .catch((error) => {
         ExtensionSecurityLogger.log('Failed to sync auth state', error);
+        logger.error("Background", "Auth state sync failed", {
+          error: error instanceof Error ? error.message : String(error)
+        });
         sendResponse({ success: false, error: error instanceof Error ? error.message : 'Unknown error' });
       });
     return true;
   } else if (request.action === "extractHireallSession") {
     // Extract session from Hireall web app
     if (sender.tab?.id) {
+      logger.debug("Background", "Extracting Hireall session", { tabId: sender.tab.id });
       chrome.tabs.sendMessage(sender.tab.id, { action: "extractHireallSession" }, (response) => {
         if (chrome.runtime.lastError) {
-          console.error("Failed to extract Hireall session:", chrome.runtime.lastError);
+          logger.error("Background", "Failed to extract Hireall session", {
+            error: chrome.runtime.lastError.message
+          });
           sendResponse({ success: false, error: "Failed to extract session" });
           return;
         }
@@ -227,7 +362,10 @@ chrome.runtime.onMessage.addListener((request: any, sender: chrome.runtime.Messa
           if (response.userEmail) payload.userEmail = response.userEmail;
 
           chrome.storage.sync.set(payload, () => {
-            console.log("Hireall session extracted and stored:", response.userId);
+            logger.info("Background", "Hireall session extracted and stored", {
+              userId: response.userId,
+              hasEmail: !!response.userEmail
+            });
             sendResponse({
               success: true,
               userId: response.userId,
@@ -236,20 +374,58 @@ chrome.runtime.onMessage.addListener((request: any, sender: chrome.runtime.Messa
             });
           });
         } else {
+          logger.debug("Background", "No session found in Hireall web app");
           sendResponse({ success: false, error: "No session found" });
         }
       });
     } else {
+      logger.warn("Background", "No tab ID available for session extraction");
       sendResponse({ success: false, error: "No tab ID available" });
     }
     return true;
+  } else if (request.action === "acquireAuthToken") {
+    const forceRefresh = request.forceRefresh === true;
+
+    acquireIdToken(forceRefresh, { skipMessageFallback: true })
+      .then((token) => {
+        if (!token) {
+          sendResponse({ success: false, error: "No token available" });
+          return;
+        }
+
+        chrome.storage.sync.get(["firebaseUid", "userId", "userEmail"], (storage) => {
+          if (chrome.runtime?.lastError) {
+            logger.warn("Background", "Failed to read user info for auth token response", {
+              error: chrome.runtime.lastError.message
+            });
+          }
+
+          const userId = storage?.firebaseUid || storage?.userId || null;
+          const userEmail = storage?.userEmail || null;
+          sendResponse({ success: true, token, userId, userEmail });
+        });
+      })
+      .catch((error) => {
+        logger.error("Background", "Failed to acquire auth token for requester", {
+          error: error instanceof Error ? error.message : String(error)
+        });
+        sendResponse({ success: false, error: error instanceof Error ? error.message : "Unknown error" });
+      });
+
+    return true;
   } else if (request.action === "authSuccess") {
     // After web app login, capture Firebase UID and store
-    console.log("Authentication successful, capturing Firebase uid");
+    logger.info("Background", "Authentication successful, capturing Firebase UID");
 
-    const messageData = (request?.data ?? {}) as { userId?: string; userEmail?: string };
+  const messageData = (request?.data ?? {}) as { userId?: string; userEmail?: string; token?: string };
     const overrideUid = messageData.userId ?? (typeof request.userId === "string" ? request.userId : undefined);
     const overrideEmail = messageData.userEmail ?? (typeof request.userEmail === "string" ? request.userEmail : undefined);
+
+    logger.debug("Background", "Auth success data", {
+      hasOverrideUid: !!overrideUid,
+      hasOverrideEmail: !!overrideEmail,
+      hasTabId: !!sender.tab?.id
+    });
 
     const syncPromise = sender.tab?.id
       ? syncAuthStateFromSite({ tabId: sender.tab.id, userIdOverride: overrideUid, userEmailOverride: overrideEmail })
@@ -259,18 +435,38 @@ chrome.runtime.onMessage.addListener((request: any, sender: chrome.runtime.Messa
 
     syncPromise
       .then((result) => {
+        const resolvedUserId = result.userId ?? overrideUid ?? undefined;
+        const resolvedEmail = result.userEmail ?? overrideEmail ?? undefined;
+
+        if (typeof messageData.token === "string" && messageData.token.length > 0) {
+          cacheAuthToken({
+            token: messageData.token,
+            userId: resolvedUserId,
+            userEmail: resolvedEmail,
+            source: "background"
+          }).catch((error) => {
+            logger.warn("Background", "Failed to cache auth token from authSuccess", {
+              error: error instanceof Error ? error.message : String(error)
+            });
+          });
+        }
+
         if (result.updated) {
-          console.log("Saved firebaseUid via authSuccess message:", result.userId);
+          logger.info("Background", "Saved firebaseUid via authSuccess message", {
+            userId: result.userId
+          });
         }
 
         sendResponse({
           success: true,
-          userId: result.userId ?? overrideUid ?? null,
-          userEmail: result.userEmail ?? overrideEmail ?? null,
+          userId: resolvedUserId ?? null,
+          userEmail: resolvedEmail ?? null,
         });
       })
       .catch((error) => {
-        console.error("Error syncing auth state from authSuccess", error);
+        logger.error("Background", "Error syncing auth state from authSuccess", {
+          error: error instanceof Error ? error.message : String(error)
+        });
         sendResponse({
           success: false,
           error: error instanceof Error ? error.message : "Unknown error",
@@ -278,17 +474,38 @@ chrome.runtime.onMessage.addListener((request: any, sender: chrome.runtime.Messa
       });
 
     return true;
+  } else {
+    logger.warn("Background", "Unhandled message action", {
+      action: request?.action,
+      senderId
+    });
+    sendResponse({ error: 'Unknown action' });
   }
+
+  // Log total processing time
+  const processingTime = Date.now() - startTime;
+  logger.debug("Background", "Message processing completed", {
+    action: request?.action,
+    processingTime,
+    senderId
+  });
 });
 
 async function handleJobData(jobData: any) {
+  logger.info("Background", "Handling job data", {
+    title: jobData.title,
+    company: jobData.company,
+    isSponsored: jobData.isSponsored
+  });
+
   // Check rate limit before processing
   const rateCheck = await checkRateLimit("job-add");
   if (!rateCheck.allowed) {
     const retryAfter = rateCheck.retryAfter || Math.ceil((rateCheck.resetIn || 0) / 1000);
-    console.warn(
-      `Rate limit exceeded for job-add endpoint. Try again in ${retryAfter} seconds.`
-    );
+    logger.warn("Background", "Rate limit exceeded for job-add", {
+      retryAfter,
+      resetIn: rateCheck.resetIn
+    });
     return;
   }
 
@@ -301,7 +518,7 @@ async function handleJobData(jobData: any) {
     ]) as { webAppUrl?: string; firebaseUid?: string; userId?: string };
     const uid = result.firebaseUid || result.userId;
     if (!uid) {
-      console.warn("No Firebase user id present; cannot sync job.");
+      logger.warn("Background", "No Firebase user ID present, cannot sync job");
       return;
     }
 
@@ -309,6 +526,7 @@ async function handleJobData(jobData: any) {
     await getOrCreateClientId();
 
     try {
+      log.time("Background", "job-api-call");
       await post("/api/app/jobs", {
         title: jobData.title,
         company: jobData.company,
@@ -319,7 +537,12 @@ async function handleJobData(jobData: any) {
         source: "extension",
         userId: uid,
       });
-      console.log("Job data synced successfully");
+      log.timeEnd("Background", "job-api-call");
+
+      logger.info("Background", "Job data synced successfully", {
+        title: jobData.title,
+        company: jobData.company
+      });
 
       // Update local storage stats
       chrome.storage.local.get(["sponsoredJobs", "jobsToday"], (result) => {
@@ -331,18 +554,33 @@ async function handleJobData(jobData: any) {
           sponsoredJobs,
           jobsToday,
         });
+
+        logger.debug("Background", "Updated job statistics", {
+          sponsoredJobs,
+          jobsToday
+        });
       });
     } catch (e) {
-      console.error("Failed to sync job data:", e);
+      logger.error("Background", "Failed to sync job data", {
+        error: e instanceof Error ? e.message : String(e),
+        title: jobData.title,
+        company: jobData.company
+      });
     }
   } catch (error) {
-    console.error("Error handling job data:", error);
+    logger.error("Background", "Error handling job data", {
+      error: error instanceof Error ? error.message : String(error)
+    });
   }
 }
 
 async function handleJobBoardAddition(jobBoardEntry: any) {
   try {
-    console.log("Job added to board:", jobBoardEntry);
+    logger.info("Background", "Job added to board", {
+      title: jobBoardEntry.title,
+      company: jobBoardEntry.company,
+      url: jobBoardEntry.url
+    });
 
     // Update local stats
     chrome.storage.local.get(["jobBoardStats"], (result: { jobBoardStats?: any }) => {
@@ -363,11 +601,20 @@ async function handleJobBoardAddition(jobBoardEntry: any) {
       stats.addedToday++;
 
       chrome.storage.local.set({ jobBoardStats: stats });
+
+      logger.debug("Background", "Updated job board statistics", {
+        totalAdded: stats.totalAdded,
+        addedToday: stats.addedToday
+      });
     });
 
     // Optionally sync analytics to the web app in the future
   } catch (error) {
-    console.error("Error handling job board addition:", error);
+    logger.error("Background", "Error handling job board addition", {
+      error: error instanceof Error ? error.message : String(error),
+      title: jobBoardEntry?.title,
+      company: jobBoardEntry?.company
+    });
   }
 }
 
@@ -375,11 +622,13 @@ async function getOrCreateClientId(): Promise<string> {
   return new Promise((resolve) => {
     chrome.storage.local.get(["clientId"], (result) => {
       if (result.clientId) {
+        logger.debug("Background", "Using existing client ID", { clientId: result.clientId });
         resolve(result.clientId);
       } else {
         const newClientId =
           "bg-" + Math.random().toString(36).substr(2, 9) + "-" + Date.now();
         chrome.storage.local.set({ clientId: newClientId }, () => {
+          logger.debug("Background", "Created new client ID", { clientId: newClientId });
           resolve(newClientId);
         });
       }

@@ -70,8 +70,10 @@ export class SponsorshipManager {
     }
 
     const lookupPromise = this.runWithSponsorLimit(async () => {
+      console.debug("Hireall: Making API call for sponsor lookup:", company);
       try {
         const data = await get<any>("/api/app/sponsorship/companies", { q: company, limit: 1 });
+        console.debug("Hireall: API call completed for", company, "results:", data.results?.length || 0);
         const rec = data.results?.[0] || null;
 
         if (rec) {
@@ -79,6 +81,7 @@ export class SponsorshipManager {
           sponsorshipCache.set(key, baseRecord);
 
           if (jobDescription) {
+            console.debug("Hireall: Enhancing sponsor record with job context for", company);
             return await this.enhanceSponsorRecordWithJobContext({ ...baseRecord }, jobDescription);
           }
 
@@ -95,8 +98,35 @@ export class SponsorshipManager {
           );
         } else if (e?.statusCode === 401) {
           console.warn(`Authentication failed for sponsor lookup: ${e.message}`);
+          // Try to refresh authentication state
+          try {
+            const { ExtensionMessageHandler } = await import("../components/ExtensionMessageHandler");
+            const syncResult = await ExtensionMessageHandler.sendMessage("syncAuthState", {}, 3);
+            if (syncResult?.userId) {
+              console.log("Hireall: Auth state refreshed, retrying sponsor lookup");
+              // Retry the API call once after auth refresh
+              const retryData = await get<any>("/api/app/sponsorship/companies", { q: company, limit: 1 });
+              const retryRec = retryData.results?.[0] || null;
+              if (retryRec) {
+                const baseRecord = this.mapApiRecordToSponsorship(retryRec);
+                sponsorshipCache.set(key, baseRecord);
+                if (jobDescription) {
+                  return await this.enhanceSponsorRecordWithJobContext({ ...baseRecord }, jobDescription);
+                }
+                return baseRecord;
+              }
+            }
+          } catch (retryError) {
+            console.warn("Hireall: Retry after auth refresh also failed", retryError);
+          }
         } else if (e?.statusCode === 403) {
           console.warn(`Permission denied for sponsor lookup: ${e.message}`);
+        } else if (e.message && e.message.includes('CORS')) {
+          console.warn(`CORS error for sponsor lookup: ${e.message}`);
+          console.info("Hireall: This is a server-side CORS issue. The extension is authenticated but the server needs to allow requests from LinkedIn.");
+        } else if (e.message && e.message.includes('Failed to fetch')) {
+          console.warn(`Network error for sponsor lookup: ${e.message}`);
+          console.info("Hireall: This could be a CORS issue or network connectivity problem.");
         }
 
         return null;
@@ -291,6 +321,9 @@ export class SponsorshipManager {
       }
     } catch (error) {
       console.warn("SponsorshipManager: failed to load SOC details", error);
+      if (error instanceof Error && (error.message.includes('CORS') || error.message.includes('Failed to fetch'))) {
+        console.info("Hireall: SOC details fetch failed due to CORS or network issue - this is a server-side configuration issue");
+      }
     }
 
     socDetailsCache.set(normalized, null);

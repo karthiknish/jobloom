@@ -4,6 +4,35 @@ import { createFirestoreCollection } from "@/firebase/firestore";
 import { getAdminFirestore } from "@/firebase/admin";
 import { where } from "firebase/firestore";
 
+// CORS helper function for LinkedIn extension
+function addCorsHeaders(response, origin) {
+  const allowedOrigins = [
+    'https://www.linkedin.com',
+    'https://linkedin.com',
+    process.env.NEXT_PUBLIC_WEB_URL || 'https://hireall.app',
+    'http://localhost:3000',
+  ];
+
+  const requestOrigin = origin;
+
+  if (requestOrigin && (allowedOrigins.includes(requestOrigin) || 
+      requestOrigin.includes('hireall.app') || 
+      requestOrigin.includes('vercel.app') || 
+      requestOrigin.includes('netlify.app'))) {
+    response.headers.set('Access-Control-Allow-Origin', requestOrigin);
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Request-ID, X-Requested-With');
+    response.headers.set('Access-Control-Allow-Credentials', 'true');
+    response.headers.set('Vary', 'Origin');
+  } else if (process.env.NODE_ENV === 'development') {
+    response.headers.set('Access-Control-Allow-Origin', '*');
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Request-ID');
+  }
+
+  return response;
+}
+
 // GET /api/app/jobs/user/[userId] - Get jobs for a specific user
 export async function GET(
   request: NextRequest,
@@ -59,4 +88,12 @@ export async function GET(
     console.error("Error fetching jobs:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
+}
+
+
+// OPTIONS handler for CORS preflight
+export async function OPTIONS(request: NextRequest) {
+  const origin = request.headers.get('origin');
+  const response = new NextResponse(null, { status: 200 });
+  return addCorsHeaders(response, origin || undefined);
 }

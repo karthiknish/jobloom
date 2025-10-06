@@ -3,6 +3,7 @@
 import { ExtensionSecurityLogger } from "./security";
 import { put } from "./apiClient";
 import { ExtensionMessageHandler } from "./components/ExtensionMessageHandler";
+import { cacheAuthToken } from "./authToken";
 
 // Content script for the web app to handle authentication communication
 let authSuccessSent = false; // Prevent duplicate auth success messages
@@ -222,12 +223,26 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     try {
       const auth = (window as any).__firebase_auth;
       if (auth && auth.currentUser) {
-        auth.currentUser.getIdToken(true).then((token: string) => {
-          sendResponse({ token, userId: auth.currentUser.uid });
-        }).catch((error: any) => {
-          ExtensionSecurityLogger.log('Error getting auth token', error);
-          sendResponse({ token: null, error: 'Failed to get auth token' });
-        });
+        const shouldForceRefresh = request?.forceRefresh === true;
+        auth.currentUser
+          .getIdToken(shouldForceRefresh)
+          .then(async (token: string) => {
+            try {
+              await cacheAuthToken({
+                token,
+                userId: auth.currentUser.uid,
+                userEmail: auth.currentUser.email ?? undefined,
+                source: "webapp"
+              });
+            } catch (cacheError) {
+              ExtensionSecurityLogger.log('Error caching auth token', cacheError);
+            }
+            sendResponse({ token, userId: auth.currentUser.uid });
+          })
+          .catch((error: any) => {
+            ExtensionSecurityLogger.log('Error getting auth token', error);
+            sendResponse({ token: null, error: 'Failed to get auth token' });
+          });
         return true; // Async response
       } else {
         sendResponse({ token: null, error: 'No authenticated user' });
@@ -246,7 +261,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 // Optimized auth success detection with debouncing
-function notifyAuthSuccess(userId: string) {
+async function notifyAuthSuccess(userId: string): Promise<void> {
   if (authSuccessSent || lastUserId === userId) {
     return; // Already sent or same user
   }
@@ -255,10 +270,28 @@ function notifyAuthSuccess(userId: string) {
   lastUserId = userId;
 
   const { userEmail } = extractUserInfo();
+  let token: string | undefined;
+
+  try {
+    const auth = (window as any).__firebase_auth;
+    if (auth?.currentUser) {
+      token = await auth.currentUser.getIdToken(true);
+      if (token) {
+        await cacheAuthToken({
+          token,
+          userId: auth.currentUser.uid,
+          userEmail: auth.currentUser.email ?? undefined,
+          source: "webapp"
+        });
+      }
+    }
+  } catch (error) {
+    ExtensionSecurityLogger.log('Error retrieving auth token for authSuccess', error);
+  }
 
   console.log("Authentication successful, notifying extension with userId:", userId);
 
-  ExtensionMessageHandler.sendMessage("authSuccess", { userId, userEmail }, 2).catch((error) => {
+  ExtensionMessageHandler.sendMessage("authSuccess", { userId, userEmail, token }, 2).catch((error) => {
     console.debug("Auth success notification failed; extension context may be invalid", error);
     // Reset flag on failure so we can try again
     authSuccessSent = false;
@@ -312,7 +345,7 @@ window.addEventListener("message", (event) => {
       }
 
       if (userId) {
-        notifyAuthSuccess(userId);
+  void notifyAuthSuccess(userId);
       }
     }, 1000);
   }
@@ -396,7 +429,7 @@ function checkForAuthSuccess(): Promise<void> {
     const { userId } = extractUserInfo();
 
     if (userId) {
-      notifyAuthSuccess(userId);
+  void notifyAuthSuccess(userId);
     }
 
     resolve();

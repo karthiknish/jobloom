@@ -55,11 +55,11 @@ export function PortfolioSettings({
     return Object.values(socialLinks).filter(link => link && link.trim().length > 0).length;
   };
 
-  const getConnectedPlatforms = () => {
-    return Object.entries(socialLinks)
-      .filter(([_, link]) => link && link.trim().length > 0)
-      .map(([platform]) => platform);
-  };
+  // const getConnectedPlatforms = () => {
+  //   return Object.entries(socialLinks)
+  //     .filter(([_, link]) => link && link.trim().length > 0)
+  //     .map(([platform]) => platform);
+  // };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -353,7 +353,7 @@ function AnalyticsSection({
           {analytics.googleAnalytics && (
             <Alert>
               <AlertDescription className="text-sm">
-                Google Analytics is configured. You'll see visitor data in your GA dashboard within 24-48 hours.
+                Google Analytics is configured. You&apos;ll see visitor data in your GA dashboard within 24-48 hours.
               </AlertDescription>
             </Alert>
           )}

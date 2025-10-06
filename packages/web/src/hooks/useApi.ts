@@ -137,7 +137,7 @@ function logApiError(error: EnhancedApiError, context?: {
   let enhancedMessage = error.message;
   
   if (error.message.includes('Missing or insufficient permissions')) {
-    enhancedMessage = `Firebase permission error: ${error.message}. This usually means the service account lacks access to the requested resource, or the user doesn't have proper permissions. Check Firestore security rules and service account configuration.`;
+    enhancedMessage = `Permission error: ${error.message}. You may not have access to this resource.`;
   } else if (error.status === 403) {
     enhancedMessage = `Access forbidden: ${error.message}. The user or service account may not have permission to access this resource.`;
   } else if (error.status === 401) {

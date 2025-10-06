@@ -34,19 +34,19 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
+  Dialog as _Dialog,
+  DialogContent as _DialogContent,
+  DialogHeader as _DialogHeader,
+  DialogTitle as _DialogTitle,
 } from "@/components/ui/dialog";
-import { Switch } from "@/components/ui/switch";
+import { Switch as _Switch } from "@/components/ui/switch";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { dashboardApi, Job, Application } from "@/utils/api/dashboard";
+import { dashboardApi, Job as _Job, Application } from "@/utils/api/dashboard";
 import { showSuccess, showError } from "@/components/ui/Toast";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Crown } from "lucide-react";
@@ -62,7 +62,7 @@ interface JobListProps {
 export function JobList({
   applications,
   onEditApplication,
-  onDeleteApplication,
+  onDeleteApplication: _onDeleteApplication,
   onViewApplication,
   onChanged,
 }: JobListProps) {
@@ -72,11 +72,11 @@ export function JobList({
   const [showRecruitmentAgency, setShowRecruitmentAgency] = useState(true);
   const [sortBy, setSortBy] = useState("dateFound");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [viewsOpen, setViewsOpen] = useState(false);
-  const [remindersOpen, setRemindersOpen] = useState(false);
-  const [reminderEnable, setReminderEnable] = useState(false);
-  const [reminderDate, setReminderDate] = useState("");
-  const [savedViews, setSavedViews] = useState<{ [key: string]: any }>({});
+  const [_viewsOpen, _setViewsOpen] = useState(false);
+  const [_remindersOpen, _setRemindersOpen] = useState(false);
+  const [_reminderEnable, _setReminderEnable] = useState(false);
+  const [_reminderDate, _setReminderDate] = useState("");
+  const [_savedViews, _setSavedViews] = useState<{ [key: string]: any }>({});
 
   // Restore filters from localStorage
   useEffect(() => {
@@ -543,7 +543,7 @@ className="text-sky-600 border-sky-200 hover:bg-sky-50"
                     <div>
                       <h3 className="text-lg font-semibold text-amber-900">Upgrade to Premium</h3>
                       <p className="text-amber-700">
-                        You've reached {applications.length} applications! Upgrade to unlock unlimited job tracking, advanced analytics, and AI-powered insights.
+                        You&apos;ve reached {applications.length} applications! Upgrade to unlock unlimited job tracking, advanced analytics, and AI-powered insights.
                       </p>
                     </div>
                   </div>

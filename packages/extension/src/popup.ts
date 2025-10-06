@@ -2,6 +2,7 @@
 import { DEFAULT_WEB_APP_URL, sanitizeBaseUrl } from "./constants";
 import { getAuthInstance } from "./firebase";
 import { get } from "./apiClient";
+import { cacheAuthToken, clearCachedAuthToken } from "./authToken";
 import { ExtensionMessageHandler } from "./components/ExtensionMessageHandler";
 import {
   signInWithEmailAndPassword,
@@ -10,6 +11,9 @@ import {
   signOut as firebaseSignOut,
 } from "firebase/auth";
 import { EXT_COLORS } from "./theme";
+
+// Import logging utility
+import { logger } from "./utils/logger";
 
 // Helper function to create SVG strings from Lucide icons
 function createSVGString(iconName: string, size: number = 16): string {
@@ -222,7 +226,7 @@ document.addEventListener("DOMContentLoaded", () => {
     authUpdateTimeout = window.setTimeout(() => {
       updateAuthUI(!!user);
       if (user) {
-        syncAuthState(); // Ensure storage reflects Firebase auth state
+  void syncAuthState(); // Ensure storage reflects Firebase auth state
       } else {
         void attemptSyncAuthFromSite();
       }
@@ -239,7 +243,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const mainTabs = document.querySelectorAll(
       '.nav-tab[data-tab="dashboard"], .nav-tab[data-tab="jobs"], .nav-tab[data-tab="settings"]'
     );
-    const signoutBtnEl = signoutBtn as HTMLElement | null;
     const formContainer = document.getElementById(
       "auth-form-container"
     ) as HTMLElement | null;
@@ -281,33 +284,65 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Function to manually sync auth state with storage
-  function syncAuthState() {
+  async function syncAuthState(): Promise<void> {
     const currentUser = auth.currentUser;
-    console.log("Manually syncing auth state:", currentUser ? `User: ${currentUser.email}` : "No user");
+    logger.info("Popup", "Manually syncing auth state", {
+      hasUser: !!currentUser,
+      email: currentUser?.email
+    });
 
     if (currentUser?.uid) {
       syncedSiteUserId = currentUser.uid;
       syncedSiteUserEmail = currentUser.email || null;
-      chrome.storage.sync.set({
+      await new Promise<void>((resolve) => {
+        chrome.storage.sync.set({
         firebaseUid: currentUser.uid,
         userEmail: currentUser.email || ""
-      }, () => {
-        if (chrome.runtime.lastError) {
-          console.error("Failed to sync auth data to storage:", chrome.runtime.lastError);
-        } else {
-          console.log("Auth state synced to storage");
-        }
+        }, () => {
+          if (chrome.runtime.lastError) {
+            logger.error("Popup", "Failed to sync auth data to storage", {
+              error: chrome.runtime.lastError.message
+            });
+          } else {
+            logger.info("Popup", "Auth state synced to storage", {
+              userId: currentUser.uid,
+              email: currentUser.email
+            });
+          }
+          resolve();
+        });
       });
+
+      try {
+        const token = await currentUser.getIdToken(true);
+        await cacheAuthToken({
+          token,
+          userId: currentUser.uid,
+          userEmail: currentUser.email || undefined,
+          source: "popup"
+        });
+      } catch (error) {
+        logger.warn("Popup", "Failed to cache Firebase ID token", {
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
     } else {
       syncedSiteUserId = null;
       syncedSiteUserEmail = null;
-      chrome.storage.sync.remove(["firebaseUid", "userEmail"], () => {
-        if (chrome.runtime.lastError) {
-          console.error("Failed to clear auth data from storage:", chrome.runtime.lastError);
-        } else {
-          console.log("Auth state cleared from storage");
-        }
+      await new Promise<void>((resolve) => {
+        chrome.storage.sync.remove(["firebaseUid", "userEmail"], () => {
+          if (chrome.runtime.lastError) {
+            logger.error("Popup", "Failed to clear auth data from storage", {
+              error: chrome.runtime.lastError.message
+            });
+          } else {
+            logger.info("Popup", "Auth state cleared from storage");
+          }
+          resolve();
+        });
       });
+
+      await clearCachedAuthToken();
     }
   }
 
@@ -537,12 +572,6 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
         return;
       }
-
-      // Get current filter
-      const activeFilter =
-        document
-          .querySelector(".filter-btn.active")
-          ?.getAttribute("data-filter") || "all";
 
       // Filter jobs
       let filteredJobs = jobs;
@@ -980,7 +1009,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const baseUrl = sanitizeBaseUrl(result.webAppUrl || DEFAULT_WEB_APP_URL);
       const targetUrl = `${baseUrl}/sign-in?from=extension&provider=google`;
 
-      chrome.tabs.create({ url: targetUrl }, (tab) => {
+  chrome.tabs.create({ url: targetUrl }, () => {
         if (chrome.runtime.lastError) {
           console.error("Failed to open Google sign-in tab:", chrome.runtime.lastError);
           showAuthError("Your browser blocked the Google sign-in window. Please allow popups for this site and try again, or manually visit the sign-in page.");
@@ -1037,6 +1066,8 @@ document.addEventListener("DOMContentLoaded", () => {
       chrome.storage.sync.remove(["firebaseUid", "userId"], () => {
         console.log("Cleared auth storage");
       });
+
+      await clearCachedAuthToken();
 
       syncedSiteUserId = null;
       syncedSiteUserEmail = null;
@@ -1247,6 +1278,11 @@ async function checkUKEligibility(job: any): Promise<boolean | null> {
 
 // Global function for checking job sponsors (called from HTML onclick)
 async function checkJobSponsor(jobId: string, companyName: string) {
+  logger.info("Popup", "Starting sponsor check", {
+    jobId,
+    companyName
+  });
+
   const sponsorBtn = document.getElementById(
     `sponsor-btn-${jobId}`
   ) as HTMLButtonElement | null;
@@ -1255,12 +1291,20 @@ async function checkJobSponsor(jobId: string, companyName: string) {
   ) as HTMLDivElement;
 
   if (!sponsorBtn || !sponsorStatus) {
-    console.error(`Sponsor check elements not found for job ${jobId}`);
+    logger.error("Popup", "Sponsor check elements not found", {
+      jobId,
+      hasButton: !!sponsorBtn,
+      hasStatus: !!sponsorStatus
+    });
     return;
   }
 
   // Validate inputs
   if (!companyName || companyName.trim().length < 2) {
+    logger.warn("Popup", "Invalid company name for sponsor check", {
+      jobId,
+      companyName
+    });
     showToast("Invalid company name for sponsor check", { type: "error" });
     return;
   }
@@ -1273,18 +1317,26 @@ async function checkJobSponsor(jobId: string, companyName: string) {
   sponsorStatus.className = "sponsor-status checking";
 
   try {
-    console.log(`Checking sponsor status for: ${companyName}`);
-    
+    logger.debug("Popup", "Making sponsor API call", {
+      jobId,
+      companyName: companyName.trim()
+    });
+
     let result: any | null = null;
     try {
       const data = await get<any>("/api/app/sponsorship/companies", {
         q: companyName.trim(),
         limit: 1,
       });
-      
+
       if (data && data.results && data.results.length > 0) {
         result = data.results[0];
-        console.log(`Sponsor found: ${result.name}, route: ${result.route}`);
+        logger.info("Popup", "Sponsor found", {
+          jobId,
+          companyName: result.name,
+          route: result.route,
+          city: result.city
+        });
       } else {
         console.log(`No sponsor found for: ${companyName}`);
       }
@@ -1318,6 +1370,10 @@ async function checkJobSponsor(jobId: string, companyName: string) {
         sponsorStatus.className = "sponsor-status not-licensed";
         return;
       } else if (e?.statusCode === 429) {
+        logger.warn("Popup", "Rate limited during sponsor check", {
+          jobId,
+          companyName
+        });
         showToast(
           "Too many requests. Please wait before trying again.",
           { type: "warning", duration: 5000 }
@@ -1326,18 +1382,32 @@ async function checkJobSponsor(jobId: string, companyName: string) {
         sponsorStatus.className = "sponsor-status rate-limited";
         return;
       }
-      
+
       // For other errors, continue with null result
-      console.error("Sponsor lookup failed with error:", e);
+      logger.error("Popup", "Sponsor lookup failed with error", {
+        jobId,
+        companyName,
+        error: e instanceof Error ? e.message : String(e)
+      });
     }
 
     if (result) {
       // Check different sponsorship types
-      const isSkilledWorker = result.route === 'skilled worker' || 
+      const isSkilledWorker = result.route === 'skilled worker' ||
                              result.route?.toLowerCase().includes('skilled');
-      const isGlobalBusiness = result.route === 'global business mobility' || 
+      const isGlobalBusiness = result.route === 'global business mobility' ||
                               result.route?.toLowerCase().includes('global');
       const hasOtherSponsorship = !isSkilledWorker && !isGlobalBusiness;
+
+      logger.info("Popup", "Sponsor check result", {
+        jobId,
+        companyName: result.name,
+        route: result.route,
+        isSkilledWorker,
+        isGlobalBusiness,
+        hasOtherSponsorship,
+        city: result.city
+      });
 
       if (isSkilledWorker) {
         sponsorStatus.textContent = "Licensed (Skilled Worker)";
@@ -1375,6 +1445,10 @@ async function checkJobSponsor(jobId: string, companyName: string) {
       }
 
     } else {
+      logger.info("Popup", "Company not found in sponsor register", {
+        jobId,
+        companyName
+      });
       sponsorStatus.textContent = "Not Found";
       sponsorStatus.className = "sponsor-status not-licensed";
       showToast(
@@ -1383,7 +1457,11 @@ async function checkJobSponsor(jobId: string, companyName: string) {
       );
     }
   } catch (error) {
-    console.error("Unexpected error in sponsor check:", error);
+    logger.error("Popup", "Unexpected error in sponsor check", {
+      jobId,
+      companyName,
+      error: error instanceof Error ? error.message : String(error)
+    });
     sponsorStatus.textContent = "Error";
     sponsorStatus.className = "sponsor-status error";
     showToast("Unable to check sponsor status due to an unexpected error", {
@@ -1392,8 +1470,12 @@ async function checkJobSponsor(jobId: string, companyName: string) {
   } finally {
     sponsorBtn.disabled = false;
     sponsorBtn.textContent = "🇬🇧 Check Sponsor";
+    logger.debug("Popup", "Sponsor check completed", { jobId, companyName });
   }
 }
 
 // Make function globally available
 (window as any).checkJobSponsor = checkJobSponsor;
+
+// Add logging to key functions
+logger.info("Popup", "Popup script loaded and initialized");

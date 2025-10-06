@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Settings } from "lucide-react";
 import type { PortfolioTheme } from "@/types/portfolio";
 
 interface ThemeCustomizerProps {
@@ -296,6 +297,5 @@ function LayoutPreview({ theme }: { theme: PortfolioTheme }) {
 
 // Settings icon component to avoid SSR issues
 function SettingsIcon({ className }: { className?: string }) {
-  const { Settings } = require('lucide-react');
   return <Settings className={className} />;
 }

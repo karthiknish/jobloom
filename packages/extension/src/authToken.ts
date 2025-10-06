@@ -1,44 +1,281 @@
 import { getAuthInstance } from "./firebase";
 
-async function getTokenFromActiveTab(): Promise<string | null> {
-  if (typeof chrome === "undefined" || !chrome.tabs) {
+const AUTH_TOKEN_STORAGE_KEY = "hireallAuthToken";
+const TOKEN_SAFETY_BUFFER_MS = 30 * 1000; // subtract 30 seconds to avoid edge expirations
+const DEFAULT_TOKEN_TTL_MS = 55 * 60 * 1000; // refresh slightly before Firebase's 60 minute expiry
+
+export interface CachedAuthToken {
+  token: string;
+  expiresAt: number;
+  userId?: string;
+  userEmail?: string;
+  source?: "popup" | "webapp" | "background" | "tab";
+  updatedAt: number;
+}
+
+function isChromeStorageAvailable(): boolean {
+  return typeof chrome !== "undefined" && !!chrome.storage?.local;
+}
+
+function isExtensionPage(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+  try {
+    return window.location?.protocol === "chrome-extension:";
+  } catch (error) {
+    console.warn("Failed to determine protocol for extension page check", error);
+    return false;
+  }
+}
+
+function canAccessTabsApi(): boolean {
+  return typeof chrome !== "undefined" && !!chrome.tabs?.query && !!chrome.tabs?.sendMessage;
+}
+
+function canMessageBackground(): boolean {
+  return typeof chrome !== "undefined" && typeof chrome.runtime?.sendMessage === "function";
+}
+
+async function readCachedAuthToken(): Promise<CachedAuthToken | null> {
+  if (!isChromeStorageAvailable()) {
+    return null;
+  }
+
+  return new Promise((resolve) => {
+    chrome.storage.local.get([AUTH_TOKEN_STORAGE_KEY], (result) => {
+      const raw = result?.[AUTH_TOKEN_STORAGE_KEY];
+      if (raw && typeof raw === "object" && typeof raw.token === "string") {
+        resolve(raw as CachedAuthToken);
+      } else {
+        resolve(null);
+      }
+    });
+  });
+}
+
+async function writeCachedAuthToken(cache: CachedAuthToken | null): Promise<void> {
+  if (!isChromeStorageAvailable()) {
+    return;
+  }
+
+  return new Promise((resolve) => {
+    if (!cache) {
+      chrome.storage.local.remove([AUTH_TOKEN_STORAGE_KEY], () => resolve());
+    } else {
+      chrome.storage.local.set({ [AUTH_TOKEN_STORAGE_KEY]: cache }, () => resolve());
+    }
+  });
+}
+
+async function getValidCachedToken(forceRefresh: boolean): Promise<CachedAuthToken | null> {
+  if (forceRefresh) {
+    return null;
+  }
+
+  const cached = await readCachedAuthToken();
+  if (!cached) {
+    return null;
+  }
+
+  if (!cached.expiresAt || cached.expiresAt - TOKEN_SAFETY_BUFFER_MS <= Date.now()) {
+    await writeCachedAuthToken(null);
+    return null;
+  }
+
+  return cached;
+}
+
+export async function cacheAuthToken(params: {
+  token: string;
+  userId?: string | null;
+  userEmail?: string | null;
+  source?: CachedAuthToken["source"];
+  expiresAt?: number;
+  ttlMs?: number;
+}): Promise<void> {
+  if (typeof params.token !== "string" || params.token.length === 0) {
+    return;
+  }
+
+  const ttlMs = params.expiresAt
+    ? Math.max(params.expiresAt - Date.now(), 10 * 1000)
+    : params.ttlMs ?? DEFAULT_TOKEN_TTL_MS;
+
+  const expiresAt = params.expiresAt ?? Date.now() + ttlMs;
+
+  const cache: CachedAuthToken = {
+    token: params.token,
+    userId: params.userId ?? undefined,
+    userEmail: params.userEmail ?? undefined,
+    source: params.source,
+    expiresAt,
+    updatedAt: Date.now(),
+  };
+
+  await writeCachedAuthToken(cache);
+}
+
+export async function clearCachedAuthToken(): Promise<void> {
+  await writeCachedAuthToken(null);
+}
+
+async function getTokenFromHireallTab(forceRefresh: boolean): Promise<CachedAuthToken | null> {
+  if (!canAccessTabsApi()) {
     return null;
   }
 
   try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tab?.id) {
-      return null;
-    }
+    const queryTabs = await chrome.tabs.query({
+      url: [
+        "https://hireall.app/*",
+        "https://*.hireall.app/*",
+        "https://*.vercel.app/*",
+        "https://*.netlify.app/*"
+      ]
+    });
 
-    const response = await chrome.tabs.sendMessage(tab.id, { action: "getAuthToken" });
-    if (response?.token && typeof response.token === "string") {
-      return response.token;
+    const candidateTabs = queryTabs.length ? queryTabs : await chrome.tabs.query({ active: true, currentWindow: true });
+
+    for (const tab of candidateTabs) {
+      if (!tab?.id) continue;
+
+      const response = await new Promise<{ token?: string; userId?: string } | null>((resolve) => {
+        chrome.tabs.sendMessage(tab.id!, { action: "getAuthToken", forceRefresh }, (resp) => {
+          if (chrome.runtime?.lastError) {
+            resolve(null);
+            return;
+          }
+          resolve(resp ?? null);
+        });
+      });
+
+      if (response?.token) {
+        const cache: CachedAuthToken = {
+          token: response.token,
+          userId: response.userId,
+          expiresAt: Date.now() + DEFAULT_TOKEN_TTL_MS,
+          source: "tab",
+          updatedAt: Date.now(),
+        };
+        await writeCachedAuthToken(cache);
+        return cache;
+      }
     }
   } catch (error) {
-    console.warn("Failed to get token from active tab:", error);
+    console.warn("Failed to get token from Hireall tab:", error);
   }
 
   return null;
 }
 
-export async function acquireIdToken(forceRefresh = false): Promise<string | null> {
+async function getTokenFromFirebase(forceRefresh: boolean): Promise<CachedAuthToken | null> {
+  if (!isExtensionPage()) {
+    return null;
+  }
+
   try {
     const auth = getAuthInstance();
     const user = auth.currentUser;
 
-    if (user) {
-      return await user.getIdToken(forceRefresh);
+    if (!user) {
+      return null;
     }
 
-    const tabToken = await getTokenFromActiveTab();
-    if (tabToken) {
-      return tabToken;
+    const token = await user.getIdToken(forceRefresh);
+    const cache: CachedAuthToken = {
+      token,
+      userId: user.uid,
+      userEmail: user.email ?? undefined,
+      expiresAt: Date.now() + DEFAULT_TOKEN_TTL_MS,
+      source: "popup",
+      updatedAt: Date.now(),
+    };
+    await writeCachedAuthToken(cache);
+    return cache;
+  } catch (error) {
+    console.warn("Failed to get token from Firebase auth instance:", error);
+    return null;
+  }
+}
+
+async function requestTokenFromBackground(forceRefresh: boolean): Promise<CachedAuthToken | null> {
+  if (!canMessageBackground()) {
+    return null;
+  }
+
+  return new Promise((resolve) => {
+    try {
+      chrome.runtime.sendMessage(
+        { action: "acquireAuthToken", forceRefresh, target: "background" },
+        (response) => {
+          if (chrome.runtime?.lastError) {
+            resolve(null);
+            return;
+          }
+
+          if (response?.token && typeof response.token === "string") {
+            const cache: CachedAuthToken = {
+              token: response.token,
+              userId: response.userId ?? undefined,
+              userEmail: response.userEmail ?? undefined,
+              expiresAt: response.expiresAt ?? Date.now() + DEFAULT_TOKEN_TTL_MS,
+              source: "background",
+              updatedAt: Date.now(),
+            };
+            writeCachedAuthToken(cache).finally(() => resolve(cache));
+            return;
+          }
+
+          resolve(null);
+        }
+      );
+    } catch (error) {
+      console.warn("Failed to request token from background:", error);
+      resolve(null);
+    }
+  });
+}
+
+export async function acquireIdToken(
+  forceRefresh = false,
+  options?: { skipMessageFallback?: boolean }
+): Promise<string | null> {
+  try {
+    const cached = await getValidCachedToken(forceRefresh);
+    if (cached) {
+      console.debug("Hireall: Using cached auth token");
+      return cached.token;
     }
 
+    console.debug("Hireall: No valid cached token, attempting to acquire fresh token");
+
+    const firebaseToken = await getTokenFromFirebase(forceRefresh);
+    if (firebaseToken) {
+      console.debug("Hireall: Acquired token from Firebase auth");
+      return firebaseToken.token;
+    }
+
+    if (canAccessTabsApi()) {
+      const tabToken = await getTokenFromHireallTab(forceRefresh);
+      if (tabToken) {
+        console.debug("Hireall: Acquired token from Hireall tab");
+        return tabToken.token;
+      }
+    }
+
+    if (!options?.skipMessageFallback) {
+      const backgroundToken = await requestTokenFromBackground(forceRefresh);
+      if (backgroundToken) {
+        console.debug("Hireall: Acquired token from background script");
+        return backgroundToken.token;
+      }
+    }
+
+    console.warn("Hireall: Failed to acquire ID token from all sources");
     return null;
   } catch (error) {
-    console.warn("Failed to acquire ID token:", error);
+    console.warn("Hireall: Failed to acquire ID token:", error);
     return null;
   }
 }

@@ -1,4 +1,4 @@
-import { acquireIdToken } from './authToken';
+import { acquireIdToken, clearCachedAuthToken } from './authToken';
 import { DEFAULT_WEB_APP_URL, sanitizeBaseUrl } from './constants';
 import { checkRateLimit } from './rateLimiter';
 import { safeChromeStorageGet } from './utils/safeStorage';
@@ -69,10 +69,19 @@ export async function apiRequest<T = any>(opts: ApiOptions): Promise<T> {
   };
 
   if (requiresAuth) {
-    const token = await acquireIdToken();
+    console.debug(`Hireall: API ${path} requires authentication, attempting to acquire token`);
+    let token = await acquireIdToken();
     if (!token) {
+      console.debug(`Hireall: First token acquisition failed for ${path}, trying with force refresh`);
+      token = await acquireIdToken(true);
+    }
+
+    if (!token) {
+      console.warn(`Hireall: Authentication failed for ${path} - no token available`);
       throw new Error('Authentication required. Please sign in to the extension.');
     }
+    
+    console.debug(`Hireall: Successfully acquired token for ${path}`);
     finalHeaders['Authorization'] = `Bearer ${token}`;
   }
 
@@ -89,8 +98,10 @@ export async function apiRequest<T = any>(opts: ApiOptions): Promise<T> {
     // Provide better error messages for common authentication issues
     if (res.status === 401) {
       errorMessage = 'Authentication failed. Please sign in again.';
+      await clearCachedAuthToken();
     } else if (res.status === 403) {
       errorMessage = 'Permission denied. You do not have access to this resource.';
+      await clearCachedAuthToken();
     } else if (res.status === 429) {
       errorMessage = 'Too many requests. Please try again later.';
     }

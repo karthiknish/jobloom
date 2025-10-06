@@ -184,6 +184,17 @@ export function addSecurityHeaders(response: Response): Response {
     headers.set('Access-Control-Allow-Origin', '*');
     headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
     headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Request-ID');
+  } else {
+    // In production, allow specific origins for extension API routes
+    const allowedOrigins = [
+      'https://www.linkedin.com',
+      'https://linkedin.com',
+      process.env.NEXT_PUBLIC_WEB_URL || 'https://hireall.app',
+      'http://localhost:3000', // for development
+    ];
+
+    // This should be called from within API routes where we have access to the request
+    // For now, we'll rely on the global middleware for CORS handling
   }
 
   return new Response(response.body, {

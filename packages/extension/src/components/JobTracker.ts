@@ -160,17 +160,23 @@ export class JobTracker {
   }
 
   async checkAndHighlightSponsoredJobs(): Promise<void> {
-    if (this.isChecking) return;
+    if (this.isChecking) {
+      console.debug("Hireall: Sponsorship check already in progress, skipping");
+      return;
+    }
 
     this.isChecking = true;
+    console.debug("Hireall: Starting sponsorship check and highlighting");
 
     try {
       const cards = JobDataExtractor.findJobCards();
       if (cards.length === 0) {
         UIComponents.showToast("No job cards detected on this page", { type: "warning" });
+        console.debug("Hireall: No job cards found on page");
         return;
       }
 
+      console.debug(`Hireall: Found ${cards.length} job cards, checking sponsorship`);
       let sponsoredCount = 0;
 
       for (const card of cards) {
@@ -187,6 +193,7 @@ export class JobTracker {
       if (sponsoredCount === 0) {
         UIComponents.showToast("No sponsored roles detected", { type: "info" });
         this.isHighlighting = false;
+        console.debug("Hireall: No sponsored roles found");
         return;
       }
 
@@ -195,6 +202,7 @@ export class JobTracker {
       });
 
       this.isHighlighting = true;
+      console.debug(`Hireall: Successfully highlighted ${sponsoredCount} sponsored roles`);
     } catch (error) {
       console.error("Hireall: sponsorship check failed", error);
       UIComponents.showToast("Unable to check sponsorship right now", { type: "error" });
@@ -233,25 +241,37 @@ export class JobTracker {
     const cacheKey = this.buildSponsorshipCacheKey(jobData.company, jobContext);
     const cached = this.sponsorCache.get(cacheKey);
     if (cached) {
+      console.debug("Hireall: Using cached sponsorship result for", jobData.company);
       return cached;
     }
 
+    console.debug("Hireall: Checking sponsorship for", {
+      company: jobData.company,
+      title: jobData.title,
+      hasJobContext: !!jobContext,
+      cacheKey
+    });
+
     try {
+      console.debug("Hireall: Starting sponsorship lookup with 30s timeout for", jobData.company);
       const sponsorRecord = await Promise.race([
         SponsorshipManager.fetchSponsorRecord(jobData.company, jobContext),
         new Promise<null>((_, reject) => 
-          setTimeout(() => reject(new Error("Sponsorship lookup timeout")), 15000)
+          setTimeout(() => reject(new Error("Sponsorship lookup timeout")), 30000)
         )
       ]);
+      console.debug("Hireall: Sponsorship lookup completed for", jobData.company);
 
       let ukEligibility;
       try {
+        console.debug("Hireall: Starting UK eligibility assessment for", jobData.company);
         ukEligibility = await Promise.race([
           sponsorRecord?.ukEligibility || SponsorshipManager.assessUkEligibility(jobContext),
           new Promise<null>((_, reject) => 
-            setTimeout(() => reject(new Error("UK eligibility assessment timeout")), 10000)
+            setTimeout(() => reject(new Error("UK eligibility assessment timeout")), 15000)
           )
         ]);
+        console.debug("Hireall: UK eligibility assessment completed for", jobData.company);
       } catch (ukError) {
         console.debug("UK eligibility assessment failed:", ukError);
         ukEligibility = sponsorRecord?.ukEligibility || null;
@@ -303,6 +323,12 @@ export class JobTracker {
       };
 
       this.sponsorCache.set(cacheKey, result);
+      console.debug("Hireall: Sponsorship check completed", {
+        company: jobData.company,
+        isSponsored: result.isSponsored,
+        confidence: result.confidence,
+        hasSponsorData: !!result.sponsorData
+      });
       return result;
     } catch (error) {
       console.warn("Hireall: sponsor lookup failed", error);
@@ -318,6 +344,11 @@ export class JobTracker {
         jobContext,
       };
       this.sponsorCache.set(cacheKey, fallback);
+      console.debug("Hireall: Using fallback sponsorship result", {
+        company: jobData.company,
+        isSponsored: fallback.isSponsored,
+        hasUkEligibility: !!ukEligibility
+      });
       return fallback;
     }
   }

@@ -4,6 +4,7 @@ import type { ReactElement } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { Sparkles, Code2, Palette, Briefcase, Rocket, Camera, Users, GraduationCap } from "lucide-react";
 import { portfolioTemplates } from "@/config/portfolioTemplates";
 import type { PortfolioTemplateMeta } from "@/config/portfolioTemplates";
 
@@ -16,16 +17,16 @@ export function TemplateSelector({ selectedTemplateId, onTemplateChange }: Templ
   const getIconComponent = (iconName: string): ReactElement => {
     // Dynamic import to avoid SSR issues
     const icons = {
-      Sparkles: require('lucide-react').Sparkles,
-      Code2: require('lucide-react').Code2,
-      Palette: require('lucide-react').Palette,
-      Briefcase: require('lucide-react').Briefcase,
-      Rocket: require('lucide-react').Rocket,
-      Camera: require('lucide-react').Camera,
-      Users: require('lucide-react').Users,
-      GraduationCap: require('lucide-react').GraduationCap,
+      Sparkles,
+      Code2,
+      Palette,
+      Briefcase,
+      Rocket,
+      Camera,
+      Users,
+      GraduationCap,
     };
-    const Icon = icons[iconName as keyof typeof icons] || icons.Sparkles;
+    const Icon = icons[iconName as keyof typeof icons] || Sparkles;
     return <Icon className="w-5 h-5" />;
   };
 

@@ -11,6 +11,11 @@ import {
   evaluateAtsCompatibilityFromText,
   getIndustryKeywordSet,
 } from "@/lib/ats";
+import {
+  getUploadLimitsForUser,
+  validateFileUploadWithLimits,
+  DEFAULT_UPLOAD_LIMITS
+} from "@/config/uploadLimits";
 
 // Initialize Firebase Admin if not already initialized (for storage)
 // Centralized admin initialization already handled in firebase/admin.ts
@@ -163,12 +168,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate file upload with security utilities
-    const fileValidation = validateFileUpload(file, {
-      maxSize: 5 * 1024 * 1024, // 5MB
-      allowedTypes: ["application/pdf", "text/plain"],
-      allowedExtensions: ["pdf", "txt"]
-    });
+    // Get upload limits based on user's subscription plan
+    const uploadLimits = await getUploadLimitsForUser(userId);
+    console.log(`Upload limits for user ${userId}:`, uploadLimits);
+
+    // Validate file upload with dynamic limits
+    const fileValidation = validateFileUploadWithLimits(file, uploadLimits);
 
     if (!fileValidation.valid) {
       SecurityLogger.logSecurityEvent({
@@ -177,18 +182,36 @@ export async function POST(request: NextRequest) {
         userId: userId,
         details: {
           error: fileValidation.error,
+          errorType: fileValidation.errorType,
           fileName: file.name,
           fileSize: file.size,
-          fileType: file.type
+          fileType: file.type,
+          uploadLimits: {
+            maxSize: uploadLimits.maxSize,
+            maxSizeMB: uploadLimits.maxSizeMB,
+            allowedTypes: uploadLimits.allowedTypes,
+            allowedExtensions: uploadLimits.allowedExtensions
+          }
         },
         severity: 'medium'
       });
 
       return NextResponse.json(
-        { error: fileValidation.error },
+        { 
+          error: fileValidation.error,
+          errorType: fileValidation.errorType,
+          details: fileValidation.details,
+          uploadLimits: {
+            maxSizeMB: uploadLimits.maxSizeMB,
+            allowedTypes: uploadLimits.allowedTypes,
+            allowedExtensions: uploadLimits.allowedExtensions
+          }
+        },
         { status: 400 }
       );
     }
+
+    console.log(`File validation passed for ${file.name} (${file.size} bytes)`);
 
     // Generate unique filename with sanitization
     const fileExtension = file.type === "application/pdf" ? "pdf" : "txt";

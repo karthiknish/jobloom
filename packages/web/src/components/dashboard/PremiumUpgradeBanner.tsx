@@ -14,7 +14,7 @@ interface PremiumUpgradeBannerProps {
 }
 
 export function PremiumUpgradeBanner({ className = "", compact = false }: PremiumUpgradeBannerProps) {
-  const { plan, limits } = useSubscription();
+  const { plan } = useSubscription();
 
   if (plan === 'premium') {
     return null; // Don't show for premium users

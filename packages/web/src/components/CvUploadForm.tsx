@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { UploadCloud, CheckCircle2, Loader2, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,14 @@ interface CvUploadFormProps {
   onUploadStarted?: () => void;
 }
 
+interface UploadLimits {
+  maxSize: number;
+  maxSizeMB: number;
+  allowedTypes: string[];
+  allowedExtensions: string[];
+  description: string;
+}
+
 export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted }: CvUploadFormProps) {
   const { user } = useFirebaseAuth();
   const [file, setFile] = useState<File | null>(null);
@@ -45,6 +53,46 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted }: CvUpl
   const [limitInfo, setLimitInfo] = useState<any>(null);
   const [showRealTimeFeedback, setShowRealTimeFeedback] = useState(false);
   const [sampleResume, setSampleResume] = useState<ResumeData | null>(null);
+  const [uploadLimits, setUploadLimits] = useState<UploadLimits>({
+    maxSize: 2 * 1024 * 1024, // 2MB default
+    maxSizeMB: 2,
+    allowedTypes: ['application/pdf', 'text/plain'],
+    allowedExtensions: ['pdf', 'txt'],
+    description: 'Free users can upload CVs up to 2MB'
+  });
+  const [loadingLimits, setLoadingLimits] = useState(true);
+
+  // Fetch upload limits for the current user
+  useEffect(() => {
+    const fetchUploadLimits = async () => {
+      if (!user) return;
+      
+      try {
+        const idToken = await user.getIdToken();
+        const response = await fetch('/api/user/upload-limits', {
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+          },
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            setUploadLimits(result.uploadLimits);
+            console.log('Upload limits loaded:', result.uploadLimits);
+          }
+        } else {
+          console.warn('Failed to fetch upload limits, using defaults');
+        }
+      } catch (error) {
+        console.error('Error fetching upload limits:', error);
+      } finally {
+        setLoadingLimits(false);
+      }
+    };
+
+    fetchUploadLimits();
+  }, [user]);
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();

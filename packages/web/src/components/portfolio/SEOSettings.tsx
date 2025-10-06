@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Globe } from "lucide-react";
 import type { PortfolioSEO } from "@/types/portfolio";
 
 interface SEOSettingsProps {
@@ -294,6 +295,5 @@ function SEOGuidelines() {
 
 // Globe icon component to avoid SSR issues
 function GlobeIcon({ className }: { className?: string }) {
-  const { Globe } = require('lucide-react');
   return <Globe className={className} />;
 }

@@ -1,6 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyIdToken } from "@/firebase/admin";
 
+// CORS helper function
+function addCorsHeaders(response: NextResponse, origin?: string): NextResponse {
+  const allowedOrigins = [
+    'https://www.linkedin.com',
+    'https://linkedin.com',
+    process.env.NEXT_PUBLIC_WEB_URL || 'https://hireall.app',
+    'http://localhost:3000',
+  ];
+
+  const requestOrigin = origin || 
+    (origin?.includes('hireall.app') || origin?.includes('vercel.app') || origin?.includes('netlify.app') ? origin : null);
+
+  if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
+    response.headers.set('Access-Control-Allow-Origin', requestOrigin);
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Request-ID, X-Requested-With');
+    response.headers.set('Access-Control-Allow-Credentials', 'true');
+    response.headers.set('Vary', 'Origin');
+  } else if (process.env.NODE_ENV === 'development') {
+    response.headers.set('Access-Control-Allow-Origin', '*');
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Request-ID');
+  }
+
+  return response;
+}
+
 // Temporary in-memory mock sponsors (previously public). Replace with Firestore later.
 const mockSponsors = [
   { name: "Google", city: "London", route: "Skilled Worker", typeRating: "AA", isSkilledWorker: true },
@@ -40,9 +67,13 @@ async function authenticate(request: NextRequest) {
 // GET /api/app/sponsorship/companies?q=Google&city=London&route=Skilled+Worker&limit=1&filters=...
 export async function GET(request: NextRequest) {
   try {
+    // Handle CORS preflight
+    const origin = request.headers.get('origin');
+    
     const user = await authenticate(request);
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      const response = NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return addCorsHeaders(response, origin || undefined);
     }
 
     const { searchParams } = new URL(request.url);
@@ -118,7 +149,7 @@ export async function GET(request: NextRequest) {
 
     results = results.slice(0, limit);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       totalResults: results.length,
       filters: sponsorshipFilters,
@@ -131,28 +162,43 @@ export async function GET(request: NextRequest) {
         eligibleForSponsorship: sponsorshipFilters ? true : undefined,
       })),
     });
+    
+    return addCorsHeaders(response, request.headers.get('origin') || undefined);
   } catch (error) {
     console.error("Error fetching sponsored companies:", error);
-    return NextResponse.json(
+    const response = NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
     );
+    return addCorsHeaders(response, request.headers.get('origin') || undefined);
   }
+}
+
+// OPTIONS handler for CORS preflight
+export async function OPTIONS(request: NextRequest) {
+  const origin = request.headers.get('origin');
+  const response = new NextResponse(null, { status: 200 });
+  return addCorsHeaders(response, origin || undefined);
 }
 
 // POST /api/app/sponsorship/companies - Add sponsored company (mock)
 export async function POST(request: NextRequest) {
   try {
+    const origin = request.headers.get('origin');
+    
     const user = await authenticate(request);
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      const response = NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return addCorsHeaders(response, origin || undefined);
     }
 
     const data = await request.json();
     console.log("(Mock) Adding sponsored company:", data);
-    return NextResponse.json({ companyId: "mock-company-id" });
+    const response = NextResponse.json({ companyId: "mock-company-id" });
+    return addCorsHeaders(response, origin || undefined);
   } catch (error) {
     console.error("Error adding sponsored company:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    const response = NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return addCorsHeaders(response, request.headers.get('origin') || undefined);
   }
 }

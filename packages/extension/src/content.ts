@@ -7,12 +7,13 @@ import { JobDataExtractor } from "./components/JobDataExtractor";
 // Import sponsorship management
 import { SponsorshipManager } from "./components/SponsorshipManager";
 
-// Import LinkedIn session extractor
-import { LinkedInSessionExtractor } from "./components/LinkedInSessionExtractor";
-
 // Import types from other components
 import { JobTracker, JobData, SponsorshipCheckResult } from "./components/JobTracker";
 import { AutofillProfile } from "./components/AutofillManager";
+
+// Import logging utility
+import { logger, log } from "./utils/logger";
+import { AuthDiagnostics } from "./utils/authDiagnostics";
 
 export const HIREALL_BUTTON_CLASSES = {
   add: "hireall-add-to-board",
@@ -77,12 +78,24 @@ const jobTracker = new JobTracker();
 
 export function addJobToBoard(card: Element, button: HTMLButtonElement): void {
   const tracker = (window as unknown as { hireallJobTracker?: JobTracker }).hireallJobTracker;
-  if (!tracker) return;
+  if (!tracker) {
+    logger.error("Content", "JobTracker not available for add to board");
+    return;
+  }
 
   const jobData = JobDataExtractor.extractJobData(card);
   if (jobData.company.trim().length < 2) {
-    console.warn("Hireall: company name too short for add to board");
+    logger.warn("Content", "Company name too short for add to board", {
+      company: jobData.company,
+      title: jobData.title
+    });
   }
+
+  logger.info("Content", "Adding job to board", {
+    company: jobData.company,
+    title: jobData.title,
+    url: jobData.url
+  });
 
   void tracker.addJobToBoardFromButton(card, button);
 
@@ -91,12 +104,24 @@ export function addJobToBoard(card: Element, button: HTMLButtonElement): void {
 
 export function checkJobSponsorshipFromButton(card: Element, button: HTMLButtonElement): void {
   const tracker = (window as unknown as { hireallJobTracker?: JobTracker }).hireallJobTracker;
-  if (!tracker) return;
+  if (!tracker) {
+    logger.error("Content", "JobTracker not available for sponsorship check");
+    return;
+  }
 
   const jobData = JobDataExtractor.extractJobData(card);
   if (jobData.company.trim().length < 2) {
-    console.warn("Hireall: company name too short for sponsor check");
+    logger.warn("Content", "Company name too short for sponsor check", {
+      company: jobData.company,
+      title: jobData.title
+    });
   }
+
+  logger.info("Content", "Checking job sponsorship", {
+    company: jobData.company,
+    title: jobData.title,
+    url: jobData.url
+  });
 
   void tracker.checkJobSponsorshipFromButton(card, button);
 }
@@ -147,11 +172,17 @@ export function checkJobSponsorshipFromButton(card: Element, button: HTMLButtonE
 
 // Simple initialization for the extension
 async function initHireallExtension() {
-  console.log("Hireall content script loaded - using modular components");
+  log.extension("Content script loaded - using modular components", {
+    url: window.location.href,
+    hostname: window.location.hostname
+  });
 
   // Check if extension context is valid before proceeding
   if (typeof chrome === "undefined" || !chrome.runtime?.id) {
-    console.debug("Hireall: Extension context invalid, skipping initialization");
+    logger.warn("Content", "Extension context invalid, skipping initialization", {
+      chromeDefined: typeof chrome !== "undefined",
+      runtimeId: chrome?.runtime?.id
+    });
     return;
   }
 
@@ -160,23 +191,108 @@ async function initHireallExtension() {
       window.location.hostname.includes('vercel.app') ||
       window.location.hostname.includes('netlify.app')) {
     try {
-      console.log("Hireall: Web app detected, attempting session extraction...");
+      logger.info("Content", "Web app detected, attempting session extraction...");
       const sessionResult = await ExtensionMessageHandler.sendMessage("extractHireallSession", {}, 3);
 
       if (sessionResult?.success && sessionResult?.userId) {
-        console.log("Hireall: Session extracted successfully, user authenticated:", sessionResult.userId);
+        log.extension("Session extracted successfully", {
+          userId: sessionResult.userId,
+          hasToken: !!sessionResult.token
+        });
         // The session is now stored in chrome.storage.sync
+        
+        // After session extraction, test if we can acquire tokens
+        const { acquireIdToken } = await import("./authToken");
+        const testToken = await acquireIdToken();
+        if (testToken) {
+          logger.info("Content", "Token acquisition successful after session extraction");
+        } else {
+          logger.warn("Content", "Token acquisition still failing after session extraction");
+        }
       } else {
-        console.debug("Hireall: Session extraction returned no user data");
+        logger.debug("Content", "Session extraction returned no user data", {
+          success: sessionResult?.success,
+          hasUserId: !!sessionResult?.userId
+        });
       }
     } catch (error) {
-      console.debug("Hireall: Session extraction failed", error);
+      logger.debug("Content", "Session extraction failed", {
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  } else {
+    // On non-Hireall sites, try to find Hireall tabs and sync authentication
+    try {
+      logger.debug("Content", "Non-Hireall site detected, checking for Hireall tabs for auth sync");
+      const syncResult = await ExtensionMessageHandler.sendMessage("syncAuthState", {}, 3);
+      
+      if (syncResult?.userId) {
+        logger.info("Content", "Authentication synced from Hireall tab", {
+          userId: syncResult.userId
+        });
+        
+        // Test token acquisition after sync
+        const { acquireIdToken } = await import("./authToken");
+        const testToken = await acquireIdToken();
+        if (testToken) {
+          logger.info("Content", "Token acquisition successful after auth sync");
+        } else {
+          logger.warn("Content", "Token acquisition still failing after auth sync");
+        }
+      } else {
+        logger.debug("Content", "No active Hireall authentication found");
+      }
+    } catch (error) {
+      logger.debug("Content", "Auth sync attempt failed", {
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   }
 
   // Check if user is authenticated
   UserProfileManager.isUserAuthenticated().then(async isAuthenticated => {
     const initializeAuthenticatedFeatures = async () => {
+      logger.info("Content", "Initializing authenticated features");
+
+      // Verify that we can actually acquire tokens before enabling features
+      try {
+        const { acquireIdToken } = await import("./authToken");
+        const testToken = await acquireIdToken();
+        
+        if (!testToken) {
+          logger.warn("Content", "User appears authenticated but token acquisition failed", {
+            hasStoredAuth: isAuthenticated,
+            url: window.location.href
+          });
+          
+          // Try to sync auth state again
+          try {
+            const syncResult = await ExtensionMessageHandler.sendMessage("syncAuthState", {}, 3);
+            if (syncResult?.userId) {
+              const retestToken = await acquireIdToken(true);
+              if (!retestToken) {
+                logger.error("Content", "Failed to acquire token even after auth sync", {
+                  userId: syncResult.userId
+                });
+                return;
+              }
+            }
+          } catch (syncError) {
+            logger.error("Content", "Auth sync failed during token verification", {
+              error: syncError instanceof Error ? syncError.message : String(syncError)
+            });
+            return;
+          }
+        }
+        
+        logger.info("Content", "Token verification successful, enabling features");
+      } catch (tokenError) {
+        logger.error("Content", "Token verification failed", {
+          error: tokenError instanceof Error ? tokenError.message : String(tokenError)
+        });
+        return;
+      }
+
       const sponsorButtonsEnabled = await UserProfileManager.isSponsorshipCheckEnabled();
       jobTracker.setSponsorButtonEnabled(sponsorButtonsEnabled);
       jobTracker.initialize();
@@ -186,6 +302,9 @@ async function initHireallExtension() {
           if (areaName === "sync" && changes.enableSponsorshipChecks) {
             const newValue = changes.enableSponsorshipChecks.newValue;
             jobTracker.setSponsorButtonEnabled(newValue !== false);
+            logger.info("Content", "Sponsorship check setting changed", {
+              enabled: newValue !== false
+            });
           }
         });
       }
@@ -193,13 +312,18 @@ async function initHireallExtension() {
       // Initialize form detection if job board integration is enabled
       UserProfileManager.isJobBoardIntegrationEnabled().then(enabled => {
         if (enabled) {
+          logger.info("Content", "Starting form detection for job board integration");
           AutofillManager.startFormDetection();
+        } else {
+          logger.debug("Content", "Job board integration disabled, skipping form detection");
         }
       });
     };
 
     if (!isAuthenticated) {
-      console.log("Hireall: user not signed in, extension features disabled on this page.");
+      logger.info("Content", "User not signed in, extension features disabled", {
+        url: window.location.href
+      });
 
       try {
         const syncResult = await ExtensionMessageHandler.sendMessage("syncAuthState", {}, 3);
@@ -207,33 +331,64 @@ async function initHireallExtension() {
           const nowAuthenticated = await UserProfileManager.isUserAuthenticated();
           if (nowAuthenticated) {
             await initializeAuthenticatedFeatures();
-            console.log("Hireall: authenticated via site session sync.");
+            logger.info("Content", "Authenticated via site session sync", {
+              userId: syncResult.userId
+            });
             return;
           }
         }
       } catch (syncError) {
-        console.debug("Hireall: syncAuthState request failed", syncError);
+        logger.debug("Content", "syncAuthState request failed", {
+          error: syncError instanceof Error ? syncError.message : String(syncError)
+        });
       }
       return;
     }
 
     await initializeAuthenticatedFeatures();
-    
-    console.log("Hireall extension initialized successfully");
-  });
-}
 
-// Cleanup on page unload to prevent memory leaks
+    log.extension("Extension initialized successfully", {
+      authenticated: true,
+      url: window.location.href
+    });
+  });
+}// Cleanup on page unload to prevent memory leaks
 window.addEventListener("beforeunload", () => {
+  logger.debug("Content", "Page unloading, cleaning up extension resources");
+
   const tracker = (window as unknown as { hireallJobTracker?: JobTracker }).hireallJobTracker;
   if (tracker && typeof tracker.cleanup === "function") {
     tracker.cleanup();
+    logger.debug("Content", "JobTracker cleanup completed");
   }
 });
 
 // Initialize when DOM is ready
 if (document.readyState === "loading") {
+  logger.debug("Content", "DOM not ready, waiting for DOMContentLoaded");
   document.addEventListener("DOMContentLoaded", initHireallExtension);
 } else {
+  logger.debug("Content", "DOM already ready, initializing immediately");
   initHireallExtension();
+}
+
+// Make diagnostic functions available globally for debugging
+if (typeof window !== 'undefined') {
+  (window as any).hireallDebugAuth = () => {
+    console.log('🔍 Running HireAll authentication diagnostics...');
+    AuthDiagnostics.runDiagnostics().then(diagnostics => {
+      console.group('🔍 HireAll Extension Authentication Diagnostics');
+      console.log(AuthDiagnostics.formatDiagnostics(diagnostics));
+      console.groupEnd();
+    });
+  };
+
+  (window as any).hireallRepairAuth = async () => {
+    console.log('🔧 Attempting HireAll authentication repair...');
+    const repaired = await AuthDiagnostics.attemptAuthRepair();
+    console.log(`Repair ${repaired ? '✅ successful' : '❌ failed'}`);
+    if (repaired) {
+      console.log('Please refresh the page to complete the repair.');
+    }
+  };
 }
