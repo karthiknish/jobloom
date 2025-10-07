@@ -13,14 +13,27 @@ export default function Home() {
   const userId = null as string | null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+    <div className="min-h-screen bg-background">
+      {/* Geometric Background Pattern */}
+      <div className="fixed inset-0 pointer-events-none opacity/[0.03]">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `
+            radial-gradient(circle at 20% 20%, currentColor 1px, transparent 1px),
+            radial-gradient(circle at 80% 80%, currentColor 1px, transparent 1px),
+            radial-gradient(circle at 40% 60%, currentColor 1px, transparent 1px),
+            radial-gradient(circle at 60% 40%, currentColor 1px, transparent 1px)
+          `,
+          backgroundSize: '60px 60px, 80px 80px, 100px 100px, 120px 120px'
+        }}></div>
+      </div>
+
       {/* Hero Section */}
       <section className="relative overflow-hidden pt-8 pb-16 lg:pt-16 lg:pb-24">
-        {/* Premium background elements */}
+        {/* Subtle Animated Background */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-20 right-20 w-96 h-96 bg-primary/15 rounded-full filter blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-20 left-20 w-80 h-80 bg-secondary/25 rounded-full filter blur-2xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-primary/20 to-secondary/30 rounded-full filter blur-3xl"></div>
+          <div className="absolute top-20 right-20 w-2 h-2 bg-primary rounded-full animate-ping opacity-20"></div>
+          <div className="absolute bottom-32 left-40 w-3 h-3 bg-secondary rounded-full animate-ping opacity-15" style={{ animationDelay: '1s' }}></div>
+          <div className="absolute top-1/3 right-1/3 w-1 h-1 bg-primary rounded-full animate-ping opacity-25" style={{ animationDelay: '2s' }}></div>
         </div>
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20">
@@ -29,20 +42,35 @@ export default function Home() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="flex flex-wrap items-center justify-center gap-4 mb-8"
+            className="flex flex-wrap items-center justify-center gap-6 mb-12"
           >
-            <div className="flex items-center gap-2 bg-primary/10 text-primary px-3 py-1.5 rounded-full text-sm font-medium">
-              <CheckCircle className="h-4 w-4" />
-              <span>500K+ Users</span>
-            </div>
-            <div className="flex items-center gap-2 bg-secondary/10 text-secondary px-3 py-1.5 rounded-full text-sm font-medium">
-              <Star className="h-4 w-4" />
-              <span>4.9 Rating</span>
-            </div>
-            <div className="flex items-center gap-2 bg-primary/10 text-primary px-3 py-1.5 rounded-full text-sm font-medium">
-              <Award className="h-4 w-4" />
-              <span>AI-Powered</span>
-            </div>
+            <motion.div 
+              whileHover={{ scale: 1.05 }}
+              className="flex items-center gap-2 group"
+            >
+              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                <CheckCircle className="h-5 w-5 text-white" />
+              </div>
+              <div className="text-sm font-medium text-foreground">500K+ Users</div>
+            </motion.div>
+            <motion.div 
+              whileHover={{ scale: 1.05 }}
+              className="flex items-center gap-2 group"
+            >
+              <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
+                <Star className="h-5 w-5 text-white" />
+              </div>
+              <div className="text-sm font-medium text-foreground">4.9 Rating</div>
+            </motion.div>
+            <motion.div 
+              whileHover={{ scale: 1.05 }}
+              className="flex items-center gap-2 group"
+            >
+              <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center">
+                <Cpu className="h-5 w-5 text-white" />
+              </div>
+              <div className="text-sm font-medium text-foreground">AI-Powered</div>
+            </motion.div>
           </motion.div>
 
           <div className="text-center space-y-10 fade-in-up">
@@ -53,10 +81,14 @@ export default function Home() {
               transition={{ duration: 0.8, delay: 0.2 }}
               className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-foreground leading-[1.1] tracking-tight"
             >
-              Never Miss a{" "}
-              <span className="block mt-2 bg-gradient-to-r from-primary via-primary to-secondary bg-clip-text text-transparent font-serif">
-                Sponsored Opportunity
-              </span>
+              <div className="relative">
+                <span className="relative z-10">Never Miss a</span>
+                <div className="absolute -bottom-2 left-0 right-0 h-4 bg-primary/20 rounded-full -z-10 transform -rotate-1"></div>
+              </div>
+              <div className="block mt-4 relative">
+                <span className="relative z-10 font-serif text-primary">Sponsored Opportunity</span>
+                <div className="absolute bottom-0 left-0 w-full h-1 bg-primary rounded-full"></div>
+              </div>
             </motion.h1>
 
             <motion.p 
@@ -65,84 +97,84 @@ export default function Home() {
               transition={{ duration: 0.8, delay: 0.4 }}
               className="max-w-4xl mx-auto text-xl sm:text-2xl text-muted-foreground leading-relaxed px-4"
             >
-              Discover exactly which companies are investing thousands in hiring. Our AI-powered platform reveals sponsored jobs across all major job sites.
+              <div className="relative">
+                <span className="relative z-10">Discover exactly which companies are investing thousands in hiring.</span>
+                <div className="absolute -bottom-1 left-1/4 right-1/4 h-px bg-border"></div>
+              </div>
+              <div className="mt-3 text-lg text-foreground">
+                Our AI-powered platform reveals sponsored jobs across all major job sites.
+              </div>
             </motion.p>
 
-            {/* Premium Stats with Animated Counters */}
+            {/* Advanced Stats with Interactive Cards */}
             <motion.div 
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.6 }}
-              className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-5xl mx-auto px-4"
+              className="grid grid-cols-1 sm:grid-cols-3 gap-8 max-w-5xl mx-auto px-4"
             >
               <motion.div 
-                whileHover={{ scale: 1.02, y: -5 }}
+                whileHover={{ scale: 1.02, y: -8 }}
                 className="relative group"
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/5 rounded-3xl blur-xl group-hover:blur-2xl transition-all"></div>
-                <div className="relative bg-gradient-to-br from-primary/10 to-primary/5 backdrop-blur-sm rounded-3xl p-8 border border-primary/20 hover:border-primary/40 transition-all shadow-lg hover:shadow-2xl">
-                  <motion.div 
-                    animate={{ rotate: [0, 5, -5, 0] }}
-                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                    className="flex items-center justify-center mb-4"
-                  >
-                    <div className="p-3 bg-gradient-to-br from-primary to-primary/80 rounded-2xl shadow-lg">
-                      <TrendingUp className="h-8 w-8 text-white" />
+                <div className="absolute inset-0 bg-primary/5 rounded-2xl blur-lg group-hover:blur-xl transition-all"></div>
+                <div className="relative bg-card border border-border rounded-2xl p-8 shadow-sm hover:shadow-lg transition-all duration-300">
+                  <div className="flex items-center justify-center mb-6">
+                    <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center shadow-lg">
+                      <TrendingUp className="h-9 w-9 text-white" />
                     </div>
-                  </motion.div>
-                  <div className="text-6xl font-serif font-bold text-primary mb-2">95%</div>
-                  <div className="text-base text-foreground font-medium">More Responses</div>
-                  <div className="mt-3 text-xs text-primary/70 flex items-center justify-center gap-1">
-                    <TrendingUp className="h-3 w-3" />
-                    <span>+45% increase</span>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-5xl font-bold text-primary mb-2">95%</div>
+                    <div className="text-lg font-semibold text-foreground mb-1">More Responses</div>
+                    <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm">
+                      <div className="w-2 h-4 bg-primary rounded-sm"></div>
+                      <span>+45% increase</span>
+                    </div>
                   </div>
                 </div>
               </motion.div>
 
               <motion.div 
-                whileHover={{ scale: 1.02, y: -5 }}
+                whileHover={{ scale: 1.02, y: -8 }}
                 className="relative group"
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-secondary/20 to-secondary/5 rounded-3xl blur-xl group-hover:blur-2xl transition-all"></div>
-                <div className="relative bg-gradient-to-br from-secondary/10 to-secondary/5 backdrop-blur-sm rounded-3xl p-8 border border-secondary/20 hover:border-secondary/40 transition-all shadow-lg hover:shadow-2xl">
-                  <motion.div 
-                    animate={{ rotate: [0, -5, 5, 0] }}
-                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-                    className="flex items-center justify-center mb-4"
-                  >
-                    <div className="p-3 bg-gradient-to-br from-secondary to-secondary/80 rounded-2xl shadow-lg">
-                      <Zap className="h-8 w-8 text-white" />
+                <div className="absolute inset-0 bg-secondary/5 rounded-2xl blur-lg group-hover:blur-xl transition-all"></div>
+                <div className="relative bg-card border border-border rounded-2xl p-8 shadow-sm hover:shadow-lg transition-all duration-300">
+                  <div className="flex items-center justify-center mb-6">
+                    <div className="w-16 h-16 rounded-2xl bg-secondary flex items-center justify-center shadow-lg">
+                      <Zap className="h-9 w-9 text-white" />
                     </div>
-                  </motion.div>
-                  <div className="text-6xl font-serif font-bold text-secondary mb-2">3x</div>
-                  <div className="text-base text-foreground font-medium">Faster Applications</div>
-                  <div className="mt-3 text-xs text-secondary/70 flex items-center justify-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    <span>Saves 6 hrs/week</span>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-5xl font-bold text-secondary mb-2">3x</div>
+                    <div className="text-lg font-semibold text-foreground mb-1">Faster Applications</div>
+                    <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm">
+                      <div className="w-2 h-4 bg-secondary rounded-sm"></div>
+                      <span>Saves 6 hrs/week</span>
+                    </div>
                   </div>
                 </div>
               </motion.div>
 
               <motion.div 
-                whileHover={{ scale: 1.02, y: -5 }}
+                whileHover={{ scale: 1.02, y: -8 }}
                 className="relative group"
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-secondary/10 to-primary/5 rounded-3xl blur-xl group-hover:blur-2xl transition-all"></div>
-                <div className="relative bg-gradient-to-br from-primary/10 via-secondary/5 to-primary/5 backdrop-blur-sm rounded-3xl p-8 border border-primary/20 hover:border-primary/40 transition-all shadow-lg hover:shadow-2xl">
-                  <motion.div 
-                    animate={{ scale: [1, 1.1, 1] }}
-                    transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                    className="flex items-center justify-center mb-4"
-                  >
-                    <div className="p-3 bg-gradient-to-br from-primary to-secondary rounded-2xl shadow-lg">
-                      <Shield className="h-8 w-8 text-white" />
+                <div className="absolute inset-0 bg-accent/5 rounded-2xl blur-lg group-hover:blur-xl transition-all"></div>
+                <div className="relative bg-card border border-border rounded-2xl p-8 shadow-sm hover:shadow-lg transition-all duration-300">
+                  <div className="flex items-center justify-center mb-6">
+                    <div className="w-16 h-16 rounded-2xl bg-accent flex items-center justify-center shadow-lg">
+                      <Shield className="h-9 w-9 text-white" />
                     </div>
-                  </motion.div>
-                  <div className="text-6xl font-serif font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-2">100%</div>
-                  <div className="text-base text-foreground font-medium">Privacy Protected</div>
-                  <div className="mt-3 text-xs text-primary/70 flex items-center justify-center gap-1">
-                    <Lock className="h-3 w-3" />
-                    <span>Bank-level security</span>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-5xl font-bold text-accent mb-2">100%</div>
+                    <div className="text-lg font-semibold text-foreground mb-1">Privacy Protected</div>
+                    <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm">
+                      <div className="w-2 h-4 bg-accent rounded-sm"></div>
+                      <span>Bank-level security</span>
+                    </div>
                   </div>
                 </div>
               </motion.div>
@@ -159,7 +191,7 @@ export default function Home() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <Button asChild size="lg" className="btn-premium text-lg px-10 py-4 gradient-primary hover:shadow-premium-xl font-bold rounded-2xl w-full sm:w-auto">
+                  <Button asChild size="lg" className="text-lg px-10 py-4 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl w-full sm:w-auto shadow-sm hover:shadow-md transition-all">
                     <Link href="/dashboard" className="flex items-center gap-3">
                       Go to Dashboard
                       <ArrowRight className="h-5 w-5" />
@@ -172,7 +204,7 @@ export default function Home() {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
-                    <Button asChild size="lg" className="text-lg px-12 py-6 bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-white font-bold rounded-2xl shadow-2xl hover:shadow-primary/50 transition-all w-full sm:w-auto">
+                    <Button asChild size="lg" className="text-lg px-12 py-6 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl w-full sm:w-auto shadow-sm hover:shadow-lg transition-all">
                       <Link href="/sign-up" className="flex items-center gap-3">
                         <Sparkles className="h-6 w-6" />
                         Start Free Today
@@ -188,7 +220,7 @@ export default function Home() {
                       asChild
                       size="lg"
                       variant="outline"
-                      className="text-lg px-12 py-6 border-2 border-primary/30 hover:border-primary hover:bg-primary/10 text-foreground font-semibold rounded-2xl transition-all w-full sm:w-auto"
+                      className="text-lg px-12 py-6 border-2 border-border hover:border-primary hover:bg-primary/5 text-foreground font-semibold rounded-xl transition-all w-full sm:w-auto"
                     >
                       <a href="#how-it-works" className="flex items-center gap-3">
                         <Eye className="h-5 w-5" />
@@ -214,7 +246,7 @@ export default function Home() {
           <Button
             asChild
             size="lg"
-            className="rounded-full w-14 h-14 bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 shadow-xl"
+            className="rounded-full w-14 h-14 bg-primary hover:bg-primary/90 shadow-lg"
           >
             <Link href="/sign-up">
               <Sparkles className="h-5 w-5" />
@@ -224,20 +256,30 @@ export default function Home() {
       </section>
 
       {/* Problem Section */}
-      <section className="py-24 bg-gradient-to-br from-muted/30 via-background to-muted/20">
+      <section className="py-24 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-20">
-            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-5 py-2.5 rounded-full text-sm font-semibold mb-8 border border-primary/20">
-              <span className="w-2 h-2 bg-primary rounded-full animate-pulse"></span>
+            <div className="inline-flex items-center gap-2 bg-card border border-border px-5 py-2.5 rounded-full text-sm font-semibold mb-8">
+              <div className="w-2 h-2 bg-primary rounded-full"></div>
               The Problem
             </div>
             <h2 className="text-5xl md:text-6xl font-bold text-foreground font-serif mb-6 leading-tight">
-              You&apos;re Missing Out on the
-              <span className="block bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mt-2">Best Opportunities</span>
+              <div className="relative">
+                You&apos;re Missing Out on the
+                <div className="block mt-2 relative">
+                  <span className="text-primary">Best Opportunities</span>
+                  <div className="absolute -bottom-2 left-0 right-0 h-3 bg-primary/20 rounded-lg -z-10"></div>
+                </div>
+              </div>
             </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              Companies spend thousands promoting jobs, but you can&apos;t tell which opportunities are real priorities. This information gap costs you time and opportunities.
-            </p>
+            <div className="relative max-w-3xl mx-auto">
+              <p className="text-xl text-muted-foreground leading-relaxed">
+                Companies spend thousands promoting jobs, but you can&apos;t tell which opportunities are real priorities.
+              </p>
+              <div className="mt-4 text-lg text-foreground">
+                This information gap costs you time and opportunities.
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
@@ -249,27 +291,27 @@ export default function Home() {
               whileHover={{ y: -8 }}
               className="group relative"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-destructive/10 via-destructive/5 to-transparent rounded-3xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
-              <div className="relative bg-card/95 backdrop-blur-sm rounded-3xl p-10 border border-border shadow-xl hover:shadow-2xl hover:border-destructive/30 transition-all duration-500">
-                <div className="absolute top-0 right-0 -translate-y-2 translate-x-2">
-                  <div className="px-3 py-1 bg-destructive/10 text-destructive text-xs font-semibold rounded-full border border-destructive/20">
+              <div className="absolute inset-0 bg-destructive/5 rounded-2xl blur-lg group-hover:blur-xl transition-all duration-500"></div>
+              <div className="relative bg-card border border-border rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-500">
+                <div className="absolute -top-3 right-6">
+                  <div className="px-3 py-1 bg-destructive text-white text-xs font-semibold rounded-full border border-destructive">
                     Critical Issue
                   </div>
                 </div>
-                <motion.div 
-                  animate={{ scale: [1, 1.05, 1] }}
-                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                  className="w-24 h-24 bg-gradient-to-br from-destructive/20 to-destructive/10 rounded-3xl flex items-center justify-center mb-6 mx-auto shadow-lg"
-                >
-                  <span className="text-4xl font-bold text-destructive">?</span>
-                </motion.div>
+                <div className="w-20 h-20 bg-destructive/10 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+                  <span className="text-3xl font-bold text-destructive">?</span>
+                </div>
                 <h3 className="text-2xl font-serif font-semibold text-foreground text-center mb-4">Invisible Sponsorships</h3>
-                <p className="text-muted-foreground text-center leading-relaxed text-lg mb-6">
+                <p className="text-muted-foreground text-center leading-relaxed text-base mb-6">
                   Sponsored jobs look identical to regular listings. You can&apos;t tell which companies are actually investing in hiring.
                 </p>
-                <div className="flex items-center justify-center gap-2 text-destructive/60 text-sm">
-                  <TrendingUp className="h-4 w-4" />
-                  <span>78% of applications ignored</span>
+                <div className="flex flex-col items-center">
+                  <div className="bg-destructive/10 border border-destructive/20 rounded-lg px-4 py-2">
+                    <div className="flex items-center gap-2 text-destructive text-sm font-semibold">
+                      <TrendingUp className="h-4 w-4" />
+                      <span>78% of applications ignored</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -282,27 +324,27 @@ export default function Home() {
               whileHover={{ y: -8 }}
               className="group relative"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent rounded-3xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
-              <div className="relative bg-card/95 backdrop-blur-sm rounded-3xl p-10 border border-border shadow-xl hover:shadow-2xl hover:border-orange-500/30 transition-all duration-500">
-                <div className="absolute top-0 right-0 -translate-y-2 translate-x-2">
-                  <div className="px-3 py-1 bg-orange-500/10 text-orange-600 text-xs font-semibold rounded-full border border-orange-500/20">
+              <div className="absolute inset-0 bg-orange-500/5 rounded-2xl blur-lg group-hover:blur-xl transition-all duration-500"></div>
+              <div className="relative bg-card border border-border rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-500">
+                <div className="absolute -top-3 right-6">
+                  <div className="px-3 py-1 bg-orange-500 text-white text-xs font-semibold rounded-full border border-orange-500">
                     Major Problem
                   </div>
                 </div>
-                <motion.div 
-                  animate={{ rotate: [0, 5, -5, 0] }}
-                  transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                  className="w-24 h-24 bg-gradient-to-br from-orange-500/20 to-orange-500/10 rounded-3xl flex items-center justify-center mb-6 mx-auto shadow-lg"
-                >
-                  <span className="text-4xl font-bold text-orange-600">!</span>
-                </motion.div>
+                <div className="w-20 h-20 bg-orange-500/10 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+                  <span className="text-3xl font-bold text-orange-600">!</span>
+                </div>
                 <h3 className="text-2xl font-serif font-semibold text-foreground text-center mb-4">Scattered Applications</h3>
-                <p className="text-muted-foreground text-center leading-relaxed text-lg mb-6">
+                <p className="text-muted-foreground text-center leading-relaxed text-base mb-6">
                   Your job search is fragmented across platforms with no central place to track applications and follow-ups.
                 </p>
-                <div className="flex items-center justify-center gap-2 text-orange-600/60 text-sm">
-                  <Database className="h-4 w-4" />
-                  <span>6-8 platforms to manage</span>
+                <div className="flex flex-col items-center">
+                  <div className="bg-orange-500/10 border border-orange-500/20 rounded-lg px-4 py-2">
+                    <div className="flex items-center gap-2 text-orange-600 text-sm font-semibold">
+                      <Database className="h-4 w-4" />
+                      <span>6-8 platforms to manage</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -315,27 +357,27 @@ export default function Home() {
               whileHover={{ y: -8 }}
               className="group relative"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-muted/10 via-muted/5 to-transparent rounded-3xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
-              <div className="relative bg-card/95 backdrop-blur-sm rounded-3xl p-10 border border-border shadow-xl hover:shadow-2xl hover:border-muted-foreground/30 transition-all duration-500">
-                <div className="absolute top-0 right-0 -translate-y-2 translate-x-2">
-                  <div className="px-3 py-1 bg-muted/10 text-muted-foreground text-xs font-semibold rounded-full border border-muted/20">
+              <div className="absolute inset-0 bg-muted/20 rounded-2xl blur-lg group-hover:blur-xl transition-all duration-500"></div>
+              <div className="relative bg-card border border-border rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-500">
+                <div className="absolute -top-3 right-6">
+                  <div className="px-3 py-1 bg-muted text-white text-xs font-semibold rounded-full border border-muted">
                     Time Wasted
                   </div>
                 </div>
-                <motion.div 
-                  animate={{ rotate: [0, -10, 10, 0] }}
-                  transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-                  className="w-24 h-24 bg-gradient-to-br from-muted/20 to-muted/10 rounded-3xl flex items-center justify-center mb-6 mx-auto shadow-lg"
-                >
-                  <Clock className="h-12 w-12 text-muted-foreground" />
-                </motion.div>
+                <div className="w-20 h-20 bg-muted/10 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+                  <Clock className="h-10 w-10 text-muted-foreground" />
+                </div>
                 <h3 className="text-2xl font-serif font-semibold text-foreground text-center mb-4">Wasted Time & Energy</h3>
-                <p className="text-muted-foreground text-center leading-relaxed text-lg mb-6">
+                <p className="text-muted-foreground text-center leading-relaxed text-base mb-6">
                   Hours spent applying to jobs without knowing which companies are serious about hiring.
                 </p>
-                <div className="flex items-center justify-center gap-2 text-muted-foreground/60 text-sm">
-                  <RefreshCw className="h-4 w-4" />
-                  <span>$2,500+ per opportunity</span>
+                <div className="flex flex-col items-center">
+                  <div className="bg-muted/10 border border-muted/20 rounded-lg px-4 py-2">
+                    <div className="flex items-center gap-2 text-muted-foreground text-sm font-semibold">
+                      <RefreshCw className="h-4 w-4" />
+                      <span>$2,500+ per opportunity</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </motion.div>

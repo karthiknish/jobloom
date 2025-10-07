@@ -2,19 +2,10 @@
   "manifest_version": 3,
   "name": "HireAll Extension v1.0.2",
   "version": "1.0.2",
-  "description": "Highlight sponsored job roles and track applications",
+  "description": "LinkedIn job sponsored highlighting and application tracking",
   "permissions": ["activeTab", "storage", "tabs"],
   "host_permissions": [
     "https://*.linkedin.com/*",
-    "https://*.indeed.com/*",
-    "https://*.glassdoor.com/*",
-    "https://*.monster.com/*",
-    "https://*.ziprecruiter.com/*",
-    "https://*.jobs.google.com/*",
-    "https://*.seek.com/*",
-    "https://*.totaljobs.com/*",
-    "https://*.reed.co.uk/*",
-    "https://*.jobsite.co.uk/*",
     "http://localhost:3000/*"
   ],
   "content_security_policy": {
@@ -27,16 +18,7 @@
   "content_scripts": [
     {
       "matches": [
-        "https://*.linkedin.com/*",
-        "https://*.indeed.com/*",
-        "https://*.glassdoor.com/*",
-        "https://*.monster.com/*",
-        "https://*.ziprecruiter.com/*",
-        "https://*.jobs.google.com/*",
-        "https://*.seek.com/*",
-        "https://*.totaljobs.com/*",
-        "https://*.reed.co.uk/*",
-        "https://*.jobsite.co.uk/*"
+        "https://*.linkedin.com/*"
       ],
       "js": ["content.js"],
       "css": ["styles.css"]

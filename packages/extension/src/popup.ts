@@ -1,14 +1,15 @@
 /// <reference types="chrome" />
 import { DEFAULT_WEB_APP_URL, sanitizeBaseUrl } from "./constants";
-import { getAuthInstance } from "./firebase";
+import { getAuthInstance, getGoogleProvider } from "./firebase";
 import { get } from "./apiClient";
-import { cacheAuthToken, clearCachedAuthToken } from "./authToken";
+import { cacheAuthToken, clearCachedAuthToken, acquireIdToken } from "./authToken";
 import { ExtensionMessageHandler } from "./components/ExtensionMessageHandler";
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   onAuthStateChanged,
   signOut as firebaseSignOut,
+  signInWithPopup,
 } from "firebase/auth";
 import { EXT_COLORS } from "./theme";
 
@@ -217,6 +218,20 @@ document.addEventListener("DOMContentLoaded", () => {
     if (user) {
       syncedSiteUserId = user.uid;
       syncedSiteUserEmail = user.email || null;
+      // Cache token immediately when user is detected
+      void (async () => {
+        try {
+          const token = await user.getIdToken();
+          await cacheAuthToken({
+            token,
+            userId: user.uid,
+            userEmail: user.email ?? undefined,
+            source: "popup"
+          });
+        } catch (error) {
+          console.debug("Failed to cache auth token on state change:", error);
+        }
+      })();
     }
 
     // Debounce UI updates to prevent flickering
@@ -231,6 +246,42 @@ document.addEventListener("DOMContentLoaded", () => {
         void attemptSyncAuthFromSite();
       }
     }, 100);
+  });
+
+  // Add listener for web app auth messages
+  window.addEventListener("message", (event) => {
+    // Only accept messages from the same origin
+    if (event.origin !== window.location.origin) return;
+
+    // Handle Firebase authentication success message from web app
+    if (event.data.type === "FIREBASE_AUTH_SUCCESS" && event.data.uid) {
+      console.log("Received Firebase auth success from web app:", event.data.uid);
+      
+      // Update local user info immediately
+      syncedSiteUserId = String(event.data.uid);
+      syncedSiteUserEmail = event.data.email || null;
+      
+      // Trigger auth state sync and UI update
+      void attemptSyncAuthFromSite();
+      updateAuthUI(true);
+      
+      showToast("Signed in from web app!", { type: "success", duration: 3000 });
+    }
+
+    // Handle Firebase authentication logout message from web app
+    if (event.data.type === "FIREBASE_AUTH_LOGOUT") {
+      console.log("Received Firebase auth logout from web app");
+      
+      // Clear local auth state
+      syncedSiteUserId = null;
+      syncedSiteUserEmail = null;
+      attemptedSiteSync = false;
+      
+      // Update UI
+      updateAuthUI(false);
+      
+      showToast("Signed out from web app", { type: "info", duration: 3000 });
+    }
   });
 
   function updateAuthUI(isAuthed: boolean) {
@@ -356,23 +407,37 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const sendMessage = async () => {
-      try {
-        return await ExtensionMessageHandler.sendMessage("syncAuthState");
-      } catch (error) {
-        console.debug("syncAuthState message failed", error);
-        return null;
+    try {
+      // First try to get auth token from cached storage
+      const token = await acquireIdToken(false, { skipMessageFallback: true });
+      
+      // Also attempt to sync auth state via message
+      const syncResult = await ExtensionMessageHandler.sendMessage("syncAuthState");
+
+      if (token || syncResult?.userId) {
+        // Update synced user info from either token or sync result
+        if (syncResult?.userId) {
+          syncedSiteUserId = String(syncResult.userId);
+          syncedSiteUserEmail = syncResult.userEmail ? String(syncResult.userEmail) : null;
+        }
+        
+        // Update UI to reflect authentication
+        updateAuthUI(!!auth.currentUser);
+        
+        logger.info("Popup", "Successfully synced auth from web app", {
+          hasToken: !!token,
+          hasSyncResult: !!syncResult?.userId,
+          userEmail: syncedSiteUserEmail
+        });
+      } else {
+        // Allow retry later if initial attempt fails
+        setTimeout(() => {
+          attemptedSiteSync = false;
+        }, 5000);
       }
-    };
-
-    const result = await sendMessage();
-
-    if (result?.userId) {
-      syncedSiteUserId = String(result.userId);
-      syncedSiteUserEmail = result.userEmail ? String(result.userEmail) : null;
-      updateAuthUI(!!auth.currentUser);
-    } else {
-      // Allow retry later if initial attempt fails
+    } catch (error) {
+      console.debug("Error in attemptSyncAuthFromSite:", error);
+      // Allow retry on error
       setTimeout(() => {
         attemptedSiteSync = false;
       }, 5000);
@@ -989,33 +1054,75 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  googleBtn?.addEventListener("click", () => {
+  googleBtn?.addEventListener("click", async () => {
     clearAuthMessages();
     googleBtn.disabled = true;
-    googleBtn.textContent = "Opening Google...";
+    googleBtn.textContent = "Signing in...";
 
-    chrome.storage.sync.get(["webAppUrl"], (result) => {
-      const baseUrl = sanitizeBaseUrl(result.webAppUrl || DEFAULT_WEB_APP_URL);
-      const targetUrl = `${baseUrl}/sign-in?from=extension&provider=google`;
-
-  chrome.tabs.create({ url: targetUrl }, () => {
-        if (chrome.runtime.lastError) {
-          console.error("Failed to open Google sign-in tab:", chrome.runtime.lastError);
-          showAuthError("Your browser blocked the Google sign-in window. Please allow popups for this site and try again, or manually visit the sign-in page.");
-          googleBtn.textContent = "Continue with Google";
-          googleBtn.disabled = false;
-        } else {
-          showToast("Complete Google sign-in in the newly opened tab", {
-            type: "info",
-            duration: 5000,
+    try {
+      // Try direct popup authentication first
+      const auth = getAuthInstance();
+      const provider = getGoogleProvider();
+      
+      await signInWithPopup(auth, provider);
+      
+      showAuthSuccess("Signed in successfully with Google");
+      // Cache the auth token
+      if (auth.currentUser) {
+        await cacheAuthToken({
+          token: await auth.currentUser.getIdToken(),
+          userId: auth.currentUser.uid,
+          userEmail: auth.currentUser.email ?? undefined,
+          source: "popup"
+        });
+      }
+    } catch (error: any) {
+      console.warn("Direct Google popup failed:", error);
+      
+      // Fallback to web app login
+      if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user') {
+        googleBtn.textContent = "Opening sign-in page...";
+        chrome.storage.sync.get(["webAppUrl"], (result) => {
+          const baseUrl = sanitizeBaseUrl(result.webAppUrl || DEFAULT_WEB_APP_URL);
+          const targetUrl = `${baseUrl}/sign-in?from=extension&provider=google`;
+          chrome.tabs.create({ url: targetUrl }, () => {
+            if (chrome.runtime.lastError) {
+              console.error("Failed to open Google sign-in tab:", chrome.runtime.lastError);
+              showAuthError("Your browser blocked authentication. Please allow popups and try again.");
+            } else {
+              showToast("Complete sign-in in the newly opened tab", {
+                type: "info",
+                duration: 5000,
+              });
+              setTimeout(() => {
+                window.close();
+              }, 2000);
+            }
           });
-          // Close the popup after a short delay to let the user see the message
-          setTimeout(() => {
-            window.close();
-          }, 2000);
-        }
-      });
-    });
+        });
+        return;
+      }
+      
+      // Handle other Google auth errors
+      let errorMessage = "Google sign-in failed";
+      switch (error.code) {
+        case "auth/network-request-failed":
+          errorMessage = "Network error. Please check your connection.";
+          break;
+        case "auth/too-many-requests":
+          errorMessage = "Too many attempts. Please try again later.";
+          break;
+        case "auth/cancelled-popup-request":
+          errorMessage = "Sign-in was cancelled. Please try again.";
+          break;
+        default:
+          errorMessage = error.message || "Google sign-in failed";
+      }
+      showAuthError(errorMessage);
+    } finally {
+      googleBtn.textContent = "Continue with Google";
+      googleBtn.disabled = false;
+    }
   });
 
   function showAuthError(msg: string) {

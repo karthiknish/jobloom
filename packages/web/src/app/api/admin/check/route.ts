@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
       NODE_ENV: process.env.NODE_ENV,
       NEXT_PUBLIC_FIREBASE_PROJECT_ID: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
       FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID,
-      hasServiceAccount: !!process.env.FIREBASE_SERVICE_ACCOUNT_KEY,
+      hasServiceAccount: !!(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64 || process.env.FIREBASE_SERVICE_ACCOUNT),
       hasPrivateKey: !!process.env.FIREBASE_PRIVATE_KEY,
     });
 

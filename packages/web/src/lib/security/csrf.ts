@@ -68,9 +68,42 @@ function extractCsrfCandidate(request: NextRequest): string | undefined {
   return undefined;
 }
 
+function isExtensionRequest(request: NextRequest): boolean {
+  const origin = request.headers.get("origin");
+  const referer = request.headers.get("referer");
+  
+  // Check for extension origins
+  if (origin && (origin.startsWith('extension://') || origin.startsWith('moz-extension://'))) {
+    return true;
+  }
+  
+  if (referer) {
+    try {
+      const refererOrigin = new URL(referer).origin;
+      if (refererOrigin.startsWith('extension://') || refererOrigin.startsWith('moz-extension://')) {
+        return true;
+      }
+    } catch {
+      // Invalid URL, continue with normal validation
+    }
+  }
+  
+  // Check for LinkedIn (our primary target for extension)
+  if (origin && (origin.includes('linkedin.com') || referer?.includes('linkedin.com'))) {
+    return true;
+  }
+  
+  return false;
+}
+
 export function validateCsrf(request: NextRequest): void {
   const method = request.method.toUpperCase();
   if (["GET", "HEAD", "OPTIONS"].includes(method)) {
+    return;
+  }
+
+  // Skip CSRF validation for extension requests
+  if (isExtensionRequest(request)) {
     return;
   }
 

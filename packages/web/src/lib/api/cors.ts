@@ -5,6 +5,8 @@ type HeadersSource = Pick<Request, "headers"> | { headers: Headers };
 const STATIC_ALLOWED_ORIGINS = [
   "https://www.linkedin.com",
   "https://linkedin.com",
+  "https://extension://", // Chrome extension origin
+  "moz-extension://", // Firefox extension origin
   process.env.NEXT_PUBLIC_WEB_URL || "https://hireall.app",
   "http://localhost:3000",
 ];
@@ -30,6 +32,12 @@ function isAllowedOrigin(origin: string | null | undefined): origin is string {
   }
 
   const normalized = origin.toLowerCase();
+  
+  // Allow extension origins
+  if (normalized.startsWith('extension://') || normalized.startsWith('moz-extension://')) {
+    return true;
+  }
+  
   return ALLOWED_DOMAIN_FRAGMENTS.some((fragment) => normalized.includes(fragment));
 }
 
@@ -86,6 +94,16 @@ export function applyCorsHeaders<T extends Response>(
   }
 
   const headers = response.headers;
+
+  // Special handling for extension origins
+  if (requestOrigin && (requestOrigin.startsWith('extension://') || requestOrigin.startsWith('moz-extension://'))) {
+    headers.set("Access-Control-Allow-Origin", requestOrigin);
+    headers.set("Access-Control-Allow-Methods", allowMethods);
+    headers.set("Access-Control-Allow-Headers", allowHeaders);
+    headers.set("Access-Control-Allow-Credentials", "true");
+    headers.set("Vary", "Origin");
+    return response;
+  }
 
   if (requestOrigin && requestOrigin !== "*") {
     headers.set("Access-Control-Allow-Origin", requestOrigin);
