@@ -6,6 +6,7 @@ import { generateRequestId, ErrorLogger } from "./errors";
 import { validateCsrf } from "@/lib/security/csrf";
 import { verifySessionFromRequest } from "@/lib/auth/session";
 import { SecurityLogger } from "@/utils/security";
+import { applyCorsHeaders } from "./cors";
 
 // Request context interface
 export interface RequestContext {
@@ -169,7 +170,7 @@ export function createRequestContext(request: NextRequest): RequestContext {
 }
 
 // Security headers middleware
-export function addSecurityHeaders(response: Response): Response {
+export function addSecurityHeaders(response: Response, origin?: string): Response {
   const headers = new Headers(response.headers);
 
   // Add security headers
@@ -180,28 +181,15 @@ export function addSecurityHeaders(response: Response): Response {
   headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 
   // Add CORS headers for development
-  if (process.env.NODE_ENV === 'development') {
-    headers.set('Access-Control-Allow-Origin', '*');
-    headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-    headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Request-ID');
-  } else {
-    // In production, allow specific origins for extension API routes
-    const allowedOrigins = [
-      'https://www.linkedin.com',
-      'https://linkedin.com',
-      process.env.NEXT_PUBLIC_WEB_URL || 'https://hireall.app',
-      'http://localhost:3000', // for development
-    ];
-
-    // This should be called from within API routes where we have access to the request
-    // For now, we'll rely on the global middleware for CORS handling
-  }
-
-  return new Response(response.body, {
+  const updatedResponse = new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
     headers
   });
+
+  applyCorsHeaders(updatedResponse, origin ?? undefined);
+
+  return updatedResponse;
 }
 
 // Content validation middleware

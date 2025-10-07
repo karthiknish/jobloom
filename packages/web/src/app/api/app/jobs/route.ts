@@ -1,37 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyIdToken } from "@/firebase/admin";
 import { verifySessionFromRequest } from "@/lib/auth/session";
 import { createFirestoreCollection } from "@/firebase/firestore";
-import { getAdminFirestore } from "@/firebase/admin";
-
-// CORS helper function for LinkedIn extension
-function addCorsHeaders(response: NextResponse, origin?: string): NextResponse {
-  const allowedOrigins = [
-    'https://www.linkedin.com',
-    'https://linkedin.com',
-    process.env.NEXT_PUBLIC_WEB_URL || 'https://hireall.app',
-    'http://localhost:3000',
-  ];
-
-  const requestOrigin = origin;
-
-  if (requestOrigin && (allowedOrigins.includes(requestOrigin) || 
-      requestOrigin.includes('hireall.app') || 
-      requestOrigin.includes('vercel.app') || 
-      requestOrigin.includes('netlify.app'))) {
-    response.headers.set('Access-Control-Allow-Origin', requestOrigin);
-    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Request-ID, X-Requested-With');
-    response.headers.set('Access-Control-Allow-Credentials', 'true');
-    response.headers.set('Vary', 'Origin');
-  } else if (process.env.NODE_ENV === 'development') {
-    response.headers.set('Access-Control-Allow-Origin', '*');
-    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Request-ID');
-  }
-
-  return response;
-}
+import { applyCorsHeaders, preflightResponse } from "@/lib/api/cors";
 
 // Enhanced error types
 class ValidationError extends Error {
@@ -163,16 +133,16 @@ function handleError(error: unknown): NextResponse {
 // POST /api/app/jobs - Create a new job
 export async function POST(request: NextRequest) {
   try {
-    const origin = request.headers.get('origin');
-
     // Verify session
     const decodedToken = await verifySessionFromRequest(request);
     if (!decodedToken) {
-      const response = NextResponse.json(
-        { error: "Invalid authentication token" },
-        { status: 401 }
+      return applyCorsHeaders(
+        NextResponse.json(
+          { error: "Invalid authentication token" },
+          { status: 401 }
+        ),
+        request,
       );
-      return addCorsHeaders(response, origin || undefined);
     }
 
     // Parse and validate request body
@@ -189,10 +159,13 @@ export async function POST(request: NextRequest) {
 
     if (isMockToken) {
       // Return mock success response for testing
-      return NextResponse.json({ 
-        id: `mock-job-${Date.now()}`,
-        message: 'Job created successfully (mock)'
-      });
+      return applyCorsHeaders(
+        NextResponse.json({ 
+          id: `mock-job-${Date.now()}`,
+          message: 'Job created successfully (mock)'
+        }),
+        request,
+      );
     }
 
     // Validate required fields
@@ -238,17 +211,19 @@ export async function POST(request: NextRequest) {
     // Create job in Firestore
     const createdJob = await jobsCollection.create(jobDataToCreate);
 
-    const response = NextResponse.json({ 
-      id: createdJob._id,
-      message: 'Job created successfully'
-    });
-    return addCorsHeaders(response, request.headers.get('origin') || undefined);
+    return applyCorsHeaders(
+      NextResponse.json({ 
+        id: createdJob._id,
+        message: 'Job created successfully'
+      }),
+      request,
+    );
 
   } catch (error) {
     const errorResponse = handleError(error);
     // If handleError returns a Response, add CORS headers
     if (errorResponse instanceof NextResponse) {
-      return addCorsHeaders(errorResponse, request.headers.get('origin') || undefined);
+      return applyCorsHeaders(errorResponse, request);
     }
     return errorResponse;
   }
@@ -269,11 +244,14 @@ export async function GET(request: NextRequest) {
 
     if (isMockToken) {
       // Return mock success response for testing
-      return NextResponse.json({ 
-        jobs: [],
-        count: 0,
-        message: 'Jobs retrieved successfully (mock)'
-      });
+      return applyCorsHeaders(
+        NextResponse.json({ 
+          jobs: [],
+          count: 0,
+          message: 'Jobs retrieved successfully (mock)'
+        }),
+        request,
+      );
     }
 
     // Initialize Firestore
@@ -282,17 +260,20 @@ export async function GET(request: NextRequest) {
     // Get all jobs (admin only)
     const jobs = await jobsCollection.getAll();
 
-    return NextResponse.json({ 
-      jobs,
-      count: jobs.length,
-      message: 'Jobs retrieved successfully'
-    });
+    return applyCorsHeaders(
+      NextResponse.json({ 
+        jobs,
+        count: jobs.length,
+        message: 'Jobs retrieved successfully'
+      }),
+      request,
+    );
 
   } catch (error) {
     const errorResponse = handleError(error);
     // If handleError returns a Response, add CORS headers
     if (errorResponse instanceof NextResponse) {
-      return addCorsHeaders(errorResponse, request.headers.get('origin') || undefined);
+      return applyCorsHeaders(errorResponse, request);
     }
     return errorResponse;
   }
@@ -301,7 +282,5 @@ export async function GET(request: NextRequest) {
 
 // OPTIONS handler for CORS preflight
 export async function OPTIONS(request: NextRequest) {
-  const origin = request.headers.get('origin');
-  const response = new NextResponse(null, { status: 200 });
-  return addCorsHeaders(response, origin || undefined);
+  return preflightResponse(request);
 }

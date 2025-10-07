@@ -241,7 +241,7 @@ document.addEventListener("DOMContentLoaded", () => {
       '.nav-tab[data-tab="auth"]'
     ) as HTMLElement | null;
     const mainTabs = document.querySelectorAll(
-      '.nav-tab[data-tab="dashboard"], .nav-tab[data-tab="jobs"], .nav-tab[data-tab="settings"]'
+      '.nav-tab[data-tab="jobs"], .nav-tab[data-tab="settings"]'
     );
     const formContainer = document.getElementById(
       "auth-form-container"
@@ -558,7 +558,7 @@ document.addEventListener("DOMContentLoaded", () => {
             )}</div>
             <h3 style="margin: 0 0 8px 0; color: var(--muted-foreground);">No jobs tracked yet</h3>
             <p style="margin: 0; font-size: 14px;">Jobs you add to your board will appear here</p>
-            <button class="action-btn" style="margin-top: 16px; padding: 8px 16px; font-size: 12px;" onclick="switchToDashboard()">
+            <button class="action-btn" style="margin-top: 16px; padding: 8px 16px; font-size: 12px;" onclick="document.querySelector('.nav-tab[data-tab=&quot;jobs&quot;]').click()">
               <div class="action-icon primary">${createSVGString(
                 "target",
                 20
@@ -822,20 +822,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Switch to dashboard tab
-  function switchToDashboard() {
-    const dashboardTab = document.querySelector(
-      '.nav-tab[data-tab="dashboard"]'
-    ) as HTMLElement;
-    if (dashboardTab) {
-      dashboardTab.click();
-    }
-  }
-
   // Update global functions
   (window as any).changeJobStatus = changeJobStatus;
   (window as any).openJobUrl = openJobUrl;
-  (window as any).switchToDashboard = switchToDashboard;
 
   autofillBtn?.addEventListener("click", () => {
     // Add loading state
@@ -1095,32 +1084,41 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function loadStats() {
+  const jobsTodayEl = document.getElementById("jobs-today");
+  const sponsoredJobsEl = document.getElementById("sponsored-jobs");
+  const applicationsEl = document.getElementById("applications");
+  const appliedCountEl = document.getElementById("applied-count");
+
+  if (!jobsTodayEl || !sponsoredJobsEl || !applicationsEl || !appliedCountEl) {
+    logger.debug("Popup", "Skipping stats load because elements are missing");
+    return;
+  }
+
   // Cache for stats to prevent unnecessary re-renders
   let lastStatsData: any = null;
-  
+
   chrome.storage.local.get(
     ["jobsToday", "sponsoredJobs", "applications", "jobBoardData"],
     (result: any) => {
       // Check if stats have actually changed
-      if (lastStatsData && JSON.stringify(result) === JSON.stringify(lastStatsData)) {
+      if (
+        lastStatsData &&
+        JSON.stringify(result) === JSON.stringify(lastStatsData)
+      ) {
         return; // No changes, skip update
       }
       lastStatsData = { ...result };
-      
-      document.getElementById("jobs-today")!.textContent =
-        result.jobsToday || "0";
-      document.getElementById("sponsored-jobs")!.textContent =
-        result.sponsoredJobs || "0";
+
+      jobsTodayEl.textContent = result.jobsToday || "0";
+      sponsoredJobsEl.textContent = result.sponsoredJobs || "0";
 
       // Update applications count
       const jobBoardData = result.jobBoardData || [];
       const appliedCount = jobBoardData.filter(
         (job: any) => job.status === "applied"
       ).length;
-      document.getElementById("applications")!.textContent =
-        jobBoardData.length.toString();
-      document.getElementById("applied-count")!.textContent =
-        appliedCount.toString();
+      applicationsEl.textContent = jobBoardData.length.toString();
+      appliedCountEl.textContent = appliedCount.toString();
     }
   );
 }

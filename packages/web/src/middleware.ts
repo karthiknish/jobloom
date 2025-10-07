@@ -7,6 +7,7 @@ import {
 import { ensureCsrfCookie, validateCsrf, hashSessionToken } from "@/lib/security/csrf";
 import { SecurityLogger } from "@/utils/security";
 import { generateRequestId } from "@/lib/api/errors";
+import { applyCorsHeaders } from "@/lib/api/cors";
 
 
 const SECURITY_HEADERS: Record<string, string> = {
@@ -160,7 +161,7 @@ function getClientIp(request: NextRequest): string {
   );
 }
 
-function applySecurityHeaders(response: NextResponse, requestId: string) {
+function applySecurityHeaders(response: NextResponse, request: NextRequest, requestId: string) {
   Object.entries(SECURITY_HEADERS).forEach(([key, value]) => {
     response.headers.set(key, value);
   });
@@ -168,38 +169,7 @@ function applySecurityHeaders(response: NextResponse, requestId: string) {
   response.headers.set("Content-Security-Policy", CONTENT_SECURITY_POLICY);
   response.headers.set("X-Request-ID", requestId);
 
-  // Add CORS headers for API routes
-  if (process.env.NODE_ENV === "development") {
-    response.headers.set("Access-Control-Allow-Origin", "*");
-    response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
-    response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Request-ID");
-  } else {
-    // In production, allow specific origins including LinkedIn for the extension
-    const allowedOrigins = [
-      "https://www.linkedin.com",
-      "https://linkedin.com",
-      // Add your production domain
-      process.env.NEXT_PUBLIC_WEB_URL || "https://hireall.app",
-      // Always allow localhost for development
-      "http://localhost:3000",
-    ];
-
-    const origin = response.headers.get("Origin");
-    const referer = response.headers.get("Referer");
-    const refererOrigin = referer ? new URL(referer).origin : null;
-    const requestOrigin = origin || refererOrigin;
-    
-    if (requestOrigin && (allowedOrigins.includes(requestOrigin) || 
-        requestOrigin.includes("hireall.app") || 
-        requestOrigin.includes("vercel.app") || 
-        requestOrigin.includes("netlify.app"))) {
-      response.headers.set("Access-Control-Allow-Origin", requestOrigin);
-      response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
-      response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Request-ID, X-Requested-With");
-      response.headers.set("Access-Control-Allow-Credentials", "true");
-      response.headers.set("Vary", "Origin");
-    }
-  }
+  applyCorsHeaders(response, request);
 
   if (process.env.NODE_ENV !== "development") {
     response.headers.set(
@@ -629,7 +599,7 @@ async function finalizeResponse(
   requestId: string,
 ): Promise<NextResponse> {
   await ensureCsrfCookie(request, response);
-  applySecurityHeaders(response, requestId);
+  applySecurityHeaders(response, request, requestId);
   cleanupExpiredServerLimits();
   return response;
 }

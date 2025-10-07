@@ -206,6 +206,23 @@ export default function BlogPostPage() {
           )}
         </motion.header>
 
+        {/* Featured Image */}
+        {post.featuredImage && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.3, duration: 0.6 }}
+            className="mb-8"
+          >
+            <img
+              src={post.featuredImage}
+              alt={post.title}
+              className="w-full max-w-4xl mx-auto rounded-lg shadow-lg"
+              loading="lazy"
+            />
+          </motion.div>
+        )}
+
         <Separator className="mb-8" />
 
         {/* Article Content */}

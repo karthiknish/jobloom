@@ -4,35 +4,7 @@ import { verifySessionFromRequest } from "@/lib/auth/session";
 import { SUBSCRIPTION_LIMITS, Subscription, SubscriptionPlan } from "@/types/api";
 import { ValidationError, DatabaseError } from "@/lib/subscriptions";
 import { checkServerRateLimit } from "@/lib/rateLimiter";
-
-// CORS helper function for LinkedIn extension
-function addCorsHeaders(response: NextResponse, origin: string | undefined) {
-  const allowedOrigins = [
-    'https://www.linkedin.com',
-    'https://linkedin.com',
-    process.env.NEXT_PUBLIC_WEB_URL || 'https://hireall.app',
-    'http://localhost:3000',
-  ];
-
-  const requestOrigin = origin;
-
-  if (requestOrigin && (allowedOrigins.includes(requestOrigin) || 
-      requestOrigin.includes('hireall.app') || 
-      requestOrigin.includes('vercel.app') || 
-      requestOrigin.includes('netlify.app'))) {
-    response.headers.set('Access-Control-Allow-Origin', requestOrigin);
-    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Request-ID, X-Requested-With');
-    response.headers.set('Access-Control-Allow-Credentials', 'true');
-    response.headers.set('Vary', 'Origin');
-  } else if (process.env.NODE_ENV === 'development') {
-    response.headers.set('Access-Control-Allow-Origin', '*');
-    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Request-ID');
-  }
-
-  return response;
-}
+import { applyCorsHeaders, preflightResponse } from "@/lib/api/cors";
 
 // Get Firestore instance using the centralized admin initialization
 const db = getAdminDb();
@@ -66,7 +38,10 @@ export async function GET(request: NextRequest) {
     const decodedToken = await verifySessionFromRequest(request);
 
     if (!decodedToken) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return applyCorsHeaders(
+        setSecurityHeaders(NextResponse.json({ error: "Unauthorized" }, { status: 401 })),
+        request,
+      );
     }
 
     // In development with mock tokens, return mock subscription status for testing
@@ -74,14 +49,17 @@ export async function GET(request: NextRequest) {
       request.headers.get("authorization")?.includes("bW9jay1zaWduYXR1cmUtZm9yLXRlc3Rpbmc");
 
     if (isMockToken) {
-      return NextResponse.json({
-        plan: "free",
-        status: "active",
-        currentPeriodStart: new Date().toISOString(),
-        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        cancelAtPeriodEnd: false,
-        message: 'Subscription status retrieved successfully (mock)'
-      });
+      return applyCorsHeaders(
+        setSecurityHeaders(NextResponse.json({
+          plan: "free",
+          status: "active",
+          currentPeriodStart: new Date().toISOString(),
+          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          cancelAtPeriodEnd: false,
+          message: 'Subscription status retrieved successfully (mock)'
+        })),
+        request,
+      );
     }
 
     const userId = decodedToken.uid;
@@ -100,7 +78,7 @@ export async function GET(request: NextRequest) {
           'X-RateLimit-Reset': (rateLimitResult.resetIn || 0).toString()
         }
       });
-      return setSecurityHeaders(response);
+      return applyCorsHeaders(setSecurityHeaders(response), request);
     }
 
     // Get user record
@@ -202,7 +180,7 @@ export async function GET(request: NextRequest) {
       },
     });
     
-    return setSecurityHeaders(response);
+    return applyCorsHeaders(setSecurityHeaders(response), request);
     
   } catch (error) {
     console.error("Error fetching subscription status:", error);
@@ -221,7 +199,7 @@ export async function GET(request: NextRequest) {
     }
     
     const response = NextResponse.json({ error: errorMessage }, { status: statusCode });
-    return setSecurityHeaders(response);
+    return applyCorsHeaders(setSecurityHeaders(response), request);
   }
 }
 
@@ -229,7 +207,5 @@ export async function GET(request: NextRequest) {
 
 // OPTIONS handler for CORS preflight
 export async function OPTIONS(request: NextRequest) {
-  const origin = request.headers.get('origin');
-  const response = new NextResponse(null, { status: 200 });
-  return addCorsHeaders(response, origin || undefined);
+  return applyCorsHeaders(setSecurityHeaders(preflightResponse(request)), request);
 }

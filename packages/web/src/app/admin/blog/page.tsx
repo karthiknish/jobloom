@@ -57,6 +57,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { TiptapEditor } from "@/components/TiptapEditor";
 import type { BlogPost } from "../../../types/api";
+import { ImageSelector } from "@/components/admin/ImageSelector";
 
 type BlogPostPayload = {
   title: string;
@@ -65,6 +66,7 @@ type BlogPostPayload = {
   category: string;
   tags: string[];
   status: "draft" | "published" | "archived";
+  featuredImage?: string;
 };
 
 export default function AdminBlogPage() {
@@ -74,6 +76,7 @@ export default function AdminBlogPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
+  const [isImageSelectorOpen, setIsImageSelectorOpen] = useState(false);
   const [newPost, setNewPost] = useState<{
     title: string;
     excerpt: string;
@@ -81,6 +84,7 @@ export default function AdminBlogPage() {
     category: string;
     tags: string;
     status: "draft" | "published" | "archived";
+    featuredImage?: string;
   }>({
     title: "",
     excerpt: "",
@@ -88,6 +92,7 @@ export default function AdminBlogPage() {
     category: "",
     tags: "",
     status: "draft",
+    featuredImage: "",
   });
 
   // Check if user is admin
@@ -225,6 +230,7 @@ export default function AdminBlogPage() {
         category: "",
         tags: "",
         status: "draft",
+        featuredImage: "",
       });
       refetchPosts();
     } catch {
@@ -257,6 +263,7 @@ export default function AdminBlogPage() {
         category: "",
         tags: "",
         status: "draft",
+        featuredImage: "",
       });
       refetchPosts();
     } catch {
@@ -285,6 +292,7 @@ export default function AdminBlogPage() {
       category: post.category,
       tags: post.tags.join(", "),
       status: post.status,
+      featuredImage: post.featuredImage || "",
     });
   };
 
@@ -296,6 +304,7 @@ export default function AdminBlogPage() {
       category: "",
       tags: "",
       status: "draft",
+      featuredImage: "",
     });
     setEditingPost(null);
   };
@@ -475,6 +484,37 @@ export default function AdminBlogPage() {
                         placeholder="Comma-separated tags (e.g., react, javascript, career)"
                       />
                     </div>
+
+                    <div className="grid gap-2">
+                      <Label>Featured Image</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          value={newPost.featuredImage || ""}
+                          onChange={(e) =>
+                            setNewPost({ ...newPost, featuredImage: e.target.value })
+                          }
+                          placeholder="Image URL or search for images..."
+                          className="flex-1"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setIsImageSelectorOpen(true)}
+                        >
+                          <Search className="h-4 w-4 mr-2" />
+                          Search
+                        </Button>
+                      </div>
+                      {newPost.featuredImage && (
+                        <div className="mt-2">
+                          <img
+                            src={newPost.featuredImage}
+                            alt="Featured image preview"
+                            className="w-full max-w-xs h-32 object-cover rounded border"
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <DialogFooter>
@@ -499,6 +539,18 @@ export default function AdminBlogPage() {
               </Dialog>
             </motion.div>
           </div>
+
+          {/* Image Selector */}
+          {isImageSelectorOpen && (
+            <ImageSelector
+              selectedImage={newPost.featuredImage}
+              onImageSelect={(imageUrl) => {
+                setNewPost({ ...newPost, featuredImage: imageUrl });
+                setIsImageSelectorOpen(false);
+              }}
+              onClose={() => setIsImageSelectorOpen(false)}
+            />
+          )}
 
           {/* Stats Cards */}
           {stats && (

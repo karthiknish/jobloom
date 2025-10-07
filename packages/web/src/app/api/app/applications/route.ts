@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyIdToken } from "@/firebase/admin";
 import { verifySessionFromRequest } from "@/lib/auth/session";
 import { createFirestoreCollection } from "@/firebase/firestore";
-import { getAdminFirestore } from "@/firebase/admin";
 import {
   withErrorHandling,
   validateRequiredFields,
@@ -11,46 +9,14 @@ import {
   createAuthorizationError,
   generateRequestId
 } from "@/lib/api/errors";
-
-// CORS helper function for LinkedIn extension
-function addCorsHeaders(response: any, origin?: string) {
-  const allowedOrigins = [
-    'https://www.linkedin.com',
-    'https://linkedin.com',
-    process.env.NEXT_PUBLIC_WEB_URL || 'https://hireall.app',
-    'http://localhost:3000',
-  ];
-
-  const requestOrigin = origin;
-
-  if (requestOrigin && (allowedOrigins.includes(requestOrigin) ||
-      requestOrigin.includes('hireall.app') ||
-      requestOrigin.includes('vercel.app') ||
-      requestOrigin.includes('netlify.app'))) {
-    response.headers.set('Access-Control-Allow-Origin', requestOrigin);
-    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Request-ID, X-Requested-With');
-    response.headers.set('Access-Control-Allow-Credentials', 'true');
-    response.headers.set('Vary', 'Origin');
-  } else if (process.env.NODE_ENV === 'development') {
-    response.headers.set('Access-Control-Allow-Origin', '*');
-    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Request-ID');
-  }
-
-  return response;
-}
-
-// POST /api/app/applications - Create a new application
-
-// CORS helper function for LinkedIn extension
+import { applyCorsHeaders, preflightResponse } from "@/lib/api/cors";
 
 // POST /api/app/applications - Create a new application
 export async function POST(request: NextRequest) {
   const requestId = generateRequestId();
   const startTime = Date.now();
 
-  return withErrorHandling(async () => {
+  const response = await withErrorHandling(async () => {
     // Validate authorization
     const decodedToken = await verifySessionFromRequest(request);
     if (!decodedToken) {
@@ -98,13 +64,15 @@ export async function POST(request: NextRequest) {
     method: 'POST',
     requestId
   });
+
+  return applyCorsHeaders(response, request);
 }
 
 // GET /api/app/applications - Get all applications (admin only)
 export async function GET(request: NextRequest) {
   const requestId = generateRequestId();
 
-  return withErrorHandling(async () => {
+  const response = await withErrorHandling(async () => {
     // Validate authorization
     const decodedToken = await verifySessionFromRequest(request);
     if (!decodedToken) {
@@ -134,12 +102,12 @@ export async function GET(request: NextRequest) {
     requestId,
     userId: undefined // Will be set by middleware if needed
   });
+
+  return applyCorsHeaders(response, request);
 }
 
 
 // OPTIONS handler for CORS preflight
 export async function OPTIONS(request: NextRequest) {
-  const origin = request.headers.get('origin');
-  const response = new NextResponse(null, { status: 200 });
-  return addCorsHeaders(response, origin || undefined);
+  return preflightResponse(request);
 }

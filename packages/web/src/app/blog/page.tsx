@@ -205,6 +205,16 @@ export default function BlogPage() {
                   transition={{ delay: index * 0.1, duration: 0.5 }}
                 >
                   <Card className="h-full hover:shadow-lg transition-shadow duration-300 group">
+                    {post.featuredImage && (
+                      <div className="aspect-video overflow-hidden rounded-t-lg">
+                        <img
+                          src={post.featuredImage}
+                          alt={post.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          loading="lazy"
+                        />
+                      </div>
+                    )}
                     <CardHeader className="pb-3">
                       <div className="flex items-center justify-between mb-2">
                         <Badge variant="secondary" className="text-xs">

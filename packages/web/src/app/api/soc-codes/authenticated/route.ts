@@ -1,45 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifySessionFromRequest } from "@/lib/auth/session";
-
-// CORS helper function
-function addCorsHeaders(response: NextResponse, origin?: string): NextResponse {
-  const allowedOrigins = [
-    'https://www.linkedin.com',
-    'https://linkedin.com',
-    process.env.NEXT_PUBLIC_WEB_URL || 'https://hireall.app',
-    'http://localhost:3000',
-  ];
-
-  const requestOrigin = origin;
-
-  if (requestOrigin && (allowedOrigins.includes(requestOrigin) || 
-      requestOrigin.includes('hireall.app') || 
-      requestOrigin.includes('vercel.app') || 
-      requestOrigin.includes('netlify.app'))) {
-    response.headers.set('Access-Control-Allow-Origin', requestOrigin);
-    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Request-ID, X-Requested-With');
-    response.headers.set('Access-Control-Allow-Credentials', 'true');
-    response.headers.set('Vary', 'Origin');
-  } else if (process.env.NODE_ENV === 'development') {
-    response.headers.set('Access-Control-Allow-Origin', '*');
-    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Request-ID');
-  }
-
-  return response;
-}
+import { applyCorsHeaders, preflightResponse } from "@/lib/api/cors";
 
 // Protected endpoint for SOC codes - authentication required
 export async function GET(request: NextRequest) {
   try {
-    const origin = request.headers.get('origin');
-
     // Verify session
     const decodedToken = await verifySessionFromRequest(request);
     if (!decodedToken) {
-      const response = NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-      return addCorsHeaders(response, origin || undefined);
+      return applyCorsHeaders(
+        NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
+        request,
+      );
     }
 
     const { searchParams } = new URL(request.url);
@@ -191,36 +163,37 @@ export async function GET(request: NextRequest) {
     // Apply limit
     results = results.slice(0, limit);
 
-    const response = NextResponse.json({
-      success: true,
-      query,
-      code,
-      eligibility,
-      totalResults: results.length,
-      results: results.map(item => ({
-        id: item.id,
-        code: item.code,
-        jobType: item.jobType,
-        relatedTitles: item.relatedTitles || [],
-        eligibility: item.eligibility,
-        isEligible: item.isEligible
-      }))
-    });
-
-    return addCorsHeaders(response, request.headers.get('origin') || undefined);
+    return applyCorsHeaders(
+      NextResponse.json({
+        success: true,
+        query,
+        code,
+        eligibility,
+        totalResults: results.length,
+        results: results.map(item => ({
+          id: item.id,
+          code: item.code,
+          jobType: item.jobType,
+          relatedTitles: item.relatedTitles || [],
+          eligibility: item.eligibility,
+          isEligible: item.isEligible
+        }))
+      }),
+      request,
+    );
 
   } catch (error) {
     console.error('Error searching SOC codes:', error);
-    const response = NextResponse.json({
-      error: 'Internal server error'
-    }, { status: 500 });
-    return addCorsHeaders(response, request.headers.get('origin') || undefined);
+    return applyCorsHeaders(
+      NextResponse.json({
+        error: 'Internal server error'
+      }, { status: 500 }),
+      request,
+    );
   }
 }
 
 // OPTIONS handler for CORS preflight
 export async function OPTIONS(request: NextRequest) {
-  const origin = request.headers.get('origin');
-  const response = new NextResponse(null, { status: 200 });
-  return addCorsHeaders(response, origin || undefined);
+  return preflightResponse(request);
 }
