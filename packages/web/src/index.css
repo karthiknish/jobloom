@@ -324,19 +324,81 @@ body {
 }
 
 /* Premium loading states */
-.loading-shimmer {
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+.loading-shimmer,
+.animate-shimmer {
+  background: linear-gradient(90deg, 
+    rgba(148, 163, 184, 0.1) 0%, 
+    rgba(148, 163, 184, 0.3) 25%, 
+    rgba(148, 163, 184, 0.1) 50%, 
+    rgba(148, 163, 184, 0.3) 75%, 
+    rgba(148, 163, 184, 0.1) 100%
+  );
   background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* Dark mode shimmer variant */
+.dark .animate-shimmer,
+.dark .loading-shimmer {
+  background: linear-gradient(90deg, 
+    rgba(71, 85, 105, 0.2) 0%, 
+    rgba(71, 85, 105, 0.4) 25%, 
+    rgba(71, 85, 105, 0.2) 50%, 
+    rgba(71, 85, 105, 0.4) 75%, 
+    rgba(71, 85, 105, 0.2) 100%
+  );
 }
 
 @keyframes shimmer {
   0% {
-    background-position: 200% 0;
-  }
-  100% {
     background-position: -200% 0;
   }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Enhanced skeleton shimmer */
+.skeleton-shimmer {
+  background: linear-gradient(90deg, 
+    var(--muted) 0%, 
+    var(--muted-foreground/20) 20%, 
+    var(--muted) 40%, 
+    var(--muted-foreground/20) 60%, 
+    var(--muted) 80%, 
+    var(--muted) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+/* High visibility shimmer for loading states */
+.shimmer-high-visibility {
+  background: linear-gradient(90deg, 
+    rgba(59, 130, 246, 0.05) 0%, 
+    rgba(59, 130, 246, 0.15) 25%, 
+    rgba(59, 130, 246, 0.05) 50%, 
+    rgba(59, 130, 246, 0.15) 75%, 
+    rgba(59, 130, 246, 0.05) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+  position: relative;
+}
+
+.shimmer-high-visibility::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 100%
+  );
+  animation: shimmer 1.5s ease-in-out infinite;
 }
 
 /* Premium spacing utilities */

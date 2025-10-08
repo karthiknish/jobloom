@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ResumeData } from "../types";
-import { skillCategories } from "../constants";
+import { ResumeData } from "./types";
+import { skillCategories } from "./constants";
 
 interface SkillsFormProps {
   data: ResumeData['skills'];

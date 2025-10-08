@@ -172,35 +172,56 @@ export default function InterviewPrepPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-muted to-muted/80 pt-16">
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background pt-16">
+      {/* Premium background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 right-20 w-96 h-96 bg-primary/2 rounded-full filter blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-20 left-20 w-80 h-80 bg-secondary/2 rounded-full filter blur-2xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+      </div>
+
       {/* Hero Section */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="bg-gradient-to-r from-primary to-secondary shadow-lg"
+        transition={{ duration: 0.6 }}
+        className="gradient-primary shadow-premium-xl relative overflow-hidden"
       >
-        <div className="relative max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+        {/* Premium background elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full filter blur-3xl"></div>
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full filter blur-2xl"></div>
+        </div>
+
+        <div className="relative max-w-7xl mx-auto py-20 px-4 sm:px-6 lg:px-8">
+          <div className="space-y-6">
+            <h1 className="text-5xl sm:text-6xl font-serif font-bold text-white tracking-tight">Interview Preparation</h1>
+            <p className="text-xl sm:text-2xl text-primary-foreground/90 max-w-3xl leading-relaxed">
+              Master your interview skills with AI-powered practice and comprehensive preparation tools
+            </p>
+          </div>
+        </div>
+      </motion.div>
+
+      <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <FeatureGate>
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45, ease: "easeOut" }}
-            className="text-center"
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="space-y-8"
           >
-            <h1 className="text-4xl font-bold text-white sm:text-5xl lg:text-6xl">
-              Ace Your Next Interview
-            </h1>
-            <p className="mt-6 max-w-2xl mx-auto text-xl text-primary-foreground/90">
-              Practice with AI-powered interview questions, get personalized
-              feedback, and build confidence for your dream job.
-            </p>
-          </motion.div>
-        </div>
-      </motion.div>
-
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-        <FeatureGate>
+            <Tabs
+              value={activeTab}
+              onValueChange={setActiveTab}
+              className="space-y-8"
+            >
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="practice">Practice Questions</TabsTrigger>
+                <TabsTrigger value="tips">Interview Tips</TabsTrigger>
+                <TabsTrigger value="mock">Mock Interviews</TabsTrigger>
+                <TabsTrigger value="progress">My Progress</TabsTrigger>
+              </TabsList>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

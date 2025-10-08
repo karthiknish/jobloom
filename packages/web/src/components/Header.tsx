@@ -50,7 +50,7 @@ export default function Header() {
   const userLinks = [
     { href: "/dashboard", label: "Dashboard" },
     { href: "/portfolio", label: "Portfolio Builder" },
-        { href: "/templates", label: "Application Templates" },
+    { href: "/application", label: "Resume & Cover Letter" },
     { href: "/interview-prep", label: "Interview Prep" },
     { href: "/cv-evaluator", label: "CV Evaluator" },
 

@@ -171,7 +171,13 @@ export function PreferencesSettings({ formData, onInputChange }: PreferencesSett
                 <Switch
                   id="ukFiltersEnabled"
                   checked={formData.preferences.ukFiltersEnabled || false}
-                  onCheckedChange={(checked) => onInputChange("preferences", "ukFiltersEnabled", checked)}
+                  onCheckedChange={(checked) => {
+                    onInputChange("preferences", "ukFiltersEnabled", checked);
+                    // Also enable sponsor button when UK filters are enabled
+                    if (checked && !formData.preferences.showSponsorButton) {
+                      onInputChange("preferences", "showSponsorButton", true);
+                    }
+                  }}
                 />
               </div>
 
@@ -203,7 +209,13 @@ export function PreferencesSettings({ formData, onInputChange }: PreferencesSett
                 <Switch
                   id="showSponsorButton"
                   checked={formData.preferences.showSponsorButton ?? true}
-                  onCheckedChange={(checked) => onInputChange("preferences", "showSponsorButton", checked)}
+                  onCheckedChange={(checked) => {
+                    onInputChange("preferences", "showSponsorButton", checked);
+                    // Also disable UK filters when sponsor button is disabled
+                    if (!checked && formData.preferences.ukFiltersEnabled) {
+                      onInputChange("preferences", "ukFiltersEnabled", false);
+                    }
+                  }}
                 />
               </div>
             </div>

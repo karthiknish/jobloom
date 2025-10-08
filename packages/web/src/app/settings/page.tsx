@@ -71,51 +71,115 @@ export default function SettingsPage() {
   const [originalData, setOriginalData] = useState(formData);
 
   useEffect(() => {
-    if (!userLoading && firebaseUser) {
-      const userData = {
-        profile: {
-          firstName: firebaseUser.displayName?.split(' ')[0] || "",
-          lastName: firebaseUser.displayName?.split(' ').slice(1).join(' ') || "",
-          email: firebaseUser.email || "",
-          phone: firebaseUser.phoneNumber || "",
-          location: "",
-          title: "",
-          company: "",
-          bio: "",
-          avatar: firebaseUser.photoURL || "",
-        },
-        preferences: {
-          emailNotifications: true,
-          pushNotifications: false,
-          newsletter: true,
-          marketingEmails: false,
-          theme: "light",
-          ukFiltersEnabled: false,
-          autoDetectJobs: true,
-          showSponsorButton: true,
-          ageCategory: "adult",
-          educationStatus: "none",
-          phdStatus: "none",
-          professionalStatus: "none",
-          minimumSalary: 0,
-          jobCategories: [] as string[],
-          locationPreference: "uk",
-        },
-        security: {
-          currentPassword: "",
-          newPassword: "",
-          confirmPassword: "",
-        },
-      };
-      // Only update if the data has actually changed
-      setFormData(prev => {
-        if (JSON.stringify(prev) !== JSON.stringify(userData)) {
-          return userData;
+    const loadUserPreferences = async () => {
+      if (!userLoading && firebaseUser) {
+        try {
+          // Load preferences from backend
+          const token = await firebaseUser.getIdToken();
+          const response = await fetch("/api/settings/preferences", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            const backendPrefs = data.preferences || {};
+            
+            const userData = {
+              profile: {
+                firstName: firebaseUser.displayName?.split(' ')[0] || "",
+                lastName: firebaseUser.displayName?.split(' ').slice(1).join(' ') || "",
+                email: firebaseUser.email || "",
+                phone: firebaseUser.phoneNumber || "",
+                location: "",
+                title: "",
+                company: "",
+                bio: "",
+                avatar: firebaseUser.photoURL || "",
+              },
+              preferences: {
+                emailNotifications: backendPrefs.emailNotifications ?? true,
+                pushNotifications: backendPrefs.pushNotifications ?? false,
+                newsletter: backendPrefs.marketingEmails ?? true,
+                marketingEmails: backendPrefs.marketingEmails ?? false,
+                theme: backendPrefs.theme ?? "light",
+                // Extension-specific preferences from backend
+                ukFiltersEnabled: backendPrefs.ukFiltersEnabled ?? false,
+                autoDetectJobs: backendPrefs.autoDetectJobs ?? true,
+                showSponsorButton: backendPrefs.showSponsorButton ?? true,
+                ageCategory: backendPrefs.ageCategory ?? "adult",
+                educationStatus: backendPrefs.educationStatus ?? "none",
+                phdStatus: backendPrefs.phdStatus ?? "none",
+                professionalStatus: backendPrefs.professionalStatus ?? "none",
+                minimumSalary: backendPrefs.minimumSalary ?? 38700,
+                jobCategories: backendPrefs.jobCategories ?? [] as string[],
+                locationPreference: backendPrefs.locationPreference ?? "uk",
+              },
+              security: {
+                currentPassword: "",
+                newPassword: "",
+                confirmPassword: "",
+              },
+            };
+            
+            // Only update if the data has actually changed
+            setFormData(prev => {
+              if (JSON.stringify(prev) !== JSON.stringify(userData)) {
+                return userData;
+              }
+              return prev;
+            });
+            setOriginalData(userData);
+          } else {
+            console.error("Failed to load preferences from backend");
+            // Fallback to default values
+            const userData = {
+              profile: {
+                firstName: firebaseUser.displayName?.split(' ')[0] || "",
+                lastName: firebaseUser.displayName?.split(' ').slice(1).join(' ') || "",
+                email: firebaseUser.email || "",
+                phone: firebaseUser.phoneNumber || "",
+                location: "",
+                title: "",
+                company: "",
+                bio: "",
+                avatar: firebaseUser.photoURL || "",
+              },
+              preferences: {
+                emailNotifications: true,
+                pushNotifications: false,
+                newsletter: true,
+                marketingEmails: false,
+                theme: "light",
+                ukFiltersEnabled: false,
+                autoDetectJobs: true,
+                showSponsorButton: true,
+                ageCategory: "adult",
+                educationStatus: "none",
+                phdStatus: "none",
+                professionalStatus: "none",
+                minimumSalary: 38700,
+                jobCategories: [] as string[],
+                locationPreference: "uk",
+              },
+              security: {
+                currentPassword: "",
+                newPassword: "",
+                confirmPassword: "",
+              },
+            };
+            setFormData(userData);
+            setOriginalData(userData);
+          }
+        } catch (error) {
+          console.error("Error loading user preferences:", error);
+          toast.error("Failed to load preferences");
         }
-        return prev;
-      });
-      setOriginalData(userData);
-    }
+      }
+    };
+
+    loadUserPreferences();
   }, [userLoading, firebaseUser]);
 
   const handleInputChange = (section: string, field: string, value: string | boolean | number | string[]) => {
@@ -132,23 +196,83 @@ export default function SettingsPage() {
   const handleSave = async () => {
     setIsLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setOriginalData(formData);
-      setHasChanges(false);
-      toast.success(TOAST_MESSAGES.SETTINGS.PROFILE_SAVED);
+      if (!firebaseUser) {
+        toast.error("User not authenticated");
+        return;
+      }
 
+      // Save preferences to backend
+      const token = await firebaseUser.getIdToken();
+      const response = await fetch("/api/settings/preferences", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          preferences: formData.preferences
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save preferences to backend");
+      }
+
+      // Sync both UK Settings and Extension settings
+      const syncData = {
+        // UK Settings - matches extension UserProfileManager structure
+        userVisaCriteria: {
+          ukFiltersEnabled: formData.preferences.ukFiltersEnabled,
+          ageCategory: formData.preferences.ageCategory === 'youngAdult' ? 'under26' : 'adult',
+          educationStatus: formData.preferences.educationStatus === 'bachelor' ? 'graduateVisa' : formData.preferences.educationStatus,
+          phdStatus: formData.preferences.phdStatus === 'completed' ? 'stemPhd' : formData.preferences.phdStatus === 'in-progress' ? 'nonStemPhD' : 'none',
+          professionalStatus: formData.preferences.professionalStatus,
+          minimumSalary: formData.preferences.minimumSalary,
+          jobCategories: formData.preferences.jobCategories,
+          locationPreference: formData.preferences.locationPreference,
+        },
+        // Extension Settings - matches extension UserProfileManager structure
+        preferences: {
+          enableSponsorshipChecks: formData.preferences.showSponsorButton !== false,
+          enableAutoDetection: formData.preferences.autoDetectJobs !== false,
+          enableJobBoardIntegration: true,
+        },
+      };
+
+      // Save to chrome storage sync for extension access
+      if (typeof window !== "undefined" && window.chrome && window.chrome.storage) {
+        await new Promise<void>((resolve, reject) => {
+          window.chrome.storage.sync.set(syncData, () => {
+            if (window.chrome.runtime.lastError) {
+              reject(new Error(window.chrome.runtime.lastError.message));
+            } else {
+              resolve();
+            }
+          });
+        });
+      }
+
+      // Also send message to any loaded extension instances
       if (typeof window !== "undefined") {
         window.postMessage(
           {
             type: "HIREALL_EXTENSION_UPDATE_PREFS",
             payload: {
+              ...syncData,
+              // Legacy support for old extension versions
               enableSponsorshipChecks: formData.preferences.showSponsorButton !== false,
+              ukFiltersEnabled: formData.preferences.ukFiltersEnabled,
             },
           },
           "*"
         );
       }
+
+      setOriginalData(formData);
+      setHasChanges(false);
+      toast.success(TOAST_MESSAGES.SETTINGS.PROFILE_SAVED);
     } catch (error) {
+      console.error("Error saving preferences:", error);
       toast.error(TOAST_MESSAGES.SETTINGS.SETTINGS_ERROR);
     } finally {
       setIsLoading(false);

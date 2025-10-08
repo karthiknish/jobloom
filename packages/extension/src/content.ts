@@ -363,6 +363,23 @@ window.addEventListener("beforeunload", () => {
   }
 });
 
+// Add message listener for popup updates
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === "updateSponsorshipButtons") {
+    logger.info("Content", "Received sponsorship button update from popup", {
+      enabled: message.enabled
+    });
+    
+    const tracker = (window as unknown as { hireallJobTracker?: JobTracker }).hireallJobTracker;
+    if (tracker && typeof tracker.setSponsorButtonEnabled === "function") {
+      tracker.setSponsorButtonEnabled(message.enabled);
+    }
+    
+    sendResponse({ success: true });
+  }
+  return true; // Keep the message channel open for async response
+});
+
 // Initialize when DOM is ready
 if (document.readyState === "loading") {
   logger.debug("Content", "DOM not ready, waiting for DOMContentLoaded");

@@ -7,16 +7,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface VisaCriteriaSettingsProps {
   formData: {
     preferences: {
+      ukFiltersEnabled: boolean;
       ageCategory: string;
       educationStatus: string;
       phdStatus: string;
       professionalStatus: string;
       minimumSalary: number;
+      jobCategories: string[];
+      locationPreference: string;
     };
   };
   onInputChange: (section: string, field: string, value: any) => void;
@@ -51,6 +55,30 @@ export function VisaCriteriaSettings({ formData, onInputChange }: VisaCriteriaSe
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 0.4 }}
           >
+            <div className="mb-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label htmlFor="ukFiltersEnabledSetting" className="text-base font-semibold text-foreground">
+                    Enable UK Visa Analysis
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    Turn on detailed UK visa eligibility assessment for job listings
+                  </p>
+                </div>
+                <Switch
+                  id="ukFiltersEnabledSetting"
+                  checked={formData.preferences.ukFiltersEnabled || false}
+                  onCheckedChange={(checked) => {
+                    onInputChange("preferences", "ukFiltersEnabled", checked);
+                    // Also sync with sponsor button preference
+                    if (checked) {
+                      onInputChange("preferences", "showSponsorButton", true);
+                    }
+                  }}
+                />
+              </div>
+            </div>
+
             <Alert>
               <Shield className="h-4 w-4" />
               <AlertDescription>

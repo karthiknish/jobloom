@@ -112,9 +112,15 @@ export const PRECONFIGURED_TABS = {
   APPLICATION: [
     {
       id: "resume-maker",
-      label: "Resume Maker",
-      icon: FileText,
-      description: "Create and edit your resume with AI assistance",
+      label: "AI Resume Generator",
+      icon: Sparkles,
+      description: "Create resumes with AI assistance",
+    },
+    {
+      id: "advanced-resume-builder",
+      label: "Advanced Resume Builder",
+      icon: Edit,
+      description: "Professional resume builder with ATS scoring",
     },
     {
       id: "cover-letter",

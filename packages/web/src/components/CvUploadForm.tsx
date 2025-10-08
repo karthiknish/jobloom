@@ -32,6 +32,7 @@ interface CvUploadFormProps {
   userId: string;
   onUploadSuccess?: (analysisId: string) => void;
   onUploadStarted?: () => void;
+  onResumeUpdate?: (resume: ResumeData, targetRole?: string, industry?: string) => void;
 }
 
 interface UploadLimits {
@@ -42,7 +43,7 @@ interface UploadLimits {
   description: string;
 }
 
-export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted }: CvUploadFormProps) {
+export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted, onResumeUpdate }: CvUploadFormProps) {
   const { user } = useFirebaseAuth();
   const [file, setFile] = useState<File | null>(null);
   const [targetRole, setTargetRole] = useState("");
@@ -253,34 +254,43 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted }: CvUpl
   };
 
   const handleShowRealTimeFeedback = () => {
-    if (!sampleResume) {
-      setSampleResume(createSampleResume());
-    }
+    const resume = sampleResume || createSampleResume();
+    setSampleResume(resume);
     setShowRealTimeFeedback(true);
+    
+    // Call the parent's update function for ATS analysis
+    if (onResumeUpdate) {
+      onResumeUpdate(resume, targetRole, industry);
+    }
   };
 
   const updateResumeField = (field: string, value: string) => {
     if (!sampleResume) return;
 
     const [section, subsection] = field.split('.');
-    setSampleResume(prev => {
-      if (!prev) return prev;
-
+    const updatedResume = (() => {
       if (subsection) {
         return {
-          ...prev,
+          ...sampleResume,
           [section]: {
-            ...(prev as any)[section],
+            ...(sampleResume as any)[section],
             [subsection]: value
           }
         };
       } else {
         return {
-          ...prev,
+          ...sampleResume,
           [field]: value
         };
       }
-    });
+    })();
+
+    setSampleResume(updatedResume);
+
+    // Call the parent's update function for ATS analysis when resume changes
+    if (onResumeUpdate) {
+      onResumeUpdate(updatedResume, targetRole, industry);
+    }
   };
 
   const formatFileSize = (bytes: number) => {

@@ -59,10 +59,12 @@ export async function GET(request: NextRequest) {
     const userDoc = await db.collection("users").doc(uid).get();
     
     if (!userDoc.exists) {
-      return NextResponse.json(
-        { error: "User profile not found" },
-        { status: 404 }
-      );
+      // User exists in auth but not in firestore - return default structure
+      return NextResponse.json({
+        success: true,
+        data: null,
+        message: "No autofill profile found"
+      });
     }
 
     const userData = userDoc.data();
@@ -279,37 +281,6 @@ function validateAutofillProfile(data: any): any {
     return null;
   }
 
-  // Basic structure validation
-  const requiredStructure = {
-    personalInfo: {
-      firstName: "string",
-      lastName: "string",
-      email: "string",
-      phone: "string",
-      address: "string",
-      city: "string",
-      state: "string",
-      zipCode: "string",
-      country: "string",
-    },
-    professional: {
-      currentTitle: "string",
-      experience: "string",
-      education: "string",
-      skills: "string",
-      linkedinUrl: "string",
-      portfolioUrl: "string",
-      githubUrl: "string",
-    },
-    preferences: {
-      salaryExpectation: "string",
-      availableStartDate: "string",
-      workAuthorization: "string",
-      relocate: "boolean",
-      coverLetter: "string",
-    },
-  };
-
   // Check if all required sections exist
   if (!data.personalInfo || !data.professional || !data.preferences) {
     return null;
@@ -341,12 +312,12 @@ function validateAutofillProfile(data: any): any {
       salaryExpectation: String(data.preferences.salaryExpectation || "").trim(),
       availableStartDate: String(data.preferences.availableStartDate || "").trim(),
       workAuthorization: String(data.preferences.workAuthorization || "").trim(),
-      relocate: Boolean(data.preferences.relocate),
+      relocate: Boolean(data.preferences.relocate || false),
       coverLetter: String(data.preferences.coverLetter || "").trim(),
     },
   };
 
-  // Basic email validation for personal info
+  // Basic email validation for personal info (only if email is provided)
   if (sanitizedData.personalInfo.email && !isValidEmail(sanitizedData.personalInfo.email)) {
     return null;
   }

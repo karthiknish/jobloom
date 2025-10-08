@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EnhancedAtsScore } from "@/components/EnhancedAtsScore";
 import { useSubscription } from "@/hooks/useSubscription";
-import type { ResumeScore } from "@/lib/enhancedAts";
+import type { ResumeScore } from "./types";
 
 interface ResumeScoreProps {
   score: ResumeScore;

@@ -119,18 +119,18 @@ export function AdvancedDashboard() {
       <div className="min-h-screen bg-gradient-to-br from-background via-accent/10 to-background mt-14">
         <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
           <div className="space-y-8">
-            <div className="h-8 bg-gradient-to-r from-muted-foreground/10 via-muted-foreground/15 to-muted-foreground/10 bg-[length:200%_100%] animate-shimmer rounded w-1/4"></div>
+            <div className="h-8 bg-gradient-to-r from-muted via-muted-foreground/20 to-muted animate-shimmer-v2 rounded w-1/4 skeleton-shimmer"></div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {[...Array(4)].map((_, i) => (
                 <div
                   key={i}
-                  className="h-32 bg-gradient-to-r from-muted-foreground/10 via-muted-foreground/15 to-muted-foreground/10 bg-[length:200%_100%] animate-shimmer rounded-lg shadow-sm"
+                  className="h-32 bg-gradient-to-r from-muted via-muted-foreground/20 to-muted animate-shimmer-v2 rounded-lg shadow-sm skeleton-shimmer"
                 ></div>
               ))}
             </div>
             <div className="space-y-6">
-              <div className="h-64 bg-gradient-to-r from-muted-foreground/10 via-muted-foreground/15 to-muted-foreground/10 bg-[length:200%_100%] animate-shimmer rounded-lg shadow-sm"></div>
-              <div className="h-64 bg-gradient-to-r from-muted-foreground/10 via-muted-foreground/15 to-muted-foreground/10 bg-[length:200%_100%] animate-shimmer rounded-lg shadow-sm"></div>
+              <div className="h-64 bg-gradient-to-r from-muted via-muted-foreground/20 to-muted animate-shimmer-v2 rounded-lg shadow-sm skeleton-shimmer"></div>
+              <div className="h-64 bg-gradient-to-r from-muted via-muted-foreground/20 to-muted animate-shimmer-v2 rounded-lg shadow-sm skeleton-shimmer"></div>
             </div>
           </div>
         </div>

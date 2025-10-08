@@ -7,10 +7,16 @@ interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
   animationDuration?: number;
 }
 
-function Skeleton({ className, ...props }: SkeletonProps) {
+function Skeleton({ className, animationType = "pulse", ...props }: SkeletonProps) {
+  const animationClass = animationType === "shimmer" ? "animate-shimmer" : "animate-pulse";
+  
   return (
     <div
-      className={cn("animate-pulse rounded-md bg-muted", className)}
+      className={cn(
+        "rounded-md bg-muted",
+        animationClass,
+        className
+      )}
       {...props}
     />
   );
@@ -21,18 +27,18 @@ function SkeletonCard({ className, ...props }: SkeletonProps) {
   return (
     <div
       className={cn(
-        "p-6 space-y-4 border border-border rounded-lg bg-background shadow-sm",
+        "p-6 space-y-4 border border-border rounded-lg bg-background shadow-sm animate-shimmer",
         className
       )}
       {...props}
     >
-      <Skeleton className="h-4 w-3/4" />
-      <Skeleton className="h-4 w-1/2" />
+      <div className="h-4 bg-muted rounded animate-pulse w-3/4 skeleton-shimmer" />
+      <div className="h-4 bg-muted rounded animate-pulse w-1/2 skeleton-shimmer" />
       <div className="flex space-x-2">
-        <Skeleton className="h-8 w-8 rounded-full" />
+        <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
         <div className="space-y-2 flex-1">
-          <Skeleton className="h-3 w-full" />
-          <Skeleton className="h-3 w-2/3" />
+          <div className="h-3 bg-muted rounded animate-pulse w-full skeleton-shimmer" />
+          <div className="h-3 bg-muted rounded animate-pulse w-2/3 skeleton-shimmer" />
         </div>
       </div>
     </div>
@@ -141,29 +147,29 @@ function SkeletonJobCard({ className, ...props }: SkeletonProps) {
   return (
     <div
       className={cn(
-        "p-6 border border-border rounded-lg bg-background shadow-sm space-y-4",
+        "p-6 border border-border rounded-lg bg-background shadow-sm space-y-4 animate-shimmer",
         className
       )}
       {...props}
     >
       <div className="flex items-start justify-between">
         <div className="flex items-center space-x-3 flex-1">
-          <Skeleton className="h-12 w-12 rounded-lg" />
+          <div className="h-12 w-12 rounded-lg bg-muted animate-pulse" />
           <div className="space-y-2 flex-1">
-            <Skeleton className="h-5 w-3/4" />
-            <Skeleton className="h-4 w-1/2" />
+            <div className="h-5 bg-muted rounded animate-pulse w-3/4" />
+            <div className="h-4 bg-muted rounded animate-pulse w-1/2" />
           </div>
         </div>
-        <Skeleton className="h-6 w-16 rounded-full" />
+        <div className="h-6 w-16 rounded-full bg-muted animate-pulse" />
       </div>
       <div className="space-y-2">
-        <Skeleton className="h-4 w-full" />
-        <Skeleton className="h-4 w-2/3" />
+        <div className="h-4 bg-muted rounded animate-pulse w-full" />
+        <div className="h-4 bg-muted rounded animate-pulse w-2/3" />
       </div>
       <div className="flex flex-wrap gap-2">
-        <Skeleton className="h-6 w-16 rounded-full" />
-        <Skeleton className="h-6 w-20 rounded-full" />
-        <Skeleton className="h-6 w-14 rounded-full" />
+        <div className="h-6 w-16 rounded-full bg-muted animate-pulse skeleton-shimmer" />
+        <div className="h-6 w-20 rounded-full bg-muted animate-pulse skeleton-shimmer" />
+        <div className="h-6 w-14 rounded-full bg-muted animate-pulse skeleton-shimmer" />
       </div>
     </div>
   );
@@ -171,16 +177,70 @@ function SkeletonJobCard({ className, ...props }: SkeletonProps) {
 
 function SkeletonInterviewQuestion({ className, ...props }: SkeletonProps) {
   return (
-    <div className={cn("p-6 border border-border rounded-lg bg-background shadow-sm space-y-4", className)} {...props}>
+    <div className={cn("p-6 border border-border rounded-lg bg-background shadow-sm space-y-4 animate-shimmer", className)} {...props}>
       <div className="flex items-center justify-between">
-        <Skeleton className="h-6 w-32 rounded-full" />
-        <Skeleton className="h-6 w-16 rounded-full" />
+        <div className="h-6 w-32 rounded-full bg-muted animate-pulse skeleton-shimmer" />
+        <div className="h-6 w-16 rounded-full bg-muted animate-pulse skeleton-shimmer" />
       </div>
-      <Skeleton className="h-6 w-full" />
-      <Skeleton className="h-4 w-4/5" />
+      <div className="h-6 bg-muted rounded animate-pulse w-full skeleton-shimmer" />
+      <div className="h-4 bg-muted rounded animate-pulse w-4/5 skeleton-shimmer" />
       <div className="flex space-x-2">
-        <Skeleton className="h-6 w-16 rounded-full" />
-        <Skeleton className="h-6 w-20 rounded-full" />
+        <div className="h-6 w-16 rounded-full bg-muted animate-pulse skeleton-shimmer" />
+        <div className="h-6 w-20 rounded-full bg-muted animate-pulse skeleton-shimmer" />
+      </div>
+    </div>
+  );
+}
+
+// New enhanced shimmer skeleton components for better visibility
+function SkeletonShimmer({ className, ...props }: SkeletonProps) {
+  return (
+    <div
+      className={cn(
+        "rounded-md animate-shimmer relative overflow-hidden",
+        "after:absolute after:inset-0 after:bg-gradient-to-r",
+        "after:from-transparent after:via-white/20 after:to-transparent",
+        "after:animate-[shimmer_2s_ease-in-out_infinite]",
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+function SkeletonShimmerText({ lines = 3, className, ...props }: SkeletonProps & { lines?: number }) {
+  return (
+    <div className={cn("space-y-2", className)} {...props}>
+      {Array.from({ length: lines }).map((_, i) => (
+        <SkeletonShimmer
+          key={i}
+          className={cn(
+            "h-4 bg-muted/50",
+            i === lines - 1 ? "w-3/4" : "w-full"
+          )}
+        />
+      ))}
+    </div>
+  );
+}
+
+function SkeletonShimmerCard({ className, ...props }: SkeletonProps) {
+  return (
+    <div
+      className={cn(
+        "p-6 space-y-4 border border-border rounded-lg bg-background shadow-sm animate-shimmer",
+        className
+      )}
+      {...props}
+    >
+      <SkeletonShimmer className="h-6 w-3/4 bg-muted/30" />
+      <SkeletonShimmer className="h-4 w-1/2 bg-muted/30" />
+      <div className="flex space-x-3">
+        <SkeletonShimmer className="h-10 w-10 rounded-full bg-muted/30" />
+        <div className="space-y-2 flex-1">
+          <SkeletonShimmer className="h-4 w-full bg-muted/30" />
+          <SkeletonShimmer className="h-4 w-2/3 bg-muted/30" />
+        </div>
       </div>
     </div>
   );
@@ -198,4 +258,7 @@ export {
   SkeletonGrid,
   SkeletonJobCard,
   SkeletonInterviewQuestion,
+  SkeletonShimmer,
+  SkeletonShimmerText,
+  SkeletonShimmerCard,
 };

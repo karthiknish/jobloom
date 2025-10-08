@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Lock, Download, Trash2, Shield } from "lucide-react";
+import { Lock, Download, Trash2, Shield, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
+import { getAuth, EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "firebase/auth";
 
 interface SecuritySettingsProps {
   formData: {
@@ -29,6 +30,11 @@ export function SecuritySettings({ formData, onInputChange, user }: SecuritySett
   const [isLoading, setIsLoading] = useState(false);
 
   const handlePasswordChange = async () => {
+    if (!user) {
+      toast.error("Authentication Error", "You must be signed in to change your password.");
+      return;
+    }
+
     if (formData.security.newPassword !== formData.security.confirmPassword) {
       toast.error("Password Mismatch", "New passwords do not match.");
       return;
@@ -39,10 +45,24 @@ export function SecuritySettings({ formData, onInputChange, user }: SecuritySett
       return;
     }
 
+    if (!formData.security.currentPassword) {
+      toast.error("Current Password Required", "Please enter your current password.");
+      return;
+    }
+
     setIsLoading(true);
     try {
-      // Simulate password change
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const token = await user.getIdToken();
+      
+      // First verify the current password by trying to sign in with it
+      const auth = getAuth();
+      const credential = EmailAuthProvider.credential(user.email || "", formData.security.currentPassword);
+      
+      // Reauthenticate user
+      await reauthenticateWithCredential(auth.currentUser!, credential);
+      
+      // Update password
+      await updatePassword(auth.currentUser!, formData.security.newPassword);
       
       toast.success(
         "Password Changed",
@@ -52,33 +72,131 @@ export function SecuritySettings({ formData, onInputChange, user }: SecuritySett
       onInputChange("security", "currentPassword", "");
       onInputChange("security", "newPassword", "");
       onInputChange("security", "confirmPassword", "");
-    } catch (error) {
-      toast.error("Error", "Failed to update password. Please try again.");
+    } catch (error: any) {
+      console.error("Password change error:", error);
+      let errorMessage = "Failed to update password. Please try again.";
+      
+      if (error.code === 'auth/wrong-password') {
+        errorMessage = "Current password is incorrect.";
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = "New password is too weak. Please choose a stronger password.";
+      } else if (error.code === 'auth/too-many-requests') {
+        errorMessage = "Too many attempts. Please try again later.";
+      }
+      
+      toast.error("Error", errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleDataExport = async () => {
+    if (!user) {
+      toast.error("Authentication Error", "You must be signed in to export your data.");
+      return;
+    }
+
+    setIsLoading(true);
     try {
-      // Simulate data export
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      toast.success(
-        "Data Exported",
-        "Your data has been exported successfully."
-      );
-    } catch (error) {
-      toast.error("Error", "Failed to export data. Please try again.");
+      const token = await user.getIdToken();
+      const response = await fetch("/api/settings/export", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to export data");
+      }
+
+      const responseData = await response.json();
+      
+      if (responseData.downloadUrl) {
+        // Download the file from the signed URL
+        const downloadResponse = await fetch(responseData.downloadUrl);
+        const blob = await downloadResponse.blob();
+        
+        // Create download link
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = responseData.filename || `hireall-data-export-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        toast.success(
+          "Data Exported",
+          `Your data has been exported successfully.`
+        );
+      } else {
+        throw new Error("No download URL provided");
+      }
+    } catch (error: any) {
+      console.error("Data export error:", error);
+      toast.error("Export Failed", error.message || "Failed to export data. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleAccountDeletion = () => {
-    if (confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
+  const handleAccountDeletion = async () => {
+    // First show a prompt to get confirmation text
+    const confirmation = prompt(
+      "To permanently delete your account, type: DELETE_MY_ACCOUNT_PERMANENTLY\n\nThis action cannot be undone and will delete all your data."
+    );
+    
+    if (confirmation !== "DELETE_MY_ACCOUNT_PERMANENTLY") {
+      return;
+    }
+
+    // Second confirmation
+    const reason = prompt("Optional: Please let us know why you're deleting your account (this helps us improve):");
+    
+    setIsLoading(true);
+    try {
+      const token = await user.getIdToken();
+      
+      const response = await fetch("/api/settings/delete-account", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          confirmation,
+          reason: reason || undefined,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to delete account");
+      }
+
+      const result = await response.json();
+      
       toast.success(
         "Account Deleted",
-        "Your account has been deleted successfully."
+        result.message || "Your account has been permanently deleted."
       );
+      
+      // Sign out and redirect
+      const auth = getAuth();
+      await auth.signOut();
       router.push("/");
+      
+    } catch (error: any) {
+      console.error("Account deletion error:", error);
+      toast.error(
+        "Deletion Failed",
+        error.message || "Failed to delete account. Please try again or contact support."
+      );
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -199,10 +317,11 @@ export function SecuritySettings({ formData, onInputChange, user }: SecuritySett
                   <Button
                     variant="outline"
                     onClick={handleDataExport}
+                    disabled={isLoading}
                     className="btn-premium font-semibold"
                   >
                     <Download className="h-4 w-4 mr-2" />
-                    Export Data
+                    {isLoading ? "Exporting..." : "Export Data"}
                   </Button>
                 </motion.div>
 
@@ -210,13 +329,21 @@ export function SecuritySettings({ formData, onInputChange, user }: SecuritySett
                   <Button
                     variant="outline"
                     onClick={handleAccountDeletion}
+                    disabled={isLoading}
                     className="btn-premium font-semibold border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
-                    Delete Account
+                    {isLoading ? "Deleting..." : "Delete Account"}
                   </Button>
                 </motion.div>
               </div>
+
+              <Alert className="border-destructive/50 bg-destructive/5">
+                <AlertTriangle className="h-4 w-4 text-destructive" />
+                <AlertDescription className="text-destructive">
+                  <strong>⚠️ Warning:</strong> Account deletion is permanent and irreversible. All your data (applications, CV analyses, saved jobs, and personal information) will be permanently erased from our servers.
+                </AlertDescription>
+              </Alert>
             </div>
           </motion.div>
         </CardContent>

@@ -4,11 +4,12 @@ import React, { useState, useCallback } from "react";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { useSubscription } from "@/hooks/useSubscription";
 import { FeatureGate } from "../../components/UpgradePrompt";
-import { EnhancedAtsScore } from "../../components/EnhancedAtsScore";
-import { RealTimeAtsFeedback } from "../../components/RealTimeAtsFeedback";
 import { CvAnalysisHistory } from "../../components/CvAnalysisHistory";
 import { CvImprovementTracker } from "../../components/CvImprovementTracker";
 import { CvUploadForm } from "../../components/CvUploadForm";
+import { calculateEnhancedATSScore } from "../../lib/enhancedAts";
+import type { ResumeData } from "@/types/resume";
+import type { ResumeScore } from "@/lib/enhancedAts";
 import { motion, AnimatePresence } from "framer-motion";
 import { useApiQuery } from "../../hooks/useApi";
 import { cvEvaluatorApi } from "../../utils/api/cvEvaluator";
@@ -85,6 +86,8 @@ export default function CvEvaluatorPage() {
   const [activeTab, setActiveTab] = useState("upload");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [selectedAnalysis, setSelectedAnalysis] = useState<any>(null);
+  const [currentAtsScore, setCurrentAtsScore] = useState<ResumeScore | null>(null);
+  const [currentResume, setCurrentResume] = useState<ResumeData | null>(null);
 
   const userRecordQueryFn = useCallback(
     () =>
@@ -235,6 +238,14 @@ export default function CvEvaluatorPage() {
     cvStatsQuery.refetch();
   };
 
+  const handleResumeUpdate = (resume: ResumeData, targetRole?: string, industry?: string) => {
+    setCurrentResume(resume);
+    if (resume && targetRole) {
+      const score = calculateEnhancedATSScore(resume, { targetRole, industry });
+      setCurrentAtsScore(score);
+    }
+  };
+
   const getScoreColor = (score: number) => {
     if (score >= 90) return "text-emerald-600";
     if (score >= 80) return "text-green-600";
@@ -254,36 +265,36 @@ export default function CvEvaluatorPage() {
   };
 
   return (
-    <TooltipProvider>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      {/* Enhanced Header */}
-      <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="py-6">
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="flex items-center justify-between"
-            >
-              <div className="flex items-center gap-4">
-                <motion.div
-                  initial={{ scale: 0.8 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: "spring", stiffness: 200, damping: 20 }}
-                  className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg"
-                >
-                  <FileText className="w-6 h-6 text-white" />
-                </motion.div>
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900">
-                    CV Evaluator Pro
-                  </h1>
-                  <p className="text-sm text-gray-600">
-                    AI-powered CV analysis and optimization
-                  </p>
-                </div>
-              </div>
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background pt-16">
+      <TooltipProvider>
+        {/* Premium background elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-20 right-20 w-96 h-96 bg-primary/2 rounded-full filter blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-20 left-20 w-80 h-80 bg-secondary/2 rounded-full filter blur-2xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+        </div>
+
+        {/* Hero Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="gradient-primary shadow-premium-xl relative overflow-hidden"
+        >
+          {/* Premium background elements */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full filter blur-3xl"></div>
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full filter blur-2xl"></div>
+          </div>
+
+          <div className="relative max-w-7xl mx-auto py-20 px-4 sm:px-6 lg:px-8">
+            <div className="space-y-6">
+              <h1 className="text-5xl sm:text-6xl font-serif font-bold text-white tracking-tight">CV Evaluator Pro</h1>
+              <p className="text-xl sm:text-2xl text-primary-foreground/90 max-w-3xl leading-relaxed">
+                AI-powered CV analysis and optimization with advanced ATS scoring
+              </p>
+            </div>
+          </div>
+        </motion.div>
               <div className="flex items-center gap-3">
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -311,9 +322,8 @@ export default function CvEvaluatorPage() {
             </motion.div>
           </div>
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <FeatureGate>
           {/* Enhanced Stats Overview */}
           <motion.div
@@ -522,69 +532,146 @@ export default function CvEvaluatorPage() {
                         userId={user?.uid || ""}
                         onUploadStarted={handleUploadStarted}
                         onUploadSuccess={handleUploadSuccess}
+                        onResumeUpdate={handleResumeUpdate}
                       />
                     </CardContent>
                   </Card>
 
-                  {/* Enhanced ATS Score Demo */}
-                  <Card className="bg-white shadow-sm border-gray-200">
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <CardTitle className="flex items-center gap-2">
-                            <Zap className="w-5 h-5 text-blue-600" />
-                            Enhanced ATS Scoring Demo
-                          </CardTitle>
-                          <CardDescription>
-                            Experience our advanced ATS analysis system with real-time feedback
-                          </CardDescription>
-                        </div>
-                        <Badge variant="secondary">
-                          <Sparkles className="w-3 h-3 mr-1" />
-                          New
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-center py-8 px-6">
-                        <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
-                          <Target className="w-8 h-8 text-white" />
-                        </div>
-                        <h3 className="text-xl font-semibold text-gray-900 mb-4">
-                          Advanced ATS Analysis
-                        </h3>
-                        <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                          Our enhanced ATS scoring system provides detailed analysis with real-time feedback,
-                          industry-specific keyword matching, and actionable improvement suggestions.
-                        </p>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                          <div className="text-center p-4 bg-blue-50 rounded-lg">
-                            <BarChart3 className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-                            <div className="text-lg font-semibold text-blue-600">7 Metrics</div>
-                            <p className="text-sm text-blue-700">Detailed scoring breakdown</p>
+                  {/* Inline ATS Score Display */}
+                  {currentAtsScore && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5 }}
+                    >
+                      <Card className="bg-gradient-to-br from-white to-slate-50 shadow-sm border-gray-200">
+                        <CardHeader>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <CardTitle className="flex items-center gap-2">
+                                <Target className="w-5 h-5 text-blue-600" />
+                                ATS Analysis Score
+                              </CardTitle>
+                              <CardDescription>
+                                Real-time optimization insights for your CV
+                              </CardDescription>
+                            </div>
+                            <div className={`w-16 h-16 rounded-full ${getScoreBg(currentAtsScore.overall)} flex items-center justify-center`}>
+                              <span className={`text-xl font-bold ${getScoreColor(currentAtsScore.overall)}`}>
+                                {currentAtsScore.overall}
+                              </span>
+                            </div>
                           </div>
-                          <div className="text-center p-4 bg-green-50 rounded-lg">
-                            <CheckCircle2 className="w-8 h-8 text-green-600 mx-auto mb-2" />
-                            <div className="text-lg font-semibold text-green-600">Real-time</div>
-                            <p className="text-sm text-green-700">Live feedback as you type</p>
+                        </CardHeader>
+                        <CardContent>
+                          {/* Score Breakdown */}
+                          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                            <div className="text-center">
+                              <div className="text-sm text-gray-600 mb-1">Structure</div>
+                              <div className={`text-lg font-semibold ${getScoreColor(currentAtsScore.breakdown?.structure || 0)}`}>
+                                {currentAtsScore.breakdown?.structure || 0}
+                              </div>
+                              <Progress 
+                                value={currentAtsScore.breakdown?.structure || 0} 
+                                className="h-2 mt-2" 
+                                indicatorClassName="bg-emerald-500"
+                              />
+                            </div>
+                            <div className="text-center">
+                              <div className="text-sm text-gray-600 mb-1">Content</div>
+                              <div className={`text-lg font-semibold ${getScoreColor(currentAtsScore.breakdown?.content || 0)}`}>
+                                {currentAtsScore.breakdown?.content || 0}
+                              </div>
+                              <Progress 
+                                value={currentAtsScore.breakdown?.content || 0} 
+                                className="h-2 mt-2" 
+                                indicatorClassName="bg-blue-500"
+                              />
+                            </div>
+                            <div className="text-center">
+                              <div className="text-sm text-gray-600 mb-1">Keywords</div>
+                              <div className={`text-lg font-semibold ${getScoreColor(currentAtsScore.breakdown?.keywords || 0)}`}>
+                                {currentAtsScore.breakdown?.keywords || 0}
+                              </div>
+                              <Progress 
+                                value={currentAtsScore.breakdown?.keywords || 0} 
+                                className="h-2 mt-2" 
+                                indicatorClassName="bg-purple-500"
+                              />
+                            </div>
+                            <div className="text-center">
+                              <div className="text-sm text-gray-600 mb-1">Readability</div>
+                              <div className={`text-lg font-semibold ${getScoreColor(currentAtsScore.breakdown?.readability || 0)}`}>
+                                {currentAtsScore.breakdown?.readability || 0}
+                              </div>
+                              <Progress 
+                                value={currentAtsScore.breakdown?.readability || 0} 
+                                className="h-2 mt-2" 
+                                indicatorClassName="bg-orange-500"
+                              />
+                            </div>
                           </div>
-                          <div className="text-center p-4 bg-purple-50 rounded-lg">
-                            <Award className="w-8 h-8 text-purple-600 mx-auto mb-2" />
-                            <div className="text-lg font-semibold text-purple-600">Industry-Specific</div>
-                            <p className="text-sm text-purple-700">Tailored keyword analysis</p>
+
+                          {/* Critical Issues and Strengths */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {currentAtsScore.criticalIssues && currentAtsScore.criticalIssues.length > 0 && (
+                              <div>
+                                <h4 className="font-semibold text-red-700 mb-2 flex items-center gap-2">
+                                  <AlertTriangle className="w-4 h-4" />
+                                  Critical Issues
+                                </h4>
+                                <div className="space-y-2">
+                                  {currentAtsScore.criticalIssues.slice(0, 3).map((issue: string, index: number) => (
+                                    <div key={index} className="flex items-start gap-2 p-2 bg-red-50 rounded-lg">
+                                      <X className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
+                                      <p className="text-sm text-red-800">{issue}</p>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {currentAtsScore.strengths && currentAtsScore.strengths.length > 0 && (
+                              <div>
+                                <h4 className="font-semibold text-green-700 mb-2 flex items-center gap-2">
+                                  <CheckCircle2 className="w-4 h-4" />
+                                  Strengths
+                                </h4>
+                                <div className="space-y-2">
+                                  {currentAtsScore.strengths.slice(0, 3).map((strength: string, index: number) => (
+                                    <div key={index} className="flex items-start gap-2 p-2 bg-green-50 rounded-lg">
+                                      <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                                      <p className="text-sm text-green-800">{strength}</p>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
-                        </div>
-                        <Button
-                          variant="outline"
-                          onClick={() => window.location.href = '/ats-demo'}
-                          className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
-                        >
-                          <Play className="w-4 h-4 mr-2" />
-                          Try Live Demo
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
+
+                          {/* Top Recommendations */}
+                          {currentAtsScore.suggestions && currentAtsScore.suggestions.length > 0 && (
+                            <div className="mt-4">
+                              <h4 className="font-semibold text-blue-700 mb-2 flex items-center gap-2">
+                                <Lightbulb className="w-4 h-4" />
+                                Top Recommendations
+                              </h4>
+                              <div className="space-y-2">
+                                {currentAtsScore.suggestions.slice(0, 3).map((suggestion: string, index: number) => (
+                                  <div key={index} className="flex items-start gap-2 p-2 bg-blue-50 rounded-lg">
+                                    <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                                    <p className="text-sm text-blue-800">{suggestion}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  )}
+
+                  
 
                   {/* Quick Tips */}
                   <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">

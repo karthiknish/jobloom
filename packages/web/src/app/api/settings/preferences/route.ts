@@ -34,6 +34,17 @@ export async function GET(request: NextRequest) {
       analyticsTracking: true,
       dataSharing: false,
       marketingEmails: true,
+      // Extension-specific preferences
+      ukFiltersEnabled: false,
+      autoDetectJobs: true,
+      showSponsorButton: true,
+      ageCategory: 'adult',
+      educationStatus: 'none',
+      phdStatus: 'none',
+      professionalStatus: 'none',
+      minimumSalary: 38700,
+      jobCategories: [],
+      locationPreference: 'uk',
       createdAt: new Date(),
       updatedAt: new Date()
     };
@@ -70,7 +81,11 @@ export async function PUT(request: NextRequest) {
       'theme', 'language', 'timezone', 'emailNotifications', 'pushNotifications',
       'jobAlertsEnabled', 'jobKeywords', 'preferredCompanies', 'preferredLocations',
       'salaryRange', 'jobTypes', 'experienceLevels', 'industries',
-      'analyticsTracking', 'dataSharing', 'marketingEmails'
+      'analyticsTracking', 'dataSharing', 'marketingEmails',
+      // Extension-specific preferences
+      'ukFiltersEnabled', 'autoDetectJobs', 'showSponsorButton',
+      'ageCategory', 'educationStatus', 'phdStatus', 'professionalStatus',
+      'minimumSalary', 'jobCategories', 'locationPreference'
     ];
 
     const sanitizedPreferences: any = {};

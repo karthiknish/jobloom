@@ -41,6 +41,12 @@ import { AIResumeGenerator } from "@/components/application/AIResumeGenerator";
 import { ResumeImporter } from "@/components/application/ResumeImporter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { PersonalInfoForm } from "@/components/application/PersonalInfoForm";
+import { ExperienceForm } from "@/components/application/ExperienceForm";
+import { SkillsForm } from "@/components/application/SkillsForm";
+import { ResumeScore } from "@/components/application/ResumeScore";
+import type { ResumeData as AdvancedResumeData } from "@/components/application/types";
+import { calculateResumeScore } from "@/components/application/utils";
 import {
   Select,
   SelectContent,
@@ -64,6 +70,26 @@ interface ResumeData {
   education: any[];
   skills: string[];
 }
+
+// Default advanced resume data
+const defaultAdvancedResumeData: AdvancedResumeData = {
+  personalInfo: {
+    fullName: "",
+    email: "",
+    phone: "",
+    location: "",
+    linkedin: "",
+    github: "",
+    website: "",
+    summary: "",
+  },
+  experience: [],
+  education: [],
+  skills: [],
+  projects: [],
+  certifications: [],
+  languages: [],
+};
 
 // Cover letter templates
 const coverLetterTemplates = {
@@ -217,6 +243,11 @@ export default function ApplicationPage() {
     skills: [],
   });
 
+  // Advanced resume builder state
+  const [advancedResumeData, setAdvancedResumeData] = useState<AdvancedResumeData>(defaultAdvancedResumeData);
+  const [advancedResumeScore, setAdvancedResumeScore] = useState(calculateResumeScore(defaultAdvancedResumeData));
+  const [activeBuilderTab, setActiveBuilderTab] = useState("personal");
+
   // Template state
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [customContent, setCustomContent] = useState("");
@@ -234,6 +265,29 @@ export default function ApplicationPage() {
     } finally {
       setSaving(false);
     }
+  }, []);
+
+  // Update advanced resume score when data changes
+  useEffect(() => {
+    setAdvancedResumeScore(calculateResumeScore(advancedResumeData));
+  }, [advancedResumeData]);
+
+  // Update personal info in advanced resume
+  const updateAdvancedPersonalInfo = useCallback((personalInfo: AdvancedResumeData['personalInfo']) => {
+    setAdvancedResumeData(prev => ({ ...prev, personalInfo }));
+    setDirty(true);
+  }, []);
+
+  // Update experience in advanced resume
+  const updateAdvancedExperience = useCallback((experience: AdvancedResumeData['experience']) => {
+    setAdvancedResumeData(prev => ({ ...prev, experience }));
+    setDirty(true);
+  }, []);
+
+  // Update skills in advanced resume
+  const updateAdvancedSkills = useCallback((skills: AdvancedResumeData['skills']) => {
+    setAdvancedResumeData(prev => ({ ...prev, skills }));
+    setDirty(true);
   }, []);
 
   const exportResume = useCallback(() => {
@@ -282,8 +336,15 @@ export default function ApplicationPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background pt-16">
+      {/* Premium background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 right-20 w-96 h-96 bg-primary/2 rounded-full filter blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-20 left-20 w-80 h-80 bg-secondary/2 rounded-full filter blur-2xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+      </div>
+
+      {/* Hero Section */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
         className="gradient-primary shadow-premium-xl relative overflow-hidden"
@@ -293,18 +354,14 @@ export default function ApplicationPage() {
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full filter blur-3xl"></div>
           <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full filter blur-2xl"></div>
         </div>
-        
-        <div className="relative max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-          >
-            <h1 className="text-5xl font-bold text-white mb-4">Application Workspace</h1>
-            <p className="text-xl text-primary-foreground/90 max-w-3xl leading-relaxed">
-              Create AI-powered resumes and cover letters. Import existing documents or generate new ones with advanced ATS optimization.
+
+        <div className="relative max-w-7xl mx-auto py-20 px-4 sm:px-6 lg:px-8">
+          <div className="space-y-6">
+            <h1 className="text-5xl sm:text-6xl font-serif font-bold text-white tracking-tight">Resume & Cover Letter Builder</h1>
+            <p className="text-xl sm:text-2xl text-primary-foreground/90 max-w-3xl leading-relaxed">
+              Create professional resumes and cover letters with AI-powered optimization and advanced ATS scoring
             </p>
-          </motion.div>
+          </div>
         </div>
       </motion.div>
 
@@ -372,6 +429,114 @@ export default function ApplicationPage() {
             <TabContent value="resume-maker" activeTab={activeTab}>
               <div className="space-y-6">
                 <AIResumeGenerator />
+              </div>
+            </TabContent>
+
+            {/* Advanced Resume Builder Tab */}
+            <TabContent value="advanced-resume-builder" activeTab={activeTab}>
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                {/* Main Content */}
+                <div className="lg:col-span-3">
+                  <Tabs value={activeBuilderTab} onValueChange={setActiveBuilderTab} className="space-y-6">
+                    <TabsList className="grid w-full grid-cols-3">
+                      <TabsTrigger value="personal">Personal Info</TabsTrigger>
+                      <TabsTrigger value="experience">Experience</TabsTrigger>
+                      <TabsTrigger value="skills">Skills</TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="personal" className="space-y-6">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Personal Information</CardTitle>
+                          <CardDescription>
+                            Add your contact details and professional summary
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <PersonalInfoForm
+                            data={advancedResumeData.personalInfo}
+                            onChange={updateAdvancedPersonalInfo}
+                          />
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+
+                    <TabsContent value="experience" className="space-y-6">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Work Experience</CardTitle>
+                          <CardDescription>
+                            Add your professional work history
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <ExperienceForm
+                            data={advancedResumeData.experience}
+                            onChange={updateAdvancedExperience}
+                          />
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+
+                    <TabsContent value="skills" className="space-y-6">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Skills</CardTitle>
+                          <CardDescription>
+                            Showcase your technical and soft skills
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <SkillsForm
+                            data={advancedResumeData.skills}
+                            onChange={updateAdvancedSkills}
+                          />
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+                  </Tabs>
+                </div>
+
+                {/* Sidebar */}
+                <div className="space-y-6">
+                  {/* Resume Score */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Resume Score</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ResumeScore score={advancedResumeScore} />
+                    </CardContent>
+                  </Card>
+
+                  {/* Quick Actions */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Quick Actions</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full"
+                        onClick={() => saveResume()}
+                        disabled={saving}
+                      >
+                        <Save className="h-4 w-4 mr-2" />
+                        {saving ? "Saving..." : "Save Resume"}
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full"
+                        onClick={exportResume}
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Export Resume
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </div>
               </div>
             </TabContent>
 

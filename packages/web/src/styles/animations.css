@@ -457,6 +457,43 @@
   }
 }
 
+/* Enhanced shimmer animations for better visibility */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes shimmer_v2 {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+@keyframes shimmer_v3 {
+  0%, 100% {
+    opacity: 0.85;
+  }
+  50% {
+    opacity: 0.95;
+  }
+}
+
+/* Enhanced shimmer utility classes */
+.animate-shimmer-pulse {
+  animation: shimmer_v3 1.8s ease-in-out infinite;
+}
+
+.animate-shimmer-v2 {
+  animation: shimmer_v2 1.5s ease-in-out infinite;
+}
+
 /* Performance optimizations */
 .gpu-accelerated {
   transform: translateZ(0);

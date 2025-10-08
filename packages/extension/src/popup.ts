@@ -496,9 +496,32 @@ document.addEventListener("DOMContentLoaded", () => {
         // Handle UK filters toggle specifically
         if (toggle.id === "uk-filters-toggle") {
           const ukFiltersDetails = document.getElementById("uk-filters-details");
+          const isActive = toggle.classList.contains("active");
+          
           if (ukFiltersDetails) {
-            ukFiltersDetails.style.display = toggle.classList.contains("active") ? "block" : "none";
+            ukFiltersDetails.style.display = isActive ? "block" : "none";
           }
+          
+          // Also update sponsorship check buttons setting to match UK filters toggle
+          chrome.storage.sync.set({ enableSponsorshipChecks: isActive }, () => {
+            if (chrome.runtime.lastError) {
+              console.error("Failed to update sponsorship checks setting:", chrome.runtime.lastError);
+            } else {
+              // Notify content scripts about the change
+              chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+                if (tabs[0]?.id) {
+                  chrome.tabs.sendMessage(tabs[0].id, {
+                    action: "updateSponsorshipButtons",
+                    enabled: isActive
+                  }, () => {
+                    if (chrome.runtime.lastError) {
+                      console.debug("Failed to notify content script about sponsorship button change:", chrome.runtime.lastError.message);
+                    }
+                  });
+                }
+              });
+            }
+          });
         }
       });
     });
@@ -1240,6 +1263,7 @@ function loadSettings() {
       "showJobBadges",
       "autoSaveProfile",
       "ukFiltersEnabled",
+      "enableSponsorshipChecks",
       // Integration settings removed
     ],
     (result: any) => {
@@ -1276,15 +1300,27 @@ function loadSettings() {
         );
       }
       if (ukFiltersToggle) {
-        ukFiltersToggle.classList.toggle(
-          "active",
-          result.ukFiltersEnabled === true
-        );
+        // Use UK filters setting, but if it's not set, sync from sponsorship checks setting
+        const ukFiltersEnabled = result.ukFiltersEnabled === true;
+        const sponsorshipChecksEnabled = result.enableSponsorshipChecks !== false;
+        
+        // Sync the settings - if one is enabled, enable both
+        const shouldBeActive = ukFiltersEnabled || sponsorshipChecksEnabled;
+        
+        ukFiltersToggle.classList.toggle("active", shouldBeActive);
+        
+        // Update storage to keep both settings in sync
+        if (ukFiltersEnabled !== shouldBeActive || sponsorshipChecksEnabled !== shouldBeActive) {
+          chrome.storage.sync.set({
+            ukFiltersEnabled: shouldBeActive,
+            enableSponsorshipChecks: shouldBeActive
+          });
+        }
         
         // Show/hide UK filters details based on toggle state
         const ukFiltersDetails = document.getElementById("uk-filters-details");
         if (ukFiltersDetails) {
-          ukFiltersDetails.style.display = result.ukFiltersEnabled === true ? "block" : "none";
+          ukFiltersDetails.style.display = shouldBeActive ? "block" : "none";
         }
       }
 
@@ -1303,12 +1339,15 @@ function saveSettings() {
   const ukFiltersToggle = document.getElementById("uk-filters-toggle");
   // Integration settings removed
 
+  const ukFiltersActive = ukFiltersToggle?.classList.contains("active") ?? false;
+
   const settings = {
     autoDetectJobs: autoDetectToggle?.classList.contains("active") ?? true,
     showJobBadges: showBadgesToggle?.classList.contains("active") ?? true,
     autoSaveProfile:
       autoSaveProfileToggle?.classList.contains("active") ?? true,
-    ukFiltersEnabled: ukFiltersToggle?.classList.contains("active") ?? false,
+    ukFiltersEnabled: ukFiltersActive,
+    enableSponsorshipChecks: ukFiltersActive, // Keep both settings in sync
     // Integration settings removed
   };
 
