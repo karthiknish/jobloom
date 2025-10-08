@@ -8,7 +8,7 @@ import { CvAnalysisHistory } from "../../CvAnalysisHistory";
 import { CvImprovementTracker } from "../../CvImprovementTracker";
 
 interface CvAnalysisTabsProps {
-  cvAnalyses: any[];
+  cvAnalyses?: any[];
   loading: boolean;
   onResumeUpdate: (resume: any) => void;
   currentResume: any;
@@ -86,7 +86,7 @@ export function CvAnalysisTabs({
               ))}
             </div>
           ) : (
-            <CvAnalysisHistory analyses={cvAnalyses || []} />
+            <CvAnalysisHistory analyses={cvAnalyses ?? []} />
           )}
         </motion.div>
       </TabContent>
@@ -106,7 +106,7 @@ export function CvAnalysisTabs({
               <p className="text-gray-600">Loading progress data...</p>
             </div>
           ) : (
-            <CvImprovementTracker analyses={cvAnalyses || []} />
+            <CvImprovementTracker analyses={cvAnalyses ?? []} />
           )}
         </motion.div>
       </TabContent>
