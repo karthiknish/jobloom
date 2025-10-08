@@ -4,8 +4,8 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PreConfiguredTabs, TabContent } from "@/lib/tabs-utils";
 import { CvUploadSection } from "./CvUploadSection";
-import { CvAnalysisHistory } from "../../CvAnalysisHistory";
-import { CvImprovementTracker } from "../../CvImprovementTracker";
+import { CvAnalysisHistory } from "../../components/CvAnalysisHistory";
+import { CvImprovementTracker } from "../../components/CvImprovementTracker";
 
 interface CvAnalysisTabsProps {
   cvAnalyses?: any[];
