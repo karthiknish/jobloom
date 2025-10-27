@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { CvUploadForm } from "../../CvUploadForm";
+import { CvUploadForm } from "../../components/CvUploadForm";
 
 interface CvUploadSectionProps {
   onResumeUpdate: (resume: any) => void;
