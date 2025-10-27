@@ -16,10 +16,10 @@ const fs = require('fs');
 
 // Firebase config - same as used in the web app
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyB8Q8Qw8Qw8Qw8Qw8Qw8Qw8Qw8Qw8Qw8Qw",
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "hireall-4f106.firebaseapp.com",
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "hireall-4f106",
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "hireall-4f106.appspot.com",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "your-api-key-here",
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "your-project.firebaseapp.com",
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "your-project-id",
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "your-project.appspot.com",
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "123456789",
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:123456789:web:abcdef123456"
 };
@@ -75,8 +75,8 @@ function createMockIdToken(uid, email) {
 
   const now = Math.floor(Date.now() / 1000);
   const payload = Buffer.from(JSON.stringify({
-    iss: 'https://securetoken.google.com/hireall-4f106',
-    aud: 'hireall-4f106',
+    iss: `https://securetoken.google.com/${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'your-project-id'}`,
+    aud: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'your-project-id',
     auth_time: now,
     user_id: uid,
     sub: uid,
@@ -105,7 +105,7 @@ async function tryAdminSDK() {
     const admin = require('firebase-admin');
 
     // Try to initialize with service account
-    const serviceAccountPath = path.join(process.cwd(), 'hireall-4f106-firebase-adminsdk-fbsvc-2e91c28cd6.json');
+    const serviceAccountPath = path.join(process.cwd(), 'your-firebase-adminsdk.json');
 
     if (fs.existsSync(serviceAccountPath)) {
       const serviceAccount = require(serviceAccountPath);
@@ -113,7 +113,7 @@ async function tryAdminSDK() {
       if (!admin.apps.length) {
         admin.initializeApp({
           credential: admin.credential.cert(serviceAccount),
-          projectId: 'hireall-4f106'
+          projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'your-project-id'
         });
       }
 
