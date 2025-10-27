@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifySessionFromRequest } from "@/lib/auth/session";
 import { createFirestoreCollection } from "@/firebase/firestore";
+import { authenticateRequest } from "@/lib/api/auth";
 import {
   withErrorHandling,
   validateRequiredFields,
   validateId,
-  createValidationError,
   createAuthorizationError,
   generateRequestId
 } from "@/lib/api/errors";
@@ -17,10 +16,10 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now();
 
   const response = await withErrorHandling(async () => {
-    // Validate authorization
-    const decodedToken = await verifySessionFromRequest(request);
-    if (!decodedToken) {
-      throw createAuthorizationError("Invalid authentication token", 'INVALID_TOKEN');
+    const auth = await authenticateRequest(request);
+
+    if (!auth.ok) {
+      return auth.response;
     }
 
     // Validate and parse request body
@@ -30,7 +29,7 @@ export async function POST(request: NextRequest) {
     validateId(applicationData.userId, 'userId');
 
     // Verify userId matches token
-    if (applicationData.userId !== decodedToken.uid) {
+    if (applicationData.userId !== auth.token.uid) {
       throw createAuthorizationError("User ID does not match authentication token", 'USER_ID_MISMATCH');
     }
 
@@ -74,15 +73,17 @@ export async function GET(request: NextRequest) {
 
   const response = await withErrorHandling(async () => {
     // Validate authorization
-    const decodedToken = await verifySessionFromRequest(request);
-    if (!decodedToken) {
-      throw createAuthorizationError("Invalid authentication token", 'INVALID_TOKEN');
+    const auth = await authenticateRequest(request, {
+      loadUser: true,
+    });
+
+    if (!auth.ok) {
+      return auth.response;
     }
 
-    // TODO: Add admin check - for now return all applications
-    // if (!decodedToken.admin) {
-    //   throw createAuthorizationError("Admin access required", 'INSUFFICIENT_PERMISSIONS');
-    // }
+    if (!auth.isAdmin) {
+      throw createAuthorizationError("Admin access required", 'INSUFFICIENT_PERMISSIONS');
+    }
 
     // Initialize Firestore
     const applicationsCollection = createFirestoreCollection<any>('applications');

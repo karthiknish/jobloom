@@ -41,6 +41,9 @@ function SignUpInner() {
   const validateName = (name: string) => {
     if (name && name.length > 0 && name.length < 2) return "Please enter at least 2 characters for your name";
     if (name && name.length > 50) return "Please keep your name under 50 characters";
+    if (name && /<script|javascript:|on\w+=/i.test(name)) {
+      return "Name contains invalid characters";
+    }
     return null;
   };
 
@@ -48,13 +51,38 @@ function SignUpInner() {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email) return "Please enter your email address to continue";
     if (!emailRegex.test(email)) return "Please enter a valid email address (e.g., you@example.com)";
+    if (email.length > 254) return "Email address is too long";
+    // Check for suspicious email patterns
+    const suspiciousPatterns = [
+      /^[0-9]+@/, // Numbers-only local part
+      /.*\.{2,}.*/, // Multiple consecutive dots
+      /.*@.*\.{2,}$/, // Multiple dots in domain
+    ];
+    if (suspiciousPatterns.some(pattern => pattern.test(email))) {
+      return "Please enter a valid email address";
+    }
     return null;
   };
 
   const validatePassword = (password: string) => {
     if (!password) return "Please create a password to secure your account";
     if (password.length < 6) return "Please use at least 6 characters for your password";
-    if (password.length > 100) return "Please keep your password under 100 characters";
+    if (password.length > 128) return "Please keep your password under 128 characters";
+    
+    // Check for common weak passwords
+    const commonPasswords = [
+      'password', '123456', 'qwerty', 'admin', 'letmein', 'welcome',
+      'monkey', 'dragon', 'master', 'sunshine', 'princess', 'football'
+    ];
+    if (commonPasswords.includes(password.toLowerCase())) {
+      return "Please choose a stronger password";
+    }
+    
+    // Check if password is same as email
+    if (password.toLowerCase() === email.toLowerCase()) {
+      return "Password cannot be the same as your email";
+    }
+    
     return null;
   };
 
@@ -181,8 +209,31 @@ function SignUpInner() {
       // Redirect to email verification page instead of dashboard
       router.replace(`/verify-email?redirect_url=${encodeURIComponent('/dashboard')}`);
     } catch (err: unknown) {
-      const e = err as { message?: string };
-      setError(e?.message || "Sign up failed");
+      const error = err as { code?: string; message?: string };
+      
+      // Handle specific Firebase auth errors
+      switch (error.code) {
+        case 'auth/email-already-in-use':
+          setError("An account with this email already exists. Try signing in instead");
+          break;
+        case 'auth/invalid-email':
+          setError("Invalid email address format");
+          break;
+        case 'auth/operation-not-allowed':
+          setError("Email/password accounts are not enabled. Please contact support");
+          break;
+        case 'auth/weak-password':
+          setError("Password is too weak. Please choose a stronger password");
+          break;
+        case 'auth/network-request-failed':
+          setError("Network error. Please check your connection and try again");
+          break;
+        case 'auth/too-many-requests':
+          setError("Too many sign-up attempts. Please try again later");
+          break;
+        default:
+          setError(error?.message || "Sign up failed. Please try again");
+      }
     } finally {
       setLoading(false);
     }
@@ -190,19 +241,37 @@ function SignUpInner() {
 
   async function handleGoogle() {
     setError(null);
+    setLoading(true);
     try {
       await signInWithGoogle();
-    } catch (err: unknown) {
-      const code = (err as { code?: string })?.code;
-      if (
-        code === "auth/popup-closed-by-user" ||
-        code === "auth/cancelled-popup-request"
-      ) {
-        setError("We couldn't complete Google sign-up. Please try again.");
-        return;
+      // Send email verification for Google accounts too
+      try {
+        await sendEmailVerification();
+      } catch (verificationError) {
+        console.warn('Failed to send email verification:', verificationError);
       }
-      const e = err as { message?: string };
-      setError(e?.message || "Google sign-up failed");
+      router.replace(`/verify-email?redirect_url=${encodeURIComponent('/dashboard')}`);
+    } catch (err: unknown) {
+      const error = err as { code?: string; message?: string };
+      
+      // Handle specific Google auth errors
+      switch (error.code) {
+        case 'auth/popup-closed-by-user':
+          setError("Sign-up popup was closed before completion");
+          break;
+        case 'auth/popup-blocked':
+          setError("Sign-up popup was blocked by your browser. Please allow popups");
+          break;
+        case 'auth/cancelled-popup-request':
+          setError("Sign-up was cancelled");
+          break;
+        case 'auth/network-request-failed':
+          setError("Network error. Please check your connection and try again");
+          break;
+        default:
+          setError(error?.message || "Google sign-up failed. Please try again");
+      }
+      setLoading(false);
     }
   }
 

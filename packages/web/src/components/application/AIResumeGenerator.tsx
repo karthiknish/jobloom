@@ -17,6 +17,7 @@ import {
   Wand2,
   Lightbulb,
   Star,
+  Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,6 +31,7 @@ import { Switch } from "@/components/ui/switch";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { useSubscription } from "@/hooks/useSubscription";
 import { showSuccess, showError, showInfo } from "@/components/ui/Toast";
+import ResumePDFGenerator from "@/lib/resumePDFGenerator";
 
 interface ResumeData {
   jobTitle: string;
@@ -38,7 +40,7 @@ interface ResumeData {
   education: string;
   industry: string;
   level: "entry" | "mid" | "senior" | "executive";
-  style: "modern" | "classic" | "creative" | "technical";
+  style: "modern" | "classic" | "creative" | "tech";
   includeObjective: boolean;
 }
 
@@ -74,6 +76,7 @@ export function AIResumeGenerator() {
   const [skillInput, setSkillInput] = useState("");
   const [atsOptimization, setAtsOptimization] = useState(true);
   const [aiEnhancement, setAiEnhancement] = useState(true);
+  const [downloadingPDF, setDownloadingPDF] = useState(false);
 
   const industries = [
     { value: "technology", label: "Technology" },
@@ -98,7 +101,7 @@ export function AIResumeGenerator() {
     { value: "modern", label: "Modern", description: "Clean and contemporary" },
     { value: "classic", label: "Classic", description: "Traditional and professional" },
     { value: "creative", label: "Creative", description: "For creative industries" },
-    { value: "technical", label: "Technical", description: "For technical roles" },
+    { value: "tech", label: "Tech", description: "For technical roles" },
   ];
 
   const generateResume = async () => {
@@ -253,6 +256,157 @@ ${data.experience}
       } catch (error) {
         showError("Failed to copy", "Please try again.");
       }
+    }
+  };
+
+  const downloadPDF = async () => {
+    if (!generatedResume || !formData.jobTitle) {
+      showError("Missing Information", "Please generate a resume first.");
+      return;
+    }
+
+    try {
+      setDownloadingPDF(true);
+      
+      // Convert generated resume content to structured resume data
+      const resumeData = {
+        personalInfo: {
+          fullName: user?.displayName || 'Your Name',
+          email: user?.email || 'your.email@example.com',
+          phone: '(555) 123-4567',
+          location: 'Your City, State',
+          summary: generatedResume.sections.summary || 'Professional summary',
+          linkedin: '',
+          github: '',
+          website: ''
+        },
+        experience: [{
+          id: '1',
+          company: 'Previous Company',
+          position: formData.jobTitle,
+          location: 'City, State',
+          startDate: '2020-01-01',
+          endDate: '2023-12-31',
+          current: false,
+          description: generatedResume.sections.experience || 'Professional experience',
+          achievements: [
+            'Key achievement 1',
+            'Key achievement 2',
+            'Key achievement 3'
+          ]
+        }],
+        education: [{
+          id: '1',
+          institution: 'University Name',
+          degree: 'Bachelor\'s Degree',
+          field: formData.industry,
+          graduationDate: '2019-05-15',
+          gpa: '3.5',
+          honors: ''
+        }],
+        skills: [{
+          category: 'Technical Skills',
+          skills: formData.skills.length > 0 ? formData.skills : ['Skill 1', 'Skill 2', 'Skill 3']
+        }],
+        projects: []
+      };
+
+      // Validate resume data
+      const validation = ResumePDFGenerator.validateResumeData(resumeData);
+      if (!validation.valid) {
+        showError("Validation Failed", validation.errors.join(', '));
+        return;
+      }
+
+      // Generate and download PDF
+      await ResumePDFGenerator.generateAndDownloadResume(
+        resumeData,
+        undefined,
+        {
+          template: formData.style,
+          fontSize: 11,
+          lineHeight: 1.4,
+          margin: 15,
+          font: 'helvetica',
+          includePhoto: false,
+          colorScheme: 'blue'
+        }
+      );
+
+      showSuccess("Success", "Resume PDF downloaded successfully!");
+    } catch (error: any) {
+      console.error("PDF download failed:", error);
+      showError("Download Failed", "Failed to download PDF: " + error.message);
+    } finally {
+      setDownloadingPDF(false);
+    }
+  };
+
+  const previewPDF = async () => {
+    if (!generatedResume || !formData.jobTitle) {
+      showError("Missing Information", "Please generate a resume first.");
+      return;
+    }
+
+    try {
+      // Convert generated resume content to structured resume data
+      const resumeData = {
+        personalInfo: {
+          fullName: user?.displayName || 'Your Name',
+          email: user?.email || 'your.email@example.com',
+          phone: '(555) 123-4567',
+          location: 'Your City, State',
+          summary: generatedResume.sections.summary || 'Professional summary',
+          linkedin: '',
+          github: '',
+          website: ''
+        },
+        experience: [{
+          id: '1',
+          company: 'Previous Company',
+          position: formData.jobTitle,
+          location: 'City, State',
+          startDate: '2020-01-01',
+          endDate: '2023-12-31',
+          current: false,
+          description: generatedResume.sections.experience || 'Professional experience',
+          achievements: [
+            'Key achievement 1',
+            'Key achievement 2',
+            'Key achievement 3'
+          ]
+        }],
+        education: [{
+          id: '1',
+          institution: 'University Name',
+          degree: 'Bachelor\'s Degree',
+          field: formData.industry,
+          graduationDate: '2019-05-15',
+          gpa: '3.5',
+          honors: ''
+        }],
+        skills: [{
+          category: 'Technical Skills',
+          skills: formData.skills.length > 0 ? formData.skills : ['Skill 1', 'Skill 2', 'Skill 3']
+        }],
+        projects: []
+      };
+
+      // Generate and preview PDF
+      await ResumePDFGenerator.previewResumePDF(resumeData, {
+        template: formData.style,
+        fontSize: 11,
+        lineHeight: 1.4,
+        margin: 15,
+        font: 'helvetica',
+        includePhoto: false,
+        colorScheme: 'blue'
+      });
+
+      showSuccess("Success", "Resume PDF preview opened in new tab!");
+    } catch (error: any) {
+      console.error("PDF preview failed:", error);
+      showError("Preview Failed", "Failed to preview PDF: " + error.message);
     }
   };
 
@@ -474,9 +628,33 @@ ${data.experience}
                     <Copy className="h-4 w-4 mr-1" />
                     Copy
                   </Button>
-                  <Button size="sm" variant="outline">
-                    <Download className="h-4 w-4 mr-1" />
-                    Export
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={previewPDF}
+                    disabled={!generatedResume || !formData.jobTitle}
+                  >
+                    <Eye className="h-4 w-4 mr-1" />
+                    Preview PDF
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="default" 
+                    onClick={downloadPDF}
+                    disabled={downloadingPDF || !generatedResume || !formData.jobTitle}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    {downloadingPDF ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="h-4 w-4 mr-1" />
+                        Download PDF
+                      </>
+                    )}
                   </Button>
                 </div>
               )}

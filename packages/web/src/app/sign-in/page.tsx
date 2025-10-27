@@ -60,12 +60,19 @@ function SignInInner() {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email) return "Email is required";
     if (!emailRegex.test(email)) return "Please enter a valid email address";
+    if (email.length > 254) return "Email address is too long";
     return null;
   };
 
   const validatePassword = (password: string) => {
     if (!password) return "Password is required";
     if (password.length < 6) return "Password must be at least 6 characters";
+    if (password.length > 128) return "Password is too long";
+    // Check for common weak passwords
+    const commonPasswords = ['password', '123456', 'qwerty', 'admin', 'letmein'];
+    if (commonPasswords.includes(password.toLowerCase())) {
+      return "Please choose a stronger password";
+    }
     return null;
   };
 
@@ -166,8 +173,31 @@ function SignInInner() {
       await refreshToken();
       router.replace(redirectUrlComplete);
     } catch (err: unknown) {
-      const e = err as { message?: string };
-      setError(e?.message || "Sign in failed");
+      const error = err as { code?: string; message?: string };
+      
+      // Handle specific Firebase auth errors
+      switch (error.code) {
+        case 'auth/user-not-found':
+          setError("No account found with this email address");
+          break;
+        case 'auth/wrong-password':
+          setError("Incorrect password. Please try again");
+          break;
+        case 'auth/too-many-requests':
+          setError("Too many failed attempts. Please try again later or reset your password");
+          break;
+        case 'auth/user-disabled':
+          setError("This account has been disabled. Please contact support");
+          break;
+        case 'auth/invalid-email':
+          setError("Invalid email address format");
+          break;
+        case 'auth/network-request-failed':
+          setError("Network error. Please check your connection and try again");
+          break;
+        default:
+          setError(error?.message || "Sign in failed. Please try again");
+      }
     } finally {
       setLoading(false);
     }
@@ -181,8 +211,25 @@ function SignInInner() {
       await refreshToken();
       router.replace(redirectUrlComplete);
     } catch (err: unknown) {
-      const e = err as { message?: string };
-      setError(e?.message || "Google sign-in failed");
+      const error = err as { code?: string; message?: string };
+      
+      // Handle specific Google auth errors
+      switch (error.code) {
+        case 'auth/popup-closed-by-user':
+          setError("Sign-in popup was closed before completion");
+          break;
+        case 'auth/popup-blocked':
+          setError("Sign-in popup was blocked by your browser. Please allow popups");
+          break;
+        case 'auth/cancelled-popup-request':
+          setError("Sign-in was cancelled");
+          break;
+        case 'auth/network-request-failed':
+          setError("Network error. Please check your connection and try again");
+          break;
+        default:
+          setError(error?.message || "Google sign-in failed. Please try again");
+      }
       setLoading(false);
     }
   }

@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifySessionFromRequest } from "@/lib/auth/session";
+import { authenticateRequest } from "@/lib/api/auth";
 
 // Protected endpoint for sponsors search - authentication required
 export async function GET(request: NextRequest) {
   try {
     // Verify session
-    const decodedToken = await verifySessionFromRequest(request);
-    if (!decodedToken) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await authenticateRequest(request);
+    if (!auth.ok) {
+      return auth.response;
     }
 
     const { searchParams } = new URL(request.url);

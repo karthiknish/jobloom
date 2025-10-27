@@ -87,7 +87,7 @@ function WelcomeInner() {
             >
               <p className="text-lg text-muted-foreground">
                 Hi <span className="font-semibold text-foreground">{user.displayName || user.email}</span>! 
-                You're all set to start your job application journey.
+                You&apos;re all set to start your job application journey.
               </p>
             </motion.div>
 

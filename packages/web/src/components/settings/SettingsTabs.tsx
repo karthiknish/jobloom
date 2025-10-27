@@ -4,8 +4,7 @@ import React from "react";
 import { 
   User, 
   Settings, 
-  Shield, 
-  Zap,
+  Shield,
   Crown
 } from "lucide-react";
 import { TabsSystem, TabConfig } from "@/components/ui/tabs-system";
@@ -28,12 +27,6 @@ export const SETTINGS_TABS: TabConfig[] = [
     label: "UK Visa Criteria",
     icon: Shield,
     description: "UK visa eligibility settings",
-  },
-  {
-    id: "autofill",
-    label: "Autofill Profile",
-    icon: Zap,
-    description: "Configure automatic form filling",
   },
   {
     id: "features",

@@ -1,0 +1,103 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e4]:
+      - link "HireAll" [ref=e5] [cursor=pointer]:
+        - /url: /
+        - img "HireAll" [ref=e6] [cursor=pointer]
+      - button "Toggle menu" [ref=e8] [cursor=pointer]:
+        - img
+        - generic [ref=e9] [cursor=pointer]: Toggle menu
+  - main [ref=e10]:
+    - generic [ref=e12]:
+      - generic [ref=e13]:
+        - heading "Welcome back" [level=3] [ref=e15]
+        - paragraph [ref=e17]: Sign in to your Hireall account
+      - generic [ref=e18]:
+        - generic [ref=e19]:
+          - generic [ref=e20]:
+            - generic [ref=e21]: Email
+            - generic [ref=e22]:
+              - img [ref=e23]
+              - textbox "Email" [ref=e26]
+          - generic [ref=e27]:
+            - generic [ref=e28]: Password
+            - generic [ref=e29]:
+              - img [ref=e30]
+              - textbox "Password" [ref=e33]
+              - button [ref=e34] [cursor=pointer]:
+                - img [ref=e35] [cursor=pointer]
+          - button "Sign in" [ref=e39] [cursor=pointer]:
+            - generic [ref=e42] [cursor=pointer]: Sign in
+        - generic [ref=e47]: Or continue with
+        - button "Continue with Google" [ref=e49] [cursor=pointer]:
+          - generic [ref=e50] [cursor=pointer]:
+            - generic [ref=e51] [cursor=pointer]:
+              - img
+            - generic [ref=e52] [cursor=pointer]: Continue with Google
+        - generic [ref=e53]:
+          - generic [ref=e54]:
+            - generic [ref=e55]: Don't have an account?
+            - link "Sign up" [ref=e56] [cursor=pointer]:
+              - /url: /sign-up?redirect_url=%2Fdashboard
+          - link "Forgot your password?" [ref=e59] [cursor=pointer]:
+            - /url: /auth/forgot?redirect_url=%2Fdashboard
+  - contentinfo [ref=e60]:
+    - generic [ref=e62]:
+      - generic [ref=e63]:
+        - generic [ref=e64]:
+          - img "HireAll" [ref=e66]
+          - paragraph [ref=e67]: Revealing the hidden job market, one sponsored listing at a time.
+        - generic [ref=e68]:
+          - heading "Product" [level=4] [ref=e69]
+          - list [ref=e70]:
+            - listitem [ref=e71]:
+              - link "Features" [ref=e72] [cursor=pointer]:
+                - /url: /#how-it-works
+            - listitem [ref=e73]:
+              - link "Chrome Extension" [ref=e74] [cursor=pointer]:
+                - /url: https://chrome.google.com/webstore/detail/hireall
+        - generic [ref=e75]:
+          - heading "Company" [level=4] [ref=e76]
+          - list [ref=e77]:
+            - listitem [ref=e78]:
+              - link "About" [ref=e79] [cursor=pointer]:
+                - /url: /about
+            - listitem [ref=e80]:
+              - link "Blog" [ref=e81] [cursor=pointer]:
+                - /url: /blog
+            - listitem [ref=e82]:
+              - link "Careers" [ref=e83] [cursor=pointer]:
+                - /url: /careers
+        - generic [ref=e84]:
+          - heading "Legal" [level=4] [ref=e85]
+          - list [ref=e86]:
+            - listitem [ref=e87]:
+              - link "Privacy Policy" [ref=e88] [cursor=pointer]:
+                - /url: /privacy
+            - listitem [ref=e89]:
+              - link "Terms of Service" [ref=e90] [cursor=pointer]:
+                - /url: /terms
+            - listitem [ref=e91]:
+              - link "Usage Conditions" [ref=e92] [cursor=pointer]:
+                - /url: /conditions
+      - generic [ref=e93]:
+        - paragraph [ref=e94]: © 2025 Hireall. All rights reserved.
+        - generic [ref=e95]:
+          - link "GitHub" [ref=e96] [cursor=pointer]:
+            - /url: https://github.com
+            - img [ref=e97] [cursor=pointer]
+          - link "Twitter" [ref=e99] [cursor=pointer]:
+            - /url: https://twitter.com
+            - img [ref=e100] [cursor=pointer]
+          - link "LinkedIn" [ref=e102] [cursor=pointer]:
+            - /url: https://linkedin.com
+            - img [ref=e103] [cursor=pointer]
+  - button [ref=e106] [cursor=pointer]:
+    - img
+  - alert [ref=e107]
+  - button "Open Next.js Dev Tools" [ref=e113] [cursor=pointer]:
+    - img [ref=e114] [cursor=pointer]
+```

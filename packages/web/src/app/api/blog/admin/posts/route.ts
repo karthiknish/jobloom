@@ -1,28 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyIdToken, isUserAdmin, getAdminDb, Query, CollectionReference, FieldValue } from "@/firebase/admin";
+import { getAdminDb, Query, CollectionReference, FieldValue } from "@/firebase/admin";
+import { authenticateRequest } from "@/lib/api/auth";
+import { withErrorHandling, generateRequestId } from "@/lib/api/errors";
 
 // Get Firestore instance using the centralized admin initialization
 const db = getAdminDb();
 
 // GET /api/blog/admin/posts - Get all blog posts for admin (including drafts)
 export async function GET(request: NextRequest) {
-  try {
-    const authHeader = request.headers.get("authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  const requestId = generateRequestId();
 
-    const token = authHeader.substring(7);
-    const decodedToken = await verifyIdToken(token);
+  return withErrorHandling(async () => {
+    const auth = await authenticateRequest(request, {
+      requireAdmin: true,
+      requireAuthHeader: true,
+      loadUser: true,
+    });
 
-    if (!decodedToken) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-    }
-
-    // Check if user is admin
-    const isAdmin = await isUserAdmin(decodedToken.uid);
-    if (!isAdmin) {
-      return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+    if (!auth.ok) {
+      return auth.response;
     }
 
     const url = new URL(request.url);
@@ -36,37 +32,46 @@ export async function GET(request: NextRequest) {
 
     const snapshot = await query.orderBy("createdAt", "desc").get();
 
-    const posts = snapshot.docs.map((doc) => ({
-      _id: doc.id,
-      ...doc.data(),
-    }));
+    const posts = snapshot.docs.map((doc) => {
+      const data = doc.data();
+      const createdAt = data.createdAt?.toMillis?.() ?? data.createdAt ?? null;
+      const updatedAt = data.updatedAt?.toMillis?.() ?? data.updatedAt ?? null;
+      const publishedAt = data.publishedAt?.toMillis?.() ?? data.publishedAt ?? null;
 
-    return NextResponse.json(posts);
-  } catch (error) {
-    console.error("Error fetching admin blog posts:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
-  }
+      return {
+        _id: doc.id,
+        ...data,
+        createdAt,
+        updatedAt,
+        publishedAt,
+      };
+    });
+
+    return NextResponse.json({
+      posts,
+      count: posts.length,
+      message: 'Blog posts retrieved successfully'
+    });
+  }, {
+    endpoint: '/api/blog/admin/posts',
+    method: 'GET',
+    requestId
+  });
 }
 
 // POST /api/blog/admin/posts - Create a new blog post
 export async function POST(request: NextRequest) {
-  try {
-    const authHeader = request.headers.get("authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  const requestId = generateRequestId();
 
-    const token = authHeader.substring(7);
-    const decodedToken = await verifyIdToken(token);
+  return withErrorHandling(async () => {
+    const auth = await authenticateRequest(request, {
+      requireAdmin: true,
+      requireAuthHeader: true,
+      loadUser: true,
+    });
 
-    if (!decodedToken) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-    }
-
-    // Check if user is admin
-    const isAdmin = await isUserAdmin(decodedToken.uid);
-    if (!isAdmin) {
-      return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+    if (!auth.ok) {
+      return auth.response;
     }
 
     const body = await request.json();
@@ -103,49 +108,39 @@ export async function POST(request: NextRequest) {
     if (!existingPost.empty) {
       return NextResponse.json(
         { error: "A post with this title already exists" },
-        { status: 400 }
+        { status: 409 }
       );
     }
 
-    // Calculate reading time (roughly 200 words per minute)
-    const wordCount = content.split(/\s+/).length;
-    const readingTime = Math.ceil(wordCount / 200);
-
-    // Get author info
-    const userDoc = await db.collection("users").doc(decodedToken.uid).get();
-    const userData = userDoc.data();
-
-    const postData = {
+    // Create the post
+    const postRef = await db.collection("blogPosts").add({
       title,
       slug,
       content,
       excerpt,
-      author: {
-        id: decodedToken.uid,
-        name: userData?.name || userData?.email || "Admin",
-        email: userData?.email || "",
-      },
-      status: status || "draft",
-      publishedAt: status === "published" ? FieldValue.serverTimestamp() : null,
-      createdAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp(),
-      tags: tags || [],
       category,
-      featuredImage,
-      readingTime,
+      tags: tags || [],
+      status: status || "draft",
+      featuredImage: featuredImage || null,
+      author: {
+        id: auth.token.uid,
+        name: auth.token.name || "Admin",
+        email: auth.token.email || "",
+      },
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      publishedAt: status === "published" ? Date.now() : null,
       viewCount: 0,
       likeCount: 0,
-    };
-
-    const docRef = await db.collection("blogPosts").add(postData);
+    });
 
     return NextResponse.json({
-      success: true,
-      postId: docRef.id,
-      slug,
+      _id: postRef.id,
+      message: "Blog post created successfully"
     });
-  } catch (error) {
-    console.error("Error creating blog post:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
-  }
+  }, {
+    endpoint: '/api/blog/admin/posts',
+    method: 'POST',
+    requestId
+  });
 }

@@ -1,28 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyIdToken, isUserAdmin, getAdminDb } from "@/firebase/admin";
+import { getAdminDb } from "@/firebase/admin";
+import { authenticateRequest } from "@/lib/api/auth";
+import { withErrorHandling, generateRequestId } from "@/lib/api/errors";
 
 // Get Firestore instance using the centralized admin initialization
 const db = getAdminDb();
 
 // GET /api/blog/admin/stats - Get blog statistics for admin dashboard
 export async function GET(request: NextRequest) {
-  try {
-    const authHeader = request.headers.get("authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  const requestId = generateRequestId();
 
-    const token = authHeader.substring(7);
-    const decodedToken = await verifyIdToken(token);
+  return withErrorHandling(async () => {
+    const auth = await authenticateRequest(request, {
+      requireAdmin: true,
+      requireAuthHeader: true,
+    });
 
-    if (!decodedToken) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-    }
-
-    // Check if user is admin
-    const isAdmin = await isUserAdmin(decodedToken.uid);
-    if (!isAdmin) {
-      return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+    if (!auth.ok) {
+      return auth.response;
     }
 
     // Get all blog posts
@@ -35,7 +30,6 @@ export async function GET(request: NextRequest) {
     let totalViews = 0;
     let totalLikes = 0;
     const postsByCategory: Record<string, number> = {};
-    const recentPosts: any[] = [];
 
     postsSnapshot.forEach((doc) => {
       const data = doc.data();
@@ -57,23 +51,10 @@ export async function GET(request: NextRequest) {
       }
 
       // Count by category
-      const category = data.category || "Uncategorized";
-      postsByCategory[category] = (postsByCategory[category] || 0) + 1;
-
-      // Collect recent posts (last 5)
-      if (recentPosts.length < 5) {
-        recentPosts.push({
-          _id: doc.id,
-          title: data.title,
-          status: data.status,
-          createdAt: data.createdAt?.toMillis() || Date.now(),
-          publishedAt: data.publishedAt?.toMillis(),
-        });
+      if (data.category) {
+        postsByCategory[data.category] = (postsByCategory[data.category] || 0) + 1;
       }
     });
-
-    // Sort recent posts by creation date
-    recentPosts.sort((a, b) => b.createdAt - a.createdAt);
 
     const stats = {
       totalPosts,
@@ -83,12 +64,15 @@ export async function GET(request: NextRequest) {
       totalViews,
       totalLikes,
       postsByCategory,
-      recentPosts,
     };
 
-    return NextResponse.json(stats);
-  } catch (error) {
-    console.error("Error fetching blog stats:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
-  }
+    return NextResponse.json({
+      stats,
+      message: 'Blog statistics retrieved successfully'
+    });
+  }, {
+    endpoint: '/api/blog/admin/stats',
+    method: 'GET',
+    requestId
+  });
 }

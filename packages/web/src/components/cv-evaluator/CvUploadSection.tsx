@@ -1,9 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { CvUploadForm } from "../../components/CvUploadForm";
+import { CvUploadForm } from "../CvUploadForm";
 
 interface CvUploadSectionProps {
+  userId: string;
   onResumeUpdate: (resume: any) => void;
   currentResume: any;
   currentAtsScore: any;
@@ -11,6 +12,7 @@ interface CvUploadSectionProps {
 }
 
 export function CvUploadSection({
+  userId,
   onResumeUpdate,
   currentResume,
   currentAtsScore,
@@ -27,6 +29,7 @@ export function CvUploadSection({
       <div className="space-y-6">
         {/* Upload Form */}
         <CvUploadForm
+          userId={userId}
           onResumeUpdate={onResumeUpdate}
           currentResume={currentResume}
           currentAtsScore={currentAtsScore}

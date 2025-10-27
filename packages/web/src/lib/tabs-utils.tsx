@@ -23,8 +23,7 @@ import {
   Sparkles,
   Eye,
   FileCheck,
-  PenTool,
-  Zap
+  PenTool
 } from "lucide-react";
 
 // Pre-configured tabs with icons for common use cases
@@ -68,12 +67,6 @@ export const PRECONFIGURED_TABS = {
       label: "UK Visa Criteria",
       icon: Shield,
       description: "UK visa eligibility settings",
-    },
-    {
-      id: "autofill",
-      label: "Autofill Profile",
-      icon: Zap,
-      description: "Configure automatic form filling",
     },
     {
       id: "security",

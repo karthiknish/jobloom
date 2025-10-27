@@ -1,0 +1,98 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e4]:
+      - link "HireAll" [ref=e5] [cursor=pointer]:
+        - /url: /
+        - img "HireAll" [ref=e6] [cursor=pointer]
+      - navigation [ref=e7]:
+        - link "How it Works" [ref=e8] [cursor=pointer]:
+          - /url: "#how-it-works"
+        - link "Features" [ref=e9] [cursor=pointer]:
+          - /url: "#features"
+        - link "Testimonials" [ref=e10] [cursor=pointer]:
+          - /url: "#testimonials"
+      - generic [ref=e12]:
+        - link "Sign In" [ref=e13] [cursor=pointer]:
+          - /url: /sign-in
+          - button "Sign In" [ref=e14] [cursor=pointer]
+        - link "Get Started" [ref=e15] [cursor=pointer]:
+          - /url: /sign-up
+          - button "Get Started" [ref=e16] [cursor=pointer]
+  - main [ref=e17]:
+    - generic [ref=e19]:
+      - generic [ref=e20]:
+        - img [ref=e22]
+        - heading "Verify your email" [level=3] [ref=e25]
+        - paragraph [ref=e26]:
+          - text: We sent a verification link to
+          - strong
+      - generic [ref=e27]:
+        - paragraph [ref=e29]: No authenticated user found
+        - generic [ref=e30]:
+          - paragraph [ref=e31]: Click the verification link in the email to verify your account.
+          - paragraph [ref=e32]: Didn't receive the email? Check your spam folder or click below to resend.
+        - generic [ref=e33]:
+          - button "Resend email" [ref=e34] [cursor=pointer]:
+            - img
+            - text: Resend email
+          - button "Continue to Welcome" [ref=e35] [cursor=pointer]
+  - contentinfo [ref=e36]:
+    - generic [ref=e38]:
+      - generic [ref=e39]:
+        - generic [ref=e40]:
+          - img "HireAll" [ref=e42]
+          - paragraph [ref=e43]: Revealing the hidden job market, one sponsored listing at a time.
+        - generic [ref=e44]:
+          - heading "Product" [level=4] [ref=e45]
+          - list [ref=e46]:
+            - listitem [ref=e47]:
+              - link "Features" [ref=e48] [cursor=pointer]:
+                - /url: /#how-it-works
+            - listitem [ref=e49]:
+              - link "Chrome Extension" [ref=e50] [cursor=pointer]:
+                - /url: https://chrome.google.com/webstore/detail/hireall
+        - generic [ref=e51]:
+          - heading "Company" [level=4] [ref=e52]
+          - list [ref=e53]:
+            - listitem [ref=e54]:
+              - link "About" [ref=e55] [cursor=pointer]:
+                - /url: /about
+            - listitem [ref=e56]:
+              - link "Blog" [ref=e57] [cursor=pointer]:
+                - /url: /blog
+            - listitem [ref=e58]:
+              - link "Careers" [ref=e59] [cursor=pointer]:
+                - /url: /careers
+        - generic [ref=e60]:
+          - heading "Legal" [level=4] [ref=e61]
+          - list [ref=e62]:
+            - listitem [ref=e63]:
+              - link "Privacy Policy" [ref=e64] [cursor=pointer]:
+                - /url: /privacy
+            - listitem [ref=e65]:
+              - link "Terms of Service" [ref=e66] [cursor=pointer]:
+                - /url: /terms
+            - listitem [ref=e67]:
+              - link "Usage Conditions" [ref=e68] [cursor=pointer]:
+                - /url: /conditions
+      - generic [ref=e69]:
+        - paragraph [ref=e70]: © 2025 Hireall. All rights reserved.
+        - generic [ref=e71]:
+          - link "GitHub" [ref=e72] [cursor=pointer]:
+            - /url: https://github.com
+            - img [ref=e73] [cursor=pointer]
+          - link "Twitter" [ref=e75] [cursor=pointer]:
+            - /url: https://twitter.com
+            - img [ref=e76] [cursor=pointer]
+          - link "LinkedIn" [ref=e78] [cursor=pointer]:
+            - /url: https://linkedin.com
+            - img [ref=e79] [cursor=pointer]
+  - button [ref=e82] [cursor=pointer]:
+    - img
+  - alert [ref=e83]
+  - button "Open Next.js Dev Tools" [ref=e89] [cursor=pointer]:
+    - img [ref=e90] [cursor=pointer]
+```

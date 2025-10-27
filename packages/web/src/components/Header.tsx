@@ -4,10 +4,18 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
+import { Menu, X, Settings, LogOut } from "lucide-react";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Menu } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
 // Dark mode removed; ModeToggle no longer used
 import {
   Sheet,
@@ -49,7 +57,6 @@ export default function Header() {
 
   const userLinks = [
     { href: "/dashboard", label: "Dashboard" },
-    { href: "/portfolio", label: "Portfolio Builder" },
     { href: "/application", label: "Resume & Cover Letter" },
     { href: "/interview-prep", label: "Interview Prep" },
     { href: "/cv-evaluator", label: "CV Evaluator" },
@@ -99,41 +106,89 @@ export default function Header() {
     </>
   );
 
-  const AuthButtons = () => (
-    <>
-      {isSignedIn ? (
-        <Link
-          href="/settings"
-          onClick={() => setIsMobileMenuOpen(false)}
-          className="group relative inline-flex h-10 w-10 items-center justify-center rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-        >
-          <span className="sr-only">Go to settings</span>
-          <Avatar className="h-10 w-10 border border-border transition-shadow group-hover:shadow">
-            <AvatarImage
-              src={user?.photoURL || undefined}
-              alt={user?.displayName || "User"}
-            />
-            <AvatarFallback>
-              {user?.displayName?.charAt(0) ||
-                user?.email?.charAt(0) ||
-                "U"}
-            </AvatarFallback>
-          </Avatar>
-        </Link>
-      ) : (
-        <div className="flex items-center justify-center space-x-2 w-full">
-          <Link href="/sign-in">
-            <Button variant="ghost" size="sm">
-              Sign In
-            </Button>
-          </Link>
-          <Link href="/sign-up">
-            <Button size="sm">Get Started</Button>
-          </Link>
-        </div>
-      )}
-    </>
-  );
+  const AuthButtons = () => {
+    const { signOut } = useFirebaseAuth();
+    const toast = useToast();
+
+    const handleLogout = async () => {
+      try {
+        await signOut();
+        toast.success("Signed Out", "You have been successfully signed out.");
+      } catch (error: any) {
+        console.error("Logout error:", error);
+        toast.error("Logout Failed", "There was an issue signing you out. Please try again.");
+      }
+    };
+
+    return (
+      <>
+        {isSignedIn ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                className="relative h-10 w-10 rounded-full"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <Avatar className="h-10 w-10 border border-border transition-shadow hover:shadow">
+                  <AvatarImage
+                    src={user?.photoURL || undefined}
+                    alt={user?.displayName || "User"}
+                  />
+                  <AvatarFallback>
+                    {user?.displayName?.charAt(0) ||
+                      user?.email?.charAt(0) ||
+                      "U"}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="sr-only">User menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <div className="flex items-center justify-start gap-2 p-2">
+                <div className="flex flex-col space-y-1 leading-none">
+                  {user?.displayName && (
+                    <p className="font-medium">{user.displayName}</p>
+                  )}
+                  {user?.email && (
+                    <p className="w-[200px] truncate text-sm text-muted-foreground">
+                      {user.email}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link href="/settings" className="flex items-center cursor-pointer">
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Settings</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                onClick={handleLogout}
+                className="text-red-600 focus:text-red-600 cursor-pointer"
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Sign out</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <div className="flex items-center justify-center space-x-2 w-full">
+            <Link href="/sign-in">
+              <Button variant="ghost" size="sm">
+                Sign In
+              </Button>
+            </Link>
+            <Link href="/sign-up">
+              <Button size="sm">Get Started</Button>
+            </Link>
+          </div>
+        )}
+      </>
+    );
+  };
 
   return (
     <motion.header

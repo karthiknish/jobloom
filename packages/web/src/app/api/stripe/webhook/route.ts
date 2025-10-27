@@ -3,6 +3,15 @@ import Stripe from "stripe";
 import { getStripeClient } from "@/lib/stripe";
 import { getAdminDb, FieldValue } from "@/firebase/admin";
 import { upsertSubscriptionFromStripe, ValidationError, DatabaseError } from "@/lib/subscriptions";
+import { 
+  createValidationError,
+  createInternalError,
+  handleExternalServiceError,
+  handleDatabaseError,
+  createSuccessResponse,
+  withErrorHandler 
+} from "@/lib/api/errorResponse";
+import { ERROR_CODES } from "@/lib/api/errorCodes";
 
 export const runtime = "nodejs";
 
@@ -196,27 +205,28 @@ async function handleCustomerUpdated(customer: Stripe.Customer) {
   }, "customer.updated");
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withErrorHandler(async (request: NextRequest) => {
   const signature = request.headers.get("stripe-signature");
   if (!signature) {
-    return NextResponse.json({ error: "Missing Stripe signature" }, { status: 400 });
+    throw createValidationError("Missing Stripe signature", "signature");
   }
 
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!webhookSecret) {
-    console.error("Stripe webhook secret is not configured");
-    return NextResponse.json({ error: "Webhook secret not configured" }, { status: 500 });
+    throw createInternalError("Stripe webhook secret is not configured");
   }
 
-  let event: Stripe.Event;
   const rawBody = await request.text();
+  let event: Stripe.Event;
 
   try {
     event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : "Unknown signature verification error";
     console.error("Failed to verify Stripe webhook signature:", errorMessage);
-    return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
+    throw createValidationError("Invalid webhook signature", "signature", {
+      originalError: errorMessage
+    });
   }
 
   try {
@@ -294,4 +304,4 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ error: "Webhook processing failed" }, { status: 500 });
   }
-}
+});

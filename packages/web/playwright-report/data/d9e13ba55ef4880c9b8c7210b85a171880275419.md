@@ -1,0 +1,98 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e4]:
+      - link "HireAll" [ref=e5] [cursor=pointer]:
+        - /url: /
+        - img "HireAll" [ref=e6] [cursor=pointer]
+      - navigation [ref=e7]:
+        - link "How it Works" [ref=e8] [cursor=pointer]:
+          - /url: "#how-it-works"
+        - link "Features" [ref=e9] [cursor=pointer]:
+          - /url: "#features"
+        - link "Testimonials" [ref=e10] [cursor=pointer]:
+          - /url: "#testimonials"
+      - generic [ref=e12]:
+        - link "Sign In" [ref=e13] [cursor=pointer]:
+          - /url: /sign-in
+          - button "Sign In" [ref=e14] [cursor=pointer]
+        - link "Get Started" [ref=e15] [cursor=pointer]:
+          - /url: /sign-up
+          - button "Get Started" [ref=e16] [cursor=pointer]
+  - main [ref=e17]:
+    - generic [ref=e18]:
+      - generic [ref=e19]:
+        - heading "Contact Us" [level=3] [ref=e20]
+        - paragraph [ref=e21]: Have a question or feedback? Fill out the form below and we'll get back to you within 24 hours.
+      - generic [ref=e23]:
+        - generic [ref=e24]:
+          - generic [ref=e25]: Name
+          - textbox "Name" [ref=e26]: Test User
+        - generic [ref=e27]:
+          - generic [ref=e28]: Email
+          - textbox "Email" [ref=e29]: test@example.com
+        - generic [ref=e30]:
+          - generic [ref=e31]:
+            - text: Message
+            - generic [ref=e32]: (12/1000 characters)
+          - textbox "Message(12/1000 characters)" [ref=e33]: Test message
+        - button "Sending..." [disabled]
+  - contentinfo [ref=e34]:
+    - generic [ref=e36]:
+      - generic [ref=e37]:
+        - generic [ref=e38]:
+          - img "HireAll" [ref=e40]
+          - paragraph [ref=e41]: Revealing the hidden job market, one sponsored listing at a time.
+        - generic [ref=e42]:
+          - heading "Product" [level=4] [ref=e43]
+          - list [ref=e44]:
+            - listitem [ref=e45]:
+              - link "Features" [ref=e46] [cursor=pointer]:
+                - /url: /#how-it-works
+            - listitem [ref=e47]:
+              - link "Chrome Extension" [ref=e48] [cursor=pointer]:
+                - /url: https://chrome.google.com/webstore/detail/hireall
+        - generic [ref=e49]:
+          - heading "Company" [level=4] [ref=e50]
+          - list [ref=e51]:
+            - listitem [ref=e52]:
+              - link "About" [ref=e53] [cursor=pointer]:
+                - /url: /about
+            - listitem [ref=e54]:
+              - link "Blog" [ref=e55] [cursor=pointer]:
+                - /url: /blog
+            - listitem [ref=e56]:
+              - link "Careers" [ref=e57] [cursor=pointer]:
+                - /url: /careers
+        - generic [ref=e58]:
+          - heading "Legal" [level=4] [ref=e59]
+          - list [ref=e60]:
+            - listitem [ref=e61]:
+              - link "Privacy Policy" [ref=e62] [cursor=pointer]:
+                - /url: /privacy
+            - listitem [ref=e63]:
+              - link "Terms of Service" [ref=e64] [cursor=pointer]:
+                - /url: /terms
+            - listitem [ref=e65]:
+              - link "Usage Conditions" [ref=e66] [cursor=pointer]:
+                - /url: /conditions
+      - generic [ref=e67]:
+        - paragraph [ref=e68]: © 2025 Hireall. All rights reserved.
+        - generic [ref=e69]:
+          - link "GitHub" [ref=e70] [cursor=pointer]:
+            - /url: https://github.com
+            - img [ref=e71] [cursor=pointer]
+          - link "Twitter" [ref=e73] [cursor=pointer]:
+            - /url: https://twitter.com
+            - img [ref=e74] [cursor=pointer]
+          - link "LinkedIn" [ref=e76] [cursor=pointer]:
+            - /url: https://linkedin.com
+            - img [ref=e77] [cursor=pointer]
+  - button [ref=e80] [cursor=pointer]:
+    - img
+  - alert [ref=e81]
+  - button "Open Next.js Dev Tools" [ref=e87] [cursor=pointer]:
+    - img [ref=e88] [cursor=pointer]
+```

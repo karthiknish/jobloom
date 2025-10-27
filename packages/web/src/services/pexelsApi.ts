@@ -1,98 +1,92 @@
-// services/pexelsApi.ts
-export interface PexelsPhoto {
-  id: number;
-  width: number;
-  height: number;
-  url: string;
-  photographer: string;
-  photographer_url: string;
-  photographer_id: number;
-  avg_color: string;
-  src: {
-    original: string;
-    large2x: string;
-    large: string;
-    medium: string;
-    small: string;
-    portrait: string;
-    landscape: string;
-    tiny: string;
-  };
-  liked: boolean;
-  alt: string;
-}
+import { PexelsApiError, type PexelsPhoto, type PexelsSearchResponse } from "@/types/pexels";
 
-export interface PexelsSearchResponse {
-  total_results: number;
-  page: number;
-  per_page: number;
-  photos: PexelsPhoto[];
-  next_page?: string;
-}
+const ORIENTATION_VALUES = ["landscape", "portrait", "square"] as const;
+const ORIENTATION_WHITELIST = new Set<string>(ORIENTATION_VALUES);
 
-export class PexelsApiError extends Error {
-  constructor(
-    message: string,
-    public status?: number
-  ) {
-    super(message);
-    this.name = "PexelsApiError";
+function resolveApiBase(): string {
+  if (typeof window !== "undefined") {
+    return "";
   }
+
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    return process.env.NEXT_PUBLIC_APP_URL;
+  }
+
+  if (process.env.APP_URL) {
+    return process.env.APP_URL;
+  }
+
+  if (process.env.VERCEL_URL) {
+    const hasProtocol = process.env.VERCEL_URL.startsWith("http://") || process.env.VERCEL_URL.startsWith("https://");
+    return hasProtocol ? process.env.VERCEL_URL : `https://${process.env.VERCEL_URL}`;
+  }
+
+  return "http://localhost:3000";
 }
 
 class PexelsApiClient {
-  private apiKey: string;
-  private baseUrl = "https://api.pexels.com/v1";
+  private readonly apiBase: string;
 
   constructor() {
-    // Get API key from environment variables
-    this.apiKey = process.env.NEXT_PUBLIC_PEXELS_API_KEY || "";
-    if (!this.apiKey) {
-      console.warn("Pexels API key not found. Image search will not work.");
-    }
+    this.apiBase = resolveApiBase();
   }
 
   private async request<T>(endpoint: string, params: Record<string, string> = {}): Promise<T> {
-    if (!this.apiKey) {
-      throw new PexelsApiError("Pexels API key not configured");
-    }
+    const searchParams = new URLSearchParams(params);
+    const url = `${this.apiBase}/api/pexels${endpoint}${searchParams.size ? `?${searchParams.toString()}` : ""}`;
 
-    const url = new URL(`${this.baseUrl}${endpoint}`);
-    Object.entries(params).forEach(([key, value]) => {
-      url.searchParams.append(key, value);
-    });
-
-    const response = await fetch(url.toString(), {
+    const response = await fetch(url, {
+      method: "GET",
       headers: {
-        Authorization: this.apiKey,
+        Accept: "application/json",
       },
+      credentials: "same-origin",
+      cache: "no-store",
     });
 
     if (!response.ok) {
+      let message = `Pexels request failed (${response.status})`;
+
       if (response.status === 429) {
-        throw new PexelsApiError("Rate limit exceeded. Please try again later.", 429);
+        message = "Rate limit exceeded. Please try again later.";
+      } else {
+        try {
+          const errorBody = await response.clone().json();
+          if (errorBody && typeof errorBody.error === "string") {
+            message = errorBody.error;
+          }
+        } catch {
+          const text = await response.text().catch(() => null);
+          if (text) {
+            message = text;
+          }
+        }
       }
-      throw new PexelsApiError(`Pexels API error: ${response.status}`, response.status);
+
+      throw new PexelsApiError(message, response.status);
     }
 
-    return response.json();
+    return response.json() as Promise<T>;
   }
 
   /**
    * Search for photos
    */
-  async searchPhotos(query: string, options: {
-    page?: number;
-    per_page?: number;
-    orientation?: "landscape" | "portrait" | "square";
-  } = {}): Promise<PexelsSearchResponse> {
+  async searchPhotos(
+    query: string,
+    options: {
+      page?: number;
+      per_page?: number;
+      orientation?: "landscape" | "portrait" | "square";
+    } = {}
+  ): Promise<PexelsSearchResponse> {
     const params: Record<string, string> = {
       query,
-      page: (options.page || 1).toString(),
-      per_page: (options.per_page || 15).toString(),
+      page: String(options.page && options.page > 0 ? options.page : 1),
+      per_page: String(options.per_page && options.per_page > 0 ? Math.min(options.per_page, 50) : 20),
     };
 
-    if (options.orientation) {
+    if (options.orientation && ORIENTATION_WHITELIST.has(options.orientation)) {
       params.orientation = options.orientation;
     }
 
@@ -102,13 +96,15 @@ class PexelsApiClient {
   /**
    * Get curated photos
    */
-  async getCuratedPhotos(options: {
-    page?: number;
-    per_page?: number;
-  } = {}): Promise<PexelsSearchResponse> {
+  async getCuratedPhotos(
+    options: {
+      page?: number;
+      per_page?: number;
+    } = {}
+  ): Promise<PexelsSearchResponse> {
     const params: Record<string, string> = {
-      page: (options.page || 1).toString(),
-      per_page: (options.per_page || 15).toString(),
+      page: String(options.page && options.page > 0 ? options.page : 1),
+      per_page: String(options.per_page && options.per_page > 0 ? Math.min(options.per_page, 50) : 20),
     };
 
     return this.request<PexelsSearchResponse>("/curated", params);

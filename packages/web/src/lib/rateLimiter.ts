@@ -124,6 +124,11 @@ export const TIERED_RATE_LIMITS: Record<string, UserTierLimits> = {
     premium: { maxRequests: 5, windowMs: 60000 },
     admin: { maxRequests: 20, windowMs: 60000 },
   },
+  'blog-admin': {
+    free: { maxRequests: 10, windowMs: 60000 },
+    premium: { maxRequests: 120, windowMs: 60000 },
+    admin: { maxRequests: 300, windowMs: 60000 },
+  },
 };
 
 // Default rate limits for backward compatibility
@@ -143,6 +148,7 @@ export const RATE_LIMITS: Record<string, RateLimitConfig> = {
   'general': { maxRequests: 100, windowMs: 60000 },
   'admin': { maxRequests: 5, windowMs: 60000 },
   'addSponsoredCompany': { maxRequests: 5, windowMs: 60000 },
+  'blog-admin': { maxRequests: 150, windowMs: 60000 },
 };
 
 export type UserTier = 'free' | 'premium' | 'admin';
@@ -462,6 +468,8 @@ export function getEndpointFromPath(path: string): string {
   if (path.includes('/applications')) return 'applications';
   if (path.includes('/cv')) return 'cv-analysis';
   if (path.includes('/subscription')) return 'subscription';
+  if (path.includes('/blog/admin')) return 'blog-admin';
+  if (path.includes('/blog')) return 'general';
   if (path.includes('/users/') && path.includes('/settings')) return 'user-settings';
   if (path.includes('/users/')) return 'user-profile';
   

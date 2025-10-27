@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyIdToken, getAdminDb } from "@/firebase/admin";
-import { verifySessionFromRequest } from "@/lib/auth/session";
+import { getAdminDb } from "@/firebase/admin";
+import { authenticateRequest } from "@/lib/api/auth";
 import { getStripeClient, getStripeSuccessUrl } from "@/lib/stripe";
 
 const stripe = getStripeClient();
@@ -8,10 +8,9 @@ const db = getAdminDb();
 
 export async function POST(request: NextRequest) {
   try {
-    const decodedToken = await verifySessionFromRequest(request);
-
-    if (!decodedToken) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await authenticateRequest(request);
+    if (!auth.ok) {
+      return auth.response;
     }
 
     // In development with mock tokens, return mock portal URL for testing
@@ -25,7 +24,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const userId = decodedToken.uid;
+  const userId = auth.token.uid;
 
     const userDoc = await db.collection("users").doc(userId).get();
     const userData = userDoc.data() as Record<string, any> | undefined;

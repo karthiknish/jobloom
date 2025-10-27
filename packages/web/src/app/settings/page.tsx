@@ -10,7 +10,6 @@ import { ProfileSettings } from "@/components/settings/ProfileSettings";
 import { PreferencesSettings } from "@/components/settings/PreferencesSettings";
 import { VisaCriteriaSettings } from "@/components/settings/VisaCriteriaSettings";
 import { SecuritySettings } from "@/components/settings/SecuritySettings";
-import { AutofillSettings } from "@/components/settings/AutofillSettings";
 import { FeaturesSettings } from "@/components/settings/FeaturesSettings";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -394,8 +393,6 @@ export default function SettingsPage() {
             onInputChange={handleInputChange}
           />
         );
-      case "autofill":
-        return <AutofillSettings />;
       case "security":
         return (
           <SecuritySettings

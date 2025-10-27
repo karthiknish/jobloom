@@ -1,8 +1,10 @@
 "use client";
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, ChevronUp } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 const faqs = [
   {
@@ -28,19 +30,11 @@ const faqs = [
 ];
 
 export default function FAQSection() {
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
-
-  const toggleFAQ = (index: number) => {
-    setOpenIndex(openIndex === index ? null : index);
-  };
-
   return (
-    <section className="py-20 bg-muted">
+    <section className="py-20 bg-muted/30">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <h2
-            className="text-3xl font-bold text-foreground sm:text-4xl font-playfair"
-          >
+          <h2 className="text-3xl font-bold text-foreground sm:text-4xl font-serif">
             Frequently Asked Questions
           </h2>
           <p className="mt-4 text-xl text-muted-foreground">
@@ -48,44 +42,18 @@ export default function FAQSection() {
           </p>
         </div>
 
-        <div className="space-y-4">
+        <Accordion type="single" collapsible className="space-y-4">
           {faqs.map((faq, i) => (
-            <Card
-              key={i}
-              onClick={() => toggleFAQ(i)}
-              className="hover:shadow-md transition-shadow cursor-pointer"
-            >
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-lg font-medium">{faq.q}</CardTitle>
-                <motion.div
-                  animate={{ rotate: openIndex === i ? 180 : 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  {openIndex === i ? (
-                    <ChevronUp className="w-5 h-5 text-muted-foreground" />
-                  ) : (
-                    <ChevronDown className="w-5 h-5 text-muted-foreground" />
-                  )}
-                </motion.div>
-              </CardHeader>
-
-              <AnimatePresence>
-                {openIndex === i && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2, ease: "easeInOut" }}
-                  >
-                    <CardContent>
-                      <p className="text-muted-foreground">{faq.a}</p>
-                    </CardContent>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </Card>
+            <AccordionItem key={i} value={`item-${i}`} className="border-0 shadow-sm">
+              <AccordionTrigger className="text-left text-lg font-medium hover:no-underline px-6">
+                {faq.q}
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground px-6">
+                {faq.a}
+              </AccordionContent>
+            </AccordionItem>
           ))}
-        </div>
+        </Accordion>
       </div>
     </section>
   );

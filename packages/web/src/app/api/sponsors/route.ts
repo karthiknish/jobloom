@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminDb } from '@/firebase/admin';
-import { verifySessionFromRequest } from '@/lib/auth/session';
+import { authenticateRequest } from '@/lib/api/auth';
 
 const db = getAdminDb();
 
@@ -34,9 +34,9 @@ export async function GET(request: NextRequest) {
     }
 
     // For search queries, require authentication
-    const decodedToken = await verifySessionFromRequest(request);
-    if (!decodedToken) {
-      return NextResponse.json({ error: "Authentication required for search" }, { status: 401 });
+    const auth = await authenticateRequest(request);
+    if (!auth.ok) {
+      return auth.response;
     }
 
     let firestoreQuery = db.collection('sponsors').where('isActive', '==', true);

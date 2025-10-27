@@ -167,7 +167,7 @@ export default function AdminUserDashboardClient() {
 
   const { mutate: deleteUser } = useApiMutation((userId: string) => {
     if (!userRecord?._id) return Promise.reject(new Error("No admin context id"));
-    return adminApi.deleteUser(userId, userRecord._id);
+    return adminApi.deleteUser(userId);
   });
 
   // Filter users based on search and filters
@@ -527,7 +527,7 @@ export default function AdminUserDashboardClient() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {Object.entries(userStats.usersByPlan).map(([plan, count]) => (
+                  {Object.entries(userStats.usersByPlan || {}).map(([plan, count]: [string, unknown]) => (
                     <div key={plan} className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div
@@ -544,22 +544,15 @@ export default function AdminUserDashboardClient() {
                         <span className="capitalize">{plan}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="text-sm font-medium">{count}</div>
+                        <div className="text-sm font-medium">{count as number}</div>
                         <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
                           <div
-                            className={`h-full ${
-                              plan === "free"
-                                ? "bg-muted-foreground"
-                                : plan === "premium"
-                                ? "bg-primary"
-                                : plan === "enterprise"
-                                ? "bg-accent"
-                                : "bg-secondary"
-                            }`}
+                            className="h-full bg-primary transition-all duration-300"
                             style={{
-                              width: `${userStats.totalUsers
-                                ? (count / userStats.totalUsers) * 100
-                                : 0}%`,
+                              width: `${Math.min(
+                                ((count as number) / (userStats.totalUsers || 1)) * 100,
+                                100
+                              )}%`,
                             }}
                           />
                         </div>

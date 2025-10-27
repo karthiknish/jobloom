@@ -67,4 +67,13 @@ export interface ResumeScore {
   ats: number;
   impact: number;
   suggestions: string[];
+  breakdown?: {
+    structure: number;
+    content: number;
+    keywords: number;
+    formatting: number;
+    readability: number;
+    impact: number;
+    modernization: number;
+  };
 }

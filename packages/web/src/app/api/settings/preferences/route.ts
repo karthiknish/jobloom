@@ -1,16 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb } from "@/firebase/admin";
-import { verifySessionFromRequest } from "@/lib/auth/session";
+import { authenticateRequest } from "@/lib/api/auth";
 
 const db = getAdminDb();
 
 export async function GET(request: NextRequest) {
   try {
-    const decodedToken = await verifySessionFromRequest(request);
-    if (!decodedToken) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const auth = await authenticateRequest(request);
+    if (!auth.ok) {
+      return auth.response;
     }
-    const userId = decodedToken.uid;
+
+    const userId = auth.token.uid;
 
     // Get user preferences from Firestore
     const userDoc = await db.collection('users').doc(userId).get();
@@ -63,11 +64,12 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const decodedToken = await verifySessionFromRequest(request);
-    if (!decodedToken) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const auth = await authenticateRequest(request);
+    if (!auth.ok) {
+      return auth.response;
     }
-    const userId = decodedToken.uid;
+
+    const userId = auth.token.uid;
 
     const body = await request.json();
     const { preferences } = body;

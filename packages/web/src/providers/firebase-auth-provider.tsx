@@ -295,6 +295,19 @@ export function FirebaseAuthProvider({
           return csrfToken;
         };
 
+        const RATE_LIMIT_MAX_ATTEMPTS = 3;
+
+        const getBackoffDelayMs = (retryAfterHeader: string | null, attempt: number) => {
+          const retryAfterSeconds = retryAfterHeader ? Number.parseInt(retryAfterHeader, 10) : NaN;
+          if (!Number.isNaN(retryAfterSeconds) && retryAfterSeconds >= 0) {
+            return retryAfterSeconds * 1000;
+          }
+
+          const exponentialDelay = Math.min(2 ** attempt * 500, 5000);
+          const jitter = Math.random() * 250;
+          return exponentialDelay + jitter;
+        };
+
         const executeSync = async (
           forceTokenRefresh: boolean,
           attempt: number,
@@ -352,6 +365,22 @@ export function FirebaseAuthProvider({
             }
 
             await executeSync(true, attempt + 1);
+            return;
+          }
+
+          if (response.status === 429) {
+            if (attempt < RATE_LIMIT_MAX_ATTEMPTS) {
+              const delayMs = getBackoffDelayMs(response.headers.get("Retry-After"), attempt);
+              console.warn(
+                `Session sync rate limited (attempt ${attempt + 1}); retrying in ${Math.round(delayMs)}ms`,
+              );
+              await new Promise((resolve) => setTimeout(resolve, delayMs));
+              await executeSync(forceTokenRefresh, attempt + 1);
+              return;
+            }
+
+            console.warn("Session sync rate limited; max retries reached. Skipping update until next auth change.");
+            lastSessionTokenRef.current = null;
             return;
           }
 
@@ -933,15 +962,48 @@ export function FirebaseAuthProvider({
     try {
       setError(null);
       const auth = getAuthClient();
-      if (!auth) return;
+      if (!auth) {
+        console.warn("Auth not available during sign out");
+        return;
+      }
 
+      // Clear local state first for immediate UI feedback
+      setState(prev => ({ ...prev, user: null, loading: false, isInitialized: false }));
+      
+      // Clear all auth-related storage
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.removeItem(LAST_AUTH_METHOD_KEY);
+          sessionStorage.clear();
+        } catch (error) {
+          console.warn("Failed to clear local storage:", error);
+        }
+      }
+
+      // Sign out from Firebase
       await signOut(auth);
+      
+      // Clear session timeouts and flags
       clearSessionTimeouts();
       setIsSessionExpiring(false);
+      
+      // Clear server session
       await clearServerSession();
+      
       showSuccess("Successfully signed out!");
+      
+      // Force a complete page refresh to clear any remaining state
+      if (typeof window !== "undefined") {
+        window.location.href = "/sign-in";
+      }
     } catch (error) {
+      console.error("Sign out error:", error);
       handleAuthError(error);
+      
+      // Even if sign out fails, try to redirect to sign-in page
+      if (typeof window !== "undefined") {
+        window.location.href = "/sign-in";
+      }
     }
   }, [clearServerSession, handleAuthError, clearSessionTimeouts]);
 

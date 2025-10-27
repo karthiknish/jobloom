@@ -79,11 +79,6 @@ export const defaultEmailTemplates: EmailTemplate[] = [
             <p>We're thrilled to have you join our community of professionals who are taking their careers to the next level!</p>
             
             <div class="feature">
-              <h3>🎯 Build Your Professional Portfolio</h3>
-              <p>Create stunning portfolios that showcase your skills and experience to potential employers.</p>
-            </div>
-            
-            <div class="feature">
               <h3>📋 AI-Powered Resume Builder</h3>
               <p>Let our AI help you craft the perfect resume that gets past ATS systems and impresses recruiters.</p>
             </div>
@@ -110,7 +105,6 @@ export const defaultEmailTemplates: EmailTemplate[] = [
       We're thrilled to have you join our community of professionals who are taking their careers to the next level!
       
       With HireAll, you can:
-      • Build stunning professional portfolios
       • Create AI-powered resumes that get results
       • Discover job opportunities matched to your skills
       
@@ -122,6 +116,377 @@ export const defaultEmailTemplates: EmailTemplate[] = [
     variables: ['firstName', 'dashboardUrl'],
     preview: 'Welcome email introducing platform features',
     tags: ['welcome', 'onboarding', 'new-user'],
+    active: true,
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-01')
+  },
+  {
+    id: 'premium-upgrade-reminder',
+    name: 'Premium Upgrade Reminder',
+    description: 'Encourage free users to upgrade to premium with limited-time offer',
+    category: 'promotional',
+    subject: '🔥 Limited Time: Unlock Premium Features for 50% Off!',
+    htmlContent: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Premium Upgrade Offer</title>
+        <style>
+          body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { text-align: center; padding: 40px 0; background: linear-gradient(135deg, #FF6B6B 0%, #4ECDC4 100%); color: white; border-radius: 10px 10px 0 0; }
+          .content { padding: 30px; background: #f9fafb; border-radius: 0 0 10px 10px; }
+          .offer-box { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px; text-align: center; margin: 20px 0; }
+          .feature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 30px 0; }
+          .feature { background: white; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea; }
+          .button { display: inline-block; padding: 15px 30px; background: #FF6B6B; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; }
+          .timer { background: #fff3cd; color: #856404; padding: 15px; border-radius: 8px; text-align: center; margin: 20px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>🔥 Exclusive Offer for {{firstName}}!</h1>
+            <p>Upgrade to Premium and Transform Your Career</p>
+          </div>
+          <div class="content">
+            <div class="offer-box">
+              <h2 style="font-size: 36px; margin: 0;">50% OFF</h2>
+              <p style="font-size: 18px; margin: 10px 0;">Premium Annual Plan</p>
+              <p style="font-size: 14px; opacity: 0.9;">Normally $5.99/month - Now just $2.99/month!</p>
+            </div>
+            
+            <div class="timer">
+              <strong>⏰ Limited Time Offer!</strong><br>
+              This special discount expires in {{offerExpiry}} hours
+            </div>
+            
+            <h3>🚀 What You'll Unlock with Premium:</h3>
+            <div class="feature-grid">
+              <div class="feature">
+                <h4>✨ Unlimited CV Analysis</h4>
+                <p>Analyze as many resumes as you need with detailed AI feedback</p>
+              </div>
+              <div class="feature">
+                <h4>🤖 AI Cover Letter Generator</h4>
+                <p>Create personalized cover letters in seconds</p>
+              </div>
+              <div class="feature">
+                <h4>📊 Advanced Analytics</h4>
+                <p>Track your application success rate and optimize your strategy</p>
+              </div>
+              <div class="feature">
+                <h4>⚡ Priority Support</h4>
+                <p>Get faster responses from our career experts</p>
+              </div>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="{{upgradeUrl}}" class="button">Claim Your 50% Discount</a>
+            </div>
+            
+            <p style="text-align: center; font-size: 14px; color: #666;">
+              No risk - 7-day free trial included • Cancel anytime
+            </p>
+            
+            <p>Don't miss this opportunity to accelerate your career growth!</p>
+            <p>Best regards,<br>The HireAll Team</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `,
+    textContent: `
+      🔥 Exclusive Offer for {{firstName}}!
+      
+      Upgrade to Premium and Transform Your Career
+      
+      LIMITED TIME: 50% OFF Premium Annual Plan
+      Normally $5.99/month - Now just $2.99/month!
+      
+      This special discount expires in {{offerExpiry}} hours
+      
+      What You'll Unlock with Premium:
+      ✨ Unlimited CV Analysis - Analyze as many resumes as you need
+      🤖 AI Cover Letter Generator - Create personalized cover letters
+      📊 Advanced Analytics - Track your application success rate
+      ⚡ Priority Support - Get faster responses from career experts
+      
+      Claim your discount now: {{upgradeUrl}}
+      
+      No risk - 7-day free trial included • Cancel anytime
+      
+      Best regards,
+      The HireAll Team
+    `,
+    variables: ['firstName', 'upgradeUrl', 'offerExpiry'],
+    preview: 'Limited-time premium upgrade offer with 50% discount',
+    tags: ['premium', 'upgrade', 'promotion', 'limited-time'],
+    active: true,
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-01')
+  },
+  {
+    id: 'uk-sponsorship-guide',
+    name: 'UK Sponsorship Guide',
+    description: 'Comprehensive guide for UK visa sponsorship requirements and opportunities',
+    category: 'marketing',
+    subject: '🇬🇧 Your Complete Guide to UK Sponsorship Opportunities',
+    htmlContent: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>UK Sponsorship Guide</title>
+        <style>
+          body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { text-align: center; padding: 30px 0; background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); color: white; border-radius: 10px 10px 0 0; }
+          .content { padding: 30px; background: #f9fafb; border-radius: 0 0 10px 10px; }
+          .uk-flag { font-size: 48px; margin-bottom: 20px; }
+          .guide-section { background: white; padding: 25px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #1e40af; }
+          .visa-list { list-style: none; padding: 0; }
+          .visa-list li { background: #eff6ff; padding: 15px; margin: 10px 0; border-radius: 6px; border-left: 3px solid #3b82f6; }
+          .stats { display: flex; justify-content: space-around; background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
+          .stat { text-align: center; }
+          .stat-number { font-size: 24px; font-weight: bold; color: #1e40af; }
+          .button { display: inline-block; padding: 12px 24px; background: #1e40af; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; }
+          .tip { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 15px 0; border-radius: 6px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <div class="uk-flag">🇬🇧</div>
+            <h1>Your UK Sponsorship Guide</h1>
+            <p>Everything you need to know about working in the UK</p>
+          </div>
+          <div class="content">
+            <p>Hi {{firstName}},</p>
+            <p>Navigating the UK sponsorship landscape can be complex, but we're here to make it simple. Here's your comprehensive guide:</p>
+            
+            <div class="stats">
+              <div class="stat">
+                <div class="stat-number">{{sponsorshipJobsCount}}</div>
+                <div>Sponsorship Jobs Available</div>
+              </div>
+              <div class="stat">
+                <div class="stat-number">{{licensedCompaniesCount}}</div>
+                <div>Licensed Companies</div>
+              </div>
+              <div class="stat">
+                <div class="stat-number">{{successRate}}%</div>
+                <div>Success Rate</div>
+              </div>
+            </div>
+            
+            <div class="guide-section">
+              <h3>📋 UK Visa Types for Work</h3>
+              <ul class="visa-list">
+                <li><strong>Skilled Worker Visa:</strong> For qualified professionals with a job offer from a licensed sponsor</li>
+                <li><strong>Global Talent Visa:</strong> For leaders in digital technology, arts, or science</li>
+                <li><strong>Health and Care Visa:</strong> For medical professionals working in the NHS</li>
+                <li><strong>Graduate Route Visa:</strong> For international students after completing their degree</li>
+              </ul>
+            </div>
+            
+            <div class="guide-section">
+              <h3>🎯 Top Sponsorship Industries</h3>
+              <p><strong>{{topIndustry1}}:</strong> {{industry1JobsCount}}+ opportunities</p>
+              <p><strong>{{topIndustry2}}:</strong> {{industry2JobsCount}}+ opportunities</p>
+              <p><strong>{{topIndustry3}}:</strong> {{industry3JobsCount}}+ opportunities</p>
+            </div>
+            
+            <div class="tip">
+              <strong>💡 Pro Tip:</strong> {{sponsorshipTip}}
+            </div>
+            
+            <div class="guide-section">
+              <h3>📈 Your Sponsorship Readiness Score</h3>
+              <p>Based on your profile, you have a <strong>{{readinessScore}}%</strong> chance of securing sponsorship!</p>
+              <p><strong>Areas to improve:</strong> {{improvementAreas}}</p>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="{{sponsorshipUrl}}" class="button">Explore Sponsorship Opportunities</a>
+            </div>
+            
+            <p>Ready to start your UK career journey? We're here to help every step of the way!</p>
+            <p>Best regards,<br>The HireAll Team</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `,
+    textContent: `
+      🇬🇧 Your UK Sponsorship Guide
+      
+      Hi {{firstName}},
+      
+      Navigating the UK sponsorship landscape can be complex, but we're here to make it simple.
+      
+      Current Stats:
+      • {{sponsorshipJobsCount}} sponsorship jobs available
+      • {{licensedCompaniesCount}} licensed companies
+      • {{successRate}}% success rate
+      
+      UK Visa Types for Work:
+      • Skilled Worker Visa - For qualified professionals
+      • Global Talent Visa - For leaders in tech/arts/science
+      • Health and Care Visa - For medical professionals
+      • Graduate Route Visa - For international students
+      
+      Top Sponsorship Industries:
+      • {{topIndustry1}}: {{industry1JobsCount}}+ opportunities
+      • {{topIndustry2}}: {{industry2JobsCount}}+ opportunities
+      • {{topIndustry3}}: {{industry3JobsCount}}+ opportunities
+      
+      Your Sponsorship Readiness Score: {{readinessScore}}%
+      
+      Explore opportunities: {{sponsorshipUrl}}
+      
+      Best regards,
+      The HireAll Team
+    `,
+    variables: ['firstName', 'sponsorshipJobsCount', 'licensedCompaniesCount', 'successRate', 'topIndustry1', 'industry1JobsCount', 'topIndustry2', 'industry2JobsCount', 'topIndustry3', 'industry3JobsCount', 'sponsorshipTip', 'readinessScore', 'improvementAreas', 'sponsorshipUrl'],
+    preview: 'Comprehensive UK sponsorship guide with personalized insights',
+    tags: ['uk', 'sponsorship', 'visa', 'guide', 'international'],
+    active: true,
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-01')
+  },
+  {
+    id: 'application-success-story',
+    name: 'Application Success Story',
+    description: 'Share success stories and testimonials to encourage engagement',
+    category: 'marketing',
+    subject: '🎉 How {{candidateName}} Landed Their Dream Job in the UK',
+    htmlContent: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Success Story</title>
+        <style>
+          body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { text-align: center; padding: 30px 0; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border-radius: 10px 10px 0 0; }
+          .content { padding: 30px; background: #f9fafb; border-radius: 0 0 10px 10px; }
+          .testimonial { background: white; padding: 30px; border-radius: 10px; margin: 20px 0; border-left: 4px solid #10b981; }
+          .quote { font-size: 18px; font-style: italic; color: #059669; margin: 20px 0; }
+          .candidate-info { display: flex; align-items: center; margin: 20px 0; }
+          .avatar { width: 60px; height: 60px; border-radius: 50%; background: #e5e7eb; margin-right: 15px; }
+          .journey { background: #ecfdf5; padding: 20px; border-radius: 8px; margin: 20px 0; }
+          .stats { display: flex; justify-content: space-around; background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
+          .stat { text-align: center; }
+          .stat-number { font-size: 24px; font-weight: bold; color: #10b981; }
+          .button { display: inline-block; padding: 12px 24px; background: #10b981; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; }
+          .company-logo { width: 100px; height: 40px; background: #e5e7eb; border-radius: 4px; margin: 10px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>🎉 Success Story Spotlight</h1>
+            <p>Real results from real users</p>
+          </div>
+          <div class="content">
+            <p>Hi {{firstName}},</p>
+            <p>We love celebrating our users' successes! Today, we're excited to share {{candidateName}}'s journey:</p>
+            
+            <div class="testimonial">
+              <div class="candidate-info">
+                <div class="avatar">{{candidateInitials}}</div>
+                <div>
+                  <h3>{{candidateName}}</h3>
+                  <p>{{candidateRole}} at {{candidateCompany}}</p>
+                  <div class="company-logo">{{candidateCompany}}</div>
+                </div>
+              </div>
+              
+              <div class="quote">
+                "{{testimonialQuote}}"
+              </div>
+              
+              <div class="journey">
+                <h4>🚀 The Journey</h4>
+                <p><strong>Challenge:</strong> {{challenge}}</p>
+                <p><strong>Solution:</strong> {{solution}}</p>
+                <p><strong>Result:</strong> {{result}}</p>
+              </div>
+            </div>
+            
+            <div class="stats">
+              <div class="stat">
+                <div class="stat-number">{{applicationsSent}}</div>
+                <div>Applications Sent</div>
+              </div>
+              <div class="stat">
+                <div class="stat-number">{{interviewsLanded}}</div>
+                <div>Interviews Landed</div>
+              </div>
+              <div class="stat">
+                <div class="stat-number">{{timeToHire}} weeks</div>
+                <div>Time to Hire</div>
+              </div>
+            </div>
+            
+            <div style="background: #fef3c7; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h4>💡 {{candidateName}}'s Top Tips</h4>
+              <ul>
+                {{#each tips}}
+                <li>{{this}}</li>
+                {{/each}}
+              </ul>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="{{dashboardUrl}}" class="button">Start Your Success Story</a>
+            </div>
+            
+            <p>Your dream job is waiting. Let us help you get there!</p>
+            <p>Best regards,<br>The HireAll Team</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `,
+    textContent: `
+      🎉 Success Story: {{candidateName}}'s Journey to {{candidateCompany}}
+      
+      Hi {{firstName}},
+      
+      We're excited to share {{candidateName}}'s success story!
+      
+      "{{testimonialQuote}}"
+      
+      The Journey:
+      Challenge: {{challenge}}
+      Solution: {{solution}}
+      Result: {{result}}
+      
+      Stats:
+      • {{applicationsSent}} applications sent
+      • {{interviewsLanded}} interviews landed  
+      • {{timeToHire}} weeks to hire
+      
+      {{candidateName}}'s Top Tips:
+      {{#each tips}}
+      • {{this}}
+      {{/each}}
+      
+      Start your journey: {{dashboardUrl}}
+      
+      Best regards,
+      The HireAll Team
+    `,
+    variables: ['firstName', 'candidateName', 'candidateRole', 'candidateCompany', 'candidateInitials', 'testimonialQuote', 'challenge', 'solution', 'result', 'applicationsSent', 'interviewsLanded', 'timeToHire', 'tips', 'dashboardUrl'],
+    preview: 'Success story testimonial to inspire and motivate users',
+    tags: ['success-story', 'testimonial', 'motivation', 'case-study'],
     active: true,
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01')

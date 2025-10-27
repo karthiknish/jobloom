@@ -1,6 +1,5 @@
 // Import the new modular components
 import { ExtensionMessageHandler } from "./components/ExtensionMessageHandler";
-import { AutofillManager } from "./components/AutofillManager";
 import { UserProfileManager } from "./components/UserProfileManager";
 import { JobDataExtractor } from "./components/JobDataExtractor";
 
@@ -8,8 +7,8 @@ import { JobDataExtractor } from "./components/JobDataExtractor";
 import { SponsorshipManager } from "./components/SponsorshipManager";
 
 // Import types from other components
-import { JobTracker, JobData, SponsorshipCheckResult } from "./components/JobTracker";
-import { AutofillProfile } from "./components/AutofillManager";
+import { JobTracker, SponsorshipCheckResult } from "./components/JobTracker";
+import { JobData } from "./components/JobDataExtractor";
 
 // Import logging utility
 import { logger, log } from "./utils/logger";
@@ -59,13 +58,11 @@ function hexToRgb(hex: string): string {
 export {
   JobData,
   SponsorshipCheckResult,
-  AutofillProfile,
   fetchSponsorRecord,
   createIcon,
   hexToRgb,
   JobTracker,
   ExtensionMessageHandler,
-  AutofillManager,
   UserProfileManager,
   SponsorshipManager
 };
@@ -312,10 +309,9 @@ async function initHireallExtension() {
       // Initialize form detection if job board integration is enabled
       UserProfileManager.isJobBoardIntegrationEnabled().then(enabled => {
         if (enabled) {
-          logger.info("Content", "Starting form detection for job board integration");
-          AutofillManager.startFormDetection();
+          logger.info("Content", "Job board integration enabled");
         } else {
-          logger.debug("Content", "Job board integration disabled, skipping form detection");
+          logger.debug("Content", "Job board integration disabled");
         }
       });
     };

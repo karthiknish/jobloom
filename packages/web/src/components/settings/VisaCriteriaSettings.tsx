@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { Shield, GraduationCap, Briefcase, Target } from "lucide-react";
+import { Shield, GraduationCap as _GraduationCap, Briefcase as _Briefcase, Target as _Target } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -117,8 +117,8 @@ export function VisaCriteriaSettings({ formData, onInputChange }: VisaCriteriaSe
                   <SelectContent>
                     <SelectItem value="none">None</SelectItem>
                     <SelectItem value="high-school">High School</SelectItem>
-                    <SelectItem value="bachelor">Bachelor's Degree</SelectItem>
-                    <SelectItem value="master">Master's Degree</SelectItem>
+                    <SelectItem value="bachelor">Bachelor&apos;s Degree</SelectItem>
+                    <SelectItem value="master">Master&apos;s Degree</SelectItem>
                     <SelectItem value="phd">PhD</SelectItem>
                   </SelectContent>
                 </Select>

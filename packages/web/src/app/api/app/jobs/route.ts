@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifySessionFromRequest } from "@/lib/auth/session";
 import { createFirestoreCollection } from "@/firebase/firestore";
 import { applyCorsHeaders, preflightResponse } from "@/lib/api/cors";
+import { authenticateRequest } from "@/lib/api/auth";
 
 // Enhanced error types
 class ValidationError extends Error {
@@ -134,15 +134,10 @@ function handleError(error: unknown): NextResponse {
 export async function POST(request: NextRequest) {
   try {
     // Verify session
-    const decodedToken = await verifySessionFromRequest(request);
-    if (!decodedToken) {
-      return applyCorsHeaders(
-        NextResponse.json(
-          { error: "Invalid authentication token" },
-          { status: 401 }
-        ),
-        request,
-      );
+    const auth = await authenticateRequest(request);
+
+    if (!auth.ok) {
+      return applyCorsHeaders(auth.response, request);
     }
 
     // Parse and validate request body
@@ -175,7 +170,7 @@ export async function POST(request: NextRequest) {
     validateJobData(jobData);
 
     // Verify userId matches token
-    if (jobData.userId !== decodedToken.uid) {
+    if (jobData.userId !== auth.token.uid) {
       throw new AuthorizationError("User ID does not match authentication token");
     }
 
@@ -233,9 +228,16 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     // Verify session
-    const decodedToken = await verifySessionFromRequest(request);
-    if (!decodedToken) {
-      throw new AuthorizationError("Invalid authentication token");
+    const auth = await authenticateRequest(request, {
+      loadUser: true,
+    });
+
+    if (!auth.ok) {
+      return applyCorsHeaders(auth.response, request);
+    }
+
+    if (!auth.isAdmin) {
+      throw new AuthorizationError("Admin access required");
     }
 
     // In development with mock tokens, skip Firebase operations for testing

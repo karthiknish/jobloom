@@ -1,0 +1,125 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e4]:
+      - link "HireAll" [ref=e5] [cursor=pointer]:
+        - /url: /
+        - img "HireAll" [ref=e6] [cursor=pointer]
+      - navigation [ref=e7]:
+        - link "How it Works" [ref=e8] [cursor=pointer]:
+          - /url: "#how-it-works"
+        - link "Features" [ref=e9] [cursor=pointer]:
+          - /url: "#features"
+        - link "Testimonials" [ref=e10] [cursor=pointer]:
+          - /url: "#testimonials"
+      - generic [ref=e12]:
+        - link "Sign In" [ref=e13] [cursor=pointer]:
+          - /url: /sign-in
+          - button "Sign In" [ref=e14] [cursor=pointer]
+        - link "Get Started" [ref=e15] [cursor=pointer]:
+          - /url: /sign-up
+          - button "Get Started" [ref=e16] [cursor=pointer]
+  - main [ref=e17]:
+    - generic [ref=e19]:
+      - generic [ref=e20]:
+        - heading "Welcome back" [level=3] [ref=e22]
+        - paragraph [ref=e24]: Sign in to your Hireall account
+      - generic [ref=e25]:
+        - generic [ref=e26]:
+          - img [ref=e28]
+          - generic [ref=e31]:
+            - paragraph [ref=e32]: Authentication Error
+            - paragraph [ref=e33]: .
+        - generic [ref=e34]:
+          - generic [ref=e35]:
+            - generic [ref=e36]: Email
+            - generic [ref=e37]:
+              - img [ref=e38]
+              - textbox "Email" [ref=e41]: test@example.com
+          - generic [ref=e42]:
+            - generic [ref=e43]: Password
+            - generic [ref=e44]:
+              - img [ref=e45]
+              - textbox "Password" [ref=e48]: testpassword123
+              - button [ref=e49] [cursor=pointer]:
+                - img [ref=e50] [cursor=pointer]
+          - button "Sign in" [ref=e54] [cursor=pointer]:
+            - generic [ref=e57] [cursor=pointer]: Sign in
+        - generic [ref=e62]: Or continue with
+        - button "Continue with Google" [ref=e64] [cursor=pointer]:
+          - generic [ref=e65] [cursor=pointer]:
+            - generic [ref=e66] [cursor=pointer]:
+              - img
+            - generic [ref=e67] [cursor=pointer]: Continue with Google
+        - generic [ref=e68]:
+          - generic [ref=e69]:
+            - generic [ref=e70]: Don't have an account?
+            - link "Sign up" [ref=e71] [cursor=pointer]:
+              - /url: /sign-up?redirect_url=%2Fdashboard
+          - link "Forgot your password?" [ref=e74] [cursor=pointer]:
+            - /url: /auth/forgot?redirect_url=%2Fdashboard
+  - contentinfo [ref=e75]:
+    - generic [ref=e77]:
+      - generic [ref=e78]:
+        - generic [ref=e79]:
+          - img "HireAll" [ref=e81]
+          - paragraph [ref=e82]: Revealing the hidden job market, one sponsored listing at a time.
+        - generic [ref=e83]:
+          - heading "Product" [level=4] [ref=e84]
+          - list [ref=e85]:
+            - listitem [ref=e86]:
+              - link "Features" [ref=e87] [cursor=pointer]:
+                - /url: /#how-it-works
+            - listitem [ref=e88]:
+              - link "Chrome Extension" [ref=e89] [cursor=pointer]:
+                - /url: https://chrome.google.com/webstore/detail/hireall
+        - generic [ref=e90]:
+          - heading "Company" [level=4] [ref=e91]
+          - list [ref=e92]:
+            - listitem [ref=e93]:
+              - link "About" [ref=e94] [cursor=pointer]:
+                - /url: /about
+            - listitem [ref=e95]:
+              - link "Blog" [ref=e96] [cursor=pointer]:
+                - /url: /blog
+            - listitem [ref=e97]:
+              - link "Careers" [ref=e98] [cursor=pointer]:
+                - /url: /careers
+        - generic [ref=e99]:
+          - heading "Legal" [level=4] [ref=e100]
+          - list [ref=e101]:
+            - listitem [ref=e102]:
+              - link "Privacy Policy" [ref=e103] [cursor=pointer]:
+                - /url: /privacy
+            - listitem [ref=e104]:
+              - link "Terms of Service" [ref=e105] [cursor=pointer]:
+                - /url: /terms
+            - listitem [ref=e106]:
+              - link "Usage Conditions" [ref=e107] [cursor=pointer]:
+                - /url: /conditions
+      - generic [ref=e108]:
+        - paragraph [ref=e109]: © 2025 Hireall. All rights reserved.
+        - generic [ref=e110]:
+          - link "GitHub" [ref=e111] [cursor=pointer]:
+            - /url: https://github.com
+            - img [ref=e112] [cursor=pointer]
+          - link "Twitter" [ref=e114] [cursor=pointer]:
+            - /url: https://twitter.com
+            - img [ref=e115] [cursor=pointer]
+          - link "LinkedIn" [ref=e117] [cursor=pointer]:
+            - /url: https://linkedin.com
+            - img [ref=e118] [cursor=pointer]
+  - generic [ref=e121]:
+    - img [ref=e124]
+    - status [ref=e128]:
+      - generic [ref=e130]: Invalid credentials. Please try again.
+    - button [ref=e131] [cursor=pointer]:
+      - img [ref=e132] [cursor=pointer]
+  - button [ref=e136] [cursor=pointer]:
+    - img
+  - alert [ref=e137]
+  - button "Open Next.js Dev Tools" [ref=e143] [cursor=pointer]:
+    - img [ref=e144] [cursor=pointer]
+```

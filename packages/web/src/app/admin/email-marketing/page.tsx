@@ -315,10 +315,8 @@ export default function EmailMarketingPage() {
           <TabsContent value="email-list">
             <EmailList 
               emailList={emailList}
-              emailListStats={emailListStats}
               loading={loading}
               onEmailListChange={setEmailList}
-              onStatsChange={setEmailListStats}
             />
           </TabsContent>
         </Tabs>

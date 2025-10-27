@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyIdToken } from "@/firebase/admin";
-import { verifySessionFromRequest } from "@/lib/auth/session";
+import { authenticateRequest } from "@/lib/api/auth";
 import { getStripeClient } from "@/lib/stripe";
 import { upsertSubscriptionFromStripe } from "@/lib/subscriptions";
 
@@ -13,10 +12,9 @@ interface UpgradeRequestBody {
 // POST /api/subscription/upgrade - Confirm subscription upgrade after successful checkout
 export async function POST(request: NextRequest) {
   try {
-    const decodedToken = await verifySessionFromRequest(request);
-
-    if (!decodedToken) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await authenticateRequest(request);
+    if (!auth.ok) {
+      return auth.response;
     }
 
     // In development with mock tokens, return mock upgrade response for testing
@@ -43,7 +41,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Checkout session not found" }, { status: 404 });
     }
 
-    const userId = decodedToken.uid;
+  const userId = auth.token.uid;
 
     const sessionUserId = session.metadata?.userId || session.client_reference_id;
     if (!sessionUserId || sessionUserId !== userId) {

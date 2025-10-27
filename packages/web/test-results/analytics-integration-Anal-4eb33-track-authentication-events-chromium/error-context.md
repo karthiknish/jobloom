@@ -1,0 +1,94 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e4]:
+      - link "HireAll" [ref=e5] [cursor=pointer]:
+        - /url: /
+        - img "HireAll" [ref=e6] [cursor=pointer]
+      - navigation [ref=e7]:
+        - link "How it Works" [ref=e8] [cursor=pointer]:
+          - /url: "#how-it-works"
+        - link "Features" [ref=e9] [cursor=pointer]:
+          - /url: "#features"
+        - link "Testimonials" [ref=e10] [cursor=pointer]:
+          - /url: "#testimonials"
+      - generic [ref=e12]:
+        - link "Sign In" [ref=e13] [cursor=pointer]:
+          - /url: /sign-in
+          - button "Sign In" [ref=e14] [cursor=pointer]
+        - link "Get Started" [ref=e15] [cursor=pointer]:
+          - /url: /sign-up
+          - button "Get Started" [ref=e16] [cursor=pointer]
+  - main [ref=e17]:
+    - generic [ref=e18]:
+      - generic [ref=e19]: "404"
+      - heading "Oops! Page Not Found" [level=1] [ref=e20]
+      - paragraph [ref=e21]: It looks like you've wandered off the job search path. The page you're looking for doesn't exist or has been moved.
+      - generic [ref=e22]:
+        - link "Go Back Home" [ref=e23] [cursor=pointer]:
+          - /url: /
+        - link "View Dashboard" [ref=e24] [cursor=pointer]:
+          - /url: /dashboard
+      - paragraph [ref=e26]:
+        - text: Need help?
+        - link "Contact Support" [ref=e27] [cursor=pointer]:
+          - /url: /contact
+  - contentinfo [ref=e28]:
+    - generic [ref=e30]:
+      - generic [ref=e31]:
+        - generic [ref=e32]:
+          - img "HireAll" [ref=e34]
+          - paragraph [ref=e35]: Revealing the hidden job market, one sponsored listing at a time.
+        - generic [ref=e36]:
+          - heading "Product" [level=4] [ref=e37]
+          - list [ref=e38]:
+            - listitem [ref=e39]:
+              - link "Features" [ref=e40] [cursor=pointer]:
+                - /url: /#how-it-works
+            - listitem [ref=e41]:
+              - link "Chrome Extension" [ref=e42] [cursor=pointer]:
+                - /url: https://chrome.google.com/webstore/detail/hireall
+        - generic [ref=e43]:
+          - heading "Company" [level=4] [ref=e44]
+          - list [ref=e45]:
+            - listitem [ref=e46]:
+              - link "About" [ref=e47] [cursor=pointer]:
+                - /url: /about
+            - listitem [ref=e48]:
+              - link "Blog" [ref=e49] [cursor=pointer]:
+                - /url: /blog
+            - listitem [ref=e50]:
+              - link "Careers" [ref=e51] [cursor=pointer]:
+                - /url: /careers
+        - generic [ref=e52]:
+          - heading "Legal" [level=4] [ref=e53]
+          - list [ref=e54]:
+            - listitem [ref=e55]:
+              - link "Privacy Policy" [ref=e56] [cursor=pointer]:
+                - /url: /privacy
+            - listitem [ref=e57]:
+              - link "Terms of Service" [ref=e58] [cursor=pointer]:
+                - /url: /terms
+            - listitem [ref=e59]:
+              - link "Usage Conditions" [ref=e60] [cursor=pointer]:
+                - /url: /conditions
+      - generic [ref=e61]:
+        - paragraph [ref=e62]: © 2025 Hireall. All rights reserved.
+        - generic [ref=e63]:
+          - link "GitHub" [ref=e64] [cursor=pointer]:
+            - /url: https://github.com
+            - img [ref=e65] [cursor=pointer]
+          - link "Twitter" [ref=e67] [cursor=pointer]:
+            - /url: https://twitter.com
+            - img [ref=e68] [cursor=pointer]
+          - link "LinkedIn" [ref=e70] [cursor=pointer]:
+            - /url: https://linkedin.com
+            - img [ref=e71] [cursor=pointer]
+  - button [ref=e74] [cursor=pointer]:
+    - img
+  - alert [ref=e75]
+  - button "Open Next.js Dev Tools" [ref=e81] [cursor=pointer]:
+    - img [ref=e82] [cursor=pointer]
+```

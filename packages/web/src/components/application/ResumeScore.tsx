@@ -19,15 +19,16 @@ interface ResumeScoreProps {
 export function ResumeScore({ score, enhanced = true }: ResumeScoreProps) {
   const { plan } = useSubscription();
   
-  // If enhanced mode is available and the score has enhanced data, use the enhanced component
-  if (enhanced && score.breakdown) {
-    return <EnhancedAtsScore score={score} />;
-  }
   const getScoreColor = (value: number) => {
     if (value >= 80) return "text-green-600 dark:text-green-400";
     if (value >= 60) return "text-yellow-600 dark:text-yellow-400";
     return "text-red-600 dark:text-red-400";
   };
+  
+  // If enhanced mode is available and the score has enhanced data, use the enhanced component
+  if (enhanced && score.breakdown) {
+    return <EnhancedAtsScore score={score} />;
+  }
 
   const getScoreBgColor = (value: number) => {
     if (value >= 80) return "bg-green-100 dark:bg-green-900/20";

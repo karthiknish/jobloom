@@ -1,0 +1,172 @@
+"use client";
+
+import { format } from "date-fns";
+import { Badge } from "@/components/ui/badge";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
+import {
+  Building2,
+  MapPin,
+  Calendar,
+  DollarSign,
+  Briefcase,
+  Clock,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  ExternalLink,
+} from "lucide-react";
+import { Application } from "@/utils/api/dashboard";
+
+interface JobHoverCardProps {
+  application: Application;
+  children: React.ReactNode;
+  onViewDetails?: (application: Application) => void;
+}
+
+export function JobHoverCard({ application, children, onViewDetails }: JobHoverCardProps) {
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "applied":
+        return <Clock className="h-4 w-4 text-blue-500" />;
+      case "interview":
+        return <AlertCircle className="h-4 w-4 text-amber-500" />;
+      case "offered":
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case "rejected":
+        return <XCircle className="h-4 w-4 text-red-500" />;
+      default:
+        return <Clock className="h-4 w-4 text-gray-500" />;
+    }
+  };
+
+  const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
+    switch (status) {
+      case "applied":
+        return "default";
+      case "interview":
+        return "secondary";
+      case "offered":
+        return "default";
+      case "rejected":
+        return "destructive";
+      default:
+        return "outline";
+    }
+  };
+
+  return (
+    <HoverCard>
+      <HoverCardTrigger asChild>
+        {children}
+      </HoverCardTrigger>
+      <HoverCardContent className="w-80">
+        <div className="space-y-4">
+          {/* Header */}
+          <div className="space-y-2">
+            <h4 className="text-sm font-semibold leading-none">
+              {application.job?.title || "Untitled Job"}
+            </h4>
+            <p className="text-sm text-muted-foreground flex items-center gap-1">
+              <Building2 className="h-3 w-3" />
+              {application.job?.company || "Unknown Company"}
+            </p>
+          </div>
+
+          {/* Key Details */}
+          <div className="space-y-2">
+            {application.job?.location && (
+              <div className="flex items-center gap-2 text-sm">
+                <MapPin className="h-3 w-3 text-muted-foreground" />
+                <span>{application.job.location}</span>
+              </div>
+            )}
+            
+            {application.job?.dateFound && (
+              <div className="flex items-center gap-2 text-sm">
+                <Calendar className="h-3 w-3 text-muted-foreground" />
+                <span>{format(new Date(application.job.dateFound), "MMM d, yyyy")}</span>
+              </div>
+            )}
+
+            {application.job?.salary && (
+              <div className="flex items-center gap-2 text-sm">
+                <DollarSign className="h-3 w-3 text-muted-foreground" />
+                <span className="font-medium">{application.job.salary}</span>
+              </div>
+            )}
+
+            {application.job?.jobType && (
+              <div className="flex items-center gap-2 text-sm">
+                <Briefcase className="h-3 w-3 text-muted-foreground" />
+                <span>{application.job.jobType}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Status */}
+          <div className="flex items-center gap-2">
+            {getStatusIcon(application.status)}
+            <Badge variant={getStatusVariant(application.status)} className="text-xs">
+              {application.status}
+            </Badge>
+          </div>
+
+          {/* Special Badges */}
+          <div className="flex flex-wrap gap-1">
+            {application.job?.isSponsored && (
+              <Badge variant="outline" className="border-emerald-500 text-emerald-700 text-xs">
+                🇬🇧 Sponsored
+              </Badge>
+            )}
+            {application.job?.isRecruitmentAgency && (
+              <Badge variant="outline" className="border-blue-500 text-blue-700 text-xs">
+                Agency
+              </Badge>
+            )}
+            {application.job?.remoteWork && (
+              <Badge variant="outline" className="border-purple-500 text-purple-700 text-xs">
+                Remote
+              </Badge>
+            )}
+          </div>
+
+          {/* Skills Preview */}
+          {application.job?.skills && application.job.skills.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground">Skills:</p>
+              <div className="flex flex-wrap gap-1">
+                {application.job.skills.slice(0, 4).map((skill, index) => (
+                  <Badge key={index} variant="outline" className="text-xs">
+                    {skill}
+                  </Badge>
+                ))}
+                {application.job.skills.length > 4 && (
+                  <Badge variant="outline" className="text-xs">
+                    +{application.job.skills.length - 4}
+                  </Badge>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Action */}
+          {onViewDetails && (
+            <div className="pt-2 border-t">
+              <button
+                onClick={() => onViewDetails(application)}
+                className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors"
+              >
+                <ExternalLink className="h-3 w-3" />
+                View Details
+              </button>
+            </div>
+          )}
+        </div>
+      </HoverCardContent>
+    </HoverCard>
+  );
+}

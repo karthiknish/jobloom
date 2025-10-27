@@ -1,31 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyIdToken, getAdminDb } from "@/firebase/admin";
-import { verifySessionFromRequest } from "@/lib/auth/session";
-import {
-  withErrorHandling,
-  createAuthorizationError,
-  generateRequestId
-} from "@/lib/api/errors";
+import { getAdminDb } from "@/firebase/admin";
+import { authenticateRequest } from "@/lib/api/auth";
+import { withErrorHandling, generateRequestId } from "@/lib/api/errors";
 
 // GET /api/app/users - Get all users (admin only)
 export async function GET(request: NextRequest) {
   const requestId = generateRequestId();
 
   return withErrorHandling(async () => {
-    // Validate authorization
-    const decodedToken = await verifySessionFromRequest(request);
-    if (!decodedToken) {
-      throw createAuthorizationError("Invalid authentication token", 'INVALID_TOKEN');
-    }
+    const auth = await authenticateRequest(request, {
+      requireAdmin: true,
+    });
 
-    // Check admin permissions
-    const db = getAdminDb();
-    const userDoc = await db.collection("users").doc(decodedToken.uid).get();
-    if (!userDoc.exists || !userDoc.data()?.isAdmin) {
-      throw createAuthorizationError("Admin access required", 'INSUFFICIENT_PERMISSIONS');
+    if (!auth.ok) {
+      return auth.response;
     }
 
     // Fetch all users from Firestore
+    const db = getAdminDb();
     const usersSnapshot = await db.collection("users").get();
     const toMillis = (value: unknown): number | undefined => {
       if (typeof value === "number") {

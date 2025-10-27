@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Lock, Download, Trash2, Shield, AlertTriangle } from "lucide-react";
+import { Lock, Download, Trash2, Shield, AlertTriangle, LogOut } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
-import { getAuth, EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "firebase/auth";
+import { getAuth, EmailAuthProvider, reauthenticateWithCredential, updatePassword, signOut as firebaseSignOut } from "firebase/auth";
+import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 
 interface SecuritySettingsProps {
   formData: {
@@ -27,7 +28,21 @@ interface SecuritySettingsProps {
 export function SecuritySettings({ formData, onInputChange, user }: SecuritySettingsProps) {
   const toast = useToast();
   const router = useRouter();
+  const { signOut } = useFirebaseAuth();
   const [isLoading, setIsLoading] = useState(false);
+
+  const handleLogout = async () => {
+    setIsLoading(true);
+    try {
+      await signOut();
+      toast.success("Signed Out", "You have been successfully signed out.");
+    } catch (error: any) {
+      console.error("Logout error:", error);
+      toast.error("Logout Failed", "There was an issue signing you out. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handlePasswordChange = async () => {
     if (!user) {
@@ -344,6 +359,37 @@ export function SecuritySettings({ formData, onInputChange, user }: SecuritySett
                   <strong>⚠️ Warning:</strong> Account deletion is permanent and irreversible. All your data (applications, CV analyses, saved jobs, and personal information) will be permanently erased from our servers.
                 </AlertDescription>
               </Alert>
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
+          >
+            <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+              <LogOut className="h-5 w-5 text-primary" />
+              Session Management
+            </h3>
+            <div className="space-y-4">
+              <Alert>
+                <LogOut className="h-4 w-4" />
+                <AlertDescription>
+                  Sign out of your account on this device. You'll need to sign in again to access your account.
+                </AlertDescription>
+              </Alert>
+
+              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                <Button
+                  variant="outline"
+                  onClick={handleLogout}
+                  disabled={isLoading}
+                  className="btn-premium font-semibold border-orange-500 text-orange-600 hover:bg-orange-50 hover:border-orange-600"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  {isLoading ? "Signing Out..." : "Sign Out"}
+                </Button>
+              </motion.div>
             </div>
           </motion.div>
         </CardContent>

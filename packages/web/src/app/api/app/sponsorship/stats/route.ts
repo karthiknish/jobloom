@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyIdToken, getAdminDb } from "@/firebase/admin";
-import { verifySessionFromRequest } from "@/lib/auth/session";
+import { getAdminDb } from "@/firebase/admin";
+import { authenticateRequest } from "@/lib/api/auth";
 import {
   withErrorHandling,
   createAuthorizationError,
@@ -23,46 +23,20 @@ export async function GET(request: NextRequest) {
     console.log('🔍 Sponsorship stats API called, requestId:', requestId);
     
     // Validate authorization
-    const decodedToken = await verifySessionFromRequest(request);
-    if (!decodedToken) {
-      console.log('❌ No decoded token - unauthorized');
-      throw createAuthorizationError("Invalid authentication token", 'INVALID_TOKEN');
-    }
-
-    console.log('✅ Decoded token received:', {
-      uid: decodedToken.uid,
-      email: decodedToken.email,
-      hasUid: !!decodedToken.uid
+    const auth = await authenticateRequest(request, {
+      requireAdmin: true,
+      loadUser: true,
     });
 
-    // Check admin permissions
-    const db = getAdminDb();
-    console.log('🔍 Attempting to get user document for uid:', decodedToken.uid);
-    
-    try {
-      const userDoc = await db.collection("users").doc(decodedToken.uid).get();
-      console.log('🔍 User document fetch result:', {
-        exists: userDoc.exists,
-        hasData: !!userDoc.data()
-      });
-      
-      if (!userDoc.exists || !userDoc.data()?.isAdmin) {
-        console.log('❌ User is not admin or document does not exist');
-        throw createAuthorizationError("Admin access required", 'INSUFFICIENT_PERMISSIONS');
-      }
-      
-      console.log('✅ User is admin, proceeding with stats fetch');
-    } catch (firestoreError: any) {
-      console.error('❌ Firestore error when checking user document:', {
-        message: firestoreError.message,
-        code: firestoreError.code,
-        stack: firestoreError.stack
-      });
-      throw firestoreError; // Re-throw to be handled by withErrorHandling
+    if (!auth.ok) {
+      return auth.response;
     }
 
     // Fetch sponsorship statistics
     console.log('🔍 Fetching sponsorship statistics...');
+    
+    // Initialize Firestore
+    const db = getAdminDb();
     
     // Get total count efficiently
     const sponsorsRef = db.collection("sponsors");
@@ -75,7 +49,7 @@ export async function GET(request: NextRequest) {
     // In production, this should use aggregation queries or maintained counters
     const sampleQuery = sponsorsRef.limit(1000);
     const sampleSnapshot = await sampleQuery.get();
-    const sampleCompanies = sampleSnapshot.docs.map(doc => ({
+    const sampleCompanies = sampleSnapshot.docs.map((doc: any) => ({
       _id: doc.id,
       ...doc.data()
     })) as SponsoredCompany[];

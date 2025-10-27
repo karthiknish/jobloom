@@ -10,6 +10,8 @@ import {
   where,
 } from "firebase/firestore";
 import { getDb, getAuthClient } from "@/firebase/client";
+import { apiClient } from "@/lib/api/client";
+import { FrontendApiError } from "@/lib/api/client";
 
 export interface UserRecord {
   _id: string;
@@ -79,49 +81,59 @@ export const cvEvaluatorApi = {
   },
 
   getUserCvAnalyses: async (userId: string): Promise<CvAnalysis[]> => {
-    const db = getDb();
-    if (!db) throw new Error("Firestore not initialized");
-    const q = query(
-      collection(db, "cvAnalyses"),
-      where("userId", "==", userId)
-    );
-    const snap = await getDocs(q);
-    type FireCv = {
-      userId: string;
-      fileName?: string;
-      fileSize?: number;
-      createdAt?: number;
-      analysisStatus?: string;
-      overallScore?: number;
-      strengths?: string[];
-      atsCompatibility?: unknown;
-      errorMessage?: string;
-    };
-    return snap.docs.map((d) => {
-      const x = d.data() as FireCv & { createdAt?: any };
-      // Handle Firestore Timestamp objects
-      let createdAtNum: number;
-      const raw = x.createdAt as any;
-      if (raw && typeof raw === 'object' && typeof raw.toDate === 'function') {
-        createdAtNum = raw.toDate().getTime();
-      } else if (typeof raw === 'number') {
-        createdAtNum = raw;
-      } else {
-        createdAtNum = Date.now();
-      }
-      return {
-        _id: d.id,
-        userId: x.userId,
-        fileName: x.fileName ?? "",
-        fileSize: x.fileSize ?? 0,
-        createdAt: createdAtNum,
-        analysisStatus: x.analysisStatus ?? "pending",
-        overallScore: x.overallScore ?? undefined,
-        strengths: Array.isArray(x.strengths) ? x.strengths : [],
-        atsCompatibility: x.atsCompatibility ?? undefined,
-        errorMessage: x.errorMessage ?? undefined,
-      } as CvAnalysis;
-    });
+    try {
+      // Try the new API first
+      const response = await apiClient.get<{ analyses: CvAnalysis[] }>(`/cv/user/${userId}`);
+      return response.analyses || [];
+    } catch (error) {
+      // Fallback to Firestore if API fails
+      const apiError = error as FrontendApiError;
+      console.warn('API call failed, falling back to Firestore:', apiError.message);
+      
+      const db = getDb();
+      if (!db) throw new Error("Firestore not initialized");
+      const q = query(
+        collection(db, "cvAnalyses"),
+        where("userId", "==", userId)
+      );
+      const snap = await getDocs(q);
+      type FireCv = {
+        userId: string;
+        fileName?: string;
+        fileSize?: number;
+        createdAt?: number;
+        analysisStatus?: string;
+        overallScore?: number;
+        strengths?: string[];
+        atsCompatibility?: unknown;
+        errorMessage?: string;
+      };
+      return snap.docs.map((d) => {
+        const x = d.data() as FireCv & { createdAt?: any };
+        // Handle Firestore Timestamp objects
+        let createdAtNum: number;
+        const raw = x.createdAt as any;
+        if (raw && typeof raw === 'object' && typeof raw.toDate === 'function') {
+          createdAtNum = raw.toDate().getTime();
+        } else if (typeof raw === 'number') {
+          createdAtNum = raw;
+        } else {
+          createdAtNum = Date.now();
+        }
+        return {
+          _id: d.id,
+          userId: x.userId,
+          fileName: x.fileName ?? "",
+          fileSize: x.fileSize ?? 0,
+          createdAt: createdAtNum,
+          analysisStatus: x.analysisStatus ?? "pending",
+          overallScore: x.overallScore ?? undefined,
+          strengths: Array.isArray(x.strengths) ? x.strengths : [],
+          atsCompatibility: x.atsCompatibility ?? undefined,
+          errorMessage: x.errorMessage ?? undefined,
+        } as CvAnalysis;
+      });
+    }
   },
 
   getCvAnalysisStats: async (userId: string): Promise<CvStats> => {

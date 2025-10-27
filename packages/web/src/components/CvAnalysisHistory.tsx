@@ -243,10 +243,10 @@ export function CvAnalysisHistory({ analyses, optimistic }: CvAnalysisHistoryPro
                         {analysis.fileName}
                       </h4>
                       <Badge
-                        variant={getStatusVariant(analysis.analysisStatus)}
+                        variant={getStatusVariant(analysis.analysisStatus || 'pending')}
                         className="text-xs"
                       >
-                        {getStatusLabel(analysis.analysisStatus)}
+                        {getStatusLabel(analysis.analysisStatus || 'pending')}
                       </Badge>
                     </div>
 

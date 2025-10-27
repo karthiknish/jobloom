@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyIdToken, getAdminDb, Timestamp } from "@/firebase/admin";
-import { verifySessionFromRequest } from "@/lib/auth/session";
+import { getAdminDb, Timestamp } from "@/firebase/admin";
+import { authenticateRequest } from "@/lib/api/auth";
 import { SUBSCRIPTION_LIMITS, Subscription, SubscriptionPlan } from "@/types/api";
 import { ValidationError, DatabaseError } from "@/lib/subscriptions";
 import { checkServerRateLimit } from "@/lib/rateLimiter";
@@ -35,13 +35,9 @@ function setSecurityHeaders(response: NextResponse): NextResponse {
 // GET /api/subscription/status - Get current subscription status
 export async function GET(request: NextRequest) {
   try {
-    const decodedToken = await verifySessionFromRequest(request);
-
-    if (!decodedToken) {
-      return applyCorsHeaders(
-        setSecurityHeaders(NextResponse.json({ error: "Unauthorized" }, { status: 401 })),
-        request,
-      );
+    const auth = await authenticateRequest(request);
+    if (!auth.ok) {
+      return applyCorsHeaders(setSecurityHeaders(auth.response), request);
     }
 
     // In development with mock tokens, return mock subscription status for testing
@@ -62,7 +58,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const userId = decodedToken.uid;
+  const userId = auth.token.uid;
     
     // Apply rate limiting
     const rateLimitResult = checkServerRateLimit(userId, 'subscription-status');

@@ -25,7 +25,7 @@ export interface CvFilters {
   search: string;
   status: string[];
   minScore: number;
-  industry: string;
+  industry: string | null;
   sortBy: "date-desc" | "date-asc" | "score-desc" | "score-asc" | "name-asc" | "name-desc";
 }
 
@@ -33,7 +33,7 @@ const initialFilters: CvFilters = {
   search: "",
   status: [],
   minScore: 0,
-  industry: "",
+  industry: null,
   sortBy: "date-desc",
 };
 
@@ -57,7 +57,7 @@ export function CvAnalysisFilters({ analyses, onFilteredAnalyses }: CvAnalysisFi
     // Status filter
     if (filters.status.length > 0) {
       filtered = filtered.filter(analysis =>
-        filters.status.includes(analysis.analysisStatus)
+        filters.status.includes(analysis.analysisStatus || 'pending')
       );
     }
 
@@ -248,12 +248,17 @@ export function CvAnalysisFilters({ analyses, onFilteredAnalyses }: CvAnalysisFi
             {/* Industry Filter */}
             <div>
               <label className="text-sm font-medium mb-2 block">Industry</label>
-              <Select value={filters.industry || ""} onValueChange={(value) => updateFilter("industry", (value === "" ? undefined : value) as CvFilters["industry"])} >
+              <Select
+                value={filters.industry ?? "__all__"}
+                onValueChange={(value) =>
+                  updateFilter("industry", value === "__all__" ? null : value)
+                }
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="All industries" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All industries</SelectItem>
+                  <SelectItem value="__all__">All industries</SelectItem>
                   {industries.map((industry) => (
                     <SelectItem key={industry} value={industry!}>
                       {industry}

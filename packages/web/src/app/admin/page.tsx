@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { useState, useEffect, useCallback } from "react";
 import { useApiQuery } from "../../hooks/useApi";
@@ -57,18 +58,18 @@ export default function AdminPage() {
             Please sign in to access the admin panel. You need administrator privileges to access this page.
           </p>
           <div className="space-y-3">
-            <a
+            <Link
               href="/sign-in?redirect_url=/admin"
               className="inline-block bg-primary text-white px-6 py-3 rounded-md text-sm font-medium hover:bg-primary/90 transition-colors w-full text-center"
             >
               Sign In
-            </a>
-            <a
+            </Link>
+            <Link
               href="/"
               className="inline-block bg-secondary text-secondary-foreground px-6 py-3 rounded-md text-sm font-medium hover:bg-secondary/90 transition-colors w-full text-center"
             >
               Return to Home
-            </a>
+            </Link>
           </div>
         </div>
       </AdminLayout>
@@ -97,7 +98,7 @@ export default function AdminPage() {
       {/* Quick Access Links */}
       <div className="mt-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <a
+          <Link
             href="/admin/users"
             className="group block p-6 bg-card border border-border rounded-lg hover:border-primary/50 transition-all duration-200 hover:shadow-lg"
           >
@@ -115,9 +116,9 @@ export default function AdminPage() {
             <p className="text-sm text-muted-foreground">
               Manage user accounts, view analytics, and handle user permissions across the platform.
             </p>
-          </a>
+          </Link>
 
-          <a
+          <Link
             href="/admin/sponsors"
             className="group block p-6 bg-card border border-border rounded-lg hover:border-primary/50 transition-all duration-200 hover:shadow-lg"
           >
@@ -135,9 +136,9 @@ export default function AdminPage() {
             <p className="text-sm text-muted-foreground">
               Manage sponsored companies, view sponsorship analytics, and handle partnership data.
             </p>
-          </a>
+          </Link>
 
-          <a
+          <Link
             href="/admin/blog"
             className="group block p-6 bg-card border border-border rounded-lg hover:border-primary/50 transition-all duration-200 hover:shadow-lg"
           >
@@ -155,9 +156,9 @@ export default function AdminPage() {
             <p className="text-sm text-muted-foreground">
               Create, edit, and manage blog posts, articles, and content across the platform.
             </p>
-          </a>
+          </Link>
 
-          <a
+          <Link
             href="/admin/contact"
             className="group block p-6 bg-card border border-border rounded-lg hover:border-primary/50 transition-all duration-200 hover:shadow-lg"
           >
@@ -175,9 +176,9 @@ export default function AdminPage() {
             <p className="text-sm text-muted-foreground">
               View and manage contact form submissions, inquiries, and customer support messages.
             </p>
-          </a>
+          </Link>
 
-          <a
+          <Link
             href="/admin/email-marketing"
             className="group block p-6 bg-card border border-border rounded-lg hover:border-primary/50 transition-all duration-200 hover:shadow-lg"
           >
@@ -196,7 +197,7 @@ export default function AdminPage() {
             <p className="text-sm text-muted-foreground">
               Create and manage email campaigns, newsletters, and marketing automation workflows.
             </p>
-          </a>
+          </Link>
         </div>
       </div>
     </AdminLayout>

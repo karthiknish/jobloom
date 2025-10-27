@@ -26,6 +26,7 @@ import { Switch } from "@/components/ui/switch";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { useSubscription } from "@/hooks/useSubscription";
 import { showSuccess, showError, showInfo } from "@/components/ui/Toast";
+import PDFGenerator from "@/lib/pdfGenerator";
 
 interface CoverLetterData {
   jobTitle: string;
@@ -66,6 +67,7 @@ export function AICoverLetterGenerator() {
   const [atsOptimization, setAtsOptimization] = useState(true);
   const [keywordFocus, setKeywordFocus] = useState(true);
   const [deepResearch, setDeepResearch] = useState(false);
+  const [downloadingPDF, setDownloadingPDF] = useState(false);
 
   const generateCoverLetter = async () => {
     if (!formData.jobTitle || !formData.companyName || !formData.jobDescription) {
@@ -170,6 +172,58 @@ Sincerely,
       } catch {
         showError("Failed to copy", "Please try again.");
       }
+    }
+  };
+
+  const downloadPDF = async () => {
+    if (!generatedLetter || !formData.jobTitle || !formData.companyName) {
+      showError("Missing Information", "Please generate a cover letter first.");
+      return;
+    }
+
+    try {
+      setDownloadingPDF(true);
+      
+      // Validate content
+      const validation = PDFGenerator.validateContent(generatedLetter.content);
+      if (!validation.valid) {
+        showError("Validation Failed", validation.errors.join(', '));
+        return;
+      }
+
+      // Prepare metadata
+      const metadata = {
+        candidateName: user?.displayName || 'Your Name',
+        jobTitle: formData.jobTitle,
+        companyName: formData.companyName,
+        date: new Date().toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        }),
+        recipientTitle: 'Hiring Manager'
+      };
+
+      // Generate and download PDF
+      await PDFGenerator.generateAndDownloadCoverLetter(
+        generatedLetter.content,
+        metadata,
+        undefined,
+        {
+          fontSize: 12,
+          lineHeight: 1.5,
+          margin: 20,
+          font: 'helvetica',
+          fontStyle: 'normal'
+        }
+      );
+
+      showSuccess("Success", "PDF downloaded successfully!");
+    } catch (error: any) {
+      console.error("PDF download failed:", error);
+      showError("Download Failed", "Failed to download PDF: " + error.message);
+    } finally {
+      setDownloadingPDF(false);
     }
   };
 
@@ -390,9 +444,24 @@ Sincerely,
                     <Copy className="h-4 w-4 mr-1" />
                     Copy
                   </Button>
-                  <Button size="sm" variant="outline">
-                    <Download className="h-4 w-4 mr-1" />
-                    Export
+                  <Button 
+                    size="sm" 
+                    variant="default" 
+                    onClick={downloadPDF}
+                    disabled={downloadingPDF}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    {downloadingPDF ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="h-4 w-4 mr-1" />
+                        Download PDF
+                      </>
+                    )}
                   </Button>
                 </div>
               )}

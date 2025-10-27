@@ -1,0 +1,467 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e4]:
+      - link "HireAll" [ref=e5] [cursor=pointer]:
+        - /url: /
+        - img "HireAll" [ref=e6] [cursor=pointer]
+      - navigation [ref=e7]:
+        - link "How it Works" [ref=e8] [cursor=pointer]:
+          - /url: "#how-it-works"
+        - link "Features" [ref=e9] [cursor=pointer]:
+          - /url: "#features"
+        - link "Testimonials" [ref=e10] [cursor=pointer]:
+          - /url: "#testimonials"
+      - generic [ref=e12]:
+        - link "Sign In" [ref=e13] [cursor=pointer]:
+          - /url: /sign-in
+          - button "Sign In" [ref=e14] [cursor=pointer]
+        - link "Get Started" [ref=e15] [cursor=pointer]:
+          - /url: /sign-up
+          - button "Get Started" [ref=e16] [cursor=pointer]
+  - generic [ref=e17]:
+    - generic [ref=e19]:
+      - generic [ref=e20]:
+        - generic [ref=e21]:
+          - img [ref=e23]
+          - generic [ref=e26]: 500K+ Users
+        - generic [ref=e27]:
+          - img [ref=e29]
+          - generic [ref=e31]: 4.9 Rating
+        - generic [ref=e32]:
+          - img [ref=e34]
+          - generic [ref=e37]: AI-Powered
+      - generic [ref=e38]:
+        - heading "Never Miss a Sponsored Opportunity" [level=1] [ref=e39]:
+          - generic [ref=e41]: Never Miss a
+          - generic [ref=e44]: Sponsored Opportunity
+        - paragraph [ref=e46]:
+          - generic [ref=e48]: Discover exactly which companies are investing thousands in hiring.
+          - generic [ref=e50]: Our AI-powered platform reveals sponsored jobs across all major job sites.
+        - generic [ref=e51]:
+          - generic [ref=e54]:
+            - img [ref=e57]
+            - generic [ref=e60]:
+              - generic [ref=e61]: 95%
+              - generic [ref=e62]: More Responses
+              - generic [ref=e65]: +45% increase
+          - generic [ref=e68]:
+            - img [ref=e71]
+            - generic [ref=e73]:
+              - generic [ref=e74]: 3x
+              - generic [ref=e75]: Faster Applications
+              - generic [ref=e78]: Saves 6 hrs/week
+          - generic [ref=e81]:
+            - img [ref=e84]
+            - generic [ref=e86]:
+              - generic [ref=e87]: 100%
+              - generic [ref=e88]: Privacy Protected
+              - generic [ref=e91]: Bank-level security
+        - generic [ref=e92]:
+          - link "Start Free Today" [ref=e94] [cursor=pointer]:
+            - /url: /sign-up
+            - img
+            - text: Start Free Today
+            - img
+          - link "See How It Works" [ref=e96] [cursor=pointer]:
+            - /url: "#how-it-works"
+            - img
+            - text: See How It Works
+        - generic [ref=e98]:
+          - img [ref=e99]
+          - generic [ref=e102]: Chrome extension included
+    - generic [ref=e104]:
+      - generic [ref=e105]:
+        - generic [ref=e106]: The Problem
+        - heading "You're Missing Out on the Best Opportunities" [level=2] [ref=e108]:
+          - generic [ref=e109]:
+            - text: You're Missing Out on the
+            - generic [ref=e111]: Best Opportunities
+        - generic [ref=e113]:
+          - paragraph [ref=e114]: Companies spend thousands promoting jobs, but you can't tell which opportunities are real priorities.
+          - generic [ref=e115]: This information gap costs you time and opportunities.
+      - generic [ref=e116]:
+        - generic [ref=e119]:
+          - generic [ref=e121]: Critical Issue
+          - generic [ref=e123]: "?"
+          - heading "Invisible Sponsorships" [level=3] [ref=e124]
+          - paragraph [ref=e125]: Sponsored jobs look identical to regular listings. You can't tell which companies are actually investing in hiring.
+          - generic [ref=e128]:
+            - img [ref=e129]
+            - generic [ref=e132]: 78% of applications ignored
+        - generic [ref=e135]:
+          - generic [ref=e137]: Major Problem
+          - generic [ref=e139]: "!"
+          - heading "Scattered Applications" [level=3] [ref=e140]
+          - paragraph [ref=e141]: Your job search is fragmented across platforms with no central place to track applications and follow-ups.
+          - generic [ref=e144]:
+            - img [ref=e145]
+            - generic [ref=e149]: 6-8 platforms to manage
+        - generic [ref=e152]:
+          - generic [ref=e154]: Time Wasted
+          - img [ref=e156]
+          - heading "Wasted Time & Energy" [level=3] [ref=e159]
+          - paragraph [ref=e160]: Hours spent applying to jobs without knowing which companies are serious about hiring.
+          - generic [ref=e163]:
+            - img [ref=e164]
+            - generic [ref=e169]: $2,500+ per opportunity
+      - generic [ref=e170]:
+        - generic [ref=e171]:
+          - generic [ref=e172]: 78%
+          - generic [ref=e173]: applications get no response
+        - generic [ref=e175]:
+          - generic [ref=e176]: 6-8
+          - generic [ref=e177]: hours wasted per week
+        - generic [ref=e179]:
+          - generic [ref=e180]: $2,500+
+          - generic [ref=e181]: average cost per hire
+    - generic [ref=e183]:
+      - generic [ref=e184]:
+        - generic [ref=e185]: The Solution
+        - heading "Three Simple Steps to Job Search Success" [level=2] [ref=e187]:
+          - text: Three Simple Steps to
+          - generic [ref=e188]: Job Search Success
+        - paragraph [ref=e189]: Our intelligent platform transforms how you approach job hunting, giving you the competitive advantage you deserve.
+      - generic [ref=e192]:
+        - generic [ref=e195]:
+          - generic [ref=e196]:
+            - generic [ref=e197]:
+              - generic [ref=e199]: "1"
+              - img [ref=e201]
+            - generic [ref=e205]:
+              - img [ref=e206]
+              - generic [ref=e209]: 30 seconds
+          - heading "Install Extension" [level=3] [ref=e210]
+          - paragraph [ref=e211]: Add our lightweight Chrome extension in seconds. Works with LinkedIn, Indeed, and 50+ job sites.
+          - generic [ref=e212]:
+            - generic [ref=e213]: Chrome
+            - generic [ref=e214]: LinkedIn
+            - generic [ref=e215]: Indeed
+        - generic [ref=e218]:
+          - generic [ref=e219]:
+            - generic [ref=e220]:
+              - generic [ref=e222]: "2"
+              - img [ref=e224]
+            - generic [ref=e229]:
+              - img [ref=e230]
+              - generic [ref=e232]: Instant
+          - heading "Spot Sponsored Jobs" [level=3] [ref=e233]
+          - paragraph [ref=e234]: Instantly see which companies are investing in hiring with color-coded badges on job listings.
+          - generic [ref=e235]:
+            - generic [ref=e238]: Sponsored companies highlighted
+            - generic [ref=e241]: Investment level displayed
+        - generic [ref=e244]:
+          - generic [ref=e245]:
+            - generic [ref=e246]:
+              - generic [ref=e248]: "3"
+              - img [ref=e250]
+            - generic [ref=e253]:
+              - img [ref=e254]
+              - generic [ref=e256]: Dashboard
+          - heading "Track Applications" [level=3] [ref=e257]
+          - paragraph [ref=e258]: Sync jobs to your dashboard and track every application, interview, and follow-up in one place.
+          - generic [ref=e259]:
+            - generic [ref=e260]:
+              - generic [ref=e261]: 95%
+              - generic [ref=e262]: Response Rate
+            - generic [ref=e263]:
+              - generic [ref=e264]: 3x
+              - generic [ref=e265]: Faster
+      - link "Start Finding Better Jobs" [ref=e267] [cursor=pointer]:
+        - /url: /sign-up
+        - img
+        - text: Start Finding Better Jobs
+    - generic [ref=e269]:
+      - generic [ref=e270]:
+        - generic [ref=e271]: Key Features
+        - heading "Everything You Need to Win Your Job Search" [level=2] [ref=e273]:
+          - text: Everything You Need to
+          - generic [ref=e274]: Win Your Job Search
+        - paragraph [ref=e275]: Built by job seekers, for job seekers. Every feature gives you a competitive edge.
+      - generic [ref=e276]:
+        - generic [ref=e279]:
+          - generic [ref=e280]:
+            - img [ref=e282]
+            - generic [ref=e286]: AI Powered
+          - heading "Smart Detection" [level=3] [ref=e287]
+          - paragraph [ref=e288]: AI-powered identification of sponsored companies across 50+ job sites.
+          - generic [ref=e289]:
+            - generic [ref=e290]:
+              - img [ref=e291]
+              - generic [ref=e294]: 50+ job sites supported
+            - generic [ref=e295]:
+              - img [ref=e296]
+              - generic [ref=e299]: 99% accuracy rate
+        - generic [ref=e302]:
+          - generic [ref=e303]:
+            - img [ref=e305]
+            - generic [ref=e307]: Analytics
+          - heading "Advanced Analytics" [level=3] [ref=e308]
+          - paragraph [ref=e309]: Track response rates and identify which companies are most responsive.
+          - generic [ref=e310]:
+            - generic [ref=e311]:
+              - img [ref=e312]
+              - generic [ref=e315]: Real-time insights
+            - generic [ref=e316]:
+              - img [ref=e317]
+              - generic [ref=e320]: Success tracking
+        - generic [ref=e323]:
+          - generic [ref=e324]:
+            - img [ref=e326]
+            - generic [ref=e329]: Sync
+          - heading "Real-time Sync" [level=3] [ref=e330]
+          - paragraph [ref=e331]: Instant data sync across all devices. Access your history anywhere.
+          - generic [ref=e332]:
+            - generic [ref=e333]:
+              - img [ref=e334]
+              - generic [ref=e337]: Cross-platform sync
+            - generic [ref=e338]:
+              - img [ref=e339]
+              - generic [ref=e342]: Automatic backup
+        - generic [ref=e345]:
+          - generic [ref=e346]:
+            - img [ref=e348]
+            - generic [ref=e353]: Intelligence
+          - heading "Company Intelligence" [level=3] [ref=e354]
+          - paragraph [ref=e355]: Learn which companies are actively investing in hiring opportunities.
+          - generic [ref=e356]:
+            - generic [ref=e357]:
+              - img [ref=e358]
+              - generic [ref=e361]: Investment tracking
+            - generic [ref=e362]:
+              - img [ref=e363]
+              - generic [ref=e366]: Hiring patterns
+        - generic [ref=e369]:
+          - generic [ref=e370]:
+            - img [ref=e372]
+            - generic [ref=e375]: Secure
+          - heading "Privacy First" [level=3] [ref=e376]
+          - paragraph [ref=e377]: Your data is encrypted and private. We never share with third parties.
+          - generic [ref=e378]:
+            - generic [ref=e379]:
+              - img [ref=e380]
+              - generic [ref=e383]: Bank-level encryption
+            - generic [ref=e384]:
+              - img [ref=e385]
+              - generic [ref=e388]: GDPR compliant
+        - generic [ref=e391]:
+          - generic [ref=e392]:
+            - img [ref=e394]
+            - generic [ref=e397]: Performance
+          - heading "Lightning Fast" [level=3] [ref=e398]
+          - paragraph [ref=e399]: Ultra-lightweight extension with zero performance impact.
+          - generic [ref=e400]:
+            - generic [ref=e401]:
+              - img [ref=e402]
+              - generic [ref=e405]: <100KB size
+            - generic [ref=e406]:
+              - img [ref=e407]
+              - generic [ref=e410]: Zero latency
+    - generic [ref=e412]:
+      - generic [ref=e413]:
+        - heading "Frequently Asked Questions" [level=2] [ref=e414]
+        - paragraph [ref=e415]: Everything you need to know about Hireall
+      - generic [ref=e416]:
+        - heading "How does Hireall detect sponsored jobs?" [level=3] [ref=e418]:
+          - button "How does Hireall detect sponsored jobs?" [ref=e419] [cursor=pointer]:
+            - text: How does Hireall detect sponsored jobs?
+            - img [ref=e420] [cursor=pointer]
+        - heading "Is Hireall free to use?" [level=3] [ref=e423]:
+          - button "Is Hireall free to use?" [ref=e424] [cursor=pointer]:
+            - text: Is Hireall free to use?
+            - img [ref=e425] [cursor=pointer]
+        - heading "Which job sites does Hireall work with?" [level=3] [ref=e428]:
+          - button "Which job sites does Hireall work with?" [ref=e429] [cursor=pointer]:
+            - text: Which job sites does Hireall work with?
+            - img [ref=e430] [cursor=pointer]
+        - heading "Is my job search data private?" [level=3] [ref=e433]:
+          - button "Is my job search data private?" [ref=e434] [cursor=pointer]:
+            - text: Is my job search data private?
+            - img [ref=e435] [cursor=pointer]
+        - heading "How accurate is the sponsored job detection?" [level=3] [ref=e438]:
+          - button "How accurate is the sponsored job detection?" [ref=e439] [cursor=pointer]:
+            - text: How accurate is the sponsored job detection?
+            - img [ref=e440] [cursor=pointer]
+    - generic [ref=e442]:
+      - generic [ref=e444]:
+        - generic [ref=e445]: Success Stories
+        - heading "Join 10,000+ Job Seekers" [level=2] [ref=e447]:
+          - text: Join
+          - generic [ref=e448]: 10,000+
+          - text: Job Seekers
+        - paragraph [ref=e449]: Real stories from people who transformed their job search with HireAll
+      - generic [ref=e451]:
+        - generic [ref=e452]:
+          - heading "What Our Users Say" [level=2] [ref=e453]
+          - paragraph [ref=e454]: Real stories from people who landed their dream jobs with Hireall
+        - generic [ref=e459]:
+          - generic [ref=e463]:
+            - generic [ref=e464]:
+              - img "Aarav Sharma" [ref=e465]
+              - img [ref=e467]
+            - blockquote [ref=e469]: “Hireall saved me weeks of searching. I landed interviews within days using their Chrome extension. The sponsored job detection is incredibly accurate!”
+            - generic [ref=e470]:
+              - img [ref=e471]
+              - img [ref=e473]
+              - img [ref=e475]
+              - img [ref=e477]
+              - img [ref=e479]
+            - generic [ref=e481]:
+              - generic [ref=e482]: Aarav Sharma
+              - generic [ref=e483]:
+                - text: Software Engineer •
+                - generic [ref=e484]: Google
+          - generic [ref=e488]:
+            - generic [ref=e489]:
+              - img "Priya Kapoor" [ref=e490]
+              - img [ref=e492]
+            - blockquote [ref=e494]: “The sponsored job detection is genius. I finally stopped wasting time on irrelevant listings. The CV evaluator helped me improve my resume by 40 points!”
+            - generic [ref=e495]:
+              - img [ref=e496]
+              - img [ref=e498]
+              - img [ref=e500]
+              - img [ref=e502]
+              - img [ref=e504]
+            - generic [ref=e506]:
+              - generic [ref=e507]: Priya Kapoor
+              - generic [ref=e508]:
+                - text: Data Analyst •
+                - generic [ref=e509]: Amazon
+          - generic [ref=e513]:
+            - generic [ref=e514]:
+              - img "Rohan Mehta" [ref=e515]
+              - img [ref=e517]
+            - blockquote [ref=e519]: “The premium analytics gave me a huge advantage in my job hunt. The interview prep feature was a game-changer for me. Highly recommend!”
+            - generic [ref=e520]:
+              - img [ref=e521]
+              - img [ref=e523]
+              - img [ref=e525]
+              - img [ref=e527]
+              - img [ref=e529]
+            - generic [ref=e531]:
+              - generic [ref=e532]: Rohan Mehta
+              - generic [ref=e533]:
+                - text: UI/UX Designer •
+                - generic [ref=e534]: Microsoft
+          - generic [ref=e538]:
+            - generic [ref=e539]:
+              - img "Sofia Rodriguez" [ref=e540]
+              - img [ref=e542]
+            - blockquote [ref=e544]: “As an international student, finding sponsored roles was challenging. Hireall made it so much easier to identify companies that would actually sponsor my visa.”
+            - generic [ref=e545]:
+              - img [ref=e546]
+              - img [ref=e548]
+              - img [ref=e550]
+              - img [ref=e552]
+              - img [ref=e554]
+            - generic [ref=e556]:
+              - generic [ref=e557]: Sofia Rodriguez
+              - generic [ref=e558]:
+                - text: Product Manager •
+                - generic [ref=e559]: Meta
+          - generic [ref=e563]:
+            - generic [ref=e564]:
+              - img "James Chen" [ref=e565]
+              - img [ref=e567]
+            - blockquote [ref=e569]: “The job tracking feature is amazing. I can manage all my applications in one place and get real-time updates on my progress.”
+            - generic [ref=e570]:
+              - img [ref=e571]
+              - img [ref=e573]
+              - img [ref=e575]
+              - img [ref=e577]
+              - img [ref=e579]
+            - generic [ref=e581]:
+              - generic [ref=e582]: James Chen
+              - generic [ref=e583]:
+                - text: Backend Developer •
+                - generic [ref=e584]: Stripe
+        - generic [ref=e585]:
+          - generic [ref=e586]:
+            - generic [ref=e587]: 500K+
+            - generic [ref=e588]: Active Users
+          - generic [ref=e589]:
+            - generic [ref=e590]: 4.9/5
+            - generic [ref=e591]: Average Rating
+          - generic [ref=e592]:
+            - generic [ref=e593]: 95%
+            - generic [ref=e594]: Success Rate
+    - generic [ref=e600]:
+      - generic [ref=e601]:
+        - generic [ref=e602]:
+          - img [ref=e603]
+          - text: Start Free Today
+        - heading "Stop Wasting Time on Dead-End Applications" [level=2] [ref=e606]:
+          - text: Stop Wasting Time on
+          - generic [ref=e607]: Dead-End Applications
+        - paragraph [ref=e608]: Join thousands landing interviews 3x faster with sponsored job intelligence.
+      - link "Start Free Today" [ref=e610] [cursor=pointer]:
+        - /url: /sign-up
+        - img
+        - text: Start Free Today
+        - img
+      - generic [ref=e611]:
+        - generic [ref=e612]:
+          - img [ref=e613]
+          - generic [ref=e616]: Chrome extension included
+        - generic [ref=e617]:
+          - img [ref=e618]
+          - generic [ref=e621]: Setup in 2 minutes
+  - contentinfo [ref=e622]:
+    - generic [ref=e624]:
+      - generic [ref=e625]:
+        - generic [ref=e626]:
+          - img "HireAll" [ref=e628]
+          - paragraph [ref=e629]: Revealing the hidden job market, one sponsored listing at a time.
+        - generic [ref=e630]:
+          - heading "Product" [level=4] [ref=e631]
+          - list [ref=e632]:
+            - listitem [ref=e633]:
+              - link "Features" [ref=e634] [cursor=pointer]:
+                - /url: /#how-it-works
+            - listitem [ref=e635]:
+              - link "Chrome Extension" [ref=e636] [cursor=pointer]:
+                - /url: https://chrome.google.com/webstore/detail/hireall
+        - generic [ref=e637]:
+          - heading "Company" [level=4] [ref=e638]
+          - list [ref=e639]:
+            - listitem [ref=e640]:
+              - link "About" [ref=e641] [cursor=pointer]:
+                - /url: /about
+            - listitem [ref=e642]:
+              - link "Blog" [ref=e643] [cursor=pointer]:
+                - /url: /blog
+            - listitem [ref=e644]:
+              - link "Careers" [ref=e645] [cursor=pointer]:
+                - /url: /careers
+        - generic [ref=e646]:
+          - heading "Legal" [level=4] [ref=e647]
+          - list [ref=e648]:
+            - listitem [ref=e649]:
+              - link "Privacy Policy" [ref=e650] [cursor=pointer]:
+                - /url: /privacy
+            - listitem [ref=e651]:
+              - link "Terms of Service" [ref=e652] [cursor=pointer]:
+                - /url: /terms
+            - listitem [ref=e653]:
+              - link "Usage Conditions" [ref=e654] [cursor=pointer]:
+                - /url: /conditions
+      - generic [ref=e655]:
+        - paragraph [ref=e656]: © 2025 Hireall. All rights reserved.
+        - generic [ref=e657]:
+          - link "GitHub" [ref=e658] [cursor=pointer]:
+            - /url: https://github.com
+            - img [ref=e659] [cursor=pointer]
+          - link "Twitter" [ref=e661] [cursor=pointer]:
+            - /url: https://twitter.com
+            - img [ref=e662] [cursor=pointer]
+          - link "LinkedIn" [ref=e664] [cursor=pointer]:
+            - /url: https://linkedin.com
+            - img [ref=e665] [cursor=pointer]
+  - button [ref=e668] [cursor=pointer]:
+    - img
+  - alert [ref=e669]
+  - button "Open Next.js Dev Tools" [ref=e675] [cursor=pointer]:
+    - img [ref=e676] [cursor=pointer]
+```

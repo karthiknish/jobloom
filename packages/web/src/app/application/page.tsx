@@ -344,23 +344,18 @@ export default function ApplicationPage() {
 
       {/* Hero Section */}
       <motion.div
-        initial={{ opacity: 0, y: 30 }}
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="gradient-primary shadow-premium-xl relative overflow-hidden"
+        className="bg-gradient-to-r from-primary via-primary/90 to-secondary shadow-xl"
       >
-        {/* Premium background elements */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full filter blur-3xl"></div>
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full filter blur-2xl"></div>
-        </div>
-
-        <div className="relative max-w-7xl mx-auto py-20 px-4 sm:px-6 lg:px-8">
-          <div className="space-y-6">
-            <h1 className="text-5xl sm:text-6xl font-serif font-bold text-white tracking-tight">Resume & Cover Letter Builder</h1>
-            <p className="text-xl sm:text-2xl text-primary-foreground/90 max-w-3xl leading-relaxed">
-              Create professional resumes and cover letters with AI-powered optimization and advanced ATS scoring
-            </p>
+        <div className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="space-y-2">
+              <h1 className="text-4xl sm:text-5xl font-bold text-white tracking-tight">Resume & Cover Letter Builder</h1>
+              <p className="text-lg sm:text-xl text-primary-foreground/90 max-w-2xl leading-relaxed">
+                Create professional resumes and cover letters with AI-powered optimization and advanced ATS scoring
+              </p>
+            </div>
           </div>
         </div>
       </motion.div>

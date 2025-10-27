@@ -29,7 +29,10 @@ export default function RootLayout({
       <head>
         <SeoHead />
       </head>
-      <body className="antialiased safe-area-inset-top safe-area-inset-bottom safe-area-inset-left safe-area-inset-right font-inter">
+      <body
+        suppressHydrationWarning
+        className="antialiased safe-area-inset-top safe-area-inset-bottom safe-area-inset-left safe-area-inset-right font-inter"
+      >
         <FirebaseInitializer />
         <FirebaseAuthProvider>
           <AnalyticsProvider>

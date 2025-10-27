@@ -47,6 +47,29 @@ chrome.runtime.onInstalled.addListener(() => {
 
 // Initialize security components
 const messageRateLimiter = new ExtensionRateLimiter(60000, 50); // 50 messages per minute
+const authRateLimiter = new ExtensionRateLimiter(15 * 60 * 1000, 5); // 5 auth attempts per 15 minutes
+
+// Enhanced authentication rate limiting
+async function checkAuthRateLimit(identifier: string): Promise<{ allowed: boolean; retryAfter?: number }> {
+  const isAllowed = authRateLimiter.isAllowed(identifier);
+  
+  if (!isAllowed) {
+    // Calculate retry after time (when the window resets)
+    const retryAfter = Math.ceil(authRateLimiter['windowMs'] / 1000); // Convert to seconds
+    
+    logger.warn("Background", "Auth rate limit exceeded", {
+      identifier,
+      retryAfter
+    });
+    
+    return {
+      allowed: false,
+      retryAfter
+    };
+  }
+  
+  return { allowed: true };
+}
 
 function isLinkedInUrl(url?: string) {
   if (!url) return false;
@@ -177,7 +200,7 @@ async function syncAuthStateFromSite(options: { tabId?: number; userIdOverride?:
 }
 
 // Handle messages from content script with security validation
-chrome.runtime.onMessage.addListener((request: any, sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void) => {
+chrome.runtime.onMessage.addListener(async (request: any, sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void) => {
   const startTime = Date.now();
   const senderId = sender.tab?.id?.toString() || 'unknown';
 
@@ -416,6 +439,22 @@ chrome.runtime.onMessage.addListener((request: any, sender: chrome.runtime.Messa
   } else if (request.action === "authSuccess") {
     // After web app login, capture Firebase UID and store
     logger.info("Background", "Authentication successful, capturing Firebase UID");
+
+    // Apply authentication rate limiting
+    const authIdentifier = sender.tab?.id?.toString() || sender.id || 'unknown';
+    const rateLimitCheck = await checkAuthRateLimit(authIdentifier);
+    
+    if (!rateLimitCheck.allowed) {
+      logger.warn("Background", "Authentication rate limit exceeded", {
+        authIdentifier,
+        retryAfter: rateLimitCheck.retryAfter
+      });
+      sendResponse({ 
+        error: 'Too many authentication attempts. Please try again later.',
+        retryAfter: rateLimitCheck.retryAfter 
+      });
+      return;
+    }
 
   const messageData = (request?.data ?? {}) as { userId?: string; userEmail?: string; token?: string };
     const overrideUid = messageData.userId ?? (typeof request.userId === "string" ? request.userId : undefined);

@@ -8,6 +8,7 @@ import { CvAnalysisHistory } from "../../components/CvAnalysisHistory";
 import { CvImprovementTracker } from "../../components/CvImprovementTracker";
 
 interface CvAnalysisTabsProps {
+  userId: string;
   cvAnalyses?: any[];
   loading: boolean;
   onResumeUpdate: (resume: any) => void;
@@ -17,6 +18,7 @@ interface CvAnalysisTabsProps {
 }
 
 export function CvAnalysisTabs({
+  userId,
   cvAnalyses,
   loading,
   onResumeUpdate,
@@ -41,6 +43,7 @@ export function CvAnalysisTabs({
       {/* Upload Tab */}
       <TabContent value="upload" activeTab={activeTab}>
         <CvUploadSection
+          userId={userId}
           onResumeUpdate={onResumeUpdate}
           currentResume={currentResume}
           currentAtsScore={currentAtsScore}

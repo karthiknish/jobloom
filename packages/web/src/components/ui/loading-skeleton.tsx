@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
   // Optional animation duration for skeleton component
   animationDuration?: number;
+  animationType?: "pulse" | "shimmer";
 }
 
 function Skeleton({ className, animationType = "pulse", ...props }: SkeletonProps) {

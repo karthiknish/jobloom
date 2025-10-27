@@ -47,11 +47,6 @@ export class ExtensionMessageHandler {
         sendResponse?.({ success: true });
         return false;
 
-      case "triggerAutofill":
-        this.handleTriggerAutofill();
-        sendResponse?.({ success: true });
-        return false;
-
       case "toggleHighlight":
         this.handleToggleHighlight();
         sendResponse?.({ success: true });
@@ -105,15 +100,7 @@ export class ExtensionMessageHandler {
     }
   }
 
-  private static handleTriggerAutofill(): void {
-    const autofillBtn = document.getElementById(
-      "hireall-autofill"
-    ) as HTMLButtonElement;
-    if (autofillBtn && autofillBtn.style.display !== "none") {
-      autofillBtn.click();
-    }
-  }
-
+  
   private static handleToggleHighlight(): void {
     const tracker = this.resolveJobTracker();
     if (tracker) {

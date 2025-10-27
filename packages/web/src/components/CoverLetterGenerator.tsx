@@ -12,6 +12,8 @@ import {
   Zap,
   Star,
   TrendingUp,
+  Download,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,6 +32,7 @@ import { showSuccess, showError } from "@/components/ui/Toast";
 import { ResumeData } from "@/types/resume";
 import { dashboardApi, Job } from "@/utils/api/dashboard";
 import { getAuthClient } from "@/firebase/client";
+import PDFGenerator from "@/lib/pdfGenerator";
 
 interface CoverLetterData {
   jobTitle: string;
@@ -355,6 +358,7 @@ export const CoverLetterGenerator: React.FC<CoverLetterGeneratorProps> = ({
   const [jobs, setJobs] = useState<Job[]>([]);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [loadingJobs, setLoadingJobs] = useState(false);
+  const [downloadingPDF, setDownloadingPDF] = useState(false);
 
   // Load user's jobs
   useEffect(() => {
@@ -524,6 +528,96 @@ export const CoverLetterGenerator: React.FC<CoverLetterGeneratorProps> = ({
       showSuccess("Copied to clipboard");
     } catch {
       showError("Clipboard copy failed");
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!letter || !formData.jobTitle || !formData.companyName) {
+      showError("Missing information for PDF generation");
+      return;
+    }
+
+    try {
+      setDownloadingPDF(true);
+      
+      // Validate content
+      const validation = PDFGenerator.validateContent(letter);
+      if (!validation.valid) {
+        showError(`PDF validation failed: ${validation.errors.join(', ')}`);
+        return;
+      }
+
+      // Prepare metadata
+      const metadata = {
+        candidateName: resumeData.personalInfo?.fullName || 'Your Name',
+        jobTitle: formData.jobTitle,
+        companyName: formData.companyName,
+        date: new Date().toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        }),
+        recipientName: formData.hiringManager !== 'Hiring Team' ? formData.hiringManager : undefined,
+        recipientTitle: 'Hiring Manager'
+      };
+
+      // Generate and download PDF
+      await PDFGenerator.generateAndDownloadCoverLetter(
+        letter,
+        metadata,
+        undefined,
+        {
+          fontSize: 12,
+          lineHeight: 1.5,
+          margin: 20,
+          font: 'helvetica',
+          fontStyle: 'normal'
+        }
+      );
+
+      showSuccess("PDF downloaded successfully!");
+    } catch (error: any) {
+      console.error("PDF download failed:", error);
+      showError("Failed to download PDF: " + error.message);
+    } finally {
+      setDownloadingPDF(false);
+    }
+  };
+
+  const handlePreviewPDF = async () => {
+    if (!letter || !formData.jobTitle || !formData.companyName) {
+      showError("Missing information for PDF preview");
+      return;
+    }
+
+    try {
+      // Validate content
+      const validation = PDFGenerator.validateContent(letter);
+      if (!validation.valid) {
+        showError(`PDF validation failed: ${validation.errors.join(', ')}`);
+        return;
+      }
+
+      // Prepare metadata
+      const metadata = {
+        candidateName: resumeData.personalInfo?.fullName || 'Your Name',
+        jobTitle: formData.jobTitle,
+        companyName: formData.companyName,
+        date: new Date().toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        }),
+        recipientName: formData.hiringManager !== 'Hiring Team' ? formData.hiringManager : undefined,
+        recipientTitle: 'Hiring Manager'
+      };
+
+      // Generate and preview PDF
+      await PDFGenerator.previewPDF(letter, metadata);
+      showSuccess("PDF preview opened in new tab!");
+    } catch (error: any) {
+      console.error("PDF preview failed:", error);
+      showError("Failed to preview PDF: " + error.message);
     }
   };
 
@@ -934,6 +1028,32 @@ export const CoverLetterGenerator: React.FC<CoverLetterGeneratorProps> = ({
               >
                 <Eye className="h-4 w-4 mr-2" />
                 {showPreview ? 'Hide' : 'Show'} Preview
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={handlePreviewPDF}
+                disabled={!letter || !formData.jobTitle || !formData.companyName}
+              >
+                <Eye className="h-4 w-4 mr-2" />
+                Preview PDF
+              </Button>
+              <Button 
+                variant="default" 
+                onClick={handleDownloadPDF}
+                disabled={downloadingPDF || !letter || !formData.jobTitle || !formData.companyName}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                {downloadingPDF ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Generating PDF...
+                  </>
+                ) : (
+                  <>
+                    <Download className="h-4 w-4 mr-2" />
+                    Download PDF
+                  </>
+                )}
               </Button>
             </>
           )}

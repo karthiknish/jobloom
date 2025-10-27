@@ -1,179 +1,126 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyIdToken } from "@/firebase/admin";
-import { applyCorsHeaders, preflightResponse } from "@/lib/api/cors";
+import { getAdminDb } from "@/firebase/admin";
+import { authenticateRequest } from "@/lib/api/auth";
+import { withErrorHandling, generateRequestId } from "@/lib/api/errors";
 
-// Temporary in-memory mock sponsors (previously public). Replace with Firestore later.
-const mockSponsors = [
-  { name: "Google", city: "London", route: "Skilled Worker", typeRating: "AA", isSkilledWorker: true },
-  { name: "Microsoft", city: "Reading", route: "Skilled Worker", typeRating: "AA", isSkilledWorker: true },
-  { name: "Amazon", city: "London", route: "Skilled Worker", typeRating: "AA", isSkilledWorker: true },
-  { name: "Meta", city: "London", route: "Skilled Worker", typeRating: "AA", isSkilledWorker: true },
-  { name: "Netflix", city: "London", route: "Skilled Worker", typeRating: "AA", isSkilledWorker: true },
-  { name: "Apple", city: "London", route: "Skilled Worker", typeRating: "AA", isSkilledWorker: true },
-  { name: "Tesla", city: "London", route: "Skilled Worker", typeRating: "AA", isSkilledWorker: true },
-  { name: "IBM", city: "London", route: "Skilled Worker", typeRating: "AA", isSkilledWorker: true },
-];
-
-async function authenticate(request: NextRequest) {
-  const authHeader = request.headers.get("authorization");
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return null;
-  }
-  const token = authHeader.substring(7);
-
-  // In development, allow mock tokens for testing
-  if (process.env.NODE_ENV === "development" && token.includes("bW9jay1zaWduYXR1cmUtZm9yLXRlc3Rpbmc")) {
-    return {
-      uid: "test-user-123",
-      email: "test@example.com",
-      email_verified: true
-    };
-  }
-
-  try {
-    const decoded = await verifyIdToken(token);
-    return decoded || null;
-  } catch {
-    return null;
-  }
-}
-
-// GET /api/app/sponsorship/companies?q=Google&city=London&route=Skilled+Worker&limit=1&filters=...
+// GET /api/app/sponsorship/companies - Get sponsored companies (admin only)
 export async function GET(request: NextRequest) {
-  try {
-    const user = await authenticate(request);
-    if (!user) {
-      return applyCorsHeaders(
-        NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
-        request,
-      );
+  const requestId = generateRequestId();
+
+  return withErrorHandling(async () => {
+    const auth = await authenticateRequest(request, {
+      requireAdmin: true,
+      loadUser: true,
+    });
+
+    if (!auth.ok) {
+      return auth.response;
     }
 
     const { searchParams } = new URL(request.url);
-    const q = searchParams.get("q")?.toLowerCase().trim();
-    const city = searchParams.get("city")?.toLowerCase().trim();
-    const route = searchParams.get("route")?.toLowerCase().trim();
-    const limit = parseInt(searchParams.get("limit") || "20", 10);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limitNum = parseInt(searchParams.get('limit') || '50');
+    const search = searchParams.get('search')?.trim();
+    const industry = searchParams.get('industry')?.trim();
+    const sponsorshipType = searchParams.get('sponsorshipType')?.trim();
+    const status = searchParams.get('status')?.trim() as 'active' | 'inactive' | 'all' | undefined;
+
+    const db = getAdminDb();
+    let sponsorsQuery = db.collection("sponsors");
     
-    // Parse sponsorship filters
-    const filtersParam = searchParams.get("filters");
-    let sponsorshipFilters = null;
-    if (filtersParam) {
-      try {
-        sponsorshipFilters = JSON.parse(filtersParam);
-      } catch (e) {
-        console.error("Invalid filters parameter:", filtersParam);
-      }
+    // Apply filters
+    if (industry && industry !== 'all') {
+      sponsorsQuery = sponsorsQuery.where('industry', '==', industry) as any;
     }
-
-    let results = mockSponsors;
     
-    // Apply basic filters
-    if (q) {
-      results = results.filter((s) => s.name.toLowerCase().includes(q));
+    if (sponsorshipType && sponsorshipType !== 'all') {
+      sponsorsQuery = sponsorsQuery.where('sponsorshipType', '==', sponsorshipType) as any;
     }
-    if (city) {
-      results = results.filter((s) => s.city.toLowerCase().includes(city));
+    
+    if (status === 'active') {
+      sponsorsQuery = sponsorsQuery.where('isActive', '==', true) as any;
+    } else if (status === 'inactive') {
+      sponsorsQuery = sponsorsQuery.where('isActive', '==', false) as any;
     }
-    if (route) {
-      results = results.filter((s) => s.route.toLowerCase().includes(route));
+    
+    // Add ordering
+    sponsorsQuery = sponsorsQuery.orderBy('createdAt', 'desc') as any;
+    
+    // Get total count by fetching all documents (less efficient but works)
+    const countSnapshot = await sponsorsQuery.get();
+    const total = countSnapshot.size;
+    
+    // Add pagination
+    sponsorsQuery = sponsorsQuery.limit(limitNum) as any;
+    
+    if (page > 1) {
+      sponsorsQuery = sponsorsQuery.offset((page - 1) * limitNum) as any;
     }
-
-    // Apply UK sponsorship filters if provided
-    if (sponsorshipFilters) {
-      results = results.filter((company) => {
-        // Only skilled worker visas are eligible for these filters
-        if (!company.isSkilledWorker) return false;
-
-        // Check minimum salary requirement
-        const minSalary = sponsorshipFilters.minSalary || 33400;
-        
-        // For immigration salary list jobs, allow lower minimum
-        if (sponsorshipFilters.immigrationSalaryList && company.typeRating === "A") {
-          return true; // These jobs have special lower salary requirements
-        }
-
-        // Apply age/education criteria (70% of going rate)
-        if (sponsorshipFilters.under26 || sponsorshipFilters.recentGraduate) {
-          return true; // These roles can go down to 70% with £33,400 minimum
-        }
-
-        // Apply STEM PhD criteria (80% of going rate)
-        if (sponsorshipFilters.stemPhD) {
-          return true; // STEM PhDs can go down to 80% with £33,400 minimum
-        }
-
-        // Apply non-STEM PhD criteria (90% of going rate)
-        if (sponsorshipFilters.nonStemPhD) {
-          return true; // Non-STEM PhDs can go down to 90% with £37,500 minimum
-        }
-
-        // Apply postdoctoral position criteria
-        if (sponsorshipFilters.postdoctoralPosition) {
-          // Only for specific science/education roles
-          const postdoctoralRoles = ["Research", "Scientist", "Academic", "Professor", "Lecturer"];
-          return postdoctoralRoles.some(role => company.name.toLowerCase().includes(role.toLowerCase()));
-        }
-
-        // Default case: standard requirements apply
-        return true;
-      });
-    }
-
-    results = results.slice(0, limit);
-
-    return applyCorsHeaders(
-      NextResponse.json({
-      success: true,
-      totalResults: results.length,
-      filters: sponsorshipFilters,
-      results: results.map((s) => ({
-        name: s.name,
-        city: s.city,
-        route: s.route,
-        typeRating: s.typeRating,
-        isSkilledWorker: s.isSkilledWorker,
-        eligibleForSponsorship: sponsorshipFilters ? true : undefined,
-      })),
-      }),
-      request,
-    );
-  } catch (error) {
-    console.error("Error fetching sponsored companies:", error);
-    return applyCorsHeaders(
-      NextResponse.json(
-        { error: "Internal server error" },
-        { status: 500 }
-      ),
-      request,
-    );
-  }
-}
-
-// OPTIONS handler for CORS preflight
-export async function OPTIONS(request: NextRequest) {
-  return preflightResponse(request);
-}
-
-// POST /api/app/sponsorship/companies - Add sponsored company (mock)
-export async function POST(request: NextRequest) {
-  try {
-    const user = await authenticate(request);
-    if (!user) {
-      return applyCorsHeaders(
-        NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
-        request,
+    
+    const snapshot = await sponsorsQuery.get();
+    
+    let companies = snapshot.docs.map((doc: any) => ({
+      _id: doc.id,
+      ...doc.data()
+    }));
+    
+    // Apply search filter client-side if needed
+    if (search && search.trim()) {
+      companies = companies.filter((company: any) => 
+        company.name?.toLowerCase().includes(search.toLowerCase()) ||
+        company.description?.toLowerCase().includes(search.toLowerCase()) ||
+        company.industry?.toLowerCase().includes(search.toLowerCase())
       );
     }
+    
+    const hasMore = page * limitNum < total;
 
-    const data = await request.json();
-    console.log("(Mock) Adding sponsored company:", data);
-    return applyCorsHeaders(NextResponse.json({ companyId: "mock-company-id" }), request);
-  } catch (error) {
-    console.error("Error adding sponsored company:", error);
-    return applyCorsHeaders(
-      NextResponse.json({ error: "Internal server error" }, { status: 500 }),
-      request,
-    );
-  }
+    return NextResponse.json({
+      companies,
+      total,
+      page,
+      limit: limitNum,
+      hasMore,
+      message: 'Sponsored companies retrieved successfully'
+    });
+  }, {
+    endpoint: '/api/app/sponsorship/companies',
+    method: 'GET',
+    requestId
+  });
+}
+
+// POST /api/app/sponsorship/companies - Create new sponsored company
+export async function POST(request: NextRequest) {
+  const requestId = generateRequestId();
+
+  return withErrorHandling(async () => {
+    const auth = await authenticateRequest(request, {
+      requireAdmin: true,
+      loadUser: true,
+    });
+
+    if (!auth.ok) {
+      return auth.response;
+    }
+
+    const companyData = await request.json();
+    
+    const db = getAdminDb();
+    const docRef = await db.collection("sponsors").add({
+      ...companyData,
+      isActive: companyData.isActive ?? true,
+      createdAt: Date.now(),
+      createdBy: auth.token.uid
+    });
+    
+    return NextResponse.json({
+      _id: docRef.id,
+      message: 'Sponsored company created successfully'
+    });
+  }, {
+    endpoint: '/api/app/sponsorship/companies',
+    method: 'POST',
+    requestId
+  });
 }

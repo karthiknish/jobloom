@@ -1,13 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb } from "@/firebase/admin";
-import { verifySessionFromRequest } from "@/lib/auth/session";
+import { authenticateRequest } from "@/lib/api/auth";
 import { applyCorsHeaders, preflightResponse } from "@/lib/api/cors";
 
-import {
-  withErrorHandling,
-  createAuthorizationError,
-  generateRequestId
-} from "@/lib/api/errors";
+import { withErrorHandling, createAuthorizationError, generateRequestId } from "@/lib/api/errors";
 
 // GET /api/app/applications/user/[userId] - Get applications for a user
 
@@ -60,20 +56,17 @@ export async function GET(
   const { userId } = await params;
 
   const response = await withErrorHandling(async () => {
-    // Validate authorization
-    const decodedToken = await verifySessionFromRequest(request);
-    if (!decodedToken) {
-      throw createAuthorizationError("Invalid authentication token", 'INVALID_TOKEN');
+    const auth = await authenticateRequest(request, {
+      loadUser: true,
+    });
+
+    if (!auth.ok) {
+      return auth.response;
     }
 
-    // Users can only access their own applications unless they're admin
-    if (decodedToken.uid !== userId) {
-      // Check if user is admin
-      const db = getAdminDb();
-      const userDoc = await db.collection("users").doc(decodedToken.uid).get();
-      if (!userDoc.exists || !userDoc.data()?.isAdmin) {
-        throw createAuthorizationError("Access denied. You can only access your own applications.", 'INSUFFICIENT_PERMISSIONS');
-      }
+    const requesterId = auth.token.uid;
+    if (requesterId !== userId && !auth.isAdmin) {
+      throw createAuthorizationError("Access denied. You can only access your own applications.", 'INSUFFICIENT_PERMISSIONS');
     }
 
     // Fetch applications from Firestore using admin API

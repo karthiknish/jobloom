@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyIdToken, getAdminDb } from "@/firebase/admin";
-import { verifySessionFromRequest } from "@/lib/auth/session";
+import { getAdminDb } from "@/firebase/admin";
+import { authenticateRequest } from "@/lib/api/auth";
 import { getStripeClient } from "@/lib/stripe";
 import Stripe from "stripe";
 import { upsertSubscriptionFromStripe, ValidationError, DatabaseError } from "@/lib/subscriptions";
@@ -33,10 +33,9 @@ function setSecurityHeaders(response: NextResponse): NextResponse {
 
 export async function POST(request: NextRequest) {
   try {
-    const decodedToken = await verifySessionFromRequest(request);
-
-    if (!decodedToken) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await authenticateRequest(request);
+    if (!auth.ok) {
+      return setSecurityHeaders(auth.response);
     }
 
     // In development with mock tokens, return mock cancellation response for testing
@@ -51,7 +50,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const userId = decodedToken.uid;
+  const userId = auth.token.uid;
     
     // Apply stricter rate limiting for sensitive operations
     const rateLimitResult = checkServerRateLimit(userId, 'subscription-cancel');

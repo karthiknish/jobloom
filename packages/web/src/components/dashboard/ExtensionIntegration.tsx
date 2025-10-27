@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, AlertTriangle } from "lucide-react";
+import { extensionAuthBridge } from "@/lib/extensionAuthBridge";
 
 interface ExtensionIntegrationProps {
   userId: string;
@@ -24,6 +25,12 @@ export function ExtensionIntegration({ userId }: ExtensionIntegrationProps) {
           const extensionData = (window as unknown as Record<string, unknown>).__hireall_extension as Record<string, unknown>;
           setJobsDetected((extensionData.jobsDetected as number) || 0);
           setLastSync(extensionData.lastSync ? new Date(extensionData.lastSync as string | number) : null);
+          return;
+        }
+
+        // Check if extension auth bridge is available
+        if (extensionAuthBridge.isExtensionAvailable()) {
+          setIsExtensionInstalled(true);
           return;
         }
 
@@ -60,7 +67,7 @@ export function ExtensionIntegration({ userId }: ExtensionIntegrationProps) {
           setIsExtensionInstalled(true);
           setJobsDetected((event.data.jobsDetected as number) || 0);
           setLastSync(event.data.lastSync ? new Date(event.data.lastSync as string | number) : null);
-        } else if (event.data.type === 'JOBOOK_EXTENSION_ERROR') {
+        } else if (event.data.type === 'JOobook_EXTENSION_ERROR') {
           console.error('Extension error:', event.data.message);
         }
       } catch (error) {
@@ -79,26 +86,44 @@ export function ExtensionIntegration({ userId }: ExtensionIntegrationProps) {
   // Send user ID to extension with better error handling
   useEffect(() => {
     if (typeof window !== 'undefined' && userId) {
-      const sendAuthToExtension = () => {
+      const sendAuthToExtension = async () => {
         try {
-          // Post message to extension
-          window.postMessage({
-            type: 'JOBOOK_USER_AUTH',
-            userId: userId,
-            timestamp: Date.now(),
-            source: 'hireall_web'
-          }, '*');
+          // Get fresh auth token and user data
+          const authResponse = await extensionAuthBridge.getAuthToken(true);
+          
+          if (authResponse.success && authResponse.token) {
+            // Post message to extension
+            window.postMessage({
+              type: 'JOBOOK_USER_AUTH',
+              userId: userId,
+              token: authResponse.token,
+              userEmail: authResponse.userEmail,
+              timestamp: Date.now(),
+              source: 'hireall_web'
+            }, '*');
 
-          // Also set in localStorage for extension access
-          localStorage.setItem('__hireall_user', JSON.stringify({
-            userId,
-            timestamp: Date.now(),
-            source: 'hireall_web'
-          }));
+            // Also set in localStorage for extension access
+            localStorage.setItem('__hireall_user', JSON.stringify({
+              userId,
+              token: authResponse.token,
+              userEmail: authResponse.userEmail,
+              timestamp: Date.now(),
+              source: 'hireall_web'
+            }));
 
-          // Set the Firebase user data for extension
-          const firebaseUserData = { id: userId, timestamp: Date.now() };
-          (window as any).__firebase_user = firebaseUserData;
+            // Set the Firebase user data for extension
+            const firebaseUserData = { 
+              id: userId, 
+              email: authResponse.userEmail,
+              token: authResponse.token,
+              timestamp: Date.now() 
+            };
+            (window as any).__firebase_user = firebaseUserData;
+
+            console.log('[ExtensionIntegration] Auth data sent to extension');
+          } else {
+            console.warn('[ExtensionIntegration] No auth token available for extension');
+          }
 
           // Set a timeout to retry if extension doesn't respond
           setTimeout(() => {
@@ -165,14 +190,22 @@ export function ExtensionIntegration({ userId }: ExtensionIntegrationProps) {
             <div className="pt-2">
               <Button
                 className="w-full"
-                onClick={() => {
-                  window.postMessage(
-                    {
-                      type: "JOBOOK_FORCE_SYNC",
-                      userId: userId,
-                    },
-                    "*"
-                  );
+                onClick={async () => {
+                  try {
+                    const authResponse = await extensionAuthBridge.getAuthToken(true);
+                    window.postMessage(
+                      {
+                        type: "JOBOOK_FORCE_SYNC",
+                        userId: userId,
+                        token: authResponse.token,
+                        userEmail: authResponse.userEmail,
+                        timestamp: Date.now()
+                      },
+                      "*"
+                    );
+                  } catch (error) {
+                    console.error('Failed to force sync:', error);
+                  }
                 }}
               >
                 Force Sync Now

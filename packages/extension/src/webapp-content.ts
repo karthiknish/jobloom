@@ -221,31 +221,40 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   // Additional action to get auth token
   if (request.action === "getAuthToken") {
     try {
-      const auth = (window as any).__firebase_auth;
-      if (auth && auth.currentUser) {
+      // Try the new auth bridge first
+      if (typeof (window as any).getHireallAuthToken === 'function') {
         const shouldForceRefresh = request?.forceRefresh === true;
-        auth.currentUser
-          .getIdToken(shouldForceRefresh)
-          .then(async (token: string) => {
-            try {
-              await cacheAuthToken({
-                token,
-                userId: auth.currentUser.uid,
-                userEmail: auth.currentUser.email ?? undefined,
-                source: "webapp"
+        (window as any).getHireallAuthToken(shouldForceRefresh)
+          .then(async (authResponse: any) => {
+            if (authResponse.success && authResponse.token) {
+              try {
+                await cacheAuthToken({
+                  token: authResponse.token,
+                  userId: authResponse.userId,
+                  userEmail: authResponse.userEmail,
+                  source: "webapp"
+                });
+              } catch (cacheError) {
+                ExtensionSecurityLogger.log('Error caching auth token', cacheError);
+              }
+              sendResponse({ 
+                token: authResponse.token, 
+                userId: authResponse.userId,
+                userEmail: authResponse.userEmail
               });
-            } catch (cacheError) {
-              ExtensionSecurityLogger.log('Error caching auth token', cacheError);
+            } else {
+              sendResponse({ token: null, error: authResponse.error || 'No authenticated user' });
             }
-            sendResponse({ token, userId: auth.currentUser.uid });
           })
           .catch((error: any) => {
-            ExtensionSecurityLogger.log('Error getting auth token', error);
-            sendResponse({ token: null, error: 'Failed to get auth token' });
+            ExtensionSecurityLogger.log('Error getting auth token from bridge', error);
+            // Fallback to old method
+            fallbackGetAuthToken(request, sendResponse);
           });
         return true; // Async response
       } else {
-        sendResponse({ token: null, error: 'No authenticated user' });
+        // Fallback to old method
+        fallbackGetAuthToken(request, sendResponse);
         return true;
       }
     } catch (error) {
@@ -259,6 +268,40 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   ExtensionSecurityLogger.logSuspiciousActivity('unknown_message_action', request.action);
   return false;
 });
+
+// Fallback function for getting auth token using old method
+function fallbackGetAuthToken(request: any, sendResponse: (response: any) => void) {
+  try {
+    const auth = (window as any).__firebase_auth;
+    if (auth && auth.currentUser) {
+      const shouldForceRefresh = request?.forceRefresh === true;
+      auth.currentUser
+        .getIdToken(shouldForceRefresh)
+        .then(async (token: string) => {
+          try {
+            await cacheAuthToken({
+              token,
+              userId: auth.currentUser.uid,
+              userEmail: auth.currentUser.email ?? undefined,
+              source: "webapp"
+            });
+          } catch (cacheError) {
+            ExtensionSecurityLogger.log('Error caching auth token', cacheError);
+          }
+          sendResponse({ token, userId: auth.currentUser.uid });
+        })
+        .catch((error: any) => {
+          ExtensionSecurityLogger.log('Error getting auth token', error);
+          sendResponse({ token: null, error: 'Failed to get auth token' });
+        });
+    } else {
+      sendResponse({ token: null, error: 'No authenticated user' });
+    }
+  } catch (error) {
+    ExtensionSecurityLogger.log('Error in fallback getAuthToken', error);
+    sendResponse({ token: null, error: 'Failed to get auth token' });
+  }
+}
 
 // Optimized auth success detection with debouncing
 async function notifyAuthSuccess(userId: string): Promise<void> {
@@ -329,6 +372,62 @@ window.addEventListener("message", (event) => {
   // Only accept messages from the same origin
   if (event.origin !== window.location.origin) return;
 
+  // Handle new auth bridge messages
+  if (event.data.type === "JOBOOK_USER_AUTH" || event.data.type === "HIREDALL_AUTH_RESPONSE") {
+    console.log("[WebApp Content] Received auth message from web app:", event.data.type);
+    
+    if (event.data.token && event.data.userId) {
+      // Cache the token from web app
+      cacheAuthToken({
+        token: event.data.token,
+        userId: event.data.userId,
+        userEmail: event.data.userEmail,
+        source: "webapp"
+      }).then(() => {
+        // Notify background script about the auth state
+        chrome.runtime.sendMessage({
+          type: 'AUTH_STATE_CHANGED',
+          payload: {
+            isAuthenticated: true,
+            userId: event.data.userId,
+            email: event.data.userEmail,
+            token: event.data.token,
+            source: 'webapp_content'
+          }
+        });
+        
+        console.log('[WebApp Content] Auth state synced from web app');
+      }).catch((error) => {
+        console.error('[WebApp Content] Failed to cache auth token:', error);
+      });
+    }
+  }
+
+  if (event.data.type === "JOBOOK_FORCE_SYNC") {
+    console.log('[WebApp Content] Force sync requested');
+    
+    // Get fresh token from web app and notify background
+    if (typeof (window as any).getHireallAuthToken === 'function') {
+      (window as any).getHireallAuthToken(true)
+        .then((authResponse: any) => {
+          if (authResponse.success && authResponse.token) {
+            chrome.runtime.sendMessage({
+              type: 'FORCE_SYNC_REQUEST',
+              payload: {
+                token: authResponse.token,
+                userId: event.data.userId,
+                userEmail: authResponse.userEmail,
+                timestamp: Date.now()
+              }
+            });
+          }
+        })
+        .catch((error: any) => {
+          console.error('[WebApp Content] Failed to get token for force sync:', error);
+        });
+    }
+  }
+
   // Handle Firebase authentication success message
   if (event.data.type === "FIREBASE_AUTH_SUCCESS") {
     setTimeout(() => {
@@ -397,7 +496,6 @@ window.addEventListener("message", (event) => {
         "autoConnectLimit",
         "autoMessage",
         "connectionMessage",
-        "autofillProfile",
         "firebaseUid",
         "userId",
       ], async (res) => {
@@ -409,7 +507,6 @@ window.addEventListener("message", (event) => {
           autoConnectLimit: res.autoConnectLimit,
           autoMessage: res.autoMessage,
           connectionMessage: res.connectionMessage,
-          autofillProfile: res.autofillProfile,
         };
         try {
           await put(`/api/app/users/${encodeURIComponent(uid)}/settings`, body);

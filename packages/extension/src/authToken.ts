@@ -94,7 +94,35 @@ export async function cacheAuthToken(params: {
   expiresAt?: number;
   ttlMs?: number;
 }): Promise<void> {
+  // Enhanced validation
   if (typeof params.token !== "string" || params.token.length === 0) {
+    console.warn("Invalid token provided to cacheAuthToken");
+    return;
+  }
+  
+  if (params.token.length < 100) {
+    console.warn("Token appears to be too short to be valid");
+    return;
+  }
+  
+  if (params.token.length > 2000) {
+    console.warn("Token appears to be too long");
+    return;
+  }
+  
+  // Validate email format if provided
+  if (params.userEmail && typeof params.userEmail === "string") {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(params.userEmail)) {
+      console.warn("Invalid email format provided to cacheAuthToken");
+      return;
+    }
+  }
+  
+  // Validate source
+  const validSources: CachedAuthToken["source"][] = ["popup", "webapp", "background", "tab"];
+  if (params.source && !validSources.includes(params.source)) {
+    console.warn("Invalid source provided to cacheAuthToken");
     return;
   }
 
@@ -117,7 +145,30 @@ export async function cacheAuthToken(params: {
 }
 
 export async function clearCachedAuthToken(): Promise<void> {
-  await writeCachedAuthToken(null);
+  try {
+    // Clear the main auth token
+    await writeCachedAuthToken(null);
+    
+    // Clear any additional auth-related data from storage
+    if (isChromeStorageAvailable()) {
+      return new Promise((resolve) => {
+        chrome.storage.local.remove([
+          AUTH_TOKEN_STORAGE_KEY,
+          'hireallUserData',
+          'hireallSessionData',
+          'hireallLastAuthSync',
+          'hireallFirebaseUid'
+        ], () => {
+          if (chrome.runtime.lastError) {
+            console.warn('Failed to clear some auth data from storage:', chrome.runtime.lastError);
+          }
+          resolve();
+        });
+      });
+    }
+  } catch (error) {
+    console.warn('Error during auth token cleanup:', error);
+  }
 }
 
 async function getTokenFromHireallTab(forceRefresh: boolean): Promise<CachedAuthToken | null> {
@@ -140,20 +191,67 @@ async function getTokenFromHireallTab(forceRefresh: boolean): Promise<CachedAuth
     for (const tab of candidateTabs) {
       if (!tab?.id) continue;
 
-      const response = await new Promise<{ token?: string; userId?: string } | null>((resolve) => {
+      // Try multiple methods to get the token
+      const response = await new Promise<{ token?: string; userId?: string; userEmail?: string } | null>((resolve) => {
+        // Method 1: Send message to get auth token
         chrome.tabs.sendMessage(tab.id!, { action: "getAuthToken", forceRefresh }, (resp) => {
           if (chrome.runtime?.lastError) {
-            resolve(null);
+            // Try method 2
+            tryGetTokenFromWindow();
             return;
           }
-          resolve(resp ?? null);
+          if (resp?.token) {
+            resolve(resp);
+            return;
+          }
+          // Try method 2
+          tryGetTokenFromWindow();
         });
+
+        // Method 2: Inject script to access global functions
+        function tryGetTokenFromWindow() {
+          chrome.scripting.executeScript({
+            target: { tabId: tab.id! },
+            func: () => {
+              // Try to get token from global function
+              if (typeof (window as any).getHireallAuthToken === 'function') {
+                return (window as any).getHireallAuthToken();
+              }
+              
+              // Try to get token from localStorage
+              const localToken = localStorage.getItem('hireall_auth_token');
+              const userData = localStorage.getItem('hireall_user_data');
+              
+              if (localToken) {
+                try {
+                  const parsed = userData ? JSON.parse(userData) : {};
+                  return {
+                    token: localToken,
+                    userId: parsed.userId,
+                    userEmail: parsed.userEmail
+                  };
+                } catch (e) {
+                  return { token: localToken };
+                }
+              }
+              
+              return null;
+            }
+          }, (result) => {
+            if (chrome.runtime?.lastError || !result || !result[0]?.result) {
+              resolve(null);
+              return;
+            }
+            resolve(result[0].result);
+          });
+        }
       });
 
       if (response?.token) {
         const cache: CachedAuthToken = {
           token: response.token,
           userId: response.userId,
+          userEmail: response.userEmail,
           expiresAt: Date.now() + DEFAULT_TOKEN_TTL_MS,
           source: "tab",
           updatedAt: Date.now(),

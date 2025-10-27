@@ -16,6 +16,16 @@ import {
   validateFileUploadWithLimits,
   DEFAULT_UPLOAD_LIMITS
 } from "@/config/uploadLimits";
+import { 
+  createAuthError, 
+  createValidationError, 
+  createRateLimitError,
+  handleFileUploadError,
+  handleDatabaseError,
+  createSuccessResponse,
+  withErrorHandler 
+} from "@/lib/api/errorResponse";
+import { ERROR_CODES } from "@/lib/api/errorCodes";
 
 // Initialize Firebase Admin if not already initialized (for storage)
 // Centralized admin initialization already handled in firebase/admin.ts

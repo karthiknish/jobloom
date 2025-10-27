@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyIdToken, isUserAdmin, getAdminDb, FieldPath, FieldValue } from "@/firebase/admin";
+import { getAdminDb, FieldPath, FieldValue } from "@/firebase/admin";
+import { authenticateRequest } from "@/lib/api/auth";
+import { withErrorHandling, generateRequestId } from "@/lib/api/errors";
 
 // Get Firestore instance using the centralized admin initialization
 const db = getAdminDb();
@@ -9,28 +11,17 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ postId: string }> }
 ) {
-  try {
+  const requestId = generateRequestId();
+
+  return withErrorHandling(async () => {
     const { postId } = await params;
+    const auth = await authenticateRequest(request, {
+      requireAdmin: true,
+      requireAuthHeader: true,
+    });
 
-    const authHeader = request.headers.get("authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const token = authHeader.substring(7);
-    const decodedToken = await verifyIdToken(token);
-
-    if (!decodedToken) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-    }
-
-    // Check if user is admin
-    const isAdmin = await isUserAdmin(decodedToken.uid);
-    if (!isAdmin) {
-      return NextResponse.json(
-        { error: "Admin access required" },
-        { status: 403 }
-      );
+    if (!auth.ok) {
+      return auth.response;
     }
 
     const body = await request.json();
@@ -62,59 +53,49 @@ export async function PUT(
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-+|-+$/g, "");
 
-      // Check if new slug conflicts with another post
+      // Check if new slug already exists (excluding current post)
       const existingPost = await db
         .collection("blogPosts")
         .where("slug", "==", slug)
-        .where(FieldPath.documentId(), "!=", postId)
         .limit(1)
         .get();
 
-      if (!existingPost.empty) {
+      if (!existingPost.empty && existingPost.docs[0].id !== postId) {
         return NextResponse.json(
           { error: "A post with this title already exists" },
-          { status: 400 }
+          { status: 409 }
         );
       }
     }
 
-    // Calculate reading time
-    const wordCount = content.split(/\s+/).length;
-    const readingTime = Math.ceil(wordCount / 200);
-
+    // Update the post
     const updateData: any = {
       title,
-      slug,
       content,
       excerpt,
       category,
       tags: tags || [],
-      featuredImage,
-      readingTime,
-      updatedAt: FieldValue.serverTimestamp(),
+      status: status || "draft",
+      featuredImage: featuredImage || null,
+      slug,
+      updatedAt: Date.now(),
     };
 
-    // Handle status changes
-    if (status !== currentData?.status) {
-      updateData.status = status;
-      if (status === "published" && !currentData?.publishedAt) {
-        updateData.publishedAt = FieldValue.serverTimestamp();
-      }
+    // Set publishedAt if status changed to published
+    if (status === "published" && currentData?.status !== "published") {
+      updateData.publishedAt = Date.now();
     }
 
     await postRef.update(updateData);
 
     return NextResponse.json({
-      success: true,
-      slug,
+      message: "Blog post updated successfully"
     });
-  } catch (error) {
-    console.error("Error updating blog post:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
-  }
+  }, {
+    endpoint: '/api/blog/admin/posts/[postId]',
+    method: 'PUT',
+    requestId
+  });
 }
 
 // DELETE /api/blog/admin/posts/[postId] - Delete a blog post
@@ -122,25 +103,17 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ postId: string }> }
 ) {
-  try {
+  const requestId = generateRequestId();
+
+  return withErrorHandling(async () => {
     const { postId } = await params;
+    const auth = await authenticateRequest(request, {
+      requireAdmin: true,
+      requireAuthHeader: true,
+    });
 
-    const authHeader = request.headers.get("authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const token = authHeader.substring(7);
-    const decodedToken = await verifyIdToken(token);
-
-    if (!decodedToken) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-    }
-
-    // Check if user is admin
-    const isAdmin = await isUserAdmin(decodedToken.uid);
-    if (!isAdmin) {
-      return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+    if (!auth.ok) {
+      return auth.response;
     }
 
     // Check if post exists
@@ -153,9 +126,12 @@ export async function DELETE(
 
     await postRef.delete();
 
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Error deleting blog post:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
-  }
+    return NextResponse.json({
+      message: "Blog post deleted successfully"
+    });
+  }, {
+    endpoint: '/api/blog/admin/posts/[postId]',
+    method: 'DELETE',
+    requestId
+  });
 }

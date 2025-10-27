@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { SkeletonGrid } from "@/components/ui/loading-skeleton";
 import { motion } from "framer-motion";
 import {
@@ -41,17 +41,20 @@ interface BlogPostWithPagination {
 
 export default function BlogPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
 
   // Fetch blog posts
+  const fetchBlogPosts = useCallback(() => {
+    return fetch(
+      `/api/blog/posts?page=${currentPage}&limit=9&search=${encodeURIComponent(
+        searchTerm
+      )}&category=${encodeURIComponent(selectedCategory ?? "")}`
+    ).then((res) => res.json());
+  }, [currentPage, searchTerm, selectedCategory]);
+
   const { data, loading, refetch } = useApiQuery<BlogPostWithPagination>(
-    () =>
-      fetch(
-        `/api/blog/posts?page=${currentPage}&limit=9&search=${encodeURIComponent(
-          searchTerm
-        )}&category=${encodeURIComponent(selectedCategory)}`
-      ).then((res) => res.json()),
+    fetchBlogPosts,
     [currentPage, searchTerm, selectedCategory]
   );
 
@@ -90,27 +93,16 @@ export default function BlogPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="bg-gradient-to-r from-primary via-primary/90 to-secondary/80 text-white"
+        className="bg-gradient-to-r from-primary via-primary/90 to-secondary shadow-xl"
       >
         <div className="max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.6 }}
-              className="text-4xl font-bold sm:text-5xl lg:text-6xl"
-            >
-              Our Blog
-            </motion.h1>
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.6 }}
-              className="mt-6 max-w-2xl mx-auto text-xl text-primary-foreground/90"
-            >
-              Insights, tips, and stories to help you navigate your career
-              journey
-            </motion.p>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="space-y-2">
+              <h1 className="text-4xl font-bold sm:text-5xl lg:text-6xl text-white">Our Blog</h1>
+              <p className="mt-6 max-w-2xl mx-auto text-xl text-primary-foreground/90">
+                Insights, tips, and stories to help you navigate your career journey
+              </p>
+            </div>
           </div>
         </div>
       </motion.div>
@@ -136,14 +128,16 @@ export default function BlogPage() {
               </div>
 
               <Select
-                value={selectedCategory}
-                onValueChange={setSelectedCategory}
+                value={selectedCategory ?? "__all__"}
+                onValueChange={(value) =>
+                  setSelectedCategory(value === "__all__" ? null : value)
+                }
               >
                 <SelectTrigger className="w-[200px]">
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Categories</SelectItem>
+                  <SelectItem value="__all__">All Categories</SelectItem>
                   {categories.map((category) => (
                     <SelectItem key={category} value={category}>
                       {category}
@@ -182,7 +176,7 @@ export default function BlogPage() {
                 variant="outline"
                 onClick={() => {
                   setSearchTerm("");
-                  setSelectedCategory("");
+                  setSelectedCategory(null);
                 }}
               >
                 Clear Filters

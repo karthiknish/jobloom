@@ -33,6 +33,9 @@ interface CvUploadFormProps {
   onUploadSuccess?: (analysisId: string) => void;
   onUploadStarted?: () => void;
   onResumeUpdate?: (resume: ResumeData, targetRole?: string, industry?: string) => void;
+  currentResume?: ResumeData;
+  currentAtsScore?: any;
+  setCurrentAtsScore?: (score: any) => void;
 }
 
 interface UploadLimits {
