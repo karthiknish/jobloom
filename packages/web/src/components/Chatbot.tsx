@@ -213,11 +213,13 @@ export default function Chatbot() {
   return (
     <>
       {/* Floating Chat Button */}
-      <div className="fixed bottom-6 right-6 z-50">
+      <div className="fixed bottom-6 right-6 z-50 sm:bottom-6 sm:right-6">
         <Button
           onClick={toggleChat}
-          size="lg"
-          className="rounded-full h-14 w-14 shadow-lg bg-primary hover:bg-primary/90 text-primary-foreground"
+          size="icon"
+          variant="default"
+          aria-label={isOpen ? "Close chat" : "Open chat"}
+          className="h-14 w-14 rounded-full shadow-lg"
         >
           {isOpen ? (
             <X className="h-6 w-6" />
@@ -229,9 +231,10 @@ export default function Chatbot() {
 
           {/* Chat Window */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 top-24 w-96 max-w-[calc(100vw-3rem)] h-[600px] max-h-[calc(100vh-8rem)] bg-background border border-border rounded-lg shadow-lg flex flex-col z-50">
+        <div className="fixed inset-x-4 bottom-4 top-auto z-50 sm:inset-auto sm:bottom-24 sm:right-6 sm:w-96">
+          <div className="bg-background border border-border rounded-lg shadow-lg flex flex-col h-[calc(100vh-5rem)] max-h-[680px] sm:h-[600px] sm:max-h-[calc(100vh-8rem)]">
           {/* Header */}
-          <div className="flex items-center gap-3 p-4 border-b border-border bg-primary text-primary-foreground">
+          <div className="flex items-center gap-3 p-4 border-b border-border bg-primary text-primary-foreground rounded-t-lg">
             <Avatar className="h-8 w-8">
               <AvatarFallback className="bg-primary-foreground/20">
                 <Bot className="h-4 w-4" />
@@ -401,6 +404,7 @@ export default function Chatbot() {
               </div>
             </div>
           )}
+          </div>
         </div>
       )}
     </>

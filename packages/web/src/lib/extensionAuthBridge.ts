@@ -81,15 +81,16 @@ class ExtensionAuthBridge {
       }, '*');
       
       // Also try to send via chrome runtime if available
-      if ((window as any).chrome?.runtime?.sendMessage) {
+      const chromeRuntime = (window as any).chrome?.runtime;
+      if (chromeRuntime?.sendMessage) {
         try {
-          (window as any).chrome.runtime.sendMessage({
+          chromeRuntime.sendMessage({
             action: 'authSuccess',
             data: authResponse,
             timestamp: Date.now()
           }, (response: any) => {
-            if (chrome.runtime.lastError) {
-              console.warn('[ExtensionAuthBridge] Chrome runtime message failed:', chrome.runtime.lastError);
+            if (chromeRuntime.lastError) {
+              console.warn('[ExtensionAuthBridge] Chrome runtime message failed:', chromeRuntime.lastError);
             }
           });
         } catch (error) {

@@ -239,16 +239,21 @@ export default function SettingsPage() {
       };
 
       // Save to chrome storage sync for extension access
-      if (typeof window !== "undefined" && window.chrome && window.chrome.storage) {
-        await new Promise<void>((resolve, reject) => {
-          window.chrome.storage.sync.set(syncData, () => {
-            if (window.chrome.runtime.lastError) {
-              reject(new Error(window.chrome.runtime.lastError.message));
-            } else {
-              resolve();
-            }
+      if (typeof window !== "undefined") {
+        const chromeApi = window.chrome;
+        const chromeRuntime = chromeApi?.runtime;
+        const storageSync = chromeApi?.storage?.sync;
+        if (storageSync?.set) {
+          await new Promise<void>((resolve, reject) => {
+            storageSync.set(syncData, () => {
+              if (chromeRuntime?.lastError) {
+                reject(new Error(chromeRuntime.lastError.message || "Chrome runtime error"));
+              } else {
+                resolve();
+              }
+            });
           });
-        });
+        }
       }
 
       // Also send message to any loaded extension instances
