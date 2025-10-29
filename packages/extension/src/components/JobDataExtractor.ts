@@ -1,33 +1,7 @@
-export interface JobData {
-  title: string;
-  company: string;
-  location: string;
-  url: string;
-  description?: string;
-  salary?: string;
-  salaryRange?: {
-    min?: number;
-    max?: number;
-    currency?: string;
-    period?: string;
-  };
-  skills?: string[];
-  requirements?: string[];
-  benefits?: string[];
-  jobType?: string;
-  experienceLevel?: string;
-  remoteWork?: boolean;
-  companySize?: string;
-  industry?: string;
-  postedDate?: string;
-  applicationDeadline?: string;
-  isSponsored: boolean;
-  sponsorshipType?: string;
-  isRecruitmentAgency?: boolean;
-  dateFound: string;
-  source: string;
-  jobId?: string;
-}
+import { extractLinkedInJob } from "../job-tracker/jobExtractor";
+import type { JobData } from "../job-tracker/types";
+
+export type { JobData } from "../job-tracker/types";
 
 type SelectorMap = Record<string, string[]>;
 
@@ -48,22 +22,50 @@ export class JobDataExtractor {
 
   static extractJobData(element: Element): JobData {
     const site = this.detectSite();
+    if (site === "linkedin") {
+      try {
+        return extractLinkedInJob(element);
+      } catch (error) {
+        console.warn("Hireall: LinkedIn extraction fallback", error);
+      }
+    }
+
     const title = this.getFirstMatch(element, this.TITLE_SELECTORS[site]) ?? "Unknown role";
     const company = this.getFirstMatch(element, this.COMPANY_SELECTORS[site]) ?? "Unknown company";
     const location = this.getFirstMatch(element, this.LOCATION_SELECTORS[site]) ?? "Location not listed";
     const url = this.getLink(element, this.URL_SELECTORS[site]) ?? window.location.href;
+
+    const description = this.extractDescription(element, site) ?? undefined;
+    const salary = this.extractSalary(element, site) ?? undefined;
+    const postedDate = this.getFirstMatch(element, this.POSTED_DATE_SELECTORS[site]) ?? undefined;
+    const textSnapshot = (element.textContent ?? "").toLowerCase();
+    const details = this.extractDetails(element, description);
+    const remoteFlag = this.detectRemote(textSnapshot);
+    const salaryRange = salary ? this.parseSalaryRange(salary) : undefined;
+    const seniority = this.detectSeniority(textSnapshot);
 
     return {
       title,
       company,
       location,
       url,
-      description: this.extractDescription(element, site),
-      salary: this.extractSalary(element, site) ?? undefined,
-      postedDate: this.getFirstMatch(element, this.POSTED_DATE_SELECTORS[site]) ?? undefined,
+      description,
+      salary,
+      salaryRange,
+      postedDate,
+      jobType: this.detectJobType(textSnapshot),
+      experienceLevel: this.detectExperienceLevel(textSnapshot),
+      remoteWork: remoteFlag,
+      skills: details.skills.length ? details.skills : undefined,
+      requirements: details.requirements.length ? details.requirements : undefined,
+      benefits: details.benefits.length ? details.benefits : undefined,
       isSponsored: this.detectSponsored(element, site),
       dateFound: new Date().toISOString(),
       source: site,
+      metadata: {
+        remote: remoteFlag,
+        seniority,
+      },
     };
   }
 
@@ -244,6 +246,163 @@ export class JobDataExtractor {
     };
 
     return this.getFirstMatch(element, selectorsBySite[site] ?? selectorsBySite.unknown);
+  }
+
+  private static extractDetails(
+    element: Element,
+    description?: string | null
+  ): { requirements: string[]; benefits: string[]; skills: string[] } {
+    const bulletItems = Array.from(element.querySelectorAll("li"))
+      .map((item) => item.textContent?.trim())
+      .filter((text): text is string => !!text)
+      .map(this.normalizeWhitespace);
+
+    const sentences = (description ?? "")
+      .split(/[\n.]+/)
+      .map((line) => line.trim())
+      .filter((line) => line.length >= 6 && line.length <= 160);
+
+    const requirementKeywords = [
+      "require",
+      "must",
+      "need",
+      "responsible",
+      "experience",
+      "knowledge",
+      "ability",
+      "background",
+      "qualification",
+      "certification",
+      "essential",
+    ];
+    const benefitKeywords = [
+      "benefit",
+      "bonus",
+      "package",
+      "holiday",
+      "pension",
+      "insurance",
+      "support",
+      "allowance",
+      "perk",
+      "wellbeing",
+      "well-being",
+      "leave",
+      "flexible",
+    ];
+    const skillIndicators = [
+      "skill",
+      "proficient",
+      "proficiency",
+      "experience",
+      "knowledge",
+      "familiar",
+      "ability",
+      "competent",
+      "expertise",
+      "capable",
+    ];
+
+    const requirements = new Set<string>();
+    const benefits = new Set<string>();
+    const skills = new Set<string>();
+
+    const categorize = (text: string) => {
+      const lower = text.toLowerCase();
+      if (benefitKeywords.some((keyword) => lower.includes(keyword))) {
+        benefits.add(text);
+        return;
+      }
+
+      if (requirementKeywords.some((keyword) => lower.includes(keyword)) || /^\d+\+?\s*year/.test(lower)) {
+        requirements.add(text);
+        return;
+      }
+
+      if (skillIndicators.some((keyword) => lower.includes(keyword))) {
+        skills.add(text);
+      }
+    };
+
+    bulletItems.forEach(categorize);
+    sentences.forEach(categorize);
+
+    return {
+      requirements: this.limitList(Array.from(requirements), 8),
+      benefits: this.limitList(Array.from(benefits), 6),
+      skills: this.limitList(Array.from(skills), 10),
+    };
+  }
+
+  private static detectJobType(text: string): string | undefined {
+    if (text.includes("full-time") || text.includes("full time")) return "Full-time";
+    if (text.includes("part-time") || text.includes("part time")) return "Part-time";
+    if (text.includes("contract")) return "Contract";
+    if (text.includes("temporary")) return "Temporary";
+    if (text.includes("intern")) return "Internship";
+    if (text.includes("freelance") || text.includes("consultant")) return "Freelance";
+    return undefined;
+  }
+
+  private static detectExperienceLevel(text: string): string | undefined {
+    if (text.includes("graduate") || text.includes("entry level")) return "Entry Level";
+    if (text.includes("junior") || text.includes("associate")) return "Early Career";
+    if (text.includes("mid level") || text.includes("mid-level") || text.includes("experienced")) return "Mid Level";
+    if (text.includes("senior") || text.includes("lead")) return "Senior Level";
+    if (text.includes("director") || text.includes("principal") || text.includes("executive")) return "Leadership";
+    return undefined;
+  }
+
+  private static detectRemote(text: string): boolean {
+    return ["remote", "work from home", "hybrid", "flexible location", "distributed"].some((keyword) =>
+      text.includes(keyword)
+    );
+  }
+
+  private static detectSeniority(text: string): string | undefined {
+    if (text.includes("graduate") || text.includes("entry")) return "entry";
+    if (text.includes("junior")) return "junior";
+    if (text.includes("mid") || text.includes("experienced")) return "mid";
+    if (text.includes("senior") || text.includes("lead")) return "senior";
+    if (text.includes("director") || text.includes("principal")) return "leadership";
+    return undefined;
+  }
+
+  private static parseSalaryRange(text: string): JobData["salaryRange"] | undefined {
+    const match = text.match(
+      /(\$|£|€)?\s?(\d[\d,]*)(?:\s*-\s*(\$|£|€)?\s?(\d[\d,]*))?(?:\s*(?:per|a)?\s*(year|annum|month|week|day|hour))?/i
+    );
+
+    if (!match) {
+      return undefined;
+    }
+
+    const [, minCurrency, minValue, maxCurrency, maxValue, periodRaw] = match;
+    const parseNumber = (value?: string) => (value ? Number(value.replace(/,/g, "")) : undefined);
+
+    const min = parseNumber(minValue);
+    const max = parseNumber(maxValue);
+    const currency = minCurrency || maxCurrency || undefined;
+    const period = periodRaw ? periodRaw.toLowerCase().replace("annum", "year") : "year";
+
+    if (!min && !max) {
+      return undefined;
+    }
+
+    return {
+      min,
+      max: max ?? min,
+      currency,
+      period,
+    };
+  }
+
+  private static normalizeWhitespace(value: string): string {
+    return value.replace(/\s+/g, " ").trim();
+  }
+
+  private static limitList<T>(items: T[], max: number): T[] {
+    return items.slice(0, max);
   }
 
   private static detectSponsored(element: Element, site: string): boolean {

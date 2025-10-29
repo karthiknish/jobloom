@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from "@google/generative-ai";
 
-// IMPORTANT: Use a server-side (non-public) key. Rename env var to avoid exposing public key usage pattern.
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY || ""; // fallback for current setup
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
+
+if (!GEMINI_API_KEY && process.env.NEXT_PUBLIC_GEMINI_API_KEY && process.env.NODE_ENV !== "production") {
+  console.warn("GEMINI_API_KEY is not configured. NEXT_PUBLIC_GEMINI_API_KEY is set but ignored to keep the key server-side.");
+}
+
+const genAI = GEMINI_API_KEY ? new GoogleGenerativeAI(GEMINI_API_KEY) : null;
 
 // Job/Career related keywords for guardrails
 const ALLOWED_TOPICS = [
@@ -97,7 +101,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    if (!GEMINI_API_KEY) {
+    if (!GEMINI_API_KEY || !genAI) {
       return NextResponse.json(
         { error: "AI service not configured. Missing GEMINI_API_KEY." },
         { status: 503 }

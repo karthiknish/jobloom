@@ -1,8 +1,33 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenerativeAI, type GenerativeModel } from '@google/generative-ai';
 
-// Initialize Gemini AI
-const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY!);
-const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
+
+if (!GEMINI_API_KEY && process.env.NEXT_PUBLIC_GEMINI_API_KEY && process.env.NODE_ENV !== 'production') {
+  console.warn('GEMINI_API_KEY is not configured. NEXT_PUBLIC_GEMINI_API_KEY is set but ignored to protect the server key.');
+}
+
+let genAI: GoogleGenerativeAI | null = null;
+const modelCache = new Map<string, GenerativeModel>();
+const DEFAULT_MODEL = 'gemini-2.0-flash';
+
+function getModel(modelName: string = DEFAULT_MODEL): GenerativeModel {
+  if (!GEMINI_API_KEY) {
+    throw new Error('Gemini API key is not configured. Set GEMINI_API_KEY on the server.');
+  }
+
+  if (!genAI) {
+    genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+  }
+
+  const cached = modelCache.get(modelName);
+  if (cached) {
+    return cached;
+  }
+
+  const created = genAI.getGenerativeModel({ model: modelName });
+  modelCache.set(modelName, created);
+  return created;
+}
 
 export interface CoverLetterRequest {
   jobTitle: string;
@@ -37,6 +62,36 @@ export interface ResumeAnalysisResponse {
   suggestions: string[];
   strengths: string[];
   weaknesses: string[];
+}
+
+export interface ResumeGenerationRequest {
+  jobTitle: string;
+  experience: string;
+  skills: string[];
+  education: string;
+  industry: string;
+  level: 'entry' | 'mid' | 'senior' | 'executive' | string;
+  style: 'modern' | 'classic' | 'creative' | 'tech' | string;
+  includeObjective: boolean;
+  atsOptimization: boolean;
+  aiEnhancement: boolean;
+}
+
+export interface ResumeGenerationResult {
+  content: string;
+  summary: string;
+  experience: string;
+  skills: string;
+  education: string;
+}
+
+export interface EditorContentRequest {
+  prompt: string;
+  tone?: 'professional' | 'approachable' | 'enthusiastic' | string;
+  audience?: string;
+  keywords?: string[];
+  length?: 'short' | 'medium' | 'long';
+  format?: 'plain' | 'bullet' | string;
 }
 
 /**
@@ -79,6 +134,7 @@ export async function generateCoverLetter(request: CoverLetterRequest): Promise<
     });
 
     // Generate content with AI
+    const model = getModel();
     const result = await model.generateContent(prompt);
     const content = result.response.text().trim();
 
@@ -115,6 +171,7 @@ export async function analyzeResume(request: ResumeAnalysisRequest): Promise<Res
 
     const prompt = createResumeAnalysisPrompt(resumeText, jobDescription);
 
+    const model = getModel();
     const result = await model.generateContent(prompt);
     const analysis = result.response.text().trim();
 
@@ -127,6 +184,107 @@ export async function analyzeResume(request: ResumeAnalysisRequest): Promise<Res
     console.error('AI Resume Analysis Error:', error);
     throw new Error('Failed to analyze resume with AI');
   }
+}
+
+export async function generateResumeWithAI(request: ResumeGenerationRequest): Promise<ResumeGenerationResult> {
+  try {
+    const prompt = createResumeGenerationPrompt(request);
+    const model = getModel();
+    const result = await model.generateContent(prompt);
+    const raw = result.response.text().trim();
+    return parseResumeGenerationResponse(raw);
+  } catch (error) {
+    console.error('AI Resume Generation Error:', error);
+    throw new Error('Failed to generate resume with AI');
+  }
+}
+
+export async function generateEditorContent(request: EditorContentRequest): Promise<string> {
+  const {
+    prompt,
+    tone = 'professional',
+    audience = 'Hireall readers',
+    keywords = [],
+    length = 'medium',
+    format = 'plain',
+  } = request;
+
+  const trimmedPrompt = typeof prompt === 'string' ? prompt.trim() : '';
+  if (!trimmedPrompt) {
+    throw new Error('Prompt is required to generate content');
+  }
+
+  const lengthGuide: Record<string, string> = {
+    short: '120-180 words',
+    medium: '220-320 words',
+    long: '350-500 words',
+  };
+
+  const keywordLine = keywords.length > 0
+    ? `Important keywords to incorporate: ${keywords.join(', ')}`
+    : 'Prioritize clarity and actionable insights for job seekers.';
+
+  const formatGuide = format === 'bullet'
+    ? 'Present the response as 3-5 concise bullet points using the • character.'
+    : 'Use short paragraphs with clear transitions and avoid markdown code fences.';
+
+  const systemPrompt = `You are Hireall's editorial assistant helping create career content that is practical, original, and on-brand.
+
+Topic: ${trimmedPrompt}
+Audience: ${audience}
+Tone: ${tone}
+${keywordLine}
+Target length: ${lengthGuide[length] ?? lengthGuide.medium}
+
+Guidelines:
+1. Deliver factual, career-focused advice tailored to the topic.
+2. Maintain a ${tone} tone that aligns with Hireall's professional voice.
+3. Provide actionable takeaways the reader can apply immediately.
+4. Avoid mentioning that you are an AI model or referencing this prompt.
+5. ${formatGuide}
+6. Do not include introductions about the article-writing process.
+7. Eliminate filler phrases and keep sentences concise.
+
+Return the final content only.`;
+
+  try {
+    const model = getModel();
+    const result = await model.generateContent(systemPrompt);
+    const raw = result.response.text();
+    return sanitizeEditorContent(raw, format);
+  } catch (error) {
+    console.error('Editor content generation error:', error);
+    throw new Error('Failed to generate editor content with AI');
+  }
+}
+
+function sanitizeEditorContent(text: string, format: string): string {
+  if (!text) {
+    return '';
+  }
+
+  const normalized = text.replace(/\r\n/g, '\n').trim();
+  const withoutFences = normalized
+    .replace(/```(?:[a-zA-Z0-9_-]+)?/g, '')
+    .replace(/```/g, '');
+  const collapsed = withoutFences.replace(/\n{3,}/g, '\n\n');
+
+  if (format === 'bullet') {
+    return collapsed
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => {
+        if (line.startsWith('• ')) return line;
+        if (line.startsWith('- ')) return `• ${line.slice(2)}`;
+        if (line.startsWith('•')) return `• ${line.slice(1).trimStart()}`;
+        if (line.startsWith('-')) return `• ${line.slice(1).trimStart()}`;
+        return line;
+      })
+      .join('\n');
+  }
+
+  return collapsed;
 }
 
 /**
@@ -147,6 +305,7 @@ Return a JSON array of the top 12 most relevant keywords/phrases. Focus on terms
 Example format: ["JavaScript", "React", "Node.js", "Team Leadership", "Agile Methodology"]
 `;
 
+    const model = getModel();
     const result = await model.generateContent(prompt);
     const response = result.response.text().trim();
 
@@ -187,6 +346,7 @@ Return insights as a JSON array of strings, each insight should be actionable an
 Example: ["Emphasizes collaborative team environment with cross-functional projects", "Focuses on innovation and cutting-edge technology solutions"]
 `;
 
+    const model = getModel();
     const result = await model.generateContent(prompt);
     const response = result.response.text().trim();
 
@@ -237,7 +397,8 @@ Evaluate based on:
 Return only a number between 0-100 representing the ATS compatibility score.
 `;
 
-    const result = await model.generateContent(prompt);
+  const model = getModel();
+  const result = await model.generateContent(prompt);
     const response = result.response.text().trim();
 
     const score = parseInt(response.match(/\d+/)?.[0] || '75');
@@ -282,7 +443,8 @@ Return suggestions as a JSON array of strings.
 Example: ["Add more quantifiable achievements with specific metrics", "Incorporate additional job-specific keywords naturally"]
 `;
 
-    const result = await model.generateContent(prompt);
+  const model = getModel();
+  const result = await model.generateContent(prompt);
     const response = result.response.text().trim();
 
     try {
@@ -391,6 +553,123 @@ Focus on:
 - Quantifiable achievements
 - Industry-specific terminology
 `;
+}
+
+function createResumeGenerationPrompt(request: ResumeGenerationRequest): string {
+  const {
+    jobTitle,
+    experience,
+    skills,
+    education,
+    industry,
+    level,
+    style,
+    includeObjective,
+    atsOptimization,
+    aiEnhancement,
+  } = request;
+
+  const styleGuide: Record<string, string> = {
+    modern: 'Modern: clean layout, concise bullet points, metrics-driven achievements',
+    classic: 'Classic: traditional formatting, professional tone, clear sections',
+    creative: 'Creative: engaging language, storytelling elements while staying ATS-friendly',
+    tech: 'Tech: emphasize technical skills, projects, agile practices, measurable outcomes',
+  };
+
+  const levelGuide: Record<string, string> = {
+    entry: 'Entry level professional (0-2 years experience)',
+    mid: 'Mid level professional (3-7 years experience)',
+    senior: 'Senior professional (8-12 years experience)',
+    executive: 'Executive leader (13+ years experience)',
+  };
+
+  const normalizedSkills = skills && skills.length > 0 ? skills.join(', ') : 'Not specified';
+  const styleDescription = styleGuide[style] ?? `Style preference: ${style}`;
+  const levelDescription = levelGuide[level] ?? `Professional level: ${level}`;
+
+  return `You are an expert resume writer helping a candidate craft an optimized resume for ATS systems.
+
+Return ONLY a valid JSON object (no markdown fences, no commentary) using this exact structure:
+{
+  "summary": "...",
+  "experience": "...",
+  "skills": "...",
+  "education": "...",
+  "content": "..."
+}
+
+Formatting rules:
+- Use \\\n within string values for line breaks.
+- Make sure content is ATS-friendly: short bullet sentences, measurable achievements, relevant keywords.
+- Keep tone ${aiEnhancement ? 'polished and confident' : 'close to the original wording provided by the user'}.
+- ${atsOptimization ? 'Prioritize keyword coverage and simple structure (SUMMARY, EXPERIENCE, SKILLS, EDUCATION).' : 'Maintain natural narrative flow. ATS optimization is optional.'}
+- If ${includeObjective ? 'include' : 'do not include'} an objective statement. If included, merge it into the summary section.
+
+Candidate context:
+- Target role: ${jobTitle}
+- Industry focus: ${industry || 'general'}
+- Professional level: ${levelDescription}
+- Resume style preference: ${styleDescription}
+- Key skills: ${normalizedSkills}
+- Education: ${education || 'Not specified'}
+- Experience highlights: ${experience || 'Not provided'}
+
+Ensure each section is complete. Provide the full resume body in the "content" field with appropriate headings (e.g., SUMMARY, EXPERIENCE, SKILLS, EDUCATION).`;
+}
+
+function parseResumeGenerationResponse(raw: string): ResumeGenerationResult {
+  const cleaned = raw
+    .replace(/```json/gi, '')
+    .replace(/```/g, '')
+    .trim();
+
+  const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    throw new Error('Missing JSON object in AI resume response');
+  }
+
+  let parsed: Record<string, unknown>;
+  try {
+    parsed = JSON.parse(jsonMatch[0]);
+  } catch (error) {
+    throw new Error('Failed to parse AI resume JSON');
+  }
+
+  const toText = (value: unknown): string => {
+    if (!value) return '';
+    if (typeof value === 'string') return value.replace(/\\n/g, '\n').trim();
+    if (Array.isArray(value)) {
+      return value
+        .map((item) => toText(item))
+        .filter(Boolean)
+        .join('\n');
+    }
+    if (typeof value === 'object') {
+      return Object.values(value)
+        .map((item) => toText(item))
+        .filter(Boolean)
+        .join('\n');
+    }
+    return String(value);
+  };
+
+  const summary = toText(parsed.summary);
+  const experience = toText(parsed.experience);
+  const skills = toText(parsed.skills);
+  const education = toText(parsed.education);
+  const content = toText(parsed.content);
+
+  if (!summary && !experience && !skills && !education && !content) {
+    throw new Error('AI resume response was empty');
+  }
+
+  return {
+    summary,
+    experience,
+    skills,
+    education,
+    content,
+  };
 }
 
 /**

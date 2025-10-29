@@ -4,14 +4,14 @@ export interface ExtensionMessage {
 }
 
 export class ExtensionMessageHandler {
-  private static handlers: Map<string, (message: ExtensionMessage) => void> = new Map();
+  private static handlers: Map<string, (message: ExtensionMessage) => unknown | Promise<unknown>> = new Map();
 
   private static resolveJobTracker(): import("./JobTracker").JobTracker | null {
     const tracker = (window as unknown as { hireallJobTracker?: import("./JobTracker").JobTracker }).hireallJobTracker;
     return tracker ?? null;
   }
 
-  static registerHandler(action: string, handler: (message: ExtensionMessage) => void): void {
+  static registerHandler(action: string, handler: (message: ExtensionMessage) => unknown | Promise<unknown>): void {
     this.handlers.set(action, handler);
   }
 
@@ -25,17 +25,28 @@ export class ExtensionMessageHandler {
     if (handler) {
       try {
         const result = handler(request);
-        if (sendResponse) {
-          sendResponse({ success: true, result });
+        if (result instanceof Promise) {
+          result
+            .then((value) => {
+              sendResponse?.({ success: true, result: value });
+            })
+            .catch((error) => {
+              console.error(`Async handler error for action ${request.action}:`, error);
+              sendResponse?.({
+                success: false,
+                error: error instanceof Error ? error.message : "Unknown error",
+              });
+            });
+          return true;
         }
+
+        sendResponse?.({ success: true, result });
       } catch (error) {
         console.error(`Error handling message action ${request.action}:`, error);
-        if (sendResponse) {
-          sendResponse({
-            success: false,
-            error: error instanceof Error ? error.message : "Unknown error",
-          });
-        }
+        sendResponse?.({
+          success: false,
+          error: error instanceof Error ? error.message : "Unknown error",
+        });
       }
       return false;
     }

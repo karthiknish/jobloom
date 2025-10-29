@@ -572,7 +572,6 @@ async function handleJobData(jobData: any) {
         location: jobData.location,
         url: jobData.url,
         isSponsored: jobData.isSponsored,
-        isRecruitmentAgency: jobData.isRecruitmentAgency || false,
         source: "extension",
         userId: uid,
       });

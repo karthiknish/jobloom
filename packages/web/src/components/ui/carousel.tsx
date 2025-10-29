@@ -120,18 +120,27 @@ export const Carousel = React.forwardRef<HTMLDivElement, CarouselProps>(
           {showDots && itemCount > 1 && (
             <div className="flex gap-2 justify-center mt-4">
               {Array.from({ length: itemCount }).map((_, index) => (
-                <button
+                <Button
                   key={index}
                   type="button"
+                  variant="ghost"
+                  size="icon"
                   className={cn(
-                    "h-2 w-2 rounded-full transition-all duration-200",
+                    "h-6 w-6 rounded-full p-0",
                     index === currentIndex
-                      ? "bg-primary"
-                      : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:text-foreground"
                   )}
                   onClick={() => goToSlide(index)}
                   aria-label={`Go to slide ${index + 1}`}
-                />
+                >
+                  <span
+                    className={cn(
+                      "h-2 w-2 rounded-full transition-colors",
+                      index === currentIndex ? "bg-current" : "bg-muted-foreground/40"
+                    )}
+                  />
+                </Button>
               ))}
             </div>
           )}

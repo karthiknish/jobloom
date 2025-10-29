@@ -1,5 +1,6 @@
 import { sponsorBatchLimiter } from "../rateLimiter";
 import { get } from "../apiClient";
+import { fetchSponsorRecord as fetchSponsorLookup, SponsorLookupResult } from "../sponsorship/lookup";
 import { JobDescriptionData } from "../jobDescriptionParser";
 
 // Sponsorship lookup cache & concurrency limiter utilities
@@ -72,12 +73,9 @@ export class SponsorshipManager {
     const lookupPromise = this.runWithSponsorLimit(async () => {
       console.debug("Hireall: Making API call for sponsor lookup:", company);
       try {
-        const data = await get<any>("/api/app/sponsorship/companies", { q: company, limit: 1 });
-        console.debug("Hireall: API call completed for", company, "results:", data.results?.length || 0);
-        const rec = data.results?.[0] || null;
-
-        if (rec) {
-          const baseRecord = this.mapApiRecordToSponsorship(rec);
+        const sponsorRecord = await fetchSponsorLookup(company);
+        if (sponsorRecord) {
+          const baseRecord = this.mapApiRecordToSponsorship(sponsorRecord);
           sponsorshipCache.set(key, baseRecord);
 
           if (jobDescription) {
@@ -98,17 +96,14 @@ export class SponsorshipManager {
           );
         } else if (e?.statusCode === 401) {
           console.warn(`Authentication failed for sponsor lookup: ${e.message}`);
-          // Try to refresh authentication state
           try {
             const { ExtensionMessageHandler } = await import("../components/ExtensionMessageHandler");
             const syncResult = await ExtensionMessageHandler.sendMessage("syncAuthState", {}, 3);
             if (syncResult?.userId) {
               console.log("Hireall: Auth state refreshed, retrying sponsor lookup");
-              // Retry the API call once after auth refresh
-              const retryData = await get<any>("/api/app/sponsorship/companies", { q: company, limit: 1 });
-              const retryRec = retryData.results?.[0] || null;
-              if (retryRec) {
-                const baseRecord = this.mapApiRecordToSponsorship(retryRec);
+              const retryRecord = await fetchSponsorLookup(company);
+              if (retryRecord) {
+                const baseRecord = this.mapApiRecordToSponsorship(retryRecord);
                 sponsorshipCache.set(key, baseRecord);
                 if (jobDescription) {
                   return await this.enhanceSponsorRecordWithJobContext({ ...baseRecord }, jobDescription);
@@ -143,15 +138,15 @@ export class SponsorshipManager {
     return sponsorBatchLimiter.add(fn);
   }
 
-  private static mapApiRecordToSponsorship(record: any): SponsorshipRecord {
+  private static mapApiRecordToSponsorship(record: SponsorLookupResult): SponsorshipRecord {
     return {
       company: record.name ?? record.company ?? "",
-      isSponsored: record.eligibleForSponsorship !== false,
-      sponsorshipType: record.route ?? record.sponsorshipType,
+      isSponsored: record.eligibleForSponsorship,
+      sponsorshipType: record.sponsorshipType ?? record.route,
       route: record.route,
       name: record.name ?? record.company,
       city: record.city,
-      isSkilledWorker: record.isSkilledWorker ?? record.eligibleForSponsorship ?? false,
+      isSkilledWorker: record.isSkilledWorker,
     };
   }
 

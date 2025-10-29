@@ -27,7 +27,6 @@ interface JobData {
   postedDate?: string;
   applicationDeadline?: string;
   isSponsored: boolean;
-  isRecruitmentAgency?: boolean;
   sponsorshipType?: string;
   dateFound: string;
   source: string;
@@ -62,7 +61,6 @@ interface JobBoardEntry {
     sponsorshipType?: string;
   };
   ukEligibility?: boolean | null;
-  isRecruitmentAgency?: boolean;
   applicationId?: string;
   appliedDate?: string;
   lastUpdated?: string;
@@ -320,7 +318,6 @@ export class JobBoardManager {
           postedDate: jobData.postedDate || undefined,
           applicationDeadline: jobData.applicationDeadline || undefined,
           isSponsored: jobData.isSponsored,
-          isRecruitmentAgency: jobData.isRecruitmentAgency || false,
           sponsorshipType: jobData.sponsorshipType || undefined,
           source: jobData.source || "extension",
           userId: userId,

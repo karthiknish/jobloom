@@ -29,6 +29,7 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { ChevronDownIcon, MoreHorizontal } from "lucide-react"
@@ -210,16 +211,18 @@ export function DataTableColumnActions<TData>({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         {actions.map((action, index) => (
-          <button
+          <DropdownMenuItem
             key={index}
             className={cn(
-              "relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
-              action.variant === "destructive" && "text-destructive hover:bg-destructive/10"
+              action.variant === "destructive" && "text-destructive focus:text-destructive"
             )}
-            onClick={() => action.onClick(row)}
+            onSelect={(event) => {
+              event.preventDefault();
+              action.onClick(row);
+            }}
           >
             {action.label}
-          </button>
+          </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
     </DropdownMenu>

@@ -44,7 +44,11 @@ loadEnvFile();
 
 // Configuration
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-const GEMINI_API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+
+if (!process.env.GEMINI_API_KEY && process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
+  console.warn('NEXT_PUBLIC_GEMINI_API_KEY is deprecated for server requests. Please migrate to GEMINI_API_KEY.');
+}
 
 // Mock authentication (in real testing, this would be a valid JWT)
 const MOCK_AUTH_TOKEN = 'mock-jwt-token-for-testing';
@@ -548,7 +552,7 @@ async function runLiveAITests() {
   // Check environment
   if (!GEMINI_API_KEY) {
     console.log('❌ GEMINI_API_KEY not found in environment variables');
-    console.log('Please set NEXT_PUBLIC_GEMINI_API_KEY in your .env file');
+    console.log('Please set GEMINI_API_KEY in your .env file (server-side only)');
     process.exit(1);
   }
 

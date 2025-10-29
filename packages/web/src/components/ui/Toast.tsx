@@ -3,6 +3,7 @@
 import type { ReactElement } from "react";
 import { Toaster, toast, ToastBar } from "react-hot-toast";
 import { CheckCircle, AlertCircle, Info, AlertTriangle, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const DEFAULT_ERROR_MESSAGE = "We couldn't complete that request. Please try again.";
 
@@ -144,17 +145,24 @@ export function AppToaster() {
                   {message}
                 </div>
               </div>
-              <button
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
                 onClick={() => toast.dismiss(t.id)}
-                className={`flex-shrink-0 p-1 rounded-full transition-colors ${
-                  t.type === 'success' ? 'hover:bg-emerald-100 text-emerald-600' :
-                  t.type === 'error' ? 'hover:bg-red-100 text-red-600' :
-                  (t.type as any) === 'warning' ? 'hover:bg-amber-100 text-amber-600' :
-                  'hover:bg-sky-100 text-sky-600'
-                }`}
+                className={
+                  t.type === 'success'
+                    ? 'text-emerald-600 hover:bg-emerald-100'
+                    : t.type === 'error'
+                    ? 'text-red-600 hover:bg-red-100'
+                    : (t.type as any) === 'warning'
+                    ? 'text-amber-600 hover:bg-amber-100'
+                    : 'text-sky-600 hover:bg-sky-100'
+                }
+                aria-label="Dismiss notification"
               >
                 <X className="h-4 w-4" />
-              </button>
+              </Button>
             </div>
           )}
         </ToastBar>

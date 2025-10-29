@@ -1,328 +1,457 @@
 "use client";
 
-import React, { useState, useRef } from "react";
-import { motion } from "framer-motion";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   UploadCloud,
   FileText,
-  CheckCircle,
-  AlertCircle,
-  Trash2,
-  Download,
-  Eye,
-  EyeOff,
   RefreshCw,
   FileCheck,
-  FileWarning,
+  Trash2,
+  AlertCircle,
+  CheckCircle2,
+  Loader2,
   Zap,
-  Brain,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { showSuccess, showError, showInfo } from "@/components/ui/Toast";
+import { cvEvaluatorApi } from "@/utils/api/cvEvaluator";
+import type { CvAnalysis } from "@/types/api";
+import { cn } from "@/lib/utils";
 
-interface ImportedResume {
+type AnalysisStatus = "pending" | "processing" | "completed" | "failed";
+
+interface ResumeAnalysisItem {
   id: string;
-  name: string;
-  content: string;
-  parsedData: {
-    personalInfo: any;
-    experience: any[];
-    education: any[];
-    skills: string[];
-  };
-  uploadedAt: string;
-  fileSize: number;
-  fileType: string;
+  fileName: string;
+  fileSize?: number;
+  fileType?: string;
+  status: AnalysisStatus;
+  overallScore?: number;
   atsScore?: number;
+  strengths: string[];
+  weaknesses: string[];
+  recommendations: string[];
+  missingSkills: string[];
+  atsCompatibility?: CvAnalysis["atsCompatibility"];
+  keywordAnalysis?: CvAnalysis["keywordAnalysis"];
+  industryAlignment?: CvAnalysis["industryAlignment"];
+  targetRole?: string | null;
+  industry?: string | null;
+  createdAt?: number;
+  updatedAt?: number;
+}
+
+const statusLabels: Record<AnalysisStatus, string> = {
+  pending: "Queued",
+  processing: "Processing",
+  completed: "Completed",
+  failed: "Failed",
+};
+
+const statusClasses: Record<AnalysisStatus, string> = {
+  pending: "bg-amber-100 text-amber-800 border-amber-300",
+  processing: "bg-blue-100 text-blue-700 border-blue-300",
+  completed: "bg-green-100 text-green-700 border-green-300",
+  failed: "bg-red-100 text-red-700 border-red-300",
+};
+
+const supportedFormats = [
+  { extension: ".pdf", description: "PDF Document" },
+  { extension: ".docx", description: "Word Document" },
+  { extension: ".doc", description: "Legacy Word Document" },
+  { extension: ".txt", description: "Plain Text" },
+];
+
+function mergeUniqueStrings(
+  ...collections: Array<ReadonlyArray<string> | null | undefined>
+): string[] {
+  const set = new Set<string>();
+  for (const collection of collections) {
+    if (!collection) continue;
+    for (const raw of collection) {
+      if (typeof raw !== "string") continue;
+      const value = raw.trim();
+      if (value) {
+        set.add(value);
+      }
+    }
+  }
+  return Array.from(set);
+}
+
+function normalizeStatus(status?: string | null): AnalysisStatus {
+  switch (status) {
+    case "pending":
+    case "processing":
+    case "completed":
+    case "failed":
+      return status;
+    case "error":
+      return "failed";
+    default:
+      return "pending";
+  }
+}
+
+function clampToPercentage(value?: number | null): number | undefined {
+  if (typeof value !== "number" || Number.isNaN(value)) {
+    return undefined;
+  }
+  return Math.max(0, Math.min(100, Math.round(value)));
+}
+
+function mapAnalysis(record: CvAnalysis): ResumeAnalysisItem {
+  const recordAny = record as unknown as Record<string, unknown>;
+
+  const status = normalizeStatus(record.analysisStatus ?? (recordAny.status as string | undefined));
+  const atsCandidates = [
+    record.atsCompatibility?.score,
+    record.overallScore,
+    recordAny.score as number | undefined,
+  ];
+  const primaryScore = atsCandidates.find(
+    (value): value is number => typeof value === "number" && !Number.isNaN(value)
+  );
+
+  const fallbackFileName = recordAny.filename;
+  const resolvedFileName =
+    record.fileName || (typeof fallbackFileName === "string" ? fallbackFileName : undefined) || "Imported Resume";
+
+  return {
+    id: record._id,
+    fileName: resolvedFileName,
+    fileSize: record.fileSize,
+    fileType: record.fileType,
+    status,
+    overallScore: clampToPercentage(record.overallScore),
+    atsScore: clampToPercentage(primaryScore),
+    strengths: mergeUniqueStrings(record.strengths),
+    weaknesses: mergeUniqueStrings(record.weaknesses),
+    recommendations: mergeUniqueStrings(
+      record.recommendations,
+      recordAny.suggestions as string[] | undefined
+    ),
+    missingSkills: mergeUniqueStrings(
+      record.missingSkills,
+      record.keywordAnalysis?.missingKeywords
+    ),
+    atsCompatibility: record.atsCompatibility,
+    keywordAnalysis: record.keywordAnalysis,
+    industryAlignment: record.industryAlignment,
+    targetRole: record.targetRole ?? null,
+    industry: record.industry ?? null,
+    createdAt: record.createdAt,
+    updatedAt: record.updatedAt,
+  };
 }
 
 export function ResumeImporter() {
-  const { user } = useFirebaseAuth();
+  const { user, loading } = useFirebaseAuth();
+  const userId = user?.uid ?? null;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [importedResumes, setImportedResumes] = useState<ImportedResume[]>([]);
-  const [selectedResume, setSelectedResume] = useState<ImportedResume | null>(null);
-  const [editingData, setEditingData] = useState<any>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [analyses, setAnalyses] = useState<ResumeAnalysisItem[]>([]);
+  const [selectedAnalysisId, setSelectedAnalysisId] = useState<string | null>(null);
+  const pollingRef = useRef<NodeJS.Timeout | null>(null);
 
-  const supportedFormats = [
-    { extension: ".pdf", description: "PDF Document" },
-    { extension: ".docx", description: "Word Document" },
-    { extension: ".doc", description: "Legacy Word Document" },
-    { extension: ".txt", description: "Plain Text" },
-  ];
-
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (!files || files.length === 0) return;
-
-    const file = files[0];
-    const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
-
-    if (!supportedFormats.some(format => format.extension === fileExtension)) {
-      showError("Unsupported Format", "Please upload a PDF, DOC, DOCX, or TXT file.");
-      return;
+  const fetchAnalyses = useCallback(async (): Promise<ResumeAnalysisItem[]> => {
+    if (!userId) {
+      setAnalyses([]);
+      return [];
     }
 
-    if (file.size > 10 * 1024 * 1024) { // 10MB limit
-      showError("File Too Large", "Please upload a file smaller than 10MB.");
-      return;
-    }
-
-    setIsUploading(true);
-    
     try {
-      // Read file content
-      const content = await readFileContent(file);
-      
-      // Create imported resume object
-      const importedResume: ImportedResume = {
-        id: Date.now().toString(),
-        name: file.name,
-        content: content,
-        parsedData: parseResumeContent(content),
-        uploadedAt: new Date().toISOString(),
-        fileSize: file.size,
-        fileType: fileExtension,
-      };
-
-      setImportedResumes(prev => [importedResume, ...prev]);
-      setSelectedResume(importedResume);
-      
-      showSuccess("File Uploaded", "Your resume has been successfully imported and parsed.");
-      
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-      
-    } catch (error: any) {
-      console.error("File upload error:", error);
-      showError("Upload Failed", error.message || "Failed to upload file. Please try again.");
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const readFileContent = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      
-      reader.onload = (e) => {
-        const content = e.target?.result as string;
-        resolve(content);
-      };
-      
-      reader.onerror = () => {
-        reject(new Error("Failed to read file"));
-      };
-      
-      reader.readAsText(file);
-    });
-  };
-
-  const parseResumeContent = (content: string): any => {
-    // Simple parsing logic - in production, this would use more sophisticated parsing
-    const lines = content.split('\n').filter(line => line.trim());
-    
-    const parsedData = {
-      personalInfo: {
-        name: extractName(content),
-        email: extractEmail(content),
-        phone: extractPhone(content),
-        location: extractLocation(content),
-      },
-      experience: extractExperience(content),
-      education: extractEducation(content),
-      skills: extractSkills(content),
-    };
-
-    return parsedData;
-  };
-
-  const extractName = (content: string): string => {
-    // Simple name extraction - look for common patterns
-    const lines = content.split('\n');
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (trimmed && trimmed.length < 50 && !trimmed.includes('@') && !trimmed.includes('http')) {
-        return trimmed;
-      }
-    }
-    return "";
-  };
-
-  const extractEmail = (content: string): string => {
-    const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g;
-    const match = content.match(emailRegex);
-    return match ? match[0] : "";
-  };
-
-  const extractPhone = (content: string): string => {
-    const phoneRegex = /\b\d{3}[-.]?\d{3}[-.]?\d{4}\b|\(\d{3}\)\s*\d{3}[-.]?\d{4}\b/g;
-    const match = content.match(phoneRegex);
-    return match ? match[0] : "";
-  };
-
-  const extractLocation = (content: string): string => {
-    // Simple location extraction - look for city, state patterns
-    const locationRegex = /\b[A-Z][a-z]+,\s*[A-Z]{2}\b/g;
-    const match = content.match(locationRegex);
-    return match ? match[0] : "";
-  };
-
-  const extractExperience = (content: string): any[] => {
-    // Simple experience extraction
-    const experienceSection = content.match(/EXPERIENCE[\s\S]*?(?=EDUCATION|SKILLS|$)/i);
-    if (!experienceSection) return [];
-    
-    const experiences = [];
-    const lines = experienceSection[0].split('\n').slice(1);
-    
-    // Group lines by experience entries
-    let currentExperience = null;
-    for (const line of lines) {
-      if (line.trim()) {
-        if (!currentExperience) {
-          currentExperience = {
-            title: line.trim(),
-            company: "",
-            duration: "",
-            description: ""
-          };
-        } else if (currentExperience && !currentExperience.company) {
-          currentExperience.company = line.trim();
-        } else if (currentExperience && !currentExperience.duration) {
-          currentExperience.duration = line.trim();
-        } else {
-          currentExperience.description += line.trim() + " ";
-        }
-      } else if (currentExperience) {
-        experiences.push({ ...currentExperience });
-        currentExperience = null;
-      }
-    }
-    
-    if (currentExperience) {
-      experiences.push(currentExperience);
-    }
-    
-    return experiences;
-  };
-
-  const extractEducation = (content: string): any[] => {
-    const educationSection = content.match(/EDUCATION[\s\S]*?(?=EXPERIENCE|SKILLS|$)/i);
-    if (!educationSection) return [];
-    
-    const education = [];
-    const lines = educationSection[0].split('\n').slice(1);
-    
-    for (const line of lines) {
-      if (line.trim()) {
-        education.push({
-          degree: line.trim(),
-          institution: "",
-          year: ""
-        });
-      }
-    }
-    
-    return education;
-  };
-
-  const extractSkills = (content: string): string[] => {
-    const skillsSection = content.match(/SKILLS[\s\S]*?(?=EXPERIENCE|EDUCATION|$)/i);
-    if (!skillsSection) return [];
-    
-    const skillsText = skillsSection[0].replace(/SKILLS/i, '');
-    const skills = skillsText.split(/[,;|\n]/)
-      .map(skill => skill.trim())
-      .filter(skill => skill.length > 0 && skill.length < 50);
-    
-    return [...new Set(skills)]; // Remove duplicates
-  };
-
-  const analyzeWithAI = async () => {
-    if (!selectedResume) return;
-    
-    setIsAnalyzing(true);
-    
-    try {
-      // Simulate AI analysis
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const atsScore = Math.floor(Math.random() * 30) + 70; // 70-100 range
-      
-      setSelectedResume(prev => prev ? { ...prev, atsScore } : null);
-      
-      showSuccess("Analysis Complete", `ATS Score: ${atsScore}%`);
+      const records = await cvEvaluatorApi.getUserCvAnalyses(userId);
+      const mapped = records
+        .map(mapAnalysis)
+        .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
+      setAnalyses(mapped);
+      return mapped;
     } catch (error) {
-      showError("Analysis Failed", "Unable to analyze resume. Please try again.");
+      console.error("Failed to load resume analyses", error);
+      return [];
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    if (!userId) {
+      setAnalyses([]);
+      return;
+    }
+    fetchAnalyses();
+  }, [userId, fetchAnalyses]);
+
+  useEffect(() => {
+    if (analyses.length === 0) {
+      setSelectedAnalysisId(null);
+      return;
+    }
+
+    setSelectedAnalysisId((current) => {
+      if (current && analyses.some((analysis) => analysis.id === current)) {
+        return current;
+      }
+      return analyses[0].id;
+    });
+  }, [analyses]);
+
+  useEffect(() => {
+    const hasPending = analyses.some(
+      (analysis) => analysis.status === "pending" || analysis.status === "processing"
+    );
+
+    if (hasPending) {
+      if (!pollingRef.current) {
+        pollingRef.current = setInterval(() => {
+          fetchAnalyses();
+        }, 5000);
+      }
+    } else if (pollingRef.current) {
+      clearInterval(pollingRef.current);
+      pollingRef.current = null;
+    }
+  }, [analyses, fetchAnalyses]);
+
+  useEffect(() => {
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
+    };
+  }, []);
+
+  const selectedAnalysis = useMemo(() => {
+    if (analyses.length === 0) {
+      return null;
+    }
+    if (selectedAnalysisId) {
+      const match = analyses.find((analysis) => analysis.id === selectedAnalysisId);
+      if (match) {
+        return match;
+      }
+    }
+    return analyses[0];
+  }, [analyses, selectedAnalysisId]);
+
+  const presentKeywords = useMemo(
+    () => selectedAnalysis?.keywordAnalysis?.presentKeywords ?? [],
+    [selectedAnalysis]
+  );
+
+  const missingKeywords = useMemo(() => {
+    const keywordGaps = selectedAnalysis?.keywordAnalysis?.missingKeywords ?? [];
+    if (keywordGaps.length > 0) {
+      return keywordGaps;
+    }
+    return selectedAnalysis?.missingSkills ?? [];
+  }, [selectedAnalysis]);
+
+  const displayAtsScore =
+    clampToPercentage(
+      selectedAnalysis?.atsScore ??
+        selectedAnalysis?.overallScore ??
+        selectedAnalysis?.atsCompatibility?.score
+    ) ?? 0;
+
+  const atsIssues = useMemo(
+    () => (selectedAnalysis?.atsCompatibility?.issues ?? []).slice(0, 3),
+    [selectedAnalysis]
+  );
+
+  const hasPendingAnalysis = useMemo(
+    () => analyses.some((analysis) => analysis.status === "pending" || analysis.status === "processing"),
+    [analyses]
+  );
+
+  const formatFileSize = useCallback((bytes?: number) => {
+    if (typeof bytes !== "number" || Number.isNaN(bytes)) {
+      return "Unknown size";
+    }
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }, []);
+
+  const formatTimestamp = useCallback((timestamp?: number) => {
+    if (!timestamp) return "Just now";
+    const date = new Date(timestamp);
+    if (Number.isNaN(date.getTime())) {
+      return "Unknown date";
+    }
+    return date.toLocaleString();
+  }, []);
+
+  const handleFileUpload = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const files = event.target.files;
+      if (!files || files.length === 0) {
+        return;
+      }
+
+      const file = files[0];
+      const extension = `.${(file.name.split(".").pop() ?? "").toLowerCase()}`;
+
+      if (!supportedFormats.some((format) => format.extension === extension)) {
+        showError("Unsupported Format", "Please upload a PDF, DOC, DOCX, or TXT file.");
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+        return;
+      }
+
+      if (file.size > 10 * 1024 * 1024) {
+        showError("File Too Large", "Please upload a file smaller than 10MB.");
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+        return;
+      }
+
+      if (!userId || !user) {
+        showError("Sign-in Required", "Please sign in to import resumes for analysis.");
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+        return;
+      }
+
+      setIsUploading(true);
+
+      try {
+        const idToken = await user.getIdToken();
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("userId", userId);
+        formData.append("targetRole", "");
+        formData.append("industry", "");
+
+        const response = await fetch("/api/cv/upload", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+          },
+          body: formData,
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          if (result?.upgradeRequired) {
+            showError(
+              "Upgrade Required",
+              result.error || "You've reached the monthly analysis limit for your plan."
+            );
+          } else {
+            showError("Upload Failed", result?.error || "Unable to upload resume. Try again.");
+          }
+          return;
+        }
+
+        showSuccess(
+          "Resume Uploaded",
+          "Your resume is queued for Gemini-powered analysis. Results will appear shortly."
+        );
+
+        const analysisId: string | undefined = result?.analysisId;
+        if (analysisId) {
+          const placeholder: ResumeAnalysisItem = {
+            id: analysisId,
+            fileName: file.name,
+            fileSize: file.size,
+            fileType: file.type,
+            status: "processing",
+            strengths: [],
+            weaknesses: [],
+            recommendations: [],
+            missingSkills: [],
+            createdAt: Date.now(),
+          };
+
+          setAnalyses((previous) => {
+            const remaining = previous.filter((item) => item.id !== analysisId);
+            return [placeholder, ...remaining];
+          });
+          setSelectedAnalysisId(analysisId);
+        }
+
+        await fetchAnalyses();
+      } catch (error) {
+        console.error("File upload error:", error);
+        showError("Upload Failed", "We could not import your resume. Please try again.");
+      } finally {
+        setIsUploading(false);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+      }
+    },
+    [userId, user, fetchAnalyses]
+  );
+
+  const handleRefresh = useCallback(async () => {
+    if (!userId) return;
+    setIsRefreshing(true);
+    try {
+      await fetchAnalyses();
+    } catch (error) {
+      console.error("Failed to refresh analyses", error);
+      showError("Refresh Failed", "Unable to refresh resume analyses right now.");
     } finally {
-      setIsAnalyzing(false);
+      setIsRefreshing(false);
     }
-  };
+  }, [userId, fetchAnalyses]);
 
-  const deleteResume = (resumeId: string) => {
-    setImportedResumes(prev => prev.filter(r => r.id !== resumeId));
-    if (selectedResume?.id === resumeId) {
-      setSelectedResume(null);
-      setEditingData(null);
-    }
-    showSuccess("Deleted", "Resume has been removed.");
-  };
+  const handleDeleteAnalysis = useCallback(
+    async (analysisId: string) => {
+      try {
+        await cvEvaluatorApi.deleteCvAnalysis(analysisId);
+        showSuccess("Analysis Removed", "The resume analysis has been deleted.");
+        setAnalyses((previous) => previous.filter((analysis) => analysis.id !== analysisId));
+        if (selectedAnalysisId === analysisId) {
+          setSelectedAnalysisId(null);
+        }
+      } catch (error) {
+        console.error("Failed to delete analysis", error);
+        showError("Delete Failed", "Unable to remove this analysis. Please try again.");
+      } finally {
+        await fetchAnalyses();
+      }
+    },
+    [fetchAnalyses, selectedAnalysisId]
+  );
 
-  const saveToResumeBuilder = () => {
-    if (!selectedResume) return;
-    
-    // This would integrate with the main resume builder
-    showInfo("Coming Soon", "Integration with resume builder will be available soon.");
-  };
-
-  const formatFileSize = (bytes: number): string => {
-    if (bytes < 1024) return bytes + " B";
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
-    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
-  };
+  const saveToResumeBuilder = useCallback(() => {
+    showInfo("Coming Soon", "Integration with the resume builder will be available soon.");
+  }, []);
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <UploadCloud className="h-5 w-5 text-blue-600" />
-            Resume Importer
-          </CardTitle>
-          <CardDescription>
-            Upload and parse existing resumes to edit and enhance them
-          </CardDescription>
-        </CardHeader>
-      </Card>
+      {hasPendingAnalysis && (
+        <Alert>
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <AlertDescription className="text-sm">
+            We are analyzing your latest resume. Results will update automatically.
+          </AlertDescription>
+        </Alert>
+      )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Upload Section */}
-        <div className="lg:col-span-1">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="space-y-6 lg:col-span-1">
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Upload Resume</CardTitle>
-              <CardDescription>
-                Supported formats: PDF, DOC, DOCX, TXT
-              </CardDescription>
+              <CardDescription>Supported formats: PDF, DOC, DOCX, TXT</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                <UploadCloud className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+              <div className="rounded-lg border-2 border-dashed border-gray-300 p-6 text-center">
+                <UploadCloud className="mx-auto mb-4 h-12 w-12 text-gray-400" />
                 <div className="space-y-2">
                   <p className="text-sm text-gray-600">
                     Drag and drop your resume here, or click to browse
@@ -337,16 +466,16 @@ export function ResumeImporter() {
                   <Button
                     variant="outline"
                     onClick={() => fileInputRef.current?.click()}
-                    disabled={isUploading}
+                    disabled={isUploading || !userId}
                   >
                     {isUploading ? (
                       <>
-                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Uploading...
                       </>
                     ) : (
                       <>
-                        <UploadCloud className="h-4 w-4 mr-2" />
+                        <UploadCloud className="mr-2 h-4 w-4" />
                         Choose File
                       </>
                     )}
@@ -355,10 +484,10 @@ export function ResumeImporter() {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-sm font-medium">Supported Formats:</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  {supportedFormats.map(format => (
-                    <div key={format.extension} className="flex items-center gap-2 text-xs text-gray-600">
+                <p className="text-sm font-medium text-gray-800">Supported Formats:</p>
+                <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+                  {supportedFormats.map((format) => (
+                    <div key={format.extension} className="flex items-center gap-2">
                       <FileText className="h-3 w-3" />
                       <span>{format.extension}</span>
                     </div>
@@ -369,235 +498,278 @@ export function ResumeImporter() {
               <Alert>
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription className="text-xs">
-                  Maximum file size: 10MB. Your data is processed securely.
+                  {userId
+                    ? "Maximum file size: 10MB. Your data is processed securely."
+                    : loading
+                    ? "Checking your session..."
+                    : "Sign in to upload resumes for AI-powered analysis."}
                 </AlertDescription>
               </Alert>
             </CardContent>
           </Card>
 
-          {/* Imported Resumes List */}
-          {importedResumes.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Imported Resumes</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {importedResumes.map(resume => (
-                  <div
-                    key={resume.id}
-                    className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                      selectedResume?.id === resume.id
-                        ? "border-blue-500 bg-blue-50"
-                        : "border-gray-200 hover:border-gray-300"
-                    }`}
-                    onClick={() => setSelectedResume(resume)}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <FileText className="h-4 w-4 text-gray-500" />
-                          <span className="font-medium text-sm truncate">
-                            {resume.name}
-                          </span>
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {formatFileSize(resume.fileSize)} • {resume.fileType}
-                        </div>
-                        {resume.atsScore && (
-                          <div className="mt-1">
-                            <Badge variant="outline" className="text-xs">
-                              ATS: {resume.atsScore}%
-                            </Badge>
-                          </div>
-                        )}
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteResume(resume.id);
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Analyses</CardTitle>
+              <CardDescription>Recent resume imports</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {analyses.length === 0 ? (
+                <p className="text-sm text-gray-500">
+                  No resume analyses yet. Upload a file to get started.
+                </p>
+              ) : (
+                analyses.map((analysis) => {
+                  const listScore = clampToPercentage(
+                    analysis.atsScore ?? analysis.overallScore
+                  );
+
+                  return (
+                    <Button
+                      key={analysis.id}
+                      type="button"
+                      variant="ghost"
+                      onClick={() => setSelectedAnalysisId(analysis.id)}
+                      className={cn(
+                        "w-full justify-start rounded-lg border p-3 transition",
+                        selectedAnalysis?.id === analysis.id
+                          ? "border-primary/60 bg-primary/10"
+                          : "border-border hover:border-border/80"
+                      )}
+                      asChild
+                    >
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            setSelectedAnalysisId(analysis.id);
+                          }
                         }}
+                        className="flex w-full items-start justify-between"
                       >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <FileText className="h-4 w-4 text-gray-500" />
+                            <span className="truncate text-sm font-medium">
+                              {analysis.fileName}
+                            </span>
+                          </div>
+                          <div className="mt-2 flex flex-wrap items-center gap-2">
+                            <Badge
+                              className={`text-xs border ${statusClasses[analysis.status]}`}
+                            >
+                              {statusLabels[analysis.status]}
+                            </Badge>
+                            {typeof listScore === "number" && (
+                              <Badge variant="outline" className="text-xs">
+                                ATS: {listScore}%
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="mt-2 text-xs text-gray-500">
+                            {formatFileSize(analysis.fileSize)} • {formatTimestamp(analysis.createdAt)}
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleDeleteAnalysis(analysis.id);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </Button>
+                  );
+                })
+              )}
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Preview and Edit Section */}
         <div className="lg:col-span-2">
-          {selectedResume ? (
+          {selectedAnalysis ? (
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                   <div>
                     <CardTitle className="flex items-center gap-2">
                       <FileText className="h-5 w-5" />
-                      {selectedResume.name}
+                      {selectedAnalysis.fileName}
                     </CardTitle>
-                    <CardDescription>
-                      Parsed content and editing options
+                    <CardDescription className="space-x-1">
+                      <span>Uploaded {formatTimestamp(selectedAnalysis.createdAt)}</span>
+                      {selectedAnalysis.targetRole && (
+                        <span>• Target role: {selectedAnalysis.targetRole}</span>
+                      )}
+                      {selectedAnalysis.industry && (
+                        <span>• Industry: {selectedAnalysis.industry}</span>
+                      )}
                     </CardDescription>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge
+                      className={`text-xs border ${statusClasses[selectedAnalysis.status]}`}
+                    >
+                      {statusLabels[selectedAnalysis.status]}
+                    </Badge>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={analyzeWithAI}
-                      disabled={isAnalyzing}
+                      onClick={handleRefresh}
+                      disabled={isRefreshing || !userId}
                     >
-                      {isAnalyzing ? (
+                      {isRefreshing ? (
                         <>
-                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                          Analyzing...
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Refreshing...
                         </>
                       ) : (
                         <>
-                          <Brain className="h-4 w-4 mr-2" />
-                          AI Analyze
+                          <RefreshCw className="mr-2 h-4 w-4" />
+                          Refresh
                         </>
                       )}
                     </Button>
                     <Button size="sm" onClick={saveToResumeBuilder}>
-                      <FileCheck className="h-4 w-4 mr-2" />
+                      <FileCheck className="mr-2 h-4 w-4" />
                       Edit in Builder
                     </Button>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* ATS Score */}
-                {selectedResume.atsScore && (
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <Zap className="h-4 w-4 text-blue-600" />
-                        <span className="font-medium">ATS Optimization Score</span>
-                      </div>
-                      <span className="font-bold text-blue-600">
-                        {selectedResume.atsScore}%
+                {selectedAnalysis.status === "failed" && (
+                  <Alert className="border-red-200 bg-red-50 text-red-800">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription className="text-sm">
+                      Analysis failed. Please retry with a different file format or contact support.
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                <div className="space-y-3 rounded-lg bg-gray-50 p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Zap className="h-4 w-4 text-blue-600" />
+                      <span className="text-sm font-medium text-gray-700">
+                        ATS Optimization Score
                       </span>
                     </div>
-                    <Progress value={selectedResume.atsScore} className="h-2" />
+                    <span className="text-base font-semibold text-blue-600">
+                      {displayAtsScore}%
+                    </span>
+                  </div>
+                  <Progress value={displayAtsScore} className="h-2" />
+                  {atsIssues.length > 0 && (
+                    <div className="text-xs text-gray-600">
+                      <span className="font-medium text-gray-700">Top issues:</span>
+                      <ul className="mt-1 list-disc space-y-1 pl-4">
+                        {atsIssues.map((issue) => (
+                          <li key={issue}>{issue}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                  {selectedAnalysis.strengths.length > 0 && (
+                    <div>
+                      <h4 className="mb-2 flex items-center gap-2 text-sm font-medium">
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                        Strengths
+                      </h4>
+                      <ul className="list-disc space-y-2 pl-4 text-sm text-gray-700">
+                        {selectedAnalysis.strengths.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {selectedAnalysis.weaknesses.length > 0 && (
+                    <div>
+                      <h4 className="mb-2 flex items-center gap-2 text-sm font-medium">
+                        <AlertCircle className="h-4 w-4 text-amber-600" />
+                        Improvements
+                      </h4>
+                      <ul className="list-disc space-y-2 pl-4 text-sm text-gray-700">
+                        {selectedAnalysis.weaknesses.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+
+                {selectedAnalysis.recommendations.length > 0 && (
+                  <div>
+                    <h4 className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-800">
+                      <Zap className="h-4 w-4 text-blue-600" />
+                      Recommended Next Steps
+                    </h4>
+                    <ul className="list-disc space-y-2 pl-4 text-sm text-gray-700">
+                      {selectedAnalysis.recommendations.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
                   </div>
                 )}
 
-                {/* Parsed Information */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {missingKeywords.length > 0 && (
                   <div>
-                    <h4 className="font-medium mb-3">Personal Information</h4>
-                    <div className="space-y-2">
-                      <div>
-                        <Label className="text-xs text-gray-500">Name</Label>
-                        <Input
-                          value={selectedResume.parsedData.personalInfo.name || ""}
-                          onChange={(e) => {
-                            const updated = {
-                              ...selectedResume,
-                              parsedData: {
-                                ...selectedResume.parsedData,
-                                personalInfo: {
-                                  ...selectedResume.parsedData.personalInfo,
-                                  name: e.target.value
-                                }
-                              }
-                            };
-                            setSelectedResume(updated);
-                          }}
-                          placeholder="Name"
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-xs text-gray-500">Email</Label>
-                        <Input
-                          value={selectedResume.parsedData.personalInfo.email || ""}
-                          onChange={(e) => {
-                            const updated = {
-                              ...selectedResume,
-                              parsedData: {
-                                ...selectedResume.parsedData,
-                                personalInfo: {
-                                  ...selectedResume.parsedData.personalInfo,
-                                  email: e.target.value
-                                }
-                              }
-                            };
-                            setSelectedResume(updated);
-                          }}
-                          placeholder="Email"
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-xs text-gray-500">Phone</Label>
-                        <Input
-                          value={selectedResume.parsedData.personalInfo.phone || ""}
-                          onChange={(e) => {
-                            const updated = {
-                              ...selectedResume,
-                              parsedData: {
-                                ...selectedResume.parsedData,
-                                personalInfo: {
-                                  ...selectedResume.parsedData.personalInfo,
-                                  phone: e.target.value
-                                }
-                              }
-                            };
-                            setSelectedResume(updated);
-                          }}
-                          placeholder="Phone"
-                        />
-                      </div>
+                    <h4 className="mb-2 text-sm font-medium text-gray-800">
+                      High-Impact Keywords to Add
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {missingKeywords.map((keyword) => (
+                        <Badge key={keyword} variant="outline" className="text-xs">
+                          {keyword}
+                        </Badge>
+                      ))}
                     </div>
                   </div>
+                )}
 
+                {presentKeywords.length > 0 && (
                   <div>
-                    <h4 className="font-medium mb-3">Skills</h4>
-                    <div className="space-y-2">
-                      <div className="flex flex-wrap gap-2">
-                        {selectedResume.parsedData.skills.map((skill, index) => (
-                          <Badge key={index} variant="secondary" className="text-xs">
-                            {skill}
-                          </Badge>
-                        ))}
-                      </div>
-                      {selectedResume.parsedData.skills.length === 0 && (
-                        <p className="text-sm text-gray-500">No skills detected</p>
-                      )}
+                    <h4 className="mb-2 text-sm font-medium text-gray-800">Detected Keywords</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {presentKeywords.map((keyword) => (
+                        <Badge
+                          key={keyword}
+                          className="text-xs border-green-200 bg-green-100 text-green-700"
+                        >
+                          {keyword}
+                        </Badge>
+                      ))}
                     </div>
                   </div>
-                </div>
+                )}
 
-                {/* Raw Content Preview */}
-                <div>
-                  <h4 className="font-medium mb-3">Original Content</h4>
-                  <div className="p-4 bg-gray-50 rounded-lg max-h-64 overflow-y-auto">
-                    <pre className="whitespace-pre-wrap text-xs font-mono">
-                      {selectedResume.content.substring(0, 2000)}
-                      {selectedResume.content.length > 2000 && (
-                        <span className="text-gray-500">... (truncated)</span>
-                      )}
-                    </pre>
+                {selectedAnalysis.industryAlignment?.feedback && (
+                  <div className="rounded-lg border border-blue-100 bg-blue-50 p-4 text-sm text-blue-800">
+                    {selectedAnalysis.industryAlignment.feedback}
                   </div>
-                </div>
+                )}
               </CardContent>
             </Card>
           ) : (
             <Card>
-              <CardContent className="py-12 text-center">
-                <UploadCloud className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  No Resume Imported
-                </h3>
-                <p className="text-gray-500 mb-4">
-                  Upload a resume to see parsed content and editing options
-                </p>
-                <Button onClick={() => fileInputRef.current?.click()}>
-                  <UploadCloud className="h-4 w-4 mr-2" />
+              <CardContent className="space-y-4 py-12 text-center">
+                <UploadCloud className="mx-auto h-12 w-12 text-gray-400" />
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900">No Resume Imported</h3>
+                  <p className="text-sm text-gray-500">
+                    Upload a resume to receive Gemini-powered ATS insights and recommendations.
+                  </p>
+                </div>
+                <Button onClick={() => fileInputRef.current?.click()} disabled={isUploading || !userId}>
+                  <UploadCloud className="mr-2 h-4 w-4" />
                   Upload Resume
                 </Button>
               </CardContent>

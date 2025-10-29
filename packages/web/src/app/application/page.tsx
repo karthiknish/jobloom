@@ -563,15 +563,20 @@ export default function ApplicationPage() {
                     <CardContent>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         {resumeTemplates.map(t => (
-                          <button
+                          <Button
                             key={t.id}
+                            type="button"
+                            variant="outline"
                             onClick={() => setResume(r => ({ ...r, templateId: t.id }))}
                             className={cn(
-                              "relative p-4 rounded-lg border text-left transition-all hover:shadow-sm bg-background",
-                              resume.templateId === t.id ? "border-primary ring-2 ring-primary/30" : "border-border"
+                              "relative flex h-full w-full flex-col items-stretch gap-3 rounded-lg border bg-background p-4 text-left transition-all hover:shadow-sm",
+                              "justify-start",
+                              resume.templateId === t.id
+                                ? "border-primary ring-2 ring-primary/30"
+                                : "border-border"
                             )}
                           >
-                            <div className="flex items-start justify-between">
+                            <div className="flex items-start justify-between w-full">
                               <div>
                                 <div className="font-medium flex items-center gap-2">
                                   {(() => {
@@ -587,7 +592,7 @@ export default function ApplicationPage() {
                             {resume.templateId === t.id && (
                               <div className="absolute top-1 right-1 text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded">Selected</div>
                             )}
-                          </button>
+                          </Button>
                         ))}
                       </div>
                     </CardContent>

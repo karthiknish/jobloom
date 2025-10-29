@@ -102,7 +102,27 @@ export async function POST(request: NextRequest) {
       deletionPromises.push(doc.ref.delete());
     });
 
-    // 5. Delete user export files
+    // 5. Delete AI-generated cover letters stored in user subcollection
+    const coverLettersSnapshot = await db.collection('users')
+      .doc(userId)
+      .collection('coverLetters')
+      .get();
+
+    coverLettersSnapshot.docs.forEach(doc => {
+      deletionPromises.push(doc.ref.delete());
+    });
+
+    // 6. Delete AI-generated resumes stored in user subcollection
+    const aiResumesSnapshot = await db.collection('users')
+      .doc(userId)
+      .collection('aiResumes')
+      .get();
+
+    aiResumesSnapshot.docs.forEach(doc => {
+      deletionPromises.push(doc.ref.delete());
+    });
+
+    // 7. Delete user export files
     if (bucket) {
       try {
         const [files] = await bucket.getFiles({ prefix: `user-exports/${userId}/` });
@@ -116,13 +136,13 @@ export async function POST(request: NextRequest) {
       console.warn('Skipping export file cleanup; no Firebase storage bucket configured.');
     }
 
-    // 6. Delete user document
+    // 8. Delete user document
     deletionPromises.push(db.collection('users').doc(userId).delete());
 
     // Execute all deletions
     await Promise.allSettled(deletionPromises);
 
-    // 7. Delete Firebase Auth user (this will sign them out everywhere)
+    // 9. Delete Firebase Auth user (this will sign them out everywhere)
     try {
       await auth.deleteUser(userId);
       console.log(`Successfully deleted Firebase Auth user ${userId}`);

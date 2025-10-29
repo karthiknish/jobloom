@@ -72,6 +72,28 @@ export async function GET(request: NextRequest) {
       ...doc.data()
     }));
 
+    // Get AI-generated cover letters (stored in user subcollection)
+    const coverLettersSnapshot = await db.collection('users')
+      .doc(userId)
+      .collection('coverLetters')
+      .get();
+
+    exportData.coverLetters = coverLettersSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    // Get AI-generated resumes (stored in user subcollection)
+    const aiResumesSnapshot = await db.collection('users')
+      .doc(userId)
+      .collection('aiResumes')
+      .get();
+
+    exportData.aiResumes = aiResumesSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
     // Get subscription data
     const subscriptionSnapshot = await db.collection('subscriptions')
       .where('userId', '==', userId)
@@ -116,6 +138,8 @@ export async function GET(request: NextRequest) {
         jobs: exportData.jobs.length,
         applications: exportData.applications.length,
         cvAnalyses: exportData.cvAnalyses.length,
+        coverLetters: exportData.coverLetters.length,
+        aiResumes: exportData.aiResumes.length,
         subscriptions: exportData.subscriptions.length
       }
     });

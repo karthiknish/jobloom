@@ -26,6 +26,7 @@ import {
   withErrorHandler 
 } from "@/lib/api/errorResponse";
 import { ERROR_CODES } from "@/lib/api/errorCodes";
+import { analyzeResume, type ResumeAnalysisResponse } from "@/services/ai/geminiService";
 
 // Initialize Firebase Admin if not already initialized (for storage)
 // Centralized admin initialization already handled in firebase/admin.ts
@@ -266,7 +267,8 @@ export async function POST(request: NextRequest) {
       industry: sanitizedIndustry || null,
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
-      analysisStatus: "pending",
+      analysisStatus: "processing",
+      processingStartedAt: FieldValue.serverTimestamp(),
       overallScore: null,
       strengths: [],
       weaknesses: [],
@@ -282,17 +284,16 @@ export async function POST(request: NextRequest) {
   debug.step = 'write-firestore-pending';
   await cvAnalysisRef.set(cvAnalysisData);
 
-    // Trigger CV analysis (this would typically call an AI service)
-    // For now, we'll simulate the analysis
-    setTimeout(async () => {
-      await performCvAnalysis(
-        cvAnalysisRef.id,
-        buffer,
-        file.type,
-        sanitizedTargetRole || null,
-        sanitizedIndustry || null
-      );
-    }, 1000);
+    // Trigger CV analysis using the Gemini-powered pipeline asynchronously
+    performCvAnalysis(
+      cvAnalysisRef.id,
+      buffer,
+      file.type,
+      sanitizedTargetRole || null,
+      sanitizedIndustry || null
+    ).catch((processingError) => {
+      console.error("Resume analysis pipeline error:", processingError);
+    });
 
     return NextResponse.json({
       success: true,
@@ -314,7 +315,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Simulated CV analysis function
+// Gemini-backed CV analysis pipeline
 async function performCvAnalysis(
   analysisId: string,
   fileBuffer: Buffer,
@@ -322,22 +323,46 @@ async function performCvAnalysis(
   targetRole: string | null,
   industry: string | null
 ) {
+  const startedAt = Date.now();
+
   try {
-    // Extract text from file (simplified)
+    await db.collection("cvAnalyses").doc(analysisId).update({
+      analysisStatus: "processing",
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+
     const text = fileType === "application/pdf"
       ? await extractTextFromPDF(fileBuffer)
       : fileBuffer.toString();
 
-    // Perform AI analysis (simplified mock analysis)
-  const analysis = await analyzeCvText(text, targetRole, industry, fileType);
+    const heuristicAnalysis = await analyzeCvText(text, targetRole, industry, fileType);
 
-    // Update the analysis record
+    let aiInsights: ResumeAnalysisResponse | null = null;
+    try {
+      aiInsights = await analyzeResume({
+        resumeText: text,
+        jobDescription: targetRole || undefined,
+      });
+    } catch (aiError) {
+      console.error("Gemini resume analysis failed; falling back to heuristic output", aiError);
+    }
+
+    const combinedAnalysis = combineAnalysisResults(
+      heuristicAnalysis,
+      aiInsights,
+      targetRole,
+      industry
+    );
+
     await db.collection("cvAnalyses").doc(analysisId).update({
-      ...analysis,
+      ...combinedAnalysis,
+      aiInsights: aiInsights ?? null,
+      analysisEngine: aiInsights ? "gemini_with_heuristics" : "heuristic_only",
       analysisStatus: "completed",
+      completedAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
+      processingDurationMs: Date.now() - startedAt,
     });
-
   } catch (error) {
     console.error("Error performing CV analysis:", error);
     await db.collection("cvAnalyses").doc(analysisId).update({
@@ -354,11 +379,119 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
   return "Sample CV text extracted from PDF. This is a placeholder.";
 }
 
+function mergeUniqueStrings(
+  ...collections: Array<ReadonlyArray<string> | null | undefined>
+): string[] {
+  const set = new Set<string>();
+  for (const collection of collections) {
+    if (!collection) continue;
+    for (const raw of collection) {
+      if (typeof raw !== "string") continue;
+      const value = raw.trim();
+      if (value) {
+        set.add(value);
+      }
+    }
+  }
+  return Array.from(set);
+}
+
 const METRICS_REGEX = /\b(\d+%|\$?\d+[kKmM]?|[+\-]?\d+%|[0-9]+ (customers?|clients?|users?|projects?|teams?|leads?|opportunities?|accounts?|revenue|roi))\b/gi;
 const ACTION_VERB_REGEX = /\b(achieved|improved|increased|decreased|developed|created|managed|led|delivered|implemented|optimized|designed|architected|built|launched|resolved|scaled|orchestrated|drove|initiated)\b/gi;
 
 const clampValue = (value: number, min: number, max: number) =>
   Math.min(Math.max(value, min), max);
+
+function clampToPercentage(value?: number | null): number | undefined {
+  if (typeof value !== "number" || Number.isNaN(value)) {
+    return undefined;
+  }
+  return clampValue(Math.round(value), 0, 100);
+}
+
+function combineAnalysisResults(
+  heuristic: Awaited<ReturnType<typeof analyzeCvText>>,
+  aiInsights: ResumeAnalysisResponse | null,
+  targetRole: string | null,
+  industry: string | null
+) {
+  const blendedStrengths = mergeUniqueStrings(heuristic.strengths, aiInsights?.strengths);
+  const blendedWeaknesses = mergeUniqueStrings(heuristic.weaknesses, aiInsights?.weaknesses);
+  const blendedRecommendations = mergeUniqueStrings(
+    heuristic.recommendations,
+    aiInsights?.suggestions
+  );
+  const blendedMissingSkills = mergeUniqueStrings(
+    heuristic.missingSkills,
+    aiInsights?.missingKeywords
+  );
+
+  const presentKeywords = mergeUniqueStrings(
+    heuristic.keywordAnalysis?.presentKeywords,
+    aiInsights?.keywords
+  ).slice(0, 50);
+
+  const missingKeywords = mergeUniqueStrings(
+    heuristic.keywordAnalysis?.missingKeywords,
+    aiInsights?.missingKeywords
+  ).slice(0, 50);
+
+  const heuristicAtsScore = clampToPercentage(heuristic.atsCompatibility?.score);
+  const aiAtsScore = clampToPercentage(aiInsights?.atsScore);
+  const baselineHeuristicAts = typeof heuristicAtsScore === "number"
+    ? heuristicAtsScore
+    : typeof aiAtsScore === "number"
+      ? aiAtsScore
+      : 0;
+
+  const blendedAtsScore = typeof aiAtsScore === "number"
+    ? clampValue(Math.round(baselineHeuristicAts * 0.4 + aiAtsScore * 0.6), 0, 100)
+    : baselineHeuristicAts;
+
+  const heuristicOverall = clampToPercentage(heuristic.overallScore);
+  const baselineOverall = typeof heuristicOverall === "number"
+    ? heuristicOverall
+    : blendedAtsScore;
+
+  const blendedOverall = typeof aiAtsScore === "number"
+    ? clampValue(Math.round(baselineOverall * 0.5 + aiAtsScore * 0.5), 0, 100)
+    : baselineOverall;
+
+  const atsCompatibility = {
+    ...(heuristic.atsCompatibility ?? {}),
+    score: blendedAtsScore,
+    suggestions: mergeUniqueStrings(
+      heuristic.atsCompatibility?.suggestions,
+      aiInsights?.suggestions
+    ),
+  };
+
+  const keywordAnalysis = heuristic.keywordAnalysis
+    ? {
+        ...heuristic.keywordAnalysis,
+        presentKeywords,
+        missingKeywords,
+        keywordDensity: heuristic.keywordAnalysis.keywordDensity,
+      }
+    : {
+        presentKeywords,
+        missingKeywords,
+        keywordDensity: 0,
+      };
+
+  return {
+    ...heuristic,
+    overallScore: blendedOverall,
+    strengths: blendedStrengths,
+    weaknesses: blendedWeaknesses,
+    recommendations: blendedRecommendations,
+    missingSkills: blendedMissingSkills,
+    atsCompatibility,
+    keywordAnalysis,
+    targetRole: targetRole || null,
+    industry: industry || null,
+  };
+}
 
 // Mock CV analysis with deterministic ATS scoring backed by shared evaluator
 async function analyzeCvText(

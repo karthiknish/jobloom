@@ -151,7 +151,6 @@ export class EnhancedJobBoardManager {
         postedDate: jobData.postedDate,
         applicationDeadline: jobData.applicationDeadline,
         isSponsored: jobData.isSponsored,
-        isRecruitmentAgency: jobData.isRecruitmentAgency,
         sponsorshipType: jobData.sponsorshipType,
         source: jobData.source,
         userId: userId,

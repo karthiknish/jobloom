@@ -352,13 +352,15 @@ export default function Chatbot() {
                     </div>
                     <div className="space-y-2">
                       {SUGGESTED_QUESTIONS.map((question, index) => (
-                        <button
+                        <Button
                           key={index}
+                          type="button"
+                          variant="outline"
                           onClick={() => handleSuggestedQuestion(question)}
-                          className="w-full text-left p-3 bg-card border border-border hover:bg-muted rounded-lg text-sm transition-colors"
+                          className="w-full justify-start rounded-lg border-border bg-card text-left text-sm hover:bg-muted"
                         >
                           {question}
-                        </button>
+                        </Button>
                       ))}
                     </div>
                   </div>

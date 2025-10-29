@@ -333,16 +333,20 @@ function SignInInner() {
                     placeholder="••••••••"
                     disabled={loading}
                   />
-                  <motion.button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-3.5 h-4 w-4 text-muted-foreground hover:text-primary transition-premium"
+                    className="absolute right-3 top-2.5 h-8 w-8 text-muted-foreground transition-premium"
                     disabled={loading}
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    asChild
                   >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </motion.button>
+                    <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </motion.button>
+                  </Button>
                 </div>
                 {passwordError && (
                   <motion.p

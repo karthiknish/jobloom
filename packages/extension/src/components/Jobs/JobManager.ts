@@ -1,7 +1,7 @@
 import { sanitizeBaseUrl, DEFAULT_WEB_APP_URL } from "../../constants";
-import { get } from "../../apiClient";
 import { JobStatus, createJobItemHTML, updateJobStatusDisplay } from "../../utils/jobStatus";
 import { popupUI } from "../UI/PopupUI";
+import { fetchSponsorRecord } from "../../sponsorship/lookup";
 
 export class JobManager {
   private static instance: JobManager;
@@ -173,39 +173,36 @@ export class JobManager {
         sponsorStatus.innerHTML = '<div class="spinner-small"></div> Checking...';
       }
       
-      const data = await get<any>("/api/app/sponsorship/companies", {
-        companyName: companyName
-      });
-      
-      if (data.error) {
-        if (data.rateLimitInfo) {
-          const resetIn = Math.ceil((data.rateLimitInfo.resetIn || 0) / 1000);
-          sponsorStatus!.className = "sponsor-status rate-limited";
-          sponsorStatus!.innerHTML = `⏱️ Rate limited. Try again in ${resetIn}s`;
-        } else if (data.code === 'NOT_LICENSED') {
-          sponsorStatus!.className = "sponsor-status not-licensed";
-          sponsorStatus!.innerHTML = '🔒 License required. <a href="#" onclick="chrome.tabs.create({url: chrome.runtime.getURL(\'options.html\')})">Upgrade now</a>';
-        } else {
-          throw new Error(data.error);
-        }
+      const record = await fetchSponsorRecord(companyName);
+
+      if (!record) {
+        sponsorStatus!.className = "sponsor-status not-licensed";
+        sponsorStatus!.innerHTML = '❌ Not found in sponsor register';
         return;
       }
-      
-      const result = data.result;
-      
-      if (result.isLicensedSponsor && result.isSponsorForAOrB) {
+
+      const isActive = record.isActive !== false;
+      const isLicensed = record.isLicensedSponsor;
+      const isSkilledWorker = record.isSkilledWorker;
+
+      if (!isActive) {
+        sponsorStatus!.className = "sponsor-status not-licensed";
+        sponsorStatus!.innerHTML = '⚠️ Sponsor inactive on UK register';
+        return;
+      }
+
+      if (isLicensed && isSkilledWorker) {
         sponsorStatus!.className = "sponsor-status licensed";
-        sponsorStatus!.innerHTML = '✅ Licensed A/B Sponsor';
-      } else if (result.isSponsorForAOrB) {
+        sponsorStatus!.innerHTML = '✅ Licensed Skilled Worker Sponsor';
+      } else if (isSkilledWorker) {
         sponsorStatus!.className = "sponsor-status licensed-alt";
-        sponsorStatus!.innerHTML = '📋 A/B Sponsor (License unverified)';
+        sponsorStatus!.innerHTML = '📋 Skilled Worker Sponsor (license unverified)';
+      } else if (isLicensed) {
+        sponsorStatus!.className = "sponsor-status licensed-alt";
+        sponsorStatus!.innerHTML = '📋 Licensed for other visa routes';
       } else {
-        sponsorStatus!.className = result.reason === 'not_skilled_worker'
-          ? "sponsor-status not-skilled"
-          : "sponsor-status not-licensed";
-        sponsorStatus!.innerHTML = result.reason === 'not_skilled_worker'
-          ? '⚠️ Not on skilled worker list'
-          : '❌ Not an A/B Sponsor';
+        sponsorStatus!.className = "sponsor-status not-licensed";
+        sponsorStatus!.innerHTML = '❌ Not a Skilled Worker sponsor';
       }
       
     } catch (error: any) {

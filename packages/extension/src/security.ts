@@ -23,7 +23,7 @@ const JOB_STRING_FIELDS = [
   'source',
 ];
 
-const JOB_BOOLEAN_FIELDS = ['isSponsored', 'isRecruitmentAgency', 'remoteWork'];
+const JOB_BOOLEAN_FIELDS = ['isSponsored', 'remoteWork'];
 const JOB_ARRAY_FIELDS = ['skills', 'requirements', 'benefits'];
 const JOB_MAX_LENGTHS: Record<string, number> = {
   title: 200,

@@ -4,6 +4,7 @@
  */
 
 import React, { Component, ReactNode } from 'react';
+import { Button } from "@/components/ui/button";
 
 interface Props {
   children: ReactNode;
@@ -105,22 +106,19 @@ export class ErrorBoundary extends Component<Props, State> {
           </p>
 
           {this.props.showRetry && this.retryCount < this.maxRetries && (
-            <button
-              onClick={this.handleRetry}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
+            <Button onClick={this.handleRetry} className="bg-primary text-primary-foreground hover:bg-primary/90">
               Try Again
-            </button>
+            </Button>
           )}
 
           {this.retryCount >= this.maxRetries && (
             <div className="mt-4">
-              <button
+              <Button
+                variant="secondary"
                 onClick={() => window.location.reload()}
-                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
               >
                 Reload Page
-              </button>
+              </Button>
             </div>
           )}
 

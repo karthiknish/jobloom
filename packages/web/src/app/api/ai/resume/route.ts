@@ -1,135 +1,264 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyIdToken } from "@/firebase/admin";
-import { getAdminDb } from "@/firebase/admin";
-import { analyzeResume } from "@/services/ai/geminiService";
+import { verifyIdToken, getAdminDb } from "@/firebase/admin";
+import {
+  generateResumeWithAI,
+  type ResumeGenerationRequest,
+  type ResumeGenerationResult,
+} from "@/services/ai/geminiService";
+
+const MOCK_SIGNATURE = "bW9jay1zaWduYXR1cmUtZm9yLXRlc3Rpbmc";
+
+interface ResumeApiResponse {
+  content: string;
+  sections: {
+    summary: string;
+    experience: string;
+    skills: string;
+    education: string;
+  };
+  atsScore: number;
+  keywords: string[];
+  suggestions: string[];
+  wordCount: number;
+  generatedAt: string;
+  source?: "gemini" | "fallback" | "mock";
+}
+
+type ResumeRequestPayload = Partial<
+  Omit<ResumeGenerationRequest, "skills">
+> & {
+  skills?: string[] | string;
+};
 
 export async function POST(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const authHeader = request.headers.get("authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const token = authHeader.substring(7);
+    const isMockToken =
+      process.env.NODE_ENV === "development" && authHeader.includes(MOCK_SIGNATURE);
 
-    // In development with mock tokens, skip premium check and Firebase operations for testing
-    const isMockToken = process.env.NODE_ENV === "development" && 
-      request.headers.get("authorization")?.includes("bW9jay1zaWduYXR1cmUtZm9yLXRlc3Rpbmc");
+    let payload: unknown;
+    try {
+      payload = await request.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 });
+    }
+
+    if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+      return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+    }
+
+    const resumeRequest = normalizeResumeRequest(payload as ResumeRequestPayload);
+
+    if (!resumeRequest.jobTitle || !resumeRequest.experience) {
+      return NextResponse.json(
+        { error: "Missing required fields: jobTitle, experience" },
+        { status: 400 }
+      );
+    }
 
     if (isMockToken) {
-      // Return mock success response for testing
-      return NextResponse.json({ 
-        optimizedResume: {
-          personalInfo: { name: "John Doe", email: "john@example.com" },
-          experience: [],
-          skills: ["JavaScript", "React", "Node.js"],
-          education: []
-        },
-        suggestions: ["Mock suggestion 1", "Mock suggestion 2"],
-        message: 'Resume optimized successfully (mock)'
-      });
+      const mockResponse = buildResumeResponse(
+        generateFallbackResume(resumeRequest),
+        resumeRequest,
+        "mock"
+      );
+      return NextResponse.json(mockResponse);
     }
 
     const decodedToken = await verifyIdToken(token);
 
     if (!decodedToken?.uid) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
     }
 
-    // Check if user is premium
     const db = getAdminDb();
-    const userDoc = await db.collection('users').doc(decodedToken.uid).get();
+    const userDoc = await db.collection("users").doc(decodedToken.uid).get();
     const userData = userDoc.data();
 
-    if (!userData || userData.subscription?.tier === 'free') {
-      return NextResponse.json({ 
-        error: 'Premium subscription required for AI resume generation' 
-      }, { status: 403 });
+    if (!userData || userData.subscription?.tier === "free") {
+      return NextResponse.json(
+        { error: "Premium subscription required for AI resume generation" },
+        { status: 403 }
+      );
     }
 
-    const { 
-      jobTitle, 
-      experience, 
-      skills, 
-      education, 
-      industry, 
-      level, 
-      style, 
-      includeObjective, 
-      atsOptimization, 
-      aiEnhancement 
-    } = await request.json();
+    let aiResult: ResumeGenerationResult;
+    let source: ResumeApiResponse["source"] = "gemini";
 
-    // Validate required fields
-    if (!jobTitle || !experience) {
-      return NextResponse.json({ 
-        error: 'Missing required fields: jobTitle, experience' 
-      }, { status: 400 });
+    try {
+      aiResult = await generateResumeWithAI(resumeRequest);
+    } catch (error) {
+      console.error("Gemini resume generation failed, using fallback:", error);
+      aiResult = generateFallbackResume(resumeRequest);
+      source = "fallback";
     }
 
-    // Simulate AI processing (in production, this would call an AI service)
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    const responsePayload = buildResumeResponse(aiResult, resumeRequest, source);
 
-    // Generate resume sections
-    const summary = generateProfessionalSummary(jobTitle, experience, level, industry);
-    const experienceSection = generateExperienceSection(experience, level);
-    const skillsSection = generateSkillsSection(skills, industry, level);
-    const educationSection = generateEducationSection(education);
+    await db
+      .collection("users")
+      .doc(decodedToken.uid)
+      .collection("aiResumes")
+      .add({
+        ...responsePayload,
+        source,
+        jobTitle: resumeRequest.jobTitle,
+        industry: resumeRequest.industry,
+        style: resumeRequest.style,
+        skills: resumeRequest.skills,
+        atsOptimization: resumeRequest.atsOptimization,
+        aiEnhancement: resumeRequest.aiEnhancement,
+        includeObjective: resumeRequest.includeObjective,
+        createdAt: new Date().toISOString(),
+      });
 
-    // Combine into full resume content
-    const content = generateResumeContent({
-      summary,
-      experience: experienceSection,
-      skills: skillsSection,
-      education: educationSection,
-      includeObjective,
-      style
-    });
-
-    // Calculate ATS score
-    const atsScore = calculateResumeATSScore(content, skills, jobTitle, industry);
-
-    // Extract keywords
-    const keywords = extractResumeKeywords(content, jobTitle, industry, skills);
-
-    // Generate suggestions
-    const suggestions = generateResumeSuggestions(content, atsScore, skills);
-
-    const wordCount = content.split(/\s+/).length;
-
-    const result = {
-      content,
-      sections: {
-        summary,
-        experience: experienceSection,
-        skills: skillsSection,
-        education: educationSection
-      },
-      atsScore,
-      keywords: keywords.slice(0, 10), // Top 10 keywords
-      suggestions,
-      wordCount,
-      generatedAt: new Date().toISOString()
-    };
-
-    // Store in user's resume history
-    await db.collection('users').doc(decodedToken.uid).collection('aiResumes').add({
-      ...result,
-      jobTitle,
-      industry,
-      style,
-      createdAt: new Date().toISOString()
-    });
-
-    return NextResponse.json(result);
-
+    return NextResponse.json(responsePayload);
   } catch (error) {
-    console.error('Resume generation error:', error);
+    console.error("Resume generation error:", error);
     return NextResponse.json(
-      { error: 'Failed to generate resume' },
+      { error: "Failed to generate resume" },
       { status: 500 }
     );
   }
+}
+
+function normalizeResumeRequest(payload: ResumeRequestPayload): ResumeGenerationRequest {
+  const toText = (value: unknown): string => {
+    if (typeof value === "string") {
+      return value.trim();
+    }
+    if (value === null || value === undefined) {
+      return "";
+    }
+    return String(value).trim();
+  };
+
+  const normalizedSkills = Array.isArray(payload.skills)
+    ? payload.skills.map((skill) => toText(skill)).filter(Boolean)
+    : typeof payload.skills === "string"
+    ? payload.skills
+        .split(",")
+        .map((skill) => skill.trim())
+        .filter(Boolean)
+    : [];
+
+  return {
+    jobTitle: toText(payload.jobTitle),
+    experience: toText(payload.experience),
+    skills: normalizedSkills,
+    education: toText(payload.education),
+    industry: toText(payload.industry) || "technology",
+    level: (toText(payload.level) as ResumeGenerationRequest["level"]) || "mid",
+    style: (toText(payload.style) as ResumeGenerationRequest["style"]) || "modern",
+    includeObjective: payload.includeObjective !== false,
+    atsOptimization: payload.atsOptimization !== false,
+    aiEnhancement: payload.aiEnhancement !== false,
+  };
+}
+
+function buildResumeResponse(
+  result: ResumeGenerationResult,
+  request: ResumeGenerationRequest,
+  source?: ResumeApiResponse["source"],
+): ResumeApiResponse {
+  const sanitize = (value: string | undefined): string =>
+    value ? value.replace(/\r\n/g, "\n").trim() : "";
+
+  const summary = sanitize(result.summary) ||
+    generateProfessionalSummary(request.jobTitle, request.experience, request.level, request.industry);
+  const experience = sanitize(result.experience) ||
+    generateExperienceSection(request.experience, request.level);
+  const skills = sanitize(result.skills) ||
+    generateSkillsSection(request.skills, request.industry, request.level);
+  const education = sanitize(result.education) ||
+    generateEducationSection(request.education);
+
+  const content = sanitize(result.content) ||
+    generateResumeContent({
+      summary,
+      experience,
+      skills,
+      education,
+      includeObjective: request.includeObjective,
+      style: request.style,
+    });
+
+  const normalizedContent = content.replace(/\n{3,}/g, "\n\n");
+  const atsScore = calculateResumeATSScore(
+    normalizedContent,
+    request.skills,
+    request.jobTitle,
+    request.industry
+  );
+  const keywords = extractResumeKeywords(
+    normalizedContent,
+    request.jobTitle,
+    request.industry,
+    request.skills
+  );
+  const suggestions = generateResumeSuggestions(
+    normalizedContent,
+    atsScore,
+    request.skills
+  );
+  const wordCount = normalizedContent.split(/\s+/).filter(Boolean).length;
+  const generatedAt = new Date().toISOString();
+
+  const response: ResumeApiResponse = {
+    content: normalizedContent,
+    sections: {
+      summary,
+      experience,
+      skills,
+      education,
+    },
+    atsScore,
+    keywords,
+    suggestions,
+    wordCount,
+    generatedAt,
+  };
+
+  if (source) {
+    response.source = source;
+  }
+
+  return response;
+}
+
+function generateFallbackResume(
+  request: ResumeGenerationRequest
+): ResumeGenerationResult {
+  const summary = generateProfessionalSummary(
+    request.jobTitle,
+    request.experience,
+    request.level,
+    request.industry
+  );
+  const experience = generateExperienceSection(request.experience, request.level);
+  const skills = generateSkillsSection(request.skills, request.industry, request.level);
+  const education = generateEducationSection(request.education);
+  const content = generateResumeContent({
+    summary,
+    experience,
+    skills,
+    education,
+    includeObjective: request.includeObjective,
+    style: request.style,
+  });
+
+  return {
+    summary,
+    experience,
+    skills,
+    education,
+    content,
+  };
 }
 
 function generateProfessionalSummary(

@@ -2,6 +2,7 @@
 
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   HoverCard,
   HoverCardContent,
@@ -156,13 +157,15 @@ export function JobHoverCard({ application, children, onViewDetails }: JobHoverC
           {/* Action */}
           {onViewDetails && (
             <div className="pt-2 border-t">
-              <button
+              <Button
+                type="button"
+                variant="link"
                 onClick={() => onViewDetails(application)}
-                className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors"
+                className="h-auto gap-2 p-0 text-sm text-primary hover:text-primary/80"
               >
                 <ExternalLink className="h-3 w-3" />
                 View Details
-              </button>
+              </Button>
             </div>
           )}
         </div>

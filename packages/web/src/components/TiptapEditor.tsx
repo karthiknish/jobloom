@@ -56,10 +56,7 @@ import {
 } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
 import { showSuccess, showError } from "@/components/ui/Toast";
-import { GoogleGenerativeAI } from "@google/generative-ai";
-
-// Note: Requires NEXT_PUBLIC_GEMINI_API_KEY environment variable
-// Get your API key from: https://makersuite.google.com/app/apikey
+import { getAuthClient } from "@/firebase/client";
 
 const lowlight = createLowlight(common);
 
@@ -108,15 +105,33 @@ const MenuBar = ({ editor }: { editor: any }) => {
 
     setIsGenerating(true);
     try {
-      const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY || "");
-      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+      const auth = getAuthClient();
+      const token = await auth?.currentUser?.getIdToken();
 
-      const result = await model.generateContent(
-        `Write a blog post section about: ${prompt}. Make it engaging and informative. Keep it concise but comprehensive.`
-      );
+      if (!token) {
+        throw new Error("Authentication required");
+      }
 
-      const response = await result.response;
-      const generatedText = response.text();
+      const response = await fetch("/api/ai/editor", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          prompt,
+          tone: "professional",
+          format: "plain",
+        }),
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => ({}));
+        throw new Error(errorBody?.error || "AI content request failed");
+      }
+
+      const { content } = await response.json();
+      const generatedText = typeof content === "string" ? content : "";
 
       // Insert the generated content at cursor position
       editor.chain().focus().insertContent(generatedText).run();

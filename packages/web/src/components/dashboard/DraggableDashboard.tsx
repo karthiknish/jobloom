@@ -78,13 +78,17 @@ function SortableWidget({ widget, onToggleVisibility }: SortableWidgetProps) {
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <button
-                className="cursor-grab active:cursor-grabbing p-1 rounded-md hover:bg-muted/50 transition-colors"
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 cursor-grab rounded-md p-1 text-muted-foreground hover:bg-muted/50 active:cursor-grabbing"
                 {...attributes}
                 {...listeners}
+                aria-label="Reorder widget"
               >
-                <GripVertical className="h-4 w-4 text-muted-foreground" />
-              </button>
+                <GripVertical className="h-4 w-4" />
+              </Button>
               <CardTitle className="text-lg font-semibold">
                 {widget.title}
               </CardTitle>

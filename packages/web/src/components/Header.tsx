@@ -176,14 +176,12 @@ export default function Header() {
           </DropdownMenu>
         ) : (
           <div className="flex items-center justify-center space-x-2 w-full">
-            <Link href="/sign-in">
-              <Button variant="ghost" size="sm">
-                Sign In
-              </Button>
-            </Link>
-            <Link href="/sign-up">
-              <Button size="sm">Get Started</Button>
-            </Link>
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/sign-in">Sign In</Link>
+            </Button>
+            <Button asChild size="sm">
+              <Link href="/sign-up">Get Started</Link>
+            </Button>
           </div>
         )}
       </>

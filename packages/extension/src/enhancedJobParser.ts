@@ -24,7 +24,6 @@ export interface EnhancedJobData {
   postedDate: string;
   applicationDeadline: string;
   isSponsored: boolean;
-  isRecruitmentAgency: boolean;
   sponsorshipType: string;
   dateFound: string;
   source: string;
@@ -282,7 +281,6 @@ export class EnhancedJobParser {
         source: 'linkedin',
         dateFound: new Date().toISOString(),
         isSponsored: false,
-        isRecruitmentAgency: false,
         sponsorshipType: '',
         skills: [],
         requirements: [],
@@ -316,7 +314,6 @@ export class EnhancedJobParser {
         source: 'indeed',
         dateFound: new Date().toISOString(),
         isSponsored: false,
-        isRecruitmentAgency: false,
         sponsorshipType: '',
         skills: [],
         requirements: [],
@@ -355,7 +352,6 @@ export class EnhancedJobParser {
         source: 'generic',
         dateFound: new Date().toISOString(),
         isSponsored: false,
-        isRecruitmentAgency: false,
         sponsorshipType: '',
         skills: [],
         requirements: [],
@@ -424,7 +420,6 @@ export class EnhancedJobParser {
       postedDate: baseData.postedDate || '',
       applicationDeadline: baseData.applicationDeadline || '',
       isSponsored: baseData.isSponsored || false,
-      isRecruitmentAgency: baseData.isRecruitmentAgency || false,
       sponsorshipType: baseData.sponsorshipType || '',
       dateFound: baseData.dateFound || new Date().toISOString(),
       source: baseData.source || 'unknown'
