@@ -88,13 +88,13 @@ export class ErrorLogger {
       context
     };
 
-    // Log to console in development
+    // Log errors to console
     if (process.env.NODE_ENV === 'development') {
       console.error('🚨 API Error:', JSON.stringify(logEntry, null, 2));
+    } else {
+      const errorInfo = typeof logEntry.error === 'object' ? logEntry.error : { message: logEntry.error };
+      console.error('API Error:', errorInfo);
     }
-
-    // TODO: In production, send to monitoring service
-    // await sendToMonitoringService(logEntry);
   }
 
   static logValidationError(error: ValidationError, context?: any) {

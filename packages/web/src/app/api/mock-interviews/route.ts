@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifySessionFromRequest } from "@/lib/auth/session";
+import { generateMockInterviewQuestions, type MockInterviewQuestion as AIMockQuestion } from "@/services/ai/geminiService";
 
 interface MockInterviewRequest {
   role: string;
@@ -45,7 +46,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate mock interview session
-    const session = generateMockInterviewSession(role, experience, duration, focus);
+    const session = await generateMockInterviewSession(role, experience, duration, focus);
 
     return NextResponse.json({
       success: true,
@@ -85,33 +86,58 @@ export async function GET(request: NextRequest) {
   }
 }
 
-function generateMockInterviewSession(
+async function generateMockInterviewSession(
   role: string,
   experience: string,
   duration: number,
   focus: string[]
-): MockInterviewSession {
-  const questionBank = getQuestionBank();
-  const selectedQuestions = selectQuestionsForInterview(questionBank, role, experience, duration, focus);
+): Promise<MockInterviewSession> {
+  let questions: MockInterviewQuestion[] = [];
+  
+  try {
+    // Try to generate questions using AI
+    const aiQuestions = await generateMockInterviewQuestions({
+      role,
+      experience,
+      duration,
+      focus
+    });
+    
+    // Map AI questions to our internal format if needed (interfaces match, but good to be safe)
+    questions = aiQuestions.map((q, index) => ({
+      id: `question-${index + 1}`,
+      question: q.question,
+      type: q.type,
+      category: q.category,
+      difficulty: q.difficulty,
+      timeLimit: q.timeLimit,
+      followUpQuestions: q.followUpQuestions || []
+    }));
+    
+  } catch (error) {
+    console.error("AI generation failed, falling back to static questions:", error);
+    questions = getFallbackQuestions(role, experience, duration, focus);
+  }
   
   return {
     id: `mock-interview-${Date.now()}`,
     role,
     experience,
     duration,
-    questions: selectedQuestions,
+    questions,
     startedAt: new Date(),
     status: "created"
   };
 }
 
-function selectQuestionsForInterview(
-  questionBank: any[],
+function getFallbackQuestions(
   role: string,
   experience: string,
   duration: number,
   focus: string[]
 ): MockInterviewQuestion[] {
+  const questionBank = getQuestionBank();
+  
   // Filter questions by role and experience
   let filteredQuestions = questionBank.filter(q => 
     q.roles.includes(role) && q.experience.includes(experience)

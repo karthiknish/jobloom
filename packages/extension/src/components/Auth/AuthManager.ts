@@ -81,7 +81,7 @@ export class AuthManager {
   
   public async signIn(email: string, password: string): Promise<void> {
     try {
-      popupUI.showLoading('sign-in-btn');
+      popupUI.showLoading('email-auth-submit');
       
       // Enhanced validation
       const emailError = validateEmail(email);
@@ -158,13 +158,13 @@ export class AuthManager {
       
       this.showAuthError(errorMessage);
     } finally {
-      popupUI.hideLoading('sign-in-btn');
+      popupUI.hideLoading('email-auth-submit');
     }
   }
   
   public async signUp(email: string, password: string): Promise<void> {
     try {
-      popupUI.showLoading('sign-up-btn');
+      popupUI.showLoading('email-auth-submit');
       
       // Enhanced validation
       const emailError = validateEmail(email);
@@ -238,13 +238,13 @@ export class AuthManager {
       
       this.showAuthError(errorMessage);
     } finally {
-      popupUI.hideLoading('sign-up-btn');
+      popupUI.hideLoading('email-auth-submit');
     }
   }
   
   public async signInWithGoogle(): Promise<void> {
     try {
-      popupUI.showLoading('google-sign-in-btn');
+      popupUI.showLoading('google-auth-btn');
       clearCachedAuthToken();
       
       const result = await signInWithPopup(getAuthInstance(), getGoogleProvider());
@@ -290,7 +290,7 @@ export class AuthManager {
       
       this.showAuthError(errorMessage);
     } finally {
-      popupUI.hideLoading('google-sign-in-btn');
+      popupUI.hideLoading('google-auth-btn');
     }
   }
   
@@ -418,52 +418,64 @@ export class AuthManager {
   }
   
   private updateAuthUI(isAuthenticated: boolean): void {
-    const authStatus = document.getElementById("auth-status") as HTMLElement;
+    const authStatus = document.getElementById("auth-indicator") as HTMLElement;
     const statusDot = authStatus?.querySelector(".status-dot") as HTMLElement;
-    const statusText = authStatus?.querySelector(".status-text") as HTMLElement;
-    const authTab = document.querySelector('.nav-tab[data-tab="auth"]') as HTMLElement;
-    const mainTabs = document.querySelectorAll('.nav-tab:not([data-tab="auth"])');
+    const authTab = document.querySelector('.nav-item[data-tab="auth"]') as HTMLElement;
+    const mainTabs = document.querySelectorAll('.nav-item:not([data-tab="auth"])');
     const formContainer = document.getElementById("auth-form-container") as HTMLElement;
     const logoutSection = document.getElementById("logout-section") as HTMLElement;
+    const userEmailDisplay = document.getElementById("user-email-display");
     
     if (isAuthenticated) {
       authStatus?.classList.add("authenticated");
       authStatus?.classList.remove("unauthenticated");
       
       if (statusDot) {
-        statusDot.style.backgroundColor = "#22c55e";
-        statusText && (statusText.textContent = "Authenticated");
+        statusDot.style.backgroundColor = "#10b981"; // Emerald-500
       }
       
       if (formContainer) formContainer.style.display = "none";
       if (logoutSection) logoutSection.style.display = "block";
       
+      if (this.currentUser) {
+        popupUI.updateUserProfile({
+          email: this.currentUser.email,
+          photoUrl: this.currentUser.photoURL,
+          displayName: this.currentUser.displayName
+        });
+      }
+      
       mainTabs.forEach(tab => {
-        (tab as HTMLElement).style.display = "inline-block";
+        (tab as HTMLElement).style.display = "flex"; // Flex for nav items
       });
       
-      if (authTab) authTab.classList.add("hidden");
+      // If we are on auth tab, switch to jobs
+      const activeTab = document.querySelector('.nav-item.active');
+      if (activeTab && (activeTab as HTMLElement).dataset.tab === 'auth') {
+        popupUI.switchTab('jobs');
+      }
+      
     } else {
       authStatus?.classList.remove("authenticated");
       authStatus?.classList.add("unauthenticated");
       
       if (statusDot) {
-        statusDot.style.backgroundColor = "#ef4444";
-        statusText && (statusText.textContent = "Not Authenticated");
+        statusDot.style.backgroundColor = "#ef4444"; // Red-500
       }
       
       if (formContainer) formContainer.style.display = "block";
       if (logoutSection) logoutSection.style.display = "none";
       
       mainTabs.forEach(tab => {
-        if ((tab as HTMLElement).dataset.tab !== 'auth') {
-          (tab as HTMLElement).style.display = "none";
-        }
+        // Hide other tabs if not authenticated
+        // (tab as HTMLElement).style.display = "none"; 
+        // Actually, let's just disable them or redirect. 
+        // For now, let's hide them to force auth.
+        (tab as HTMLElement).style.display = "none";
       });
       
-      if (authTab && !authTab.classList.contains("active")) {
-        authTab.click();
-      }
+      // Force switch to auth tab
+      popupUI.switchTab('auth');
     }
   }
   

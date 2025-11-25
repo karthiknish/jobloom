@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -27,6 +27,8 @@ interface CreateSponsorDialogProps {
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: CreateSponsorData) => void;
   isSubmitting: boolean;
+  initialData?: CreateSponsorData;
+  mode?: 'create' | 'edit' | 'view';
 }
 
 export interface CreateSponsorData {
@@ -45,6 +47,8 @@ export function CreateSponsorDialog({
   onOpenChange,
   onSubmit,
   isSubmitting,
+  initialData,
+  mode = 'create'
 }: CreateSponsorDialogProps) {
   const [formData, setFormData] = useState<CreateSponsorData>({
     name: "",
@@ -58,8 +62,18 @@ export function CreateSponsorDialog({
   });
   const [aliasesInput, setAliasesInput] = useState("");
 
+  useEffect(() => {
+    if (open && initialData && (mode === 'edit' || mode === 'view')) {
+      setFormData(initialData);
+      setAliasesInput(initialData.aliases.join(", "));
+    } else if (open && mode === 'create') {
+      resetForm();
+    }
+  }, [open, initialData, mode]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (mode === 'view') return;
     const aliasesArray = aliasesInput
       .split(",")
       .map((alias) => alias.trim())
@@ -88,13 +102,18 @@ export function CreateSponsorDialog({
     onOpenChange(newOpen);
   };
 
+  const isEdit = mode === 'edit';
+  const isView = mode === 'view';
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Create New Sponsor</DialogTitle>
+          <DialogTitle>
+            {isView ? "Sponsor Details" : isEdit ? "Edit Sponsor" : "Create New Sponsor"}
+          </DialogTitle>
           <DialogDescription>
-            Add a new sponsored company to the system.
+            {isView ? "View sponsor details." : isEdit ? "Update sponsor details." : "Add a new sponsored company to the system."}
           </DialogDescription>
         </DialogHeader>
         
@@ -108,6 +127,7 @@ export function CreateSponsorDialog({
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="Enter company name"
                 required
+                disabled={isView}
               />
             </div>
             
@@ -116,6 +136,7 @@ export function CreateSponsorDialog({
               <Select
                 value={formData.sponsorshipType}
                 onValueChange={(value) => setFormData({ ...formData, sponsorshipType: value })}
+                disabled={isView}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select sponsorship type" />
@@ -138,6 +159,7 @@ export function CreateSponsorDialog({
               value={aliasesInput}
               onChange={(e) => setAliasesInput(e.target.value)}
               placeholder="Enter aliases separated by commas"
+              disabled={isView}
             />
             <p className="text-xs text-muted-foreground">
               Alternative names or abbreviations for the company
@@ -153,6 +175,7 @@ export function CreateSponsorDialog({
                 onChange={(e) => setFormData({ ...formData, website: e.target.value })}
                 placeholder="https://example.com"
                 type="url"
+                disabled={isView}
               />
             </div>
             
@@ -161,6 +184,7 @@ export function CreateSponsorDialog({
               <Select
                 value={formData.industry || ""}
                 onValueChange={(value) => setFormData({ ...formData, industry: value })}
+                disabled={isView}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select industry" />
@@ -187,6 +211,7 @@ export function CreateSponsorDialog({
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               placeholder="Brief description of the company"
               rows={3}
+              disabled={isView}
             />
           </div>
 
@@ -198,6 +223,7 @@ export function CreateSponsorDialog({
               onChange={(e) => setFormData({ ...formData, logo: e.target.value })}
               placeholder="https://example.com/logo.png"
               type="url"
+              disabled={isView}
             />
           </div>
 
@@ -206,6 +232,7 @@ export function CreateSponsorDialog({
               id="isActive"
               checked={formData.isActive}
               onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+              disabled={isView}
             />
             <Label htmlFor="isActive">Active Sponsor</Label>
           </div>
@@ -216,11 +243,13 @@ export function CreateSponsorDialog({
               variant="outline"
               onClick={() => handleOpenChange(false)}
             >
-              Cancel
+              {isView ? "Close" : "Cancel"}
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Creating..." : "Create Sponsor"}
-            </Button>
+            {!isView && (
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? (isEdit ? "Updating..." : "Creating...") : (isEdit ? "Update Sponsor" : "Create Sponsor")}
+              </Button>
+            )}
           </DialogFooter>
         </form>
       </DialogContent>

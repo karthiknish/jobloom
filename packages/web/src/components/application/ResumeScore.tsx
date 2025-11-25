@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { EnhancedAtsScore } from "@/components/EnhancedAtsScore";
 import { useSubscription } from "@/hooks/useSubscription";
 import type { ResumeScore } from "./types";
+import { themeColors, themeUtils } from "@/styles/theme-colors";
+import { cn } from "@/lib/utils";
 
 interface ResumeScoreProps {
   score: ResumeScore;
@@ -19,28 +21,23 @@ interface ResumeScoreProps {
 export function ResumeScore({ score, enhanced = true }: ResumeScoreProps) {
   const { plan } = useSubscription();
   
-  const getScoreColor = (value: number) => {
-    if (value >= 80) return "text-green-600 dark:text-green-400";
-    if (value >= 60) return "text-yellow-600 dark:text-yellow-400";
-    return "text-red-600 dark:text-red-400";
-  };
-  
   // If enhanced mode is available and the score has enhanced data, use the enhanced component
   if (enhanced && score.breakdown) {
     return <EnhancedAtsScore score={score} />;
   }
-
-  const getScoreBgColor = (value: number) => {
-    if (value >= 80) return "bg-green-100 dark:bg-green-900/20";
-    if (value >= 60) return "bg-yellow-100 dark:bg-yellow-900/20";
-    return "bg-red-100 dark:bg-red-900/20";
-  };
 
   const getScoreLabel = (value: number) => {
     if (value >= 80) return "Excellent";
     if (value >= 60) return "Good";
     if (value >= 40) return "Fair";
     return "Needs Work";
+  };
+
+  const getScoreColorObj = (value: number) => {
+    if (value >= 80) return { bg: themeColors.success.bg, text: themeColors.success.text };
+    if (value >= 60) return { bg: themeColors.info.bg, text: themeColors.info.text };
+    if (value >= 40) return { bg: themeColors.warning.bg, text: themeColors.warning.text };
+    return { bg: themeColors.error.bg, text: themeColors.error.text };
   };
 
   return (
@@ -51,13 +48,13 @@ export function ResumeScore({ score, enhanced = true }: ResumeScoreProps) {
         animate={{ opacity: 1, y: 0 }}
         className="text-center"
       >
-        <div className={`inline-flex items-center justify-center w-24 h-24 rounded-full ${getScoreBgColor(score.overall)} mb-4`}>
-          <span className={`text-3xl font-bold ${getScoreColor(score.overall)}`}>
+        <div className={cn("inline-flex items-center justify-center w-24 h-24 rounded-full mb-4", getScoreColorObj(score.overall).bg)}>
+          <span className={cn("text-3xl font-bold", getScoreColorObj(score.overall).text)}>
             {score.overall}
           </span>
         </div>
         <h3 className="text-xl font-semibold mb-2">Resume Score</h3>
-        <Badge variant="outline" className={getScoreColor(score.overall)}>
+        <Badge variant="outline" className={getScoreColorObj(score.overall).text}>
           {getScoreLabel(score.overall)}
         </Badge>
       </motion.div>
@@ -77,7 +74,7 @@ export function ResumeScore({ score, enhanced = true }: ResumeScoreProps) {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Score</span>
-                  <span className={getScoreColor(score.completeness)}>{score.completeness}%</span>
+                  <span className={getScoreColorObj(score.completeness).text}>{score.completeness}%</span>
                 </div>
                 <Progress value={score.completeness} className="h-2" />
               </div>
@@ -98,7 +95,7 @@ export function ResumeScore({ score, enhanced = true }: ResumeScoreProps) {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Score</span>
-                  <span className={getScoreColor(score.ats)}>{score.ats}%</span>
+                  <span className={getScoreColorObj(score.ats).text}>{score.ats}%</span>
                 </div>
                 <Progress value={score.ats} className="h-2" />
               </div>
@@ -119,7 +116,7 @@ export function ResumeScore({ score, enhanced = true }: ResumeScoreProps) {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Score</span>
-                  <span className={getScoreColor(score.impact)}>{score.impact}%</span>
+                  <span className={getScoreColorObj(score.impact).text}>{score.impact}%</span>
                 </div>
                 <Progress value={score.impact} className="h-2" />
               </div>
@@ -150,9 +147,9 @@ export function ResumeScore({ score, enhanced = true }: ResumeScoreProps) {
                 <div key={index} className="flex items-start gap-3">
                   <div className="mt-0.5">
                     {score.overall >= 70 ? (
-                      <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0" />
+                      <CheckCircle className={cn("h-4 w-4 flex-shrink-0", themeColors.success.icon)} />
                     ) : (
-                      <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
+                      <AlertCircle className={cn("h-4 w-4 flex-shrink-0", themeColors.warning.icon)} />
                     )}
                   </div>
                   <p className="text-sm text-muted-foreground">{suggestion}</p>
@@ -169,11 +166,11 @@ export function ResumeScore({ score, enhanced = true }: ResumeScoreProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
           >
-            <Card className="bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200">
+            <Card className={cn("border", "bg-gradient-to-r from-amber-50 to-orange-50", "border-amber-200")}>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
-                    <div className="p-3 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full">
+                    <div className={cn("p-3 rounded-full", "bg-gradient-to-r from-amber-500 to-orange-500")}>
                       <Crown className="h-6 w-6 text-white" />
                     </div>
                     <div>
@@ -184,7 +181,7 @@ export function ResumeScore({ score, enhanced = true }: ResumeScoreProps) {
                     </div>
                   </div>
                   <Button 
-                    className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white"
+                    className={cn("text-white", "bg-gradient-to-r from-amber-500 to-orange-500")}
                     onClick={() => window.location.href = '/upgrade'}
                   >
                     <Crown className="h-4 w-4 mr-2" />

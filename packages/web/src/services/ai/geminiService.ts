@@ -85,6 +85,23 @@ export interface ResumeGenerationResult {
   education: string;
 }
 
+export interface MockInterviewQuestion {
+  id: string;
+  question: string;
+  type: "behavioral" | "technical" | "situational" | "leadership";
+  category: string;
+  difficulty: string;
+  timeLimit: number;
+  followUpQuestions?: string[];
+}
+
+export interface MockInterviewGenerationRequest {
+  role: string;
+  experience: string;
+  duration: number;
+  focus: string[];
+}
+
 export interface EditorContentRequest {
   prompt: string;
   tone?: 'professional' | 'approachable' | 'enthusiastic' | string;
@@ -196,6 +213,48 @@ export async function generateResumeWithAI(request: ResumeGenerationRequest): Pr
   } catch (error) {
     console.error('AI Resume Generation Error:', error);
     throw new Error('Failed to generate resume with AI');
+  }
+}
+
+/**
+ * Generate mock interview questions using AI
+ */
+export async function generateMockInterviewQuestions(request: MockInterviewGenerationRequest): Promise<MockInterviewQuestion[]> {
+  try {
+    const { role, experience, duration, focus } = request;
+    const questionCount = Math.floor(duration / 8); // ~8 minutes per question
+
+    const prompt = `
+Generate a set of ${questionCount} mock interview questions for a ${experience} ${role} position.
+Focus areas: ${focus.join(', ')}.
+
+Return a JSON array of objects with this structure:
+{
+  "id": "question-1",
+  "question": "The interview question",
+  "type": "behavioral" | "technical" | "situational" | "leadership",
+  "category": "Specific category (e.g., System Design, Conflict Resolution)",
+  "difficulty": "Easy" | "Medium" | "Hard",
+  "timeLimit": number (in minutes, usually 5-10),
+  "followUpQuestions": ["Follow up 1", "Follow up 2"]
+}
+
+Ensure the questions are diverse and appropriate for the experience level.
+Return ONLY the JSON array.
+`;
+
+    const model = getModel();
+    const result = await model.generateContent(prompt);
+    const response = result.response.text().trim();
+    
+    const cleaned = response.replace(/```json/gi, '').replace(/```/g, '').trim();
+    const questions = JSON.parse(cleaned);
+    
+    return Array.isArray(questions) ? questions : [];
+  } catch (error) {
+    console.error('AI Mock Interview Generation Error:', error);
+    // Fallback to empty array or throw, caller should handle
+    throw new Error('Failed to generate mock interview questions with AI');
   }
 }
 

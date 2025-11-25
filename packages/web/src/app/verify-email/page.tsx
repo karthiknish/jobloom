@@ -52,17 +52,23 @@ function VerifyEmailInner() {
 
   if (verificationStatus === 'checking') {
     return (
-      <main className="flex min-h-screen items-center justify-center p-4 bg-gradient-to-br from-primary/5 via-background to-secondary/5">
+      <main className="flex min-h-screen items-center justify-center p-4 sm:p-6 lg:p-8 pt-16 sm:pt-20 lg:pt-24 bg-gradient-to-br from-background via-muted/20 to-background">
+        {/* Premium background elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-20 right-20 w-96 h-96 bg-primary/2 rounded-full filter blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-20 left-20 w-80 h-80 bg-secondary/2 rounded-full filter blur-2xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+        </div>
+
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="w-full max-w-md"
+          transition={{ duration: 0.6 }}
+          className="w-full max-w-md sm:max-w-lg space-y-8 relative z-10"
         >
-          <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+          <Card className="card-premium-elevated border-0 bg-surface p-8">
             <CardContent className="flex flex-col items-center justify-center p-8">
-              <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
-              <p className="text-center text-muted-foreground">Checking verification status...</p>
+              <Loader2 className="h-12 w-12 animate-spin text-primary mb-6" />
+              <p className="text-center text-lg font-medium text-muted-foreground">Checking verification status...</p>
             </CardContent>
           </Card>
         </motion.div>
@@ -72,36 +78,44 @@ function VerifyEmailInner() {
 
   if (verificationStatus === 'verified') {
     return (
-      <main className="flex min-h-screen items-center justify-center p-4 bg-gradient-to-br from-primary/5 via-background to-secondary/5">
+      <main className="flex min-h-screen items-center justify-center p-4 sm:p-6 lg:p-8 pt-16 sm:pt-20 lg:pt-24 bg-gradient-to-br from-background via-muted/20 to-background">
+        {/* Premium background elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-20 right-20 w-96 h-96 bg-primary/2 rounded-full filter blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-20 left-20 w-80 h-80 bg-secondary/2 rounded-full filter blur-2xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+        </div>
+
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="w-full max-w-md"
+          transition={{ duration: 0.6 }}
+          className="w-full max-w-md sm:max-w-lg space-y-8 relative z-10"
         >
-          <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-            <CardHeader className="space-y-1 text-center pb-8">
+          <Card className="card-premium-elevated border-0 bg-surface p-8">
+            <CardHeader className="space-y-4 text-center pb-8">
               <motion.div
-                initial={{ scale: 0.8 }}
+                initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                className="mx-auto h-12 w-12 rounded-full bg-green-100 flex items-center justify-center mb-4"
+                transition={{ type: "spring", stiffness: 260, damping: 20 }}
+                className="mx-auto h-20 w-20 rounded-full bg-green-100 flex items-center justify-center mb-4"
               >
-                <CheckCircle className="h-6 w-6 text-green-600" />
+                <CheckCircle className="h-10 w-10 text-green-600" />
               </motion.div>
-              <CardTitle className="text-2xl font-bold text-green-600">Email verified!</CardTitle>
-              <CardDescription className="text-muted-foreground">
+              <CardTitle className="text-3xl font-bold text-green-600">Email verified!</CardTitle>
+              <CardDescription className="text-muted-foreground text-lg">
                 Your email address has been successfully verified
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="text-center text-sm text-muted-foreground">
+            <CardContent className="space-y-8">
+              <div className="text-center text-base text-muted-foreground">
                 <p>You can now access all features of Hireall.</p>
               </div>
 
-              <Button onClick={handleContinue} className="w-full" size="lg">
-                Continue to Welcome
-              </Button>
+              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                <Button onClick={handleContinue} className="btn-premium w-full h-12 font-bold gradient-primary hover:shadow-premium-xl text-base" size="lg">
+                  Continue to Welcome
+                </Button>
+              </motion.div>
             </CardContent>
           </Card>
         </motion.div>
@@ -110,41 +124,47 @@ function VerifyEmailInner() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-4 bg-gradient-to-br from-primary/5 via-background to-secondary/5">
+    <main className="flex min-h-screen items-center justify-center p-4 sm:p-6 lg:p-8 pt-16 sm:pt-20 lg:pt-24 bg-gradient-to-br from-background via-muted/20 to-background">
+      {/* Premium background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 right-20 w-96 h-96 bg-primary/2 rounded-full filter blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-20 left-20 w-80 h-80 bg-secondary/2 rounded-full filter blur-2xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+      </div>
+
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-md"
+        transition={{ duration: 0.6 }}
+        className="w-full max-w-md sm:max-w-lg space-y-8 relative z-10"
       >
-        <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-          <CardHeader className="space-y-1 text-center pb-8">
+        <Card className="card-premium-elevated border-0 bg-surface p-8">
+          <CardHeader className="space-y-4 text-center pb-8">
             <motion.div
-              initial={{ scale: 0.8 }}
+              initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-              className="mx-auto h-12 w-12 rounded-full bg-yellow-100 flex items-center justify-center mb-4"
+              transition={{ type: "spring", stiffness: 260, damping: 20 }}
+              className="mx-auto h-20 w-20 rounded-full bg-yellow-100 flex items-center justify-center mb-4"
             >
-              <Mail className="h-6 w-6 text-yellow-600" />
+              <Mail className="h-10 w-10 text-yellow-600" />
             </motion.div>
-            <CardTitle className="text-2xl font-bold">Verify your email</CardTitle>
-            <CardDescription className="text-muted-foreground">
-              We sent a verification link to <strong>{user?.email}</strong>
+            <CardTitle className="text-3xl font-bold text-gradient-premium">Verify your email</CardTitle>
+            <CardDescription className="text-muted-foreground text-lg">
+              We sent a verification link to <strong className="text-foreground">{user?.email}</strong>
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-8">
             {error && (
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.3 }}
-                className="rounded-md border border-red-200 bg-red-50 p-3"
+                className="rounded-lg border border-destructive/20 bg-destructive/5 p-4 flex items-start gap-3"
               >
-                <p className="text-sm text-red-700">{error}</p>
+                <p className="text-sm font-medium text-destructive">{error}</p>
               </motion.div>
             )}
 
-            <div className="text-center text-sm text-muted-foreground space-y-4">
+            <div className="text-center text-base text-muted-foreground space-y-4">
               <p>
                 Click the verification link in the email to verify your account.
               </p>
@@ -153,28 +173,43 @@ function VerifyEmailInner() {
               </p>
             </div>
 
-            <div className="flex gap-3">
-              <Button
-                variant="outline"
-                onClick={handleResendVerification}
-                disabled={loading}
-                className="flex-1"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Sending...
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="mr-2 h-4 w-4" />
-                    Resend email
-                  </>
-                )}
-              </Button>
-              <Button onClick={handleContinue} className="flex-1">
-                Continue to Welcome
-              </Button>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <motion.div className="flex-1" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                <Button
+                  variant="outline"
+                  onClick={handleResendVerification}
+                  disabled={loading}
+                  className="btn-premium w-full h-12 bg-surface border-2 hover:bg-muted/20 hover:border-primary/30 font-semibold text-base shadow-premium"
+                >
+                  {loading ? (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="flex items-center justify-center"
+                    >
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <span>Sending...</span>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="flex items-center justify-center"
+                    >
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      <span>Resend email</span>
+                    </motion.div>
+                  )}
+                </Button>
+              </motion.div>
+              <motion.div className="flex-1" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                <Button 
+                  onClick={handleContinue} 
+                  className="btn-premium w-full h-12 font-bold gradient-primary hover:shadow-premium-xl text-base"
+                >
+                  Continue to Welcome
+                </Button>
+              </motion.div>
             </div>
           </CardContent>
         </Card>

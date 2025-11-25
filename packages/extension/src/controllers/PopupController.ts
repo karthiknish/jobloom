@@ -3,6 +3,14 @@ import { jobManager } from "../components/Jobs/JobManager";
 import { settingsManager } from "../components/Settings/SettingsManager";
 import { popupUI } from "../components/UI/PopupUI";
 import { sanitizeBaseUrl, DEFAULT_WEB_APP_URL } from "../constants";
+import { 
+  signInWithGoogle, 
+  signInWithEmail, 
+  signUpWithEmail, 
+  signOutUser, 
+  onAuthStateChanged,
+  sendPasswordReset
+} from '../firebase';
 
 export class PopupController {
   private static instance: PopupController;
@@ -45,7 +53,7 @@ export class PopupController {
   
   private setupEventListeners(): void {
     // Tab navigation
-    document.querySelectorAll('.nav-tab').forEach(tab => {
+    document.querySelectorAll('.nav-item').forEach(tab => {
       tab.addEventListener('click', () => {
         const targetTab = (tab as HTMLElement).dataset.tab;
         if (targetTab) {
@@ -60,7 +68,7 @@ export class PopupController {
     });
     
     // Job filters
-    document.querySelectorAll('.filter-btn').forEach(filter => {
+    document.querySelectorAll('.filter-pill').forEach(filter => {
       filter.addEventListener('click', () => {
         const filterType = (filter as HTMLElement).dataset.filter;
         if (filterType !== undefined) {
@@ -77,48 +85,78 @@ export class PopupController {
     
     // Global functions (for onclick handlers in HTML)
     this.setupGlobalFunctions();
+
+    // Sync Button
+    document.getElementById('sync-btn')?.addEventListener('click', () => {
+      this.handleSync();
+    });
+
+    // Forgot Password
+    document.getElementById('forgot-password-link')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.handleForgotPassword();
+    });
   }
   
   private setupAuthEventListeners(): void {
-    // Sign in form
-    const signInBtn = document.getElementById('sign-in-btn');
-    if (signInBtn) {
-      signInBtn.addEventListener('click', async () => {
-        const email = popupUI.getElementValue('email-input');
-        const password = popupUI.getElementValue('password-input');
+    let isSignUp = false;
+    const submitBtn = document.getElementById('email-auth-submit');
+    const toggleBtn = document.getElementById('auth-toggle-btn');
+    const toggleText = document.getElementById('auth-toggle-text');
+    const formTitle = document.querySelector('#auth-view h2');
+
+    // Toggle Sign In / Sign Up
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', () => {
+        isSignUp = !isSignUp;
         
-        if (!email || !password) {
-          popupUI.showError('Please enter both email and password');
-          return;
-        }
+        if (submitBtn) submitBtn.textContent = isSignUp ? 'Sign Up' : 'Sign In';
+        if (toggleBtn) toggleBtn.textContent = isSignUp ? 'Sign In' : 'Sign Up';
+        if (toggleText) toggleText.textContent = isSignUp ? 'Already have an account?' : "Don't have an account?";
+        if (formTitle) formTitle.textContent = isSignUp ? 'Create Account' : 'Welcome Back';
         
-        await authManager.signIn(email, password);
+        authManager.clearAuthMessages();
       });
     }
-    
-    // Sign up form
-    const signUpBtn = document.getElementById('sign-up-btn');
-    if (signUpBtn) {
-      signUpBtn.addEventListener('click', async () => {
-        const email = popupUI.getElementValue('email-input');
-        const password = popupUI.getElementValue('password-input');
+
+    // Form Submission
+    const emailForm = document.getElementById('email-auth-form');
+    if (emailForm) {
+      emailForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const email = popupUI.getElementValue('auth-email');
+        const password = popupUI.getElementValue('auth-password');
         
         if (!email || !password) {
           popupUI.showError('Please enter both email and password');
+          popupUI.shakeElement('auth-form-container');
           return;
         }
         
-        if (password.length < 6) {
-          popupUI.showError('Password must be at least 6 characters long');
-          return;
+        popupUI.setAuthLoading(true);
+        try {
+          if (isSignUp) {
+             if (password.length < 6) {
+              popupUI.showError('Password must be at least 6 characters long');
+              popupUI.shakeElement('auth-form-container');
+              return;
+            }
+            await authManager.signUp(email, password);
+          } else {
+            await authManager.signIn(email, password);
+          }
+        } catch (error) {
+          console.error('Auth error:', error);
+          popupUI.shakeElement('auth-form-container');
+        } finally {
+          popupUI.setAuthLoading(false);
         }
-        
-        await authManager.signUp(email, password);
       });
     }
     
     // Google sign in
-    const googleSignInBtn = document.getElementById('google-sign-in-btn');
+    const googleSignInBtn = document.getElementById('google-auth-btn');
     if (googleSignInBtn) {
       googleSignInBtn.addEventListener('click', () => {
         authManager.signInWithGoogle();
@@ -133,17 +171,8 @@ export class PopupController {
       });
     }
     
-    // Form submissions
-    const emailForm = document.getElementById('email-form');
-    if (emailForm) {
-      emailForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        signInBtn?.click();
-      });
-    }
-    
     // Clear auth messages when typing
-    ['email-input', 'password-input'].forEach(inputId => {
+    ['auth-email', 'auth-password'].forEach(inputId => {
       const input = document.getElementById(inputId) as HTMLInputElement;
       if (input) {
         input.addEventListener('input', () => {
@@ -196,34 +225,79 @@ export class PopupController {
   }
   
   private async loadInitialData(): Promise<void> {
+    if (!authManager.isAuthenticated()) return;
+
+    popupUI.showSkeletonLoader(true);
     try {
-      // Load stats
-      await this.loadStats();
-      
-      // Load jobs
       await jobManager.loadJobs();
-      
+      await this.loadStats();
     } catch (error) {
       console.error('Error loading initial data:', error);
+      popupUI.showError('Failed to load jobs');
+    } finally {
+      popupUI.showSkeletonLoader(false);
+    }
+  }
+  
+  private async handleSync() {
+    if (!authManager.isAuthenticated()) return;
+    
+    popupUI.setSyncing(true);
+    try {
+      await jobManager.loadJobs();
+      await this.loadStats();
+      popupUI.showSuccess('Jobs synced successfully');
+    } catch (error) {
+      console.error('Sync failed:', error);
+      popupUI.showError('Failed to sync jobs');
+    } finally {
+      popupUI.setSyncing(false);
+    }
+  }
+
+  private async handleForgotPassword() {
+    const emailInput = document.getElementById('auth-email') as HTMLInputElement;
+    const email = emailInput.value.trim();
+
+    if (!email) {
+      popupUI.showError('Please enter your email address first');
+      emailInput.focus();
+      return;
+    }
+
+    try {
+      await sendPasswordReset(email);
+      popupUI.showSuccess('Password reset email sent!');
+    } catch (error: any) {
+      console.error('Password reset failed:', error);
+      popupUI.showError(error.message || 'Failed to send reset email');
     }
   }
   
   private async loadStats(): Promise<void> {
     try {
-      const stats = await jobManager.getJobs();
-      const today = new Date().toDateString();
+      const jobs = jobManager.getJobs();
       
-      const jobsToday = stats.filter(job => 
-        job.postedDate && new Date(job.postedDate).toDateString() === today
-      ).length;
+      // Calculate stats
+      const totalTracked = jobs.length;
       
-      const sponsoredJobs = jobManager.getSponsoredJobsCount();
-      const appliedCount = jobManager.getAppliedJobsCount();
+      // Calculate jobs added this week
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
       
-      popupUI.setElementText('jobs-today', jobsToday.toString());
-      popupUI.setElementText('sponsored-jobs', sponsoredJobs.toString());
-      popupUI.setElementText('applications', appliedCount.toString());
-      popupUI.setElementText('applied-count', appliedCount.toString());
+      const newJobsThisWeek = jobs.filter(job => {
+        if (!job.dateAdded) return false;
+        const addedDate = new Date(job.dateAdded);
+        return addedDate >= oneWeekAgo;
+      }).length;
+      
+      // Update UI
+      popupUI.setElementText('jobs-count-display', totalTracked.toString());
+      
+      const weeklyDisplay = document.getElementById('weekly-count-display');
+      if (weeklyDisplay) {
+        weeklyDisplay.textContent = `+${newJobsThisWeek}`;
+      }
       
     } catch (error) {
       console.error('Error loading stats:', error);

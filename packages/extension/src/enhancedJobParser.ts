@@ -1,3 +1,5 @@
+import { fetchSponsorRecord } from './sponsorship/lookup';
+
 // Enhanced job description parser with fuzzy matching and improved SOC code detection
 export interface EnhancedJobData {
   title: string;
@@ -226,6 +228,8 @@ export class EnhancedJobParser {
       jobData = this.extractFromLinkedIn(document, url);
     } else if (domain.includes('indeed')) {
       jobData = this.extractFromIndeed(document, url);
+    } else if (domain.includes('glassdoor')) {
+      jobData = this.extractFromGlassdoor(document, url);
     } else {
       jobData = this.extractFromGeneric(document, url);
     }
@@ -239,19 +243,19 @@ export class EnhancedJobParser {
   private static extractFromLinkedIn(document: Document, url: string): Partial<EnhancedJobData> | null {
     try {
       // Extract job title
-      const titleElement = document.querySelector('h1.top-card-layout__title, .top-jobs-title, h1');
+      const titleElement = document.querySelector('h1.top-card-layout__title, .top-jobs-title, h1, .job-details-jobs-unified-top-card__job-title, .t-24');
       const title = titleElement?.textContent?.trim() || '';
 
       // Extract company
-      const companyElement = document.querySelector('.topcard__org-name-link, .top-jobs-company-name, [data-test-id="job-details-company-name"]');
+      const companyElement = document.querySelector('.topcard__org-name-link, .top-jobs-company-name, [data-test-id="job-details-company-name"], .job-details-jobs-unified-top-card__company-name, .t-14');
       const company = companyElement?.textContent?.trim() || '';
 
       // Extract location
-      const locationElement = document.querySelector('.topcard__flavor-row, .top-jobs-location, [data-test-id="job-details-location"]');
+      const locationElement = document.querySelector('.topcard__flavor-row, .top-jobs-location, [data-test-id="job-details-location"], .job-details-jobs-unified-top-card__bullet');
       const location = locationElement?.textContent?.trim() || '';
 
       // Extract description
-      const descriptionElement = document.querySelector('div.show-more-less-html__markup, .jobs-description__content, .job-description-container');
+      const descriptionElement = document.querySelector('div.show-more-less-html__markup, .jobs-description__content, .job-description-container, #job-details');
       const description = descriptionElement?.innerHTML || '';
 
       // Extract salary using enhanced patterns
@@ -298,11 +302,11 @@ export class EnhancedJobParser {
 
   private static extractFromIndeed(document: Document, url: string): Partial<EnhancedJobData> | null {
     try {
-      const title = document.querySelector('#jobTitleTextContainer, h1, .jobsearch-JobInfoHeader-title')?.textContent?.trim() || '';
-      const company = document.querySelector('[data-testid="inlineHeader-companyName"], .companyName')?.textContent?.trim() || '';
+      const title = document.querySelector('#jobTitleTextContainer, h1, .jobsearch-JobInfoHeader-title, [data-testid="job-title"]')?.textContent?.trim() || '';
+      const company = document.querySelector('[data-testid="inlineHeader-companyName"], .companyName, [data-company-name="true"]')?.textContent?.trim() || '';
       const location = document.querySelector('[data-testid="job-location"], .jobLocation')?.textContent?.trim() || '';
-      const description = document.querySelector('#jobDescriptionText, .job-snippet')?.innerHTML || '';
-      const salary = SalaryExtractor.extract(document.querySelector('.salary-snippet-container, .job-salary')?.textContent || '');
+      const description = document.querySelector('#jobDescriptionText, .job-snippet, [id="jobDescriptionText"]')?.innerHTML || '';
+      const salary = SalaryExtractor.extract(document.querySelector('.salary-snippet-container, .job-salary, [id="salaryInfoAndJobType"]')?.textContent || '');
 
       return {
         title,
@@ -329,6 +333,41 @@ export class EnhancedJobParser {
       };
     } catch (error) {
       console.error('Indeed extraction failed:', error);
+      return null;
+    }
+  }
+
+  private static extractFromGlassdoor(document: Document, url: string): Partial<EnhancedJobData> | null {
+    try {
+      const title = document.querySelector('[data-test="job-title"], .JobDetails_jobTitle__...')?.textContent?.trim() || '';
+      const company = document.querySelector('[data-test="employer-name"], .JobDetails_jobDetailsHeader__...')?.textContent?.trim() || '';
+      const location = document.querySelector('[data-test="location"], .JobDetails_location__...')?.textContent?.trim() || '';
+      const description = document.querySelector('[class*="JobDetails_jobDescription"], .jobDescriptionContent')?.innerHTML || '';
+      
+      return {
+        title,
+        company,
+        location,
+        url,
+        description,
+        source: 'glassdoor',
+        dateFound: new Date().toISOString(),
+        isSponsored: false,
+        sponsorshipType: '',
+        skills: [],
+        requirements: [],
+        benefits: [],
+        qualifications: [],
+        remoteWork: location.toLowerCase().includes('remote'),
+        industry: '',
+        jobType: '',
+        experienceLevel: '',
+        companySize: '',
+        postedDate: '',
+        applicationDeadline: ''
+      };
+    } catch (error) {
+      console.error('Glassdoor extraction failed:', error);
       return null;
     }
   }
@@ -371,7 +410,7 @@ export class EnhancedJobParser {
     }
   }
 
-  private static enhanceJobData(baseData: Partial<EnhancedJobData>, document: Document): EnhancedJobData | null {
+  public static async enhanceJobData(baseData: Partial<EnhancedJobData>, document: Document): Promise<EnhancedJobData | null> {
     if (!baseData.title) return null;
 
     // Normalize job title
@@ -392,6 +431,25 @@ export class EnhancedJobParser {
 
     // Extract department
     const department = this.extractDepartment(normalized, description);
+
+    // Detect sponsorship from description
+    const descriptionSponsorship = this.detectSponsorshipInDescription(description);
+    
+    // Check official sponsorship register
+    let isSponsored = descriptionSponsorship.isSponsored;
+    let sponsorshipType = descriptionSponsorship.type;
+    
+    if (baseData.company) {
+      try {
+        const sponsorRecord = await fetchSponsorRecord(baseData.company);
+        if (sponsorRecord && sponsorRecord.eligibleForSponsorship) {
+          isSponsored = true;
+          sponsorshipType = sponsorshipType || sponsorRecord.sponsorshipType || 'Licensed Sponsor';
+        }
+      } catch (error) {
+        console.error('Sponsorship lookup failed:', error);
+      }
+    }
 
     return {
       ...baseData,
@@ -419,11 +477,49 @@ export class EnhancedJobParser {
       industry: baseData.industry || '',
       postedDate: baseData.postedDate || '',
       applicationDeadline: baseData.applicationDeadline || '',
-      isSponsored: baseData.isSponsored || false,
-      sponsorshipType: baseData.sponsorshipType || '',
+      isSponsored,
+      sponsorshipType,
       dateFound: baseData.dateFound || new Date().toISOString(),
       source: baseData.source || 'unknown'
     } as EnhancedJobData;
+  }
+
+  private static detectSponsorshipInDescription(description: string): { isSponsored: boolean; type: string } {
+    const text = description.toLowerCase();
+    const sponsorshipKeywords = [
+      'visa sponsorship',
+      'sponsorship available',
+      'tier 2',
+      'skilled worker visa',
+      'relocation support',
+      'can sponsor',
+      'eligible for sponsorship',
+      'sponsor visa'
+    ];
+
+    const noSponsorshipKeywords = [
+      'no sponsorship',
+      'cannot sponsor',
+      'must have right to work',
+      'must be eligible to work',
+      'no visa sponsorship',
+      'uk work authorization required',
+      'right to work in the uk'
+    ];
+
+    // Check for negative keywords first
+    if (noSponsorshipKeywords.some(k => text.includes(k))) {
+      return { isSponsored: false, type: '' };
+    }
+
+    // Check for positive keywords
+    for (const keyword of sponsorshipKeywords) {
+      if (text.includes(keyword)) {
+        return { isSponsored: true, type: 'Skilled Worker Visa' };
+      }
+    }
+
+    return { isSponsored: false, type: '' };
   }
 
   // Enhanced extraction methods

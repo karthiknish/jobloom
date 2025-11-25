@@ -5,6 +5,7 @@
 
 import React, { Component, ReactNode } from 'react';
 import { Button } from "@/components/ui/button";
+import { themeColors } from "@/styles/theme-colors";
 
 interface Props {
   children: ReactNode;
@@ -52,10 +53,9 @@ export class ErrorBoundary extends Component<Props, State> {
       this.props.onError(error, errorInfo);
     }
 
-    // In production, send to error reporting service
+    // Log error in production
     if (process.env.NODE_ENV === 'production') {
-      // TODO: Send to Sentry or similar service
-      // Sentry.captureException(error, { contexts: { react: { componentStack: errorInfo.componentStack } } });
+      console.error('React Error Boundary caught error:', error.message);
     }
   }
 
@@ -81,9 +81,11 @@ export class ErrorBoundary extends Component<Props, State> {
       // Default error UI
       return (
         <div className={`flex flex-col items-center justify-center min-h-[400px] p-8 text-center ${this.props.className}`}>
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+          <div 
+            className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${themeColors.error.bg}`}
+          >
             <svg
-              className="w-8 h-8 text-red-600"
+              className={`w-8 h-8 ${themeColors.error.text}`}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -97,12 +99,12 @@ export class ErrorBoundary extends Component<Props, State> {
             </svg>
           </div>
           
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+          <h2 className="text-xl font-semibold mb-2">
             Something went wrong
           </h2>
           
-          <p className="text-gray-600 mb-6 max-w-md">
-            {this.state.error?.message || 'An unexpected error occurred. Please try again.'}
+          <p className={`mb-6 max-w-md ${themeColors.muted.text}`}>
+            An error occurred. Please try again.
           </p>
 
           {this.props.showRetry && this.retryCount < this.maxRetries && (
@@ -115,6 +117,7 @@ export class ErrorBoundary extends Component<Props, State> {
             <div className="mt-4">
               <Button
                 variant="secondary"
+                className="cursor-pointer text-sm hover:text-gray-700"
                 onClick={() => window.location.reload()}
               >
                 Reload Page
@@ -124,12 +127,14 @@ export class ErrorBoundary extends Component<Props, State> {
 
           {process.env.NODE_ENV === 'development' && this.state.errorInfo && (
             <details className="mt-8 text-left">
-              <summary className="cursor-pointer text-sm text-gray-500 hover:text-gray-700">
+              <summary 
+                className={`cursor-pointer text-sm hover:text-gray-700 ${themeColors.muted.text}`}
+              >
                 Error Details (Development)
               </summary>
-              <pre className="mt-2 p-4 bg-gray-100 rounded text-xs overflow-auto max-h-64">
+              <pre className={`mt-2 p-4 rounded text-xs overflow-auto max-h-64 ${themeColors.muted.bg}`}>
                 <code>
-                  {this.state.error?.stack}
+                  {this.state.error?.toString()}
                   {'\n\n'}
                   Component Stack:
                   {this.state.errorInfo.componentStack}

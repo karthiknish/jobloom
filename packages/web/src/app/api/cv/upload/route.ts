@@ -28,6 +28,13 @@ import {
 import { ERROR_CODES } from "@/lib/api/errorCodes";
 import { analyzeResume, type ResumeAnalysisResponse } from "@/services/ai/geminiService";
 
+// Use dynamic import for pdf-parse to avoid build-time file access issue
+type PDFParseResult = { text: string };
+const parsePDF = async (buffer: Buffer): Promise<PDFParseResult> => {
+  const pdfParse = (await import('pdf-parse')).default;
+  return pdfParse(buffer);
+};
+
 // Initialize Firebase Admin if not already initialized (for storage)
 // Centralized admin initialization already handled in firebase/admin.ts
 
@@ -373,10 +380,20 @@ async function performCvAnalysis(
   }
 }
 
-// Mock text extraction from PDF
+// Extract text from PDF using pdf-parse
+// Extract text from PDF using pdf-parse
 async function extractTextFromPDF(buffer: Buffer): Promise<string> {
-  // In a real implementation, you would use a PDF parsing library like pdf-parse
-  return "Sample CV text extracted from PDF. This is a placeholder.";
+  try {
+    const data = await parsePDF(buffer);
+    // Clean up the text: remove excessive whitespace, null bytes, etc.
+    return data.text.replace(/\0/g, '').trim();
+  } catch (error) {
+    console.error("Error parsing PDF:", error);
+    // Fallback or rethrow depending on desired behavior. 
+    // For now, we'll return a generic error message in the text so analysis fails gracefully-ish
+    // or throw to let the main handler catch it.
+    throw new Error("Failed to extract text from PDF file.");
+  }
 }
 
 function mergeUniqueStrings(

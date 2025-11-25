@@ -71,6 +71,7 @@ export function DashboardJobsView({
     >
       {hasApplications ? (
         <>
+          // ...existing code...
           {/* Advanced Filters */}
           <DashboardFilters
             searchTerm={searchTerm}
@@ -84,25 +85,31 @@ export function DashboardJobsView({
             totalApplicationsCount={applications.length}
           />
 
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-sm text-muted-foreground">View</div>
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant={boardMode === "list" ? "secondary" : "outline"}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 bg-muted/30 p-2 rounded-lg border border-border/50">
+            <div className="flex items-center bg-muted p-1 rounded-lg">
+              <button
                 onClick={() => setBoardMode("list")}
+                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 ${
+                  boardMode === "list"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
               >
-                List
-              </Button>
-              <Button
-                size="sm"
-                variant={boardMode === "kanban" ? "secondary" : "outline"}
+                List View
+              </button>
+              <button
                 onClick={() => setBoardMode("kanban")}
+                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 ${
+                  boardMode === "kanban"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
               >
-                Kanban
-              </Button>
+                Kanban Board
+              </button>
             </div>
-            <div className="flex flex-wrap gap-2">
+            
+            <div className="flex flex-wrap gap-2 w-full sm:w-auto">
               <ExportCsvButton
                 fileName="filtered-applications.csv"
                 rows={filteredApplications.map((a) => ({
@@ -121,15 +128,16 @@ export function DashboardJobsView({
                 feature="exportFormats"
                 requires="json"
                 fallback={
-                  <Button size="sm" variant="outline" disabled>
+                  <Button size="sm" variant="outline" disabled className="h-9">
                     <FileText className="h-4 w-4 mr-2" />
-                    JSON <span className="ml-1 text-xs">Pro</span>
+                    JSON <span className="ml-1 text-xs bg-primary/10 text-primary px-1 rounded">Pro</span>
                   </Button>
                 }
               >
                 <Button
                   size="sm"
                   variant="outline"
+                  className="h-9"
                   onClick={() => {
                     // Export as JSON
                     const data = filteredApplications.map((a) => ({
@@ -161,7 +169,7 @@ export function DashboardJobsView({
                   }}
                 >
                   <FileText className="h-4 w-4 mr-2" />
-                  JSON <span className="ml-1 text-xs">Pro</span>
+                  JSON
                 </Button>
 
                 {/* PDF Export - Premium Only */}
@@ -169,27 +177,29 @@ export function DashboardJobsView({
                   feature="exportFormats"
                   requires="pdf"
                   fallback={
-                    <Button size="sm" variant="outline" disabled>
+                    <Button size="sm" variant="outline" disabled className="h-9">
                       <FileText className="h-4 w-4 mr-2" />
-                      PDF <span className="ml-1 text-xs">Pro</span>
+                      PDF <span className="ml-1 text-xs bg-primary/10 text-primary px-1 rounded">Pro</span>
                     </Button>
                   }
                 >
                   <Button
                     size="sm"
                     variant="outline"
+                    className="h-9"
                     onClick={() => {
                       // Mock PDF export - would integrate with PDF library
                     }}
                   >
                     <FileText className="h-4 w-4 mr-2" />
-                    PDF <span className="ml-1 text-xs">Pro</span>
+                    PDF
                   </Button>
                 </FeatureGate>
               </FeatureGate>
             </div>
           </div>
           {boardMode === "kanban" ? (
+// ...existing code...
             <KanbanBoard
               applications={filteredApplications}
               onChangeStatus={async (id, status) => {

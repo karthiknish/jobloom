@@ -116,7 +116,10 @@ export function logRequest(request: NextRequest, context: RequestContext): void 
     console.log('📝 API Request:', logData);
   }
 
-  // TODO: Send to monitoring service in production
+  // Log to console for production monitoring
+  if (process.env.NODE_ENV === 'production') {
+    console.info(JSON.stringify({ level: 'info', type: 'api_request', ...logData }));
+  }
 }
 
 // Response logging middleware
@@ -135,7 +138,10 @@ export function logResponse(response: Response, context: RequestContext): void {
     console.log('📤 API Response:', logData);
   }
 
-  // TODO: Send to monitoring service in production
+  // Log to console for production monitoring
+  if (process.env.NODE_ENV === 'production') {
+    console.info(JSON.stringify({ level: 'info', type: 'api_response', ...logData }));
+  }
 }
 
 // Get client IP address

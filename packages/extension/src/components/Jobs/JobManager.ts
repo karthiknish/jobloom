@@ -2,6 +2,7 @@ import { sanitizeBaseUrl, DEFAULT_WEB_APP_URL } from "../../constants";
 import { JobStatus, createJobItemHTML, updateJobStatusDisplay } from "../../utils/jobStatus";
 import { popupUI } from "../UI/PopupUI";
 import { fetchSponsorRecord } from "../../sponsorship/lookup";
+import { safeChromeStorageGet } from "../../utils/safeStorage";
 
 export class JobManager {
   private static instance: JobManager;
@@ -21,16 +22,37 @@ export class JobManager {
     this.activeFilter = filterType;
     
     try {
-      const { JobBoardManager } = await import("../../addToBoard");
-      const allJobs = await JobBoardManager.getAllJobs();
+      const { EnhancedJobBoardManager } = await import("../../enhancedAddToBoard");
+      const allJobs = await EnhancedJobBoardManager.getInstance().getAllJobs();
       
+      // Fetch pending jobs
+      const { pendingJobs } = await safeChromeStorageGet("local", ["pendingJobs"], { pendingJobs: [] as any[] }, "JobManager");
+      
+      // Convert pending jobs to JobBoardEntry format for display
+      const pendingEntries = pendingJobs.map((p: any) => ({
+        id: p.id || `pending-${Date.now()}`,
+        title: p.jobData.title,
+        company: p.jobData.company,
+        location: p.jobData.location,
+        url: p.jobData.url,
+        status: p.status,
+        dateAdded: new Date(p.timestamp).toISOString(),
+        notes: "Queued for sync",
+        salary: p.jobData.salary?.original,
+        description: p.jobData.description,
+        isPending: true // Flag for UI
+      }));
+
+      // Merge jobs (pending first)
+      const mergedJobs = [...pendingEntries, ...allJobs];
+
       // Apply filters
-      let filteredJobs = allJobs;
+      let filteredJobs = mergedJobs;
       if (filterType && filterType !== 'all') {
-        filteredJobs = allJobs.filter(job => {
+        filteredJobs = mergedJobs.filter(job => {
           switch (filterType) {
             case 'sponsored':
-              return job.sponsorshipInfo?.isSponsored === true;
+              return (job as any).isSponsored === true || (job as any).sponsorshipInfo?.isSponsored === true;
             case 'interested':
               return job.status === 'interested';
             case 'applied':
@@ -50,10 +72,13 @@ export class JobManager {
         company: job.company,
         location: job.location,
         status: job.status,
-        sponsored: job.sponsorshipInfo?.isSponsored || false,
+        sponsored: (job as any).isSponsored || (job as any).sponsorshipInfo?.isSponsored || false,
         salary: job.salary,
-        remote: job.remoteWork,
-        url: job.url
+        remote: (job as any).remoteWork,
+        url: job.url,
+        isPending: (job as any).isPending,
+        logoUrl: (job as any).logoUrl, // Map logoUrl if available
+        dateAdded: job.dateAdded
       }));
       
       this.jobs = mappedJobs;
@@ -76,23 +101,29 @@ export class JobManager {
     }
     
     // Update job count
-    const jobCount = document.getElementById("jobs-count") as HTMLElement;
+    const jobCount = document.getElementById("jobs-count-display") as HTMLElement;
     if (jobCount) {
-      jobCount.textContent = `${this.jobs.length} job${this.jobs.length !== 1 ? 's' : ''}`;
+      jobCount.textContent = this.jobs.length.toString();
     }
     
     // Check if UK filters are enabled
     const ukFiltersEnabled = await this.checkUKFiltersEnabled();
     
     const jobsHTML = this.jobs.map(job => {
-      const jobHTML = createJobItemHTML(job, ukFiltersEnabled);
+      // Add pending indicator if needed
+      let html = createJobItemHTML(job, ukFiltersEnabled);
+      if ((job as any).isPending) {
+        // Inject pending badge (hacky but works without changing createJobItemHTML signature too much)
+        html = html.replace('<div class="job-card">', '<div class="job-card pending-job" style="opacity: 0.7; border-left: 3px solid orange;">');
+        html = html.replace('<h3 class="job-title">', '<h3 class="job-title"><span style="font-size: 10px; background: orange; color: white; padding: 2px 4px; border-radius: 4px; margin-right: 4px;">QUEUED</span>');
+      }
       
       // If UK filters are enabled, check eligibility
-      if (ukFiltersEnabled && job.sponsored) {
+      if (ukFiltersEnabled && job.sponsored && !(job as any).isPending) {
         this.checkUKEligibilityForJob(job.id);
       }
       
-      return jobHTML;
+      return html;
     }).join('');
     
     jobList.innerHTML = jobsHTML;
@@ -103,23 +134,21 @@ export class JobManager {
   
   private renderEmptyState(errorMessage?: string): void {
     const jobList = document.getElementById("job-list") as HTMLElement;
-    const jobCount = document.getElementById("jobs-count") as HTMLElement;
+    const jobCount = document.getElementById("jobs-count-display") as HTMLElement;
     
     if (!jobList || !jobCount) return;
     
-    jobCount.textContent = "0 jobs";
+    jobCount.textContent = "0";
     
     const emptyHTML = `
-      <div class="empty-state">
-        <div class="empty-icon">📋</div>
-        <h3>No jobs found</h3>
-        <p>${errorMessage || 'Start highlighting jobs on job boards to see them here.'}</p>
-        <button class="action-btn" style="margin-top: 16px; padding: 8px 16px; font-size: 12px;" onclick="document.querySelector('.nav-tab[data-tab=&quot;jobs&quot;]').click()">
-          <div class="action-icon primary">🎯</div>
-          <div class="action-content">
-            <span>How to add jobs</span>
-            <span style="font-size: 11px; opacity: 0.8;">Highlight job descriptions on any job board</span>
-          </div>
+      <div class="empty-state-container">
+        <div class="empty-icon-wrapper">
+          <span>📋</span>
+        </div>
+        <h3 class="empty-title">No jobs found</h3>
+        <p class="empty-description">${errorMessage || 'Start highlighting jobs on job boards to see them here.'}</p>
+        <button class="btn-empty-action" onclick="window.open('https://hireall.com/help', '_blank')">
+          How to add jobs
         </button>
       </div>
     `;
@@ -131,10 +160,10 @@ export class JobManager {
     try {
       popupUI.showLoading(`status-btn-${jobId}`);
       
-      const { JobBoardManager } = await import("../../addToBoard");
-      const result = await JobBoardManager.updateJobStatus(jobId, newStatus as "interested" | "applied" | "interviewing" | "rejected" | "offered" | "withdrawn");
+      const { EnhancedJobBoardManager } = await import("../../enhancedAddToBoard");
+      const result = await EnhancedJobBoardManager.getInstance().updateJobStatus(jobId, newStatus as "interested" | "applied" | "interviewing" | "rejected" | "offered" | "withdrawn");
       
-      if (result.success) {
+      if (result) {
         // Update the job in local array
         const jobIndex = this.jobs.findIndex(job => job.id === jobId);
         if (jobIndex !== -1) {
@@ -151,7 +180,7 @@ export class JobManager {
           setTimeout(() => this.loadJobs(this.activeFilter), 1000);
         }
       } else {
-        throw new Error(result.message || 'Failed to update job status');
+        throw new Error('Failed to update job status');
       }
       
     } catch (error) {

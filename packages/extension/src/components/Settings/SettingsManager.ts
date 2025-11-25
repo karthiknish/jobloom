@@ -77,10 +77,10 @@ export class SettingsManager {
   
   private updateSettingsUI(settings: ExtensionSettings): void {
     // Update toggle states
-    popupUI.toggleClass('auto-detect-toggle', 'active', settings.autoDetectJobs);
-    popupUI.toggleClass('show-badges-toggle', 'active', settings.showJobBadges);
-    popupUI.toggleClass('auto-save-profile-toggle', 'active', settings.autoSaveProfile);
-    popupUI.toggleClass('uk-filters-toggle', 'active', settings.ukFiltersEnabled);
+    popupUI.setElementChecked('auto-detect-toggle', settings.autoDetectJobs);
+    popupUI.setElementChecked('show-badges-toggle', settings.showJobBadges);
+    popupUI.setElementChecked('auto-save-profile-toggle', settings.autoSaveProfile);
+    popupUI.setElementChecked('uk-filters-toggle', settings.ukFiltersEnabled);
     
     // Update input values
     popupUI.setElementValue('web-app-url-input', settings.webAppUrl);
@@ -106,10 +106,10 @@ export class SettingsManager {
   }
   
   private getSettingsFromUI(): ExtensionSettings {
-    const autoDetectJobs = popupUI.getElementValue('auto-detect-toggle') !== 'off';
-    const showJobBadges = popupUI.getElementValue('show-badges-toggle') !== 'off';
-    const autoSaveProfile = popupUI.getElementValue('auto-save-profile-toggle') !== 'off';
-    const ukFiltersEnabled = popupUI.getElementValue('uk-filters-toggle') !== 'off';
+    const autoDetectJobs = popupUI.getElementValue('auto-detect-toggle') === 'true';
+    const showJobBadges = popupUI.getElementValue('show-badges-toggle') === 'true';
+    const autoSaveProfile = popupUI.getElementValue('auto-save-profile-toggle') === 'true';
+    const ukFiltersEnabled = popupUI.getElementValue('uk-filters-toggle') === 'true';
     
     let webAppUrl = popupUI.getElementValue('web-app-url-input').trim();
     webAppUrl = sanitizeBaseUrl(webAppUrl || DEFAULT_WEB_APP_URL);
@@ -218,20 +218,22 @@ export class SettingsManager {
         : undefined,
     };
   }
-  
+
   public setupEventListeners(): void {
     // Toggle switches
-    document.querySelectorAll('.settings-toggle').forEach(toggle => {
-      toggle.addEventListener('click', () => {
-        const element = toggle as HTMLElement;
-        element.classList.toggle('active');
-        
-        // Special handling for UK filters toggle
-        if (element.id === 'uk-filters-toggle') {
-          const isActive = element.classList.contains('active');
-          popupUI.toggleElement('uk-filters-details', isActive);
-        }
-      });
+    ['auto-detect-toggle', 'show-badges-toggle', 'auto-save-profile-toggle', 'uk-filters-toggle'].forEach(id => {
+      const toggle = document.getElementById(id);
+      if (toggle) {
+        toggle.addEventListener('change', () => {
+          // Special handling for UK filters toggle
+          if (id === 'uk-filters-toggle') {
+            const isChecked = (toggle as HTMLInputElement).checked;
+            popupUI.toggleElement('uk-filters-details', isChecked);
+          }
+          // Auto-save settings on toggle change
+          this.saveSettings();
+        });
+      }
     });
     
     // Web app URL validation
@@ -243,6 +245,7 @@ export class SettingsManager {
           url = sanitizeBaseUrl(url);
           webAppUrlInput.value = url;
         }
+        this.saveSettings();
       });
     }
     

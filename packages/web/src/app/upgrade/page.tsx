@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Check, Crown, Star, Zap, Shield, Users } from "lucide-react";
+import { Check, Crown, Star, Zap, Shield, Users, Loader2 } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { useRouter } from "next/navigation";
@@ -105,42 +105,46 @@ export default function UpgradePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-muted to-muted/80">
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background relative overflow-hidden">
+      {/* Premium background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full filter blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-0 left-0 w-80 h-80 bg-secondary/5 rounded-full filter blur-2xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+      </div>
+
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-primary via-primary/90 to-secondary/80 text-white">
-        <div className="max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <motion.div
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-              transition={{ duration: 0.5 }}
-              className="inline-flex items-center justify-center w-16 h-16 bg-white/10 rounded-full mb-6"
-            >
-              <Crown className="h-8 w-8" />
-            </motion.div>
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.6 }}
-              className="text-4xl font-bold sm:text-5xl lg:text-6xl"
-            >
-              Upgrade to Premium
-            </motion.h1>
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.6 }}
-              className="mt-6 max-w-2xl mx-auto text-xl text-primary-foreground/90"
-            >
-              Unlock unlimited CV analyses, advanced analytics, and priority
-              support to supercharge your job search.
-            </motion.p>
-          </div>
+      <div className="relative pt-16 pb-12 sm:pt-24 sm:pb-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", stiffness: 260, damping: 20 }}
+            className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 text-primary mb-8"
+          >
+            <Crown className="h-10 w-10" />
+          </motion.div>
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.6 }}
+            className="text-4xl font-bold tracking-tight text-foreground sm:text-6xl text-gradient-premium"
+          >
+            Upgrade to Premium
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, duration: 0.6 }}
+            className="mt-6 max-w-2xl mx-auto text-xl text-muted-foreground"
+          >
+            Unlock unlimited CV analyses, advanced analytics, and priority
+            support to supercharge your job search.
+          </motion.p>
         </div>
       </div>
 
       {/* Pricing Section */}
-      <div className="max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto pb-24 px-4 sm:px-6 lg:px-8 relative z-10">
 
         {/* Plans */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
@@ -149,31 +153,32 @@ export default function UpgradePage() {
               key={planData.name}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1, duration: 0.5 }}
+              transition={{ delay: index * 0.1 + 0.6, duration: 0.5 }}
+              className="h-full"
             >
               <Card
-                className={`relative h-full ${
+                className={`h-full border-0 bg-surface transition-all duration-300 ${
                   planData.popular
-                    ? "ring-2 ring-primary shadow-xl"
-                    : "shadow-md"
+                    ? "card-premium-elevated ring-2 ring-primary/20 shadow-premium-lg scale-105 lg:scale-105 z-10"
+                    : "card-premium-elevated hover:shadow-premium-lg opacity-90 hover:opacity-100"
                 }`}
               >
                 {planData.popular && (
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                    <Badge className="bg-gradient-to-r from-primary to-secondary text-white px-4 py-1">
-                      <Star className="h-3 w-3 mr-1" />
+                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-20">
+                    <Badge className="bg-gradient-to-r from-primary to-secondary text-white px-4 py-1 shadow-lg border-0">
+                      <Star className="h-3 w-3 mr-1 fill-current" />
                       Most Popular
                     </Badge>
                   </div>
                 )}
 
-                <CardHeader className="text-center pb-4">
-                  <CardTitle className="text-2xl font-bold">
+                <CardHeader className="text-center pb-4 pt-8">
+                  <CardTitle className="text-2xl font-bold text-foreground">
                     {planData.name}
                   </CardTitle>
                   <div className="mt-4">
                     <div className="flex items-baseline justify-center">
-                      <span className="text-4xl font-bold">
+                      <span className="text-4xl font-bold text-gradient-premium">
                         £{planData.price}
                       </span>
                       {planData.price > 0 && (
@@ -186,21 +191,23 @@ export default function UpgradePage() {
                   <p className="text-muted-foreground mt-2">{planData.description}</p>
                 </CardHeader>
 
-                <CardContent className="flex-1">
-                  <div className="space-y-4">
+                <CardContent className="flex-1 flex flex-col">
+                  <div className="space-y-6 flex-1">
                     {/* Features */}
                     <div>
-                      <h4 className="font-semibold text-foreground mb-3 flex items-center">
-                        <Check className="h-4 w-4 text-green-500 mr-2" />
+                      <h4 className="font-semibold text-foreground mb-4 flex items-center">
+                        <Check className="h-4 w-4 text-primary mr-2" />
                         What&apos;s included:
                       </h4>
-                      <ul className="space-y-2">
+                      <ul className="space-y-3">
                         {planData.features.map((feature, featureIndex) => (
                           <li
                             key={featureIndex}
-                            className="flex items-center text-sm"
+                            className="flex items-start text-sm text-muted-foreground"
                           >
-                            <Check className="h-4 w-4 text-green-500 mr-3 flex-shrink-0" />
+                            <div className="mr-3 mt-0.5 h-4 w-4 rounded-full bg-green-500/10 flex items-center justify-center flex-shrink-0">
+                              <Check className="h-2.5 w-2.5 text-green-500" />
+                            </div>
                             {feature}
                           </li>
                         ))}
@@ -210,17 +217,17 @@ export default function UpgradePage() {
                     {planData.limitations &&
                       planData.limitations.length > 0 && (
                         <div>
-                          <h4 className="font-semibold text-foreground mb-3">
+                          <h4 className="font-semibold text-foreground mb-4">
                             Limitations:
                           </h4>
-                          <ul className="space-y-2">
+                          <ul className="space-y-3">
                             {planData.limitations.map(
                               (limitation, limitationIndex) => (
                                 <li
                                   key={limitationIndex}
-                                  className="flex items-center text-sm text-muted-foreground"
+                                  className="flex items-start text-sm text-muted-foreground/70"
                                 >
-                                  <span className="w-4 h-4 mr-3 flex-shrink-0 text-center">
+                                  <span className="w-4 h-4 mr-3 flex-shrink-0 text-center text-muted-foreground">
                                     •
                                   </span>
                                   {limitation}
@@ -230,31 +237,40 @@ export default function UpgradePage() {
                           </ul>
                         </div>
                       )}
+                  </div>
 
-                    <Separator className="my-6" />
+                  <Separator className="my-8" />
 
-                    <div className="text-center">
-                      {planData.current ? (
-                        <Button disabled className="w-full">
-                          Current Plan
-                        </Button>
-                      ) : planData.name === "Free" ? (
-                        <Button variant="outline" disabled className="w-full">
-                          Current Plan
-                        </Button>
-                      ) : (
+                  <div className="text-center mt-auto">
+                    {planData.current ? (
+                      <Button disabled className="w-full h-12 font-semibold bg-muted text-muted-foreground">
+                        Current Plan
+                      </Button>
+                    ) : planData.name === "Free" ? (
+                      <Button variant="outline" disabled className="w-full h-12 font-semibold">
+                        Current Plan
+                      </Button>
+                    ) : (
+                      <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                         <Button
-                          className="w-full bg-gradient-to-r from-primary to-secondary text-white"
+                          className="w-full h-12 font-bold btn-premium gradient-primary hover:shadow-premium-xl text-base"
                           onClick={() => handleUpgrade("premium")}
                           disabled={isUpgrading}
                         >
-                          <Crown className="h-4 w-4 mr-2" />
-                          {isUpgrading
-                            ? "Upgrading..."
-                            : `Upgrade to ${planData.name}`}
+                          {isUpgrading ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Upgrading...
+                            </>
+                          ) : (
+                            <>
+                              <Crown className="h-4 w-4 mr-2" />
+                              Upgrade to {planData.name}
+                            </>
+                          )}
                         </Button>
-                      )}
-                    </div>
+                      </motion.div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -266,45 +282,45 @@ export default function UpgradePage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6, duration: 0.5 }}
-          className="mt-16"
+          transition={{ delay: 0.8, duration: 0.6 }}
+          className="mt-24"
         >
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-center text-2xl">
+          <Card className="card-premium-elevated border-0 bg-surface overflow-hidden">
+            <CardHeader className="text-center pb-8 pt-10">
+              <CardTitle className="text-3xl font-bold text-gradient-premium">
                 Why Choose Premium?
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div className="text-center">
-                  <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
-                    <Zap className="h-6 w-6 text-primary" />
+            <CardContent className="pb-12 px-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+                <div className="text-center group">
+                  <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+                    <Zap className="h-8 w-8 text-primary" />
                   </div>
-                  <h3 className="font-semibold mb-2">Unlimited Usage</h3>
-                  <p className="text-sm text-muted-foreground">
+                  <h3 className="font-semibold text-lg mb-3 text-foreground">Unlimited Usage</h3>
+                  <p className="text-muted-foreground leading-relaxed">
                     Analyze as many CVs as you need and track unlimited job
                     applications without restrictions.
                   </p>
                 </div>
 
-                <div className="text-center">
-                  <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
-                    <Shield className="h-6 w-6 text-primary" />
+                <div className="text-center group">
+                  <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+                    <Shield className="h-8 w-8 text-primary" />
                   </div>
-                  <h3 className="font-semibold mb-2">Advanced Analytics</h3>
-                  <p className="text-sm text-muted-foreground">
+                  <h3 className="font-semibold text-lg mb-3 text-foreground">Advanced Analytics</h3>
+                  <p className="text-muted-foreground leading-relaxed">
                     Get deep insights into your job search performance with
                     detailed analytics and trends.
                   </p>
                 </div>
 
-                <div className="text-center">
-                  <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
-                    <Users className="h-6 w-6 text-primary" />
+                <div className="text-center group">
+                  <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+                    <Users className="h-8 w-8 text-primary" />
                   </div>
-                  <h3 className="font-semibold mb-2">Priority Support</h3>
-                  <p className="text-sm text-muted-foreground">
+                  <h3 className="font-semibold text-lg mb-3 text-foreground">Priority Support</h3>
+                  <p className="text-muted-foreground leading-relaxed">
                     Get faster responses and dedicated support from our career
                     experts.
                   </p>
@@ -318,18 +334,18 @@ export default function UpgradePage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8, duration: 0.5 }}
+          transition={{ delay: 1.0, duration: 0.6 }}
           className="mt-16 text-center"
         >
-          <div className="bg-muted/30 rounded-lg p-8 max-w-2xl mx-auto">
-            <h3 className="text-xl font-semibold mb-4">Questions?</h3>
-            <p className="text-muted-foreground mb-6">
+          <div className="bg-muted/30 rounded-2xl p-8 max-w-2xl mx-auto border border-border/50 backdrop-blur-sm">
+            <h3 className="text-xl font-semibold mb-4 text-foreground">Questions?</h3>
+            <p className="text-muted-foreground mb-8">
               Have questions about our premium features or need help choosing
               the right plan?
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button variant="outline">Contact Support</Button>
-              <Button variant="outline">View Demo</Button>
+              <Button variant="outline" className="h-11 px-6 border-primary/20 hover:bg-primary/5 hover:text-primary">Contact Support</Button>
+              <Button variant="outline" className="h-11 px-6 border-primary/20 hover:bg-primary/5 hover:text-primary">View Demo</Button>
             </div>
           </div>
         </motion.div>

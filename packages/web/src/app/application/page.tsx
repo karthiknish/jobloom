@@ -47,6 +47,7 @@ import { SkillsForm } from "@/components/application/SkillsForm";
 import { ResumeScore } from "@/components/application/ResumeScore";
 import type { ResumeData as AdvancedResumeData } from "@/components/application/types";
 import { calculateResumeScore } from "@/components/application/utils";
+import ResumePDFGenerator from "@/lib/resumePDFGenerator";
 import {
   Select,
   SelectContent,
@@ -253,19 +254,37 @@ export default function ApplicationPage() {
   const [customContent, setCustomContent] = useState("");
   const [templateActiveTab, setTemplateActiveTab] = useState("cover-letters");
 
+  // Load saved resume data on mount
+  useEffect(() => {
+    const savedData = localStorage.getItem('hireall_resume_data');
+    if (savedData) {
+      try {
+        const parsedData = JSON.parse(savedData);
+        setAdvancedResumeData(parsedData);
+      } catch (e) {
+        console.error("Failed to load saved resume data", e);
+      }
+    }
+  }, []);
+
   const saveResume = useCallback(async () => {
     setSaving(true);
     try {
-      // TODO: Implement actual save functionality
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Save to localStorage
+      localStorage.setItem('hireall_resume_data', JSON.stringify(advancedResumeData));
+      
+      // Simulate API delay for better UX
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       setDirty(false);
       showSuccess("Resume saved successfully!");
     } catch (error) {
+      console.error('Save error:', error);
       showError("Failed to save resume");
     } finally {
       setSaving(false);
     }
-  }, []);
+  }, [advancedResumeData]);
 
   // Update advanced resume score when data changes
   useEffect(() => {
@@ -290,10 +309,16 @@ export default function ApplicationPage() {
     setDirty(true);
   }, []);
 
-  const exportResume = useCallback(() => {
-    // TODO: Implement export functionality
-    showInfo("Export functionality coming soon!");
-  }, []);
+  const exportResume = useCallback(async () => {
+    try {
+      // Use the ResumePDFGenerator to generate and download the PDF
+      await ResumePDFGenerator.generateAndDownloadResume(advancedResumeData);
+      showSuccess("Resume exported successfully!");
+    } catch (error) {
+      console.error('Export error:', error);
+      showError("Failed to export resume");
+    }
+  }, [advancedResumeData]);
 
   const handleCopyToClipboard = async (content: string) => {
     try {
@@ -542,7 +567,23 @@ export default function ApplicationPage() {
 
             {/* Import Resume Tab */}
             <TabContent value="import" activeTab={activeTab}>
-              <ResumeImporter />
+              <ResumeImporter onImport={(data) => {
+                setAdvancedResumeData(prev => ({
+                  ...prev,
+                  ...data,
+                  // Preserve existing info if new data is empty
+                  personalInfo: {
+                    ...prev.personalInfo,
+                    ...data.personalInfo,
+                    // Don't overwrite name/email if they exist and new one is empty/default
+                    fullName: data.personalInfo.fullName || prev.personalInfo.fullName,
+                    email: data.personalInfo.email || prev.personalInfo.email,
+                  }
+                }));
+                setActiveTab("advanced-resume-builder");
+                // Also save to local storage immediately
+                localStorage.setItem('hireall_resume_data', JSON.stringify(data));
+              }} />
             </TabContent>
 
             {/* Templates Tab */}

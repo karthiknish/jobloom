@@ -18,6 +18,7 @@ export interface Job {
   title: string;
   company: string;
   location: string;
+  dateFound?: string | number;
 }
 
 export interface Application {
@@ -112,78 +113,107 @@ export function KanbanBoard({
       setDraggedId(null);
     };
 
+  // ...existing code...
   const statusBadge: Record<KanbanStatus, React.ReactNode> = {
-    interested: <Badge>Interested</Badge>,
-    applied: <Badge variant="yellow">Applied</Badge>,
-    interviewing: <Badge variant="purple">Interviewing</Badge>,
-    offered: <Badge variant="green">Offered</Badge>,
-    rejected: <Badge variant="destructive">Rejected</Badge>,
-    withdrawn: <Badge variant="secondary">Withdrawn</Badge>,
+    interested: <Badge variant="secondary" className="bg-slate-100 text-slate-700 hover:bg-slate-200">Interested</Badge>,
+    applied: <Badge variant="secondary" className="bg-blue-100 text-blue-700 hover:bg-blue-200">Applied</Badge>,
+    interviewing: <Badge variant="secondary" className="bg-purple-100 text-purple-700 hover:bg-purple-200">Interviewing</Badge>,
+    offered: <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200">Offered</Badge>,
+    rejected: <Badge variant="secondary" className="bg-red-100 text-red-700 hover:bg-red-200">Rejected</Badge>,
+    withdrawn: <Badge variant="secondary" className="bg-gray-100 text-gray-700 hover:bg-gray-200">Withdrawn</Badge>,
   } as const;
 
   return (
-    <div className="overflow-x-auto pb-2">
-      <div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-3 gap-4 min-w-max md:min-w-0">
+    <div className="overflow-x-auto pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
+      <div className="flex gap-4 min-w-max pb-2">
       {columns.map((col) => (
-        <Card key={col} className="min-h-[320px]">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="capitalize">{col}</CardTitle>
-            {statusBadge[col]}
-          </CardHeader>
-          <CardContent>
-            <div
-              onDragOver={onDragOver}
-              onDrop={onDrop(col)}
-              className="min-h-[240px] rounded-md border border-dashed border-border p-2 bg-muted/30"
-            >
-              <ul className="space-y-2">
-                {/* Top drop zone */}
-                <li
-                  onDragOver={onDragOver}
-                  onDrop={onDropBefore(col, byCol[col][0]?._id ?? null)}
-                  className="h-3"
-                />
-                {byCol[col].map((a, idx) => (
-                  <React.Fragment key={a._id}>
-                    <li
-                      draggable
-                      onDragStart={onDragStart(a._id)}
-                      className="rounded-md bg-card text-card-foreground border p-3 cursor-grab active:cursor-grabbing"
-                    >
-                      <div className="text-sm font-medium truncate">{a.job?.title}</div>
-                      <div className="text-xs text-muted-foreground truncate">
-                        {a.job?.company} • {a.job?.location}
-                      </div>
-                      <div className="mt-2 flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => onChangeStatus(a._id, col)}
-                        >
-                          Move here
-                        </Button>
-                        {onView && (
-                          <Button size="sm" variant="ghost" onClick={() => onView(a)}>
-                            Details
-                          </Button>
-                        )}
-                      </div>
-                    </li>
-                    {/* Drop zone below each item */}
-                    <li
-                      onDragOver={onDragOver}
-                      onDrop={onDropBefore(
-                        col,
-                        byCol[col][idx + 1]?._id ?? null
-                      )}
-                      className="h-3"
-                    />
-                  </React.Fragment>
-                ))}
-              </ul>
+        <div key={col} className="w-80 flex-shrink-0 flex flex-col bg-muted/30 rounded-xl border border-border/50 max-h-[calc(100vh-220px)]">
+          <div className="p-3 flex items-center justify-between border-b border-border/50 bg-background/50 backdrop-blur-sm rounded-t-xl sticky top-0 z-10">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-sm capitalize text-foreground/80">{col}</span>
+              <span className="bg-muted text-muted-foreground text-xs px-2 py-0.5 rounded-full font-medium">
+                {byCol[col].length}
+              </span>
             </div>
-          </CardContent>
-        </Card>
+            <div className="scale-90 origin-right">
+              {statusBadge[col]}
+            </div>
+          </div>
+          
+          <div
+            onDragOver={onDragOver}
+            onDrop={onDrop(col)}
+            className="flex-1 p-2 overflow-y-auto custom-scrollbar"
+          >
+            <ul className="space-y-2 min-h-[100px]">
+              {/* Top drop zone */}
+              <li
+                onDragOver={onDragOver}
+                onDrop={onDropBefore(col, byCol[col][0]?._id ?? null)}
+                className="h-1"
+              />
+              {byCol[col].map((a, idx) => (
+                <React.Fragment key={a._id}>
+                  <li
+                    draggable
+                    onDragStart={onDragStart(a._id)}
+                    className={`
+                      group relative rounded-lg bg-card border border-border/60 p-3 shadow-sm 
+                      hover:shadow-md hover:border-primary/30 transition-all duration-200 cursor-grab active:cursor-grabbing
+                      ${draggedId === a._id ? 'opacity-50 ring-2 ring-primary ring-offset-2' : ''}
+                    `}
+                  >
+                    <div className="font-medium text-sm text-foreground mb-1 line-clamp-2 leading-tight">
+                      {a.job?.title}
+                    </div>
+                    <div className="text-xs text-muted-foreground mb-3 flex items-center gap-1 truncate">
+                      <span className="font-medium text-foreground/70">{a.job?.company}</span>
+                      {a.job?.location && (
+                        <>
+                          <span>•</span>
+                          <span className="truncate">{a.job?.location}</span>
+                        </>
+                      )}
+                    </div>
+                    
+                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/30">
+                      <div className="text-[10px] text-muted-foreground">
+                        {new Date(a.job?.dateFound || Date.now()).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                      </div>
+                      {onView && (
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="h-6 px-2 text-xs hover:bg-primary/10 hover:text-primary"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onView(a);
+                          }}
+                        >
+                          Details
+                        </Button>
+                      )}
+                    </div>
+                  </li>
+                  {/* Drop zone below each item */}
+                  <li
+                    onDragOver={onDragOver}
+                    onDrop={onDropBefore(
+                      col,
+                      byCol[col][idx + 1]?._id ?? null
+                    )}
+                    className="h-1"
+                  />
+                </React.Fragment>
+              ))}
+              {byCol[col].length === 0 && (
+                <div className="h-24 border-2 border-dashed border-border/40 rounded-lg flex items-center justify-center text-muted-foreground/40 text-xs">
+                  Drop here
+                </div>
+              )}
+            </ul>
+          </div>
+        </div>
       ))}
       </div>
     </div>

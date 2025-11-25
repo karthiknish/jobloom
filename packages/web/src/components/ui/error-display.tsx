@@ -8,6 +8,8 @@ import { AlertCircle, RefreshCw, AlertTriangle, Info as _Info, X, ExternalLink a
 import { FrontendApiError } from '@/lib/api/client';
 import { Button } from './button';
 import { Alert, AlertDescription, AlertTitle } from './alert';
+import { themeColors } from "@/styles/theme-colors";
+import { cn } from "@/lib/utils";
 
 interface ErrorDisplayProps {
   error: FrontendApiError;
@@ -40,21 +42,21 @@ export function ErrorDisplay({
     
     switch (error.category) {
       case 'authentication':
-        return <Shield className={`${iconClass} text-red-500`} />;
+        return <Shield className={cn(iconClass, themeColors.error.icon)} />;
       case 'authorization':
-        return <AlertCircle className={`${iconClass} text-orange-500`} />;
+        return <AlertCircle className={cn(iconClass, themeColors.warning.icon)} />;
       case 'validation':
-        return <AlertTriangle className={`${iconClass} text-yellow-500`} />;
+        return <AlertTriangle className={cn(iconClass, themeColors.warning.icon)} />;
       case 'rate_limit':
-        return <RefreshCw className={`${iconClass} text-blue-500`} />;
+        return <RefreshCw className={cn(iconClass, themeColors.info.icon)} />;
       case 'subscription':
-        return <CreditCard className={`${iconClass} text-purple-500`} />;
+        return <CreditCard className={cn(iconClass, themeColors.primary.text)} />;
       case 'file_upload':
-        return <FileText className={`${iconClass} text-orange-500`} />;
+        return <FileText className={cn(iconClass, themeColors.warning.icon)} />;
       case 'network':
-        return <WifiOff className={`${iconClass} text-gray-500`} />;
+        return <WifiOff className={cn(iconClass, themeColors.muted.text)} />;
       default:
-        return <AlertCircle className={`${iconClass} text-red-500`} />;
+        return <AlertCircle className={cn(iconClass, themeColors.error.icon)} />;
     }
   };
 
@@ -111,15 +113,15 @@ export function ErrorDisplay({
   const getSeverityColor = () => {
     switch (error.severity) {
       case 'critical':
-        return 'border-red-200 bg-red-50 text-red-900';
+        return cn(themeColors.error.border, themeColors.error.bg, themeColors.error.text);
       case 'high':
-        return 'border-orange-200 bg-orange-50 text-orange-900';
+        return cn(themeColors.warning.border, themeColors.warning.bg, themeColors.warning.text);
       case 'medium':
-        return 'border-yellow-200 bg-yellow-50 text-yellow-900';
+        return cn(themeColors.warning.border, themeColors.warning.bg, themeColors.warning.text);
       case 'low':
-        return 'border-blue-200 bg-blue-50 text-blue-900';
+        return cn(themeColors.info.border, themeColors.info.bg, themeColors.info.text);
       default:
-        return 'border-gray-200 bg-gray-50 text-gray-900';
+        return cn(themeColors.muted.border, themeColors.muted.bg, themeColors.muted.text);
     }
   };
 
@@ -424,7 +426,7 @@ export function RateLimitError({ error, onDismiss }: { error: FrontendApiError; 
   const retryTime = error.retryAfter ? Math.ceil(error.retryAfter / 1000) : 60;
   
   return (
-    <Alert className="mb-4 border-blue-200 bg-blue-50 text-blue-900">
+    <Alert className={cn("mb-4", themeColors.info.border, themeColors.info.bg, themeColors.info.text)}>
       <RefreshCw className="h-4 w-4" />
       <AlertTitle>Rate Limit Exceeded</AlertTitle>
       <AlertDescription>
@@ -443,7 +445,7 @@ export function RateLimitError({ error, onDismiss }: { error: FrontendApiError; 
 
 export function SubscriptionError({ error, onDismiss }: { error: FrontendApiError; onDismiss?: () => void }) {
   return (
-    <Alert className="mb-4 border-purple-200 bg-purple-50 text-purple-900">
+    <Alert className={cn("mb-4", themeColors.primary.border, themeColors.primary.bg, themeColors.primary.text)}>
       <CreditCard className="h-4 w-4" />
       <AlertTitle>Subscription Required</AlertTitle>
       <AlertDescription>

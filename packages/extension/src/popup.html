@@ -5,217 +5,262 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Hireall - Job Tracker</title>
   <link rel="stylesheet" href="popup.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div class="container">
+  <div class="app-container">
     <!-- Header -->
-    <header class="header">
-      <div class="header-content">
-        <div class="logo-section">
-          <div class="logo">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"></circle>
-          <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
-        </svg>
+        <header class="app-header">
+      <div class="logo-container">
+        <img src="icons/icon48.png" alt="HireAll Logo" class="logo-icon">
+        <h1 class="logo-text">HireAll</h1>
       </div>
-          <div class="brand-info">
-            <h1>Hireall</h1>
-            <p>Smart Job Tracker</p>
-          </div>
-        </div>
-        <div class="auth-status" id="auth-status">
+      <div class="header-actions">
+        <button id="sync-btn" class="icon-btn" title="Sync Data" aria-label="Sync Data">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
+        </button>
+        <div id="auth-indicator" class="auth-indicator" title="Not signed in">
           <span class="status-dot"></span>
-          <span class="status-text">Checking...</span>
         </div>
       </div>
     </header>
 
-    <!-- Navigation Tabs -->
-    <nav class="nav-tabs">
-      <button class="nav-tab active" data-tab="jobs">
-        <span class="icon">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20 7h-9"></path>
-            <path d="M14 17H5"></path>
-            <circle cx="17" cy="17" r="3"></circle>
-            <circle cx="7" cy="7" r="3"></circle>
-          </svg>
-        </span>
-        <span>Jobs</span>
-      </button>
-      <button class="nav-tab" data-tab="settings">
-        <span class="icon">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="3"></circle>
-            <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"></path>
-            <path d="M20.5 7.5 16 12m0 0-4.5 4.5M16 12l4.5-4.5M16 12l-4.5 4.5"></path>
-          </svg>
-        </span>
-        <span>Settings</span>
-      </button>
-      <button class="nav-tab" data-tab="auth">
-        <span class="icon">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-          </svg>
-        </span>
-        <span>Account</span>
-      </button>
-    </nav>
-
-    <!-- Tab Content -->
-    <main>
-      <!-- Jobs Tab -->
-      <div class="jobs-tab tab-content active" id="jobs-content">
-        <div class="jobs-header">
-          <h2>Tracked Jobs</h2>
-          <span class="jobs-count" id="jobs-count">0 jobs</span>
+    <!-- Main Content Area -->
+    <main class="app-content">
+      
+      <!-- Jobs Tab (Dashboard) -->
+      <div class="tab-view active" id="jobs-content">
+        <!-- Hero Stats (Bento Style) -->
+        <div class="stats-grid">
+          <div class="stat-card primary">
+            <div class="stat-label">Tracked Jobs</div>
+            <div class="stat-value" id="jobs-count-display">0</div>
+            <div class="stat-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            </div>
+          </div>
+          <div class="stat-card secondary">
+            <div class="stat-label">This Week</div>
+            <div class="stat-value" id="weekly-count-display">+0</div>
+            <div class="stat-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+            </div>
+          </div>
         </div>
 
-        <div class="job-filters">
-          <button class="filter-btn active" data-filter="all">All</button>
-          <button class="filter-btn" data-filter="interested">Interested</button>
-          <button class="filter-btn" data-filter="applied">Applied</button>
-          <button class="filter-btn" data-filter="interviewing">Interviewing</button>
-          <button class="filter-btn" data-filter="sponsored">Sponsored</button>
+        <!-- Filters (Pill Style) -->
+        <div class="filter-scroll-container">
+          <div class="job-filters">
+            <button class="filter-pill active" data-filter="all">All</button>
+            <button class="filter-pill" data-filter="interested">Interested</button>
+            <button class="filter-pill" data-filter="applied">Applied</button>
+            <button class="filter-pill" data-filter="interviewing">Interviewing</button>
+            <button class="filter-pill" data-filter="sponsored">Sponsored</button>
+          </div>
         </div>
 
-        <div class="job-list" id="job-list">
-          <div class="loading">
+        <!-- Job List -->
+        <div class="job-list-container" id="job-list">
+          <!-- Skeleton Loader -->
+          <div id="jobs-skeleton" class="skeleton-loader hidden">
+            <div class="skeleton-card">
+              <div class="skeleton-line title"></div>
+              <div class="skeleton-line subtitle"></div>
+              <div class="skeleton-line meta"></div>
+            </div>
+            <div class="skeleton-card">
+              <div class="skeleton-line title"></div>
+              <div class="skeleton-line subtitle"></div>
+              <div class="skeleton-line meta"></div>
+            </div>
+            <div class="skeleton-card">
+              <div class="skeleton-line title"></div>
+              <div class="skeleton-line subtitle"></div>
+              <div class="skeleton-line meta"></div>
+            </div>
+          </div>
+          <div class="loading-state">
             <div class="spinner"></div>
-            <span>Loading jobs...</span>
+            <span>Syncing jobs...</span>
           </div>
         </div>
       </div>
 
-
       <!-- Settings Tab -->
-      <div class="settings-tab tab-content" id="settings-content">
-        <div class="settings-section">
-          <h3><span class="icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
-            </svg>
-          </span> Job Detection</h3>
-          <div class="setting-item">
-            <div>
-              <div class="setting-label">Auto-Detect Jobs</div>
-              <div class="setting-description">Automatically highlight sponsored jobs when pages load</div>
-            </div>
-            <div class="setting-control">
-              <div class="toggle-switch" id="auto-detect-toggle"></div>
-            </div>
-          </div>
-          <div class="setting-item">
-            <div>
-              <div class="setting-label">Show Job Badges</div>
-              <div class="setting-description">Display sponsored/agency badges on job cards</div>
-            </div>
-            <div class="setting-control">
-              <div class="toggle-switch active" id="show-badges-toggle"></div>
+      <div class="tab-view" id="settings-content">
+        <div class="section-title">Preferences</div>
+        
+        <div class="settings-grid">
+          <!-- Job Detection Card -->
+          <div class="setting-card">
+            <div class="setting-header">
+              <div class="setting-icon blue">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+              </div>
+              <div class="setting-info">
+                <h3>Auto-Detect</h3>
+                <p>Highlight jobs on page load</p>
+              </div>
+              <div class="toggle-wrapper">
+                <input type="checkbox" id="auto-detect-toggle" class="toggle-input">
+                <label for="auto-detect-toggle" class="toggle-label"></label>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div class="settings-section">
-          <h3><span class="icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-              <polyline points="14 2 14 8 20 8"></polyline>
-              <line x1="16" y1="13" x2="8" y2="13"></line>
-              <line x1="16" y1="17" x2="8" y2="17"></line>
-              <polyline points="10 9 9 9 8 9"></polyline>
-            </svg>
-          </span> Autofill</h3>
-          <div class="setting-item">
-            <div>
-              <div class="setting-label">Auto-Save Profile</div>
-              <div class="setting-description">Remember your application details</div>
-            </div>
-            <div class="setting-control">
-              <div class="toggle-switch active" id="auto-save-profile-toggle"></div>
+          <!-- Badges Card -->
+          <div class="setting-card">
+            <div class="setting-header">
+              <div class="setting-icon purple">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
+              </div>
+              <div class="setting-info">
+                <h3>Show Badges</h3>
+                <p>Display sponsorship info</p>
+              </div>
+              <div class="toggle-wrapper">
+                <input type="checkbox" id="show-badges-toggle" class="toggle-input" checked>
+                <label for="show-badges-toggle" class="toggle-label"></label>
+              </div>
             </div>
           </div>
-          <div class="setting-item">
-            <button class="action-btn" id="configure-profile-btn" style="margin: 0; padding: 8px 12px; font-size: 12px;">
-              Configure Profile
-            </button>
-          </div>
-        </div>
 
-        <div class="settings-section">
-          <h3><span class="icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
-            </svg>
-          </span> UK Sponsorship Filters</h3>
-          <div class="setting-item">
-            <div>
-              <div class="setting-label">Enable UK Filters</div>
-              <div class="setting-description">Filter jobs by UK visa eligibility criteria</div>
+          <!-- Auto-Save Card -->
+          <div class="setting-card">
+            <div class="setting-header">
+              <div class="setting-icon green">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+              </div>
+              <div class="setting-info">
+                <h3>Auto-Save</h3>
+                <p>Remember application data</p>
+              </div>
+              <div class="toggle-wrapper">
+                <input type="checkbox" id="auto-save-profile-toggle" class="toggle-input" checked>
+                <label for="auto-save-profile-toggle" class="toggle-label"></label>
+              </div>
             </div>
-            <div class="setting-control">
-              <div class="toggle-switch" id="uk-filters-toggle"></div>
+            <div class="setting-footer">
+              <button class="text-btn" id="configure-profile-btn">Configure Profile →</button>
             </div>
           </div>
-          <div id="uk-filters-details" style="display: none; margin-top: 12px; padding: 12px; background: var(--accent); border-radius: 6px; border: 1px solid var(--border);">
-            <div style="font-size: 12px; font-weight: 600; margin-bottom: 8px; color: var(--primary);">🇬🇧 UK Skilled Worker Visa Criteria</div>
-            <div style="font-size: 11px; color: var(--muted); line-height: 1.4;">
-              <div style="margin-bottom: 6px;"><strong>Age & Education:</strong> Under 26 or recent graduates (70% salary rate, £33.4k min)</div>
-              <div style="margin-bottom: 6px;"><strong>PhD Holders:</strong> STEM PhDs (80% rate, £33.4k min) • Non-STEM PhDs (90% rate, £37.5k min)</div>
-              <div style="margin-bottom: 6px;"><strong>Special Roles:</strong> Postdoctoral positions • Immigration Salary List jobs</div>
-              <div><strong>Default:</strong> Standard requirements (£41.7k or going rate)</div>
+
+          <!-- UK Filters Card -->
+          <div class="setting-card">
+            <div class="setting-header">
+              <div class="setting-icon orange">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M2 12h20"></path><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+              </div>
+              <div class="setting-info">
+                <h3>UK Filters</h3>
+                <p>Visa eligibility check</p>
+              </div>
+              <div class="toggle-wrapper">
+                <input type="checkbox" id="uk-filters-toggle" class="toggle-input">
+                <label for="uk-filters-toggle" class="toggle-label"></label>
+              </div>
             </div>
-            <button id="configure-uk-filters" style="margin-top: 8px; padding: 4px 8px; background: var(--primary); color: white; border: none; border-radius: 4px; font-size: 11px; cursor: pointer;">
-              Configure in Web App →
-            </button>
+            <div id="uk-filters-details" class="setting-details hidden">
+              <div class="info-box">
+                <strong>🇬🇧 Skilled Worker Visa</strong>
+                <ul>
+                  <li>New Entrant: £30,960+</li>
+                  <li>Experienced: £38,700+</li>
+                </ul>
+                <button class="text-btn small" id="configure-uk-filters">Manage Rules</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       <!-- Auth Tab -->
-      <div class="auth-tab tab-content" id="auth-content">
-        <div class="auth-message">
-          <h2>Welcome to Hireall</h2>
-          <p>Sign in to sync your jobs across devices and access advanced features</p>
-        </div>
+      <div class="tab-view" id="auth-content">
+        <div class="auth-container">
+          <div class="auth-hero">
+            <h2>Welcome Back</h2>
+            <p>Sync your job search across all devices.</p>
+          </div>
 
-        <div class="auth-buttons" id="auth-form-container">
-          <form id="email-auth-form" style="display:flex; flex-direction:column; gap:10px; width:100%;">
-            <input type="email" id="auth-email" placeholder="Email" required style="padding:10px; border:1px solid var(--border); border-radius:6px; font-size:14px;" />
-            <input type="password" id="auth-password" placeholder="Password" required style="padding:10px; border:1px solid var(--border); border-radius:6px; font-size:14px;" />
-            <button type="submit" class="auth-btn" id="email-auth-submit">
-              <span>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                </svg>
-              </span>
-              Sign In / Create
+          <div class="auth-form-wrapper" id="auth-form-container">
+            <form id="email-auth-form" class="auth-form">
+              <div class="input-group">
+                <div class="input-icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                </div>
+                <input type="email" id="auth-email" placeholder="Email address" required />
+              </div>
+              <div class="input-group">
+                <div class="input-icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                </div>
+                <input type="password" id="auth-password" placeholder="Password" required />
+                <a href="#" id="forgot-password-link" class="forgot-password-link">Forgot?</a>
+              </div>
+              <button type="submit" class="btn-primary full-width" id="email-auth-submit">
+                <span class="btn-text">Sign In</span>
+                <div class="btn-spinner hidden"></div>
+              </button>
+            </form>
+            
+            <div class="divider"><span>or</span></div>
+            
+            <button class="btn-google full-width" id="google-auth-btn">
+              <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+              Continue with Google
             </button>
-          </form>
-          <button class="auth-btn google" id="google-auth-btn">Continue with Google</button>
-          <div id="auth-error" style="display:none; color: var(--error); font-size:12px; text-align:left;"></div>
-          <div id="auth-success" style="display:none; color: var(--success); font-size:12px; text-align:left;"></div>
-        </div>
+            
+            <div class="mt-4 text-center text-sm" style="margin-top: 1rem; text-align: center; font-size: 0.875rem;">
+              <span class="text-slate-400" id="auth-toggle-text" style="color: #94a3b8;">Don't have an account?</span>
+              <button id="auth-toggle-btn" style="color: #10b981; font-weight: 500; margin-left: 0.25rem; background: none; border: none; cursor: pointer;">
+                Sign Up
+              </button>
+            </div>
 
-        <!-- Logout button - always visible when authenticated -->
-        <div class="logout-section" id="logout-section" style="display:none; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border);">
-          <button class="auth-btn logout" id="signout-btn" style="background: var(--error); color: var(--primary-foreground); border-color: var(--error); width: 100%;">
-            <span>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                <polyline points="16 17 21 12 16 7"></polyline>
-                <line x1="21" y1="12" x2="9" y2="12"></line>
-              </svg>
-            </span>
-            Sign Out
-          </button>
+            <div id="auth-error" class="auth-feedback error hidden"></div>
+            <div id="auth-success" class="auth-feedback success hidden"></div>
+          </div>
+
+          <div class="logout-wrapper hidden" id="logout-section">
+            <div class="user-profile-card">
+              <div class="avatar-placeholder">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+              </div>
+              <div class="user-info">
+                <div class="user-name">Logged In</div>
+                <div class="user-email" id="user-email-display">user@example.com</div>
+              </div>
+            </div>
+            <button class="btn-danger full-width" id="signout-btn">Sign Out</button>
+          </div>
         </div>
       </div>
+
     </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+      <button class="nav-item active" data-tab="jobs">
+        <div class="nav-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+        </div>
+        <span>Jobs</span>
+      </button>
+      <button class="nav-item" data-tab="settings">
+        <div class="nav-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        </div>
+        <span>Settings</span>
+      </button>
+      <button class="nav-item" data-tab="auth">
+        <div class="nav-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        </div>
+        <span>Account</span>
+      </button>
+    </nav>
   </div>
 
   <!-- Toast Container -->

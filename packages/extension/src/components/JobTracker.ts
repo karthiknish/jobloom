@@ -6,7 +6,8 @@ import {
   type SponsorshipRecord,
   type UkEligibilityAssessment,
 } from "./SponsorshipManager";
-import { JobBoardManager } from "../addToBoard";
+import { EnhancedJobBoardManager } from "../enhancedAddToBoard";
+import EnhancedJobParser, { type EnhancedJobData } from "../enhancedJobParser";
 import { UKJobDescriptionParser, type JobDescriptionData } from "../jobDescriptionParser";
 
 export interface SponsorshipCheckResult {
@@ -68,7 +69,7 @@ export class JobTracker {
     return parts.join("|");
   }
 
-  private buildJobDescriptionData(jobData: JobData, card?: Element): JobDescriptionData | undefined {
+  private async buildJobDescriptionData(jobData: JobData, card?: Element): Promise<JobDescriptionData | undefined> {
     const descriptionText =
       jobData.description ||
       (card instanceof HTMLElement
@@ -79,7 +80,7 @@ export class JobTracker {
       return undefined;
     }
 
-    const parsed = UKJobDescriptionParser.parseJobDescription(
+    const parsed = await UKJobDescriptionParser.parseJobDescription(
       descriptionText,
       jobData.title,
       jobData.company
@@ -237,7 +238,7 @@ export class JobTracker {
   }
 
   private async checkSponsorship(jobData: JobData, card?: Element): Promise<SponsorshipCheckResult> {
-    const jobContext = this.buildJobDescriptionData(jobData, card);
+    const jobContext = await this.buildJobDescriptionData(jobData, card);
     const cacheKey = this.buildSponsorshipCacheKey(jobData.company, jobContext);
     const cached = this.sponsorCache.get(cacheKey);
     if (cached) {
@@ -583,13 +584,45 @@ export class JobTracker {
     button.innerHTML = `${UIComponents.createIcon("clock", 12, "#fff")} <span>Adding...</span>`;
 
     try {
-      const result = await JobBoardManager.addToBoard(jobData);
-      if (result.success) {
+      // Prepare data for enhanced parser
+      const partialData: Partial<EnhancedJobData> = {
+        title: jobData.title,
+        company: jobData.company,
+        location: jobData.location,
+        url: jobData.url,
+        description: jobData.description,
+        source: jobData.source,
+        dateFound: jobData.dateFound,
+        isSponsored: jobData.isSponsored,
+        sponsorshipType: jobData.sponsorshipType || '',
+        salary: jobData.salary ? { 
+          original: jobData.salary, 
+          currency: 'GBP', 
+          period: 'year' // Default assumption, parser might improve this
+        } : null
+      };
+
+      // Enhance data
+      const enhancedData = await EnhancedJobParser.enhanceJobData(partialData, document);
+      
+      if (!enhancedData) {
+        throw new Error("Failed to process job data");
+      }
+
+      // Add to board using enhanced manager
+      const result = await EnhancedJobBoardManager.getInstance().addToBoard(enhancedData);
+      
+      if (result) {
         button.innerHTML = `${UIComponents.createIcon("checkCircle", 12, "#fff")} <span>Added</span>`;
-        UIComponents.showToast(result.message, { type: "success" });
+        // Check if it was a queued job (optimistic)
+        if (result.id.startsWith('pending-')) {
+          UIComponents.showToast("Job queued for sync (offline)", { type: "info" });
+        } else {
+          UIComponents.showToast("Job added to board successfully", { type: "success" });
+        }
       } else {
         button.innerHTML = `${UIComponents.createIcon("alertTriangle", 12, "#fff")} <span>Retry</span>`;
-        UIComponents.showToast(result.message, { type: "warning" });
+        UIComponents.showToast("Failed to add job to board", { type: "warning" });
       }
     } catch (error) {
       console.error("Hireall: add to board failed", error);

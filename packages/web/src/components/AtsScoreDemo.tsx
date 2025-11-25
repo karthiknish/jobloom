@@ -11,6 +11,8 @@ import { RealTimeAtsFeedback } from "./RealTimeAtsFeedback";
 import { calculateEnhancedATSScore } from "@/lib/enhancedAts";
 import type { ResumeData } from "@/types/resume";
 import { RefreshCw, Play, Settings } from "lucide-react";
+import { themeColors } from "@/styles/theme-colors";
+import { cn } from "@/lib/utils";
 
 // Sample resume data for demonstration
 const sampleResume: ResumeData = {
@@ -268,7 +270,7 @@ export function AtsScoreDemo() {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div>
-              <h4 className="font-semibold mb-3 text-blue-600">Structure Metrics</h4>
+              <h4 className={cn("font-semibold mb-3", themeColors.primary.text)}>Structure Metrics</h4>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span>Section Completeness:</span>
@@ -290,7 +292,7 @@ export function AtsScoreDemo() {
             </div>
 
             <div>
-              <h4 className="font-semibold mb-3 text-green-600">Content Metrics</h4>
+              <h4 className={cn("font-semibold mb-3", themeColors.success.text)}>Content Metrics</h4>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span>Word Count:</span>
@@ -312,7 +314,7 @@ export function AtsScoreDemo() {
             </div>
 
             <div>
-              <h4 className="font-semibold mb-3 text-purple-600">Quality Metrics</h4>
+              <h4 className={cn("font-semibold mb-3", themeColors.info.text)}>Quality Metrics</h4>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span>Quantification Score:</span>

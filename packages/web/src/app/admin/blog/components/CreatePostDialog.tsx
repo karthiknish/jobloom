@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -28,6 +28,7 @@ interface CreatePostDialogProps {
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: CreatePostData) => void;
   isSubmitting: boolean;
+  initialData?: CreatePostData | null;
 }
 
 export interface CreatePostData {
@@ -45,6 +46,7 @@ export function CreatePostDialog({
   onOpenChange,
   onSubmit,
   isSubmitting,
+  initialData,
 }: CreatePostDialogProps) {
   const [formData, setFormData] = useState<CreatePostData>({
     title: "",
@@ -57,6 +59,23 @@ export function CreatePostDialog({
   });
   const [tagsInput, setTagsInput] = useState("");
   const [isImageSelectorOpen, setIsImageSelectorOpen] = useState(false);
+
+  useEffect(() => {
+    if (open && initialData) {
+      setFormData({
+        title: initialData.title || "",
+        excerpt: initialData.excerpt || "",
+        content: initialData.content || "",
+        category: initialData.category || "",
+        tags: initialData.tags || [],
+        status: initialData.status || "draft",
+        featuredImage: initialData.featuredImage || "",
+      });
+      setTagsInput(initialData.tags ? initialData.tags.join(", ") : "");
+    } else if (open && !initialData) {
+      resetForm();
+    }
+  }, [open, initialData]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,9 +116,9 @@ export function CreatePostDialog({
       <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create New Blog Post</DialogTitle>
+          <DialogTitle>{initialData ? "Edit Blog Post" : "Create New Blog Post"}</DialogTitle>
           <DialogDescription>
-            Create a new blog post. Fill in the details below.
+            {initialData ? "Edit the blog post details below." : "Create a new blog post. Fill in the details below."}
           </DialogDescription>
         </DialogHeader>
         
@@ -224,7 +243,7 @@ export function CreatePostDialog({
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Creating..." : "Create Post"}
+              {isSubmitting ? (initialData ? "Updating..." : "Creating...") : (initialData ? "Update Post" : "Create Post")}
             </Button>
           </DialogFooter>
         </form>

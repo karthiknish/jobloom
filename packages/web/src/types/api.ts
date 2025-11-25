@@ -44,6 +44,7 @@ export interface CvAnalysis {
       formatting: number;
       readability: number;
       extras: number;
+      impact?: number;
     };
   };
   industryAlignment?: {
@@ -156,6 +157,7 @@ export interface CvAnalysisExtended {
       formatting: number;
       readability: number;
       extras: number;
+      impact?: number;
     };
   };
   summary?: string;

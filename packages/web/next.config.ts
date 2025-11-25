@@ -2,9 +2,6 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
-  eslint: {
-    ignoreDuringBuilds: true, // Temporarily disable ESLint for production testing
-  },
   typescript: {
     ignoreBuildErrors: true, // Temporarily disable TypeScript checking for production testing
   },
@@ -14,67 +11,25 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   generateEtags: true,
   
-  // Image optimization
+  // Image optimization - using remotePatterns (Next.js 16 best practice)
   images: {
-    domains: ['firebasestorage.googleapis.com', 'lh3.googleusercontent.com'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'firebasestorage.googleapis.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+      },
+    ],
     formats: ['image/webp', 'image/avif'],
     minimumCacheTTL: 60 * 60 * 24 * 7, // 7 days
   },
   
-  // Bundle analyzer for optimization
-  webpack: (config, { isServer, dev }) => {
-    if (!dev && !isServer) {
-      // Production optimizations
-      config.optimization = {
-        ...config.optimization,
-        splitChunks: {
-          chunks: 'all',
-          cacheGroups: {
-            vendor: {
-              test: /[\\/]node_modules[\\/]/,
-              name: 'vendors',
-              chunks: 'all',
-            },
-            common: {
-              name: 'common',
-              minChunks: 2,
-              chunks: 'all',
-              enforce: true,
-            },
-          },
-        },
-      };
-    }
-
-    // Handle Node.js built-in modules
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        crypto: false,
-        fs: false,
-        net: false,
-        tls: false,
-        stream: false,
-        url: false,
-        zlib: false,
-        http: false,
-        https: false,
-        assert: false,
-        os: false,
-        path: false,
-      };
-    }
-
-    // Handle node: protocol imports
-    config.externals = config.externals.map((external: any) => {
-      if (typeof external === 'string' && external.startsWith('node:')) {
-        return external.replace('node:', '');
-      }
-      return external;
-    });
-
-    return config;
-  },
+  // Turbopack configuration (Next.js 16 uses Turbopack by default)
+  // Empty config silences the webpack migration warning
+  turbopack: {},
 
   // Security headers
   async headers() {

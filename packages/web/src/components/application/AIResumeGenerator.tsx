@@ -18,6 +18,10 @@ import {
   Lightbulb,
   Star,
   Eye,
+  Briefcase,
+  GraduationCap,
+  Layers,
+  PenTool,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,6 +36,8 @@ import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { useSubscription } from "@/hooks/useSubscription";
 import { showSuccess, showError, showInfo } from "@/components/ui/Toast";
 import ResumePDFGenerator from "@/lib/resumePDFGenerator";
+import { themeColors, themeUtils } from "@/styles/theme-colors";
+import { cn } from "@/lib/utils";
 
 interface ResumeData {
   jobTitle: string;
@@ -57,6 +63,15 @@ interface GeneratedResume {
   suggestions: string[];
   wordCount: number;
 }
+
+const containerVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { duration: 0.5 }
+  }
+};
 
 export function AIResumeGenerator() {
   const { user } = useFirebaseAuth();
@@ -410,12 +425,6 @@ ${data.experience}
     }
   };
 
-  const getAtsScoreColor = (score: number) => {
-    if (score >= 90) return "text-green-600";
-    if (score >= 70) return "text-yellow-600";
-    return "text-red-600";
-  };
-
   const getAtsScoreLabel = (score: number) => {
     if (score >= 90) return "Excellent";
     if (score >= 70) return "Good";
@@ -424,66 +433,85 @@ ${data.experience}
   };
 
   return (
-    <div className="space-y-6">
+    <motion.div 
+      className="space-y-6"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
       {/* Header */}
-      <Card>
+      <Card className="border-none shadow-md bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Wand2 className="h-5 w-5 text-purple-600" />
+          <CardTitle className="flex items-center gap-3 text-2xl">
+            <div className="p-2 bg-purple-600 rounded-lg shadow-sm">
+              <Wand2 className="h-6 w-6 text-white" />
+            </div>
             AI Resume Generator
           </CardTitle>
-          <CardDescription>
-            Create ATS-optimized resumes with AI-powered content generation
+          <CardDescription className="text-base ml-11">
+            Create ATS-optimized resumes with AI-powered content generation tailored to your industry.
           </CardDescription>
         </CardHeader>
         <CardContent>
           {plan === "free" && (
-            <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <div className="ml-11 p-4 bg-amber-100/50 border border-amber-200 rounded-xl flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <Sparkles className="h-5 w-5 text-amber-600" />
+                <div className="p-1.5 bg-amber-100 rounded-full">
+                  <Sparkles className="h-4 w-4 text-amber-600" />
+                </div>
                 <div>
                   <h4 className="font-semibold text-amber-900">Premium Feature</h4>
                   <p className="text-sm text-amber-700">
                     Upgrade to generate unlimited AI-powered resumes with ATS optimization
                   </p>
                 </div>
-                <Button 
-                  size="sm" 
-                  className="bg-amber-600 hover:bg-amber-700 text-white"
-                  onClick={() => window.location.href = '/upgrade'}
-                >
-                  Upgrade
-                </Button>
               </div>
+              <Button 
+                size="sm" 
+                className="bg-amber-600 hover:bg-amber-700 text-white shadow-sm"
+                onClick={() => window.location.href = '/upgrade'}
+              >
+                Upgrade Now
+              </Button>
             </div>
           )}
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Input Form */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Your Information</CardTitle>
+        <Card className="shadow-lg border-muted/40 h-fit">
+          <CardHeader className="pb-4 border-b bg-muted/10">
+            <CardTitle className="flex items-center gap-2">
+              <PenTool className="h-5 w-5 text-primary" />
+              Your Information
+            </CardTitle>
             <CardDescription>
               Provide details about your background and target role
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="jobTitle">Target Job Title *</Label>
+          <CardContent className="space-y-6 pt-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="space-y-2">
+                <Label htmlFor="jobTitle" className="flex items-center gap-2">
+                  <Briefcase className="h-3.5 w-3.5 text-muted-foreground" />
+                  Target Job Title <span className="text-red-500">*</span>
+                </Label>
                 <Input
                   id="jobTitle"
                   placeholder="e.g. Senior Software Engineer"
                   value={formData.jobTitle}
                   onChange={(e) => setFormData(prev => ({ ...prev, jobTitle: e.target.value }))}
+                  className="bg-background"
                 />
               </div>
-              <div>
-                <Label htmlFor="industry">Industry</Label>
+              <div className="space-y-2">
+                <Label htmlFor="industry" className="flex items-center gap-2">
+                  <Layers className="h-3.5 w-3.5 text-muted-foreground" />
+                  Industry
+                </Label>
                 <Select value={formData.industry} onValueChange={(value: any) => setFormData(prev => ({ ...prev, industry: value }))}>
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-background">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -497,55 +525,64 @@ ${data.experience}
               </div>
             </div>
 
-            <div>
-              <Label htmlFor="experience">Your Experience *</Label>
+            <div className="space-y-2">
+              <Label htmlFor="experience">Your Experience <span className="text-red-500">*</span></Label>
               <Textarea
                 id="experience"
                 placeholder="Describe your relevant experience, achievements, and responsibilities..."
                 value={formData.experience}
                 onChange={(e) => setFormData(prev => ({ ...prev, experience: e.target.value }))}
-                rows={4}
+                rows={5}
+                className="bg-background resize-none"
               />
             </div>
 
-            <div>
-              <Label htmlFor="education">Education</Label>
+            <div className="space-y-2">
+              <Label htmlFor="education" className="flex items-center gap-2">
+                <GraduationCap className="h-3.5 w-3.5 text-muted-foreground" />
+                Education
+              </Label>
               <Textarea
                 id="education"
                 placeholder="Your educational background, degrees, certifications..."
                 value={formData.education}
                 onChange={(e) => setFormData(prev => ({ ...prev, education: e.target.value }))}
                 rows={2}
+                className="bg-background resize-none"
               />
             </div>
 
-            <div>
+            <div className="space-y-2">
               <Label>Key Skills</Label>
-              <div className="flex gap-2 mb-2">
+              <div className="flex gap-2 mb-3">
                 <Input
                   placeholder="Add a skill..."
                   value={skillInput}
                   onChange={(e) => setSkillInput(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && addSkill()}
+                  className="bg-background"
                 />
-                <Button type="button" onClick={addSkill} size="sm">
+                <Button type="button" onClick={addSkill} size="sm" variant="secondary">
                   Add
                 </Button>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 min-h-[2.5rem] p-2 bg-muted/20 rounded-lg border border-dashed">
+                {formData.skills.length === 0 && (
+                  <span className="text-sm text-muted-foreground italic p-1">No skills added yet</span>
+                )}
                 {formData.skills.map(skill => (
-                  <Badge key={skill} variant="secondary" className="cursor-pointer" onClick={() => removeSkill(skill)}>
+                  <Badge key={skill} variant="secondary" className="cursor-pointer hover:bg-destructive/10 hover:text-destructive transition-colors" onClick={() => removeSkill(skill)}>
                     {skill} ×
                   </Badge>
                 ))}
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="space-y-2">
                 <Label htmlFor="level">Experience Level</Label>
                 <Select value={formData.level} onValueChange={(value: any) => setFormData(prev => ({ ...prev, level: value }))}>
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-background">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -557,10 +594,10 @@ ${data.experience}
                   </SelectContent>
                 </Select>
               </div>
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="style">Resume Style</Label>
                 <Select value={formData.style} onValueChange={(value: any) => setFormData(prev => ({ ...prev, style: value }))}>
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-background">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -574,39 +611,47 @@ ${data.experience}
               </div>
             </div>
 
-            <div className="space-y-3">
-              <h4 className="font-medium">AI Options</h4>
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="ats-optimization"
-                  checked={atsOptimization}
-                  onCheckedChange={setAtsOptimization}
-                />
-                <Label htmlFor="ats-optimization">ATS Optimization</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="ai-enhancement"
-                  checked={aiEnhancement}
-                  onCheckedChange={setAiEnhancement}
-                />
-                <Label htmlFor="ai-enhancement">AI Content Enhancement</Label>
+            <div className="space-y-4 pt-4 border-t">
+              <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">AI Options</h4>
+              <div className="grid grid-cols-1 gap-3">
+                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="ats-optimization" className="text-base">ATS Optimization</Label>
+                    <p className="text-xs text-muted-foreground">Optimize keywords for tracking systems</p>
+                  </div>
+                  <Switch
+                    id="ats-optimization"
+                    checked={atsOptimization}
+                    onCheckedChange={setAtsOptimization}
+                  />
+                </div>
+                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="ai-enhancement" className="text-base">AI Content Enhancement</Label>
+                    <p className="text-xs text-muted-foreground">Improve phrasing and impact</p>
+                  </div>
+                  <Switch
+                    id="ai-enhancement"
+                    checked={aiEnhancement}
+                    onCheckedChange={setAiEnhancement}
+                  />
+                </div>
               </div>
             </div>
 
             <Button 
               onClick={generateResume} 
               disabled={isGenerating || plan === "free"}
-              className="w-full"
+              className="w-full h-12 text-lg font-medium shadow-lg hover:shadow-xl transition-all"
             >
               {isGenerating ? (
                 <>
-                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
                   Generating...
                 </>
               ) : (
                 <>
-                  <Wand2 className="h-4 w-4 mr-2" />
+                  <Wand2 className="h-5 w-5 mr-2" />
                   Generate Resume
                 </>
               )}
@@ -615,11 +660,11 @@ ${data.experience}
         </Card>
 
         {/* Generated Output */}
-        <Card>
-          <CardHeader>
+        <Card className="shadow-lg border-muted/40 flex flex-col h-full">
+          <CardHeader className="pb-4 border-b bg-muted/10">
             <CardTitle className="flex items-center justify-between">
               <span className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
+                <FileText className="h-5 w-5 text-primary" />
                 Generated Resume
               </span>
               {generatedResume && (
@@ -635,14 +680,14 @@ ${data.experience}
                     disabled={!generatedResume || !formData.jobTitle}
                   >
                     <Eye className="h-4 w-4 mr-1" />
-                    Preview PDF
+                    Preview
                   </Button>
                   <Button 
                     size="sm" 
                     variant="default" 
                     onClick={downloadPDF}
                     disabled={downloadingPDF || !generatedResume || !formData.jobTitle}
-                    className="bg-green-600 hover:bg-green-700"
+                    className={cn("hover:opacity-90 shadow-sm", "bg-green-600 text-white")}
                   >
                     {downloadingPDF ? (
                       <>
@@ -660,33 +705,39 @@ ${data.experience}
               )}
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex-1 p-6 bg-muted/5">
             {generatedResume ? (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {/* ATS Score */}
-                <div className="p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
+                <div className="p-5 bg-white dark:bg-card rounded-xl border shadow-sm">
+                  <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <Target className="h-4 w-4 text-blue-600" />
-                      <span className="font-medium">ATS Score</span>
+                      <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-md">
+                        <Target className={cn("h-4 w-4", themeColors.primary.text)} />
+                      </div>
+                      <span className="font-semibold">ATS Score</span>
                     </div>
-                    <span className={`font-bold ${getAtsScoreColor(generatedResume.atsScore)}`}>
-                      {generatedResume.atsScore}% - {getAtsScoreLabel(generatedResume.atsScore)}
+                    <span className={cn("font-bold text-lg", themeUtils.scoreColor(generatedResume.atsScore))}>
+                      {generatedResume.atsScore}%
                     </span>
                   </div>
-                  <Progress value={generatedResume.atsScore} className="h-2" />
+                  <Progress value={generatedResume.atsScore} className="h-2.5" />
+                  <p className="text-xs text-muted-foreground mt-2 text-right font-medium">
+                    {getAtsScoreLabel(generatedResume.atsScore)}
+                  </p>
                 </div>
 
                 {/* Keywords */}
                 {generatedResume.keywords.length > 0 && (
-                  <div>
-                    <h4 className="font-medium mb-2 flex items-center gap-2">
-                      <Zap className="h-4 w-4 text-yellow-600" />
-                      Keywords Found
+                  <div className="space-y-3">
+                    <h4 className="font-medium flex items-center gap-2 text-sm text-muted-foreground uppercase tracking-wider">
+                      <Zap className={cn("h-4 w-4", themeColors.warning.icon)} />
+                      Keywords Optimized
                     </h4>
                     <div className="flex flex-wrap gap-2">
                       {generatedResume.keywords.map(keyword => (
-                        <Badge key={keyword} variant="outline" className="text-green-700 border-green-300">
+                        <Badge key={keyword} variant="outline" className={cn(themeColors.success.badge, "px-2 py-1")}>
+                          <CheckCircle className="h-3 w-3 mr-1" />
                           {keyword}
                         </Badge>
                       ))}
@@ -694,30 +745,33 @@ ${data.experience}
                   </div>
                 )}
 
-                {/* Resume Content */}
-                <div>
-                  <h4 className="font-medium mb-2">Resume Content</h4>
-                  <div className="p-4 bg-white border rounded-lg max-h-96 overflow-y-auto">
-                    <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed">
-                      {generatedResume.content}
-                    </pre>
+                {/* Resume Content - Document View */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">Preview</h4>
+                    <div className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">
+                      {generatedResume.wordCount} words • {formData.style} style
+                    </div>
                   </div>
-                  <div className="mt-2 text-xs text-muted-foreground">
-                    {generatedResume.wordCount} words • {formData.style} style
+                  
+                  <div className="p-8 bg-white text-black shadow-md border rounded-sm min-h-[400px] max-h-[600px] overflow-y-auto font-sans text-[10pt] leading-relaxed">
+                    <div className="whitespace-pre-wrap">
+                      {generatedResume.content}
+                    </div>
                   </div>
                 </div>
 
                 {/* Suggestions */}
                 {generatedResume.suggestions.length > 0 && (
-                  <div>
-                    <h4 className="font-medium mb-2 flex items-center gap-2">
-                      <Lightbulb className="h-4 w-4 text-blue-600" />
+                  <div className="p-4 bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/30 rounded-xl">
+                    <h4 className="font-medium mb-3 flex items-center gap-2 text-amber-700 dark:text-amber-400">
+                      <Lightbulb className={cn("h-4 w-4", themeColors.primary.text)} />
                       AI Suggestions
                     </h4>
-                    <ul className="space-y-1">
+                    <ul className="space-y-2">
                       {generatedResume.suggestions.map((suggestion, index) => (
-                        <li key={index} className="flex items-start gap-2 text-sm">
-                          <Star className="h-4 w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
+                        <li key={index} className="flex items-start gap-2 text-sm text-amber-800 dark:text-amber-300">
+                          <Star className={cn("h-4 w-4 mt-0.5 flex-shrink-0", themeColors.warning.icon)} />
                           {suggestion}
                         </li>
                       ))}
@@ -726,15 +780,19 @@ ${data.experience}
                 )}
               </div>
             ) : (
-              <div className="text-center py-12 text-muted-foreground">
-                <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Your generated resume will appear here</p>
-                <p className="text-sm mt-1">Fill in your information and click generate to get started</p>
+              <div className="h-full flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-xl border-muted-foreground/20 bg-muted/10">
+                <div className="p-4 bg-background rounded-full shadow-sm mb-4">
+                  <FileText className="h-8 w-8 text-muted-foreground/50" />
+                </div>
+                <h3 className="text-lg font-medium text-foreground mb-2">Ready to Generate</h3>
+                <p className="text-muted-foreground max-w-xs">
+                  Fill in your information on the left and click "Generate Resume" to create your professional document.
+                </p>
               </div>
             )}
           </CardContent>
         </Card>
       </div>
-    </div>
+    </motion.div>
   );
 }

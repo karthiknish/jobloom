@@ -4,6 +4,8 @@ import type { ReactElement } from "react";
 import { Toaster, toast, ToastBar } from "react-hot-toast";
 import { CheckCircle, AlertCircle, Info, AlertTriangle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { themeColors } from "@/styles/theme-colors";
+import { cn } from "@/lib/utils";
 
 const DEFAULT_ERROR_MESSAGE = "We couldn't complete that request. Please try again.";
 
@@ -55,10 +57,10 @@ const DEFAULT_DURATION = 4000;
 type ToastKind = "success" | "error" | "info" | "warning";
 
 const ICONS: Record<ToastKind, ReactElement> = {
-  success: <CheckCircle className="h-5 w-5 text-emerald-600" />,
-  error: <AlertCircle className="h-5 w-5 text-red-600" />,
-  info: <Info className="h-5 w-5 text-sky-600" />,
-  warning: <AlertTriangle className="h-5 w-5 text-amber-600" />,
+  success: <CheckCircle className={cn("h-5 w-5", themeColors.success.icon)} />,
+  error: <AlertCircle className={cn("h-5 w-5", themeColors.error.icon)} />,
+  info: <Info className={cn("h-5 w-5", themeColors.info.icon)} />,
+  warning: <AlertTriangle className={cn("h-5 w-5", themeColors.warning.icon)} />,
 };
 
 const DURATIONS: Record<ToastKind, number> = {
@@ -119,29 +121,29 @@ export function AppToaster() {
           }}
         >
           {({ icon, message }) => (
-            <div className={`flex items-start gap-3 p-4 rounded-lg shadow-lg border ${
-              t.type === 'success' ? 'bg-emerald-50 border-emerald-200' :
-              t.type === 'error' ? 'bg-red-50 border-red-200' :
-              (t.type as any) === 'warning' ? 'bg-amber-50 border-amber-200' :
-              'bg-sky-50 border-sky-200'
-            }`}>
+            <div className={cn("flex items-start gap-3 p-4 rounded-lg shadow-lg border", 
+              t.type === 'success' ? cn(themeColors.success.bg, themeColors.success.border) :
+              t.type === 'error' ? cn(themeColors.error.bg, themeColors.error.border) :
+              (t.type as any) === 'warning' ? cn(themeColors.warning.bg, themeColors.warning.border) :
+              cn(themeColors.info.bg, themeColors.info.border)
+            )}>
               <div className="flex-shrink-0 mt-0.5">
-                <div className={`p-1 rounded-full ${
-                  t.type === 'success' ? 'bg-emerald-100' :
-                  t.type === 'error' ? 'bg-red-100' :
-                  (t.type as any) === 'warning' ? 'bg-amber-100' :
-                  'bg-sky-100'
-                }`}>
+                <div className={cn("p-1 rounded-full",
+                  t.type === 'success' ? themeColors.success.bg :
+                  t.type === 'error' ? themeColors.error.bg :
+                  (t.type as any) === 'warning' ? themeColors.warning.bg :
+                  themeColors.info.bg
+                )}>
                   {icon}
                 </div>
               </div>
               <div className="flex-1 min-w-0">
-                <div className={`text-sm font-medium leading-relaxed ${
-                  t.type === 'success' ? 'text-emerald-900' :
-                  t.type === 'error' ? 'text-red-900' :
-                  (t.type as any) === 'warning' ? 'text-amber-900' :
-                  'text-sky-900'
-                }`}>
+                <div className={cn("text-sm font-medium leading-relaxed",
+                  t.type === 'success' ? themeColors.success.text :
+                  t.type === 'error' ? themeColors.error.text :
+                  (t.type as any) === 'warning' ? themeColors.warning.text :
+                  themeColors.info.text
+                )}>
                   {message}
                 </div>
               </div>
@@ -150,15 +152,15 @@ export function AppToaster() {
                 variant="ghost"
                 size="icon"
                 onClick={() => toast.dismiss(t.id)}
-                className={
+                className={cn(
                   t.type === 'success'
-                    ? 'text-emerald-600 hover:bg-emerald-100'
+                    ? cn(themeColors.success.text, "hover:bg-green-100")
                     : t.type === 'error'
-                    ? 'text-red-600 hover:bg-red-100'
+                    ? cn(themeColors.error.text, "hover:bg-red-100")
                     : (t.type as any) === 'warning'
-                    ? 'text-amber-600 hover:bg-amber-100'
-                    : 'text-sky-600 hover:bg-sky-100'
-                }
+                    ? cn(themeColors.warning.text, "hover:bg-amber-100")
+                    : cn(themeColors.info.text, "hover:bg-sky-100")
+                )}
                 aria-label="Dismiss notification"
               >
                 <X className="h-4 w-4" />
@@ -188,7 +190,7 @@ export const showLoading = (message: string) =>
   toast.loading(buildContent(message), {
     icon: (
       <div
-        className="h-5 w-5 border-2 border-t-transparent rounded-full animate-spin border-sky-600"
+        className={cn("h-5 w-5 border-2 border-t-transparent rounded-full animate-spin", themeColors.info.border)}
         style={{ borderTopColor: "transparent" }}
       />
     ),

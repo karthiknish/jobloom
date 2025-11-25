@@ -2,13 +2,12 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { Camera, User } from "lucide-react";
+import { User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 
 interface ProfileSettingsProps {
@@ -18,10 +17,6 @@ interface ProfileSettingsProps {
       lastName: string;
       email: string;
       phone: string;
-      location: string;
-      title: string;
-      company: string;
-      bio: string;
       avatar: string;
     };
   };
@@ -64,27 +59,12 @@ export function ProfileSettings({ formData, onInputChange, firebaseUser }: Profi
                 {formData.profile.firstName?.[0]}{formData.profile.lastName?.[0]}
               </AvatarFallback>
             </Avatar>
-            <div className="space-y-3">
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    toast.success(
-                      "Avatar uploaded",
-                      "Your profile picture has been updated."
-                    );
-                  }}
-                  className="btn-premium gap-2"
-                >
-                  <Camera className="h-4 w-4" />
-                  Change Avatar
-                </Button>
-              </motion.div>
+            <div className="space-y-1">
+              <h3 className="text-lg font-medium text-foreground">
+                {formData.profile.firstName} {formData.profile.lastName}
+              </h3>
               <p className="text-sm text-muted-foreground">
-                JPG, PNG or GIF. Max size 2MB
+                {formData.profile.email}
               </p>
             </div>
           </motion.div>
@@ -154,63 +134,11 @@ export function ProfileSettings({ formData, onInputChange, firebaseUser }: Profi
                 onChange={(e) => onInputChange("profile", "phone", e.target.value)}
                 placeholder="Phone number"
                 className="input-premium"
+                disabled
               />
-            </div>
-
-            <div className="space-y-3">
-              <Label htmlFor="location" className="text-sm font-semibold text-foreground">
-                Location
-              </Label>
-              <Input
-                id="location"
-                type="text"
-                value={formData.profile.location}
-                onChange={(e) => onInputChange("profile", "location", e.target.value)}
-                placeholder="City, Country"
-                className="input-premium"
-              />
-            </div>
-
-            <div className="space-y-3">
-              <Label htmlFor="title" className="text-sm font-semibold text-foreground">
-                Professional Title
-              </Label>
-              <Input
-                id="title"
-                type="text"
-                value={formData.profile.title}
-                onChange={(e) => onInputChange("profile", "title", e.target.value)}
-                placeholder="e.g. Software Engineer"
-                className="input-premium"
-              />
-            </div>
-
-            <div className="space-y-3">
-              <Label htmlFor="company" className="text-sm font-semibold text-foreground">
-                Company
-              </Label>
-              <Input
-                id="company"
-                type="text"
-                value={formData.profile.company}
-                onChange={(e) => onInputChange("profile", "company", e.target.value)}
-                placeholder="Company name"
-                className="input-premium"
-              />
-            </div>
-
-            <div className="space-y-3 md:col-span-2">
-              <Label htmlFor="bio" className="text-sm font-semibold text-foreground">
-                Bio
-              </Label>
-              <Textarea
-                id="bio"
-                value={formData.profile.bio}
-                onChange={(e) => onInputChange("profile", "bio", e.target.value)}
-                placeholder="Tell us about yourself..."
-                rows={4}
-                className="input-premium resize-none"
-              />
+              <p className="text-sm text-muted-foreground">
+                Phone number cannot be changed here.
+              </p>
             </div>
           </motion.div>
         </CardContent>

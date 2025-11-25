@@ -22,8 +22,14 @@ import { showSuccess, showError, showInfo } from "@/components/ui/Toast";
 import { cvEvaluatorApi } from "@/utils/api/cvEvaluator";
 import type { CvAnalysis } from "@/types/api";
 import { cn } from "@/lib/utils";
+import { themeColors, themeUtils } from "@/styles/theme-colors";
+import type { ResumeData } from "@/types/resume";
 
 type AnalysisStatus = "pending" | "processing" | "completed" | "failed";
+
+interface ResumeImporterProps {
+  onImport?: (data: ResumeData) => void;
+}
 
 interface ResumeAnalysisItem {
   id: string;
@@ -54,10 +60,10 @@ const statusLabels: Record<AnalysisStatus, string> = {
 };
 
 const statusClasses: Record<AnalysisStatus, string> = {
-  pending: "bg-amber-100 text-amber-800 border-amber-300",
-  processing: "bg-blue-100 text-blue-700 border-blue-300",
-  completed: "bg-green-100 text-green-700 border-green-300",
-  failed: "bg-red-100 text-red-700 border-red-300",
+  pending: themeColors.warning.badge,
+  processing: themeColors.processing.badge,
+  completed: themeColors.success.badge,
+  failed: themeColors.error.badge,
 };
 
 const supportedFormats = [
@@ -150,7 +156,7 @@ function mapAnalysis(record: CvAnalysis): ResumeAnalysisItem {
   };
 }
 
-export function ResumeImporter() {
+export function ResumeImporter({ onImport }: ResumeImporterProps) {
   const { user, loading } = useFirebaseAuth();
   const userId = user?.uid ?? null;
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -428,8 +434,131 @@ export function ResumeImporter() {
   );
 
   const saveToResumeBuilder = useCallback(() => {
-    showInfo("Coming Soon", "Integration with the resume builder will be available soon.");
-  }, []);
+    if (!selectedAnalysis) {
+      showError("No Analysis Selected", "Please select a resume analysis to import.");
+      return;
+    }
+
+    // Build professional summary from analysis data
+    const buildSummary = (): string => {
+      const parts: string[] = [];
+      
+      if (selectedAnalysis.targetRole) {
+        parts.push(`${selectedAnalysis.targetRole} professional`);
+      } else {
+        parts.push('Professional');
+      }
+      
+      if (selectedAnalysis.industry) {
+        parts.push(`with expertise in ${selectedAnalysis.industry}`);
+      }
+      
+      if (selectedAnalysis.keywordAnalysis?.presentKeywords?.length) {
+        const topSkills = selectedAnalysis.keywordAnalysis.presentKeywords.slice(0, 3);
+        parts.push(`skilled in ${topSkills.join(', ')}`);
+      }
+      
+      if (selectedAnalysis.atsScore && selectedAnalysis.atsScore >= 70) {
+        parts.push('with a strong track record of delivering results');
+      }
+      
+      return parts.join(' ') + '.';
+    };
+
+    // Map analysis data to resume builder format
+    const resumeData: ResumeData = {
+      personalInfo: {
+        fullName: user?.displayName || "",
+        email: user?.email || "",
+        phone: "",
+        location: "",
+        summary: buildSummary(),
+        linkedin: "",
+        github: "",
+        website: "",
+      },
+      experience: [],
+      education: [],
+      skills: [],
+      projects: [],
+      certifications: [],
+      languages: []
+    };
+
+    // Build structured skills from analysis
+    if (selectedAnalysis.keywordAnalysis?.presentKeywords?.length) {
+      const keywords = selectedAnalysis.keywordAnalysis.presentKeywords;
+      const technicalSkills: string[] = [];
+      const softSkills: string[] = [];
+      const otherSkills: string[] = [];
+      
+      // Categorize skills (basic heuristic)
+      const technicalPatterns = /^(javascript|typescript|react|node|python|java|sql|aws|azure|docker|kubernetes|git|api|html|css|database|cloud|devops|ci\/cd|testing|agile)/i;
+      const softPatterns = /^(communication|leadership|team|management|problem|analytical|creative|strategic|collaboration|presentation)/i;
+      
+      keywords.forEach(skill => {
+        if (technicalPatterns.test(skill)) {
+          technicalSkills.push(skill);
+        } else if (softPatterns.test(skill)) {
+          softSkills.push(skill);
+        } else {
+          otherSkills.push(skill);
+        }
+      });
+      
+      const skillGroups: { category: string; skills: string[] }[] = [];
+      
+      if (technicalSkills.length > 0) {
+        skillGroups.push({ category: "Technical Skills", skills: technicalSkills.slice(0, 15) });
+      }
+      if (softSkills.length > 0) {
+        skillGroups.push({ category: "Soft Skills", skills: softSkills.slice(0, 10) });
+      }
+      if (otherSkills.length > 0) {
+        skillGroups.push({ category: "Additional Skills", skills: otherSkills.slice(0, 10) });
+      }
+      
+      // Fallback if categorization didn't work
+      if (skillGroups.length === 0 && keywords.length > 0) {
+        for (let i = 0; i < keywords.length; i += 10) {
+          skillGroups.push({
+            category: i === 0 ? "Key Skills" : "Additional Skills",
+            skills: keywords.slice(i, i + 10)
+          });
+        }
+      }
+      
+      resumeData.skills = skillGroups;
+    }
+
+    // Add missing skills as recommendations in a special category
+    if (selectedAnalysis.missingSkills?.length) {
+      resumeData.skills.push({
+        category: "Skills to Develop (From Analysis)",
+        skills: selectedAnalysis.missingSkills.slice(0, 10)
+      });
+    }
+
+    // Always save to local storage for persistence
+    try {
+      localStorage.setItem('hireall_resume_data', JSON.stringify(resumeData));
+      localStorage.setItem('hireall_resume_import_timestamp', new Date().toISOString());
+    } catch (storageError) {
+      console.warn('Failed to save resume data to localStorage:', storageError);
+    }
+
+    // If onImport callback is provided, use it (for direct integration)
+    if (onImport) {
+      onImport(resumeData);
+      showSuccess("Imported to Builder", "Analysis data has been applied to the resume builder.");
+    } else {
+      // Fallback: Show success with instructions to navigate to resume builder
+      showSuccess(
+        "Resume Data Saved", 
+        "Your analysis has been saved. Go to the Resume Builder tab to see your imported data."
+      );
+    }
+  }, [selectedAnalysis, onImport, user]);
 
   return (
     <div className="space-y-6">
@@ -644,7 +773,7 @@ export function ResumeImporter() {
               </CardHeader>
               <CardContent className="space-y-6">
                 {selectedAnalysis.status === "failed" && (
-                  <Alert className="border-red-200 bg-red-50 text-red-800">
+                  <Alert className={cn(themeColors.error.border, themeColors.error.bg, themeColors.error.text)}>
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription className="text-sm">
                       Analysis failed. Please retry with a different file format or contact support.
@@ -655,12 +784,12 @@ export function ResumeImporter() {
                 <div className="space-y-3 rounded-lg bg-gray-50 p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Zap className="h-4 w-4 text-blue-600" />
+                      <Zap className={cn("h-4 w-4", themeColors.primary.text)} />
                       <span className="text-sm font-medium text-gray-700">
                         ATS Optimization Score
                       </span>
                     </div>
-                    <span className="text-base font-semibold text-blue-600">
+                    <span className={cn("text-base font-semibold", themeUtils.scoreColor(displayAtsScore))}>
                       {displayAtsScore}%
                     </span>
                   </div>
@@ -681,7 +810,7 @@ export function ResumeImporter() {
                   {selectedAnalysis.strengths.length > 0 && (
                     <div>
                       <h4 className="mb-2 flex items-center gap-2 text-sm font-medium">
-                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                        <CheckCircle2 className={cn("h-4 w-4", themeColors.success.icon)} />
                         Strengths
                       </h4>
                       <ul className="list-disc space-y-2 pl-4 text-sm text-gray-700">
@@ -694,7 +823,7 @@ export function ResumeImporter() {
                   {selectedAnalysis.weaknesses.length > 0 && (
                     <div>
                       <h4 className="mb-2 flex items-center gap-2 text-sm font-medium">
-                        <AlertCircle className="h-4 w-4 text-amber-600" />
+                        <AlertCircle className={cn("h-4 w-4", themeColors.warning.icon)} />
                         Improvements
                       </h4>
                       <ul className="list-disc space-y-2 pl-4 text-sm text-gray-700">
@@ -709,7 +838,7 @@ export function ResumeImporter() {
                 {selectedAnalysis.recommendations.length > 0 && (
                   <div>
                     <h4 className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-800">
-                      <Zap className="h-4 w-4 text-blue-600" />
+                      <Zap className={cn("h-4 w-4", themeColors.info.icon)} />
                       Recommended Next Steps
                     </h4>
                     <ul className="list-disc space-y-2 pl-4 text-sm text-gray-700">
@@ -742,7 +871,7 @@ export function ResumeImporter() {
                       {presentKeywords.map((keyword) => (
                         <Badge
                           key={keyword}
-                          className="text-xs border-green-200 bg-green-100 text-green-700"
+                          className={cn("text-xs", themeColors.success.badge)}
                         >
                           {keyword}
                         </Badge>
@@ -752,7 +881,7 @@ export function ResumeImporter() {
                 )}
 
                 {selectedAnalysis.industryAlignment?.feedback && (
-                  <div className="rounded-lg border border-blue-100 bg-blue-50 p-4 text-sm text-blue-800">
+                  <div className={cn("rounded-lg border p-4 text-sm", themeColors.info.bg, themeColors.info.border, themeColors.info.text)}>
                     {selectedAnalysis.industryAlignment.feedback}
                   </div>
                 )}

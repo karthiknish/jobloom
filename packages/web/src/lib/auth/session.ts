@@ -166,7 +166,7 @@ export async function verifySessionFromRequest(request: NextRequest) {
     const token = authHeader.substring(7).trim();
     if (token) {
       try {
-                // In development, allow mock tokens for testing
+        // In development, allow mock tokens for testing
         if (process.env.NODE_ENV === "development" && token.includes("bW9jay1zaWduYXR1cmUtZm9yLXRlc3Rpbmc")) {
           return {
             uid: "test-user-123",
@@ -175,14 +175,64 @@ export async function verifySessionFromRequest(request: NextRequest) {
           };
         }
 
+        // Basic token validation before attempting verification
+        if (token.length < 100) {
+          SecurityLogger.logSecurityEvent({
+            type: "suspicious_request",
+            severity: "low",
+            details: {
+              reason: "Token too short to be valid",
+              tokenLength: token.length
+            },
+            ip: getClientIp(request),
+          });
+          return null;
+        }
+
+        // Verify the token
         const auth = getAdminAuth();
-        return await auth.verifyIdToken(token);
-      } catch (error) {
+        const decoded = await auth.verifyIdToken(token);
+        
+        // Log successful authentication for audit (in development only)
+        if (decoded && process.env.NODE_ENV === 'development') {
+          console.log('[AUTH] Successfully authenticated user:', decoded.uid);
+        }
+        
+        return decoded;
+      } catch (error: any) {
+        // Categorize the error for better handling
+        let severity: "low" | "medium" | "high" = "medium";
+        let errorReason = "unknown";
+        
+        if (error?.code) {
+          switch (error.code) {
+            case 'auth/id-token-expired':
+              errorReason = "Token expired";
+              severity = "low"; // Expected behavior
+              break;
+            case 'auth/id-token-revoked':
+              errorReason = "Token revoked";
+              severity = "high"; // Potential security issue
+              break;
+            case 'auth/invalid-id-token':
+              errorReason = "Invalid token format";
+              severity = "medium";
+              break;
+            case 'auth/argument-error':
+              errorReason = "Malformed token";
+              severity = "medium";
+              break;
+            default:
+              errorReason = error.code;
+          }
+        }
+        
         SecurityLogger.logSecurityEvent({
           type: "auth_failure",
-          severity: "medium",
+          severity,
           details: {
-            reason: "Bearer token verification failed",
+            reason: errorReason,
+            errorCode: error?.code,
             error: error instanceof Error ? error.message : "unknown",
           },
           ip: getClientIp(request),

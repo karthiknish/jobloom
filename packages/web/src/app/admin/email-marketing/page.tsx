@@ -7,15 +7,18 @@ import {
   FileText,
   Send,
   Users,
+  BarChart3,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { showSuccess, showError } from "@/components/ui/Toast";
 import { useApiQuery } from "@/hooks/useApi";
 import { adminApi } from "@/utils/api/admin";
 import { AdminAccessDenied } from "@/components/admin/AdminAccessDenied";
 import { EmailTemplate, EmailCampaign } from "@/config/emailTemplates";
+import { AdminLayout } from "@/components/admin/AdminLayout";
 
 // Import components
 import { EmailMarketingHeader } from "@/components/admin/email-marketing/EmailMarketingHeader";
@@ -169,23 +172,27 @@ export default function EmailMarketingPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="mb-4">Please sign in to access email marketing.</p>
-          <a className="underline" href="/sign-in">Sign in</a>
+      <AdminLayout title="Email Marketing">
+        <div className="flex items-center justify-center h-[50vh]">
+          <div className="text-center">
+            <p className="mb-4">Please sign in to access email marketing.</p>
+            <a className="underline" href="/sign-in">Sign in</a>
+          </div>
         </div>
-      </div>
+      </AdminLayout>
     );
   }
 
   if (isAdmin === null) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Checking admin access...</p>
+      <AdminLayout title="Email Marketing">
+        <div className="flex items-center justify-center h-[50vh]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-4 text-muted-foreground">Checking admin access...</p>
+          </div>
         </div>
-      </div>
+      </AdminLayout>
     );
   }
 
@@ -194,81 +201,95 @@ export default function EmailMarketingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pt-16">
-      {/* Header */}
-      <EmailMarketingHeader 
-        onSendTestEmail={sendTestEmail}
-        templates={templates}
-        campaigns={campaigns}
-      />
+    <AdminLayout title="Email Marketing">
+      <div className="space-y-8">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+        >
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Email Marketing</h1>
+            <p className="text-muted-foreground mt-2">
+              Create and manage email campaigns to engage with your users
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              onClick={sendTestEmail}
+            >
+              <Mail className="h-4 w-4 mr-2" />
+              Test Email
+            </Button>
+            <Button
+              variant="outline"
+            >
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Analytics
+            </Button>
+          </div>
+        </motion.div>
 
-      <div className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
         {/* Stats Cards */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
+          className="grid grid-cols-1 md:grid-cols-4 gap-6"
         >
-          <Card className="shadow-lg border-0">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Templates</p>
-                  <p className="text-2xl font-bold">{templates.length}</p>
-                </div>
-                <div className="p-3 bg-primary/10 rounded-lg">
-                  <FileText className="h-6 w-6 text-primary" />
-                </div>
+          <Card className="card-depth-2 border-none shadow-sm hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total Templates</CardTitle>
+              <div className="p-2 rounded-full bg-primary/10">
+                <FileText className="h-4 w-4 text-primary" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{templates.length}</div>
+            </CardContent>
+          </Card>
+
+          <Card className="card-depth-2 border-none shadow-sm hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Active Campaigns</CardTitle>
+              <div className="p-2 rounded-full bg-green-100 dark:bg-green-900/20">
+                <Send className="h-4 w-4 text-green-600" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{campaigns.filter(c => c.status !== 'draft').length}</div>
+            </CardContent>
+          </Card>
+
+          <Card className="card-depth-2 border-none shadow-sm hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total Sent</CardTitle>
+              <div className="p-2 rounded-full bg-blue-100 dark:bg-blue-900/20">
+                <Mail className="h-4 w-4 text-blue-600" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {campaigns.reduce((sum, c) => sum + c.metrics.sent, 0)}
               </div>
             </CardContent>
           </Card>
 
-          <Card className="shadow-lg border-0">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Active Campaigns</p>
-                  <p className="text-2xl font-bold">{campaigns.filter(c => c.status !== 'draft').length}</p>
-                </div>
-                <div className="p-3 bg-green-100 rounded-lg">
-                  <Send className="h-6 w-6 text-green-600" />
-                </div>
+          <Card className="card-depth-2 border-none shadow-sm hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Open Rate</CardTitle>
+              <div className="p-2 rounded-full bg-orange-100 dark:bg-orange-900/20">
+                <Mail className="h-4 w-4 text-orange-600" />
               </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-lg border-0">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Sent</p>
-                  <p className="text-2xl font-bold">
-                    {campaigns.reduce((sum, c) => sum + c.metrics.sent, 0)}
-                  </p>
-                </div>
-                <div className="p-3 bg-blue-100 rounded-lg">
-                  <Mail className="h-6 w-6 text-blue-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-lg border-0">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Open Rate</p>
-                  <p className="text-2xl font-bold">
-                    {campaigns.reduce((sum, c) => sum + c.metrics.opened, 0) > 0 
-                      ? Math.round((campaigns.reduce((sum, c) => sum + c.metrics.opened, 0) / 
-                          campaigns.reduce((sum, c) => sum + c.metrics.sent, 0)) * 100)
-                      : 0}%
-                  </p>
-                </div>
-                <div className="p-3 bg-orange-100 rounded-lg">
-                  <Mail className="h-6 w-6 text-orange-600" />
-                </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {campaigns.reduce((sum, c) => sum + c.metrics.opened, 0) > 0 
+                  ? Math.round((campaigns.reduce((sum, c) => sum + c.metrics.opened, 0) / 
+                      campaigns.reduce((sum, c) => sum + c.metrics.sent, 0)) * 100)
+                  : 0}%
               </div>
             </CardContent>
           </Card>
@@ -321,6 +342,6 @@ export default function EmailMarketingPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
+    </AdminLayout>
   );
 }

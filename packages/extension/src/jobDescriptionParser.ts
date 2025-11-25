@@ -1,3 +1,5 @@
+import { get } from "./apiClient";
+
 // Enhanced job description parser for UK job sites (2025)
 export interface JobDescriptionData {
   fullDescription: string;
@@ -84,63 +86,8 @@ export class UKJobDescriptionParser {
   };
 
   // SOC code patterns for UK occupations
-  private static readonly SOC_PATTERNS = [
-    // SOC 2020 patterns
-    { code: '1111', keywords: ['chief executive', 'managing director', 'president', 'ceo'], title: 'Senior Officials and Legislators' },
-    { code: '1120', keywords: ['business manager', 'operations manager', 'general manager'], title: 'Production Managers and Directors in Manufacturing' },
-    { code: '1131', keywords: ['finance manager', 'financial controller', 'cfo'], title: 'Financial Managers and Directors' },
-    { code: '1132', keywords: ['hr manager', 'personnel manager', 'human resources'], title: 'Human Resource Managers and Directors' },
-    { code: '1150', keywords: ['it manager', 'technology manager', 'information systems'], title: 'Information Technology and Telecommunications Directors' },
-
-    // Software Development
-    { code: '2136', keywords: ['software developer', 'programmer', 'software engineer', 'full stack'], title: 'Programmers and Software Development Professionals' },
-    { code: '2135', keywords: ['web developer', 'front-end developer', 'back-end developer'], title: 'Web Design and Development Professionals' },
-    { code: '2137', keywords: ['data analyst', 'data scientist', 'business analyst'], title: 'Data Analysts' },
-    { code: '2139', keywords: ['systems analyst', 'business systems analyst'], title: 'Systems Analysts' },
-
-    // Marketing & Digital
-    { code: '3543', keywords: ['marketing manager', 'digital marketing', 'brand manager'], title: 'Marketing Associate Professionals' },
-    { code: '2473', keywords: ['graphic designer', 'ux designer', 'ui designer'], title: 'Artists' },
-
-    // Healthcare
-    { code: '2211', keywords: ['doctor', 'physician', 'gp', 'general practitioner'], title: 'Medical Practitioners' },
-    { code: '2212', keywords: ['nurse', 'registered nurse', 'staff nurse'], title: 'Nurses' },
-    { code: '2213', keywords: ['pharmacist', 'clinical pharmacist'], title: 'Pharmacists' },
-    { code: '2214', keywords: ['psychologist', 'clinical psychologist'], title: 'Psychologists' },
-
-    // Engineering
-    { code: '2122', keywords: ['civil engineer', 'structural engineer'], title: 'Engineering Professionals' },
-    { code: '2123', keywords: ['mechanical engineer', 'maintenance engineer'], title: 'Engineering Professionals (not civil)' },
-    { code: '2126', keywords: ['electrical engineer', 'electronics engineer'], title: 'IT and Telecommunications Professionals' },
-
-    // Education
-    { code: '2315', keywords: ['teacher', 'lecturer', 'professor'], title: 'Teaching and Other Educational Professionals' },
-    { code: '2320', keywords: ['teaching assistant', 'learning support'], title: 'Teaching Assistants' },
-
-    // Finance
-    { code: '4131', keywords: ['accountant', 'chartered accountant', 'cpa'], title: 'Bookkeepers, Payroll Managers and Wages Clerks' },
-    { code: '2431', keywords: ['accountant', 'financial accountant'], title: 'Accountants' },
-    { code: '4132', keywords: ['credit controller', 'debt collector'], title: 'Credit Controllers' },
-    { code: '4133', keywords: ['financial adviser', 'ifa'], title: 'Financial and Accounting Technicians' },
-
-    // Customer Service
-    { code: '4111', keywords: ['call centre', 'customer service', 'help desk'], title: 'Customer Service Occupations' },
-    { code: '4121', keywords: ['receptionist', 'switchboard operator'], title: 'Receptionists' },
-
-    // Sales
-    { code: '3533', keywords: ['sales executive', 'sales representative', 'account manager'], title: 'Sales Representatives' },
-    { code: '3534', keywords: ['sales manager', 'business development'], title: 'Sales Managers and Directors' },
-
-    // Construction
-    { code: '5311', keywords: ['bricklayer', 'mason', 'builder'], title: 'Bricklayers, Masons and Related Workers' },
-    { code: '5312', keywords: ['carpenter', 'joiner', 'woodworker'], title: 'Carpenters and Joiners' },
-    { code: '5313', keywords: ['plasterer', 'dry liner'], title: 'Construction Trades' },
-
-    // Hospitality
-    { code: '5434', keywords: ['chef', 'cook', 'kitchen porter'], title: 'Chefs' },
-    { code: '9234', keywords: ['waiter', 'waitress', 'server', 'barista'], title: 'Waiters and Waitresses' },
-    { code: '9235', keywords: ['bar staff', 'bartender', 'barman'], title: 'Bar Staff' }
-  ];
+  // Note: We now fetch these from the API instead of hardcoding them
+  private static readonly SOC_PATTERNS: any[] = [];
 
   // Visa sponsorship keywords for UK context
   private static readonly VISA_SPONSORSHIP_PATTERNS = {
@@ -158,7 +105,10 @@ export class UKJobDescriptionParser {
       'right to work sponsorship',
       'immigration sponsorship',
       'work permit sponsorship',
-      'skilled worker license'
+      'skilled worker license',
+      'health and care worker visa',
+      'relocation support',
+      'sponsorship offered'
     ],
     negative: [
       'no sponsorship',
@@ -172,7 +122,11 @@ export class UKJobDescriptionParser {
       'must be based in uk',
       'uk residents only',
       'no visa support',
-      ' sponsorship not available'
+      ' sponsorship not available',
+      'no sponsorship provided',
+      'we cannot offer sponsorship',
+      'requires existing right to work',
+      'must hold valid work permit'
     ]
   };
 
@@ -289,9 +243,12 @@ export class UKJobDescriptionParser {
       .trim();
   }
 
-  static parseJobDescription(description: string, title?: string, company?: string): JobDescriptionData {
+  static async parseJobDescription(description: string, title?: string, company?: string): Promise<JobDescriptionData> {
     const cleanedDescription = description.toLowerCase();
     const processedDescription = this.cleanDescriptionText(description);
+
+    const socCode = await this.detectSOCCode(cleanedDescription, title);
+    const occupationTitle = await this.getOccupationTitle(socCode);
 
     return {
       fullDescription: processedDescription,
@@ -307,8 +264,8 @@ export class UKJobDescriptionParser {
       remoteWork: this.detectRemoteWork(cleanedDescription),
       location: this.extractLocation(cleanedDescription),
       company: company || '',
-      socCode: this.detectSOCCode(cleanedDescription, title),
-      occupationTitle: this.getOccupationTitle(cleanedDescription, title),
+      socCode,
+      occupationTitle,
       visaSponsorship: this.analyzeVisaSponsorship(cleanedDescription)
     };
   }
@@ -646,44 +603,37 @@ export class UKJobDescriptionParser {
     return 'Not specified';
   }
 
-  private static detectSOCCode(description: string, title?: string): string | undefined {
-    const combinedText = `${title || ''} ${description}`.toLowerCase();
+  private static async detectSOCCode(description: string, title?: string): Promise<string | undefined> {
+    if (!title) return undefined;
 
-    // Score each SOC pattern
-    let bestMatch: { code: string; score: number } | undefined;
-
-    for (const soc of this.SOC_PATTERNS) {
-      let score = 0;
-
-      // Check title match (highest weight)
-      if (title) {
-        for (const keyword of soc.keywords) {
-          if (title.toLowerCase().includes(keyword)) {
-            score += 10;
-          }
-        }
+    try {
+      // Use the API to find SOC code based on title
+      // We use the authenticated endpoint which has access to the full Firebase SOC list
+      const response = await get<any>("/api/soc-codes/authenticated", { q: title, limit: 1 }, true);
+      
+      if (response && response.results && response.results.length > 0) {
+        return response.results[0].code;
       }
-
-      // Check description match
-      for (const keyword of soc.keywords) {
-        const matches = (combinedText.match(new RegExp(keyword, 'g')) || []).length;
-        score += matches * 2;
-      }
-
-      if (!bestMatch || score > bestMatch.score) {
-        bestMatch = { code: soc.code, score };
-      }
+    } catch (error) {
+      console.warn("Hireall: Failed to detect SOC code via API", error);
     }
 
-    return bestMatch && bestMatch.score > 3 ? bestMatch.code : undefined;
+    return undefined;
   }
 
-  private static getOccupationTitle(description: string, title?: string): string | undefined {
-    const socCode = this.detectSOCCode(description, title);
-    if (socCode) {
-      const soc = this.SOC_PATTERNS.find(s => s.code === socCode);
-      return soc?.title;
+  private static async getOccupationTitle(socCode?: string): Promise<string | undefined> {
+    if (!socCode) return undefined;
+
+    try {
+      const response = await get<any>("/api/soc-codes/authenticated", { code: socCode, limit: 1 }, true);
+      
+      if (response && response.results && response.results.length > 0) {
+        return response.results[0].jobType;
+      }
+    } catch (error) {
+      console.warn("Hireall: Failed to fetch occupation title", error);
     }
+
     return undefined;
   }
 

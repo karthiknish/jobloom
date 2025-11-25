@@ -20,6 +20,8 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { ResumeScore } from "@/lib/enhancedAts";
+import { themeColors } from "@/styles/theme-colors";
+import { cn } from "@/lib/utils";
 
 interface EnhancedAtsScoreProps {
   score: ResumeScore;
@@ -35,21 +37,15 @@ export function EnhancedAtsScore({
   size = 'medium'
 }: EnhancedAtsScoreProps) {
   const getScoreColor = (value: number) => {
-    if (value >= 90) return "text-emerald-600";
-    if (value >= 80) return "text-green-600";
-    if (value >= 70) return "text-lime-600";
-    if (value >= 60) return "text-yellow-600";
-    if (value >= 50) return "text-orange-600";
-    return "text-red-600";
+    if (value >= 80) return themeColors.success.text;
+    if (value >= 60) return themeColors.warning.text;
+    return themeColors.error.text;
   };
 
   const getScoreBgColor = (value: number) => {
-    if (value >= 90) return "bg-emerald-100";
-    if (value >= 80) return "bg-green-100";
-    if (value >= 70) return "bg-lime-100";
-    if (value >= 60) return "bg-yellow-100";
-    if (value >= 50) return "bg-orange-100";
-    return "bg-red-100";
+    if (value >= 80) return themeColors.success.bg;
+    if (value >= 60) return themeColors.warning.bg;
+    return themeColors.error.bg;
   };
 
   const getScoreLabel = (value: number) => {
@@ -62,7 +58,7 @@ export function EnhancedAtsScore({
   };
 
   const getProgressColor = (value: number) => {
-    if (value >= 80) return "bg-green-500";
+    if (value >= 80) return "bg-green-600";
     if (value >= 60) return "bg-yellow-500";
     if (value >= 40) return "bg-orange-500";
     return "bg-red-500";
@@ -189,26 +185,26 @@ export function EnhancedAtsScore({
 
           {/* Overall Score Description */}
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             transition={{ delay: 0.8, duration: 0.5 }}
             className="mt-4 text-center"
           >
             <div className="flex items-center justify-center gap-2 mb-2">
               {score.overall >= 80 ? (
-                <Star className="w-5 h-5 text-yellow-500" />
+                <Star className={cn("w-5 h-5", themeColors.warning.icon)} />
               ) : score.overall >= 60 ? (
-                <TrendingUp className="w-5 h-5 text-green-500" />
+                <TrendingUp className={cn("w-5 h-5", themeColors.success.icon)} />
               ) : score.overall >= 40 ? (
-                <Info className="w-5 h-5 text-emerald-500" />
+                <Info className={cn("w-5 h-5", themeColors.info.icon)} />
               ) : (
-                <AlertTriangle className="w-5 h-5 text-red-500" />
+                <AlertTriangle className={cn("w-5 h-5", themeColors.error.icon)} />
               )}
-              <span className="text-lg font-semibold text-gray-700">
+              <span className="text-lg font-semibold text-foreground">
                 {getScoreLabel(score.overall)} Performance
               </span>
             </div>
-            <p className="text-sm text-gray-600 max-w-md mx-auto">
+            <p className="text-sm max-w-md mx-auto text-muted-foreground">
               {score.overall >= 80 && "Excellent! Your resume is highly optimized for ATS systems and should perform well."}
               {score.overall >= 60 && score.overall < 80 && "Good! Your resume has solid ATS optimization with room for improvement."}
               {score.overall >= 40 && score.overall < 60 && "Fair. Consider implementing the suggested improvements to enhance ATS performance."}
@@ -237,7 +233,7 @@ export function EnhancedAtsScore({
                   label="Structure & Organization"
                   value={score.breakdown.structure}
                   icon={Target}
-                  color="text-emerald-600"
+                  color={themeColors.success.text}
                   max={50}
                   delay={0.2}
                 />
@@ -245,7 +241,7 @@ export function EnhancedAtsScore({
                   label="Content Quality"
                   value={score.breakdown.content}
                   icon={Star}
-                  color="text-emerald-600"
+                  color={themeColors.success.text}
                   max={50}
                   delay={0.3}
                 />
@@ -253,7 +249,7 @@ export function EnhancedAtsScore({
                   label="Keyword Optimization"
                   value={score.breakdown.keywords}
                   icon={Zap}
-                  color="text-green-600"
+                  color={themeColors.success.text}
                   max={35}
                   delay={0.4}
                 />
@@ -261,7 +257,7 @@ export function EnhancedAtsScore({
                   label="Formatting & Readability"
                   value={score.breakdown.readability}
                   icon={Activity}
-                  color="text-orange-600"
+                  color={themeColors.warning.text}
                   max={45}
                   delay={0.5}
                 />
@@ -285,7 +281,7 @@ export function EnhancedAtsScore({
                 {/* Strengths */}
                 {score.strengths && score.strengths.length > 0 && (
                   <div>
-                    <h4 className="font-semibold text-green-700 mb-3 flex items-center gap-2">
+                    <h4 className={cn("font-semibold mb-3 flex items-center gap-2", themeColors.success.text)}>
                       <CheckCircle2 className="w-4 h-4" />
                       Strengths
                     </h4>
@@ -296,10 +292,10 @@ export function EnhancedAtsScore({
                           initial={{ opacity: 0, x: -20 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: 0.1 * index, duration: 0.5 }}
-                          className="flex items-start gap-2 p-3 bg-green-50 rounded-lg"
+                          className={cn("flex items-start gap-2 p-3 rounded-lg", themeColors.success.bg)}
                         >
-                          <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                          <p className="text-sm text-green-800">{strength}</p>
+                          <CheckCircle2 className={cn("w-4 h-4 mt-0.5 flex-shrink-0", themeColors.success.icon)} />
+                          <p className={cn("text-sm", themeColors.success.text)}>{strength}</p>
                         </motion.div>
                       ))}
                     </div>
@@ -309,7 +305,7 @@ export function EnhancedAtsScore({
                 {/* Critical Issues */}
                 {score.criticalIssues && score.criticalIssues.length > 0 && (
                   <div>
-                    <h4 className="font-semibold text-red-700 mb-3 flex items-center gap-2">
+                    <h4 className={cn("font-semibold mb-3 flex items-center gap-2", themeColors.error.text)}>
                       <AlertTriangle className="w-4 h-4" />
                       Critical Issues
                     </h4>
@@ -320,10 +316,10 @@ export function EnhancedAtsScore({
                           initial={{ opacity: 0, x: -20 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: 0.1 * index, duration: 0.5 }}
-                          className="flex items-start gap-2 p-3 bg-red-50 rounded-lg"
+                          className={cn("flex items-start gap-2 p-3 rounded-lg", themeColors.error.bg)}
                         >
-                          <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
-                          <p className="text-sm text-red-800">{issue}</p>
+                          <AlertTriangle className={cn("w-4 h-4 mt-0.5 flex-shrink-0", themeColors.error.icon)} />
+                          <p className={cn("text-sm", themeColors.error.text)}>{issue}</p>
                         </motion.div>
                       ))}
                     </div>
@@ -353,10 +349,10 @@ export function EnhancedAtsScore({
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.1 * index, duration: 0.5 }}
-                      className="flex items-start gap-3 p-3 bg-emerald-50 rounded-lg"
+                      className={cn("flex items-start gap-3 p-3 rounded-lg", themeColors.success.bg)}
                     >
-                      <Info className="w-4 h-4 text-emerald-600 mt-0.5 flex-shrink-0" />
-                      <p className="text-sm text-emerald-800">{suggestion}</p>
+                      <Info className={cn("w-4 h-4 mt-0.5 flex-shrink-0", themeColors.success.icon)} />
+                      <p className={cn("text-sm", themeColors.success.text)}>{suggestion}</p>
                     </motion.div>
                   ))}
                 </div>
@@ -367,7 +363,7 @@ export function EnhancedAtsScore({
       )}
 
       {/* Call to Action */}
-      <Card className="border-0 shadow-lg bg-gradient-to-r from-emerald-50 to-green-50">
+      <Card className={cn("border-0 shadow-lg", themeColors.success.bg)}>
         <CardContent className="pt-6">
           <div className="text-center space-y-4">
             <motion.div
@@ -377,13 +373,13 @@ export function EnhancedAtsScore({
             >
               {score.overall >= 80 ? (
                 <div className="flex items-center justify-center gap-2 mb-2">
-                  <Award className="w-6 h-6 text-yellow-500" />
-                  <span className="text-lg font-bold text-gray-800">ATS Optimized!</span>
+                  <Award className={cn("w-6 h-6", themeColors.warning.icon)} />
+                  <span className="text-lg font-bold text-foreground">ATS Optimized!</span>
                 </div>
               ) : (
                 <div className="flex items-center justify-center gap-2 mb-2">
-                  <Zap className="w-6 h-6 text-emerald-600" />
-                  <span className="text-lg font-bold text-gray-800">Improve Your Score</span>
+                  <Zap className={cn("w-6 h-6", themeColors.success.icon)} />
+                  <span className="text-lg font-bold text-foreground">Improve Your Score</span>
                 </div>
               )}
             </motion.div>
@@ -392,7 +388,7 @@ export function EnhancedAtsScore({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1.2, duration: 0.5 }}
-              className="text-sm text-gray-600 max-w-md mx-auto"
+              className="text-sm max-w-md mx-auto text-muted-foreground"
             >
               {score.overall >= 80
                 ? "Your resume is ready for ATS systems. Focus on tailoring it to specific job applications for best results."
@@ -407,7 +403,7 @@ export function EnhancedAtsScore({
             >
               <Button
                 size="lg"
-                className="bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700"
+                className="w-full sm:w-auto"
               >
                 {score.overall >= 80 ? "Download ATS Report" : "View Detailed Analysis"}
               </Button>

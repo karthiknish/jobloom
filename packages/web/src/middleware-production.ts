@@ -35,21 +35,14 @@ export function middleware(request: NextRequest) {
     });
   }
 
-  // Rate limiting for API routes (basic implementation)
+  // Rate limiting for API routes - implemented via in-memory limiters in individual API routes
   if (request.nextUrl.pathname.startsWith('/api/')) {
     const clientId = request.headers.get('x-forwarded-for') || 
                     request.headers.get('x-real-ip') || 
                     'unknown';
-    const now = Date.now();
     
-    // This is a simple in-memory rate limiter
-    // In production, use Redis or a dedicated rate limiting service
-    const rateLimitKey = `rate_limit_${clientId}`;
-    const windowStart = now - (15 * 60 * 1000); // 15 minutes ago
-    
-    // TODO: Implement proper rate limiting with Redis
-    // For now, we'll just log the request
-    if (Math.random() < 0.01) { // Log 1% of requests to avoid spam
+    // Sample 1% of requests for logging to avoid spam
+    if (Math.random() < 0.01) {
       logSecurityEvent('API_REQUEST', {
         path: request.nextUrl.pathname,
         method: request.method,

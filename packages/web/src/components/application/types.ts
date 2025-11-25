@@ -57,7 +57,7 @@ export interface ResumeData {
   languages?: Array<{
     id: string;
     language: string;
-    proficiency: string;
+    proficiency: 'Beginner' | 'Intermediate' | 'Advanced' | 'Native';
   }>;
 }
 

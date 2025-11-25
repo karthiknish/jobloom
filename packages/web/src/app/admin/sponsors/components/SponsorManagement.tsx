@@ -39,6 +39,8 @@ export function SponsorManagement() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedSponsors, setSelectedSponsors] = useState<string[]>([]);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [editingSponsor, setEditingSponsor] = useState<Sponsor | null>(null);
+  const [dialogMode, setDialogMode] = useState<'create' | 'edit' | 'view'>('create');
   const [isExporting, setIsExporting] = useState(false);
 
   // Check admin access
@@ -115,18 +117,29 @@ export function SponsorManagement() {
   // Handlers
   const handleCreateSponsor = async (data: CreateSponsorData) => {
     try {
-      await createSponsorMutation.mutate(data);
-      showSuccess("Sponsor created successfully");
+      if (dialogMode === 'edit' && editingSponsor) {
+        await updateSponsorMutation.mutate({
+          sponsorId: editingSponsor._id,
+          data
+        });
+        showSuccess("Sponsor updated successfully");
+      } else if (dialogMode === 'create') {
+        await createSponsorMutation.mutate(data);
+        showSuccess("Sponsor created successfully");
+      }
       setIsCreateDialogOpen(false);
+      setEditingSponsor(null);
+      setDialogMode('create');
       refetchSponsors();
     } catch (error) {
-      showError("Failed to create sponsor");
+      showError(dialogMode === 'edit' ? "Failed to update sponsor" : "Failed to create sponsor");
     }
   };
 
   const handleEditSponsor = (sponsor: Sponsor) => {
-    // TODO: Open edit dialog
-    console.log("Edit sponsor:", sponsor);
+    setEditingSponsor(sponsor);
+    setDialogMode('edit');
+    setIsCreateDialogOpen(true);
   };
 
   const handleDeleteSponsor = async (sponsorId: string) => {
@@ -142,8 +155,9 @@ export function SponsorManagement() {
   };
 
   const handleViewSponsor = (sponsor: Sponsor) => {
-    // TODO: Open sponsor details dialog
-    console.log("View sponsor:", sponsor);
+    setEditingSponsor(sponsor);
+    setDialogMode('view');
+    setIsCreateDialogOpen(true);
   };
 
   const handleExportSponsors = async () => {
@@ -199,78 +213,121 @@ export function SponsorManagement() {
     return <AdminAccessDenied />;
   }
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 }
+  };
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="space-y-6"
+      variants={containerVariants}
+      initial="hidden"
+      animate="show"
+      className="space-y-8"
     >
-      <div className="flex items-center justify-between">
+      <motion.div variants={itemVariants} className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Sponsor Management</h1>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground mt-2">
             Manage sponsored companies and track sponsorship analytics
           </p>
         </div>
-      </div>
+      </motion.div>
 
       {/* Stats Cards */}
-      <SponsorStats stats={sponsorStats} />
+      <motion.div variants={itemVariants}>
+        <SponsorStats stats={sponsorStats} />
+      </motion.div>
 
       {/* Filters */}
-      <SponsorFilters
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        industryFilter={industryFilter}
-        onIndustryFilterChange={setIndustryFilter}
-        typeFilter={typeFilter}
-        onTypeFilterChange={setTypeFilter}
-        statusFilter={statusFilter}
-        onStatusFilterChange={setStatusFilter}
-        onCreateSponsor={() => setIsCreateDialogOpen(true)}
-        onRefresh={handleRefresh}
-        onExport={handleExportSponsors}
-        isExporting={isExporting}
-        industries={industries}
-        types={types}
-      />
+      <motion.div variants={itemVariants}>
+        <Card className="p-4">
+          <SponsorFilters
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            industryFilter={industryFilter}
+            onIndustryFilterChange={setIndustryFilter}
+            typeFilter={typeFilter}
+            onTypeFilterChange={setTypeFilter}
+            statusFilter={statusFilter}
+            onStatusFilterChange={setStatusFilter}
+            onCreateSponsor={() => setIsCreateDialogOpen(true)}
+            onRefresh={handleRefresh}
+            onExport={handleExportSponsors}
+            isExporting={isExporting}
+            industries={industries}
+            types={types}
+          />
+        </Card>
+      </motion.div>
 
       {/* Sponsors Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Sponsored Companies</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {sponsoredCompanies && sponsoredCompanies.length > 0 ? (
-            <SponsorTable
-              sponsors={sponsoredCompanies}
-              selectedSponsors={selectedSponsors}
-              onSelectionChange={setSelectedSponsors}
-              onEditSponsor={handleEditSponsor}
-              onDeleteSponsor={handleDeleteSponsor}
-              onViewSponsor={handleViewSponsor}
-            />
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              {searchTerm || industryFilter !== "all" || typeFilter !== "all" || statusFilter !== "all"
-                ? "No sponsors match your filters"
-                : "No sponsored companies yet. Add your first sponsor!"}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <motion.div variants={itemVariants}>
+        <Card className="overflow-hidden border-none shadow-md">
+          <CardHeader className="bg-muted/30">
+            <CardTitle>Sponsored Companies</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            {sponsoredCompanies && sponsoredCompanies.length > 0 ? (
+              <SponsorTable
+                sponsors={sponsoredCompanies}
+                selectedSponsors={selectedSponsors}
+                onSelectionChange={setSelectedSponsors}
+                onEditSponsor={handleEditSponsor}
+                onDeleteSponsor={handleDeleteSponsor}
+                onViewSponsor={handleViewSponsor}
+              />
+            ) : (
+              <div className="text-center py-12 text-muted-foreground">
+                {searchTerm || industryFilter !== "all" || typeFilter !== "all" || statusFilter !== "all"
+                  ? "No sponsors match your filters"
+                  : "No sponsored companies yet. Add your first sponsor!"}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
 
       {/* Charts */}
       {sponsorStats && (
-        <SponsorCharts stats={sponsorStats} />
+        <motion.div variants={itemVariants}>
+          <SponsorCharts stats={sponsorStats} />
+        </motion.div>
       )}
 
-      {/* Create Sponsor Dialog */}
+      {/* Create/Edit/View Sponsor Dialog */}
       <CreateSponsorDialog
         open={isCreateDialogOpen}
-        onOpenChange={setIsCreateDialogOpen}
+        onOpenChange={(open) => {
+          setIsCreateDialogOpen(open);
+          if (!open) {
+            setEditingSponsor(null);
+            setDialogMode('create');
+          }
+        }}
         onSubmit={handleCreateSponsor}
-        isSubmitting={createSponsorMutation.loading}
+        isSubmitting={createSponsorMutation.loading || updateSponsorMutation.loading}
+        initialData={editingSponsor ? {
+          name: editingSponsor.name,
+          aliases: editingSponsor.aliases,
+          sponsorshipType: editingSponsor.sponsorshipType,
+          description: editingSponsor.description,
+          website: editingSponsor.website,
+          industry: editingSponsor.industry,
+          logo: editingSponsor.logo,
+          isActive: editingSponsor.isActive !== false
+        } : undefined}
+        mode={dialogMode}
       />
     </motion.div>
   );

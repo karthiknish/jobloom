@@ -1,7 +1,8 @@
 "use client";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart3, FileText, TrendingUp, Eye } from "lucide-react";
+import { motion } from "framer-motion";
 import type { BlogStats } from "@/types/api";
 
 interface BlogStatsProps {
@@ -26,59 +27,68 @@ export function BlogStats({ stats }: BlogStatsProps) {
     );
   }
 
+  const statsData = [
+    {
+      title: "Total Posts",
+      value: stats.totalPosts,
+      description: `${stats.publishedPosts} published`,
+      icon: FileText,
+      color: "text-blue-600",
+      bgColor: "bg-blue-100 dark:bg-blue-900/20",
+    },
+    {
+      title: "Total Views",
+      value: stats.totalViews.toLocaleString(),
+      description: "Across all posts",
+      icon: Eye,
+      color: "text-green-600",
+      bgColor: "bg-green-100 dark:bg-green-900/20",
+    },
+    {
+      title: "Total Likes",
+      value: stats.totalLikes.toLocaleString(),
+      description: "Across all posts",
+      icon: TrendingUp,
+      color: "text-pink-600",
+      bgColor: "bg-pink-100 dark:bg-pink-900/20",
+    },
+    {
+      title: "Categories",
+      value: Object.keys(stats.postsByCategory || {}).length,
+      description: "Active categories",
+      icon: BarChart3,
+      color: "text-purple-600",
+      bgColor: "bg-purple-100 dark:bg-purple-900/20",
+    },
+  ];
+
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Posts</CardTitle>
-          <FileText className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{stats.totalPosts}</div>
-          <p className="text-xs text-muted-foreground">
-            {stats.publishedPosts} published
-          </p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Views</CardTitle>
-          <Eye className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{stats.totalViews.toLocaleString()}</div>
-          <p className="text-xs text-muted-foreground">
-            Across all posts
-          </p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Likes</CardTitle>
-          <TrendingUp className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{stats.totalLikes.toLocaleString()}</div>
-          <p className="text-xs text-muted-foreground">
-            Across all posts
-          </p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Categories</CardTitle>
-          <BarChart3 className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{Object.keys(stats.postsByCategory || {}).length}</div>
-          <p className="text-xs text-muted-foreground">
-            Active categories
-          </p>
-        </CardContent>
-      </Card>
+      {statsData.map((stat, index) => (
+        <motion.div
+          key={stat.title}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: index * 0.1 }}
+        >
+          <Card className="overflow-hidden border-none shadow-sm hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                {stat.title}
+              </CardTitle>
+              <div className={`p-2 rounded-full ${stat.bgColor}`}>
+                <stat.icon className={`h-4 w-4 ${stat.color}`} />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stat.value}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {stat.description}
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
+      ))}
     </div>
   );
 }

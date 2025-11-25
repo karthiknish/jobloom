@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { showSuccess } from "@/components/ui/Toast";
+import { themeColors } from "@/styles/theme-colors";
+import { cn } from "@/lib/utils";
 import type { CvAnalysis } from "../types/api";
 
 interface CvComparisonProps {
@@ -194,11 +196,11 @@ export function CvComparison({ analyses, onBack }: CvComparisonProps) {
               {/* Strengths */}
               {analysis.strengths && analysis.strengths.length > 0 && (
                 <div>
-                  <h4 className="font-medium text-green-700 mb-2">Strengths</h4>
+                  <h4 className={cn("font-medium mb-2", themeColors.success.text)}>Strengths</h4>
                   <ul className="text-sm space-y-1">
                     {analysis.strengths.slice(0, 3).map((strength, i) => (
                       <li key={i} className="flex items-start">
-                        <span className="text-green-500 mr-2 mt-1">•</span>
+                        <span className={cn("mr-2 mt-1", themeColors.success.icon)}>•</span>
                         <span>{strength}</span>
                       </li>
                     ))}
@@ -209,14 +211,14 @@ export function CvComparison({ analyses, onBack }: CvComparisonProps) {
               {/* Weaknesses */}
               {analysis.weaknesses && analysis.weaknesses.length > 0 && (
                 <div>
-                  <h4 className="font-medium text-red-700 mb-2 flex items-center gap-2">
+                  <h4 className={cn("font-medium mb-2 flex items-center gap-2", themeColors.error.text)}>
                     <AlertTriangle className="h-4 w-4" />
                     Areas for Improvement
                   </h4>
                   <ul className="text-sm space-y-1">
                     {analysis.weaknesses.slice(0, 3).map((weakness, i) => (
                       <li key={i} className="flex items-start">
-                        <span className="text-red-500 mr-2 mt-1">•</span>
+                        <span className={cn("mr-2 mt-1", themeColors.error.icon)}>•</span>
                         <span>{weakness}</span>
                       </li>
                     ))}
@@ -227,7 +229,7 @@ export function CvComparison({ analyses, onBack }: CvComparisonProps) {
               {/* ATS Score */}
               {analysis.atsCompatibility && (
                 <div>
-                  <h4 className="font-medium text-blue-700 mb-2">🤖 ATS Compatibility</h4>
+                  <h4 className={cn("font-medium mb-2", themeColors.primary.text)}>🤖 ATS Compatibility</h4>
                   <div className="flex items-center gap-2">
                     <Progress
                       value={analysis.atsCompatibility.score}
@@ -243,7 +245,7 @@ export function CvComparison({ analyses, onBack }: CvComparisonProps) {
               {/* Keyword Analysis */}
               {analysis.keywordAnalysis && (
                 <div>
-                  <h4 className="font-medium text-purple-700 mb-2 flex items-center gap-2">
+                  <h4 className={cn("font-medium mb-2 flex items-center gap-2", themeColors.info.text)}>
                     <Search className="h-4 w-4" />
                     Keywords
                   </h4>
@@ -295,13 +297,13 @@ export function CvComparison({ analyses, onBack }: CvComparisonProps) {
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    {improvement > 0 && <TrendingUp className="h-5 w-5 text-green-500" />}
-                    {improvement < 0 && <TrendingDown className="h-5 w-5 text-red-500" />}
+                    {improvement > 0 && <TrendingUp className={cn("h-5 w-5", themeColors.success.icon)} />}
+                    {improvement < 0 && <TrendingDown className={cn("h-5 w-5", themeColors.error.icon)} />}
                     {improvement === 0 && <Minus className="h-5 w-5 text-muted-foreground" />}
-                    <span className={`font-bold ${
-                      improvement > 0 ? 'text-green-600' :
-                      improvement < 0 ? 'text-red-600' : 'text-muted-foreground'
-                    }`}>
+                    <span className={cn("font-bold",
+                      improvement > 0 ? themeColors.success.text :
+                      improvement < 0 ? themeColors.error.text : 'text-muted-foreground'
+                    )}>
                       {improvement > 0 ? '+' : ''}{improvement} points
                     </span>
                   </div>

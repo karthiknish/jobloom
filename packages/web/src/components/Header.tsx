@@ -8,6 +8,8 @@ import { Menu, X, Settings, LogOut } from "lucide-react";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { themeColors } from "@/styles/theme-colors";
+import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -165,7 +167,7 @@ export default function Header() {
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 onClick={handleLogout}
                 className="text-red-600 focus:text-red-600 cursor-pointer"
               >

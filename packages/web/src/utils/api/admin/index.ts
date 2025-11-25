@@ -4,6 +4,7 @@ import { blogApi } from "./blog";
 import { userApi } from "./users";
 import { sponsorApi } from "./sponsors";
 import { verifyAdminAccess } from "./auth";
+import { clearUserAuthCache } from "@/lib/api/auth-cache";
 import type { ContactSubmission } from "@/types/api";
 
 // Types
@@ -33,15 +34,97 @@ export interface SponsorshipRule {
   updatedAt: number;
 }
 
+// Cache types for invalidation
+export type CacheType = 
+  | 'user' 
+  | 'users' 
+  | 'blog' 
+  | 'blogs' 
+  | 'sponsor' 
+  | 'sponsors' 
+  | 'auth' 
+  | 'all';
+
+// Event emitter for cache invalidation across the app
+type CacheInvalidationListener = (cacheType: CacheType, key?: string) => void;
+const cacheInvalidationListeners: Set<CacheInvalidationListener> = new Set();
+
+/**
+ * Subscribe to cache invalidation events
+ * @returns Unsubscribe function
+ */
+export function onCacheInvalidation(listener: CacheInvalidationListener): () => void {
+  cacheInvalidationListeners.add(listener);
+  return () => cacheInvalidationListeners.delete(listener);
+}
+
+/**
+ * Notify all listeners about cache invalidation
+ */
+function notifyCacheInvalidation(cacheType: CacheType, key?: string): void {
+  cacheInvalidationListeners.forEach(listener => {
+    try {
+      listener(cacheType, key);
+    } catch (error) {
+      console.error('Cache invalidation listener error:', error);
+    }
+  });
+}
+
 // Core Admin API Functions
 export const adminApi = {
   // Authentication
   verifyAdminAccess,
 
-  // Cache Management (placeholder - can be implemented later)
-  invalidateCache: (cacheKey?: string) => {
-    console.log("Cache invalidation requested for:", cacheKey);
-    // TODO: Implement cache invalidation when needed
+  // Cache Management - Comprehensive implementation
+  invalidateCache: (cacheKey?: string, cacheType: CacheType = 'all') => {
+    console.log(`Cache invalidation: type=${cacheType}, key=${cacheKey || 'all'}`);
+    
+    const invalidationResults: Record<string, boolean> = {};
+    
+    try {
+      // Invalidate auth/user cache
+      if (cacheType === 'all' || cacheType === 'auth' || cacheType === 'user' || cacheType === 'users') {
+        clearUserAuthCache(cacheKey);
+        invalidationResults.auth = true;
+      }
+      
+      // Invalidate blog cache (client-side) - notify listeners
+      if (cacheType === 'all' || cacheType === 'blog' || cacheType === 'blogs') {
+        invalidationResults.blog = true;
+      }
+      
+      // Invalidate sponsor cache (client-side) - notify listeners
+      if (cacheType === 'all' || cacheType === 'sponsor' || cacheType === 'sponsors') {
+        invalidationResults.sponsors = true;
+      }
+      
+      // Notify all listeners about the cache invalidation
+      notifyCacheInvalidation(cacheType, cacheKey);
+      
+      console.log('Cache invalidation completed:', invalidationResults);
+      return { success: true, invalidated: invalidationResults };
+    } catch (error) {
+      console.error('Cache invalidation error:', error);
+      return { success: false, error: String(error) };
+    }
+  },
+  
+  // Specific cache invalidation helpers
+  invalidateUserCache: (userId?: string) => {
+    return adminApi.invalidateCache(userId, 'user');
+  },
+  
+  invalidateBlogCache: (blogId?: string) => {
+    return adminApi.invalidateCache(blogId, 'blog');
+  },
+  
+  invalidateSponsorCache: (sponsorId?: string) => {
+    return adminApi.invalidateCache(sponsorId, 'sponsor');
+  },
+  
+  invalidateAllCaches: () => {
+    return adminApi.invalidateCache(undefined, 'all');
   },
 
   // Export all module APIs

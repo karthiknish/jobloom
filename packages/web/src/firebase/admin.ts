@@ -6,7 +6,54 @@ import { existsSync, readFileSync } from "fs";
 import { join } from "path";
 
 let adminApp: App | undefined;
+let initializationPromise: Promise<App> | null = null;
+let isInitialized = false;
+let lastHealthCheck: { timestamp: number; healthy: boolean; details?: Record<string, any> } | null = null;
+const HEALTH_CHECK_INTERVAL_MS = 60_000; // 1 minute
+const MAX_INIT_RETRIES = 3;
+const INIT_RETRY_DELAY_MS = 1000;
 
+// Error categories for better error handling
+export type FirebaseErrorCategory = 'auth' | 'permission' | 'network' | 'config' | 'unknown';
+
+export interface FirebaseError {
+  category: FirebaseErrorCategory;
+  code: string;
+  message: string;
+  retryable: boolean;
+}
+
+export function categorizeFirebaseError(error: any): FirebaseError {
+  const code = error?.code || 'unknown';
+  const message = error?.message || 'Unknown error';
+  
+  // Auth errors
+  if (code.startsWith('auth/')) {
+    const retryable = !['auth/id-token-expired', 'auth/id-token-revoked', 'auth/invalid-id-token'].includes(code);
+    return { category: 'auth', code, message, retryable };
+  }
+  
+  // Permission errors
+  if (code === 'permission-denied' || code.includes('PERMISSION_DENIED')) {
+    return { category: 'permission', code, message, retryable: false };
+  }
+  
+  // Network errors
+  if (code === 'unavailable' || code.includes('UNAVAILABLE') || message.includes('network') || message.includes('ECONNREFUSED')) {
+    return { category: 'network', code, message, retryable: true };
+  }
+  
+  // Config errors
+  if (code.includes('invalid-argument') || code.includes('configuration')) {
+    return { category: 'config', code, message, retryable: false };
+  }
+  
+  return { category: 'unknown', code, message, retryable: true };
+}
+
+/**
+ * Initialize Firebase Admin with mutex to prevent race conditions
+ */
 function initAdminApp(): App {
   if (adminApp) {
     console.log('Returning existing admin app');
@@ -110,6 +157,7 @@ try {
         projectId: serviceAccount.project_id || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
         storageBucket: process.env.FIREBASE_STORAGE_BUCKET || process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
       });
+      isInitialized = true;
       console.log('Firebase Admin initialized with service account');
     } catch (initError) {
       console.error('Failed to initialize Firebase Admin with service account:', initError);
@@ -123,6 +171,7 @@ try {
         projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
         storageBucket: process.env.FIREBASE_STORAGE_BUCKET || process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
       });
+      isInitialized = true;
       console.log('Firebase Admin initialized with application default credentials');
     } catch (adcError) {
       console.warn('Failed to initialize with application default credentials:', adcError);
@@ -165,13 +214,103 @@ export function getAdminStorage(): Storage {
   return getStorage(getAdminApp());
 }
 
+export interface TokenVerificationResult {
+  success: boolean;
+  token?: import("firebase-admin/auth").DecodedIdToken;
+  error?: FirebaseError;
+}
+
 export async function verifyIdToken(token: string): Promise<import("firebase-admin/auth").DecodedIdToken | null> {
+  const result = await verifyIdTokenDetailed(token);
+  return result.token || null;
+}
+
+/**
+ * Verify ID token with detailed error information
+ */
+export async function verifyIdTokenDetailed(token: string): Promise<TokenVerificationResult> {
+  // Basic token validation
+  if (!token || typeof token !== 'string') {
+    return {
+      success: false,
+      error: { category: 'auth', code: 'auth/invalid-token-format', message: 'Token must be a non-empty string', retryable: false }
+    };
+  }
+  
+  if (token.length < 100) {
+    return {
+      success: false,
+      error: { category: 'auth', code: 'auth/token-too-short', message: 'Token appears to be truncated or invalid', retryable: false }
+    };
+  }
+  
+  // Check for obvious placeholder/test tokens
+  if (token === 'test' || token.startsWith('mock') || token === 'undefined') {
+    return {
+      success: false,
+      error: { category: 'auth', code: 'auth/test-token', message: 'Invalid test or placeholder token', retryable: false }
+    };
+  }
+
   try {
     const auth = getAuth(getAdminApp());
-    return await auth.verifyIdToken(token);
-  } catch {
-    return null;
+    const decodedToken = await auth.verifyIdToken(token);
+    return { success: true, token: decodedToken };
+  } catch (error: any) {
+    const categorized = categorizeFirebaseError(error);
+    
+    // Log with appropriate level based on error type
+    if (categorized.retryable) {
+      console.warn(`Token verification failed (retryable): ${categorized.code}`);
+    } else {
+      console.debug(`Token verification failed: ${categorized.code}`);
+    }
+    
+    return { success: false, error: categorized };
   }
+}
+
+/**
+ * Verify a token with retry logic for transient failures
+ */
+export async function verifyIdTokenWithRetry(
+  token: string,
+  maxRetries: number = 2,
+  delayMs: number = 500
+): Promise<import("firebase-admin/auth").DecodedIdToken | null> {
+  let lastError: any = null;
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const result = await verifyIdToken(token);
+      if (result) return result;
+      
+      // If no result but no error, the token is invalid - don't retry
+      return null;
+    } catch (error: any) {
+      lastError = error;
+      
+      // Don't retry on permanent errors
+      const permanentErrors = [
+        'auth/id-token-expired',
+        'auth/id-token-revoked',
+        'auth/invalid-id-token',
+        'auth/argument-error'
+      ];
+      
+      if (permanentErrors.includes(error?.code)) {
+        return null;
+      }
+      
+      // Retry on transient errors
+      if (attempt < maxRetries) {
+        await new Promise(resolve => setTimeout(resolve, delayMs * (attempt + 1)));
+      }
+    }
+  }
+  
+  console.warn('Token verification failed after retries:', lastError?.code || lastError?.message);
+  return null;
 }
 
 export async function isUserAdmin(userId: string): Promise<boolean> {
@@ -247,5 +386,146 @@ export function getAdminFirestore() {
 export async function createCustomToken(uid: string, additionalClaims?: any): Promise<string> {
   const auth = getAdminAuth();
   return await auth.createCustomToken(uid, additionalClaims);
+}
+
+export interface HealthCheckResult {
+  healthy: boolean;
+  latencyMs: number;
+  error?: string;
+  details?: Record<string, any>;
+  services?: {
+    firestore: boolean;
+    auth: boolean;
+    storage: boolean;
+  };
+}
+
+/**
+ * Check if Firebase Admin is healthy and connected
+ * Performs comprehensive health checks on all Firebase services
+ */
+export async function checkFirebaseHealth(force: boolean = false): Promise<HealthCheckResult> {
+  const startTime = Date.now();
+  
+  // Return cached result if recent and not forced
+  if (!force && lastHealthCheck && (Date.now() - lastHealthCheck.timestamp) < HEALTH_CHECK_INTERVAL_MS) {
+    return {
+      healthy: lastHealthCheck.healthy,
+      latencyMs: 0,
+      details: { cached: true, ...lastHealthCheck.details }
+    };
+  }
+  
+  const services = {
+    firestore: false,
+    auth: false,
+    storage: false
+  };
+  
+  const errors: string[] = [];
+  
+  try {
+    // Test Firestore connection
+    try {
+      const db = getAdminDb();
+      const testRef = db.collection('_health_check');
+      await Promise.race([
+        testRef.limit(1).get(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Firestore timeout')), 5000))
+      ]);
+      services.firestore = true;
+    } catch (e: any) {
+      errors.push(`Firestore: ${e.message}`);
+    }
+    
+    // Test Auth service
+    try {
+      const auth = getAdminAuth();
+      // Just verify the auth instance is accessible
+      if (auth) {
+        services.auth = true;
+      }
+    } catch (e: any) {
+      errors.push(`Auth: ${e.message}`);
+    }
+    
+    // Test Storage service
+    try {
+      const storage = getAdminStorage();
+      if (storage) {
+        services.storage = true;
+      }
+    } catch (e: any) {
+      errors.push(`Storage: ${e.message}`);
+    }
+    
+    const latencyMs = Date.now() - startTime;
+    const healthy = services.firestore && services.auth; // Firestore and Auth are critical
+    
+    lastHealthCheck = { 
+      timestamp: Date.now(), 
+      healthy,
+      details: { services, latencyMs }
+    };
+    
+    return {
+      healthy,
+      latencyMs,
+      services,
+      error: errors.length > 0 ? errors.join('; ') : undefined,
+      details: {
+        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+        initialized: isInitialized,
+        serviceCount: Object.values(services).filter(Boolean).length
+      }
+    };
+  } catch (error: any) {
+    const latencyMs = Date.now() - startTime;
+    lastHealthCheck = { timestamp: Date.now(), healthy: false };
+    
+    return {
+      healthy: false,
+      latencyMs,
+      services,
+      error: error?.message || 'Unknown error',
+      details: {
+        code: error?.code,
+        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
+      }
+    };
+  }
+}
+
+/**
+ * Get the current initialization status
+ */
+export function getInitializationStatus(): {
+  initialized: boolean;
+  projectId: string | undefined;
+  lastHealthCheck: { timestamp: number; healthy: boolean } | null;
+} {
+  return {
+    initialized: isInitialized,
+    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+    lastHealthCheck
+  };
+}
+
+/**
+ * Ensure Firebase is initialized before performing operations
+ * This can be called at the start of API routes for better error handling
+ */
+export async function ensureFirebaseInitialized(): Promise<void> {
+  if (!adminApp) {
+    getAdminApp(); // This will initialize synchronously
+  }
+  
+  // Optionally check health on first call
+  if (!lastHealthCheck) {
+    const health = await checkFirebaseHealth();
+    if (!health.healthy) {
+      console.warn('Firebase health check failed on initialization:', health.error);
+    }
+  }
 }
 

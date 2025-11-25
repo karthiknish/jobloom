@@ -455,53 +455,61 @@ export default function AdminUserDashboardClient() {
             transition={{ delay: 0.1 }}
             className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4"
           >
-            <Card className="card-depth-2">
+            <Card className="card-depth-2 border-none shadow-sm hover:shadow-md transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium text-muted-foreground">Total Users</CardTitle>
+                <div className="p-2 rounded-full bg-blue-100 dark:bg-blue-900/20">
+                  <Users className="h-4 w-4 text-blue-600" />
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{userStats.totalUsers}</div>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground mt-1">
                   +{userStats.newUsersThisMonth} this month
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="card-depth-2">
+            <Card className="card-depth-2 border-none shadow-sm hover:shadow-md transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Active Users</CardTitle>
-                <Activity className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium text-muted-foreground">Active Users</CardTitle>
+                <div className="p-2 rounded-full bg-green-100 dark:bg-green-900/20">
+                  <Activity className="h-4 w-4 text-green-600" />
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{userStats.activeUsers}</div>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground mt-1">
                   Recently active
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="card-depth-2">
+            <Card className="card-depth-2 border-none shadow-sm hover:shadow-md transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Admin Users</CardTitle>
-                <Crown className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium text-muted-foreground">Admin Users</CardTitle>
+                <div className="p-2 rounded-full bg-purple-100 dark:bg-purple-900/20">
+                  <Crown className="h-4 w-4 text-purple-600" />
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{userStats.adminUsers}</div>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground mt-1">
                   System administrators
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="card-depth-2">
+            <Card className="card-depth-2 border-none shadow-sm hover:shadow-md transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Recent Logins</CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium text-muted-foreground">Recent Logins</CardTitle>
+                <div className="p-2 rounded-full bg-orange-100 dark:bg-orange-900/20">
+                  <TrendingUp className="h-4 w-4 text-orange-600" />
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{userStats.recentLogins}</div>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground mt-1">
                   Last 7 days
                 </p>
               </CardContent>
@@ -840,9 +848,9 @@ export default function AdminUserDashboardClient() {
             </div>
 
             {/* Users Table */}
-            <div className="rounded-md border">
+            <div className="rounded-md border overflow-hidden">
               <Table>
-                <TableHeader>
+                <TableHeader className="bg-muted/30">
                   <TableRow>
                     <TableHead>User</TableHead>
                     <TableHead>Status</TableHead>
@@ -857,12 +865,12 @@ export default function AdminUserDashboardClient() {
                 </TableHeader>
                 <TableBody>
                   {filteredUsers.map((user) => (
-                    <TableRow key={user._id}>
+                    <TableRow key={user._id} className="hover:bg-muted/50 transition-colors">
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <Avatar className="h-8 w-8">
+                          <Avatar className="h-9 w-9 border">
                             <AvatarImage src="" />
-                            <AvatarFallback className="text-xs">
+                            <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
                               {getInitials(user.name, user.email)}
                             </AvatarFallback>
                           </Avatar>
@@ -870,7 +878,7 @@ export default function AdminUserDashboardClient() {
                             <div className="font-medium truncate">
                               {user.name || 'No name'}
                             </div>
-                            <div className="text-sm text-muted-foreground truncate">
+                            <div className="text-xs text-muted-foreground truncate">
                               {user.email}
                             </div>
                           </div>
@@ -880,7 +888,7 @@ export default function AdminUserDashboardClient() {
                         {getStatusBadge(user)}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="capitalize">
+                        <Badge variant="outline" className="capitalize font-normal">
                           {user.subscriptionPlan || "free"}
                         </Badge>
                       </TableCell>
@@ -898,7 +906,7 @@ export default function AdminUserDashboardClient() {
                         )}
                       </TableCell>
                       <TableCell>
-                        <div className="text-sm">
+                        <div className="text-sm text-muted-foreground">
                           {format(new Date(user.createdAt), "PP")}
                         </div>
                       </TableCell>
@@ -933,7 +941,7 @@ export default function AdminUserDashboardClient() {
                                 {user.isAdmin ? (
                                   <DropdownMenuItem
                                     onClick={() => handleRemoveAdmin(user._id)}
-                                    className="text-red-600"
+                                    className="text-red-600 focus:text-red-600"
                                   >
                                     <UserX className="h-4 w-4 mr-2" />
                                     Remove Admin
@@ -941,7 +949,7 @@ export default function AdminUserDashboardClient() {
                                 ) : (
                                   <DropdownMenuItem
                                     onClick={() => handleSetAdmin(user._id)}
-                                    className="text-sky-600"
+                                    className="text-sky-600 focus:text-sky-600"
                                   >
                                     <Crown className="h-4 w-4 mr-2" />
                                     Make Admin
@@ -950,7 +958,7 @@ export default function AdminUserDashboardClient() {
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                   onClick={() => handleDeleteUser(user._id, user.email)}
-                                  className="text-red-600"
+                                  className="text-red-600 focus:text-red-600"
                                 >
                                   <Trash2 className="h-4 w-4 mr-2" />
                                   Delete User
@@ -966,7 +974,7 @@ export default function AdminUserDashboardClient() {
               </Table>
 
               {filteredUsers.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground">
+                <div className="text-center py-12 text-muted-foreground">
                   {searchTerm || statusFilter !== "all" || planFilter !== "all"
                     ? "No users match your filters"
                     : "No users found"}

@@ -171,9 +171,8 @@ export function logSecurityEvent(event: string, details: any = {}): void {
   };
 
   if (isProduction()) {
-    // In production, send to security monitoring service
+    // Log security events in production
     console.warn('Security Event:', logEntry);
-    // TODO: Integrate with security monitoring service like Sentry, LogRocket, etc.
   } else {
     console.log('Security Event (Development):', logEntry);
   }

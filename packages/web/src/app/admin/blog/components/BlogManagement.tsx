@@ -110,18 +110,24 @@ export function BlogManagement() {
   // Handlers
   const handleCreatePost = async (data: CreatePostData) => {
     try {
-      await createPostMutation.mutate(data);
-      showSuccess("Post created successfully");
+      if (editingPost) {
+        await updatePostMutation.mutate({ postId: editingPost._id, data });
+        showSuccess("Post updated successfully");
+      } else {
+        await createPostMutation.mutate(data);
+        showSuccess("Post created successfully");
+      }
       setIsCreateDialogOpen(false);
+      setEditingPost(null);
       refetchPosts();
     } catch (error) {
-      showError("Failed to create post");
+      showError(editingPost ? "Failed to update post" : "Failed to create post");
     }
   };
 
   const handleEditPost = (post: BlogPost) => {
     setEditingPost(post);
-    // TODO: Open edit dialog
+    setIsCreateDialogOpen(true);
   };
 
   const handleDeletePost = async (postId: string) => {
@@ -137,7 +143,6 @@ export function BlogManagement() {
   };
 
   const handleViewPost = (post: BlogPost) => {
-    // TODO: Open post preview
     window.open(`/blog/${post.slug}`, "_blank");
   };
 
@@ -209,84 +214,118 @@ export function BlogManagement() {
     return <AdminAccessDenied />;
   }
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 }
+  };
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="space-y-6"
+      variants={containerVariants}
+      initial="hidden"
+      animate="show"
+      className="space-y-8"
     >
-      <div className="flex items-center justify-between">
+      <motion.div variants={itemVariants} className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Blog Management</h1>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground mt-2">
             Manage your blog posts, content, and analytics
           </p>
         </div>
-      </div>
+      </motion.div>
 
       {/* Stats Cards */}
-      <BlogStats stats={stats} />
+      <motion.div variants={itemVariants}>
+        <BlogStats stats={stats} />
+      </motion.div>
 
       {/* Filters */}
-      <BlogFilters
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        statusFilter={statusFilter}
-        onStatusFilterChange={setStatusFilter}
-        onCreatePost={() => setIsCreateDialogOpen(true)}
-        selectedCount={selectedPosts.length}
-        onClearSelection={() => setSelectedPosts([])}
-      />
+      <motion.div variants={itemVariants}>
+        <Card className="p-4">
+          <BlogFilters
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            statusFilter={statusFilter}
+            onStatusFilterChange={setStatusFilter}
+            onCreatePost={() => setIsCreateDialogOpen(true)}
+            selectedCount={selectedPosts.length}
+            onClearSelection={() => setSelectedPosts([])}
+          />
+        </Card>
+      </motion.div>
 
       {/* Bulk Actions */}
-      <BulkActions
-        selectedCount={selectedPosts.length}
-        onBulkDelete={handleBulkDelete}
-        onBulkArchive={handleBulkArchive}
-        onBulkPublish={handleBulkPublish}
-        onBulkDraft={handleBulkDraft}
-      />
+      {selectedPosts.length > 0 && (
+        <motion.div variants={itemVariants}>
+          <BulkActions
+            selectedCount={selectedPosts.length}
+            onBulkDelete={handleBulkDelete}
+            onBulkArchive={handleBulkArchive}
+            onBulkPublish={handleBulkPublish}
+            onBulkDraft={handleBulkDraft}
+          />
+        </motion.div>
+      )}
 
       {/* Posts Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Blog Posts</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {paginatedPosts.length > 0 ? (
-            <>
-              <BlogTable
-                posts={paginatedPosts}
-                selectedPosts={selectedPosts}
-                onSelectionChange={setSelectedPosts}
-                onEditPost={handleEditPost}
-                onDeletePost={handleDeletePost}
-                onViewPost={handleViewPost}
-              />
-              <BlogPagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                totalItems={filteredPosts.length}
-                pageSize={pageSize}
-                onPageChange={setCurrentPage}
-              />
-            </>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              {searchTerm || statusFilter !== "all"
-                ? "No posts match your filters"
-                : "No blog posts yet. Create your first post!"}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <motion.div variants={itemVariants}>
+        <Card className="overflow-hidden border-none shadow-md">
+          <CardHeader className="bg-muted/30">
+            <CardTitle>Blog Posts</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            {paginatedPosts.length > 0 ? (
+              <>
+                <BlogTable
+                  posts={paginatedPosts}
+                  selectedPosts={selectedPosts}
+                  onSelectionChange={setSelectedPosts}
+                  onEditPost={handleEditPost}
+                  onDeletePost={handleDeletePost}
+                  onViewPost={handleViewPost}
+                />
+                <div className="p-4 border-t">
+                  <BlogPagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    totalItems={filteredPosts.length}
+                    pageSize={pageSize}
+                    onPageChange={setCurrentPage}
+                  />
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-12 text-muted-foreground">
+                {searchTerm || statusFilter !== "all"
+                  ? "No posts match your filters"
+                  : "No blog posts yet. Create your first post!"}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
 
       {/* Create Post Dialog */}
       <CreatePostDialog
         open={isCreateDialogOpen}
-        onOpenChange={setIsCreateDialogOpen}
+        onOpenChange={(open) => {
+          setIsCreateDialogOpen(open);
+          if (!open) setEditingPost(null);
+        }}
         onSubmit={handleCreatePost}
-        isSubmitting={createPostMutation.loading}
+        isSubmitting={createPostMutation.loading || updatePostMutation.loading}
+        initialData={editingPost}
       />
     </motion.div>
   );

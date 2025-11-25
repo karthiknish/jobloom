@@ -1,42 +1,58 @@
-// components/admin/AdminAccessDenied.tsx
+"use client";
+
 import Link from "next/link";
+import { motion } from "framer-motion";
+import { ShieldAlert, Home, LayoutDashboard } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export function AdminAccessDenied() {
   return (
-    <div className="min-h-screen bg-muted flex items-center justify-center">
-      <div className="bg-background shadow-xl rounded-lg p-8 max-w-md w-full text-center border">
-        <div className="text-red-500 text-6xl mb-4">🚫</div>
-        <h2 className="text-3xl font-bold text-foreground mb-3">Access Denied</h2>
-        <p className="text-muted-foreground mb-6 leading-relaxed">
-          You don&apos;t have permission to access the admin panel. 
-          Your account does not have administrator privileges.
-        </p>
-        
-        <div className="space-y-3">
-          <Link
-            href="/"
-            className="inline-block bg-primary text-white px-6 py-3 rounded-md text-sm font-medium hover:bg-primary/90 transition-colors w-full"
-          >
-            Return to Home
-          </Link>
-          
-          <Link
-            href="/dashboard"
-            className="inline-block bg-secondary text-secondary-foreground px-6 py-3 rounded-md text-sm font-medium hover:bg-secondary/90 transition-colors w-full"
-          >
-            Go to Dashboard
-          </Link>
-        </div>
-        
-        <div className="mt-6 p-4 bg-muted/50 rounded-md">
-          <p className="text-sm text-muted-foreground mb-2">
-            <strong>Need admin access?</strong>
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Contact an existing administrator to have your account granted admin privileges.
-          </p>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gray-50/50 dark:bg-gray-900/50 flex items-center justify-center p-4">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.3 }}
+        className="w-full max-w-md"
+      >
+        <Card className="border-red-200 dark:border-red-900 shadow-lg">
+          <CardHeader className="text-center pb-2">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+              <ShieldAlert className="h-8 w-8 text-red-600 dark:text-red-500" />
+            </div>
+            <CardTitle className="text-2xl font-bold text-red-700 dark:text-red-400">
+              Access Denied
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-center space-y-6">
+            <p className="text-muted-foreground">
+              You do not have permission to access the admin panel. 
+              This area is restricted to administrators only.
+            </p>
+            
+            <div className="grid gap-3">
+              <Button asChild variant="default" className="w-full">
+                <Link href="/">
+                  <Home className="mr-2 h-4 w-4" />
+                  Return to Home
+                </Link>
+              </Button>
+              
+              <Button asChild variant="outline" className="w-full">
+                <Link href="/dashboard">
+                  <LayoutDashboard className="mr-2 h-4 w-4" />
+                  Go to Dashboard
+                </Link>
+              </Button>
+            </div>
+            
+            <div className="rounded-lg bg-muted p-4 text-xs text-muted-foreground">
+              <p className="font-medium mb-1">Need access?</p>
+              <p>Contact a system administrator to request privileges.</p>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
     </div>
   );
 }

@@ -9,95 +9,250 @@ const ROLE_KEYWORDS: KeywordMap = {
     "React",
     "Node.js",
     "Python",
+    "Java",
+    "C++",
+    "AWS",
+    "Docker",
+    "Kubernetes",
     "APIs",
     "SQL",
+    "NoSQL",
     "Git",
+    "CI/CD",
     "Agile",
     "Unit Testing",
+    "System Design",
+    "Algorithms",
+    "Data Structures",
   ],
   "frontend developer": [
     "React",
+    "Vue",
+    "Angular",
     "TypeScript",
-    "Next.js",
-    "CSS",
-    "Tailwind",
-    "Accessibility",
-    "Design Systems",
-    "Performance Optimization",
-    "Testing",
     "JavaScript",
+    "HTML5",
+    "CSS3",
+    "Sass",
+    "Tailwind CSS",
+    "Redux",
+    "Next.js",
+    "Webpack",
+    "Jest",
+    "Cypress",
+    "Accessibility",
+    "Responsive Design",
+    "Performance Optimization",
+    "Figma",
   ],
   "backend engineer": [
     "Node.js",
-    "TypeScript",
-    "Databases",
-    "API Design",
+    "Python",
+    "Java",
+    "Go",
+    "Ruby",
+    "PostgreSQL",
+    "MongoDB",
+    "Redis",
+    "GraphQL",
+    "REST APIs",
     "Microservices",
-    "Testing",
-    "CI/CD",
-    "Cloud",
+    "Docker",
+    "Kubernetes",
+    "AWS",
+    "GCP",
+    "Azure",
+    "System Design",
     "Security",
     "Scalability",
   ],
+  "full stack developer": [
+    "JavaScript",
+    "TypeScript",
+    "React",
+    "Node.js",
+    "Express",
+    "Python",
+    "Django",
+    "SQL",
+    "NoSQL",
+    "AWS",
+    "Docker",
+    "Git",
+    "REST APIs",
+    "GraphQL",
+    "CI/CD",
+    "Agile",
+    "Testing",
+    "System Architecture",
+  ],
+  "devops engineer": [
+    "AWS",
+    "Azure",
+    "GCP",
+    "Docker",
+    "Kubernetes",
+    "Terraform",
+    "Ansible",
+    "Jenkins",
+    "GitLab CI",
+    "Linux",
+    "Bash",
+    "Python",
+    "Monitoring",
+    "Logging",
+    "Security",
+    "Networking",
+    "CloudFormation",
+    "Prometheus",
+  ],
+  "mobile developer": [
+    "Swift",
+    "Kotlin",
+    "React Native",
+    "Flutter",
+    "iOS",
+    "Android",
+    "Objective-C",
+    "Java",
+    "Dart",
+    "Mobile UI",
+    "App Store",
+    "Play Store",
+    "Firebase",
+    "GraphQL",
+    "REST APIs",
+    "Git",
+    "Testing",
+  ],
   "data scientist": [
     "Python",
-    "Machine Learning",
-    "Statistics",
+    "R",
     "SQL",
-    "Pandas",
+    "Machine Learning",
+    "Deep Learning",
     "TensorFlow",
+    "PyTorch",
+    "Scikit-learn",
+    "Pandas",
+    "NumPy",
     "Data Visualization",
-    "Modeling",
-    "Experimentation",
-    "Feature Engineering",
+    "Tableau",
+    "Statistics",
+    "Big Data",
+    "Spark",
+    "Hadoop",
+    "NLP",
+    "Computer Vision",
   ],
   "product manager": [
     "Product Strategy",
     "Roadmap",
     "User Research",
-    "Analytics",
+    "Agile",
+    "Scrum",
+    "Jira",
+    "Data Analysis",
+    "A/B Testing",
     "Stakeholder Management",
-    "Prioritization",
     "Go-To-Market",
     "KPIs",
+    "Prioritization",
+    "UX/UI",
+    "Technical Writing",
+  ],
+  "project manager": [
+    "Project Planning",
+    "Risk Management",
+    "Budgeting",
     "Agile",
-    "Cross-functional",
+    "Waterfall",
+    "Scrum",
+    "Kanban",
+    "Jira",
+    "Asana",
+    "Stakeholder Communication",
+    "Resource Allocation",
+    "Timeline Management",
+    "Scope Management",
+    "Leadership",
+  ],
+  "business analyst": [
+    "Requirements Gathering",
+    "Data Analysis",
+    "SQL",
+    "Process Modeling",
+    "UML",
+    "Visio",
+    "Stakeholder Management",
+    "User Stories",
+    "Agile",
+    "Scrum",
+    "Business Intelligence",
+    "Tableau",
+    "Power BI",
+    "Excel",
   ],
   "marketing": [
     "SEO",
     "SEM",
-    "Content Strategy",
-    "Campaigns",
-    "Analytics",
-    "Lead Generation",
-    "Email Marketing",
-    "Brand",
-    "Conversions",
+    "Content Marketing",
     "Social Media",
+    "Google Analytics",
+    "Email Marketing",
+    "CRM",
+    "HubSpot",
+    "Copywriting",
+    "Brand Strategy",
+    "Market Research",
+    "PPC",
+    "Campaign Management",
+    "Growth Hacking",
   ],
   "sales": [
-    "Pipeline",
     "CRM",
-    "Quota",
+    "Salesforce",
     "Prospecting",
+    "Cold Calling",
+    "Lead Generation",
     "Negotiation",
     "Closing",
-    "Revenue",
     "Account Management",
-    "Forecasting",
+    "B2B Sales",
+    "SaaS",
+    "Pipeline Management",
+    "Presentation Skills",
     "Relationship Building",
   ],
   "designer": [
     "Figma",
-    "Prototyping",
+    "Sketch",
+    "Adobe XD",
+    "Photoshop",
+    "Illustrator",
     "User Research",
-    "UX",
-    "UI",
+    "Wireframing",
+    "Prototyping",
     "Interaction Design",
-    "Typography",
-    "Accessibility",
-    "Design Systems",
     "Visual Design",
+    "Design Systems",
+    "Accessibility",
+    "HTML/CSS",
+    "User Testing",
+  ],
+  "hr specialist": [
+    "Recruiting",
+    "Onboarding",
+    "Employee Relations",
+    "HRIS",
+    "Compliance",
+    "Benefits Administration",
+    "Talent Acquisition",
+    "Performance Management",
+    "Training",
+    "Labor Laws",
+    "Interviewing",
+    "Diversity & Inclusion",
   ],
   default: [
     "Leadership",
@@ -106,10 +261,12 @@ const ROLE_KEYWORDS: KeywordMap = {
     "Teamwork",
     "Project Management",
     "Strategic Planning",
-    "Stakeholder Management",
-    "Results-Oriented",
-    "Collaboration",
+    "Time Management",
     "Adaptability",
+    "Critical Thinking",
+    "Collaboration",
+    "Creativity",
+    "Organization",
   ],
 };
 
@@ -220,11 +377,110 @@ const SECTION_PATTERNS: Record<string, RegExp[]> = {
   contact: [/(contact|email|phone|linkedin)\b/i],
 };
 
+const ACTION_VERBS = [
+  "achieved",
+  "accelerated",
+  "accomplished",
+  "advanced",
+  "amplified",
+  "attained",
+  "boosted",
+  "built",
+  "capitalized",
+  "championed",
+  "collaborated",
+  "completed",
+  "constructed",
+  "created",
+  "delivered",
+  "demonstrated",
+  "designed",
+  "developed",
+  "directed",
+  "drove",
+  "earned",
+  "enhanced",
+  "established",
+  "exceeded",
+  "expanded",
+  "expedited",
+  "facilitated",
+  "formed",
+  "generated",
+  "guided",
+  "headed",
+  "implemented",
+  "improved",
+  "increased",
+  "initiated",
+  "innovated",
+  "integrated",
+  "introduced",
+  "launched",
+  "led",
+  "managed",
+  "maximized",
+  "mentored",
+  "modernized",
+  "negotiated",
+  "optimized",
+  "orchestrated",
+  "overhauled",
+  "pioneered",
+  "planned",
+  "produced",
+  "promoted",
+  "propelled",
+  "reduced",
+  "resolved",
+  "revitalized",
+  "saved",
+  "secured",
+  "simplified",
+  "spearheaded",
+  "standardized",
+  "streamlined",
+  "strengthened",
+  "structured",
+  "succeeded",
+  "surpassed",
+  "transformed",
+  "upgraded",
+  "utilized",
+  "won",
+];
+
+const CLICHES = [
+  "hard worker",
+  "team player",
+  "go-getter",
+  "synergy",
+  "thought leader",
+  "out of the box",
+  "results-driven",
+  "detail-oriented",
+  "self-starter",
+  "people person",
+  "dynamic",
+  "motivated",
+  "passionate",
+  "track record",
+  "best of breed",
+  "bottom line",
+  "cutting edge",
+  "guru",
+  "ninja",
+  "rockstar",
+  "strategic thinker",
+  "value add",
+  "win-win",
+];
+
 const LINKEDIN_PATTERN = /linkedin\.com\/(in|company)\//i;
 const EMAIL_PATTERN = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/;
 const PHONE_PATTERN = /\b(?:\+?\d{1,3}[\s-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}\b/;
 const LOCATION_PATTERN = /\b([A-Z][a-z]+\s?)+(city|town|state|country|,\s?[A-Z]{2})\b/;
-const METRIC_PATTERN = /\b(\d+%|\$\d+[kKmM]?|\d+\s?(customers?|clients?|users?|projects?|deals?|revenue|growth|roi))\b/gi;
+const METRIC_PATTERN = /(\b\d+(\.\d+)?%|\b\$\d+(\.\d+)?[kKmM]?\b|\b\d+\s?(customers?|clients?|users?|projects?|deals?|revenue|growth|roi)\b)/gi;
 
 export interface AtsEvaluationBreakdown {
   structure: number;
@@ -233,6 +489,7 @@ export interface AtsEvaluationBreakdown {
   formatting: number;
   readability: number;
   extras: number;
+  impact: number;
 }
 
 export interface AtsEvaluation {
@@ -321,106 +578,133 @@ export function evaluateAtsCompatibilityFromText({
 
   const keywordDensity = Number(((keywordOccurrences / wordCount) * 100).toFixed(2));
 
+  // Structure Score (Max 15)
   let structureScore = 0;
   const missingSections: string[] = [];
   Object.entries(SECTION_PATTERNS).forEach(([section, patterns]) => {
     const found = patterns.some((pattern) => pattern.test(safeText));
     if (found) {
-      structureScore += 5;
+      structureScore += 3;
     } else {
       missingSections.push(section);
     }
   });
-  structureScore = clamp(structureScore, 0, 25);
+  structureScore = clamp(structureScore, 0, 15);
 
+  // Contact Score (Max 10)
   let contactScore = 0;
   const issues: string[] = [];
   if (EMAIL_PATTERN.test(safeText)) {
-    contactScore += 7;
+    contactScore += 3;
   } else {
     issues.push("Add a professional email address to your header.");
   }
 
   if (PHONE_PATTERN.test(safeText)) {
-    contactScore += 5;
+    contactScore += 3;
   } else {
     issues.push("Include a phone number in an ATS-friendly format (e.g., 123-456-7890).");
   }
 
   if (LOCATION_PATTERN.test(safeText)) {
-    contactScore += 3;
+    contactScore += 2;
   } else {
     issues.push("Mention your location or preferred location to help recruiters filter candidates.");
   }
 
   if (LINKEDIN_PATTERN.test(lowerText) || /portfolio|github|behance/i.test(safeText)) {
-    contactScore += 5;
+    contactScore += 2;
   } else {
     issues.push("Add a LinkedIn profile or professional portfolio link.");
   }
-  contactScore = clamp(contactScore, 0, 20);
+  contactScore = clamp(contactScore, 0, 10);
 
-  let formattingScore = 15;
+  // Formatting Score (Max 10)
+  let formattingScore = 10;
   const tableIndicators = (safeText.match(/[|]/g) || []).length + (safeText.match(/\t/g) || []).length;
   if (tableIndicators > 10) {
-    formattingScore -= 7;
+    formattingScore -= 5;
     issues.push("Tables or tabbed layouts can break in ATS parsing. Use simple bullet lists instead.");
   } else if (tableIndicators > 0) {
-    formattingScore -= 4;
+    formattingScore -= 2;
   }
 
   const excessiveSpacing = /\s{4,}/.test(safeText);
   if (excessiveSpacing) {
-    formattingScore -= 3;
+    formattingScore -= 2;
     issues.push("Large spacing or multi-column layouts may not parse correctly in ATS.");
   }
 
   const bulletSymbols = (safeText.match(/[•◦▪■]/g) || []).length;
   if (bulletSymbols > 100) {
-    formattingScore -= 2;
+    formattingScore -= 1;
   }
 
   const specialCharRatio =
     (safeText.replace(/[\p{L}0-9\s.,;:'"()\-]/gu, "").length / safeText.length) || 0;
   if (specialCharRatio > 0.25) {
-    formattingScore -= 3;
+    formattingScore -= 2;
     issues.push("Reduce heavy use of special characters; they can confuse ATS parsers.");
   }
-  formattingScore = clamp(formattingScore, 0, 15);
+  formattingScore = clamp(formattingScore, 0, 10);
 
+  // Readability Score (Max 10)
   let readabilityScore = 10;
   if (wordCount < 200) {
-    readabilityScore -= 4;
+    readabilityScore -= 3;
     issues.push("Your resume looks brief. Expand experience details with impact statements.");
   } else if (wordCount > 1500) {
-    readabilityScore -= 3;
+    readabilityScore -= 2;
     issues.push("Consider trimming content to keep the resume concise for recruiters.");
   }
 
   if (avgSentenceLength > 30) {
-    readabilityScore -= 3;
+    readabilityScore -= 2;
     issues.push("Long sentences decrease readability. Break them into short action-driven bullet points.");
   } else if (avgSentenceLength >= 12 && avgSentenceLength <= 25) {
-    readabilityScore += 1;
+    // Good range
+  }
+
+  // Check for clichés
+  const foundCliches = CLICHES.filter((cliche) => lowerText.includes(cliche));
+  if (foundCliches.length > 0) {
+    readabilityScore -= Math.min(foundCliches.length, 3);
+    issues.push(`Avoid overused clichés like "${foundCliches[0]}". Use specific examples instead.`);
   }
   readabilityScore = clamp(readabilityScore, 0, 10);
 
-  let extrasScore = 5;
+  // Impact Score (Max 20)
+  let impactScore = 0;
+  const foundActionVerbs = ACTION_VERBS.filter((verb) => lowerText.includes(verb));
+  const actionVerbCount = foundActionVerbs.length;
+
+  if (actionVerbCount > 15) impactScore += 15;
+  else if (actionVerbCount > 10) impactScore += 10;
+  else if (actionVerbCount >= 5) impactScore += 5;
+  else
+    issues.push(
+      "Use more strong action verbs (e.g., 'led', 'developed', 'achieved') to describe your experience."
+    );
+
   if (METRIC_PATTERN.test(safeText)) {
-    extrasScore += 2;
+    impactScore += 5;
   } else {
     issues.push("Add quantifiable metrics (%, $, #) to highlight achievements.");
   }
+  impactScore = clamp(impactScore, 0, 20);
 
+  // Extras Score (Max 10)
+  let extrasScore = 5;
   if (fileType && /pdf/i.test(fileType)) {
-    extrasScore += 1;
+    extrasScore += 3;
   }
 
   if (/\b(resume|curriculum vitae|cv)\b/i.test(safeText)) {
-    extrasScore += 1;
+    extrasScore += 2;
   }
-  extrasScore = clamp(extrasScore, 0, 15);
+  extrasScore = clamp(extrasScore, 0, 10);
 
+  // Keywords Score (Max 25)
   const keywordCoverage = combinedKeywords.length
     ? (matchedKeywords.length / combinedKeywords.length) * 100
     : 0;
@@ -437,6 +721,7 @@ export function evaluateAtsCompatibilityFromText({
     formatting: formattingScore,
     readability: readabilityScore,
     extras: extrasScore,
+    impact: impactScore,
   };
 
   const score = clamp(
@@ -446,7 +731,8 @@ export function evaluateAtsCompatibilityFromText({
         breakdown.keywords +
         breakdown.formatting +
         breakdown.readability +
-        breakdown.extras
+        breakdown.extras +
+        breakdown.impact
     ),
     0,
     100
@@ -484,6 +770,10 @@ export function evaluateAtsCompatibilityFromText({
 
   if (keywordCoverage < 60) {
     suggestions.push("Tailor your resume to the target role by mirroring terminology from job descriptions.");
+  }
+
+  if (actionVerbCount < 5) {
+    suggestions.push("Start bullet points with strong action verbs to show impact.");
   }
 
   const uniqueIssues = Array.from(new Set(issues));

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, AlertTriangle, Zap, Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { themeColors } from '@/styles/theme-colors';
 
 interface RateLimitIndicatorProps {
   maxRequests: number;
@@ -33,10 +34,10 @@ export function RateLimitIndicator({
   }, [resetIn]);
 
   const getStatusColor = () => {
-    if (percentage === 0) return 'text-destructive';
-    if (percentage < 20) return 'text-orange-600';
-    if (percentage < 50) return 'text-yellow-600';
-    return 'text-green-600';
+    if (percentage === 0) return themeColors.error.text;
+    if (percentage < 20) return themeColors.warning.text;
+    if (percentage < 50) return themeColors.warning.text;
+    return themeColors.success.text;
   };
 
   const getStatusIcon = () => {
@@ -94,12 +95,12 @@ export function RateLimitIndicator({
             className={cn(
               "h-full rounded-full transition-all duration-500",
               percentage === 0
-                ? "bg-destructive"
+                ? "bg-red-600"
                 : percentage < 20
-                ? "bg-orange-500"
+                ? "bg-amber-500"
                 : percentage < 50
-                ? "bg-yellow-500"
-                : "bg-green-500"
+                ? "bg-amber-500"
+                : "bg-green-600"
             )}
             style={{ width: `${percentage}%` }}
           />
@@ -122,7 +123,7 @@ export function RateLimitIndicator({
       {/* Additional info for low remaining requests */}
       {percentage < 20 && (
         <div className="flex items-start gap-2 text-xs text-muted-foreground">
-          <AlertTriangle className="h-3 w-3 mt-0.5 text-orange-500" />
+          <AlertTriangle className={cn("h-3 w-3 mt-0.5", themeColors.warning.icon)} />
           <span>
             {percentage === 0
               ? "Rate limit reached. Please wait before making more requests."
@@ -146,9 +147,9 @@ export function PremiumRateLimitBadge({
   const getPlanColor = () => {
     switch (plan) {
       case 'premium':
-        return 'bg-gradient-to-r from-amber-500 to-orange-500 text-white';
+        return cn("bg-gradient-to-r from-amber-500 to-orange-500", 'text-white');
       case 'admin':
-        return 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white';
+        return cn("bg-gradient-to-r from-blue-600 to-indigo-600", 'text-white');
       default:
         return 'bg-gradient-to-r from-gray-500 to-gray-600 text-white';
     }

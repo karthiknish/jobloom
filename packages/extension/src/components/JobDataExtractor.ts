@@ -91,8 +91,17 @@ export class JobDataExtractor {
       ".jobs-unified-top-card__job-title",
       ".job-card-list__title",
       ".job-card-container__link",
+      ".t-24",
+      ".job-details-jobs-unified-top-card__job-title"
     ],
-    indeed: ["[data-testid='jobTitle']", ".jobTitle", ".jobtitle", ".jobTitle-text"],
+    indeed: [
+      "[data-testid='jobTitle']", 
+      ".jobTitle", 
+      ".jobtitle", 
+      ".jobTitle-text",
+      "#jobTitleTextContainer",
+      ".jobsearch-JobInfoHeader-title"
+    ],
     reed: [".job-title", "h1", "h2"],
     totaljobs: ["[data-automation='job-title']", ".job-title", "h2"],
     glassdoor: ["[data-test='job-title']", ".job-title", "h2"],
@@ -107,8 +116,16 @@ export class JobDataExtractor {
       "span.topcard__flavor",
       ".job-card-container__primary-description",
       ".job-card-list__company",
+      ".job-details-jobs-unified-top-card__company-name",
+      ".t-14"
     ],
-    indeed: ["[data-testid='companyName']", ".companyName", ".company"],
+    indeed: [
+      "[data-testid='companyName']", 
+      ".companyName", 
+      ".company",
+      "[data-testid='inlineHeader-companyName']",
+      "[data-company-name='true']"
+    ],
     reed: [".company", "[data-testid='company-name']"],
     totaljobs: ["[data-automation='jobCompany']", ".company"],
     glassdoor: ["[data-test='employer-name']", ".job-info__company"],
@@ -417,9 +434,14 @@ export class JobDataExtractor {
       unknown: [".sponsored", "[data-promoted='true']"],
     };
 
-    const keywordMatches = ["sponsored", "promoted", "ad", "advert"].some((keyword) =>
-      element.textContent?.toLowerCase().includes(keyword)
-    );
+    const keywordMatches = ["sponsored", "promoted", "advertisement"].some((keyword) => {
+      const text = element.textContent?.toLowerCase() || "";
+      // Check for exact word match or specific phrases
+      return text.includes(` ${keyword} `) || 
+             text.startsWith(`${keyword} `) || 
+             text.endsWith(` ${keyword}`) || 
+             text === keyword;
+    });
 
     const selectorMatch = !!this.getFirstMatch(element, sponsoredSelectors[site] ?? sponsoredSelectors.unknown);
 

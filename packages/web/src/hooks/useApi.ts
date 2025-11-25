@@ -158,13 +158,12 @@ function logApiError(error: EnhancedApiError, context?: {
     timestamp: new Date().toISOString()
   };
 
-  // Log in development
+  // Log errors
   if (process.env.NODE_ENV === 'development') {
     console.error('🚨 API Error:', JSON.stringify(logData, null, 2));
+  } else {
+    console.error('API Error:', logData.error.code, logData.error.message);
   }
-
-  // TODO: Send to error monitoring service
-  // sendToErrorMonitoring(logData);
 }
 
 // Enhanced custom hook for API queries

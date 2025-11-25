@@ -334,7 +334,7 @@ function SignUpInner() {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.6 }}
             >
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <Label htmlFor="name" className="text-sm font-semibold text-foreground">Name (optional)</Label>
                 <div className="relative group">
                   <User className="absolute left-4 top-3.5 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-premium" />
@@ -359,7 +359,7 @@ function SignUpInner() {
                 )}
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <Label htmlFor="email" className="text-sm font-semibold text-foreground">Email</Label>
                 <div className="relative group">
                   <Mail className="absolute left-4 top-3.5 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-premium" />
@@ -385,17 +385,17 @@ function SignUpInner() {
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium text-foreground">Password</Label>
+              <div className="space-y-3">
+                <Label htmlFor="password" className="text-sm font-semibold text-foreground">Password</Label>
                 <div className="relative group">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                  <Lock className="absolute left-4 top-3.5 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-premium" />
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => handlePasswordChange(e.target.value)}
                     required
-                    className={`pl-10 pr-10 h-11 bg-muted/50 border-input hover:bg-muted/50 focus:bg-white focus:border-primary focus:ring-primary/20 transition-all duration-200 ${passwordError ? 'border-red-500 focus:ring-red-500/20' : ''}`}
+                    className={`input-premium pl-12 pr-12 h-12 ${passwordError ? 'border-destructive focus:ring-destructive' : ''}`}
                     placeholder="••••••••"
                     disabled={loading}
                   />
@@ -404,38 +404,48 @@ function SignUpInner() {
                     variant="ghost"
                     size="icon"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-2.5 top-2.5 h-8 w-8 text-muted-foreground hover:text-muted-foreground active:scale-95 transition-all duration-200"
+                    className="absolute right-3 top-2.5 h-8 w-8 text-muted-foreground transition-premium"
                     disabled={loading}
                     aria-label={showPassword ? "Hide password" : "Show password"}
+                    asChild
                   >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </motion.button>
                   </Button>
                 </div>
                 
                 {/* Password Strength Indicator */}
                 {password && (
-                  <div className="space-y-2">
+                  <motion.div 
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    className="space-y-2"
+                  >
                     <div className="flex gap-1">
                       {[1, 2, 3, 4, 5].map((level) => (
-                        <div
+                        <motion.div
                           key={level}
-                          className={`h-1 flex-1 rounded-full transition-all duration-300 ${
+                          initial={{ scaleX: 0 }}
+                          animate={{ scaleX: 1 }}
+                          transition={{ duration: 0.2, delay: level * 0.05 }}
+                          className={`h-1.5 flex-1 rounded-full transition-colors duration-300 ${
                             level <= passwordStrength
                               ? passwordStrength <= 2
-                                ? 'bg-destructive'
+                                ? 'bg-destructive shadow-[0_0_8px_rgba(239,68,68,0.5)]'
                                 : passwordStrength <= 3
-                                ? 'bg-accent'
-                                : 'bg-secondary'
+                                ? 'bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.5)]'
+                                : 'bg-primary shadow-[0_0_8px_rgba(16,185,129,0.5)]'
                               : 'bg-muted'
                           }`}
                         />
                       ))}
                     </div>
                     <div className="flex items-center justify-between text-xs">
-                      <span className={`font-medium ${
-                        passwordStrength <= 2 ? 'text-red-600' : 
+                      <span className={`font-semibold transition-colors duration-300 ${
+                        passwordStrength <= 2 ? 'text-destructive' : 
                         passwordStrength <= 3 ? 'text-yellow-600' : 
-                        'text-green-600'
+                        'text-primary'
                       }`}>
                         {passwordStrength === 0 && 'Very weak'}
                         {passwordStrength === 1 && 'Weak'}
@@ -447,23 +457,23 @@ function SignUpInner() {
                       <div className="flex gap-3 text-muted-foreground">
                         <div className="flex items-center gap-1">
                           {password.length >= 8 ? (
-                            <Check className="h-3 w-3 text-green-500" />
+                            <Check className="h-3 w-3 text-primary" />
                           ) : (
-                            <X className="h-3 w-3 text-muted-foreground" />
+                            <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/30" />
                           )}
-                          <span className="text-xs">8+ chars</span>
+                          <span className={password.length >= 8 ? "text-foreground font-medium" : ""}>8+ chars</span>
                         </div>
                         <div className="flex items-center gap-1">
                           {/[^A-Za-z0-9]/.test(password) ? (
-                            <Check className="h-3 w-3 text-green-500" />
+                            <Check className="h-3 w-3 text-primary" />
                           ) : (
-                            <X className="h-3 w-3 text-muted-foreground" />
+                            <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/30" />
                           )}
-                          <span className="text-xs">Special</span>
+                          <span className={/[^A-Za-z0-9]/.test(password) ? "text-foreground font-medium" : ""}>Special</span>
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </motion.div>
                 )}
                 
                 {passwordError && (
@@ -471,31 +481,33 @@ function SignUpInner() {
                 )}
               </div>
 
-              <Button
-                type="submit"
-                className="w-full h-11 font-medium shadow-lg hover:shadow-xl transition-all duration-200 relative overflow-hidden"
-                disabled={loading}
-                size="lg"
-              >
-                {loading ? (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="flex items-center justify-center"
-                  >
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    <span>Setting up your account...</span>
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="flex items-center justify-center"
-                  >
-                    <span>Create account</span>
-                  </motion.div>
-                )}
-              </Button>
+              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                <Button
+                  type="submit"
+                  className="btn-premium w-full h-12 font-bold gradient-primary hover:shadow-premium-xl text-base"
+                  disabled={loading}
+                  size="lg"
+                >
+                  {loading ? (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="flex items-center justify-center"
+                    >
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <span>Setting up your account...</span>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="flex items-center justify-center"
+                    >
+                      <span>Create account</span>
+                    </motion.div>
+                  )}
+                </Button>
+              </motion.div>
             </motion.form>
 
             <div className="relative my-6">
@@ -507,26 +519,35 @@ function SignUpInner() {
               </div>
             </div>
 
-            <Button
-              variant="outline"
-              onClick={handleGoogle}
-              className="w-full h-11 bg-background border-input hover:bg-muted/50 hover:border-border/80 font-medium shadow-sm transition-all duration-200"
-              disabled={loading}
-              size="lg"
-            >
-              <Chrome className="mr-2 h-4 w-4" />
-              Continue with Google
-            </Button>
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Button
+                variant="outline"
+                onClick={handleGoogle}
+                className="btn-premium w-full h-12 bg-surface border-2 hover:bg-muted/20 hover:border-primary/30 font-semibold text-base shadow-premium hover:shadow-premium-lg"
+                disabled={loading}
+                size="lg"
+              >
+                <Chrome className="mr-2 h-5 w-5" />
+                Continue with Google
+              </Button>
+            </motion.div>
 
-            <div className="text-center text-sm pt-4 border-t border-input">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.8 }}
+              className="text-center text-sm pt-6 border-t border-border/50"
+            >
               <span className="text-muted-foreground">Already have an account? </span>
-              <a
+              <motion.a
                 href={`/sign-in?redirect_url=${encodeURIComponent(redirectUrlComplete)}`}
-                className="font-medium text-primary hover:underline transition-colors"
+                className="font-semibold text-primary hover:text-primary/80 transition-premium inline-block"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
                 Sign in
-              </a>
-            </div>
+              </motion.a>
+            </motion.div>
           </CardContent>
         </Card>
       </motion.div>

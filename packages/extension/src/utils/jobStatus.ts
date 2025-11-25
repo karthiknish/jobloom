@@ -12,6 +12,9 @@ export interface JobStatus {
   description?: string;
   postedDate?: string;
   url?: string;
+  isPending?: boolean;
+  logoUrl?: string;
+  dateAdded?: string;
 }
 
 export function getStatusIcon(status: string): string {
@@ -50,42 +53,86 @@ export function getStatusLabel(status: string): string {
   return statusLabels[status] || status;
 }
 
+function getCompanyColor(company: string): string {
+  const colors = [
+    '#EF4444', '#F97316', '#F59E0B', '#84CC16', '#10B981',
+    '#06B6D4', '#3B82F6', '#6366F1', '#8B5CF6', '#EC4899'
+  ];
+  let hash = 0;
+  for (let i = 0; i < company.length; i++) {
+    hash = company.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return colors[Math.abs(hash) % colors.length];
+}
+
+function getCompanyLogoHTML(company: string, logoUrl?: string): string {
+  if (logoUrl) {
+    return `<img src="${logoUrl}" alt="${company}" class="company-logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div class="company-logo-placeholder" style="display:none; background-color: ${getCompanyColor(company)}">${company.charAt(0).toUpperCase()}</div>`;
+  }
+  
+  const color = getCompanyColor(company);
+  return `<div class="company-logo-placeholder" style="background-color: ${color}; color: white;">${company.charAt(0).toUpperCase()}</div>`;
+}
+
 export function createJobItemHTML(job: JobStatus, showEligibility?: boolean): string {
   const statusColor = getStatusColor(job.status);
   const statusIcon = getStatusIcon(job.status);
   
+  // Helper for status badge style
+  const statusStyle = `background: rgba(${statusColor.r}, ${statusColor.g}, ${statusColor.b}, 0.1); color: rgb(${statusColor.r}, ${statusColor.g}, ${statusColor.b});`;
+  
+  // Company Logo
+  const companyLogoHTML = getCompanyLogoHTML(job.company, job.logoUrl);
+  
+  // Date formatting
+  const dateDisplay = job.postedDate 
+    ? new Date(job.postedDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) 
+    : 'Recently';
+
+  const pendingClass = job.isPending ? 'pending-job' : '';
+  const pendingBadge = job.isPending 
+    ? `<span class="tag" style="background: rgba(245, 158, 11, 0.1); color: rgb(245, 158, 11);">${createSVGString("clock", 12)} Queued</span>` 
+    : '';
+
   return `
-    <div class="job-item" data-status="${job.status}" data-sponsored="${job.sponsored}" data-job-id="${job.id}">
-      <div class="job-item-header">
+    <div class="job-card ${pendingClass}" data-status="${job.status}" data-sponsored="${job.sponsored}" data-job-id="${job.id}" style="${job.isPending ? 'opacity: 0.8; border-left: 3px solid #f59e0b;' : ''}">
+      <div class="job-header">
+        ${companyLogoHTML}
         <div class="job-info">
-          <h4 class="job-title">${job.title}</h4>
+          <h4 class="job-title" title="${job.title}">${job.title}</h4>
           <div class="job-company">${job.company}</div>
-          <div class="job-meta">${job.location} • ${job.postedDate ? new Date(job.postedDate).toLocaleDateString() : 'Recently'}</div>
+          <div class="job-meta">
+            <span>${job.location}</span>
+            <span class="meta-dot"></span>
+            <span>${dateDisplay}</span>
+          </div>
         </div>
       </div>
       
-      <div class="job-badges">
-        <span class="job-badge" style="background: rgba(${statusColor.r}, ${statusColor.g}, ${statusColor.b}, 0.1); color: rgb(${statusColor.r}, ${statusColor.g}, ${statusColor.b});">
+      <div class="job-tags">
+        ${pendingBadge}
+        <span class="tag" style="${statusStyle}">
           ${statusIcon} ${getStatusLabel(job.status)}
         </span>
         
         ${job.sponsored 
-          ? `<span class="job-badge badge-sponsored">${createSVGString("poundSterling", 12)} Visa Sponsorship</span>` 
+          ? `<span class="tag tag-purple">${createSVGString("poundSterling", 12)} Visa Sponsorship</span>` 
           : ''
         }
         
-        ${showEligibility 
-          ? `<span class="job-badge badge-uk-checking" data-job-id="${job.id}">Checking eligibility...</span>`
+        ${showEligibility && !job.isPending
+          ? `<span class="tag tag-blue badge-uk-checking" data-job-id="${job.id}">Checking eligibility...</span>`
           : ''
         }
         
         ${job.salary 
-          ? `<span class="job-badge badge-salary">$ ${job.salary}</span>` 
+          ? `<span class="tag tag-green">$ ${job.salary}</span>` 
           : ''
         }
         
         ${job.remote 
-          ? `<span class="job-badge badge-remote">${createSVGString("globe", 12)} Remote</span>` 
+          ? `<span class="tag tag-orange">${createSVGString("globe", 12)} Remote</span>` 
           : ''
         }
       </div>
@@ -93,28 +140,30 @@ export function createJobItemHTML(job: JobStatus, showEligibility?: boolean): st
       <div class="job-actions">
         <div class="sponsor-status" id="sponsor-status-${job.id}"></div>
         
-        <button class="job-action-btn" onclick="checkJobSponsor('${job.id}', '${job.company.replace(/'/g, "\\'")}')" ${!job.sponsored ? 'style="display:none;"' : ''}>
+        ${!job.isPending ? `
+        <button class="btn-sm secondary" onclick="checkJobSponsor('${job.id}', '${job.company.replace(/'/g, "\\'")}')" ${!job.sponsored ? 'style="display:none;"' : ''}>
           Check Sponsor
         </button>
         
         ${job.status === 'saved' 
-          ? `<button class="job-action-btn" id="status-btn-${job.id}" onclick="changeJobStatus('${job.id}', 'interested')">Mark Interested</button>`
+          ? `<button class="btn-sm secondary" id="status-btn-${job.id}" onclick="changeJobStatus('${job.id}', 'interested')">Mark Interested</button>`
           : ''
         }
         
         ${job.status === 'interested' 
-          ? `<button class="job-action-btn primary" id="status-btn-${job.id}" onclick="changeJobStatus('${job.id}', 'applied')">Mark Applied</button>`
+          ? `<button class="btn-sm primary" id="status-btn-${job.id}" onclick="changeJobStatus('${job.id}', 'applied')">Mark Applied</button>`
           : ''
         }
         
         ${job.status === 'applied' 
-          ? `<button class="job-action-btn" id="status-btn-${job.id}" onclick="changeJobStatus('${job.id}', 'interviewing')">Interviewing</button>`
+          ? `<button class="btn-sm secondary" id="status-btn-${job.id}" onclick="changeJobStatus('${job.id}', 'interviewing')">Interviewing</button>`
           : ''
         }
+        ` : '<span class="text-xs text-muted">Syncing...</span>'}
         
         ${job.url 
-          ? `<button class="job-action-btn" onclick="openJobUrl('${job.url.replace(/'/g, "\\'")}')">
-            ${createSVGString("externalLink", 12)} View Job
+          ? `<button class="btn-sm ghost" onclick="openJobUrl('${job.url.replace(/'/g, "\\'")}')">
+            ${createSVGString("externalLink", 12)}
           </button>`
           : ''
         }
@@ -131,7 +180,7 @@ export function updateJobStatusDisplay(jobId: string, newStatus: string): void {
   jobItem.dataset.status = newStatus;
   
   // Update status badge
-  const statusBadge = jobItem.querySelector('.job-badge') as HTMLElement;
+  const statusBadge = jobItem.querySelector('.tag') as HTMLElement;
   if (statusBadge) {
     const statusColor = getStatusColor(newStatus);
     const statusIcon = getStatusIcon(newStatus);
@@ -143,24 +192,30 @@ export function updateJobStatusDisplay(jobId: string, newStatus: string): void {
   // Update action buttons
   const actionsContainer = jobItem.querySelector('.job-actions');
   if (actionsContainer) {
-    const existingButtons = actionsContainer.querySelectorAll('.job-action-btn:not([onclick*="checkJobSponsor"]):not([onclick*="openJobUrl"])');
+    const existingButtons = actionsContainer.querySelectorAll('.btn-sm:not([onclick*="checkJobSponsor"]):not([onclick*="openJobUrl"])');
     existingButtons.forEach(btn => btn.remove());
     
     let actionButton = '';
     switch (newStatus) {
       case 'saved':
-        actionButton = `<button class="job-action-btn" id="status-btn-${jobId}" onclick="changeJobStatus('${jobId}', 'interested')">Mark Interested</button>`;
+        actionButton = `<button class="btn-sm secondary" id="status-btn-${jobId}" onclick="changeJobStatus('${jobId}', 'interested')">Mark Interested</button>`;
         break;
       case 'interested':
-        actionButton = `<button class="job-action-btn primary" id="status-btn-${jobId}" onclick="changeJobStatus('${jobId}', 'applied')">Mark Applied</button>`;
+        actionButton = `<button class="btn-sm primary" id="status-btn-${jobId}" onclick="changeJobStatus('${jobId}', 'applied')">Mark Applied</button>`;
         break;
       case 'applied':
-        actionButton = `<button class="job-action-btn" id="status-btn-${jobId}" onclick="changeJobStatus('${jobId}', 'interviewing')">Interviewing</button>`;
+        actionButton = `<button class="btn-sm secondary" id="status-btn-${jobId}" onclick="changeJobStatus('${jobId}', 'interviewing')">Interviewing</button>`;
         break;
     }
     
     if (actionButton) {
-      actionsContainer.insertAdjacentHTML('beforeend', actionButton);
+      // Insert before the view job button (last child)
+      const viewJobBtn = actionsContainer.querySelector('.btn-sm.ghost');
+      if (viewJobBtn) {
+        viewJobBtn.insertAdjacentHTML('beforebegin', actionButton);
+      } else {
+        actionsContainer.insertAdjacentHTML('beforeend', actionButton);
+      }
     }
   }
 }

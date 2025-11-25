@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { getAuth, signOut as firebaseSignOut } from "firebase/auth";
+import { getAuth, signOut as firebaseSignOut, updateProfile } from "firebase/auth";
 
 import { SettingsLayout } from "@/components/settings/SettingsLayout";
 import { ProfileSettings } from "@/components/settings/ProfileSettings";
@@ -37,10 +37,6 @@ export default function SettingsPage() {
       lastName: "",
       email: "",
       phone: "",
-      location: "",
-      title: "",
-      company: "",
-      bio: "",
       avatar: "",
     },
     preferences: {
@@ -91,10 +87,6 @@ export default function SettingsPage() {
                 lastName: firebaseUser.displayName?.split(' ').slice(1).join(' ') || "",
                 email: firebaseUser.email || "",
                 phone: firebaseUser.phoneNumber || "",
-                location: "",
-                title: "",
-                company: "",
-                bio: "",
                 avatar: firebaseUser.photoURL || "",
               },
               preferences: {
@@ -139,10 +131,6 @@ export default function SettingsPage() {
                 lastName: firebaseUser.displayName?.split(' ').slice(1).join(' ') || "",
                 email: firebaseUser.email || "",
                 phone: firebaseUser.phoneNumber || "",
-                location: "",
-                title: "",
-                company: "",
-                bio: "",
                 avatar: firebaseUser.photoURL || "",
               },
               preferences: {
@@ -215,6 +203,16 @@ export default function SettingsPage() {
 
       if (!response.ok) {
         throw new Error("Failed to save preferences to backend");
+      }
+
+      // Update profile if changed
+      if (
+        formData.profile.firstName !== originalData.profile.firstName ||
+        formData.profile.lastName !== originalData.profile.lastName
+      ) {
+        await updateProfile(firebaseUser, {
+          displayName: `${formData.profile.firstName} ${formData.profile.lastName}`.trim(),
+        });
       }
 
       // Sync both UK Settings and Extension settings

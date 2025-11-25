@@ -32,16 +32,37 @@ interface JobBoardEntry {
   locationType?: string;
 }
 
+interface PendingJob {
+  id: string;
+  jobData: EnhancedJobData;
+  status: "interested" | "applied";
+  timestamp: number;
+  retryCount: number;
+}
+
 export class EnhancedJobBoardManager {
   private static instance: EnhancedJobBoardManager;
   private cache = new Map<string, EnhancedJobData>();
   private socCodeCache = new Map<string, SocCodeMatch>();
+  private isSyncing = false;
 
   static getInstance(): EnhancedJobBoardManager {
     if (!EnhancedJobBoardManager.instance) {
       EnhancedJobBoardManager.instance = new EnhancedJobBoardManager();
+      EnhancedJobBoardManager.instance.initSync();
     }
     return EnhancedJobBoardManager.instance;
+  }
+
+  private initSync() {
+    // Check for pending jobs periodically
+    setInterval(() => this.processPendingJobs(), 60000); // Every minute
+    
+    // Check when coming online
+    window.addEventListener('online', () => this.processPendingJobs());
+    
+    // Initial check
+    this.processPendingJobs();
   }
 
   // Enhanced job extraction with SOC matching
@@ -111,8 +132,73 @@ export class EnhancedJobBoardManager {
     }
   }
 
+  // Queue job for offline/retry processing
+  private async queueJob(jobData: EnhancedJobData, status: "interested" | "applied"): Promise<void> {
+    try {
+      const { pendingJobs } = await safeChromeStorageGet("local", ["pendingJobs"], { pendingJobs: [] as PendingJob[] }, "enhancedAddToBoard");
+      
+      const newPendingJob: PendingJob = {
+        id: crypto.randomUUID(),
+        jobData,
+        status,
+        timestamp: Date.now(),
+        retryCount: 0
+      };
+
+      await new Promise<void>((resolve) => {
+        chrome.storage.local.set({ pendingJobs: [...pendingJobs, newPendingJob] }, () => resolve());
+      });
+
+      console.log("Job queued for sync:", jobData.company);
+    } catch (error) {
+      console.error("Failed to queue job:", error);
+    }
+  }
+
+  // Process pending jobs queue
+  private async processPendingJobs(): Promise<void> {
+    if (this.isSyncing || !navigator.onLine) return;
+
+    try {
+      this.isSyncing = true;
+      const { pendingJobs } = await safeChromeStorageGet("local", ["pendingJobs"], { pendingJobs: [] as PendingJob[] }, "enhancedAddToBoard");
+
+      if (pendingJobs.length === 0) return;
+
+      console.log(`Processing ${pendingJobs.length} pending jobs...`);
+      const remainingJobs: PendingJob[] = [];
+
+      for (const job of pendingJobs) {
+        try {
+          // Try to add to board
+          await this.addToBoard(job.jobData, job.status, true); // true = isRetry
+          console.log("Successfully synced pending job:", job.jobData.company);
+        } catch (error) {
+          console.error("Failed to sync pending job:", error);
+          
+          // Keep in queue if retry count < 5
+          if (job.retryCount < 5) {
+            remainingJobs.push({
+              ...job,
+              retryCount: job.retryCount + 1
+            });
+          }
+        }
+      }
+
+      await new Promise<void>((resolve) => {
+        chrome.storage.local.set({ pendingJobs: remainingJobs }, () => resolve());
+      });
+
+    } catch (error) {
+      console.error("Error processing pending jobs:", error);
+    } finally {
+      this.isSyncing = false;
+    }
+  }
+
   // Enhanced add to board with better data extraction
-  async addToBoard(jobData: EnhancedJobData, status: "interested" | "applied" = "interested"): Promise<JobBoardEntry | null> {
+  async addToBoard(jobData: EnhancedJobData, status: "interested" | "applied" = "interested", isRetry = false): Promise<JobBoardEntry | null> {
     try {
       const userId = await this.getUserId();
       if (!userId) {
@@ -227,8 +313,41 @@ export class EnhancedJobBoardManager {
 
       return jobBoardEntry;
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to add job to board:", error);
+      
+      // If this is not a retry and it's a network/server error, queue it
+      if (!isRetry && (
+        !navigator.onLine || 
+        error.message?.includes("Failed to fetch") || 
+        error.message?.includes("NetworkError") ||
+        error.code === "RATE_LIMITED" ||
+        error.code === "SERVER_ERROR" ||
+        error.code === "SERVICE_UNAVAILABLE"
+      )) {
+        console.log("Queueing job for later sync due to error:", error.message);
+        await this.queueJob(jobData, status);
+        
+        // Return a temporary "optimistic" entry so UI updates
+        return {
+          id: "pending-" + crypto.randomUUID(),
+          company: jobData.company,
+          title: jobData.title,
+          location: jobData.location,
+          url: jobData.url,
+          dateAdded: new Date().toISOString(),
+          status: status,
+          notes: "Queued for sync",
+          salary: jobData.salary?.original,
+          description: jobData.description,
+          skills: jobData.skills,
+          isSponsored: jobData.isSponsored,
+          sponsorshipType: jobData.sponsorshipType,
+          socCode: jobData.likelySocCode,
+          socMatchConfidence: jobData.socMatchConfidence
+        } as JobBoardEntry;
+      }
+      
       throw error;
     }
   }
@@ -279,11 +398,20 @@ export class EnhancedJobBoardManager {
   // Enhanced job existence check
   private async checkJobExists(url: string, userId: string): Promise<JobBoardEntry | null> {
     try {
-      const userJobs = await get<any[]>(`/api/app/jobs/user/${encodeURIComponent(userId)}`);
-      
-      const existingJob = userJobs.find(job => job.url === url);
-      if (existingJob) {
-        return this.mapToJobBoardEntry(existingJob);
+      // Check local storage first (faster and works offline)
+      const { jobBoardData } = await safeChromeStorageGet("local", ["jobBoardData"], { jobBoardData: [] as JobBoardEntry[] }, "enhancedAddToBoard");
+      const localMatch = jobBoardData.find(job => job.url === url);
+      if (localMatch) {
+        return localMatch;
+      }
+
+      // If online, check API to be sure
+      if (navigator.onLine) {
+        const userJobs = await get<any[]>(`/api/app/jobs/user/${encodeURIComponent(userId)}`);
+        const existingJob = userJobs.find(job => job.url === url);
+        if (existingJob) {
+          return this.mapToJobBoardEntry(existingJob);
+        }
       }
       
       return null;

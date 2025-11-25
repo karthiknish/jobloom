@@ -448,47 +448,55 @@ export default function AdminContactDashboard() {
           transition={{ delay: 0.1 }}
           className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4"
         >
-          <Card className="card-depth-2">
+          <Card className="card-depth-2 border-none shadow-sm hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total messages</CardTitle>
-              <Inbox className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total messages</CardTitle>
+              <div className="p-2 rounded-full bg-blue-100 dark:bg-blue-900/20">
+                <Inbox className="h-4 w-4 text-blue-600" />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{contactStats.total}</div>
-              <p className="text-xs text-muted-foreground">Across all time</p>
+              <p className="text-xs text-muted-foreground mt-1">Across all time</p>
             </CardContent>
           </Card>
 
-          <Card className="card-depth-2">
+          <Card className="card-depth-2 border-none shadow-sm hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Awaiting response</CardTitle>
-              <Mail className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">Awaiting response</CardTitle>
+              <div className="p-2 rounded-full bg-orange-100 dark:bg-orange-900/20">
+                <Mail className="h-4 w-4 text-orange-600" />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{contactStats.open}</div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground mt-1">
                 {contactStats.unread} new • {contactStats.open - contactStats.unread} read
               </p>
             </CardContent>
           </Card>
 
-          <Card className="card-depth-2">
+          <Card className="card-depth-2 border-none shadow-sm hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Response rate</CardTitle>
-              <Send className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">Response rate</CardTitle>
+              <div className="p-2 rounded-full bg-green-100 dark:bg-green-900/20">
+                <Send className="h-4 w-4 text-green-600" />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{contactStats.responseRate}%</div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground mt-1">
                 {contactStats.responded} responded • {contactStats.archived} archived
               </p>
             </CardContent>
           </Card>
 
-          <Card className="card-depth-2">
+          <Card className="card-depth-2 border-none shadow-sm hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Avg. response time</CardTitle>
-              <MessageSquare className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">Avg. response time</CardTitle>
+              <div className="p-2 rounded-full bg-purple-100 dark:bg-purple-900/20">
+                <MessageSquare className="h-4 w-4 text-purple-600" />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
@@ -496,7 +504,7 @@ export default function AdminContactDashboard() {
                   ? `${contactStats.averageResponseHours}h`
                   : "—"}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground mt-1">
                 Across responded conversations
               </p>
             </CardContent>
@@ -632,7 +640,7 @@ export default function AdminContactDashboard() {
 
             <div className="rounded-md border overflow-hidden">
               <Table>
-                <TableHeader>
+                <TableHeader className="bg-muted/30">
                   <TableRow>
                     <TableHead>Name & email</TableHead>
                     <TableHead>Subject</TableHead>
@@ -646,7 +654,7 @@ export default function AdminContactDashboard() {
                   {filteredContacts.map((contact) => (
                     <TableRow
                       key={contact._id}
-                      className={contact.status === "new" ? "bg-primary/5" : undefined}
+                      className={`${contact.status === "new" ? "bg-primary/5" : ""} hover:bg-muted/50 transition-colors`}
                     >
                       <TableCell>
                         <div className="flex flex-col">
@@ -708,7 +716,7 @@ export default function AdminContactDashboard() {
                             )}
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
-                              className="text-red-600"
+                              className="text-red-600 focus:text-red-600"
                               onClick={() => handleDeleteContact(contact)}
                               disabled={deleteLoading}
                             >
@@ -723,7 +731,7 @@ export default function AdminContactDashboard() {
               </Table>
 
               {filteredContacts.length === 0 && !contactsLoading && (
-                <div className="py-8 text-center text-muted-foreground">
+                <div className="py-12 text-center text-muted-foreground">
                   {searchTerm || statusFilter !== "all"
                     ? "No contact submissions match your filters."
                     : "No contact submissions yet."}

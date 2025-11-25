@@ -89,10 +89,10 @@ export function SponsorTable({
   };
 
   return (
-    <div className="rounded-md border">
+    <div className="relative w-full overflow-auto">
       <Table>
         <TableHeader>
-          <TableRow>
+          <TableRow className="hover:bg-transparent">
             <TableHead className="w-12">
               <Checkbox
                 checked={isAllSelected}
@@ -111,7 +111,7 @@ export function SponsorTable({
         </TableHeader>
         <TableBody>
           {sponsors.map((sponsor: Sponsor) => (
-            <TableRow key={sponsor._id}>
+            <TableRow key={sponsor._id} className="hover:bg-muted/50 transition-colors">
               <TableCell>
                 <Checkbox
                   checked={selectedSponsors.includes(sponsor._id)}
@@ -121,15 +121,15 @@ export function SponsorTable({
               </TableCell>
               <TableCell>
                 <div className="flex items-center gap-3">
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback>
+                  <Avatar className="h-9 w-9 border">
+                    <AvatarFallback className="bg-primary/10 text-primary">
                       {sponsor.name.slice(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div>
                     <div className="font-medium">{sponsor.name}</div>
                     {sponsor.aliases.length > 0 && (
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-xs text-muted-foreground">
                         {sponsor.aliases.slice(0, 2).join(", ")}
                         {sponsor.aliases.length > 2 && "..."}
                       </div>
@@ -140,22 +140,23 @@ export function SponsorTable({
               <TableCell>
                 <Badge
                   variant={getSponsorshipTypeBadge(sponsor.sponsorshipType)}
-                  className="capitalize"
+                  className="capitalize font-normal"
                 >
                   {sponsor.sponsorshipType}
                 </Badge>
               </TableCell>
               <TableCell>
-                <span className="capitalize">{sponsor.industry || "Unknown"}</span>
+                <span className="capitalize text-sm text-muted-foreground">{sponsor.industry || "Unknown"}</span>
               </TableCell>
               <TableCell>
                 <Badge
                   variant={sponsor.isActive !== false ? "default" : "secondary"}
+                  className={sponsor.isActive !== false ? "bg-green-500/15 text-green-700 hover:bg-green-500/25 dark:text-green-400 border-0" : ""}
                 >
                   {sponsor.isActive !== false ? "Active" : "Inactive"}
                 </Badge>
               </TableCell>
-              <TableCell>
+              <TableCell className="text-muted-foreground text-sm">
                 {new Date(sponsor.createdAt).toLocaleDateString()}
               </TableCell>
               <TableCell className="text-right">
@@ -190,7 +191,7 @@ export function SponsorTable({
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onClick={() => onDeleteSponsor(sponsor._id)}
-                      className="text-destructive"
+                      className="text-destructive focus:text-destructive"
                     >
                       <Trash2 className="mr-2 h-4 w-4" />
                       Delete

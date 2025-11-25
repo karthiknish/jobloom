@@ -59,10 +59,10 @@ export function BlogTable({
   const isIndeterminate = selectedPosts.length > 0 && selectedPosts.length < posts.length;
 
   return (
-    <div className="rounded-md border">
+    <div className="relative w-full overflow-auto">
       <Table>
         <TableHeader>
-          <TableRow>
+          <TableRow className="hover:bg-transparent">
             <TableHead className="w-12">
               <Checkbox
                 checked={isAllSelected}
@@ -82,7 +82,7 @@ export function BlogTable({
         </TableHeader>
         <TableBody>
           {posts.map((post: BlogPost) => (
-            <TableRow key={post._id}>
+            <TableRow key={post._id} className="hover:bg-muted/50 transition-colors">
               <TableCell>
                 <Checkbox
                   checked={selectedPosts.includes(post._id)}
@@ -104,14 +104,25 @@ export function BlogTable({
                       ? "secondary"
                       : "outline"
                   }
+                  className={
+                    post.status === "published"
+                      ? "bg-green-500/15 text-green-700 hover:bg-green-500/25 dark:text-green-400 border-0"
+                      : post.status === "draft"
+                      ? "bg-yellow-500/15 text-yellow-700 hover:bg-yellow-500/25 dark:text-yellow-400 border-0"
+                      : ""
+                  }
                 >
                   {post.status}
                 </Badge>
               </TableCell>
-              <TableCell>{post.category}</TableCell>
-              <TableCell>{post.viewCount || 0}</TableCell>
-              <TableCell>{post.likeCount || 0}</TableCell>
               <TableCell>
+                <Badge variant="outline" className="font-normal">
+                  {post.category}
+                </Badge>
+              </TableCell>
+              <TableCell className="text-muted-foreground">{post.viewCount || 0}</TableCell>
+              <TableCell className="text-muted-foreground">{post.likeCount || 0}</TableCell>
+              <TableCell className="text-muted-foreground text-sm">
                 {new Date(post.createdAt).toLocaleDateString()}
               </TableCell>
               <TableCell className="text-right">
@@ -133,7 +144,7 @@ export function BlogTable({
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onClick={() => onDeletePost(post._id)}
-                      className="text-destructive"
+                      className="text-destructive focus:text-destructive"
                     >
                       <Trash2 className="mr-2 h-4 w-4" />
                       Delete

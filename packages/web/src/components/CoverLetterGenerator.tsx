@@ -34,6 +34,8 @@ import { dashboardApi, type Job } from "@/utils/api/dashboard";
 import { formatLetter } from "./cover-letter/format-letter";
 import { DEFAULT_LETTER_DATA } from "./cover-letter/templates";
 import type { CoverLetterData, CoverLetterGeneratorProps } from "./cover-letter/types";
+import { themeColors, themeUtils } from "@/styles/theme-colors";
+import { cn } from "@/lib/utils";
 
 export const CoverLetterGenerator: React.FC<CoverLetterGeneratorProps> = ({
   resumeData,
@@ -318,8 +320,8 @@ export const CoverLetterGenerator: React.FC<CoverLetterGeneratorProps> = ({
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="flex items-center gap-3 text-xl text-gray-900">
-              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                <FileText className="h-5 w-5 text-blue-600" />
+              <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", "bg-blue-50")}>
+                <FileText className={cn("h-5 w-5", themeColors.primary.text)} />
               </div>
               AI Cover Letter Generator
             </CardTitle>
@@ -329,7 +331,7 @@ export const CoverLetterGenerator: React.FC<CoverLetterGeneratorProps> = ({
           </div>
           {letterScore > 0 && (
             <div className="text-right">
-              <div className="text-3xl font-bold text-blue-600">{letterScore}%</div>
+              <div className={cn("text-3xl font-bold", themeColors.primary.text)}>{letterScore}%</div>
               <div className="text-sm text-gray-600">Quality Score</div>
             </div>
           )}
@@ -349,10 +351,10 @@ export const CoverLetterGenerator: React.FC<CoverLetterGeneratorProps> = ({
                     variant={formData.tone === tone ? "default" : "outline"}
                     size="sm"
                     onClick={() => updateField("tone", tone)}
-                    className={`text-xs ${formData.tone === tone
-                      ? "bg-blue-600 hover:bg-blue-700 text-white"
+                    className={cn("text-xs", formData.tone === tone
+                      ? cn("bg-primary", "hover:opacity-90 text-white")
                       : "bg-white hover:bg-gray-50 border-gray-300 text-gray-700"
-                    }`}
+                    )}
                   >
                     {tone.charAt(0).toUpperCase() + tone.slice(1)}
                   </Button>
@@ -368,10 +370,10 @@ export const CoverLetterGenerator: React.FC<CoverLetterGeneratorProps> = ({
                     variant={formData.template === template ? "default" : "outline"}
                     size="sm"
                     onClick={() => updateField("template", template)}
-                    className={`text-xs ${formData.template === template
-                      ? "bg-blue-600 hover:bg-blue-700 text-white"
+                    className={cn("text-xs", formData.template === template
+                      ? cn("bg-primary", "hover:opacity-90 text-white")
                       : "bg-white hover:bg-gray-50 border-gray-300 text-gray-700"
-                    }`}
+                    )}
                   >
                     {template.charAt(0).toUpperCase() + template.slice(1)}
                   </Button>
@@ -392,20 +394,20 @@ export const CoverLetterGenerator: React.FC<CoverLetterGeneratorProps> = ({
           ) : jobs.length > 0 ? (
             <div className="space-y-3">
               {selectedJob ? (
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className={cn("p-4 border rounded-lg", "bg-blue-50", "border-blue-200")}>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <div className="font-medium text-blue-900">{selectedJob.title}</div>
-                      <div className="text-sm text-blue-700">{selectedJob.company} • {selectedJob.location}</div>
+                      <div className={cn("font-medium", "text-blue-900")}>{selectedJob.title}</div>
+                      <div className={cn("text-sm", themeColors.primary.text)}>{selectedJob.company} • {selectedJob.location}</div>
                       {selectedJob.skills && selectedJob.skills.length > 0 && (
                         <div className="flex flex-wrap gap-2 mt-3">
                           {selectedJob.skills.slice(0, 4).map((skill, index) => (
-                            <Badge key={index} variant="outline" className="text-xs border-blue-300 text-blue-700 bg-white">
+                            <Badge key={index} variant="outline" className={cn("text-xs bg-white", themeColors.primary.border, themeColors.primary.text)}>
                               {skill}
                             </Badge>
                           ))}
                           {selectedJob.skills.length > 4 && (
-                            <Badge variant="outline" className="text-xs border-blue-300 text-blue-700 bg-white">
+                            <Badge variant="outline" className={cn("text-xs bg-white", themeColors.primary.border, themeColors.primary.text)}>
                               +{selectedJob.skills.length - 4}
                             </Badge>
                           )}
@@ -416,7 +418,7 @@ export const CoverLetterGenerator: React.FC<CoverLetterGeneratorProps> = ({
                       variant="outline"
                       size="sm"
                       onClick={handleClearJobSelection}
-                      className="text-blue-600 border-blue-300 hover:bg-blue-100"
+                      className={cn("hover:bg-blue-100", themeColors.primary.text, themeColors.primary.border)}
                     >
                       Clear
                     </Button>
@@ -519,9 +521,9 @@ export const CoverLetterGenerator: React.FC<CoverLetterGeneratorProps> = ({
         </div>
 
         {/* Smart Suggestions */}
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-6">
+        <div className={cn("rounded-xl border p-6", "bg-gradient-to-br from-blue-50 to-indigo-50", "border-blue-200")}>
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+            <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", "bg-primary")}>
               <Zap className="h-5 w-5 text-white" />
             </div>
             <div>
@@ -692,7 +694,7 @@ export const CoverLetterGenerator: React.FC<CoverLetterGeneratorProps> = ({
           <Button 
             onClick={handleGenerate} 
             disabled={generating || !formData.jobTitle.trim() || !formData.companyName.trim()}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+            className={cn("hover:opacity-90", "bg-gradient-to-r from-blue-600 to-indigo-600")}
           >
             {generating ? (
               <>
@@ -732,7 +734,7 @@ export const CoverLetterGenerator: React.FC<CoverLetterGeneratorProps> = ({
                 variant="default" 
                 onClick={handleDownloadPDF}
                 disabled={downloadingPDF || !letter || !formData.jobTitle || !formData.companyName}
-                className="bg-green-600 hover:bg-green-700"
+                className={cn("hover:opacity-90", "bg-green-600")}
               >
                 {downloadingPDF ? (
                   <>
@@ -790,18 +792,18 @@ export const CoverLetterGenerator: React.FC<CoverLetterGeneratorProps> = ({
 
             {/* AI Suggestions */}
             {suggestions.length > 0 && (
-              <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+              <div className={cn("p-4 rounded-lg border", themeColors.warning.bg, themeColors.warning.border)}>
                 <div className="flex items-center gap-2 mb-3">
-                  <TrendingUp className="h-5 w-5 text-yellow-600" />
+                  <TrendingUp className={cn("h-5 w-5", themeColors.warning.text)} />
                   <div>
-                    <p className="text-sm font-medium text-yellow-900">Suggestions for Improvement</p>
-                    <p className="text-xs text-yellow-700">Consider these enhancements to make your letter even stronger</p>
+                    <p className={cn("text-sm font-medium", themeColors.warning.text)}>Suggestions for Improvement</p>
+                    <p className={cn("text-xs", themeColors.warning.text, "opacity-90")}>Consider these enhancements to make your letter even stronger</p>
                   </div>
                 </div>
                 <div className="space-y-2">
                   {suggestions.map((suggestion, index) => (
                     <div key={index} className="flex items-start gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                      <CheckCircle className={cn("h-4 w-4 mt-0.5 flex-shrink-0", themeColors.success.icon)} />
                       <span className="text-sm text-gray-700">{suggestion}</span>
                     </div>
                   ))}
