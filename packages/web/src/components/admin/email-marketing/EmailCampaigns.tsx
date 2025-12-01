@@ -260,11 +260,11 @@ export function EmailCampaigns({
   const getStatusColor = (status: EmailCampaign['status']) => {
     switch (status) {
       case 'draft': return 'bg-gray-100 text-gray-800 border-gray-200';
-      case 'scheduled': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'sending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'sent': return 'bg-green-100 text-green-800 border-green-200';
-      case 'paused': return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'cancelled': return 'bg-red-100 text-red-800 border-red-200';
+      case 'scheduled': return 'bg-blue-50 text-blue-700 border-blue-200';
+      case 'sending': return 'bg-yellow-50 text-yellow-700 border-yellow-200';
+      case 'sent': return 'bg-green-50 text-green-700 border-green-200';
+      case 'paused': return 'bg-orange-50 text-orange-700 border-orange-200';
+      case 'cancelled': return 'bg-red-50 text-red-700 border-red-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
@@ -341,18 +341,18 @@ export function EmailCampaigns({
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: index * 0.1 }}
           >
-            <Card className="group hover:shadow-lg transition-all duration-300">
+            <Card className="group border-gray-200 bg-white hover:bg-gray-50 transition-colors duration-200">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <Badge className={getStatusColor(campaign.status)}>
+                      <Badge variant="outline" className={getStatusColor(campaign.status)}>
                         {getStatusIcon(campaign.status)}
                         <span className="ml-1 capitalize">{campaign.status}</span>
                       </Badge>
                     </div>
-                    <CardTitle className="text-lg line-clamp-1">{campaign.name}</CardTitle>
-                    <CardDescription className="line-clamp-2">
+                    <CardTitle className="text-lg line-clamp-1 text-gray-900">{campaign.name}</CardTitle>
+                    <CardDescription className="line-clamp-2 text-gray-500">
                       {campaign.subject}
                     </CardDescription>
                   </div>
@@ -364,18 +364,18 @@ export function EmailCampaigns({
                   {/* Metrics */}
                   {campaign.metrics.sent > 0 && (
                     <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
+                      <div className="flex justify-between text-sm text-gray-500">
                         <span>Progress</span>
                         <span>{campaign.metrics.sent} sent</span>
                       </div>
                       <Progress value={(campaign.metrics.sent / 1000) * 100} className="h-2" />
                       
                       <div className="grid grid-cols-2 gap-2 text-sm">
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 text-gray-600">
                           <Mail className="h-3 w-3 text-blue-500" />
                           <span>{calculateOpenRate(campaign.metrics)}% open</span>
                         </div>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 text-gray-600">
                           <Target className="h-3 w-3 text-green-500" />
                           <span>{calculateClickRate(campaign.metrics)}% click</span>
                         </div>
@@ -385,17 +385,17 @@ export function EmailCampaigns({
                   
                   {/* Campaign Info */}
                   <div className="space-y-2 text-sm">
-                    <div className="flex items-center gap-2 text-gray-600">
+                    <div className="flex items-center gap-2 text-gray-500">
                       <Users className="h-3 w-3" />
                       <span>{campaign.recipients.type}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-gray-600">
+                    <div className="flex items-center gap-2 text-gray-500">
                       <FileText className="h-3 w-3" />
                       <span className="line-clamp-1">
                         {templates.find(t => t.id === campaign.templateId)?.name || 'Unknown template'}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 text-gray-600">
+                    <div className="flex items-center gap-2 text-gray-500">
                       <Clock className="h-3 w-3" />
                       <span>{new Date(campaign.updatedAt).toLocaleDateString()}</span>
                     </div>
@@ -407,7 +407,7 @@ export function EmailCampaigns({
                       variant="outline"
                       size="sm"
                       onClick={() => setPreviewCampaign(campaign)}
-                      className="flex-1"
+                      className="flex-1 border-gray-200 hover:bg-white"
                     >
                       <Eye className="h-3 w-3 mr-1" />
                       View
@@ -419,6 +419,7 @@ export function EmailCampaigns({
                         size="sm"
                         onClick={() => handleSendCampaign(campaign.id)}
                         disabled={sendingCampaign === campaign.id}
+                        className="border-gray-200 hover:bg-white"
                       >
                         {sendingCampaign === campaign.id ? (
                           <div className="animate-spin h-3 w-3 border-b-2 border-current rounded-full" />
@@ -432,6 +433,7 @@ export function EmailCampaigns({
                       variant="outline"
                       size="sm"
                       onClick={() => handleDuplicateCampaign(campaign)}
+                      className="border-gray-200 hover:bg-white"
                     >
                       <Copy className="h-3 w-3" />
                     </Button>
@@ -441,6 +443,7 @@ export function EmailCampaigns({
                         variant="outline"
                         size="sm"
                         onClick={() => handleEditCampaign(campaign)}
+                        className="border-gray-200 hover:bg-white"
                       >
                         <Edit className="h-3 w-3" />
                       </Button>
@@ -450,7 +453,7 @@ export function EmailCampaigns({
                       variant="outline"
                       size="sm"
                       onClick={() => handleDeleteCampaign(campaign.id)}
-                      className="text-red-600 hover:text-red-700"
+                      className="text-red-600 hover:text-red-700 border-gray-200 hover:bg-red-50"
                     >
                       <Trash2 className="h-3 w-3" />
                     </Button>

@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { CheckCircle, Crown, ArrowRight, Rocket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useSubscription } from "@/hooks/useSubscription";
+import { useSubscription } from "@/providers/subscription-provider";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 
 function UpgradeSuccessContent() {

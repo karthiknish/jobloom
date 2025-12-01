@@ -544,7 +544,7 @@ export const CoverLetterGenerator: React.FC<CoverLetterGeneratorProps> = ({
               }}
               className="text-xs bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
             >
-              🎯 Extract Skills from Resume
+              Extract Skills from Resume
             </Button>
             <Button
               variant="outline"
@@ -558,7 +558,7 @@ export const CoverLetterGenerator: React.FC<CoverLetterGeneratorProps> = ({
               }}
               className="text-xs bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
             >
-              ✨ Create Personalized Opening
+              Create Personalized Opening
             </Button>
             {selectedJob && (
               <Button
@@ -581,7 +581,7 @@ export const CoverLetterGenerator: React.FC<CoverLetterGeneratorProps> = ({
                 }}
                 className="text-xs bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
               >
-                📋 Use Job Requirements
+                Use Job Requirements
               </Button>
             )}
           </div>

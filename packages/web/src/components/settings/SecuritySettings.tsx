@@ -356,7 +356,7 @@ export function SecuritySettings({ formData, onInputChange, user }: SecuritySett
               <Alert className="border-destructive/50 bg-destructive/5">
                 <AlertTriangle className="h-4 w-4 text-destructive" />
                 <AlertDescription className="text-destructive">
-                  <strong>⚠️ Warning:</strong> Account deletion is permanent and irreversible. All your data (applications, CV analyses, saved jobs, and personal information) will be permanently erased from our servers.
+                  <strong>Warning:</strong> Account deletion is permanent and irreversible. All your data (applications, CV analyses, saved jobs, and personal information) will be permanently erased from our servers.
                 </AlertDescription>
               </Alert>
             </div>

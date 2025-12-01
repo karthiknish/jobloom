@@ -237,11 +237,11 @@ function StandardErrorFallback({
 
   const getSeverityIcon = () => {
     switch (severity) {
-      case 'critical': return '🚨';
-      case 'high': return '⚠️';
-      case 'medium': return '⚡';
-      case 'low': return '💡';
-      default: return '❓';
+      case 'critical': return '[!!]';
+      case 'high': return '[!]';
+      case 'medium': return '[*]';
+      case 'low': return '[i]';
+      default: return '[?]';
     }
   };
 

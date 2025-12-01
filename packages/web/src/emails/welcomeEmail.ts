@@ -10,6 +10,7 @@ interface WelcomeEmailTemplateProps {
 }
 
 const brandColor = COLORS.brand;
+const brandLight = COLORS.brandLight;
 const backgroundColor = COLORS.backgroundLight;
 const textColor = COLORS.text;
 const mutedTextColor = COLORS.mutedText;
@@ -74,8 +75,8 @@ export function renderWelcomeEmailHtml({
                   </td>
                 </tr>
                 <tr>
-                  <td class="card" style="background:${cardBackground}; border-radius:16px; box-shadow:0 20px 50px -20px rgba(37, 99, 235, 0.35); padding:40px 48px; border:1px solid ${borderColor};">
-                    <p style="margin:0 0 12px; font-size:18px; font-weight:600;">${greeting} 👋</p>
+                  <td class="card" style="background:${cardBackground}; border-radius:16px; box-shadow:0 20px 50px -20px rgba(5, 150, 105, 0.35); padding:40px 48px; border:1px solid ${borderColor};">
+                    <p style="margin:0 0 12px; font-size:18px; font-weight:600;">${greeting}</p>
                     <h1 style="margin:0 0 16px; font-size:28px; line-height:1.3; font-weight:700; letter-spacing:-0.6px;">Welcome to your smarter job search</h1>
                     <p style="margin:0 0 16px; font-size:16px; line-height:1.6; color:${mutedTextColor};">
                       Thanks for signing up for Hireall. You're all set to keep every application organized, spot sponsored opportunities faster, and stay on top of follow-ups without the chaos.
@@ -92,7 +93,7 @@ export function renderWelcomeEmailHtml({
                       <tbody>
                         <tr>
                           <td>
-                            <a class="cta-button" href="${dashboardUrl}" target="_blank" rel="noopener" style="display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:14px 26px; border-radius:999px; background:${brandColor}; color:#ffffff; font-size:16px; font-weight:600; text-decoration:none; box-shadow:0 10px 25px -12px rgba(37, 99, 235, 0.7);">
+                            <a class="cta-button" href="${dashboardUrl}" target="_blank" rel="noopener" style="display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:14px 26px; border-radius:999px; background:linear-gradient(135deg, ${brandColor} 0%, ${brandLight} 100%); color:#ffffff; font-size:16px; font-weight:600; text-decoration:none; box-shadow:0 10px 25px -12px rgba(5, 150, 105, 0.7);">
                               Jump into your dashboard
                             </a>
                           </td>
@@ -141,5 +142,5 @@ export function renderWelcomeEmailText({
 }: WelcomeEmailTemplateProps): string {
   const greeting = getGreeting(name);
   const year = currentYear();
-  return `${greeting} 👋\n\nWelcome to Hireall — your smarter job search starts now.\n\nYou're ready to:\n• Track every role from one dashboard\n• Stay on top of follow-ups with reminders\n• Prioritize visa-friendly opportunities with sponsor insights\n\nJump into your dashboard → ${dashboardUrl}\n\nNeed help? Reply to this email or reach us at support@hireall.app.\n\nCheering you on,\nThe Hireall Team\n\n© ${year} Hireall | Manage notifications in your settings: ${settingsUrl}`;
+  return `${greeting}\n\nWelcome to Hireall — your smarter job search starts now.\n\nYou're ready to:\n• Track every role from one dashboard\n• Stay on top of follow-ups with reminders\n• Prioritize visa-friendly opportunities with sponsor insights\n\nJump into your dashboard → ${dashboardUrl}\n\nNeed help? Reply to this email or reach us at support@hireall.app.\n\nCheering you on,\nThe Hireall Team\n\n© ${year} Hireall | Manage notifications in your settings: ${settingsUrl}`;
 }

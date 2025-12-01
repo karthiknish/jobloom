@@ -12,6 +12,7 @@ interface PasswordResetTemplateProps {
 }
 
 const brandColor = COLORS.brand;
+const brandLight = COLORS.brandLight;
 const backgroundColor = COLORS.backgroundLight;
 const textColor = COLORS.text;
 const mutedTextColor = COLORS.mutedText;
@@ -76,8 +77,8 @@ export function renderPasswordResetEmailHtml({
                   </td>
                 </tr>
                 <tr>
-                  <td class="card" style="background:${cardBackground}; border-radius:16px; box-shadow:0 20px 50px -20px rgba(37, 99, 235, 0.35); padding:40px 48px; border:1px solid ${borderColor};">
-                    <p style="margin:0 0 12px; font-size:18px; font-weight:600;">${greeting} 👋</p>
+                  <td class="card" style="background:${cardBackground}; border-radius:16px; box-shadow:0 20px 50px -20px rgba(5, 150, 105, 0.35); padding:40px 48px; border:1px solid ${borderColor};">
+                    <p style="margin:0 0 12px; font-size:18px; font-weight:600;">${greeting}</p>
                     <h1 style="margin:0 0 16px; font-size:28px; line-height:1.3; font-weight:700; letter-spacing:-0.6px;">Reset your Hireall password</h1>
                     <p style="margin:0 0 16px; font-size:16px; line-height:1.6; color:${mutedTextColor};">
                       We received a request to reset the password for <strong>${email}</strong>. If this was you, tap the button below to choose a new password.
@@ -86,7 +87,7 @@ export function renderPasswordResetEmailHtml({
                       <tbody>
                         <tr>
                           <td>
-                            <a class="cta-button" href="${resetUrl}" target="_blank" rel="noopener" style="display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:14px 26px; border-radius:999px; background:${brandColor}; color:#ffffff; font-size:16px; font-weight:600; text-decoration:none; box-shadow:0 10px 25px -12px rgba(37, 99, 235, 0.7);">
+                            <a class="cta-button" href="${resetUrl}" target="_blank" rel="noopener" style="display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:14px 26px; border-radius:999px; background:linear-gradient(135deg, ${brandColor} 0%, ${brandLight} 100%); color:#ffffff; font-size:16px; font-weight:600; text-decoration:none; box-shadow:0 10px 25px -12px rgba(5, 150, 105, 0.7);">
                               Reset password
                             </a>
                           </td>
@@ -147,7 +148,7 @@ export function renderPasswordResetEmailText({
   const greeting = getGreeting(name);
   const year = currentYear();
 
-  return `${greeting} 👋
+  return `${greeting}
 
 We received a request to reset the password for ${email}.
 

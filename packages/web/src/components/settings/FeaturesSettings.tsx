@@ -6,7 +6,7 @@ import { Crown, Star, Zap } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useSubscription } from "@/hooks/useSubscription";
+import { useSubscription } from "@/providers/subscription-provider";
 import { PremiumUpgradeBanner } from "@/components/dashboard/PremiumUpgradeBanner";
 
 interface FeaturesSettingsProps {

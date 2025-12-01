@@ -34,7 +34,7 @@ export default function AdminPage() {
     return Promise.reject(new Error("No user"));
   }, [user?.uid]);
 
-  const { data: userRecord } = useApiQuery(
+  const { data: userRecord, loading: userRecordLoading, error: userRecordError } = useApiQuery(
     loadUserRecord,
     [user?.uid],
     { enabled: !!user?.uid },
@@ -43,15 +43,28 @@ export default function AdminPage() {
 
   // Check admin status
   useEffect(() => {
-    if (userRecord) {
-      setIsAdmin(userRecord.isAdmin === true);
+    if (userRecord !== undefined) {
+      // userRecord is loaded - check if admin (null means user not found = not admin)
+      setIsAdmin(userRecord?.isAdmin === true);
+    } else if (userRecordError) {
+      // Error loading user record - treat as not admin
+      console.error('Error loading user record for admin check:', userRecordError);
+      setIsAdmin(false);
     }
-  }, [userRecord]);
+  }, [userRecord, userRecordError]);
+
+  // Also handle case where query completed but userRecord is null
+  useEffect(() => {
+    if (!userRecordLoading && userRecord === null && isAdmin === null) {
+      // Query completed, no user record found - not admin
+      setIsAdmin(false);
+    }
+  }, [userRecordLoading, userRecord, isAdmin]);
 
   // Show loading state while authentication is initializing
   if (loading || !isInitialized) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="flex flex-col items-center gap-4">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           <p className="text-muted-foreground">Loading admin panel...</p>
@@ -67,7 +80,7 @@ export default function AdminPage() {
   // Show loading state while checking admin status
   if (isAdmin === null) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="flex flex-col items-center gap-4">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           <p className="text-muted-foreground">Verifying permissions...</p>
@@ -124,50 +137,58 @@ export default function AdminPage() {
 
         {/* Quick Stats Grid */}
         <motion.div variants={item} className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card className="card-depth-1 hover:shadow-md transition-shadow">
+          <Card className="hover:bg-gray-50 transition-all duration-200 border-gray-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-gray-600">Total Users</CardTitle>
+              <div className="h-8 w-8 rounded-lg bg-blue-50 flex items-center justify-center">
+                <Users className="h-4 w-4 text-blue-600" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">--</div>
-              <p className="text-xs text-muted-foreground">
+              <div className="text-2xl font-bold text-gray-900">--</div>
+              <p className="text-xs text-muted-foreground mt-1">
                 +0% from last month
               </p>
             </CardContent>
           </Card>
-          <Card className="card-depth-1 hover:shadow-md transition-shadow">
+          <Card className="hover:bg-gray-50 transition-all duration-200 border-gray-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Sponsors</CardTitle>
-              <Building2 className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-gray-600">Active Sponsors</CardTitle>
+              <div className="h-8 w-8 rounded-lg bg-green-50 flex items-center justify-center">
+                <Building2 className="h-4 w-4 text-green-600" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">--</div>
-              <p className="text-xs text-muted-foreground">
+              <div className="text-2xl font-bold text-gray-900">--</div>
+              <p className="text-xs text-muted-foreground mt-1">
                 +0% from last month
               </p>
             </CardContent>
           </Card>
-          <Card className="card-depth-1 hover:shadow-md transition-shadow">
+          <Card className="hover:bg-gray-50 transition-all duration-200 border-gray-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Blog Posts</CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-gray-600">Blog Posts</CardTitle>
+              <div className="h-8 w-8 rounded-lg bg-purple-50 flex items-center justify-center">
+                <FileText className="h-4 w-4 text-purple-600" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">--</div>
-              <p className="text-xs text-muted-foreground">
+              <div className="text-2xl font-bold text-gray-900">--</div>
+              <p className="text-xs text-muted-foreground mt-1">
                 +0 new this week
               </p>
             </CardContent>
           </Card>
-          <Card className="card-depth-1 hover:shadow-md transition-shadow">
+          <Card className="hover:bg-gray-50 transition-all duration-200 border-gray-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending Inquiries</CardTitle>
-              <MessageSquare className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-gray-600">Pending Inquiries</CardTitle>
+              <div className="h-8 w-8 rounded-lg bg-orange-50 flex items-center justify-center">
+                <MessageSquare className="h-4 w-4 text-orange-600" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">--</div>
-              <p className="text-xs text-muted-foreground">
+              <div className="text-2xl font-bold text-gray-900">--</div>
+              <p className="text-xs text-muted-foreground mt-1">
                 Requires attention
               </p>
             </CardContent>
@@ -178,7 +199,7 @@ export default function AdminPage() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
           {/* Recent Activity / Overview */}
           <motion.div variants={item} className="col-span-4">
-            <Card className="h-full">
+            <Card className="h-full border-gray-200">
               <CardHeader>
                 <CardTitle>Platform Overview</CardTitle>
                 <CardDescription>
@@ -187,52 +208,52 @@ export default function AdminPage() {
               </CardHeader>
               <CardContent>
                 <div className="grid gap-4 md:grid-cols-2">
-                  <Link href="/admin/users" className="group block space-y-3 rounded-lg border p-4 hover:bg-accent transition-colors">
+                  <Link href="/admin/users" className="group block space-y-3 rounded-xl border border-gray-100 p-4 hover:bg-gray-50 hover:border-blue-100 transition-all duration-200">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-blue-600 group-hover:scale-105 transition-transform">
                         <Users className="h-5 w-5" />
                       </div>
-                      <div className="font-semibold">User Management</div>
-                      <ArrowUpRight className="ml-auto h-4 w-4 opacity-0 transition-opacity group-hover:opacity-100" />
+                      <div className="font-semibold text-gray-900">User Management</div>
+                      <ArrowUpRight className="ml-auto h-4 w-4 text-gray-400 opacity-0 -translate-x-2 transition-all group-hover:opacity-100 group-hover:translate-x-0" />
                     </div>
                     <p className="text-sm text-muted-foreground">
                       Manage user accounts, roles, and permissions. View user growth and activity.
                     </p>
                   </Link>
 
-                  <Link href="/admin/sponsors" className="group block space-y-3 rounded-lg border p-4 hover:bg-accent transition-colors">
+                  <Link href="/admin/sponsors" className="group block space-y-3 rounded-xl border border-gray-100 p-4 hover:bg-gray-50 hover:border-green-100 transition-all duration-200">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100 text-green-600 group-hover:scale-105 transition-transform">
                         <Building2 className="h-5 w-5" />
                       </div>
-                      <div className="font-semibold">Sponsors</div>
-                      <ArrowUpRight className="ml-auto h-4 w-4 opacity-0 transition-opacity group-hover:opacity-100" />
+                      <div className="font-semibold text-gray-900">Sponsors</div>
+                      <ArrowUpRight className="ml-auto h-4 w-4 text-gray-400 opacity-0 -translate-x-2 transition-all group-hover:opacity-100 group-hover:translate-x-0" />
                     </div>
                     <p className="text-sm text-muted-foreground">
                       Manage sponsored companies and track sponsorship performance.
                     </p>
                   </Link>
 
-                  <Link href="/admin/blog" className="group block space-y-3 rounded-lg border p-4 hover:bg-accent transition-colors">
+                  <Link href="/admin/blog" className="group block space-y-3 rounded-xl border border-gray-100 p-4 hover:bg-gray-50 hover:border-purple-100 transition-all duration-200">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100 text-purple-600 group-hover:scale-105 transition-transform">
                         <FileText className="h-5 w-5" />
                       </div>
-                      <div className="font-semibold">Blog Posts</div>
-                      <ArrowUpRight className="ml-auto h-4 w-4 opacity-0 transition-opacity group-hover:opacity-100" />
+                      <div className="font-semibold text-gray-900">Blog Posts</div>
+                      <ArrowUpRight className="ml-auto h-4 w-4 text-gray-400 opacity-0 -translate-x-2 transition-all group-hover:opacity-100 group-hover:translate-x-0" />
                     </div>
                     <p className="text-sm text-muted-foreground">
                       Create and edit blog content. Manage categories and tags.
                     </p>
                   </Link>
 
-                  <Link href="/admin/contact" className="group block space-y-3 rounded-lg border p-4 hover:bg-accent transition-colors">
+                  <Link href="/admin/contact" className="group block space-y-3 rounded-xl border border-gray-100 p-4 hover:bg-gray-50 hover:border-orange-100 transition-all duration-200">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-100 text-orange-600 group-hover:scale-105 transition-transform">
                         <MessageSquare className="h-5 w-5" />
                       </div>
-                      <div className="font-semibold">Inquiries</div>
-                      <ArrowUpRight className="ml-auto h-4 w-4 opacity-0 transition-opacity group-hover:opacity-100" />
+                      <div className="font-semibold text-gray-900">Inquiries</div>
+                      <ArrowUpRight className="ml-auto h-4 w-4 text-gray-400 opacity-0 -translate-x-2 transition-all group-hover:opacity-100 group-hover:translate-x-0" />
                     </div>
                     <p className="text-sm text-muted-foreground">
                       View and respond to contact form submissions.
@@ -245,7 +266,7 @@ export default function AdminPage() {
 
           {/* System Status / Recent Actions */}
           <motion.div variants={item} className="col-span-3">
-            <Card className="h-full">
+            <Card className="h-full border-gray-200">
               <CardHeader>
                 <CardTitle>System Status</CardTitle>
                 <CardDescription>
@@ -254,52 +275,55 @@ export default function AdminPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                      <span className="text-sm font-medium">System Operational</span>
+                  <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-lg border border-emerald-100">
+                    <div className="flex items-center gap-3">
+                      <div className="relative flex h-3 w-3">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                      </div>
+                      <span className="text-sm font-medium text-emerald-700">System Operational</span>
                     </div>
-                    <span className="text-xs text-muted-foreground">Updated just now</span>
+                    <span className="text-xs text-emerald-600">Updated just now</span>
                   </div>
 
-                  <div className="space-y-4">
+                  <div className="space-y-5">
                     <div className="space-y-2">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Database Connection</span>
-                        <span className="text-emerald-600 font-medium">Healthy</span>
+                        <span className="text-gray-600">Database Connection</span>
+                        <span className="text-emerald-600 font-medium text-xs bg-emerald-50 px-2 py-0.5 rounded-full">Healthy</span>
                       </div>
-                      <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
-                        <div className="h-full w-full bg-emerald-500" />
+                      <div className="h-2 w-full rounded-full bg-gray-100 overflow-hidden">
+                        <div className="h-full w-full bg-emerald-500 rounded-full" />
                       </div>
                     </div>
 
                     <div className="space-y-2">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">API Latency</span>
-                        <span className="text-emerald-600 font-medium">45ms</span>
+                        <span className="text-gray-600">API Latency</span>
+                        <span className="text-emerald-600 font-medium text-xs bg-emerald-50 px-2 py-0.5 rounded-full">45ms</span>
                       </div>
-                      <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
-                        <div className="h-full w-[95%] bg-emerald-500" />
+                      <div className="h-2 w-full rounded-full bg-gray-100 overflow-hidden">
+                        <div className="h-full w-[95%] bg-emerald-500 rounded-full" />
                       </div>
                     </div>
 
                     <div className="space-y-2">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Storage Usage</span>
-                        <span className="text-blue-600 font-medium">24%</span>
+                        <span className="text-gray-600">Storage Usage</span>
+                        <span className="text-blue-600 font-medium text-xs bg-blue-50 px-2 py-0.5 rounded-full">24%</span>
                       </div>
-                      <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
-                        <div className="h-full w-[24%] bg-blue-500" />
+                      <div className="h-2 w-full rounded-full bg-gray-100 overflow-hidden">
+                        <div className="h-full w-[24%] bg-blue-500 rounded-full" />
                       </div>
                     </div>
                   </div>
 
-                  <div className="rounded-lg bg-muted p-4">
+                  <div className="rounded-lg bg-gray-50 p-4 border border-gray-100">
                     <div className="flex items-center gap-2 mb-2">
                       <ShieldCheck className="h-4 w-4 text-primary" />
-                      <span className="text-sm font-medium">Security Status</span>
+                      <span className="text-sm font-medium text-gray-900">Security Status</span>
                     </div>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-muted-foreground leading-relaxed">
                       No security incidents reported in the last 24 hours. All systems are running normally.
                     </p>
                   </div>

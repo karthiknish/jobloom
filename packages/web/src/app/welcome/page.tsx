@@ -69,7 +69,7 @@ function WelcomeInner() {
               transition={{ delay: 0.2, duration: 0.6 }}
             >
               <CardTitle className="text-4xl font-bold text-gradient-premium mb-4">
-                Welcome to Hireall! 🎉
+                Welcome to Hireall!
               </CardTitle>
               <CardDescription className="text-xl text-muted-foreground">
                 Your account has been successfully verified

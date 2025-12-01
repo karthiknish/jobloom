@@ -33,7 +33,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
-import { useSubscription } from "@/hooks/useSubscription";
+import { useSubscription } from "@/providers/subscription-provider";
 import { showSuccess, showError, showInfo } from "@/components/ui/Toast";
 import ResumePDFGenerator from "@/lib/resumePDFGenerator";
 import { themeColors, themeUtils } from "@/styles/theme-colors";

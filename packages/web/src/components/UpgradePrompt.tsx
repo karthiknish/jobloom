@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useSubscription } from "@/hooks/useSubscription";
+import { useSubscription } from "@/providers/subscription-provider";
 import { SUBSCRIPTION_LIMITS } from "@/types/api";
 import Link from "next/link";
 
@@ -53,17 +53,17 @@ const FEATURES = [
     title: "AI-Powered Recommendations",
     description:
       "Receive personalized job recommendations based on your profile",
-    icon: "🤖",
+    icon: "Bot",
   },
   {
     title: "Priority Support",
     description: "Get faster responses from our dedicated support team",
-    icon: "⚡",
+    icon: "Zap",
   },
   {
     title: "Custom Alerts",
     description: "Set up custom job alerts for specific companies or roles",
-    icon: "🔔",
+    icon: "Bell",
   },
 ];
 
@@ -83,13 +83,13 @@ export function UpgradePrompt({ feature }: UpgradePromptProps) {
             {
               title: "Unlimited CV Analyses",
               description: "Analyze as many resumes as you need",
-              icon: "📄",
+              icon: "FileText",
             },
             {
               title: "AI-Powered Insights",
               description:
                 "Get detailed feedback on content, structure, and ATS compatibility",
-              icon: "🤖",
+              icon: "Bot",
             },
             {
               title: "Industry-Specific Advice",
@@ -134,13 +134,13 @@ export function UpgradePrompt({ feature }: UpgradePromptProps) {
               title: "PDF Reports",
               description:
                 "Generate beautiful, shareable PDF reports of your job search",
-              icon: "📄",
+              icon: "FileText",
             },
             {
               title: "JSON Export",
               description:
                 "Export all your data in JSON format for backup and analysis",
-              icon: "💾",
+              icon: "Database",
             },
             {
               title: "Professional Templates",
@@ -159,12 +159,12 @@ export function UpgradePrompt({ feature }: UpgradePromptProps) {
             {
               title: "Priority Support",
               description: "Get responses within 24 hours from our expert team",
-              icon: "⚡",
+              icon: "Zap",
             },
             {
               title: "Career Coaching",
               description: "1-on-1 sessions with experienced career counselors",
-              icon: "👥",
+              icon: "Users",
             },
             {
               title: "Resume Reviews",
@@ -196,7 +196,7 @@ export function UpgradePrompt({ feature }: UpgradePromptProps) {
               title: "Real-time Notifications",
               description:
                 "Instant notifications when new jobs match your criteria",
-              icon: "⚡",
+              icon: "Zap",
             },
           ],
         };

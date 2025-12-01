@@ -1,11 +1,20 @@
-import { getDb } from "@/firebase/client";
-import { doc, updateDoc, addDoc, collection, deleteDoc, getDocs, query, where, orderBy, limit } from "firebase/firestore";
+import { getDb, getAuthClient } from "@/firebase/client";
+import { doc, updateDoc, addDoc, collection, deleteDoc, getDocs, query, where, orderBy, limit, getDoc } from "firebase/firestore";
 import { blogApi } from "./blog";
 import { userApi } from "./users";
 import { sponsorApi } from "./sponsors";
-import { verifyAdminAccess } from "./auth";
+import { verifyAdminAccess, clearAdminVerificationCache } from "./auth";
 import { clearUserAuthCache } from "@/lib/api/auth-cache";
 import type { ContactSubmission } from "@/types/api";
+
+// Helper to get auth token
+async function getAuthToken(): Promise<string> {
+  const auth = getAuthClient();
+  if (!auth?.currentUser) {
+    throw new Error("Authentication required");
+  }
+  return auth.currentUser.getIdToken();
+}
 
 // Types
 export interface UserRecord {
@@ -75,6 +84,7 @@ function notifyCacheInvalidation(cacheType: CacheType, key?: string): void {
 export const adminApi = {
   // Authentication
   verifyAdminAccess,
+  clearAdminVerificationCache,
 
   // Cache Management - Comprehensive implementation
   invalidateCache: (cacheKey?: string, cacheType: CacheType = 'all') => {
@@ -136,51 +146,73 @@ export const adminApi = {
     const db = getDb();
     if (!db) throw new Error("Firestore not initialized");
 
-    const q = query(collection(db, "users"), where("uid", "==", uid));
-    const querySnapshot = await getDocs(q);
+    // The document ID is the Firebase UID
+    const userDocRef = doc(db, "users", uid);
+    const userDoc = await getDoc(userDocRef);
 
-    if (querySnapshot.empty) {
+    if (!userDoc.exists()) {
       return null;
     }
 
-    const doc = querySnapshot.docs[0];
     return {
-      _id: doc.id,
-      ...doc.data(),
+      _id: userDoc.id,
+      ...userDoc.data(),
     } as UserRecord;
   },
 
   getAllContactSubmissions: async (): Promise<ContactSubmission[]> => {
-    const db = getDb();
-    if (!db) throw new Error("Firestore not initialized");
+    // Use the API endpoint which has proper admin authentication
+    const token = await getAuthToken();
+    const response = await fetch("/api/app/contacts/admin", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-    const q = query(collection(db, "contactSubmissions"), orderBy("createdAt", "desc"));
-    const querySnapshot = await getDocs(q);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
 
-    return querySnapshot.docs.map((doc) => ({
-      _id: doc.id,
-      ...doc.data(),
-    })) as ContactSubmission[];
+    const data = await response.json();
+    return data.contacts || [];
   },
 
   updateContactSubmission: async (
     submissionId: string,
     updates: Partial<ContactSubmission>
   ): Promise<void> => {
-    const db = getDb();
-    if (!db) throw new Error("Firestore not initialized");
-
-    await updateDoc(doc(db, "contactSubmissions", submissionId), {
-      ...updates,
-      updatedAt: Date.now(),
+    // Use the API endpoint which has proper admin authentication
+    const token = await getAuthToken();
+    const response = await fetch(`/api/app/contacts/admin/${submissionId}`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(updates),
     });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
   },
 
   deleteContactSubmission: async (submissionId: string): Promise<void> => {
-    const db = getDb();
-    if (!db) throw new Error("Firestore not initialized");
+    // Use the API endpoint which has proper admin authentication
+    const token = await getAuthToken();
+    const response = await fetch(`/api/app/contacts/admin/${submissionId}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-    await deleteDoc(doc(db, "contactSubmissions", submissionId));
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
   },
 
   // Sponsorship functions

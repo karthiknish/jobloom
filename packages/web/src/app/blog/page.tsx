@@ -84,11 +84,12 @@ export default function BlogPage() {
     });
   };
 
-  const getReadingTime = (content: string) => {
+  const getReadingTime = (content?: string | null) => {
+    if (!content) return 1;
     const wordsPerMinute = 200;
-    const words = content.replace(/<[^>]*>/g, "").split(/\s+/).length;
+    const words = content.replace(/<[^>]*>/g, "").split(/\s+/).filter(Boolean).length;
     const minutes = Math.ceil(words / wordsPerMinute);
-    return minutes;
+    return minutes || 1;
   };
 
   return (
@@ -166,7 +167,7 @@ export default function BlogPage() {
             animate={{ opacity: 1 }}
             className="text-center py-24 bg-muted/30 rounded-3xl border border-dashed border-muted-foreground/20"
           >
-            <div className="text-6xl mb-6">🔍</div>
+            <div className="text-6xl mb-6"><Search className="w-16 h-16 mx-auto text-muted-foreground" /></div>
             <h3 className="text-2xl font-semibold text-foreground mb-2">
               No articles found
             </h3>

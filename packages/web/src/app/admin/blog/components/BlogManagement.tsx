@@ -7,6 +7,7 @@ import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { showError, showSuccess } from "@/components/ui/Toast";
 import { useApiQuery, useApiMutation } from "@/hooks/useApi";
 import { adminApi } from "@/utils/api/admin";
+import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminAccessDenied } from "@/components/admin/AdminAccessDenied";
 import { BlogStats } from "./BlogStats";
 import { BlogFilters } from "./BlogFilters";
@@ -207,11 +208,19 @@ export function BlogManagement() {
   };
 
   if (isAdmin === null) {
-    return <div>Loading...</div>;
+    return (
+      <AdminLayout title="Blog Management">
+        <div className="flex items-center justify-center h-64">Loading...</div>
+      </AdminLayout>
+    );
   }
 
   if (!isAdmin) {
-    return <AdminAccessDenied />;
+    return (
+      <AdminLayout title="Blog Management">
+        <AdminAccessDenied />
+      </AdminLayout>
+    );
   }
 
   const containerVariants = {
@@ -230,12 +239,13 @@ export function BlogManagement() {
   };
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="show"
-      className="space-y-8"
-    >
+    <AdminLayout title="Blog Management">
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="show"
+        className="space-y-8"
+      >
       <motion.div variants={itemVariants} className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Blog Management</h1>
@@ -328,5 +338,6 @@ export function BlogManagement() {
         initialData={editingPost}
       />
     </motion.div>
+    </AdminLayout>
   );
 }

@@ -229,7 +229,7 @@ export function CvComparison({ analyses, onBack }: CvComparisonProps) {
               {/* ATS Score */}
               {analysis.atsCompatibility && (
                 <div>
-                  <h4 className={cn("font-medium mb-2", themeColors.primary.text)}>🤖 ATS Compatibility</h4>
+                  <h4 className={cn("font-medium mb-2", themeColors.primary.text)}>ATS Compatibility</h4>
                   <div className="flex items-center gap-2">
                     <Progress
                       value={analysis.atsCompatibility.score}

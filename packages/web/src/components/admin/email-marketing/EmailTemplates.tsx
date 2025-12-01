@@ -262,7 +262,7 @@ export function EmailTemplates({
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(6)].map((_, i) => (
-            <Card key={i} className="animate-pulse">
+            <Card key={i} className="animate-pulse border-gray-200">
               <CardHeader>
                 <div className="h-4 bg-gray-200 rounded w-3/4"></div>
                 <div className="h-3 bg-gray-200 rounded w-1/2"></div>
@@ -291,12 +291,12 @@ export function EmailTemplates({
               placeholder="Search templates..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-10 border-gray-200 focus:ring-blue-500"
             />
           </div>
           
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-full sm:w-48">
+            <SelectTrigger className="w-full sm:w-48 border-gray-200">
               <SelectValue placeholder="Category" />
             </SelectTrigger>
             <SelectContent>
@@ -305,7 +305,7 @@ export function EmailTemplates({
                   <div className="flex items-center gap-2">
                     {getCategoryIcon(category.value as EmailTemplate['category'])}
                     <span>{category.label}</span>
-                    <Badge variant="secondary" className="ml-auto">
+                    <Badge variant="secondary" className="ml-auto bg-gray-100 text-gray-600">
                       {category.count}
                     </Badge>
                   </div>
@@ -316,11 +316,11 @@ export function EmailTemplates({
         </div>
 
         <div className="flex gap-2">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" className="border-gray-200 text-gray-700 hover:bg-gray-50">
             <Upload className="h-4 w-4 mr-2" />
             Import
           </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" className="border-gray-200 text-gray-700 hover:bg-gray-50">
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
@@ -340,7 +340,7 @@ export function EmailTemplates({
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: index * 0.1 }}
           >
-            <Card className="group hover:shadow-lg transition-all duration-300">
+            <Card className="group hover:shadow-lg transition-all duration-300 border-gray-200 shadow-sm">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -355,8 +355,8 @@ export function EmailTemplates({
                         <AlertCircle className="h-4 w-4 text-gray-400" />
                       )}
                     </div>
-                    <CardTitle className="text-lg line-clamp-1">{template.name}</CardTitle>
-                    <CardDescription className="line-clamp-2">
+                    <CardTitle className="text-lg line-clamp-1 text-gray-900">{template.name}</CardTitle>
+                    <CardDescription className="line-clamp-2 text-gray-500">
                       {template.description}
                     </CardDescription>
                   </div>
@@ -374,12 +374,12 @@ export function EmailTemplates({
                     <p className="text-sm font-medium text-gray-700 mb-1">Variables</p>
                     <div className="flex flex-wrap gap-1">
                       {template.variables.slice(0, 3).map(variable => (
-                        <Badge key={variable} variant="outline" className="text-xs">
+                        <Badge key={variable} variant="outline" className="text-xs border-gray-200 text-gray-600">
                           {variable}
                         </Badge>
                       ))}
                       {template.variables.length > 3 && (
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-xs border-gray-200 text-gray-600">
                           +{template.variables.length - 3}
                         </Badge>
                       )}
@@ -390,12 +390,12 @@ export function EmailTemplates({
                     <p className="text-sm font-medium text-gray-700 mb-1">Tags</p>
                     <div className="flex flex-wrap gap-1">
                       {template.tags.slice(0, 3).map(tag => (
-                        <Badge key={tag} variant="secondary" className="text-xs">
+                        <Badge key={tag} variant="secondary" className="text-xs bg-gray-100 text-gray-600">
                           {tag}
                         </Badge>
                       ))}
                       {template.tags.length > 3 && (
-                        <Badge variant="secondary" className="text-xs">
+                        <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-600">
                           +{template.tags.length - 3}
                         </Badge>
                       )}
@@ -412,7 +412,7 @@ export function EmailTemplates({
                       variant="outline"
                       size="sm"
                       onClick={() => setPreviewTemplate(template)}
-                      className="flex-1"
+                      className="flex-1 border-gray-200 text-gray-700 hover:bg-gray-50"
                     >
                       <Eye className="h-3 w-3 mr-1" />
                       Preview
@@ -421,6 +421,7 @@ export function EmailTemplates({
                       variant="outline"
                       size="sm"
                       onClick={() => handleSendTest(template.id)}
+                      className="border-gray-200 text-gray-700 hover:bg-gray-50"
                     >
                       <TestTube className="h-3 w-3" />
                     </Button>
@@ -428,6 +429,7 @@ export function EmailTemplates({
                       variant="outline"
                       size="sm"
                       onClick={() => handleDuplicateTemplate(template)}
+                      className="border-gray-200 text-gray-700 hover:bg-gray-50"
                     >
                       <Copy className="h-3 w-3" />
                     </Button>
@@ -435,6 +437,7 @@ export function EmailTemplates({
                       variant="outline"
                       size="sm"
                       onClick={() => handleEditTemplate(template)}
+                      className="border-gray-200 text-gray-700 hover:bg-gray-50"
                     >
                       <Edit className="h-3 w-3" />
                     </Button>
@@ -442,7 +445,7 @@ export function EmailTemplates({
                       variant="outline"
                       size="sm"
                       onClick={() => handleDeleteTemplate(template.id)}
-                      className="text-red-600 hover:text-red-700"
+                      className="border-gray-200 text-red-600 hover:text-red-700 hover:bg-red-50"
                     >
                       <Trash2 className="h-3 w-3" />
                     </Button>

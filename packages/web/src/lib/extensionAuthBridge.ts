@@ -46,10 +46,35 @@ class ExtensionAuthBridge {
     this.setupAuthStateListener();
     
     // Set up global function for extension to call
-    (window as any).getHireallAuthToken = this.getAuthToken.bind(this);
+    // Make it return a Promise that the extension can await
+    (window as any).getHireallAuthToken = async (forceRefresh?: boolean): Promise<ExtensionAuthResponse> => {
+      return this.getAuthToken(forceRefresh);
+    };
+    
+    // Also expose a sync version for localStorage fallback
+    this.storeCurrentToken();
     
     this.isInitialized = true;
     console.log('[ExtensionAuthBridge] Initialized');
+  }
+  
+  private async storeCurrentToken(): Promise<void> {
+    try {
+      const auth = getAuthClient();
+      if (!auth?.currentUser) return;
+      
+      const token = await auth.currentUser.getIdToken();
+      if (token) {
+        localStorage.setItem('hireall_auth_token', token);
+        localStorage.setItem('hireall_user_data', JSON.stringify({
+          userId: auth.currentUser.uid,
+          userEmail: auth.currentUser.email,
+          timestamp: Date.now()
+        }));
+      }
+    } catch (error) {
+      console.warn('[ExtensionAuthBridge] Failed to store initial token:', error);
+    }
   }
 
   private handleExtensionMessage(event: MessageEvent): void {

@@ -67,7 +67,7 @@ export function VisaCriteriaSettings({ formData, onInputChange }: VisaCriteriaSe
                 </div>
                 <Switch
                   id="ukFiltersEnabledSetting"
-                  checked={formData.preferences.ukFiltersEnabled || false}
+                  checked={formData.preferences.ukFiltersEnabled ?? false}
                   onCheckedChange={(checked) => {
                     onInputChange("preferences", "ukFiltersEnabled", checked);
                     // Also sync with sponsor button preference
@@ -203,10 +203,10 @@ export function VisaCriteriaSettings({ formData, onInputChange }: VisaCriteriaSe
                 </div>
                 <div className="flex items-center gap-2">
                   <div className={`w-2 h-2 rounded-full ${
-                    formData.preferences.minimumSalary >= 38700 ? 'bg-green-500' : 'bg-yellow-500'
+                    (formData.preferences.minimumSalary || 0) >= 38700 ? 'bg-green-500' : 'bg-yellow-500'
                   }`}></div>
                   <span className="text-muted-foreground">
-                    Salary: <span className="font-medium text-foreground">£{formData.preferences.minimumSalary.toLocaleString()}</span>
+                    Salary: <span className="font-medium text-foreground">£{(formData.preferences.minimumSalary || 0).toLocaleString()}</span>
                   </span>
                 </div>
               </div>

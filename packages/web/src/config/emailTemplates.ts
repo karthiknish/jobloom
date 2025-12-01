@@ -62,10 +62,10 @@ export const defaultEmailTemplates: EmailTemplate[] = [
         <style>
           body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; color: #333; }
           .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { text-align: center; padding: 30px 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 10px 10px 0 0; }
+          .header { text-align: center; padding: 30px 0; background: linear-gradient(135deg, #059669 0%, #0d9488 100%); color: white; border-radius: 10px 10px 0 0; }
           .content { padding: 30px; background: #f9fafb; border-radius: 0 0 10px 10px; }
-          .button { display: inline-block; padding: 12px 24px; background: #667eea; color: white; text-decoration: none; border-radius: 6px; margin: 20px 0; }
-          .feature { margin: 20px 0; padding: 15px; background: white; border-radius: 6px; border-left: 4px solid #667eea; }
+          .button { display: inline-block; padding: 12px 24px; background: #059669; color: white; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+          .feature { margin: 20px 0; padding: 15px; background: white; border-radius: 6px; border-left: 4px solid #059669; }
         </style>
       </head>
       <body>
@@ -136,13 +136,13 @@ export const defaultEmailTemplates: EmailTemplate[] = [
         <style>
           body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; color: #333; }
           .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { text-align: center; padding: 40px 0; background: linear-gradient(135deg, #FF6B6B 0%, #4ECDC4 100%); color: white; border-radius: 10px 10px 0 0; }
+          .header { text-align: center; padding: 40px 0; background: linear-gradient(135deg, #059669 0%, #0d9488 100%); color: white; border-radius: 10px 10px 0 0; }
           .content { padding: 30px; background: #f9fafb; border-radius: 0 0 10px 10px; }
-          .offer-box { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px; text-align: center; margin: 20px 0; }
+          .offer-box { background: linear-gradient(135deg, #059669 0%, #0d9488 100%); color: white; padding: 30px; border-radius: 10px; text-align: center; margin: 20px 0; }
           .feature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 30px 0; }
-          .feature { background: white; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea; }
-          .button { display: inline-block; padding: 15px 30px; background: #FF6B6B; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; }
-          .timer { background: #fff3cd; color: #856404; padding: 15px; border-radius: 8px; text-align: center; margin: 20px 0; }
+          .feature { background: white; padding: 20px; border-radius: 8px; border-left: 4px solid #059669; }
+          .button { display: inline-block; padding: 15px 30px; background: #f59e0b; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; }
+          .timer { background: #fef3c7; color: #856404; padding: 15px; border-radius: 8px; text-align: center; margin: 20px 0; }
         </style>
       </head>
       <body>
@@ -244,16 +244,16 @@ export const defaultEmailTemplates: EmailTemplate[] = [
         <style>
           body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; color: #333; }
           .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { text-align: center; padding: 30px 0; background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); color: white; border-radius: 10px 10px 0 0; }
+          .header { text-align: center; padding: 30px 0; background: linear-gradient(135deg, #059669 0%, #0d9488 100%); color: white; border-radius: 10px 10px 0 0; }
           .content { padding: 30px; background: #f9fafb; border-radius: 0 0 10px 10px; }
           .uk-flag { font-size: 48px; margin-bottom: 20px; }
-          .guide-section { background: white; padding: 25px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #1e40af; }
+          .guide-section { background: white; padding: 25px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #059669; }
           .visa-list { list-style: none; padding: 0; }
-          .visa-list li { background: #eff6ff; padding: 15px; margin: 10px 0; border-radius: 6px; border-left: 3px solid #3b82f6; }
+          .visa-list li { background: #ecfdf5; padding: 15px; margin: 10px 0; border-radius: 6px; border-left: 3px solid #10b981; }
           .stats { display: flex; justify-content: space-around; background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
           .stat { text-align: center; }
-          .stat-number { font-size: 24px; font-weight: bold; color: #1e40af; }
-          .button { display: inline-block; padding: 12px 24px; background: #1e40af; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; }
+          .stat-number { font-size: 24px; font-weight: bold; color: #059669; }
+          .button { display: inline-block; padding: 12px 24px; background: #059669; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; }
           .tip { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 15px 0; border-radius: 6px; }
         </style>
       </head>
@@ -507,12 +507,12 @@ export const defaultEmailTemplates: EmailTemplate[] = [
         <style>
           body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; color: #333; }
           .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { text-align: center; padding: 30px 0; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; border-radius: 10px 10px 0 0; }
+          .header { text-align: center; padding: 30px 0; background: linear-gradient(135deg, #059669 0%, #0d9488 100%); color: white; border-radius: 10px 10px 0 0; }
           .content { padding: 30px; background: #f9fafb; border-radius: 0 0 10px 10px; }
-          .article { margin: 20px 0; padding: 20px; background: white; border-radius: 6px; border-left: 4px solid #f093fb; }
+          .article { margin: 20px 0; padding: 20px; background: white; border-radius: 6px; border-left: 4px solid #059669; }
           .stats { display: flex; justify-content: space-around; margin: 20px 0; }
           .stat { text-align: center; padding: 15px; background: white; border-radius: 6px; flex: 1; margin: 0 5px; }
-          .button { display: inline-block; padding: 12px 24px; background: #f093fb; color: white; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+          .button { display: inline-block; padding: 12px 24px; background: #059669; color: white; text-decoration: none; border-radius: 6px; margin: 20px 0; }
         </style>
       </head>
       <body>
@@ -615,15 +615,15 @@ export const defaultEmailTemplates: EmailTemplate[] = [
         <style>
           body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; color: #333; }
           .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { text-align: center; padding: 30px 0; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border-radius: 10px 10px 0 0; }
+          .header { text-align: center; padding: 30px 0; background: linear-gradient(135deg, #059669 0%, #0d9488 100%); color: white; border-radius: 10px 10px 0 0; }
           .content { padding: 30px; background: #f9fafb; border-radius: 0 0 10px 10px; }
           .job-card { margin: 20px 0; padding: 20px; background: white; border-radius: 8px; border: 1px solid #e5e7eb; }
           .job-title { font-size: 18px; font-weight: bold; color: #1f2937; margin-bottom: 8px; }
           .company { color: #6b7280; margin-bottom: 8px; }
           .location { color: #6b7280; font-size: 14px; margin-bottom: 12px; }
           .skills { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
-          .skill { background: #e0f2fe; color: #0369a1; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
-          .button { display: inline-block; padding: 10px 20px; background: #4facfe; color: white; text-decoration: none; border-radius: 6px; }
+          .skill { background: #ecfdf5; color: #059669; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+          .button { display: inline-block; padding: 10px 20px; background: #059669; color: white; text-decoration: none; border-radius: 6px; }
         </style>
       </head>
       <body>
@@ -712,12 +712,12 @@ export const defaultEmailTemplates: EmailTemplate[] = [
         <style>
           body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; color: #333; }
           .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { text-align: center; padding: 30px 0; background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white; border-radius: 10px 10px 0 0; }
+          .header { text-align: center; padding: 30px 0; background: linear-gradient(135deg, #059669 0%, #0d9488 100%); color: white; border-radius: 10px 10px 0 0; }
           .content { padding: 30px; background: #f9fafb; border-radius: 0 0 10px 10px; }
           .feature { margin: 25px 0; padding: 25px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
           .feature-title { font-size: 20px; font-weight: bold; color: #1f2937; margin-bottom: 10px; }
           .feature-icon { font-size: 24px; margin-bottom: 10px; }
-          .button { display: inline-block; padding: 12px 24px; background: #fa709a; color: white; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+          .button { display: inline-block; padding: 12px 24px; background: #059669; color: white; text-decoration: none; border-radius: 6px; margin: 20px 0; }
         </style>
       </head>
       <body>
@@ -795,18 +795,18 @@ export const defaultEmailTemplates: EmailTemplate[] = [
         <style>
           body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; color: #333; }
           .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { text-align: center; padding: 30px 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 10px 10px 0 0; }
+          .header { text-align: center; padding: 30px 0; background: linear-gradient(135deg, #059669 0%, #0d9488 100%); color: white; border-radius: 10px 10px 0 0; }
           .content { padding: 30px; background: #f9fafb; border-radius: 0 0 10px 10px; }
-          .offer { background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%); padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; }
+          .offer { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; }
           .stats { display: flex; justify-content: space-around; margin: 20px 0; }
           .stat { text-align: center; padding: 15px; background: white; border-radius: 6px; flex: 1; margin: 0 5px; }
-          .button { display: inline-block; padding: 12px 24px; background: #667eea; color: white; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+          .button { display: inline-block; padding: 12px 24px; background: #059669; color: white; text-decoration: none; border-radius: 6px; margin: 20px 0; }
         </style>
       </head>
       <body>
         <div class="container">
           <div class="header">
-            <h1>We Miss You! 💜</h1>
+            <h1>We Miss You! 💚</h1>
             <p>It's been {{daysSinceLastLogin}} days since your last visit</p>
           </div>
           <div class="content">

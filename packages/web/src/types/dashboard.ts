@@ -71,7 +71,6 @@ export type DashboardView =
   | "dashboard"
   | "jobs"
   | "applications"
-  | "analytics"
-  | "cv-evaluator";
+  | "analytics";
 
 export type BoardMode = "list" | "kanban";

@@ -182,7 +182,8 @@ async function getTokenFromHireallTab(forceRefresh: boolean): Promise<CachedAuth
         "https://hireall.app/*",
         "https://*.hireall.app/*",
         "https://*.vercel.app/*",
-        "https://*.netlify.app/*"
+        "https://*.netlify.app/*",
+        "http://localhost:3000/*"
       ]
     });
 
@@ -192,15 +193,22 @@ async function getTokenFromHireallTab(forceRefresh: boolean): Promise<CachedAuth
       if (!tab?.id) continue;
 
       // Try multiple methods to get the token
-      const response = await new Promise<{ token?: string; userId?: string; userEmail?: string } | null>((resolve) => {
-        // Method 1: Send message to get auth token
-        chrome.tabs.sendMessage(tab.id!, { action: "getAuthToken", forceRefresh }, (resp) => {
+      const response = await new Promise<{ token?: string; userId?: string; userEmail?: string; success?: boolean } | null>((resolve) => {
+        const timeoutId = setTimeout(() => {
+          console.debug('Hireall: Token request timed out for tab', tab.id);
+          resolve(null);
+        }, 5000); // 5 second timeout
+
+        // Method 1: Send message to get auth token via content script
+        chrome.tabs.sendMessage(tab.id!, { action: "getAuthToken", forceRefresh, target: "webapp-content" }, (resp) => {
           if (chrome.runtime?.lastError) {
+            console.debug('Hireall: Content script message failed:', chrome.runtime.lastError.message);
             // Try method 2
             tryGetTokenFromWindow();
             return;
           }
           if (resp?.token) {
+            clearTimeout(timeoutId);
             resolve(resp);
             return;
           }
@@ -210,39 +218,65 @@ async function getTokenFromHireallTab(forceRefresh: boolean): Promise<CachedAuth
 
         // Method 2: Inject script to access global functions
         function tryGetTokenFromWindow() {
+          if (!chrome.scripting?.executeScript) {
+            clearTimeout(timeoutId);
+            resolve(null);
+            return;
+          }
+
           chrome.scripting.executeScript({
             target: { tabId: tab.id! },
             func: () => {
-              // Try to get token from global function
+              // Try to get token from global function (async)
               if (typeof (window as any).getHireallAuthToken === 'function') {
-                return (window as any).getHireallAuthToken();
+                try {
+                  const result = (window as any).getHireallAuthToken();
+                  if (result && typeof result.then === 'function') {
+                    // Return a marker that this needs async handling
+                    return { needsAsync: true };
+                  }
+                  return result;
+                } catch (e) {
+                  console.debug('getHireallAuthToken failed:', e);
+                }
               }
               
               // Try to get token from localStorage
-              const localToken = localStorage.getItem('hireall_auth_token');
-              const userData = localStorage.getItem('hireall_user_data');
-              
-              if (localToken) {
-                try {
+              try {
+                const localToken = localStorage.getItem('hireall_auth_token');
+                const userData = localStorage.getItem('hireall_user_data');
+                
+                if (localToken && localToken.length > 100) {
                   const parsed = userData ? JSON.parse(userData) : {};
                   return {
                     token: localToken,
                     userId: parsed.userId,
-                    userEmail: parsed.userEmail
+                    userEmail: parsed.userEmail,
+                    success: true
                   };
-                } catch (e) {
-                  return { token: localToken };
                 }
+              } catch (e) {
+                console.debug('localStorage token retrieval failed:', e);
               }
               
               return null;
             }
           }, (result) => {
+            clearTimeout(timeoutId);
             if (chrome.runtime?.lastError || !result || !result[0]?.result) {
               resolve(null);
               return;
             }
-            resolve(result[0].result);
+            
+            const scriptResult = result[0].result;
+            // Handle async marker - need to retry via message
+            if (scriptResult?.needsAsync) {
+              // Fallback for async case - just use what we have
+              resolve(null);
+              return;
+            }
+            
+            resolve(scriptResult);
           });
         }
       });

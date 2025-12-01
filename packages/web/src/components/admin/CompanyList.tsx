@@ -2,6 +2,7 @@
 import type { SponsoredCompany } from "../../types/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Building } from "lucide-react";
 
 interface CompanyListProps {
   companies: SponsoredCompany[];
@@ -71,7 +72,7 @@ export function CompanyList({ companies }: CompanyListProps) {
           </div>
         ) : (
           <div className="text-center py-12">
-            <span className="text-4xl">🏢</span>
+            <Building className="w-12 h-12 mx-auto text-muted-foreground" />
             <h3 className="mt-2 text-sm font-medium text-foreground">No sponsored companies yet</h3>
             <p className="mt-1 text-sm text-muted-foreground">
               Start by adding companies to the sponsored database.

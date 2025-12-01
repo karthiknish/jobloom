@@ -284,8 +284,10 @@ export async function generateEditorContent(request: EditorContentRequest): Prom
     : 'Prioritize clarity and actionable insights for job seekers.';
 
   const formatGuide = format === 'bullet'
-    ? 'Present the response as 3-5 concise bullet points using the • character.'
-    : 'Use short paragraphs with clear transitions and avoid markdown code fences.';
+    ? 'Present the response as a bullet point list. Use <ul> and <li> tags for the list.'
+    : format === 'html'
+    ? 'Output content as semantic HTML using <p>, <h2>, <h3>, <ul>, <li>, <strong>, <em> tags as appropriate. Do NOT use markdown formatting or code fences.'
+    : 'Use short paragraphs with clear transitions. Output as plain text without any markdown or code fences.';
 
   const systemPrompt = `You are Hireall's editorial assistant helping create career content that is practical, original, and on-brand.
 
@@ -304,7 +306,7 @@ Guidelines:
 6. Do not include introductions about the article-writing process.
 7. Eliminate filler phrases and keep sentences concise.
 
-Return the final content only.`;
+Return the final content only. No explanations or metadata.`;
 
   try {
     const model = getModel();
@@ -323,24 +325,42 @@ function sanitizeEditorContent(text: string, format: string): string {
   }
 
   const normalized = text.replace(/\r\n/g, '\n').trim();
+  // Remove code fences
   const withoutFences = normalized
-    .replace(/```(?:[a-zA-Z0-9_-]+)?/g, '')
+    .replace(/```(?:html|[a-zA-Z0-9_-]+)?\n?/gi, '')
     .replace(/```/g, '');
-  const collapsed = withoutFences.replace(/\n{3,}/g, '\n\n');
+  const collapsed = withoutFences.replace(/\n{3,}/g, '\n\n').trim();
+
+  if (format === 'html') {
+    // If it looks like HTML already, return it cleaned up
+    if (collapsed.includes('<p>') || collapsed.includes('<h') || collapsed.includes('<ul>')) {
+      return collapsed;
+    }
+    // Convert plain text to HTML paragraphs
+    return collapsed
+      .split('\n\n')
+      .map((para) => para.trim())
+      .filter(Boolean)
+      .map((para) => `<p>${para}</p>`)
+      .join('\n');
+  }
 
   if (format === 'bullet') {
-    return collapsed
+    const lines = collapsed
       .split('\n')
       .map((line) => line.trim())
       .filter(Boolean)
       .map((line) => {
-        if (line.startsWith('• ')) return line;
-        if (line.startsWith('- ')) return `• ${line.slice(2)}`;
-        if (line.startsWith('•')) return `• ${line.slice(1).trimStart()}`;
-        if (line.startsWith('-')) return `• ${line.slice(1).trimStart()}`;
+        // Remove existing bullet characters
+        if (line.startsWith('• ')) return line.slice(2);
+        if (line.startsWith('- ')) return line.slice(2);
+        if (line.startsWith('* ')) return line.slice(2);
+        if (line.match(/^\d+\.\s/)) return line.replace(/^\d+\.\s/, '');
         return line;
-      })
-      .join('\n');
+      });
+    
+    // Return as HTML unordered list
+    return `<ul>\n${lines.map((line) => `  <li>${line}</li>`).join('\n')}\n</ul>`;
   }
 
   return collapsed;

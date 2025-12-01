@@ -48,7 +48,7 @@ import {
 } from "@/components/ui/tooltip";
 import { dashboardApi, Job as _Job, Application } from "@/utils/api/dashboard";
 import { showSuccess, showError } from "@/components/ui/Toast";
-import { useSubscription } from "@/hooks/useSubscription";
+import { useSubscription } from "@/providers/subscription-provider";
 import { Crown, Calendar, MapPin, DollarSign, Building, Target, Award, Clock, Mail, ExternalLink, Bookmark, TrendingUp, AlertCircle, CheckCircle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";

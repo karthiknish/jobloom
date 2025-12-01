@@ -5,7 +5,6 @@
 
 import React, { Component, ReactNode } from 'react';
 import { Button } from "@/components/ui/button";
-import { themeColors } from "@/styles/theme-colors";
 
 interface Props {
   children: ReactNode;
@@ -82,10 +81,10 @@ export class ErrorBoundary extends Component<Props, State> {
       return (
         <div className={`flex flex-col items-center justify-center min-h-[400px] p-8 text-center ${this.props.className}`}>
           <div 
-            className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${themeColors.error.bg}`}
+            className="w-16 h-16 rounded-full flex items-center justify-center mb-4 bg-red-50"
           >
             <svg
-              className={`w-8 h-8 ${themeColors.error.text}`}
+              className="w-8 h-8 text-red-600"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -103,7 +102,7 @@ export class ErrorBoundary extends Component<Props, State> {
             Something went wrong
           </h2>
           
-          <p className={`mb-6 max-w-md ${themeColors.muted.text}`}>
+          <p className="mb-6 max-w-md text-gray-500">
             An error occurred. Please try again.
           </p>
 
@@ -128,11 +127,11 @@ export class ErrorBoundary extends Component<Props, State> {
           {process.env.NODE_ENV === 'development' && this.state.errorInfo && (
             <details className="mt-8 text-left">
               <summary 
-                className={`cursor-pointer text-sm hover:text-gray-700 ${themeColors.muted.text}`}
+                className="cursor-pointer text-sm hover:text-gray-700 text-gray-500"
               >
                 Error Details (Development)
               </summary>
-              <pre className={`mt-2 p-4 rounded text-xs overflow-auto max-h-64 ${themeColors.muted.bg}`}>
+              <pre className="mt-2 p-4 rounded text-xs overflow-auto max-h-64 bg-gray-100">
                 <code>
                   {this.state.error?.toString()}
                   {'\n\n'}

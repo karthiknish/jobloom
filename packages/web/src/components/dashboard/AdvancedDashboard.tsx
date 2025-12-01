@@ -28,14 +28,14 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cvEvaluatorApi } from "@/utils/api/cvEvaluator";
-import { useSubscription } from "@/hooks/useSubscription";
+import { useSubscription } from "@/providers/subscription-provider";
 import { PremiumUpgradeBanner } from "@/components/dashboard/PremiumUpgradeBanner";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { DashboardAnalytics } from "@/components/dashboard/DashboardAnalytics";
 import { DashboardEmptyState } from "@/components/dashboard/DashboardEmptyState";
 import { DashboardJobsView } from "@/components/dashboard/DashboardJobsView";
 import { Application, DashboardView, BoardMode } from "@/types/dashboard";
-import { ArrowRight, FileText, Target, TrendingUp, Calendar, BarChart3, Brain, Sparkles, Zap } from "lucide-react";
+import { FileText, Target, TrendingUp, Calendar, Briefcase, Sparkles } from "lucide-react";
 
 
 
@@ -187,8 +187,9 @@ export function AdvancedDashboard() {
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background pt-16">
       {/* Premium background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 right-20 w-96 h-96 bg-primary/2 rounded-full filter blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-20 left-20 w-80 h-80 bg-secondary/2 rounded-full filter blur-2xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute top-20 right-20 w-96 h-96 bg-emerald-500/3 rounded-full filter blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-20 left-20 w-80 h-80 bg-teal-500/3 rounded-full filter blur-2xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-br from-emerald-500/2 to-teal-500/2 rounded-full filter blur-3xl"></div>
       </div>
 
       <div className="relative z-10">
@@ -199,7 +200,7 @@ export function AdvancedDashboard() {
           onAddApplication={() => setShowApplicationForm(true)}
         />
 
-        <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
         {/* Premium Upgrade Banner for Free Users */}
         {plan === "free" && <PremiumUpgradeBanner className="mb-6" />}
 
@@ -208,27 +209,35 @@ export function AdvancedDashboard() {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-8 p-6 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl text-white shadow-lg relative overflow-hidden"
+            className="mb-6 p-5 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 rounded-2xl text-white shadow-xl relative overflow-hidden"
           >
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl"></div>
-            <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
-              <div>
-                <h2 className="text-2xl font-bold mb-2">Kickstart your job search! 🚀</h2>
-                <p className="text-indigo-100 max-w-xl">
-                  You've added your first few applications. To get the most out of the dashboard, try importing more jobs or using our AI CV Evaluator to optimize your resume.
-                </p>
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full -ml-12 -mb-12 blur-2xl"></div>
+            <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-5">
+              <div className="flex items-start gap-4">
+                <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                  <Sparkles className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold mb-1">Kickstart your job search</h2>
+                  <p className="text-emerald-100 max-w-xl text-sm">
+                    You&apos;ve added your first applications. Import more jobs using the browser extension or optimize your resume with our AI CV Evaluator.
+                  </p>
+                </div>
               </div>
-              <div className="flex gap-3">
+              <div className="flex gap-2 flex-shrink-0">
                 <Button 
                   onClick={() => setShowImportModal(true)}
                   variant="secondary" 
-                  className="bg-white text-indigo-600 hover:bg-indigo-50 border-0"
+                  size="sm"
+                  className="bg-white text-emerald-600 hover:bg-emerald-50 border-0 shadow-lg"
                 >
                   Import Jobs
                 </Button>
                 <Button 
-                  onClick={() => setView("cv-evaluator")}
+                  onClick={() => window.location.href = '/career-tools'}
                   variant="outline" 
+                  size="sm"
                   className="bg-transparent text-white border-white/30 hover:bg-white/10 hover:text-white"
                 >
                   Optimize CV
@@ -244,21 +253,21 @@ export function AdvancedDashboard() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1, duration: 0.5 }}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
+            className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
           >
             {/* Total Applications */}
             <motion.div
               whileHover={{ scale: 1.02, y: -2 }}
-              className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border border-blue-100 dark:border-blue-900 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300"
+              className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40 border border-blue-100 dark:border-blue-900/50 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300"
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-blue-600 dark:text-blue-400 text-sm font-medium mb-1">Total Applications</p>
-                  <p className="text-3xl font-bold text-blue-900 dark:text-blue-100">{applications?.length || 0}</p>
-                  <p className="text-xs text-blue-600/80 dark:text-blue-400/80 mt-1">Active job search</p>
+                  <p className="text-blue-600 dark:text-blue-400 text-xs font-medium mb-0.5">Total Jobs</p>
+                  <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">{applications?.length || 0}</p>
+                  <p className="text-[10px] text-blue-600/70 dark:text-blue-400/70 mt-0.5">Tracking</p>
                 </div>
-                <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/50 rounded-xl flex items-center justify-center">
-                  <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/50 rounded-lg flex items-center justify-center">
+                  <Briefcase className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 </div>
               </div>
             </motion.div>
@@ -266,20 +275,20 @@ export function AdvancedDashboard() {
             {/* Sponsored Jobs */}
             <motion.div
               whileHover={{ scale: 1.02, y: -2 }}
-              className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border border-purple-100 dark:border-purple-900 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300"
+              className="bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/40 dark:to-green-950/40 border border-emerald-100 dark:border-emerald-900/50 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300"
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-purple-600 dark:text-purple-400 text-sm font-medium mb-1">Sponsored Jobs</p>
-                  <p className="text-3xl font-bold text-purple-900 dark:text-purple-100">
+                  <p className="text-emerald-600 dark:text-emerald-400 text-xs font-medium mb-0.5">Sponsored</p>
+                  <p className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
                     {applications?.filter(app => app.job?.isSponsored).length || 0}
                   </p>
-                  <p className="text-xs text-purple-600/80 dark:text-purple-400/80 mt-1">
+                  <p className="text-[10px] text-emerald-600/70 dark:text-emerald-400/70 mt-0.5">
                     {((applications?.filter(app => app.job?.isSponsored).length || 0) / (applications?.length || 1) * 100).toFixed(0)}% of total
                   </p>
                 </div>
-                <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/50 rounded-xl flex items-center justify-center">
-                  <Target className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/50 rounded-lg flex items-center justify-center">
+                  <Target className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                 </div>
               </div>
             </motion.div>
@@ -287,22 +296,22 @@ export function AdvancedDashboard() {
             {/* Interview Rate */}
             <motion.div
               whileHover={{ scale: 1.02, y: -2 }}
-              className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 border border-emerald-100 dark:border-emerald-900 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300"
+              className="bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-teal-950/40 dark:to-cyan-950/40 border border-teal-100 dark:border-teal-900/50 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300"
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-emerald-600 dark:text-emerald-400 text-sm font-medium mb-1">Interview Rate</p>
-                  <p className="text-3xl font-bold text-emerald-900 dark:text-emerald-100">
+                  <p className="text-teal-600 dark:text-teal-400 text-xs font-medium mb-0.5">Interview Rate</p>
+                  <p className="text-2xl font-bold text-teal-900 dark:text-teal-100">
                     {(() => {
                       const applied = applications?.filter(app => app.status === 'applied').length || 0;
                       const interviewing = applications?.filter(app => app.status === 'interviewing').length || 0;
                       return applied > 0 ? Math.round((interviewing / applied) * 100) : 0;
                     })()}%
                   </p>
-                  <p className="text-xs text-emerald-600/80 dark:text-emerald-400/80 mt-1">Success rate</p>
+                  <p className="text-[10px] text-teal-600/70 dark:text-teal-400/70 mt-0.5">Success rate</p>
                 </div>
-                <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/50 rounded-xl flex items-center justify-center">
-                  <TrendingUp className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                <div className="w-10 h-10 bg-teal-100 dark:bg-teal-900/50 rounded-lg flex items-center justify-center">
+                  <TrendingUp className="w-5 h-5 text-teal-600 dark:text-teal-400" />
                 </div>
               </div>
             </motion.div>
@@ -310,12 +319,12 @@ export function AdvancedDashboard() {
             {/* This Week Activity */}
             <motion.div
               whileHover={{ scale: 1.02, y: -2 }}
-              className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border border-amber-100 dark:border-amber-900 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300"
+              className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/40 border border-amber-100 dark:border-amber-900/50 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300"
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-amber-600 dark:text-amber-400 text-sm font-medium mb-1">This Week</p>
-                  <p className="text-3xl font-bold text-amber-900 dark:text-amber-100">
+                  <p className="text-amber-600 dark:text-amber-400 text-xs font-medium mb-0.5">This Week</p>
+                  <p className="text-2xl font-bold text-amber-900 dark:text-amber-100">
                     {(() => {
                       const weekAgo = new Date();
                       weekAgo.setDate(weekAgo.getDate() - 7);
@@ -324,10 +333,10 @@ export function AdvancedDashboard() {
                       ).length || 0;
                     })()}
                   </p>
-                  <p className="text-xs text-amber-600/80 dark:text-amber-400/80 mt-1">New applications</p>
+                  <p className="text-[10px] text-amber-600/70 dark:text-amber-400/70 mt-0.5">New jobs added</p>
                 </div>
-                <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/50 rounded-xl flex items-center justify-center">
-                  <Calendar className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/50 rounded-lg flex items-center justify-center">
+                  <Calendar className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                 </div>
               </div>
             </motion.div>
@@ -347,25 +356,23 @@ export function AdvancedDashboard() {
                 value === "dashboard" ||
                   value === "jobs" ||
                   value === "applications" ||
-                  value === "analytics" ||
-                  value === "cv-evaluator"
+                  value === "analytics"
                   ? value
                   : "dashboard"
               )
             }
-            className="mb-8"
+            className="mb-6"
           >
-            <TabsList className="bg-background/50 backdrop-blur-sm p-1.5 rounded-2xl border border-border/50 shadow-sm inline-flex h-auto gap-1">
+            <TabsList className="bg-background/80 backdrop-blur-sm p-1 rounded-xl border border-border/50 shadow-sm inline-flex h-auto gap-1">
               <motion.div
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
                 <TabsTrigger
                   value="dashboard"
-                  className="px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-300 rounded-xl font-medium"
+                  className="px-5 py-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-green-500 data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300 rounded-lg font-medium text-sm"
                 >
-                  <BarChart3 className="w-4 h-4 mr-2" />
-                  Dashboard
+                  Overview
                 </TabsTrigger>
               </motion.div>
               <motion.div
@@ -374,22 +381,9 @@ export function AdvancedDashboard() {
               >
                 <TabsTrigger
                   value="jobs"
-                  className="px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-300 rounded-xl font-medium"
+                  className="px-5 py-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-green-500 data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300 rounded-lg font-medium text-sm"
                 >
-                  <Target className="w-4 h-4 mr-2" />
-                  Jobs <span className="ml-2 bg-primary-foreground/20 px-1.5 py-0.5 rounded-full text-xs">{applications?.length || 0}</span>
-                </TabsTrigger>
-              </motion.div>
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <TabsTrigger
-                  value="cv-evaluator"
-                  className="px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-300 rounded-xl font-medium"
-                >
-                  <Brain className="w-4 h-4 mr-2" />
-                  CV Evaluator
+                  Jobs <Badge variant="secondary" className="ml-1.5 text-[10px] px-1.5 py-0 bg-muted/80">{applications?.length || 0}</Badge>
                 </TabsTrigger>
               </motion.div>
               <motion.div
@@ -398,9 +392,8 @@ export function AdvancedDashboard() {
               >
                 <TabsTrigger
                   value="analytics"
-                  className="px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-300 rounded-xl font-medium"
+                  className="px-5 py-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-green-500 data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300 rounded-lg font-medium text-sm"
                 >
-                  <TrendingUp className="w-4 h-4 mr-2" />
                   Analytics
                 </TabsTrigger>
               </motion.div>
@@ -426,117 +419,6 @@ export function AdvancedDashboard() {
               userRecord={userRecord}
             />
           ))}
-
-        {view === "cv-evaluator" && (
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="space-y-6"
-          >
-            <Card className="bg-primary/5 border-primary/20">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2 text-primary">
-                      <Brain className="w-6 h-6 text-primary" />
-                      AI-Powered CV Evaluator
-                    </CardTitle>
-                    <CardDescription className="text-muted-foreground">
-                      Optimize your CV with our advanced ATS scoring system and get personalized feedback
-                    </CardDescription>
-                  </div>
-                  <Badge variant="secondary" className="bg-secondary text-secondary-foreground">
-                    <Sparkles className="w-3 h-3 mr-1" />
-                    Enhanced
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                  <div className="text-center p-6 bg-card/80 rounded-xl border border-border">
-                    <Zap className="w-8 h-8 text-primary mx-auto mb-3" />
-                    <h3 className="font-semibold text-foreground mb-2">Real-time Analysis</h3>
-                    <p className="text-sm text-muted-foreground">Get instant feedback as you write your CV</p>
-                  </div>
-                  <div className="text-center p-6 bg-card/80 rounded-xl border border-border">
-                    <Target className="w-8 h-8 text-secondary mx-auto mb-3" />
-                    <h3 className="font-semibold text-foreground mb-2">ATS Optimized</h3>
-                    <p className="text-sm text-muted-foreground">Pass through Applicant Tracking Systems with confidence</p>
-                  </div>
-                  <div className="text-center p-6 bg-card/80 rounded-xl border border-border">
-                    <TrendingUp className="w-8 h-8 text-accent-foreground mx-auto mb-3" />
-                    <h3 className="font-semibold text-foreground mb-2">Industry Insights</h3>
-                    <p className="text-sm text-muted-foreground">Get tailored recommendations for your target role</p>
-                  </div>
-                </div>
-                <div className="text-center">
-                  <Button
-                    size="lg"
-                    onClick={() => window.location.href = '/cv-evaluator'}
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3"
-                  >
-                    <Brain className="w-5 h-5 mr-2" />
-                    Launch CV Evaluator
-                    <ArrowRight className="w-5 h-5 ml-2" />
-                  </Button>
-                  <p className="text-sm text-muted-foreground mt-3">
-                    {cvAnalyses && cvAnalyses.length > 0
-                      ? `You have ${cvAnalyses.length} previous ${cvAnalyses.length === 1 ? 'analysis' : 'analyses'}`
-                      : "Start your first CV analysis today"
-                    }
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {cvAnalyses && cvAnalyses.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <BarChart3 className="w-5 h-5 text-primary" />
-                    Recent CV Analyses
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {cvAnalyses.slice(0, 6).map((analysis: any) => (
-                      <div key={analysis._id} className="p-4 border border-border rounded-lg bg-muted/20">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium truncate">{analysis.fileName}</span>
-                          <span className={`text-xs px-2 py-1 rounded-full ${
-                            (analysis.overallScore || 0) >= 80
-                              ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
-                              : (analysis.overallScore || 0) >= 60
-                              ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
-                              : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
-                          }`}>
-                            {analysis.overallScore || 0}%
-                          </span>
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(analysis.createdAt).toLocaleDateString()}
-                        </p>
-                        {analysis.atsCompatibility && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            ATS Score: {analysis.atsCompatibility.score}/100
-                          </p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                  {cvAnalyses.length > 6 && (
-                    <div className="text-center mt-4">
-                      <Button variant="outline" onClick={() => window.location.href = '/cv-evaluator'}>
-                        View All Analyses ({cvAnalyses.length})
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-          </motion.div>
-        )}
 
         {view === "analytics" && (
           <DashboardAnalytics

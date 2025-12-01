@@ -353,18 +353,37 @@ export class AuthManager {
     
     try {
       const token = await this.currentUser.getIdToken(true);
-      cacheAuthToken({ token });
+      await cacheAuthToken({ 
+        token,
+        userId: this.currentUser.uid,
+        userEmail: this.currentUser.email,
+        source: 'popup'
+      });
+      
+      // Store in sync storage for other extension components
+      if (typeof chrome !== 'undefined' && chrome.storage?.sync) {
+        await chrome.storage.sync.set({
+          firebaseUid: this.currentUser.uid,
+          userId: this.currentUser.uid,
+          userEmail: this.currentUser.email
+        });
+      }
       
       // Notify background script about auth state
-      chrome.runtime.sendMessage({
-        type: 'AUTH_STATE_CHANGED',
-        payload: {
-          isAuthenticated: true,
-          userId: this.currentUser.uid,
-          email: this.currentUser.email,
-          token: token
-        }
-      });
+      if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
+        chrome.runtime.sendMessage({
+          type: 'AUTH_STATE_CHANGED',
+          payload: {
+            isAuthenticated: true,
+            userId: this.currentUser.uid,
+            email: this.currentUser.email,
+            token: token,
+            source: 'popup'
+          }
+        }).catch((error) => {
+          console.debug('Failed to notify background of auth state:', error);
+        });
+      }
       
     } catch (error) {
       console.error('Auth sync error:', error);
@@ -374,37 +393,70 @@ export class AuthManager {
   
   public async attemptSyncFromWebApp(): Promise<boolean> {
     try {
+      console.debug('AuthManager: Attempting to sync auth from web app...');
+      
       // First try to get token from web app tabs
-      const token = await acquireIdToken(true, { skipMessageFallback: true });
-      if (!token) return false;
+      const token = await acquireIdToken(true, { skipMessageFallback: false });
+      if (!token) {
+        console.debug('AuthManager: No token acquired from web app');
+        return false;
+      }
+      
+      console.debug('AuthManager: Token acquired, checking Firebase auth state...');
       
       // Update current user state
       const auth = getAuthInstance();
       if (auth.currentUser) {
         this.currentUser = auth.currentUser;
+        
+        // Cache the token properly
+        await cacheAuthToken({
+          token,
+          userId: auth.currentUser.uid,
+          userEmail: auth.currentUser.email,
+          source: 'popup'
+        });
+        
+        // Store in sync storage
+        if (typeof chrome !== 'undefined' && chrome.storage?.sync) {
+          await chrome.storage.sync.set({
+            firebaseUid: auth.currentUser.uid,
+            userId: auth.currentUser.uid,
+            userEmail: auth.currentUser.email
+          });
+        }
+        
         this.updateAuthUI(true);
         
         // Notify background script about successful sync
-        chrome.runtime.sendMessage({
-          type: 'AUTH_STATE_CHANGED',
-          payload: {
-            isAuthenticated: true,
-            userId: this.currentUser.uid,
-            email: this.currentUser.email,
-            token: token,
-            source: 'webapp_sync'
-          }
-        });
+        if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
+          chrome.runtime.sendMessage({
+            type: 'AUTH_STATE_CHANGED',
+            payload: {
+              isAuthenticated: true,
+              userId: this.currentUser.uid,
+              email: this.currentUser.email,
+              token: token,
+              source: 'webapp_sync'
+            }
+          }).catch((err) => {
+            console.debug('Failed to notify background:', err);
+          });
+        }
         
-        popupUI.showSuccess('Authentication synchronized with web app');
+        popupUI.showSuccess('Synced with web app');
         popupUI.switchTab('jobs');
         return true;
       }
       
+      console.debug('AuthManager: Firebase auth has no current user after token acquisition');
       return false;
     } catch (error) {
       console.error('Sync from web app error:', error);
-      popupUI.showError('Failed to sync with web app');
+      // Don't show error if it's just a normal "not logged in" scenario
+      if ((error as any)?.code !== 'AUTH_REQUIRED') {
+        popupUI.showError('Failed to sync with web app');
+      }
       return false;
     }
   }

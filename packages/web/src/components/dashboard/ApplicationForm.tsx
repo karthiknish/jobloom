@@ -104,12 +104,12 @@ export function ApplicationForm({
     | "outline"
     | "green"
     | "orange"
-    | "purple"
+    | "teal"
     | "yellow"
   > = {
     interested: "default",
     applied: "yellow",
-    interviewing: "purple",
+    interviewing: "teal",
     offered: "green",
     rejected: "destructive",
     withdrawn: "secondary",

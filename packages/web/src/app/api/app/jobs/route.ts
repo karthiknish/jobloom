@@ -76,7 +76,17 @@ function validateJobData(jobData: any): void {
 }
 
 function handleError(error: unknown): NextResponse {
-  console.error('API Error:', error);
+  // Enhanced error logging
+  if (error instanceof Error) {
+    console.error('API Error:', {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+      ...(error as any).code && { code: (error as any).code }
+    });
+  } else {
+    console.error('API Error:', error);
+  }
 
   if (error instanceof ValidationError) {
     return NextResponse.json({ 

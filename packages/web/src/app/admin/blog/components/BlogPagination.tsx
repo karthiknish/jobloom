@@ -54,7 +54,7 @@ export function BlogPagination({
 
   return (
     <div className="flex items-center justify-between px-2 py-4">
-      <div className="text-sm text-muted-foreground">
+      <div className="text-sm text-gray-500">
         Showing {startItem} to {endItem} of {totalItems} posts
       </div>
       <div className="flex items-center space-x-2">
@@ -63,6 +63,7 @@ export function BlogPagination({
           size="sm"
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
+          className="border-gray-200 text-gray-600 hover:bg-gray-50"
         >
           Previous
         </Button>
@@ -71,12 +72,17 @@ export function BlogPagination({
           {getVisiblePages().map((page, index) => (
             <div key={index}>
               {page === "..." ? (
-                <span className="px-3 py-1 text-sm text-muted-foreground">...</span>
+                <span className="px-3 py-1 text-sm text-gray-500">...</span>
               ) : (
                 <Button
                   variant={currentPage === page ? "default" : "outline"}
                   size="sm"
                   onClick={() => onPageChange(page as number)}
+                  className={
+                    currentPage === page
+                      ? "bg-gray-900 text-white hover:bg-gray-800"
+                      : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                  }
                 >
                   {page}
                 </Button>
@@ -90,6 +96,7 @@ export function BlogPagination({
           size="sm"
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
+          className="border-gray-200 text-gray-600 hover:bg-gray-50"
         >
           Next
         </Button>

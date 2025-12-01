@@ -97,13 +97,13 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    // Update user preferences in Firestore
-    await db.collection('users').doc(userId).update({
+    // Update user preferences in Firestore (use set with merge to create if doesn't exist)
+    await db.collection('users').doc(userId).set({
       preferences: {
         ...sanitizedPreferences,
         updatedAt: new Date()
       }
-    });
+    }, { merge: true });
 
     return NextResponse.json({
       success: true,

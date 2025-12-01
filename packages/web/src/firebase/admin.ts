@@ -56,13 +56,11 @@ export function categorizeFirebaseError(error: any): FirebaseError {
  */
 function initAdminApp(): App {
   if (adminApp) {
-    console.log('Returning existing admin app');
     return adminApp;
   }
 
   const existing = getApps();
   if (existing.length) {
-    console.log('Using existing Firebase app from getApps()');
     adminApp = existing[0]!;
     return adminApp;
   }
@@ -345,7 +343,6 @@ export async function isUserAdmin(userId: string): Promise<boolean> {
 
     // Check admin status
     const isAdmin = userData.isAdmin === true;
-    console.log(`User ${userId} admin status: ${isAdmin}`);
     return isAdmin;
 
   } catch (error) {

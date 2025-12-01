@@ -254,9 +254,9 @@ export function EmailList({
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-green-100 text-green-800 border-green-200';
-      case 'inactive': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'unsubscribed': return 'bg-red-100 text-red-800 border-red-200';
+      case 'active': return 'bg-green-50 text-green-700 border-green-200';
+      case 'inactive': return 'bg-yellow-50 text-yellow-700 border-yellow-200';
+      case 'unsubscribed': return 'bg-red-50 text-red-700 border-red-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
@@ -294,59 +294,59 @@ export function EmailList({
     <div className="space-y-6">
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
+        <Card className="border-gray-200 bg-white">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Subscribers</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-gray-900">Total Subscribers</CardTitle>
+            <Users className="h-4 w-4 text-gray-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{emailList.length}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-2xl font-bold text-gray-900">{emailList.length}</div>
+            <p className="text-xs text-gray-500">
               +{Math.floor(Math.random() * 20)}% from last month
             </p>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="border-gray-200 bg-white">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Rate</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-gray-900">Active Rate</CardTitle>
+            <Activity className="h-4 w-4 text-gray-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-2xl font-bold text-gray-900">
               {emailList.length > 0 ? Math.round((statusCounts.active / emailList.length) * 100) : 0}%
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-gray-500">
               {statusCounts.active || 0} active subscribers
             </p>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="border-gray-200 bg-white">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg. Open Rate</CardTitle>
-            <Mail className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-gray-900">Avg. Open Rate</CardTitle>
+            <Mail className="h-4 w-4 text-gray-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-2xl font-bold text-gray-900">
               {emailList.length > 0 
                 ? Math.round(emailList.reduce((acc, s) => acc + calculateEngagementRate(s.metrics), 0) / emailList.length)
                 : 0}%
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-gray-500">
               +{Math.floor(Math.random() * 10)}% from last month
             </p>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="border-gray-200 bg-white">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Segments</CardTitle>
-            <Filter className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-gray-900">Segments</CardTitle>
+            <Filter className="h-4 w-4 text-gray-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{Object.keys(segmentCounts).length}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-2xl font-bold text-gray-900">{Object.keys(segmentCounts).length}</div>
+            <p className="text-xs text-gray-500">
               Targeted groups available
             </p>
           </CardContent>
@@ -423,17 +423,17 @@ export function EmailList({
       </div>
 
       {/* Subscribers List */}
-      <div className="border rounded-lg">
+      <div className="border border-gray-200 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b bg-gray-50">
-                <th className="text-left p-4 font-medium text-sm">Subscriber</th>
-                <th className="text-left p-4 font-medium text-sm">Status</th>
-                <th className="text-left p-4 font-medium text-sm">Segment</th>
-                <th className="text-left p-4 font-medium text-sm">Engagement</th>
-                <th className="text-left p-4 font-medium text-sm">Joined</th>
-                <th className="text-left p-4 font-medium text-sm">Actions</th>
+              <tr className="border-b border-gray-200 bg-gray-50">
+                <th className="text-left p-4 font-medium text-sm text-gray-900">Subscriber</th>
+                <th className="text-left p-4 font-medium text-sm text-gray-900">Status</th>
+                <th className="text-left p-4 font-medium text-sm text-gray-900">Segment</th>
+                <th className="text-left p-4 font-medium text-sm text-gray-900">Engagement</th>
+                <th className="text-left p-4 font-medium text-sm text-gray-900">Joined</th>
+                <th className="text-left p-4 font-medium text-sm text-gray-900">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -443,12 +443,12 @@ export function EmailList({
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: index * 0.05 }}
-                  className="border-b hover:bg-gray-50"
+                  className="border-b border-gray-200 hover:bg-gray-50 transition-colors"
                 >
                   <td className="p-4">
                     <div>
-                      <div className="font-medium">{subscriber.firstName} {subscriber.lastName}</div>
-                      <div className="text-sm text-gray-600">{subscriber.email}</div>
+                      <div className="font-medium text-gray-900">{subscriber.firstName} {subscriber.lastName}</div>
+                      <div className="text-sm text-gray-500">{subscriber.email}</div>
                       {subscriber.company && (
                         <div className="text-xs text-gray-500 flex items-center gap-1 mt-1">
                           <Building className="h-3 w-3" />
@@ -465,7 +465,7 @@ export function EmailList({
                   </td>
                   
                   <td className="p-4">
-                    <Badge className={getStatusColor(subscriber.status)}>
+                    <Badge variant="outline" className={getStatusColor(subscriber.status)}>
                       {getStatusIcon(subscriber.status)}
                       <span className="ml-1 capitalize">{subscriber.status}</span>
                     </Badge>
@@ -473,7 +473,7 @@ export function EmailList({
                   
                   <td className="p-4">
                     {subscriber.segment ? (
-                      <Badge variant="outline">{subscriber.segment}</Badge>
+                      <Badge variant="outline" className="border-gray-200 text-gray-700">{subscriber.segment}</Badge>
                     ) : (
                       <span className="text-gray-400 text-sm">None</span>
                     )}
@@ -481,11 +481,11 @@ export function EmailList({
                   
                   <td className="p-4">
                     <div className="space-y-1">
-                      <div className="flex items-center gap-2 text-sm">
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
                         <Mail className="h-3 w-3 text-blue-500" />
                         <span>{calculateEngagementRate(subscriber.metrics)}% open</span>
                       </div>
-                      <div className="flex items-center gap-2 text-sm">
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
                         <TrendingUp className="h-3 w-3 text-green-500" />
                         <span>{calculateClickRate(subscriber.metrics)}% click</span>
                       </div>
@@ -493,7 +493,7 @@ export function EmailList({
                   </td>
                   
                   <td className="p-4">
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-gray-500">
                       {new Date(subscriber.subscribedAt).toLocaleDateString()}
                     </div>
                   </td>
@@ -504,6 +504,7 @@ export function EmailList({
                         variant="outline"
                         size="sm"
                         onClick={() => setPreviewSubscriber(subscriber)}
+                        className="border-gray-200 hover:bg-white"
                       >
                         <Eye className="h-3 w-3" />
                       </Button>
@@ -511,6 +512,7 @@ export function EmailList({
                         variant="outline"
                         size="sm"
                         onClick={() => handleEditSubscriber(subscriber)}
+                        className="border-gray-200 hover:bg-white"
                       >
                         <Edit className="h-3 w-3" />
                       </Button>
@@ -518,7 +520,7 @@ export function EmailList({
                         variant="outline"
                         size="sm"
                         onClick={() => handleDeleteSubscriber(subscriber.id)}
-                        className="text-red-600 hover:text-red-700"
+                        className="text-red-600 hover:text-red-700 border-gray-200 hover:bg-red-50"
                       >
                         <Trash2 className="h-3 w-3" />
                       </Button>

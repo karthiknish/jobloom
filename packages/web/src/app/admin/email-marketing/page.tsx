@@ -115,19 +115,19 @@ export default function EmailMarketingPage() {
         },
         body: JSON.stringify({
           to: testEmail,
-          subject: "🧪 HireAll Email Marketing Test",
+          subject: "HireAll Email Marketing Test",
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2 style="color: #333;">🎉 Email Marketing Test Successful!</h2>
+              <h2 style="color: #333;">Email Marketing Test Successful!</h2>
               <p>This is a test email from the HireAll Email Marketing System.</p>
               <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
                 <h3 style="color: #666; margin-top: 0;">System Features:</h3>
                 <ul style="color: #666;">
-                  <li>✅ Resend Integration</li>
-                  <li>✅ Template Personalization</li>
-                  <li>✅ Bulk Email Sending</li>
-                  <li>✅ Campaign Analytics</li>
-                  <li>✅ User Segmentation</li>
+                  <li>Resend Integration</li>
+                  <li>Template Personalization</li>
+                  <li>Bulk Email Sending</li>
+                  <li>Campaign Analytics</li>
+                  <li>User Segmentation</li>
                 </ul>
               </div>
               <p style="color: #666; font-size: 14px;">
@@ -239,53 +239,53 @@ export default function EmailMarketingPage() {
           transition={{ delay: 0.1 }}
           className="grid grid-cols-1 md:grid-cols-4 gap-6"
         >
-          <Card className="card-depth-2 border-none shadow-sm hover:shadow-md transition-shadow">
+          <Card className="border-gray-200 shadow-sm hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Templates</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-500">Total Templates</CardTitle>
               <div className="p-2 rounded-full bg-primary/10">
                 <FileText className="h-4 w-4 text-primary" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{templates.length}</div>
+              <div className="text-2xl font-bold text-gray-900">{templates.length}</div>
             </CardContent>
           </Card>
 
-          <Card className="card-depth-2 border-none shadow-sm hover:shadow-md transition-shadow">
+          <Card className="border-gray-200 shadow-sm hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Active Campaigns</CardTitle>
-              <div className="p-2 rounded-full bg-green-100 dark:bg-green-900/20">
+              <CardTitle className="text-sm font-medium text-gray-500">Active Campaigns</CardTitle>
+              <div className="p-2 rounded-full bg-green-100">
                 <Send className="h-4 w-4 text-green-600" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{campaigns.filter(c => c.status !== 'draft').length}</div>
+              <div className="text-2xl font-bold text-gray-900">{campaigns.filter(c => c.status !== 'draft').length}</div>
             </CardContent>
           </Card>
 
-          <Card className="card-depth-2 border-none shadow-sm hover:shadow-md transition-shadow">
+          <Card className="border-gray-200 shadow-sm hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Sent</CardTitle>
-              <div className="p-2 rounded-full bg-blue-100 dark:bg-blue-900/20">
+              <CardTitle className="text-sm font-medium text-gray-500">Total Sent</CardTitle>
+              <div className="p-2 rounded-full bg-blue-100">
                 <Mail className="h-4 w-4 text-blue-600" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-2xl font-bold text-gray-900">
                 {campaigns.reduce((sum, c) => sum + c.metrics.sent, 0)}
               </div>
             </CardContent>
           </Card>
 
-          <Card className="card-depth-2 border-none shadow-sm hover:shadow-md transition-shadow">
+          <Card className="border-gray-200 shadow-sm hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Open Rate</CardTitle>
-              <div className="p-2 rounded-full bg-orange-100 dark:bg-orange-900/20">
+              <CardTitle className="text-sm font-medium text-gray-500">Open Rate</CardTitle>
+              <div className="p-2 rounded-full bg-orange-100">
                 <Mail className="h-4 w-4 text-orange-600" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-2xl font-bold text-gray-900">
                 {campaigns.reduce((sum, c) => sum + c.metrics.opened, 0) > 0 
                   ? Math.round((campaigns.reduce((sum, c) => sum + c.metrics.opened, 0) / 
                       campaigns.reduce((sum, c) => sum + c.metrics.sent, 0)) * 100)
@@ -297,16 +297,16 @@ export default function EmailMarketingPage() {
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-          <TabsList className="grid w-full grid-cols-3 h-12 bg-muted/50 p-1 rounded-xl">
-            <TabsTrigger value="templates" className="text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg">
+          <TabsList className="grid w-full grid-cols-3 h-12 bg-gray-100 p-1 rounded-xl border border-gray-200">
+            <TabsTrigger value="templates" className="text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-lg text-gray-600 data-[state=active]:text-gray-900">
               <FileText className="h-4 w-4 mr-2" />
               Templates
             </TabsTrigger>
-            <TabsTrigger value="campaigns" className="text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg">
+            <TabsTrigger value="campaigns" className="text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-lg text-gray-600 data-[state=active]:text-gray-900">
               <Send className="h-4 w-4 mr-2" />
               Campaigns
             </TabsTrigger>
-            <TabsTrigger value="email-list" className="text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg">
+            <TabsTrigger value="email-list" className="text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-lg text-gray-600 data-[state=active]:text-gray-900">
               <Users className="h-4 w-4 mr-2" />
               Email List
             </TabsTrigger>

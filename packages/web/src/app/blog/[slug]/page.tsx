@@ -92,11 +92,12 @@ export default function BlogPostPage() {
     });
   };
 
-  const getReadingTime = (content: string) => {
+  const getReadingTime = (content?: string | null) => {
+    if (!content) return 1;
     const wordsPerMinute = 200;
-    const words = content.replace(/<[^>]*>/g, "").split(/\s+/).length;
+    const words = content.replace(/<[^>]*>/g, "").split(/\s+/).filter(Boolean).length;
     const minutes = Math.ceil(words / wordsPerMinute);
-    return minutes;
+    return minutes || 1;
   };
 
   if (isLoading) {

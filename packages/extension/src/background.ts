@@ -205,9 +205,9 @@ chrome.runtime.onMessage.addListener(async (request: any, sender: chrome.runtime
   const senderId = sender.tab?.id?.toString() || 'unknown';
 
   logger.debug("Background", "Received message", {
-    action: request?.action,
+    action: request?.action || request?.type,
     senderId,
-    hasData: !!request?.data
+    hasData: !!request?.data || !!request?.payload
   });
 
   // Check if extension context is still valid
@@ -215,6 +215,68 @@ chrome.runtime.onMessage.addListener(async (request: any, sender: chrome.runtime
     logger.error("Background", "Extension context invalidated, cannot process message");
     sendResponse({ error: 'Extension context invalidated' });
     return false;
+  }
+
+  // Handle AUTH_STATE_CHANGED from content scripts (uses 'type' instead of 'action')
+  if (request.type === 'AUTH_STATE_CHANGED' && request.payload) {
+    logger.info("Background", "Auth state changed received", {
+      isAuthenticated: request.payload.isAuthenticated,
+      hasUserId: !!request.payload.userId,
+      source: request.payload.source
+    });
+    
+    if (request.payload.isAuthenticated && request.payload.token) {
+      try {
+        await cacheAuthToken({
+          token: request.payload.token,
+          userId: request.payload.userId,
+          userEmail: request.payload.email,
+          source: "background"
+        });
+        
+        // Also store userId in sync storage for other components
+        if (request.payload.userId) {
+          await chrome.storage.sync.set({
+            firebaseUid: request.payload.userId,
+            userId: request.payload.userId,
+            userEmail: request.payload.email
+          });
+        }
+        
+        logger.info("Background", "Auth state cached successfully");
+      } catch (error) {
+        logger.warn("Background", "Failed to cache auth state", {
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+    }
+    
+    sendResponse({ success: true });
+    return true;
+  }
+
+  // Handle FORCE_SYNC_REQUEST from content scripts
+  if (request.type === 'FORCE_SYNC_REQUEST' && request.payload) {
+    logger.info("Background", "Force sync request received");
+    
+    if (request.payload.token) {
+      try {
+        await cacheAuthToken({
+          token: request.payload.token,
+          userId: request.payload.userId,
+          userEmail: request.payload.userEmail,
+          source: "background"
+        });
+        logger.info("Background", "Force sync completed");
+      } catch (error) {
+        logger.warn("Background", "Force sync failed", {
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+    }
+    
+    sendResponse({ success: true });
+    return true;
   }
 
   // Only process messages that are meant for the background script

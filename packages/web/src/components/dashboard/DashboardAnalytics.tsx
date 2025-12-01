@@ -34,12 +34,16 @@ export function DashboardAnalytics({
   cvAnalyses,
   jobStats,
 }: DashboardAnalyticsProps) {
-  const weeklyApplications = getWeeklyApplications(applications);
-  const successRate = calculateSuccessRate(applications);
-  const interviewRate = calculateInterviewRate(applications);
-  const responseRate = calculateResponseRate(applications);
-  const sponsoredPercentage = getSponsoredJobsPercentage(applications);
-  const agencyPercentage = getAgencyJobsPercentage(applications);
+  // Ensure applications is always an array
+  const safeApplications = Array.isArray(applications) ? applications : [];
+  const safeCvAnalyses = Array.isArray(cvAnalyses) ? cvAnalyses : [];
+  
+  const weeklyApplications = getWeeklyApplications(safeApplications);
+  const successRate = calculateSuccessRate(safeApplications);
+  const interviewRate = calculateInterviewRate(safeApplications);
+  const responseRate = calculateResponseRate(safeApplications);
+  const sponsoredPercentage = getSponsoredJobsPercentage(safeApplications);
+  const agencyPercentage = getAgencyJobsPercentage(safeApplications);
 
   return (
     <FeatureGate feature="advancedAnalytics">
@@ -70,12 +74,12 @@ export function DashboardAnalytics({
             <CardTitle>CV Analysis History</CardTitle>
           </CardHeader>
           <CardContent>
-            <CvAnalysisHistory analyses={cvAnalyses || []} />
+            <CvAnalysisHistory analyses={safeCvAnalyses} />
           </CardContent>
         </Card>
 
         {/* Application Timeline */}
-        {applications && applications.length > 0 && (
+        {safeApplications.length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -85,7 +89,7 @@ export function DashboardAnalytics({
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {applications
+                {safeApplications
                   .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
                   .slice(0, 10)
                   .map((application, index) => {
@@ -93,7 +97,7 @@ export function DashboardAnalytics({
                       {
                         interested: "bg-muted text-muted-foreground",
                         applied: "bg-sky-100 text-sky-800",
-                        interviewing: "bg-violet-100 text-violet-800",
+                        interviewing: "bg-teal-100 text-teal-800",
                         offered: "bg-emerald-100 text-emerald-800",
                         rejected: "bg-red-100 text-red-800",
                         withdrawn: "bg-muted text-muted-foreground",
@@ -141,7 +145,7 @@ export function DashboardAnalytics({
                     );
                   })}
               </div>
-              {applications.length > 10 && (
+              {safeApplications.length > 10 && (
                 <div className="text-center mt-4">
                   <Button variant="outline" size="sm">
                     View All Applications
@@ -288,8 +292,7 @@ export function DashboardAnalytics({
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium">Interviews This Month</span>
                   <span className="text-sm text-muted-foreground">
-                    {applications?.filter((a) => a.status === "interviewing").length ||
-                      0}{" "}
+                    {safeApplications.filter((a) => a.status === "interviewing").length}{" "}
                     / {ANALYTICS_GOALS.monthlyInterviews}
                   </span>
                 </div>
@@ -299,8 +302,8 @@ export function DashboardAnalytics({
                     style={{
                       width: `${Math.min(
                         100,
-                        ((applications?.filter((a) => a.status === "interviewing")
-                          .length || 0) /
+                        (safeApplications.filter((a) => a.status === "interviewing")
+                          .length /
                           ANALYTICS_GOALS.monthlyInterviews) *
                           100
                       )}%`,
@@ -322,7 +325,7 @@ export function DashboardAnalytics({
                 </div>
                 <div className="w-full bg-muted rounded-full h-2">
                   <div
-                    className="bg-violet-600 h-2 rounded-full transition-all duration-300"
+                    className="bg-teal-600 h-2 rounded-full transition-all duration-300"
                     style={{
                       width: `${Math.min(
                         100,

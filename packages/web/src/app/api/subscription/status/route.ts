@@ -142,20 +142,50 @@ export async function GET(request: NextRequest) {
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
 
-    // CV analyses usage
-    const cvAnalysesQuery = await db.collection("cvAnalyses")
-      .where("userId", "==", userId)
-      .where("createdAt", ">=", Timestamp.fromDate(startOfMonth))
-      .get();
+    let cvAnalysesCount = 0;
+    let applicationsCount = 0;
+
+    // CV analyses usage - with fallback if index not ready
+    try {
+      const cvAnalysesQuery = await db.collection("cvAnalyses")
+        .where("userId", "==", userId)
+        .where("createdAt", ">=", Timestamp.fromDate(startOfMonth))
+        .get();
+      cvAnalysesCount = cvAnalysesQuery.size;
+    } catch (indexError: any) {
+      // If index is not ready, fall back to fetching all and filtering client-side
+      if (indexError?.code === 9) {
+        console.warn("cvAnalyses index not ready, falling back to simple query");
+        try {
+          const allCvAnalyses = await db.collection("cvAnalyses")
+            .where("userId", "==", userId)
+            .get();
+          const startOfMonthTimestamp = Timestamp.fromDate(startOfMonth);
+          cvAnalysesCount = allCvAnalyses.docs.filter(doc => {
+            const createdAt = doc.data().createdAt;
+            return createdAt && createdAt >= startOfMonthTimestamp;
+          }).length;
+        } catch {
+          cvAnalysesCount = 0;
+        }
+      } else {
+        throw indexError;
+      }
+    }
 
     // Application usage (simplified - just count total for now)
-    const applicationsQuery = await db.collection("applications")
-      .where("userId", "==", userId)
-      .get();
+    try {
+      const applicationsQuery = await db.collection("applications")
+        .where("userId", "==", userId)
+        .get();
+      applicationsCount = applicationsQuery.size;
+    } catch {
+      applicationsCount = 0;
+    }
 
     const currentUsage = {
-      cvAnalyses: cvAnalysesQuery.size,
-      applications: applicationsQuery.size,
+      cvAnalyses: cvAnalysesCount,
+      applications: applicationsCount,
     };
 
     const customerPortalUrl = subscription?.customerPortalUrl ?? userData?.stripeCustomerPortalUrl ?? null;

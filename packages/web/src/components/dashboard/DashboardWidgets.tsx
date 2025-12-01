@@ -34,6 +34,9 @@ export function useDashboardWidgets({
   onViewApplication,
   onRefetchApplications,
 }: DashboardWidgetsProps) {
+  // Ensure applications is always an array
+  const safeApplications = Array.isArray(applications) ? applications : [];
+  
   return React.useMemo(
     () => [
       {
@@ -47,9 +50,9 @@ export function useDashboardWidgets({
         id: "upcoming-followups",
         title: "Upcoming Follow-ups",
         component:
-          applications && applications.length > 0 ? (
+          safeApplications.length > 0 ? (
             <UpcomingFollowUps
-              applications={applications}
+              applications={safeApplications}
               onChanged={onRefetchApplications}
             />
           ) : null,
@@ -113,8 +116,8 @@ export function useDashboardWidgets({
         id: "sponsorship-check",
         title: "Sponsorship Quick Check",
         component:
-          applications && applications.length > 0 ? (
-            <SponsorshipQuickCheck applications={applications} />
+          safeApplications.length > 0 ? (
+            <SponsorshipQuickCheck applications={safeApplications} />
           ) : null,
         visible: hasApplications,
         required: false,
@@ -131,13 +134,13 @@ export function useDashboardWidgets({
       {
         id: "recent-applications",
         title: "Recent Applications",
-        component: applications ? (
+        component: safeApplications.length > 0 ? (
           <div>
             <div className="flex items-center justify-between mb-4">
               <div className="flex gap-2">
                 <ExportCsvButton
                   fileName="applications.csv"
-                  rows={applications.map((a) => ({
+                  rows={safeApplications.map((a) => ({
                     id: a._id,
                     title: a.job?.title,
                     company: a.job?.company,
@@ -164,7 +167,7 @@ export function useDashboardWidgets({
                     size="sm"
                     variant="outline"
                     onClick={() => {
-                      const data = applications.map((a) => ({
+                      const data = safeApplications.map((a) => ({
                         id: a._id,
                         title: a.job?.title,
                         company: a.job?.company,
@@ -201,7 +204,7 @@ export function useDashboardWidgets({
               </div>
             </div>
             <JobList
-              applications={applications.slice(0, 5)}
+              applications={safeApplications.slice(0, 5)}
               onEditApplication={onEditApplication}
               onDeleteApplication={onDeleteApplication}
               onViewApplication={onViewApplication}
@@ -215,7 +218,7 @@ export function useDashboardWidgets({
     ],
     [
       jobStats,
-      applications,
+      safeApplications,
       hasApplications,
       userRecord,
       onEditApplication,

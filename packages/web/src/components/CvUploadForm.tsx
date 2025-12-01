@@ -450,7 +450,7 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted, onResum
               </ul>
               <div className="mt-4 p-3 bg-yellow-50 rounded border border-yellow-200">
                 <h5 className="flex items-center gap-2 text-xs font-medium text-yellow-900 mb-2">
-                  🤖 ATS Optimization Tip:
+                  ATS Optimization Tip:
                 </h5>
                 <p className="text-xs text-yellow-800 leading-relaxed">
                   For best results with Applicant Tracking Systems, use standard
@@ -494,7 +494,7 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted, onResum
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-lg text-blue-900">
-                    ⚡ Real-time ATS Feedback
+                    Real-time ATS Feedback
                   </CardTitle>
                   <CardDescription className="text-blue-700">
                     See how your target role and industry affect ATS optimization

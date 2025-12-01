@@ -113,22 +113,15 @@ export class EnhancedJobBoardManager {
     }
   }
 
-  // Fetch SOC codes with fallback to enhanced endpoint
+  // Fetch SOC codes for fuzzy matching
   private async fetchSocCodes(): Promise<any[]> {
     try {
-      // Try enhanced endpoint first
-      const response = await get<any>("/api/soc-codes/enhanced", { fuzzy: "true", limit: 100 });
+      // Use authenticated endpoint with fuzzy matching support
+      const response = await get<any>("/api/soc-codes/authenticated", { fuzzy: "true", limit: 100 });
       return response.results || [];
     } catch (error) {
-      console.warn("Enhanced SOC codes endpoint failed, falling back to standard:", error);
-      try {
-        // Fallback to standard endpoint
-        const response = await get<any>("/api/soc-codes/authenticated", { limit: 100 });
-        return response.results || [];
-      } catch (fallbackError) {
-        console.error("All SOC code endpoints failed:", fallbackError);
-        return [];
-      }
+      console.error("SOC code fetch failed:", error);
+      return [];
     }
   }
 

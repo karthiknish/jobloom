@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, CheckCircle, Loader2, Play, TestTube } from "lucide-react";
+import { AlertTriangle, Check, CheckCircle, Loader2, Play, TestTube } from "lucide-react";
 
 interface TestResult {
   name: string;
@@ -275,12 +275,12 @@ export default function SOCSponsorshipTestPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
-              <div className="text-sm">✅ Job title extraction</div>
-              <div className="text-sm">✅ Company name detection</div>
-              <div className="text-sm">✅ Location parsing</div>
-              <div className="text-sm">✅ Salary extraction</div>
-              <div className="text-sm">✅ Sponsored job detection</div>
-              <div className="text-sm">✅ Special character handling</div>
+              <div className="text-sm flex items-center gap-2"><Check className="w-4 h-4 text-green-500" /> Job title extraction</div>
+              <div className="text-sm flex items-center gap-2"><Check className="w-4 h-4 text-green-500" /> Company name detection</div>
+              <div className="text-sm flex items-center gap-2"><Check className="w-4 h-4 text-green-500" /> Location parsing</div>
+              <div className="text-sm flex items-center gap-2"><Check className="w-4 h-4 text-green-500" /> Salary extraction</div>
+              <div className="text-sm flex items-center gap-2"><Check className="w-4 h-4 text-green-500" /> Sponsored job detection</div>
+              <div className="text-sm flex items-center gap-2"><Check className="w-4 h-4 text-green-500" /> Special character handling</div>
             </CardContent>
           </Card>
 
@@ -292,12 +292,12 @@ export default function SOCSponsorshipTestPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
-              <div className="text-sm">✅ Minimum salary thresholds (£38,700)</div>
-              <div className="text-sm">✅ Age-based reductions (Under 26: £30,960)</div>
-              <div className="text-sm">✅ New entrant rates (£25,600)</div>
-              <div className="text-sm">✅ PhD holder concessions</div>
-              <div className="text-sm">✅ SOC code eligibility (RQF Level 6+)</div>
-              <div className="text-sm">✅ Skilled Worker route validation</div>
+              <div className="text-sm flex items-center gap-2"><Check className="w-4 h-4 text-green-500" /> Minimum salary thresholds (£38,700)</div>
+              <div className="text-sm flex items-center gap-2"><Check className="w-4 h-4 text-green-500" /> Age-based reductions (Under 26: £30,960)</div>
+              <div className="text-sm flex items-center gap-2"><Check className="w-4 h-4 text-green-500" /> New entrant rates (£25,600)</div>
+              <div className="text-sm flex items-center gap-2"><Check className="w-4 h-4 text-green-500" /> PhD holder concessions</div>
+              <div className="text-sm flex items-center gap-2"><Check className="w-4 h-4 text-green-500" /> SOC code eligibility (RQF Level 6+)</div>
+              <div className="text-sm flex items-center gap-2"><Check className="w-4 h-4 text-green-500" /> Skilled Worker route validation</div>
             </CardContent>
           </Card>
         </div>

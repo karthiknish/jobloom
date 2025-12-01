@@ -1,7 +1,7 @@
 "use client";
 
 import { format } from "date-fns";
-import { AlertTriangle, Rocket, Lightbulb, CheckCircle, XCircle } from "lucide-react";
+import { AlertTriangle, Check, Rocket, Lightbulb, CheckCircle, XCircle } from "lucide-react";
 import type { CvAnalysis } from "../types/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -21,11 +21,13 @@ export function CvAnalysisResults({ analysis }: CvAnalysisResultsProps) {
   };
 
   const getScoreLabel = (score: number) => {
-    if (score >= 80) return "Excellent";
-    if (score >= 60) return "Good";
-    if (score >= 40) return "Fair";
-    return "Needs Improvement";
+    if (score >= 80) return { text: "Excellent", bg: "bg-emerald-100", color: "text-emerald-700" };
+    if (score >= 60) return { text: "Good", bg: "bg-amber-100", color: "text-amber-700" };
+    if (score >= 40) return { text: "Fair", bg: "bg-orange-100", color: "text-orange-700" };
+    return { text: "Needs Work", bg: "bg-red-100", color: "text-red-700" };
   };
+
+  const scoreLabel = getScoreLabel(analysis.overallScore || 0);
 
   return (
     <div className="space-y-6">
@@ -46,27 +48,27 @@ export function CvAnalysisResults({ analysis }: CvAnalysisResultsProps) {
               </p>
             </div>
             <div className="text-right">
-              <Badge variant={getScoreVariant(analysis.overallScore || 0)}>
-                {analysis.overallScore || 0}/100 •{" "}
-                {getScoreLabel(analysis.overallScore || 0)}
-              </Badge>
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold ${scoreLabel.bg} ${scoreLabel.color}`}>
+                <span className="text-lg tabular-nums">{analysis.overallScore || 0}</span>
+                <span className="text-xs opacity-75">/100</span>
+                <span className="mx-1">•</span>
+                {scoreLabel.text}
+              </span>
             </div>
           </div>
 
           {/* ATS Quick Summary */}
           {analysis.atsCompatibility &&
             analysis.atsCompatibility.score < 80 && (
-              <div className="mt-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                <h4 className="text-sm font-medium text-yellow-900 mb-2 flex items-center">
-                  <AlertTriangle className="h-4 w-4 mr-2 text-yellow-500" />
-                  ATS Optimization Needed
+              <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-900/50">
+                <h4 className="text-sm font-medium text-amber-800 dark:text-amber-200 mb-2 flex items-center">
+                  <AlertTriangle className="h-4 w-4 mr-2 text-amber-500" />
+                  ATS Optimization Recommended
                 </h4>
-                <p className="text-sm text-yellow-800">
-                  Your CV has an ATS compatibility score of{" "}
-                  {analysis.atsCompatibility.score}/100. Focus on the &quot;ATS
-                  Compatibility&quot; section below for specific issues and
-                  improvement suggestions to increase your chances of passing
-                  automated screening systems.
+                <p className="text-sm text-amber-700 dark:text-amber-300">
+                  Your CV scores {analysis.atsCompatibility.score}/100 on ATS compatibility. 
+                  Review the breakdown below for specific improvements to increase your chances 
+                  of passing automated screening systems.
                 </p>
               </div>
             )}
@@ -96,7 +98,7 @@ export function CvAnalysisResults({ analysis }: CvAnalysisResultsProps) {
           }}
           showDetailed={true}
           animated={true}
-          size="large"
+          size="expanded"
         />
       ) : (
         <Card>
@@ -176,7 +178,7 @@ export function CvAnalysisResults({ analysis }: CvAnalysisResultsProps) {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
-              <span className="text-blue-500 mr-2">✓</span>
+              <Check className="w-4 h-4 text-blue-500 mr-2" />
               Missing Skills
             </CardTitle>
           </CardHeader>
@@ -206,9 +208,7 @@ export function CvAnalysisResults({ analysis }: CvAnalysisResultsProps) {
               {analysis.recommendations.map(
                 (recommendation: string, index: number) => (
                   <li key={index} className="flex items-start">
-                    <span className="text-secondary mr-2 mt-1 flex-shrink-0">
-                      ✓
-                    </span>
+                    <Check className="w-4 h-4 text-secondary mr-2 mt-1 flex-shrink-0" />
                     <span className="text-foreground">{recommendation}</span>
                   </li>
                 )
@@ -357,7 +357,7 @@ export function CvAnalysisResults({ analysis }: CvAnalysisResultsProps) {
                       {analysis.atsCompatibility.suggestions.map(
                         (suggestion: string, index: number) => (
                           <li key={index} className="flex items-start">
-                            <span className="text-green-500 mr-2 mt-1">✓</span>
+                            <Check className="w-4 h-4 text-green-500 mr-2 mt-1" />
                             <span>{suggestion}</span>
                           </li>
                         )

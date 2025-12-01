@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Check, Crown, Star, Zap, Shield, Users, Loader2 } from "lucide-react";
-import { useSubscription } from "@/hooks/useSubscription";
+import { useSubscription } from "@/providers/subscription-provider";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { useRouter } from "next/navigation";
 import { showSuccess, showError } from "@/components/ui/Toast";

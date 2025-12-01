@@ -59,9 +59,8 @@ export default function Header() {
 
   const userLinks = [
     { href: "/dashboard", label: "Dashboard" },
-    { href: "/application", label: "Resume & Cover Letter" },
+    { href: "/career-tools", label: "Career Tools" },
     { href: "/interview-prep", label: "Interview Prep" },
-    { href: "/cv-evaluator", label: "CV Evaluator" },
 
   ];
 

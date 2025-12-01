@@ -19,13 +19,13 @@ export function EmailMarketingHeader({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-gradient-to-r from-primary to-secondary shadow-xl"
+      className="bg-white border-b border-gray-200"
     >
       <div className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
           <div className="space-y-2">
-            <h1 className="text-4xl sm:text-5xl font-serif font-bold text-white tracking-tight">Email Marketing</h1>
-            <p className="text-lg sm:text-xl text-primary-foreground/90 max-w-2xl leading-relaxed">
+            <h1 className="text-4xl sm:text-5xl font-serif font-bold text-gray-900 tracking-tight">Email Marketing</h1>
+            <p className="text-lg sm:text-xl text-gray-500 max-w-2xl leading-relaxed">
               Create and manage email campaigns to engage with your users
             </p>
           </div>
@@ -33,7 +33,7 @@ export function EmailMarketingHeader({
             <Button
               variant="outline"
               size="lg"
-              className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+              className="border-gray-200 hover:bg-gray-50"
               onClick={onSendTestEmail}
             >
               <Mail className="h-5 w-5 mr-2" />
@@ -42,7 +42,7 @@ export function EmailMarketingHeader({
             <Button
               variant="outline"
               size="lg"
-              className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+              className="border-gray-200 hover:bg-gray-50"
             >
               <BarChart3 className="h-5 w-5 mr-2" />
               Analytics

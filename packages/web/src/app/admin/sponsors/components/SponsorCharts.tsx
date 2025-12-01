@@ -29,10 +29,10 @@ export function SponsorCharts({ stats }: SponsorChartsProps) {
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       {/* Sponsorship Type Distribution */}
-      <Card>
+      <Card className="border-gray-200">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5" />
+          <CardTitle className="flex items-center gap-2 text-gray-900">
+            <BarChart3 className="h-5 w-5 text-gray-500" />
             Sponsorship Type Distribution
           </CardTitle>
           <CardDescription>Sponsors by sponsorship level</CardDescription>
@@ -48,19 +48,19 @@ export function SponsorCharts({ stats }: SponsorChartsProps) {
                   <div className="flex items-center gap-3">
                     <Badge
                       variant={getSponsorshipTypeBadge(type)}
-                      className="capitalize"
+                      className="capitalize border-gray-200 text-gray-600"
                     >
                       {type}
                     </Badge>
-                    <span className="text-sm font-medium capitalize">
+                    <span className="text-sm font-medium capitalize text-gray-700">
                       {type} Sponsors
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="text-sm font-medium">{count as number}</div>
-                    <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
+                    <div className="text-sm font-medium text-gray-900">{count as number}</div>
+                    <div className="w-24 h-2 bg-gray-100 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-primary transition-all duration-300"
+                        className="h-full bg-blue-500 transition-all duration-300"
                         style={{
                           width: `${Math.min(
                             ((count as number) / (stats.totalSponsoredCompanies || 1)) * 100,
@@ -78,9 +78,9 @@ export function SponsorCharts({ stats }: SponsorChartsProps) {
       </Card>
 
       {/* Industry Breakdown */}
-      <Card>
+      <Card className="border-gray-200">
         <CardHeader>
-          <CardTitle>Industry Breakdown</CardTitle>
+          <CardTitle className="text-gray-900">Industry Breakdown</CardTitle>
           <CardDescription>Top industries represented</CardDescription>
         </CardHeader>
         <CardContent>
@@ -93,14 +93,14 @@ export function SponsorCharts({ stats }: SponsorChartsProps) {
                   key={industry}
                   className="flex items-center justify-between"
                 >
-                  <span className="text-sm truncate">
+                  <span className="text-sm truncate text-gray-700">
                     {industry || "Unknown"}
                   </span>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">{count as number}</span>
-                    <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
+                    <span className="text-sm font-medium text-gray-900">{count as number}</span>
+                    <div className="w-16 h-2 bg-gray-100 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-primary transition-all duration-300"
+                        className="h-full bg-purple-500 transition-all duration-300"
                         style={{
                           width: `${Math.min(
                             ((count as number) / (stats.totalSponsoredCompanies || 1)) * 100,

@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import "./globals.css";
 import FirebaseInitializer from "@/components/FirebaseInitializer";
 import { FirebaseAuthProvider } from "@/providers/firebase-auth-provider";
+import { SubscriptionProvider } from "@/providers/subscription-provider";
 import { AppToaster } from "@/components/ui/Toast";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -35,15 +36,17 @@ export default function RootLayout({
       >
         <FirebaseInitializer />
         <FirebaseAuthProvider>
-          <AnalyticsProvider>
-            <Header />
-            <EmailVerificationBanner />
-            {children}
-            <Footer />
-            <MobileNavigation />
-            <AppToaster />
-            <Chatbot />
-          </AnalyticsProvider>
+          <SubscriptionProvider>
+            <AnalyticsProvider>
+              <Header />
+              <EmailVerificationBanner />
+              {children}
+              <Footer />
+              <MobileNavigation />
+              <AppToaster />
+              <Chatbot />
+            </AnalyticsProvider>
+          </SubscriptionProvider>
         </FirebaseAuthProvider>
       </body>
     </html>

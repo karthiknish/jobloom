@@ -29,34 +29,34 @@ export function BulkActions({
 
   return (
     <div className="flex items-center gap-2 mb-4">
-      <span className="text-sm text-muted-foreground">
+      <span className="text-sm text-gray-500">
         {selectedCount} item{selectedCount !== 1 ? "s" : ""} selected
       </span>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" className="border-gray-200 text-gray-600 hover:bg-gray-50">
             <MoreHorizontal className="h-4 w-4 mr-2" />
             Bulk Actions
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start">
-          <DropdownMenuItem onClick={onBulkPublish}>
+        <DropdownMenuContent align="start" className="border-gray-200">
+          <DropdownMenuItem onClick={onBulkPublish} className="text-gray-700 focus:bg-gray-100">
             <FileText className="mr-2 h-4 w-4" />
             Publish Selected
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={onBulkDraft}>
+          <DropdownMenuItem onClick={onBulkDraft} className="text-gray-700 focus:bg-gray-100">
             <FileText className="mr-2 h-4 w-4" />
             Set as Draft
           </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={onBulkArchive}>
+          <DropdownMenuSeparator className="bg-gray-200" />
+          <DropdownMenuItem onClick={onBulkArchive} className="text-gray-700 focus:bg-gray-100">
             <Archive className="mr-2 h-4 w-4" />
             Archive Selected
           </DropdownMenuItem>
-          <DropdownMenuSeparator />
+          <DropdownMenuSeparator className="bg-gray-200" />
           <DropdownMenuItem
             onClick={onBulkDelete}
-            className="text-destructive"
+            className="text-red-600 focus:text-red-700 focus:bg-red-50"
           >
             <Trash2 className="mr-2 h-4 w-4" />
             Delete Selected

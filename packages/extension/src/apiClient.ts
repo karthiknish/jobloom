@@ -147,20 +147,36 @@ export async function apiRequest<T = any>(opts: ApiOptions): Promise<T> {
   // Acquire auth token if needed
   if (requiresAuth) {
     console.debug(`Hireall: API ${path} requires authentication, attempting to acquire token`);
-    let token = await acquireIdToken();
-    if (!token) {
-      console.debug(`Hireall: First token acquisition failed for ${path}, trying with force refresh`);
-      token = await acquireIdToken(true);
+    let token: string | null = null;
+    
+    try {
+      token = await acquireIdToken();
+      if (!token) {
+        console.debug(`Hireall: First token acquisition failed for ${path}, trying with force refresh`);
+        // Wait a bit before retrying with force refresh
+        await delay(500);
+        token = await acquireIdToken(true);
+      }
+    } catch (tokenError) {
+      console.warn(`Hireall: Token acquisition threw error for ${path}:`, tokenError);
+      // One more try after error
+      await delay(1000);
+      try {
+        token = await acquireIdToken(true);
+      } catch (retryError) {
+        console.error(`Hireall: Token retry also failed:`, retryError);
+      }
     }
 
     if (!token) {
       console.warn(`Hireall: Authentication failed for ${path} - no token available`);
-      const error = new Error('Authentication required. Please sign in to the extension.');
+      const error = new Error('Authentication required. Please sign in to the extension or web app.');
       (error as any).code = 'AUTH_REQUIRED';
+      (error as any).statusCode = 401;
       throw error;
     }
     
-    console.debug(`Hireall: Successfully acquired token for ${path}`);
+    console.debug(`Hireall: Successfully acquired token for ${path} (length: ${token.length})`);
     finalHeaders['Authorization'] = `Bearer ${token}`;
   }
 

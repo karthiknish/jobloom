@@ -115,7 +115,8 @@ let cleanupIntervalId: ReturnType<typeof setInterval> | null = null;
 let currentUserTier: UserTier = 'free';
 let tierCheckTime = 0;
 let tierLookupDepth = 0;
-const TIER_CACHE_DURATION = 5 * 60 * 1000; // Cache tier for 5 minutes
+let tierFetchPromise: Promise<UserTier> | null = null;
+const TIER_CACHE_DURATION = 10 * 60 * 1000; // Cache tier for 10 minutes (increased from 5)
 
 export async function fetchSubscriptionStatus(): Promise<SubscriptionStatus | null> {
   const shouldProxyThroughBackground =
@@ -162,51 +163,66 @@ export async function fetchSubscriptionStatus(): Promise<SubscriptionStatus | nu
 
 // Get current user tier from storage or server
 async function getCurrentUserTier(): Promise<UserTier> {
+  const now = Date.now();
+
+  // Return cached tier if still valid
+  if (now - tierCheckTime < TIER_CACHE_DURATION) {
+    return currentUserTier;
+  }
+
+  // If a fetch is already in progress, wait for it
+  if (tierFetchPromise) {
+    return tierFetchPromise;
+  }
+
   tierLookupDepth++;
-  try {
-    const now = Date.now();
-
-    // Return cached tier if still valid
-    if (now - tierCheckTime < TIER_CACHE_DURATION) {
-      return currentUserTier;
-    }
-
-    // Try to get from local storage first
-    const result = await chrome.storage.local.get(['userTier']);
-    if (result.userTier) {
-      currentUserTier = result.userTier;
-      tierCheckTime = now;
-      return currentUserTier;
-    }
-
-    // Check with server if we have auth
-    const status = await fetchSubscriptionStatus();
-    if (status) {
-      if (status.plan === 'premium' || status.subscriptionStatus === 'active') {
-        currentUserTier = 'premium';
-      } else if (status.subscription?.plan === 'premium' || status.subscription?.status === 'active') {
-        currentUserTier = 'premium';
-      } else if (status.isAdmin || status.subscription?.plan === 'admin') {
-        currentUserTier = 'admin';
-      } else {
-        currentUserTier = 'free';
+  
+  // Create a promise that will be shared by all concurrent calls
+  tierFetchPromise = (async (): Promise<UserTier> => {
+    try {
+      // Try to get from local storage first
+      const result = await chrome.storage.local.get(['userTier', 'tierCheckTime']);
+      const storedTierTime = result.tierCheckTime || 0;
+      
+      // Use stored tier if still valid
+      if (result.userTier && now - storedTierTime < TIER_CACHE_DURATION) {
+        currentUserTier = result.userTier;
+        tierCheckTime = storedTierTime;
+        return currentUserTier;
       }
 
-      await chrome.storage.local.set({ userTier: currentUserTier });
-      tierCheckTime = now;
-      return currentUserTier;
-    }
+      // Check with server if we have auth
+      const status = await fetchSubscriptionStatus();
+      if (status) {
+        if (status.plan === 'premium' || status.subscriptionStatus === 'active') {
+          currentUserTier = 'premium';
+        } else if (status.subscription?.plan === 'premium' || status.subscription?.status === 'active') {
+          currentUserTier = 'premium';
+        } else if (status.isAdmin || status.subscription?.plan === 'admin') {
+          currentUserTier = 'admin';
+        } else {
+          currentUserTier = 'free';
+        }
 
-    currentUserTier = 'free';
-    tierCheckTime = now;
-    await chrome.storage.local.set({ userTier: currentUserTier });
-    return currentUserTier;
-  } catch (error) {
-    console.warn('Failed to get user tier:', error);
-    return 'free';
-  } finally {
-    tierLookupDepth = Math.max(0, tierLookupDepth - 1);
-  }
+        tierCheckTime = now;
+        await chrome.storage.local.set({ userTier: currentUserTier, tierCheckTime: now });
+        return currentUserTier;
+      }
+
+      currentUserTier = 'free';
+      tierCheckTime = now;
+      await chrome.storage.local.set({ userTier: currentUserTier, tierCheckTime: now });
+      return currentUserTier;
+    } catch (error) {
+      console.warn('Failed to get user tier:', error);
+      return 'free';
+    } finally {
+      tierLookupDepth = Math.max(0, tierLookupDepth - 1);
+      tierFetchPromise = null;
+    }
+  })();
+
+  return tierFetchPromise;
 }
 
 function resolveRateLimitConfig(

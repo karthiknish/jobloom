@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { QueryDocumentSnapshot } from "firebase-admin/firestore";
+import type { QueryDocumentSnapshot, Query } from "firebase-admin/firestore";
 
 import { getAdminDb } from "@/firebase/admin";
 import { authenticateRequest } from "@/lib/api/auth";
@@ -95,65 +95,74 @@ export async function GET(request: NextRequest) {
 
     const quickQuery = searchParams.get("q")?.trim() || "";
     const search = searchParams.get("search")?.trim() || quickQuery;
-    const industry = searchParams.get("industry")?.trim();
-    const sponsorshipType = searchParams.get("sponsorshipType")?.trim();
     const status = searchParams.get("status")?.trim() as "active" | "inactive" | "all" | undefined;
 
+    console.log('[GET /api/app/sponsorship/companies] Starting request, requestId:', requestId);
+    console.log('[GET /api/app/sponsorship/companies] Params:', { page, limit: limitNum, search, status });
+
     const db = getAdminDb();
-    let sponsorsQuery = db.collection("sponsors");
+    const sponsorsRef = db.collection("sponsors");
+    
+    // Get total count
+    const totalSnapshot = await sponsorsRef.count().get();
+    const totalInCollection = totalSnapshot.data().count;
+    console.log('[GET /api/app/sponsorship/companies] Total sponsors in collection:', totalInCollection);
 
-    if (industry && industry !== "all") {
-      sponsorsQuery = sponsorsQuery.where("industry", "==", industry) as any;
-    }
-
-    if (sponsorshipType && sponsorshipType !== "all") {
-      sponsorsQuery = sponsorsQuery.where("sponsorshipType", "==", sponsorshipType) as any;
-    }
-
+    // Build query with pagination
+    // Note: For large collections, we use simple limit/offset pagination
+    // More advanced cursor-based pagination would be better for very large offsets
+    let query: Query = sponsorsRef.orderBy("name", "asc");
+    
+    // Apply status filter if needed (this is a simple equality filter)
     if (status === "active") {
-      sponsorsQuery = sponsorsQuery.where("isActive", "==", true) as any;
+      query = query.where("isActive", "==", true);
     } else if (status === "inactive") {
-      sponsorsQuery = sponsorsQuery.where("isActive", "==", false) as any;
+      query = query.where("isActive", "==", false);
     }
-
-    sponsorsQuery = sponsorsQuery.orderBy("createdAt", "desc") as any;
-
-    const countSnapshot = await sponsorsQuery.get();
-    const total = countSnapshot.size;
-
-    let pagedQuery = sponsorsQuery.limit(limitNum) as any;
-    if (page > 1) {
-      pagedQuery = pagedQuery.offset((page - 1) * limitNum) as any;
-    }
-
-    const snapshot = await pagedQuery.get();
-
-    const mapped = snapshot.docs.map(mapToPublicSponsor);
-
-    let filtered: SponsorRecord[] = mapped;
+    
+    // Get count for the filtered query
+    const filteredCountSnapshot = await query.count().get();
+    const filteredTotal = filteredCountSnapshot.data().count;
+    console.log('[GET /api/app/sponsorship/companies] Filtered total:', filteredTotal);
+    
+    // Apply pagination
+    const offset = (page - 1) * limitNum;
+    query = query.offset(offset).limit(limitNum);
+    
+    const snapshot = await query.get();
+    console.log('[GET /api/app/sponsorship/companies] Fetched docs count:', snapshot.docs.length);
+    
+    let mappedDocs = snapshot.docs.map(mapToPublicSponsor);
+    
+    // If there's a text search, filter the results in memory
+    // Note: For production, consider using Firestore full-text search extensions
+    // or a dedicated search service like Algolia/Elasticsearch
     if (search) {
       const searchLower = search.toLowerCase();
-      filtered = mapped.filter((company: SponsorRecord) => {
+      mappedDocs = mappedDocs.filter((company: SponsorRecord) => {
         const fields = [company.name, company.city, company.route, company.typeRating];
         return fields.some((field) => field?.toLowerCase().includes(searchLower));
       });
     }
 
-    if (!auth.isAdmin) {
-      filtered = filtered.filter((company: SponsorRecord) => company.isActive);
+    // Filter out inactive for non-admins (if not already filtered by status)
+    if (!auth.isAdmin && status !== "active" && status !== "inactive") {
+      mappedDocs = mappedDocs.filter((company: SponsorRecord) => company.isActive);
     }
 
-    const hasMore = page * limitNum < total;
+    const hasMore = offset + mappedDocs.length < filteredTotal;
 
-    const publicRecords = filtered.map(({ raw, ...rest }: SponsorRecord) => rest);
-    const adminRecords = filtered.map(({ raw, ...rest }: SponsorRecord) => ({ ...(raw ?? {}), ...rest }));
+    const publicRecords = mappedDocs.map(({ raw, ...rest }: SponsorRecord) => rest);
+    const adminRecords = mappedDocs.map(({ raw, ...rest }: SponsorRecord) => ({ ...(raw ?? {}), ...rest }));
     const responseRecords = auth.isAdmin ? adminRecords : publicRecords;
+
+    console.log('[GET /api/app/sponsorship/companies] Returning', responseRecords.length, 'records');
 
     if (quickQuery) {
       return NextResponse.json({
         query: quickQuery,
-        results: publicRecords.slice(0, limitNum),
-        total: publicRecords.length,
+        results: publicRecords,
+        total: filteredTotal,
         page,
         limit: limitNum,
         hasMore,
@@ -164,10 +173,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       companies: responseRecords,
       results: publicRecords,
-      total,
+      total: filteredTotal,
       page,
       limit: limitNum,
       hasMore,
+      totalInCollection,
       message: "Sponsored companies retrieved successfully",
     });
   }, {

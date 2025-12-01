@@ -129,7 +129,7 @@ export function JobHoverCard({ application, children, onViewDetails }: JobHoverC
               </Badge>
             )}
             {application.job?.remoteWork && (
-              <Badge variant="outline" className="border-purple-500 text-purple-700 text-xs">
+              <Badge variant="outline" className="border-teal-500 text-teal-700 text-xs">
                 Remote
               </Badge>
             )}

@@ -21,7 +21,7 @@ import Subscript from "@tiptap/extension-subscript";
 import Superscript from "@tiptap/extension-superscript";
 import { common, createLowlight } from "lowlight";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   Bold,
   Italic,
@@ -122,7 +122,7 @@ const MenuBar = ({ editor }: { editor: any }) => {
       .run();
   }, [editor]);
 
-  const generateContent = useCallback(async (prompt: string) => {
+  const generateContent = useCallback(async (prompt: string, options?: { length?: string; format?: string }) => {
     if (!prompt.trim()) return;
 
     setIsGenerating(true);
@@ -143,7 +143,8 @@ const MenuBar = ({ editor }: { editor: any }) => {
         body: JSON.stringify({
           prompt,
           tone: "professional",
-          format: "html", // Request HTML for better formatting
+          format: options?.format || "html",
+          length: options?.length || "medium",
         }),
       });
 
@@ -167,6 +168,15 @@ const MenuBar = ({ editor }: { editor: any }) => {
     }
   }, [editor]);
 
+  // AI Quick Actions
+  const aiQuickActions = [
+    { label: "Write introduction", prompt: "Write a compelling introduction paragraph for this blog post" },
+    { label: "Add conclusion", prompt: "Write a strong conclusion paragraph summarizing key points" },
+    { label: "Generate tips list", prompt: "Create a list of 5 practical tips", options: { format: "bullet" } },
+    { label: "Expand paragraph", prompt: "Expand and elaborate on the selected content or previous paragraph" },
+    { label: "Add examples", prompt: "Add relevant real-world examples to illustrate the point" },
+  ];
+
   if (!editor) {
     return null;
   }
@@ -174,32 +184,78 @@ const MenuBar = ({ editor }: { editor: any }) => {
   return (
     <div className="border-b border-border p-2 flex flex-wrap gap-1 items-center bg-muted/30 sticky top-0 z-10 backdrop-blur-sm">
       {/* AI Content Generation */}
-      <div className="flex items-center gap-1 mr-2 bg-background/50 p-1 rounded-md border border-border/50">
-        <Input
-          placeholder="Ask AI to write..."
-          value={aiPrompt}
-          onChange={(e) => setAiPrompt(e.target.value)}
-          className="w-48 h-8 text-sm border-none focus-visible:ring-0 bg-transparent"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              generateContent(aiPrompt);
-              setAiPrompt("");
-            }
-          }}
-        />
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            generateContent(aiPrompt);
-            setAiPrompt("");
-          }}
-          disabled={isGenerating || !aiPrompt.trim()}
-          className="h-8 w-8 p-0 text-purple-600 hover:text-purple-700 hover:bg-purple-50"
-        >
-          <Sparkles className={cn("h-4 w-4", isGenerating && "animate-spin")} />
-        </Button>
+      <div className="flex items-center gap-1 mr-2 bg-emerald-50 dark:bg-emerald-950/30 p-1 rounded-md border border-emerald-200 dark:border-emerald-800">
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 px-2 gap-1 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/50"
+            >
+              <Sparkles className="h-4 w-4" />
+              <span className="text-xs font-medium hidden sm:inline">AI Assist</span>
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-72 p-3" align="start">
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Quick Actions</Label>
+                <div className="grid grid-cols-1 gap-1">
+                  {aiQuickActions.map((action, idx) => (
+                    <Button
+                      key={idx}
+                      variant="ghost"
+                      size="sm"
+                      className="justify-start h-8 text-xs hover:bg-emerald-50 dark:hover:bg-emerald-900/30"
+                      onClick={() => generateContent(action.prompt, action.options)}
+                      disabled={isGenerating}
+                    >
+                      {action.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              <Separator />
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Custom Prompt</Label>
+                <Input
+                  placeholder="Describe what to write..."
+                  value={aiPrompt}
+                  onChange={(e) => setAiPrompt(e.target.value)}
+                  className="h-8 text-sm"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      generateContent(aiPrompt);
+                      setAiPrompt("");
+                    }
+                  }}
+                />
+                <Button
+                  size="sm"
+                  className="w-full h-8 bg-emerald-600 hover:bg-emerald-700"
+                  onClick={() => {
+                    generateContent(aiPrompt);
+                    setAiPrompt("");
+                  }}
+                  disabled={isGenerating || !aiPrompt.trim()}
+                >
+                  {isGenerating ? (
+                    <>
+                      <Sparkles className="h-3 w-3 mr-1 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-3 w-3 mr-1" />
+                      Generate
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
 
       <Separator orientation="vertical" className="h-6 mx-1" />
@@ -483,7 +539,9 @@ export function TiptapEditor({
 }: TiptapEditorProps) {
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        codeBlock: false, // Disable default, use CodeBlockLowlight instead
+      }),
       Placeholder.configure({
         placeholder,
       }),
@@ -537,7 +595,19 @@ export function TiptapEditor({
         class: "prose prose-sm sm:prose-base lg:prose-lg xl:prose-xl mx-auto focus:outline-none min-h-[300px] p-6 max-w-none",
       },
     },
+    immediatelyRender: false,
   });
+
+  // Sync content when it changes externally (e.g., when editing an existing post)
+  useEffect(() => {
+    if (editor && content !== editor.getHTML()) {
+      // Only update if content actually differs to avoid cursor position issues
+      const currentContent = editor.getHTML();
+      if (content !== currentContent && content !== "") {
+        editor.commands.setContent(content, { emitUpdate: false });
+      }
+    }
+  }, [content, editor]);
 
   const characterCount = editor?.storage?.characterCount?.characters() || 0;
   const wordCount = editor?.storage?.characterCount?.words() || 0;

@@ -82,13 +82,19 @@ export const cvEvaluatorApi = {
 
   getUserCvAnalyses: async (userId: string): Promise<CvAnalysis[]> => {
     try {
-      // Try the new API first
-      const response = await apiClient.get<{ analyses: CvAnalysis[] }>(`/cv/user/${userId}`);
-      return response.analyses || [];
+      // Try the new API first - the endpoint returns array directly
+      const response = await apiClient.get<CvAnalysis[]>(
+        `/app/cv-analysis/user/${userId}`,
+        { retries: 0 }, // Don't retry - fall back to Firestore on failure
+        { showGlobalError: false } // Don't show error toast
+      );
+      return Array.isArray(response) ? response : [];
     } catch (error) {
-      // Fallback to Firestore if API fails
+      // Fallback to Firestore if API fails (silently for 401 errors)
       const apiError = error as FrontendApiError;
-      console.warn('API call failed, falling back to Firestore:', apiError.message);
+      if (apiError.status !== 401) {
+        console.warn('CV Analysis API call failed, falling back to Firestore:', apiError.message);
+      }
       
       const db = getDb();
       if (!db) throw new Error("Firestore not initialized");

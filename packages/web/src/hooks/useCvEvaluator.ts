@@ -169,29 +169,31 @@ export function useCvEvaluator(options: UseCvEvaluatorOptions = {}) {
     ]);
   }, [refetchAnalyses, refetchStats]);
 
+  // Ensure analyses is always an array
+  const safeAnalyses = Array.isArray(analyses) ? analyses : [];
+
   // Get analyses by status
   const getAnalysesByStatus = useCallback((status: string) => {
-    if (!analyses) return [];
-    return analyses.filter(analysis => analysis.analysisStatus === status);
-  }, [analyses]);
+    return safeAnalyses.filter(analysis => analysis.analysisStatus === status);
+  }, [safeAnalyses]);
 
   // Get completed analyses
-  const completedAnalyses = getAnalysesByStatus('completed');
+  const completedAnalyses = safeAnalyses.filter(analysis => analysis.analysisStatus === 'completed');
   
   // Get pending analyses
-  const pendingAnalyses = getAnalysesByStatus('pending');
+  const pendingAnalyses = safeAnalyses.filter(analysis => analysis.analysisStatus === 'pending');
   
   // Get failed analyses
-  const failedAnalyses = getAnalysesByStatus('failed');
+  const failedAnalyses = safeAnalyses.filter(analysis => analysis.analysisStatus === 'failed');
 
   // Get recent analysis
-  const recentAnalysis = analyses && analyses.length > 0 
-    ? analyses.sort((a, b) => b.createdAt - a.createdAt)[0] 
+  const recentAnalysis = safeAnalyses.length > 0 
+    ? [...safeAnalyses].sort((a, b) => b.createdAt - a.createdAt)[0] 
     : null;
 
   return {
     // Data
-    analyses,
+    analyses: safeAnalyses,
     stats,
     uploadResult,
     recentAnalysis,

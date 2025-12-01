@@ -7,7 +7,7 @@ import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { showError, showSuccess, showInfo, showWarning } from "@/components/ui/Toast";
 import { useApiQuery, useApiMutation } from "@/hooks/useApi";
 import { adminApi } from "@/utils/api/admin";
-import { AdminAccessDenied } from "@/components/admin/AdminAccessDenied";
+import { AdminLayout } from "@/components/admin/AdminLayout";
 import { SponsorStats } from "./SponsorStats";
 import { SponsorFilters } from "./SponsorFilters";
 import { SponsorTable } from "./SponsorTable";
@@ -25,14 +25,13 @@ interface Sponsor {
   logo?: string;
   status: string;
   isActive?: boolean;
-  aliases: string[];
+  aliases?: string[];
   createdAt: number;
   updatedAt?: number;
 }
 
 export function SponsorManagement() {
   const { user } = useFirebaseAuth();
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [industryFilter, setIndustryFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
@@ -42,51 +41,72 @@ export function SponsorManagement() {
   const [editingSponsor, setEditingSponsor] = useState<Sponsor | null>(null);
   const [dialogMode, setDialogMode] = useState<'create' | 'edit' | 'view'>('create');
   const [isExporting, setIsExporting] = useState(false);
+  const [isReady, setIsReady] = useState(false);
 
-  // Check admin access
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  // Initialize after mount (server-side layout already verified admin access)
   useEffect(() => {
-    const checkAdminAccess = async () => {
-      if (!user) {
-        setIsAdmin(false);
-        return;
-      }
-      try {
-        const adminUser = await adminApi.verifyAdminAccess();
-        setIsAdmin(adminUser.isAdmin === true);
-      } catch (error) {
-        setIsAdmin(false);
-      }
-    };
-    checkAdminAccess();
+    if (user) {
+      setIsReady(true);
+    }
   }, [user]);
 
   // Fetch sponsors and stats
   const fetchSponsors = useCallback(async () => {
+    console.log('[SponsorManagement] Fetching sponsors with filters:', {
+      search: searchTerm || undefined,
+      industry: industryFilter !== "all" ? industryFilter : undefined,
+      sponsorshipType: typeFilter !== "all" ? typeFilter : undefined,
+      status: statusFilter,
+      page,
+      limit: pageSize,
+    });
     const response = await adminApi.getAllSponsoredCompanies({
       search: searchTerm || undefined,
       industry: industryFilter !== "all" ? industryFilter : undefined,
       sponsorshipType: typeFilter !== "all" ? typeFilter : undefined,
       status: statusFilter,
+      page,
+      limit: pageSize,
     });
-    return response.companies || response || [];
-  }, [searchTerm, industryFilter, typeFilter, statusFilter]);
+    console.log('[SponsorManagement] Sponsors response:', response);
+    return response;
+  }, [searchTerm, industryFilter, typeFilter, statusFilter, page, pageSize]);
 
   const fetchStats = useCallback(async () => {
     const response = await adminApi.getSponsorshipStats();
     return response.stats || response;
   }, []);
 
-  const { data: sponsoredCompanies, refetch: refetchSponsors } = useApiQuery(
+  const { data: sponsorsData, refetch: refetchSponsors, loading: isSponsorsLoading } = useApiQuery(
     fetchSponsors,
-    [isAdmin, searchTerm, industryFilter, typeFilter, statusFilter],
-    { enabled: !!user && isAdmin === true },
-    "admin-sponsored-companies"
+    [isReady, searchTerm, industryFilter, typeFilter, statusFilter, page, pageSize],
+    { enabled: isReady, staleTime: 0 }, // Disable caching to ensure fresh data on filter changes
+    `admin-sponsored-companies-${searchTerm}-${industryFilter}-${typeFilter}-${statusFilter}-${page}-${pageSize}`
   );
+
+  const sponsoredCompanies = sponsorsData?.companies || sponsorsData?.results || [];
+  const totalSponsors = sponsorsData?.total || 0;
+
+  // Debug logging - can be removed after issue is resolved
+  useEffect(() => {
+    if (sponsorsData !== undefined) {
+      console.log('[SponsorManagement] ===== DATA UPDATE =====');
+      console.log('[SponsorManagement] Raw sponsorsData:', JSON.stringify(sponsorsData, null, 2)?.slice(0, 500));
+      console.log('[SponsorManagement] sponsorsData.companies:', sponsorsData?.companies?.length);
+      console.log('[SponsorManagement] sponsorsData.results:', sponsorsData?.results?.length);
+      console.log('[SponsorManagement] Extracted sponsoredCompanies:', sponsoredCompanies?.length);
+      console.log('[SponsorManagement] Total sponsors:', totalSponsors);
+      console.log('[SponsorManagement] ========================');
+    }
+  }, [sponsorsData, sponsoredCompanies, totalSponsors]);
 
   const { data: sponsorStats } = useApiQuery(
     fetchStats,
-    [user?.uid, isAdmin],
-    { enabled: !!user && isAdmin === true },
+    [user?.uid, isReady],
+    { enabled: isReady },
     "admin-sponsor-stats"
   );
 
@@ -186,7 +206,7 @@ export function SponsorManagement() {
         Industry: sponsor.industry || "",
         Website: sponsor.website || "",
         Status: sponsor.isActive !== false ? "Active" : "Inactive",
-        Aliases: sponsor.aliases.join(", "),
+        Aliases: (sponsor.aliases || []).join(", "),
         "Created At": sponsor.createdAt && !isNaN(new Date(sponsor.createdAt).getTime())
           ? new Date(sponsor.createdAt).toISOString()
           : "",
@@ -205,12 +225,14 @@ export function SponsorManagement() {
     refetchSponsors();
   };
 
-  if (isAdmin === null) {
-    return <div>Loading...</div>;
-  }
-
-  if (!isAdmin) {
-    return <AdminAccessDenied />;
+  if (!isReady) {
+    return (
+      <AdminLayout title="Sponsors">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </AdminLayout>
+    );
   }
 
   const containerVariants = {
@@ -229,20 +251,21 @@ export function SponsorManagement() {
   };
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="show"
-      className="space-y-8"
-    >
-      <motion.div variants={itemVariants} className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Sponsor Management</h1>
-          <p className="text-muted-foreground mt-2">
-            Manage sponsored companies and track sponsorship analytics
-          </p>
-        </div>
-      </motion.div>
+    <AdminLayout title="Sponsors">
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="show"
+        className="space-y-8"
+      >
+        <motion.div variants={itemVariants} className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Sponsor Management</h1>
+            <p className="text-muted-foreground mt-2">
+              Manage sponsored companies and track sponsorship analytics
+            </p>
+          </div>
+        </motion.div>
 
       {/* Stats Cards */}
       <motion.div variants={itemVariants}>
@@ -251,7 +274,7 @@ export function SponsorManagement() {
 
       {/* Filters */}
       <motion.div variants={itemVariants}>
-        <Card className="p-4">
+        <Card className="p-4 border-gray-200 bg-white">
           <SponsorFilters
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
@@ -273,9 +296,9 @@ export function SponsorManagement() {
 
       {/* Sponsors Table */}
       <motion.div variants={itemVariants}>
-        <Card className="overflow-hidden border-none shadow-md">
-          <CardHeader className="bg-muted/30">
-            <CardTitle>Sponsored Companies</CardTitle>
+        <Card className="overflow-hidden border-gray-200 bg-white">
+          <CardHeader className="bg-gray-50 border-b border-gray-200">
+            <CardTitle className="text-gray-900">Sponsored Companies</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {sponsoredCompanies && sponsoredCompanies.length > 0 ? (
@@ -286,9 +309,16 @@ export function SponsorManagement() {
                 onEditSponsor={handleEditSponsor}
                 onDeleteSponsor={handleDeleteSponsor}
                 onViewSponsor={handleViewSponsor}
+                isLoading={isSponsorsLoading}
+                currentPage={page}
+                totalPages={Math.ceil(totalSponsors / pageSize)}
+                onPageChange={setPage}
+                pageSize={pageSize}
+                onPageSizeChange={setPageSize}
+                totalItems={totalSponsors}
               />
             ) : (
-              <div className="text-center py-12 text-muted-foreground">
+              <div className="text-center py-12 text-gray-500">
                 {searchTerm || industryFilter !== "all" || typeFilter !== "all" || statusFilter !== "all"
                   ? "No sponsors match your filters"
                   : "No sponsored companies yet. Add your first sponsor!"}
@@ -319,7 +349,7 @@ export function SponsorManagement() {
         isSubmitting={createSponsorMutation.loading || updateSponsorMutation.loading}
         initialData={editingSponsor ? {
           name: editingSponsor.name,
-          aliases: editingSponsor.aliases,
+          aliases: editingSponsor.aliases || [],
           sponsorshipType: editingSponsor.sponsorshipType,
           description: editingSponsor.description,
           website: editingSponsor.website,
@@ -330,5 +360,6 @@ export function SponsorManagement() {
         mode={dialogMode}
       />
     </motion.div>
+    </AdminLayout>
   );
 }

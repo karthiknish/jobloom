@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Briefcase, MapPin, TrendingUp } from "lucide-react";
+import { Briefcase, Building, MapPin, TrendingUp, Zap } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -33,11 +33,11 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
     | "offered"
     | "rejected"
     | "withdrawn",
-    "yellow" | "purple" | "green" | "destructive" | "secondary" | "default"
+    "yellow" | "teal" | "green" | "destructive" | "secondary" | "default"
   > = {
     interested: "default",
     applied: "yellow",
-    interviewing: "purple",
+    interviewing: "teal",
     offered: "green",
     rejected: "destructive",
     withdrawn: "secondary",
@@ -140,7 +140,7 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
                   <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-lg">
-                    <span className="text-white text-2xl">⚡</span>
+                    <Zap className="w-6 h-6 text-white" />
                   </div>
                   <div className="ml-4">
                     <p className="text-sm font-medium text-muted-foreground">
@@ -174,19 +174,19 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
-                  <div className="p-4 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600 shadow-lg">
+                  <div className="p-4 rounded-2xl bg-gradient-to-br from-teal-500 to-teal-600 shadow-lg">
                     <TrendingUp className="h-8 w-8 text-white" />
                   </div>
                   <div className="ml-4">
                     <p className="text-sm font-medium text-muted-foreground">
                       Today&apos;s Jobs
                     </p>
-                    <p className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-purple-800 bg-clip-text text-transparent">
+                    <p className="text-3xl font-bold bg-gradient-to-r from-teal-600 to-teal-800 bg-clip-text text-transparent">
                       {stats.jobsToday}
                     </p>
                   </div>
                 </div>
-                <div className="text-purple-500 opacity-20 group-hover:opacity-30 transition-opacity">
+                <div className="text-teal-500 opacity-20 group-hover:opacity-30 transition-opacity">
                   <svg
                     className="w-8 h-8"
                     fill="currentColor"
@@ -275,7 +275,7 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
           <Card className="group hover:shadow-xl transition-shadow duration-300">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <span className="text-2xl">🏢</span>
+                <Building className="w-6 h-6 text-primary" />
                 Recruitment Insights
               </CardTitle>
             </CardHeader>
@@ -287,7 +287,7 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
                       <div className="group/insight flex items-center justify-between p-4 bg-gradient-to-r from-muted to-muted/80   rounded-xl hover:from-muted/80 hover:to-muted/60   transition-all duration-300 cursor-help">
                         <div className="flex items-center">
                           <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-md group-hover/insight:shadow-lg transition-shadow">
-                            <span className="text-white text-xl">🏢</span>
+                            <Building className="w-5 h-5 text-white" />
                           </div>
                           <div className="ml-4">
                             <span className="font-semibold text-foreground">

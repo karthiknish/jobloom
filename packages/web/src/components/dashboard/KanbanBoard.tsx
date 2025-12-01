@@ -117,7 +117,7 @@ export function KanbanBoard({
   const statusBadge: Record<KanbanStatus, React.ReactNode> = {
     interested: <Badge variant="secondary" className="bg-slate-100 text-slate-700 hover:bg-slate-200">Interested</Badge>,
     applied: <Badge variant="secondary" className="bg-blue-100 text-blue-700 hover:bg-blue-200">Applied</Badge>,
-    interviewing: <Badge variant="secondary" className="bg-purple-100 text-purple-700 hover:bg-purple-200">Interviewing</Badge>,
+    interviewing: <Badge variant="secondary" className="bg-teal-100 text-teal-700 hover:bg-teal-200">Interviewing</Badge>,
     offered: <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200">Offered</Badge>,
     rejected: <Badge variant="secondary" className="bg-red-100 text-red-700 hover:bg-red-200">Rejected</Badge>,
     withdrawn: <Badge variant="secondary" className="bg-gray-100 text-gray-700 hover:bg-gray-200">Withdrawn</Badge>,

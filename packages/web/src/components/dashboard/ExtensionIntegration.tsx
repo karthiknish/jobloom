@@ -1,9 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, AlertTriangle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { 
+  CheckCircle, 
+  AlertTriangle, 
+  Chrome, 
+  RefreshCw, 
+  Zap, 
+  Clock, 
+  Briefcase,
+  ExternalLink,
+  Sparkles
+} from "lucide-react";
 import { extensionAuthBridge } from "@/lib/extensionAuthBridge";
 
 interface ExtensionIntegrationProps {
@@ -14,6 +26,7 @@ export function ExtensionIntegration({ userId }: ExtensionIntegrationProps) {
   const [isExtensionInstalled, setIsExtensionInstalled] = useState(false);
   const [jobsDetected, setJobsDetected] = useState(0);
   const [lastSync, setLastSync] = useState<Date | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   // Check if extension is installed with better detection
   useEffect(() => {
@@ -141,136 +154,171 @@ export function ExtensionIntegration({ userId }: ExtensionIntegrationProps) {
     }
   }, [userId, isExtensionInstalled]);
 
+  const handleForceSync = async () => {
+    setIsSyncing(true);
+    try {
+      const authResponse = await extensionAuthBridge.getAuthToken(true);
+      window.postMessage(
+        {
+          type: "JOBOOK_FORCE_SYNC",
+          userId: userId,
+          token: authResponse.token,
+          userEmail: authResponse.userEmail,
+          timestamp: Date.now()
+        },
+        "*"
+      );
+      // Simulate sync completion
+      setTimeout(() => {
+        setLastSync(new Date());
+        setIsSyncing(false);
+      }, 2000);
+    } catch (error) {
+      console.error('Failed to force sync:', error);
+      setIsSyncing(false);
+    }
+  };
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Chrome Extension</CardTitle>
-        <CardDescription>
-          Automatically detect and sync job postings
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {isExtensionInstalled ? (
-          <div className="space-y-6">
-            <div className="flex items-center p-3 bg-green-50 rounded-lg border border-green-200">
-              <div className="flex-shrink-0">
-                <CheckCircle className="h-6 w-6 text-green-600" />
-              </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-green-800">
-                  Extension Installed
-                </p>
-                <p className="text-xs text-green-700">
-                  Jobs will be automatically detected and synced
-                </p>
-              </div>
+    <Card className="overflow-hidden border-0 shadow-lg">
+      <CardHeader className={`pb-4 ${
+        isExtensionInstalled 
+          ? "bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-950/30 dark:to-green-950/30" 
+          : "bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30"
+      }`}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className={`p-2.5 rounded-xl ${
+              isExtensionInstalled 
+                ? "bg-emerald-100 dark:bg-emerald-900/50" 
+                : "bg-blue-100 dark:bg-blue-900/50"
+            }`}>
+              <Chrome className={`h-6 w-6 ${
+                isExtensionInstalled 
+                  ? "text-emerald-600 dark:text-emerald-400" 
+                  : "text-blue-600 dark:text-blue-400"
+              }`} />
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-muted rounded-lg p-4 text-center">
-                <p className="text-2xl font-bold text-foreground">
-                  {jobsDetected}
-                </p>
-                <p className="text-sm text-muted-foreground">Jobs Detected</p>
-              </div>
-
-              <div className="bg-muted rounded-lg p-4 text-center">
-                <p className="text-2xl font-bold text-foreground">
-                  {lastSync ? lastSync.toLocaleTimeString() : "Never"}
-                </p>
-                <p className="text-sm text-muted-foreground">Last Sync</p>
-              </div>
-
-              <div className="bg-muted rounded-lg p-4 text-center">
-                <p className="text-2xl font-bold text-foreground">Active</p>
-                <p className="text-sm text-muted-foreground">Status</p>
-              </div>
-            </div>
-
-            <div className="pt-2">
-              <Button
-                className="w-full"
-                onClick={async () => {
-                  try {
-                    const authResponse = await extensionAuthBridge.getAuthToken(true);
-                    window.postMessage(
-                      {
-                        type: "JOBOOK_FORCE_SYNC",
-                        userId: userId,
-                        token: authResponse.token,
-                        userEmail: authResponse.userEmail,
-                        timestamp: Date.now()
-                      },
-                      "*"
-                    );
-                  } catch (error) {
-                    console.error('Failed to force sync:', error);
-                  }
-                }}
-              >
-                Force Sync Now
-              </Button>
+            <div>
+              <CardTitle className="text-lg">Browser Extension</CardTitle>
+              <CardDescription className="text-sm">
+                {isExtensionInstalled 
+                  ? "Connected and ready to sync jobs" 
+                  : "Save jobs from any job board with one click"
+                }
+              </CardDescription>
             </div>
           </div>
+          {isExtensionInstalled && (
+            <Badge className="bg-emerald-500 hover:bg-emerald-500 text-white gap-1">
+              <CheckCircle className="h-3 w-3" />
+              Active
+            </Badge>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className="pt-6">
+        {isExtensionInstalled ? (
+          <div className="space-y-5">
+            {/* Stats Grid */}
+            <div className="grid grid-cols-3 gap-3">
+              <motion.div 
+                whileHover={{ scale: 1.02 }}
+                className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-xl p-4 text-center border border-blue-100 dark:border-blue-900/50"
+              >
+                <Briefcase className="h-5 w-5 text-blue-600 dark:text-blue-400 mx-auto mb-2" />
+                <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+                  {jobsDetected}
+                </p>
+                <p className="text-xs text-blue-600/80 dark:text-blue-400/80">Jobs Saved</p>
+              </motion.div>
+
+              <motion.div 
+                whileHover={{ scale: 1.02 }}
+                className="bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-teal-950/30 dark:to-cyan-950/30 rounded-xl p-4 text-center border border-teal-100 dark:border-teal-900/50"
+              >
+                <Clock className="h-5 w-5 text-teal-600 dark:text-teal-400 mx-auto mb-2" />
+                <p className="text-2xl font-bold text-teal-900 dark:text-teal-100">
+                  {lastSync ? lastSync.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "--:--"}
+                </p>
+                <p className="text-xs text-teal-600/80 dark:text-teal-400/80">Last Sync</p>
+              </motion.div>
+
+              <motion.div 
+                whileHover={{ scale: 1.02 }}
+                className="bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/30 dark:to-green-950/30 rounded-xl p-4 text-center border border-emerald-100 dark:border-emerald-900/50"
+              >
+                <Zap className="h-5 w-5 text-emerald-600 dark:text-emerald-400 mx-auto mb-2" />
+                <p className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
+                  Active
+                </p>
+                <p className="text-xs text-emerald-600/80 dark:text-emerald-400/80">Status</p>
+              </motion.div>
+            </div>
+
+            {/* Sync Button */}
+            <Button
+              className="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white gap-2"
+              onClick={handleForceSync}
+              disabled={isSyncing}
+            >
+              <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+              {isSyncing ? 'Syncing...' : 'Sync Now'}
+            </Button>
+          </div>
         ) : (
-          <div className="space-y-6">
-            <div className="flex items-center p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-              <div className="flex-shrink-0">
-                <AlertTriangle className="h-6 w-6 text-yellow-600" />
-              </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-yellow-800">
+          <div className="space-y-5">
+            {/* Warning Banner */}
+            <div className="flex items-center gap-3 p-3 bg-amber-50 dark:bg-amber-950/30 rounded-xl border border-amber-200 dark:border-amber-800">
+              <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
                   Extension Not Installed
                 </p>
-                <p className="text-xs text-yellow-700">
-                  Install the Chrome extension to automatically detect jobs
+                <p className="text-xs text-amber-700 dark:text-amber-300">
+                  Install to save jobs automatically from job boards
                 </p>
               </div>
             </div>
 
-            <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                The Hireall Chrome extension automatically detects job postings
-                on popular job sites and syncs them to your dashboard.
-              </p>
-
-              <div className="flex items-center space-x-3 text-sm text-muted-foreground">
-                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary">
-                  1
-                </span>
-                <span>Install the Hireall Chrome Extension</span>
-              </div>
-
-              <div className="flex items-center space-x-3 text-sm text-muted-foreground">
-                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary">
-                  2
-                </span>
-                <span>
-                  Browse job sites like LinkedIn, Indeed, or Glassdoor
-                </span>
-              </div>
-
-              <div className="flex items-center space-x-3 text-sm text-muted-foreground">
-                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary">
-                  3
-                </span>
-                <span>
-                  Jobs are automatically detected and added to your dashboard
-                </span>
-              </div>
-            </div>
-
-            <div className="pt-2">
-              <Button className="w-full" asChild>
-                <a
-                  href="https://chrome.google.com/webstore/detail/hireall-extension"
-                  target="_blank"
-                  rel="noopener noreferrer"
+            {/* Steps */}
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-foreground">How it works:</p>
+              {[
+                { step: 1, text: "Install the Hireall Chrome Extension" },
+                { step: 2, text: "Browse LinkedIn, Indeed, Glassdoor, and more" },
+                { step: 3, text: "Click 'Add to Board' on any job listing" },
+              ].map((item, index) => (
+                <motion.div 
+                  key={item.step}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  className="flex items-center gap-3"
                 >
-                  Install Extension
-                </a>
-              </Button>
+                  <span className="flex items-center justify-center w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-sm font-semibold">
+                    {item.step}
+                  </span>
+                  <span className="text-sm text-muted-foreground">{item.text}</span>
+                </motion.div>
+              ))}
             </div>
+
+            {/* Install Button */}
+            <Button 
+              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white gap-2"
+              asChild
+            >
+              <a
+                href="https://chrome.google.com/webstore/detail/hireall-extension"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Chrome className="h-4 w-4" />
+                Install Chrome Extension
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            </Button>
           </div>
         )}
       </CardContent>

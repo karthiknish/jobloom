@@ -170,7 +170,7 @@ export function PreferencesSettings({ formData, onInputChange }: PreferencesSett
                 </div>
                 <Switch
                   id="ukFiltersEnabled"
-                  checked={formData.preferences.ukFiltersEnabled || false}
+                  checked={formData.preferences.ukFiltersEnabled ?? false}
                   onCheckedChange={(checked) => {
                     onInputChange("preferences", "ukFiltersEnabled", checked);
                     // Also enable sponsor button when UK filters are enabled
@@ -192,7 +192,7 @@ export function PreferencesSettings({ formData, onInputChange }: PreferencesSett
                 </div>
                 <Switch
                   id="autoDetectJobs"
-                  checked={formData.preferences.autoDetectJobs || true}
+                  checked={formData.preferences.autoDetectJobs ?? true}
                   onCheckedChange={(checked) => onInputChange("preferences", "autoDetectJobs", checked)}
                 />
               </div>

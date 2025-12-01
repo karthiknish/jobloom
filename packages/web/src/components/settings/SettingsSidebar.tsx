@@ -50,9 +50,11 @@ export function SettingsSidebar({
                 {user?.displayName || 'User'}
               </div>
               <div className="text-sm text-gray-600">{user?.email}</div>
-              <div className="text-xs text-gray-500 mt-1">
-                Member since {new Date().toLocaleDateString()}
-              </div>
+              {user?.metadata?.creationTime && (
+                <div className="text-xs text-gray-500 mt-1">
+                  Member since {new Date(user.metadata.creationTime).toLocaleDateString()}
+                </div>
+              )}
             </div>
           </div>
           <Separator className="mb-6" />

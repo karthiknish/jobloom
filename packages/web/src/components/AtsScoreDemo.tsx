@@ -256,7 +256,7 @@ export function AtsScoreDemo() {
         score={currentScore}
         showDetailed={true}
         animated={true}
-        size="large"
+        size="expanded"
       />
 
       {/* Technical Details */}

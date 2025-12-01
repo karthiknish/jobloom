@@ -71,6 +71,7 @@ export function useEnhancedApi<T = any>(
   const executeRef = useRef(apiCall);
   const optionsRef = useRef(options);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const hasExecutedRef = useRef(false);
 
   // Update refs when dependencies change
   useEffect(() => {
@@ -113,6 +114,16 @@ export function useEnhancedApi<T = any>(
       error: null
     }));
 
+    const currentOptions = optionsRef.current;
+    const {
+      onSuccess: optOnSuccess,
+      onError: optOnError,
+      showGlobalError: optShowGlobalError = true,
+      showLocalError: optShowLocalError = true,
+      customErrorHandler: optCustomErrorHandler,
+      cacheTime: optCacheTime = 5 * 60 * 1000
+    } = currentOptions;
+
     try {
       // Check cache first
       const cacheKey = JSON.stringify({ fn: executeRef.current.name, args });
@@ -127,7 +138,7 @@ export function useEnhancedApi<T = any>(
           requestId: 'cached'
         });
         
-        if (onSuccess) onSuccess(cached.data);
+        if (optOnSuccess) optOnSuccess(cached.data);
         return cached.data;
       }
 
@@ -135,11 +146,11 @@ export function useEnhancedApi<T = any>(
       const data = await executeRef.current(...args);
 
       // Cache the result
-      if (cacheTime > 0) {
+      if (optCacheTime > 0) {
         apiCache.set(cacheKey, {
           data,
           timestamp: Date.now(),
-          ttl: cacheTime
+          ttl: optCacheTime
         });
       }
 
@@ -151,7 +162,7 @@ export function useEnhancedApi<T = any>(
         requestId: data?.requestId || null
       });
 
-      if (onSuccess) onSuccess(data);
+      if (optOnSuccess) optOnSuccess(data);
       return data;
 
     } catch (error) {
@@ -165,28 +176,36 @@ export function useEnhancedApi<T = any>(
         requestId: apiError.requestId || null
       });
 
-      if (onError) onError(apiError);
+      if (optOnError) optOnError(apiError);
 
       // Handle error based on options
-      if (!customErrorHandler) {
-        if (showLocalError && apiError.field) {
+      if (!optCustomErrorHandler) {
+        if (optShowLocalError && apiError.field) {
           // Field-specific error - don't show global toast
           console.warn(`Field error (${apiError.field}): ${apiError.message}`);
-        } else if (showGlobalError) {
-          // Show global error toast
-          const severity = apiError.status >= 500 ? 'error' : 
-                          apiError.status === 429 ? 'warning' : 'error';
+        } else if (optShowGlobalError) {
+          // Show global error toast (with deduplication for rate limit errors)
+          const isRateLimit = apiError.status === 429;
+          const toastId = isRateLimit ? 'rate-limit-error' : apiError.requestId;
           
-          toast.error(apiError.message, {
-            duration: severity === 'error' ? 5000 : 3000,
-            id: apiError.requestId // Prevent duplicate toasts
-          });
+          if (isRateLimit) {
+            toast.error('Too many requests. Please wait a moment before trying again.', {
+              duration: 5000,
+              id: toastId // Prevent duplicate rate limit toasts
+            });
+          } else {
+            toast.error(apiError.message, {
+              duration: apiError.status >= 500 ? 5000 : 3000,
+              id: toastId
+            });
+          }
         }
       }
 
       return null;
     }
-  }, [onSuccess, onError, showGlobalError, showLocalError, customErrorHandler, cacheTime]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array - use refs for all dependencies
 
   // Refetch function
   const refetch = useCallback(async (): Promise<T | null> => {
@@ -197,9 +216,12 @@ export function useEnhancedApi<T = any>(
     return execute();
   }, [execute]);
 
-  // Execute on mount if immediate
+  // Execute on mount if immediate (only once)
   useEffect(() => {
-    if (immediate || retryOnMount) {
+    const shouldExecute = (immediate || retryOnMount) && !hasExecutedRef.current;
+    
+    if (shouldExecute) {
+      hasExecutedRef.current = true;
       execute();
     }
 
@@ -209,7 +231,8 @@ export function useEnhancedApi<T = any>(
         abortControllerRef.current.abort();
       }
     };
-  }, [immediate, retryOnMount, execute]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [immediate, retryOnMount]); // Remove execute from dependencies - it's stable now
 
   return {
     data: state.data,

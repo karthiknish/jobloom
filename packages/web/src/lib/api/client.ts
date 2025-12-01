@@ -259,11 +259,20 @@ class ApiClient {
    * Create frontend error from backend error response
    */
   private createFrontendError(errorData: any, status: number): FrontendApiError {
+    // Handle null/undefined/empty error data
+    if (!errorData || (typeof errorData === 'object' && Object.keys(errorData).length === 0)) {
+      return new FrontendApiError(
+        `Request failed with status ${status}`,
+        `HTTP_${status}`,
+        status
+      );
+    }
+
     if (errorData.error && typeof errorData.error === 'object') {
       // New standardized error format
       return new FrontendApiError(
-        errorData.error.message,
-        errorData.error.code,
+        errorData.error.message || `Request failed with status ${status}`,
+        errorData.error.code || `HTTP_${status}`,
         status,
         errorData.error.requestId,
         errorData.error.field,
@@ -274,12 +283,12 @@ class ApiClient {
     } else {
       // Legacy error format
       return new FrontendApiError(
-        errorData.message || errorData.error || 'Request failed',
+        errorData.message || errorData.error || `Request failed with status ${status}`,
         errorData.code || `HTTP_${status}`,
         status,
         undefined,
         undefined,
-        errorData.details || errorData
+        errorData.details || (typeof errorData === 'object' ? errorData : undefined)
       );
     }
   }
@@ -288,7 +297,12 @@ class ApiClient {
    * Determine if an error should be retried
    */
   private shouldRetryError(error: FrontendApiError): boolean {
-    // Don't retry client errors (4xx) except rate limiting
+    // Never retry auth errors
+    if (error.status === 401 || error.status === 403) {
+      return false;
+    }
+    
+    // Don't retry client errors (4xx) except rate limiting and timeout
     if (error.status >= 400 && error.status < 500) {
       return error.status === 429 || error.status === 408;
     }
@@ -303,13 +317,19 @@ class ApiClient {
   private handleError(error: FrontendApiError, options: ApiResponseOptions): void {
     const classification = this.classifyError(error);
 
-    // Log error for debugging
+    // Log error for debugging with null-safe property access
     console.error('API Error:', {
-      message: error.message,
-      code: error.code,
-      status: error.status,
-      requestId: error.requestId,
-      classification
+      message: error.message || 'Unknown error',
+      code: error.code || 'UNKNOWN',
+      status: error.status ?? 'N/A',
+      requestId: error.requestId || 'N/A',
+      field: error.field || undefined,
+      details: error.details || undefined,
+      classification: {
+        category: classification.category,
+        severity: classification.severity,
+        shouldRetry: classification.shouldRetry
+      }
     });
 
     // Call custom error handler if provided
@@ -520,7 +540,8 @@ class ApiClient {
         const { getAuthClient } = await import('@/firebase/client');
         const auth = getAuthClient();
         if (auth?.currentUser) {
-          return await auth.currentUser.getIdToken();
+          const token = await auth.currentUser.getIdToken();
+          return token ? `Bearer ${token}` : '';
         }
       } catch (error) {
         console.warn('[ApiClient] Failed to get token from Firebase auth client:', error);
@@ -529,7 +550,8 @@ class ApiClient {
       // Fallback to legacy method
       const user = (window as any).firebase?.auth()?.currentUser;
       if (user) {
-        return await user.getIdToken();
+        const token = await user.getIdToken();
+        return token ? `Bearer ${token}` : '';
       }
     }
     return '';

@@ -12,7 +12,7 @@ import { VisaCriteriaSettings } from "@/components/settings/VisaCriteriaSettings
 import { SecuritySettings } from "@/components/settings/SecuritySettings";
 import { FeaturesSettings } from "@/components/settings/FeaturesSettings";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
-import { useSubscription } from "@/hooks/useSubscription";
+import { useSubscription } from "@/providers/subscription-provider";
 import { useToast, TOAST_MESSAGES } from "@/hooks/use-toast";
 
 export default function SettingsPage() {

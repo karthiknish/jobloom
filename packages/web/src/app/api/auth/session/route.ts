@@ -23,8 +23,13 @@ import { checkServerRateLimit } from "@/lib/rateLimiter";
 // Enhanced rate limiting for auth endpoints
 async function applyAuthRateLimit(request: NextRequest): Promise<void> {
   const identifier = getClientIp(request);
+  
+  // More lenient rate limiting for development and localhost
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  const isLocalhost = identifier === 'unknown' || identifier.includes('127.0.0.1') || identifier.includes('::1') || identifier.includes('192.168.');
+  
   const result = checkServerRateLimit(identifier, 'auth', {
-    maxRequests: 5,
+    maxRequests: isDevelopment || isLocalhost ? 50 : 10, // 50 for dev/localhost, 10 for production
     windowMs: 15 * 60 * 1000, // 15 minutes
   });
   

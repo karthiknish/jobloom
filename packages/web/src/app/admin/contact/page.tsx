@@ -448,63 +448,63 @@ export default function AdminContactDashboard() {
           transition={{ delay: 0.1 }}
           className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4"
         >
-          <Card className="card-depth-2 border-none shadow-sm hover:shadow-md transition-shadow">
+          <Card className="border-gray-200 shadow-sm hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total messages</CardTitle>
-              <div className="p-2 rounded-full bg-blue-100 dark:bg-blue-900/20">
+              <CardTitle className="text-sm font-medium text-gray-500">Total messages</CardTitle>
+              <div className="p-2 rounded-full bg-blue-100">
                 <Inbox className="h-4 w-4 text-blue-600" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{contactStats.total}</div>
-              <p className="text-xs text-muted-foreground mt-1">Across all time</p>
+              <div className="text-2xl font-bold text-gray-900">{contactStats.total}</div>
+              <p className="text-xs text-gray-500 mt-1">Across all time</p>
             </CardContent>
           </Card>
 
-          <Card className="card-depth-2 border-none shadow-sm hover:shadow-md transition-shadow">
+          <Card className="border-gray-200 shadow-sm hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Awaiting response</CardTitle>
-              <div className="p-2 rounded-full bg-orange-100 dark:bg-orange-900/20">
+              <CardTitle className="text-sm font-medium text-gray-500">Awaiting response</CardTitle>
+              <div className="p-2 rounded-full bg-orange-100">
                 <Mail className="h-4 w-4 text-orange-600" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{contactStats.open}</div>
-              <p className="text-xs text-muted-foreground mt-1">
+              <div className="text-2xl font-bold text-gray-900">{contactStats.open}</div>
+              <p className="text-xs text-gray-500 mt-1">
                 {contactStats.unread} new • {contactStats.open - contactStats.unread} read
               </p>
             </CardContent>
           </Card>
 
-          <Card className="card-depth-2 border-none shadow-sm hover:shadow-md transition-shadow">
+          <Card className="border-gray-200 shadow-sm hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Response rate</CardTitle>
-              <div className="p-2 rounded-full bg-green-100 dark:bg-green-900/20">
+              <CardTitle className="text-sm font-medium text-gray-500">Response rate</CardTitle>
+              <div className="p-2 rounded-full bg-green-100">
                 <Send className="h-4 w-4 text-green-600" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{contactStats.responseRate}%</div>
-              <p className="text-xs text-muted-foreground mt-1">
+              <div className="text-2xl font-bold text-gray-900">{contactStats.responseRate}%</div>
+              <p className="text-xs text-gray-500 mt-1">
                 {contactStats.responded} responded • {contactStats.archived} archived
               </p>
             </CardContent>
           </Card>
 
-          <Card className="card-depth-2 border-none shadow-sm hover:shadow-md transition-shadow">
+          <Card className="border-gray-200 shadow-sm hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Avg. response time</CardTitle>
-              <div className="p-2 rounded-full bg-purple-100 dark:bg-purple-900/20">
+              <CardTitle className="text-sm font-medium text-gray-500">Avg. response time</CardTitle>
+              <div className="p-2 rounded-full bg-purple-100">
                 <MessageSquare className="h-4 w-4 text-purple-600" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-2xl font-bold text-gray-900">
                 {contactStats.averageResponseHours !== null
                   ? `${contactStats.averageResponseHours}h`
                   : "—"}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-xs text-gray-500 mt-1">
                 Across responded conversations
               </p>
             </CardContent>
@@ -518,18 +518,18 @@ export default function AdminContactDashboard() {
           transition={{ delay: 0.2 }}
           className="grid grid-cols-1 xl:grid-cols-3 gap-6"
         >
-          <Card className="card-depth-2">
+          <Card className="border-gray-200 shadow-sm">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
+              <CardTitle className="flex items-center gap-2 text-lg text-gray-900">
                 <Filter className="h-5 w-5 text-primary" />
                 Quick actions
               </CardTitle>
-              <CardDescription>Operate on the currently filtered list</CardDescription>
+              <CardDescription className="text-gray-500">Operate on the currently filtered list</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               <Button
                 variant="outline"
-                className="w-full justify-start"
+                className="w-full justify-start border-gray-200 text-gray-700 hover:bg-gray-50"
                 onClick={handleCopyAllEmails}
               >
                 <Copy className="h-4 w-4 mr-2" />
@@ -537,7 +537,7 @@ export default function AdminContactDashboard() {
               </Button>
               <Button
                 variant="outline"
-                className="w-full justify-start"
+                className="w-full justify-start border-gray-200 text-gray-700 hover:bg-gray-50"
                 onClick={handleCopyFollowUps}
               >
                 <Reply className="h-4 w-4 mr-2" />
@@ -545,7 +545,7 @@ export default function AdminContactDashboard() {
               </Button>
               <Button
                 variant="outline"
-                className="w-full justify-start"
+                className="w-full justify-start border-gray-200 text-gray-700 hover:bg-gray-50"
                 onClick={handleExportContacts}
               >
                 <Download className="h-4 w-4 mr-2" />
@@ -554,39 +554,39 @@ export default function AdminContactDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="card-depth-2 xl:col-span-2">
+          <Card className="border-gray-200 shadow-sm xl:col-span-2">
             <CardHeader>
-              <CardTitle className="text-lg">Recent inbound messages</CardTitle>
-              <CardDescription>Latest conversations awaiting action</CardDescription>
+              <CardTitle className="text-lg text-gray-900">Recent inbound messages</CardTitle>
+              <CardDescription className="text-gray-500">Latest conversations awaiting action</CardDescription>
             </CardHeader>
             <CardContent>
               {recentContacts.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No contact submissions yet.</p>
+                <p className="text-sm text-gray-500">No contact submissions yet.</p>
               ) : (
                 <div className="space-y-4">
                   {recentContacts.map((contact) => (
                     <div
                       key={contact._id}
-                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b last:border-b-0 pb-3 last:pb-0"
+                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 last:border-b-0 pb-3 last:pb-0"
                     >
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium truncate">
+                          <span className="font-medium truncate text-gray-900">
                             {contact.subject || "(No subject)"}
                           </span>
                           {getStatusBadge(contact.status)}
                         </div>
-                        <p className="text-sm text-muted-foreground truncate">
+                        <p className="text-sm text-gray-500 truncate">
                           {contact.name} • {contact.email}
                         </p>
-                        <p className="text-xs text-muted-foreground truncate">
+                        <p className="text-xs text-gray-400 truncate">
                           Received {formatDistanceToNow(contact.createdAt, { addSuffix: true })}
                         </p>
                       </div>
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="self-start"
+                        className="self-start text-gray-500 hover:text-gray-900"
                         onClick={() => handleOpenDetails(contact)}
                       >
                         <Eye className="h-4 w-4 mr-2" /> View
@@ -604,28 +604,28 @@ export default function AdminContactDashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
-          className="card-depth-2"
+          className="border rounded-lg border-gray-200 bg-white shadow-sm"
         >
           <CardHeader>
-            <CardTitle>Contact submissions</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-gray-900">Contact submissions</CardTitle>
+            <CardDescription className="text-gray-500">
               {filteredContacts.length} conversations match your filters
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center mb-6">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
                   placeholder="Search by name, email, subject, or message"
                   value={searchTerm}
                   onChange={(event) => setSearchTerm(event.target.value)}
-                  className="pl-9"
+                  className="pl-9 border-gray-200 focus:ring-blue-500"
                 />
               </div>
 
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-[180px] border-gray-200">
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -638,64 +638,65 @@ export default function AdminContactDashboard() {
               </Select>
             </div>
 
-            <div className="rounded-md border overflow-hidden">
+            <div className="rounded-md border border-gray-200 overflow-hidden">
               <Table>
-                <TableHeader className="bg-muted/30">
-                  <TableRow>
-                    <TableHead>Name & email</TableHead>
-                    <TableHead>Subject</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Received</TableHead>
-                    <TableHead className="hidden lg:table-cell">Last update</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                <TableHeader className="bg-gray-50">
+                  <TableRow className="border-gray-200">
+                    <TableHead className="text-gray-600 font-medium">Name & email</TableHead>
+                    <TableHead className="text-gray-600 font-medium">Subject</TableHead>
+                    <TableHead className="text-gray-600 font-medium">Status</TableHead>
+                    <TableHead className="text-gray-600 font-medium">Received</TableHead>
+                    <TableHead className="hidden lg:table-cell text-gray-600 font-medium">Last update</TableHead>
+                    <TableHead className="text-right text-gray-600 font-medium">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredContacts.map((contact) => (
                     <TableRow
                       key={contact._id}
-                      className={`${contact.status === "new" ? "bg-primary/5" : ""} hover:bg-muted/50 transition-colors`}
+                      className={`${contact.status === "new" ? "bg-blue-50/50" : ""} hover:bg-gray-50 transition-colors border-gray-200`}
                     >
                       <TableCell>
                         <div className="flex flex-col">
-                          <span className="font-medium">{contact.name}</span>
-                          <span className="text-sm text-muted-foreground truncate">
+                          <span className="font-medium text-gray-900">{contact.name}</span>
+                          <span className="text-sm text-gray-500 truncate">
                             {contact.email}
                           </span>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="min-w-0 max-w-[280px] truncate">
+                        <div className="min-w-0 max-w-[280px] truncate text-gray-700">
                           {contact.subject || "(No subject)"}
                         </div>
                       </TableCell>
                       <TableCell>{getStatusBadge(contact.status)}</TableCell>
                       <TableCell>
-                        <div className="text-sm text-muted-foreground">
+                        <div className="text-sm text-gray-500">
                           {formatDistanceToNow(contact.createdAt, { addSuffix: true })}
                         </div>
                       </TableCell>
                       <TableCell className="hidden lg:table-cell">
-                        <div className="text-sm text-muted-foreground">
+                        <div className="text-sm text-gray-500">
                           {format(new Date(contact.updatedAt), "PPp")}
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
+                            <Button variant="ghost" className="h-8 w-8 p-0 text-gray-500 hover:text-gray-900">
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem onClick={() => handleOpenDetails(contact)}>
+                          <DropdownMenuContent align="end" className="border-gray-200">
+                            <DropdownMenuLabel className="text-gray-900">Actions</DropdownMenuLabel>
+                            <DropdownMenuItem onClick={() => handleOpenDetails(contact)} className="text-gray-700 focus:bg-gray-100">
                               <Eye className="h-4 w-4 mr-2" /> View details
                             </DropdownMenuItem>
-                            <DropdownMenuSeparator />
+                            <DropdownMenuSeparator className="bg-gray-200" />
                             {contact.status === "new" && (
                               <DropdownMenuItem
                                 onClick={() => handleUpdateStatus(contact, "read")}
+                                className="text-gray-700 focus:bg-gray-100"
                               >
                                 <Mail className="h-4 w-4 mr-2" /> Mark as read
                               </DropdownMenuItem>
@@ -703,6 +704,7 @@ export default function AdminContactDashboard() {
                             {contact.status !== "responded" && (
                               <DropdownMenuItem
                                 onClick={() => handleUpdateStatus(contact, "responded")}
+                                className="text-gray-700 focus:bg-gray-100"
                               >
                                 <Send className="h-4 w-4 mr-2" /> Mark responded
                               </DropdownMenuItem>
@@ -710,13 +712,14 @@ export default function AdminContactDashboard() {
                             {contact.status !== "archived" && (
                               <DropdownMenuItem
                                 onClick={() => handleUpdateStatus(contact, "archived")}
+                                className="text-gray-700 focus:bg-gray-100"
                               >
                                 <Archive className="h-4 w-4 mr-2" /> Archive conversation
                               </DropdownMenuItem>
                             )}
-                            <DropdownMenuSeparator />
+                            <DropdownMenuSeparator className="bg-gray-200" />
                             <DropdownMenuItem
-                              className="text-red-600 focus:text-red-600"
+                              className="text-red-600 focus:text-red-700 focus:bg-red-50"
                               onClick={() => handleDeleteContact(contact)}
                               disabled={deleteLoading}
                             >
@@ -731,7 +734,7 @@ export default function AdminContactDashboard() {
               </Table>
 
               {filteredContacts.length === 0 && !contactsLoading && (
-                <div className="py-12 text-center text-muted-foreground">
+                <div className="py-12 text-center text-gray-500">
                   {searchTerm || statusFilter !== "all"
                     ? "No contact submissions match your filters."
                     : "No contact submissions yet."}
@@ -739,7 +742,7 @@ export default function AdminContactDashboard() {
               )}
 
               {contactsLoading && (
-                <div className="py-6 flex items-center justify-center gap-2 text-muted-foreground">
+                <div className="py-6 flex items-center justify-center gap-2 text-gray-500">
                   <Loader2 className="h-4 w-4 animate-spin" /> Loading submissions...
                 </div>
               )}

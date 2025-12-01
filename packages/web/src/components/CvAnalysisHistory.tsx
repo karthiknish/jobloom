@@ -103,9 +103,17 @@ export function CvAnalysisHistory({ analyses, optimistic }: CvAnalysisHistoryPro
   };
 
   const getScoreColor = (score: number) => {
-    if (score >= 80) return "text-green-600";
-    if (score >= 60) return "text-yellow-600";
-    return "text-red-600";
+    if (score >= 80) return "text-emerald-600";
+    if (score >= 60) return "text-amber-500";
+    if (score >= 40) return "text-orange-500";
+    return "text-red-500";
+  };
+
+  const getScoreBg = (score: number) => {
+    if (score >= 80) return "bg-emerald-100 text-emerald-700";
+    if (score >= 60) return "bg-amber-100 text-amber-700";
+    if (score >= 40) return "bg-orange-100 text-orange-700";
+    return "bg-red-100 text-red-700";
   };
 
   if (showComparison) {
@@ -265,11 +273,11 @@ export function CvAnalysisHistory({ analyses, optimistic }: CvAnalysisHistoryPro
                         <>
                           <span>•</span>
                           <span
-                            className={`font-medium ${getScoreColor(
+                            className={`font-semibold px-2 py-0.5 rounded-full text-xs ${getScoreBg(
                               analysis.overallScore
                             )}`}
                           >
-                            Score: {analysis.overallScore}/100
+                            Score: {analysis.overallScore}
                           </span>
                         </>
                       )}
@@ -291,27 +299,22 @@ export function CvAnalysisHistory({ analyses, optimistic }: CvAnalysisHistoryPro
                             {analysis.strengths.length > 2 && "..."}
                           </p>
                           {analysis.atsCompatibility && (
-                            <p className="text-sm text-muted-foreground">
-                              <span className="font-medium">Enhanced ATS Score:</span>{" "}
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-muted-foreground">ATS Score:</span>
                               <span
-                                className={
-                                  analysis.atsCompatibility.score >= 90
-                                    ? "text-emerald-600 font-semibold"
-                                    : analysis.atsCompatibility.score >= 80
-                                    ? "text-green-600 font-medium"
-                                    : analysis.atsCompatibility.score >= 70
-                                    ? "text-lime-600 font-medium"
+                                className={`font-semibold px-2.5 py-0.5 rounded-full text-xs ${
+                                  analysis.atsCompatibility.score >= 80
+                                    ? "bg-emerald-100 text-emerald-700"
                                     : analysis.atsCompatibility.score >= 60
-                                    ? "text-yellow-600 font-medium"
-                                    : analysis.atsCompatibility.score >= 50
-                                    ? "text-orange-600 font-medium"
-                                    : "text-red-600 font-medium"
-                                }
+                                    ? "bg-amber-100 text-amber-700"
+                                    : analysis.atsCompatibility.score >= 40
+                                    ? "bg-orange-100 text-orange-700"
+                                    : "bg-red-100 text-red-700"
+                                }`}
                               >
-                                {analysis.atsCompatibility.score}/100
-                                {analysis.atsCompatibility.score >= 90 && " ⭐"}
+                                {analysis.atsCompatibility.score}
                               </span>
-                            </p>
+                            </div>
                           )}
                         </div>
                       )}

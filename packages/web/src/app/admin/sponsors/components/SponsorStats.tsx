@@ -13,12 +13,12 @@ export function SponsorStats({ stats }: SponsorStatsProps) {
     return (
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {[...Array(4)].map((_, i) => (
-          <Card key={i}>
+          <Card key={i} className="border-gray-200 bg-white">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Loading...</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-500">Loading...</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-8 bg-muted animate-pulse rounded"></div>
+              <div className="h-8 bg-gray-100 animate-pulse rounded"></div>
             </CardContent>
           </Card>
         ))}
@@ -29,11 +29,11 @@ export function SponsorStats({ stats }: SponsorStatsProps) {
   const statsData = [
     {
       title: "Total Sponsors",
-      value: stats.totalSponsoredCompanies,
-      description: "Active sponsored companies",
+      value: stats.totalSponsoredCompanies || 0,
+      description: "Total sponsored companies",
       icon: Building2,
       color: "text-blue-600",
-      bgColor: "bg-blue-100 dark:bg-blue-900/20",
+      bgColor: "bg-blue-50",
     },
     {
       title: "Top Industry",
@@ -44,23 +44,23 @@ export function SponsorStats({ stats }: SponsorStatsProps) {
       description: "Most represented industry",
       icon: BarChart3,
       color: "text-purple-600",
-      bgColor: "bg-purple-100 dark:bg-purple-900/20",
+      bgColor: "bg-purple-50",
     },
     {
       title: "Sponsorship Types",
       value: Object.keys(stats.sponsorshipTypeStats || {}).length,
-      description: "Different sponsorship levels",
+      description: "Different sponsorship types",
       icon: TrendingUp,
       color: "text-green-600",
-      bgColor: "bg-green-100 dark:bg-green-900/20",
+      bgColor: "bg-green-50",
     },
     {
       title: "Active Sponsors",
-      value: stats.sponsoredCompanies?.filter((c: any) => c.isActive !== false).length || 0,
+      value: stats.activeCompanies || 0,
       description: "Currently active",
       icon: Activity,
       color: "text-orange-600",
-      bgColor: "bg-orange-100 dark:bg-orange-900/20",
+      bgColor: "bg-orange-50",
     },
   ];
 
@@ -73,18 +73,18 @@ export function SponsorStats({ stats }: SponsorStatsProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: index * 0.1 }}
         >
-          <Card className="overflow-hidden border-none shadow-sm hover:shadow-md transition-shadow">
+          <Card className="hover:bg-gray-50 transition-all duration-200 border-gray-200 bg-white">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+              <CardTitle className="text-sm font-medium text-gray-600">
                 {stat.title}
               </CardTitle>
-              <div className={`p-2 rounded-full ${stat.bgColor}`}>
+              <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${stat.bgColor}`}>
                 <stat.icon className={`h-4 w-4 ${stat.color}`} />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
-              <p className="text-xs text-muted-foreground mt-1">
+              <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
+              <p className="text-xs text-gray-500 mt-1">
                 {stat.description}
               </p>
             </CardContent>

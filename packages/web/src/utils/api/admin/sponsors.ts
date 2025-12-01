@@ -31,6 +31,8 @@ export const sponsorApi = {
       if (filters.limit) url.searchParams.set("limit", filters.limit.toString());
     }
 
+    console.log('[sponsorApi.getSponsors] Fetching from:', url.toString());
+
     const response = await fetch(url.toString(), {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -38,10 +40,14 @@ export const sponsorApi = {
     });
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[sponsorApi.getSponsors] Error response:', response.status, errorText);
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    return response.json();
+    const data = await response.json();
+    console.log('[sponsorApi.getSponsors] Response data:', data);
+    return data;
   },
 
   createSponsor: async (sponsorData: any): Promise<any> => {
@@ -133,7 +139,7 @@ export const sponsorApi = {
     }
 
     const token = await auth.currentUser.getIdToken();
-    const response = await fetch("/api/app/sponsorship/companies", {
+    const response = await fetch("/api/app/sponsorship/stats", {
       headers: {
         Authorization: `Bearer ${token}`,
       },

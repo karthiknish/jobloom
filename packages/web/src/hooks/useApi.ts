@@ -1,5 +1,5 @@
 // hooks/useApi.ts
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { ApiError } from "../services/api/appApi";
 
 // Enhanced error interface with more context
@@ -48,7 +48,7 @@ export function categorizeError(error: ApiError | EnhancedApiError): {
       category: 'rate_limit',
       severity: 'medium',
       userMessage: 'Too many requests. Please wait before trying again.',
-      shouldRetry: true,
+      shouldRetry: false, // Don't auto-retry rate limit errors - wait for user action or timeout
       retryDelay: (error as EnhancedApiError).retryAfter ? (error as EnhancedApiError).retryAfter! * 1000 : 60000
     };
   }
@@ -105,6 +105,8 @@ interface UseQueryOptions {
   retryDelay?: number;
   onSuccess?: (data: any) => void;
   onError?: (error: EnhancedApiError) => void;
+  /** Cache time in milliseconds - prevents re-fetching if data is fresh */
+  staleTime?: number;
 }
 
 interface UseQueryResult<T> {
@@ -166,6 +168,9 @@ function logApiError(error: EnhancedApiError, context?: {
   }
 }
 
+// Simple in-memory cache for query results
+const queryCache = new Map<string, { data: any; timestamp: number }>();
+
 // Enhanced custom hook for API queries
 export function useApiQuery<T>(
   queryFn: () => Promise<T>,
@@ -176,19 +181,62 @@ export function useApiQuery<T>(
   const {
     enabled = true,
     retry: shouldRetry = true,
-    retryCount: maxRetries = 3,
+    retryCount: maxRetries = 2, // Reduced from 3 to 2
     retryDelay: retryDelayMs = 1000,
     onSuccess,
-    onError
+    onError,
+    staleTime = 30000 // Default 30 seconds cache
   } = options;
 
-  const [data, setData] = useState<T | undefined>(undefined);
-  const [loading, setLoading] = useState<boolean>(enabled);
+  // Generate a cache key from the provided key or deps
+  const cacheKey = key || JSON.stringify(deps);
+
+  const [data, setData] = useState<T | undefined>(() => {
+    // Initialize from cache if available and fresh
+    const cached = queryCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < staleTime) {
+      return cached.data;
+    }
+    return undefined;
+  });
+  const [loading, setLoading] = useState<boolean>(() => {
+    // Don't show loading if we have cached data
+    const cached = queryCache.get(cacheKey);
+    return enabled && (!cached || Date.now() - cached.timestamp >= staleTime);
+  });
   const [error, setError] = useState<EnhancedApiError | null>(null);
   const [currentRetryCount, setCurrentRetryCount] = useState(0);
+  const isRateLimitedRef = useRef(false);
+  const lastFetchTimeRef = useRef(0);
+  const isFetchingRef = useRef(false);
 
-  const fetchData = useCallback(async (isRetry = false) => {
+  const fetchData = useCallback(async (isRetry = false, forceRefresh = false) => {
     if (!enabled) return;
+
+    // Check cache first (unless force refresh)
+    if (!forceRefresh && !isRetry) {
+      const cached = queryCache.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < staleTime) {
+        setData(cached.data);
+        setLoading(false);
+        return;
+      }
+    }
+
+    // Prevent concurrent fetches and respect rate limits
+    if (isFetchingRef.current) return;
+    if (isRateLimitedRef.current) {
+      console.warn('Request blocked: currently rate limited');
+      return;
+    }
+
+    // Debounce rapid requests (minimum 200ms between requests)
+    const now = Date.now();
+    if (now - lastFetchTimeRef.current < 200) {
+      return;
+    }
+    lastFetchTimeRef.current = now;
+    isFetchingRef.current = true;
 
     try {
       setLoading(true);
@@ -197,6 +245,10 @@ export function useApiQuery<T>(
       const result = await queryFn();
       setData(result);
       setCurrentRetryCount(0);
+      
+      // Store in cache
+      queryCache.set(cacheKey, { data: result, timestamp: Date.now() });
+      
       onSuccess?.(result);
     } catch (err: any) {
       const enhancedError: EnhancedApiError = err instanceof ApiError
@@ -209,6 +261,16 @@ export function useApiQuery<T>(
       enhancedError.requestId = enhancedError.requestId || `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
       setError(enhancedError);
+
+      // Mark as rate limited if 429 error
+      if (enhancedError.status === 429) {
+        isRateLimitedRef.current = true;
+        const retryAfter = errorInfo.retryDelay || 60000;
+        // Auto-clear rate limit flag after the retry period
+        setTimeout(() => {
+          isRateLimitedRef.current = false;
+        }, retryAfter);
+      }
       
       // Only log errors that are not authentication-related or are unexpected
       if (!enhancedError.message.includes('No user') && 
@@ -223,11 +285,12 @@ export function useApiQuery<T>(
 
       onError?.(enhancedError);
 
-      // Auto-retry logic (don't retry authentication errors)
+      // Auto-retry logic (don't retry authentication or rate limit errors)
       if (shouldRetry && errorInfo.shouldRetry && currentRetryCount < maxRetries && 
           !enhancedError.message.includes('No user') && 
           !enhancedError.message.includes('Not authenticated') &&
-          enhancedError.status !== 401) {
+          enhancedError.status !== 401 &&
+          enhancedError.status !== 429) {
         const delay = errorInfo.retryDelay || retryDelayMs * Math.pow(2, currentRetryCount);
         setTimeout(() => {
           setCurrentRetryCount(prev => prev + 1);
@@ -236,6 +299,7 @@ export function useApiQuery<T>(
       }
     } finally {
       setLoading(false);
+      isFetchingRef.current = false;
     }
   }, [queryFn, enabled, shouldRetry, currentRetryCount, maxRetries, retryDelayMs, onSuccess, onError]);
 
@@ -246,17 +310,18 @@ export function useApiQuery<T>(
     }
 
     let isMounted = true;
-    fetchData().then(() => {
+    fetchData(false, false).then(() => {
       if (!isMounted) return;
     });
     return () => {
       isMounted = false;
     };
-  }, [fetchData, enabled, ...deps]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled, cacheKey, ...deps]);
 
   const refetch = useCallback(() => {
     setCurrentRetryCount(0);
-    fetchData();
+    fetchData(false, true); // Force refresh
   }, [fetchData]);
 
   const retryFunction = useCallback(() => {

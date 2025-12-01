@@ -8,8 +8,9 @@ import { KanbanBoard } from "@/components/dashboard/KanbanBoard";
 import { ExportCsvButton } from "@/components/dashboard/ExportCsvButton";
 import { DashboardFilters } from "@/components/dashboard/DashboardFilters";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { FeatureGate } from "@/components/UpgradePrompt";
-import { FileText } from "lucide-react";
+import { FileText, LayoutList, LayoutGrid, Download, Briefcase } from "lucide-react";
 import { filterApplications, getUniqueCompanies } from "@/utils/dashboard";
 import { slideInUp } from "@/styles/animations";
 
@@ -44,23 +45,26 @@ export function DashboardJobsView({
   onViewApplication,
   onChanged,
 }: DashboardJobsViewProps) {
+  // Ensure applications is always an array
+  const safeApplications = Array.isArray(applications) ? applications : [];
+  
   // Create wrapper function for JobList which expects applicationId
   const handleDeleteApplicationForJobList = (applicationId: string) => {
     // Find the application by ID and call the delete function
-    const application = applications.find(app => app._id === applicationId);
+    const application = safeApplications.find(app => app._id === applicationId);
     if (application) {
       onDeleteApplication(application);
     }
   };
   const filteredApplications = filterApplications(
-    applications,
+    safeApplications,
     statusFilter,
     searchTerm,
     companyFilter
   );
-  const uniqueCompanies = getUniqueCompanies(applications);
+  const uniqueCompanies = getUniqueCompanies(safeApplications);
 
-  const hasApplications = Array.isArray(applications) && applications.length > 0;
+  const hasApplications = safeApplications.length > 0;
 
   return (
     <motion.div
@@ -71,7 +75,6 @@ export function DashboardJobsView({
     >
       {hasApplications ? (
         <>
-          // ...existing code...
           {/* Advanced Filters */}
           <DashboardFilters
             searchTerm={searchTerm}
@@ -82,33 +85,43 @@ export function DashboardJobsView({
             setCompanyFilter={setCompanyFilter}
             uniqueCompanies={uniqueCompanies}
             filteredApplicationsCount={filteredApplications.length}
-            totalApplicationsCount={applications.length}
+            totalApplicationsCount={safeApplications.length}
           />
 
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 bg-muted/30 p-2 rounded-lg border border-border/50">
-            <div className="flex items-center bg-muted p-1 rounded-lg">
+          {/* View Toggle & Export Actions */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-3 bg-gradient-to-r from-muted/50 via-muted/30 to-muted/50 rounded-xl border border-border/50">
+            {/* View Mode Toggle */}
+            <div className="flex items-center gap-2 bg-background p-1 rounded-lg border border-border/50 shadow-sm">
               <button
                 onClick={() => setBoardMode("list")}
-                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 ${
+                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
                   boardMode === "list"
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "bg-gradient-to-r from-emerald-500 to-green-500 text-white shadow-md"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                 }`}
               >
-                List View
+                <LayoutList className="h-4 w-4" />
+                List
               </button>
               <button
                 onClick={() => setBoardMode("kanban")}
-                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 ${
+                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
                   boardMode === "kanban"
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "bg-gradient-to-r from-emerald-500 to-green-500 text-white shadow-md"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                 }`}
               >
-                Kanban Board
+                <LayoutGrid className="h-4 w-4" />
+                Kanban
               </button>
             </div>
+
+            {/* Results Count */}
+            <Badge variant="secondary" className="text-sm font-medium px-3 py-1.5">
+              {filteredApplications.length} of {safeApplications.length} jobs
+            </Badge>
             
+            {/* Export Actions */}
             <div className="flex flex-wrap gap-2 w-full sm:w-auto">
               <ExportCsvButton
                 fileName="filtered-applications.csv"
@@ -128,16 +141,16 @@ export function DashboardJobsView({
                 feature="exportFormats"
                 requires="json"
                 fallback={
-                  <Button size="sm" variant="outline" disabled className="h-9">
-                    <FileText className="h-4 w-4 mr-2" />
-                    JSON <span className="ml-1 text-xs bg-primary/10 text-primary px-1 rounded">Pro</span>
+                  <Button size="sm" variant="outline" disabled className="h-9 gap-2">
+                    <Download className="h-4 w-4" />
+                    JSON <Badge variant="secondary" className="ml-1 text-[10px] px-1 py-0">Pro</Badge>
                   </Button>
                 }
               >
                 <Button
                   size="sm"
                   variant="outline"
-                  className="h-9"
+                  className="h-9 gap-2"
                   onClick={() => {
                     // Export as JSON
                     const data = filteredApplications.map((a) => ({
@@ -168,7 +181,7 @@ export function DashboardJobsView({
                     URL.revokeObjectURL(url);
                   }}
                 >
-                  <FileText className="h-4 w-4 mr-2" />
+                  <Download className="h-4 w-4" />
                   JSON
                 </Button>
 
@@ -177,29 +190,30 @@ export function DashboardJobsView({
                   feature="exportFormats"
                   requires="pdf"
                   fallback={
-                    <Button size="sm" variant="outline" disabled className="h-9">
-                      <FileText className="h-4 w-4 mr-2" />
-                      PDF <span className="ml-1 text-xs bg-primary/10 text-primary px-1 rounded">Pro</span>
+                    <Button size="sm" variant="outline" disabled className="h-9 gap-2">
+                      <FileText className="h-4 w-4" />
+                      PDF <Badge variant="secondary" className="ml-1 text-[10px] px-1 py-0">Pro</Badge>
                     </Button>
                   }
                 >
                   <Button
                     size="sm"
                     variant="outline"
-                    className="h-9"
+                    className="h-9 gap-2"
                     onClick={() => {
                       // Mock PDF export - would integrate with PDF library
                     }}
                   >
-                    <FileText className="h-4 w-4 mr-2" />
+                    <FileText className="h-4 w-4" />
                     PDF
                   </Button>
                 </FeatureGate>
               </FeatureGate>
             </div>
           </div>
+
+          {/* Content Area */}
           {boardMode === "kanban" ? (
-// ...existing code...
             <KanbanBoard
               applications={filteredApplications}
               onChangeStatus={async (id, status) => {
@@ -216,7 +230,7 @@ export function DashboardJobsView({
                 try {
                   const { dashboardApi } = await import("@/utils/api/dashboard");
                   // Compute an order value
-                  const col = applications.filter(
+                  const col = safeApplications.filter(
                     (a) => a.status === targetStatus
                   );
                   let newOrder: number;
@@ -258,15 +272,15 @@ export function DashboardJobsView({
           )}
         </>
       ) : (
-        <div className="rounded-xl bg-white p-10 text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
-            <FileText className="h-7 w-7 text-primary" />
+        <div className="rounded-2xl bg-gradient-to-br from-background via-muted/30 to-background p-12 text-center border border-border/50 shadow-sm">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-100 to-green-100 dark:from-emerald-900/50 dark:to-green-900/50">
+            <Briefcase className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
           </div>
-          <h3 className="mt-4 text-lg font-semibold text-foreground">
-            No jobs or applications yet
+          <h3 className="mt-5 text-xl font-semibold text-foreground">
+            No jobs yet
           </h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Add your first job or import from a file to get started.
+          <p className="mt-2 text-sm text-muted-foreground max-w-sm mx-auto">
+            Start tracking your job search by importing jobs from the extension or adding them manually.
           </p>
         </div>
       )}

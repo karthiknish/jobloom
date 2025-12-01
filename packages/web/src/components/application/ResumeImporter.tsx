@@ -692,8 +692,17 @@ export function ResumeImporter({ onImport }: ResumeImporterProps) {
                               {statusLabels[analysis.status]}
                             </Badge>
                             {typeof listScore === "number" && (
-                              <Badge variant="outline" className="text-xs">
-                                ATS: {listScore}%
+                              <Badge 
+                                variant="outline" 
+                                className={cn(
+                                  "text-xs",
+                                  listScore >= 80 ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
+                                  listScore >= 60 ? "bg-amber-50 text-amber-700 border-amber-200" :
+                                  listScore >= 40 ? "bg-orange-50 text-orange-700 border-orange-200" :
+                                  "bg-red-50 text-red-700 border-red-200"
+                                )}
+                              >
+                                ATS: {listScore}
                               </Badge>
                             )}
                           </div>
@@ -784,16 +793,47 @@ export function ResumeImporter({ onImport }: ResumeImporterProps) {
                 <div className="space-y-3 rounded-lg bg-gray-50 p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Zap className={cn("h-4 w-4", themeColors.primary.text)} />
+                      <div className={cn(
+                        "p-1.5 rounded-lg",
+                        displayAtsScore >= 80 ? "bg-emerald-100" :
+                        displayAtsScore >= 60 ? "bg-amber-100" :
+                        displayAtsScore >= 40 ? "bg-orange-100" :
+                        "bg-red-100"
+                      )}>
+                        <Zap className={cn(
+                          "h-4 w-4",
+                          displayAtsScore >= 80 ? "text-emerald-600" :
+                          displayAtsScore >= 60 ? "text-amber-600" :
+                          displayAtsScore >= 40 ? "text-orange-600" :
+                          "text-red-600"
+                        )} />
+                      </div>
                       <span className="text-sm font-medium text-gray-700">
-                        ATS Optimization Score
+                        ATS Score
                       </span>
                     </div>
-                    <span className={cn("text-base font-semibold", themeUtils.scoreColor(displayAtsScore))}>
-                      {displayAtsScore}%
+                    <span className={cn(
+                      "text-lg font-bold px-2.5 py-0.5 rounded-full",
+                      displayAtsScore >= 80 ? "bg-emerald-100 text-emerald-700" :
+                      displayAtsScore >= 60 ? "bg-amber-100 text-amber-700" :
+                      displayAtsScore >= 40 ? "bg-orange-100 text-orange-700" :
+                      "bg-red-100 text-red-700"
+                    )}>
+                      {displayAtsScore}
                     </span>
                   </div>
-                  <Progress value={displayAtsScore} className="h-2" />
+                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div 
+                      className={cn(
+                        "h-full rounded-full transition-all duration-500",
+                        displayAtsScore >= 80 ? "bg-emerald-500" :
+                        displayAtsScore >= 60 ? "bg-amber-400" :
+                        displayAtsScore >= 40 ? "bg-orange-400" :
+                        "bg-red-400"
+                      )}
+                      style={{ width: `${displayAtsScore}%` }}
+                    />
+                  </div>
                   {atsIssues.length > 0 && (
                     <div className="text-xs text-gray-600">
                       <span className="font-medium text-gray-700">Top issues:</span>

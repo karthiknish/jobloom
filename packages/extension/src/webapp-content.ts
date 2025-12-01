@@ -166,9 +166,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   // Only process messages that are meant for the webapp content script
-  if (request.target && request.target !== 'webapp-content') {
+  // Accept messages with no target OR target === 'webapp-content'
+  if (request.target && request.target !== 'webapp-content' && request.target !== 'content') {
     return undefined; // Let other handlers process this message
   }
+
+  console.debug('Hireall webapp-content: Received message', request.action);
 
   // Only allow specific actions
   if (request.action === "getUserId") {
@@ -272,12 +275,19 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // Fallback function for getting auth token using old method
 function fallbackGetAuthToken(request: any, sendResponse: (response: any) => void) {
   try {
-    const auth = (window as any).__firebase_auth;
+    // Try multiple sources for Firebase auth
+    const auth = (window as any).__firebase_auth || (window as any).firebase?.auth?.();
+    
     if (auth && auth.currentUser) {
       const shouldForceRefresh = request?.forceRefresh === true;
       auth.currentUser
         .getIdToken(shouldForceRefresh)
         .then(async (token: string) => {
+          if (!token) {
+            sendResponse({ token: null, error: 'Token was empty' });
+            return;
+          }
+          
           try {
             await cacheAuthToken({
               token,
@@ -288,18 +298,55 @@ function fallbackGetAuthToken(request: any, sendResponse: (response: any) => voi
           } catch (cacheError) {
             ExtensionSecurityLogger.log('Error caching auth token', cacheError);
           }
-          sendResponse({ token, userId: auth.currentUser.uid });
+          
+          console.debug('Hireall: Got token via fallback method, length:', token.length);
+          sendResponse({ 
+            token, 
+            userId: auth.currentUser.uid,
+            userEmail: auth.currentUser.email,
+            success: true 
+          });
         })
         .catch((error: any) => {
           ExtensionSecurityLogger.log('Error getting auth token', error);
-          sendResponse({ token: null, error: 'Failed to get auth token' });
+          
+          // Try localStorage as last resort
+          tryLocalStorageToken(sendResponse);
         });
     } else {
-      sendResponse({ token: null, error: 'No authenticated user' });
+      // No auth object - try localStorage
+      tryLocalStorageToken(sendResponse);
     }
   } catch (error) {
     ExtensionSecurityLogger.log('Error in fallback getAuthToken', error);
-    sendResponse({ token: null, error: 'Failed to get auth token' });
+    tryLocalStorageToken(sendResponse);
+  }
+}
+
+// Last resort token retrieval from localStorage
+function tryLocalStorageToken(sendResponse: (response: any) => void) {
+  try {
+    const localToken = localStorage.getItem('hireall_auth_token');
+    const userData = localStorage.getItem('hireall_user_data');
+    
+    if (localToken && localToken.length > 100) {
+      let userId, userEmail;
+      try {
+        const parsed = userData ? JSON.parse(userData) : {};
+        userId = parsed.userId;
+        userEmail = parsed.userEmail;
+      } catch (e) {
+        // Ignore parse errors
+      }
+      
+      console.debug('Hireall: Using token from localStorage');
+      sendResponse({ token: localToken, userId, userEmail, success: true, source: 'localStorage' });
+      return;
+    }
+    
+    sendResponse({ token: null, error: 'No authenticated user found' });
+  } catch (e) {
+    sendResponse({ token: null, error: 'Failed to get auth token from any source' });
   }
 }
 
