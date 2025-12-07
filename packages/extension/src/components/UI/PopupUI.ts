@@ -3,18 +3,18 @@ import { addMicroInteractions, addRippleAnimation, addLoadingSpinner, removeLoad
 
 export class PopupUI {
   private static instance: PopupUI;
-  
+
   private constructor() {
     this.initialize();
   }
-  
+
   public static getInstance(): PopupUI {
     if (!PopupUI.instance) {
       PopupUI.instance = new PopupUI();
     }
     return PopupUI.instance;
   }
-  
+
   private initialize(): void {
     // Add animations when DOM is ready
     if (document.readyState === 'loading') {
@@ -27,24 +27,24 @@ export class PopupUI {
       addMicroInteractions();
     }
   }
-  
+
   // Toast methods
   public showSuccess(message: string, action?: ToastOptions['action']): void {
     showToast(message, { type: 'success', action });
   }
-  
+
   public showError(message: string, action?: ToastOptions['action']): void {
     showToast(message, { type: 'error', action });
   }
-  
+
   public showWarning(message: string, action?: ToastOptions['action']): void {
     showToast(message, { type: 'warning', action });
   }
-  
+
   public showInfo(message: string, action?: ToastOptions['action']): void {
     showToast(message, { type: 'info', action });
   }
-  
+
   // UI state methods
   public showLoading(buttonId: string): void {
     const button = document.getElementById(buttonId) as HTMLButtonElement;
@@ -53,7 +53,7 @@ export class PopupUI {
       button.disabled = true;
     }
   }
-  
+
   public hideLoading(buttonId: string): void {
     const button = document.getElementById(buttonId) as HTMLButtonElement;
     if (button) {
@@ -61,7 +61,7 @@ export class PopupUI {
       button.disabled = false;
     }
   }
-  
+
   public toggleElement(elementId: string, force?: boolean): void {
     const element = document.getElementById(elementId) as HTMLElement;
     if (element) {
@@ -72,7 +72,7 @@ export class PopupUI {
       }
     }
   }
-  
+
   public toggleClass(elementId: string, className: string, force?: boolean): void {
     const element = document.getElementById(elementId) as HTMLElement;
     if (element) {
@@ -83,32 +83,32 @@ export class PopupUI {
       }
     }
   }
-  
+
   public setElementText(elementId: string, text: string): void {
     const element = document.getElementById(elementId);
     if (element) {
       element.textContent = text;
     }
   }
-  
+
   public setElementHTML(elementId: string, html: string): void {
     const element = document.getElementById(elementId);
     if (element) {
       element.innerHTML = html;
     }
   }
-  
+
   public getElementValue(elementId: string): string {
     const element = document.getElementById(elementId) as HTMLInputElement;
     if (!element) return '';
-    
+
     if (element.type === 'checkbox') {
       return element.checked ? 'true' : 'false';
     }
-    
+
     return element.value || '';
   }
-  
+
   public setElementValue(elementId: string, value: string): void {
     const element = document.getElementById(elementId) as HTMLInputElement;
     if (element) {
@@ -119,56 +119,61 @@ export class PopupUI {
       }
     }
   }
-  
+
   public setElementChecked(elementId: string, checked: boolean): void {
     const element = document.getElementById(elementId) as HTMLInputElement;
     if (element && element.type === 'checkbox') {
       element.checked = checked;
     }
   }
-  
+
   public clearElement(elementId: string): void {
     const element = document.getElementById(elementId);
     if (element) {
       element.innerHTML = '';
     }
   }
-  
+
   public focusElement(elementId: string): void {
     const element = document.getElementById(elementId) as HTMLElement;
     if (element && element.focus) {
       element.focus();
     }
   }
-  
+
   // Tab navigation
   public switchTab(tabId: string): void {
     const tabs = document.querySelectorAll('.nav-item');
     const contents = document.querySelectorAll('.tab-view');
-    
+
     // Remove active class from all tabs and contents
     tabs.forEach(tab => tab.classList.remove('active'));
     contents.forEach(content => content.classList.remove('active'));
-    
+
     // Add active class to selected tab and content
     const selectedTab = document.querySelector(`[data-tab="${tabId}"]`) as HTMLElement;
-    const selectedContent = document.getElementById(`${tabId}-view`);
-    
+    // HTML uses *-content IDs (e.g., jobs-content, settings-content, auth-content)
+    const selectedContent = document.getElementById(`${tabId}-content`);
+
     if (selectedTab) selectedTab.classList.add('active');
-    if (selectedContent) selectedContent.classList.add('active');
+    if (selectedContent) {
+      selectedContent.classList.add('active');
+    } else {
+      console.warn(`PopupUI: Tab content element not found for tab "${tabId}"`);
+    }
   }
-  
+
   // Filter methods
   public setActiveFilter(filterType?: string): void {
     const filters = document.querySelectorAll('.filter-pill');
     filters.forEach(filter => filter.classList.remove('active'));
-    
+
     if (filterType) {
       const activeFilter = document.querySelector(`[data-filter="${filterType}"]`) as HTMLElement;
       if (activeFilter) activeFilter.classList.add('active');
     }
   }
-  
+
   // Form methods
   public clearForm(formId: string): void {
     const form = document.getElementById(formId) as HTMLFormElement;
@@ -176,11 +181,11 @@ export class PopupUI {
       form.reset();
     }
   }
-  
+
   public getFormData(formId: string): Record<string, string> {
     const form = document.getElementById(formId) as HTMLFormElement;
     const data: Record<string, string> = {};
-    
+
     if (form) {
       const inputs = form.querySelectorAll('input, select, textarea');
       inputs.forEach(input => {
@@ -190,10 +195,10 @@ export class PopupUI {
         }
       });
     }
-    
+
     return data;
   }
-  
+
   // Modal methods
   public showModal(modalId: string): void {
     const modal = document.getElementById(modalId) as HTMLElement;
@@ -202,7 +207,7 @@ export class PopupUI {
       modal.setAttribute('aria-hidden', 'false');
     }
   }
-  
+
   public hideModal(modalId: string): void {
     const modal = document.getElementById(modalId) as HTMLElement;
     if (modal) {
@@ -210,7 +215,7 @@ export class PopupUI {
       modal.setAttribute('aria-hidden', 'true');
     }
   }
-  
+
   // Animation helpers
   public addPulseAnimation(elementId: string): void {
     const element = document.getElementById(elementId) as HTMLElement;
@@ -219,7 +224,7 @@ export class PopupUI {
       setTimeout(() => element.classList.remove('pulse-once'), 500);
     }
   }
-  
+
   public shakeElement(elementId: string): void {
     const element = document.getElementById(elementId) as HTMLElement;
     if (element) {
@@ -230,7 +235,7 @@ export class PopupUI {
 
   public toggleGlobalLoading(isLoading: boolean) {
     const loader = document.querySelector('.loading-state');
-    
+
     if (isLoading) {
       loader?.classList.remove('hidden');
     } else {
@@ -242,7 +247,7 @@ export class PopupUI {
     const skeleton = document.getElementById('jobs-skeleton');
     const emptyState = document.querySelector('.empty-state');
     const jobListContainer = document.getElementById('job-list');
-    
+
     // Hide actual jobs if they exist (optional, depending on behavior)
     // const actualJobs = document.querySelectorAll('.job-card');
     // actualJobs.forEach(job => job.classList.toggle('hidden', show));
@@ -272,7 +277,7 @@ export class PopupUI {
     const submitBtn = document.getElementById('email-auth-submit') as HTMLButtonElement;
     const btnText = submitBtn?.querySelector('.btn-text');
     const btnSpinner = submitBtn?.querySelector('.btn-spinner');
-    
+
     if (submitBtn && btnText && btnSpinner) {
       if (isLoading) {
         submitBtn.disabled = true;
@@ -290,11 +295,11 @@ export class PopupUI {
     const emailDisplay = document.getElementById('user-email-display');
     const nameDisplay = document.querySelector('.user-name');
     const avatarPlaceholder = document.querySelector('.avatar-placeholder');
-    
+
     if (emailDisplay) {
       emailDisplay.textContent = user.email;
     }
-    
+
     if (nameDisplay && user.displayName) {
       nameDisplay.textContent = user.displayName;
     }
@@ -312,7 +317,7 @@ export class PopupUI {
           hash = str.charCodeAt(i) + ((hash << 5) - hash);
         }
         const color = colors[Math.abs(hash) % colors.length];
-        
+
         avatarPlaceholder.innerHTML = `<div style="width: 100%; height: 100%; background-color: ${color}; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem; border-radius: 50%;">${initial}</div>`;
       }
     }

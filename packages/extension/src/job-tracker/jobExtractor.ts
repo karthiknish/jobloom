@@ -1,20 +1,36 @@
 import type { JobData } from "./types";
 
 export function extractLinkedInJob(element: Element): JobData {
+  // Modern LinkedIn selectors (2024/2025) with fallbacks to legacy selectors
   const title =
     getText(element, [
+      // Job detail page (new design)
+      ".job-details-jobs-unified-top-card__job-title",
+      ".job-details-jobs-unified-top-card__job-title-link",
+      // Job detail page (legacy)
       "h1.top-card-layout__title",
       ".jobs-unified-top-card__job-title",
+      // Job cards
       ".job-card-list__title",
       ".job-card-container__link",
+      ".scaffold-layout__list-item h3",
+      '[data-test="job-title"]',
     ]) ?? "Unknown role";
 
   const company =
     getText(element, [
+      // Job detail page (new design)
+      ".job-details-jobs-unified-top-card__company-name",
+      ".job-details-jobs-unified-top-card__primary-description-container a",
+      // Job detail page (legacy)
       "a.topcard__org-name-link",
       "span.topcard__flavor",
+      ".jobs-unified-top-card__company-name",
+      // Job cards
       ".job-card-container__primary-description",
       ".job-card-list__company",
+      ".artdeco-entity-lockup__subtitle",
+      '[data-test="company-name"]',
     ]) ?? "Unknown company";
 
   const url =
@@ -22,39 +38,78 @@ export function extractLinkedInJob(element: Element): JobData {
       'a[data-control-name="job_card_click"]',
       'a[data-tracking-control-name="public_jobs_topcard-title"]',
       'a[href*="linkedin.com/jobs/view"]',
+      ".job-card-container__link",
+      ".job-card-list__title-link",
     ]) ?? window.location.href;
 
   const location =
     getText(element, [
+      // Job detail page (new design)
+      ".job-details-jobs-unified-top-card__primary-description-container .tvm__text",
+      ".job-details-jobs-unified-top-card__bullet",
+      // Job detail page (legacy)
       "span.topcard__flavor--bullet",
       ".jobs-unified-top-card__bullet",
+      // Job cards
       ".job-card-container__metadata-item",
       ".job-card-list__location",
+      ".artdeco-entity-lockup__caption",
+      '[data-test="job-location"]',
     ]) ?? "Location not listed";
 
   const description =
     getText(element, [
-      "div.show-more-less-html__markup",
+      // Job detail page (new design)
       ".jobs-description__content",
+      ".jobs-description-content__text",
+      "#job-details",
+      // Job detail page (legacy)
+      "div.show-more-less-html__markup",
+      // Job cards (limited description)
       ".job-card-list__description",
       ".job-card-container__details",
     ]) ?? undefined;
 
   const salary =
     getText(element, [
+      // Job detail page (new design)
+      ".job-details-jobs-unified-top-card__job-insight--highlight",
+      ".job-details-jobs-unified-top-card__job-insight span",
+      // Job detail page (legacy)
       ".jobs-unified-top-card__salary-info",
+      ".compensation__salary",
+      // Job cards
       ".job-card-container__salary",
+      '[data-test="job-salary"]',
     ]) ?? undefined;
 
   const postedDateRaw =
     getText(element, [
-      "span.topcard__flavor--metadata",
+      // Job detail page (new design)
+      ".job-details-jobs-unified-top-card__primary-description-container time",
       ".jobs-unified-top-card__posted-date",
+      // Job detail page (legacy)
+      "span.topcard__flavor--metadata",
+      // Job cards
       ".job-card-container__posted-date",
+      ".job-card-list__time",
+      "time",
     ]) ?? null;
 
+  // Extract applicant count ("247 applicants", "Be among the first 25 applicants")
+  const applicantCount = extractApplicantCount(element);
+
+  // Detect Easy Apply status
+  const easyApply = detectEasyApply(element);
+
+  // Extract workplace type (Remote, Hybrid, On-site)
+  const workplaceType = extractWorkplaceType(element);
+
+  // Extract company logo URL
+  const companyLogo = getCompanyLogo(element);
+
   const textSnapshot = (element.textContent ?? "").toLowerCase();
-  const remoteFlag = detectRemote(textSnapshot);
+  const remoteFlag = workplaceType === "Remote" || detectRemote(textSnapshot);
   const seniority = detectSeniority(textSnapshot);
 
   const detailBuckets = extractJobDetails(element, description);
@@ -80,10 +135,119 @@ export function extractLinkedInJob(element: Element): JobData {
     metadata: {
       remote: remoteFlag,
       seniority,
+      applicantCount,
+      easyApply,
+      workplaceType,
+      companyLogo,
     },
     isSponsored: detectSponsored(element),
     dateFound: new Date().toISOString(),
   };
+}
+
+// Extract applicant count from LinkedIn job postings
+function extractApplicantCount(element: Element): number | undefined {
+  const selectors = [
+    ".job-details-jobs-unified-top-card__job-insight",
+    ".jobs-unified-top-card__applicant-count",
+    ".num-applicants__caption",
+    '[data-test="applicant-count"]',
+  ];
+
+  for (const selector of selectors) {
+    const el = element.querySelector(selector);
+    if (el?.textContent) {
+      const match = el.textContent.match(/(\d+)\s*applicant/i);
+      if (match) {
+        return parseInt(match[1], 10);
+      }
+    }
+  }
+
+  // Try extracting from general text
+  const text = element.textContent ?? "";
+  const match = text.match(/(\d+)\s*applicant/i);
+  return match ? parseInt(match[1], 10) : undefined;
+}
+
+// Detect if job has Easy Apply option
+function detectEasyApply(element: Element): boolean {
+  const selectors = [
+    ".jobs-apply-button--top-card",
+    '[data-test="apply-button"]',
+    ".jobs-unified-top-card__apply-button",
+    ".jobs-s-apply",
+  ];
+
+  for (const selector of selectors) {
+    const el = element.querySelector(selector);
+    if (el?.textContent?.toLowerCase().includes("easy apply")) {
+      return true;
+    }
+  }
+
+  // Check for LinkedIn Easy Apply indicator
+  if (element.querySelector('[data-control-name="jobdetails_topcard_inapply"]')) {
+    return true;
+  }
+
+  const text = element.textContent?.toLowerCase() ?? "";
+  return text.includes("easy apply") || text.includes("linkedin apply");
+}
+
+// Extract workplace type (Remote, Hybrid, On-site)
+function extractWorkplaceType(element: Element): string | undefined {
+  const selectors = [
+    ".job-details-jobs-unified-top-card__job-insight",
+    ".job-details-jobs-unified-top-card__workplace-type",
+    ".jobs-unified-top-card__workplace-type",
+    '[data-test="workplace-type"]',
+  ];
+
+  for (const selector of selectors) {
+    const el = element.querySelector(selector);
+    const text = el?.textContent?.toLowerCase() ?? "";
+
+    if (text.includes("remote")) return "Remote";
+    if (text.includes("hybrid")) return "Hybrid";
+    if (text.includes("on-site") || text.includes("onsite")) return "On-site";
+  }
+
+  // Check badges and pills
+  const badges = Array.from(element.querySelectorAll(".artdeco-pill, .jobs-workplace-type-badge"));
+  for (const badge of badges) {
+    const text = badge.textContent?.toLowerCase() ?? "";
+    if (text.includes("remote")) return "Remote";
+    if (text.includes("hybrid")) return "Hybrid";
+    if (text.includes("on-site") || text.includes("onsite")) return "On-site";
+  }
+
+  return undefined;
+}
+
+// Extract company logo URL
+function getCompanyLogo(element: Element): string | undefined {
+  const selectors = [
+    ".job-details-jobs-unified-top-card__company-logo img",
+    ".jobs-unified-top-card__company-logo img",
+    ".artdeco-entity-image--square img",
+    ".job-card-container__logo img",
+    "[data-delayed-url]",
+  ];
+
+  for (const selector of selectors) {
+    const img = element.querySelector(selector) as HTMLImageElement | null;
+    if (img?.src && !img.src.includes("ghost")) {
+      return img.src;
+    }
+    // Check for delayed loading images
+    const delayedUrl = img?.getAttribute("data-delayed-url") || img?.getAttribute("data-ghost-url");
+    if (delayedUrl) {
+      return delayedUrl;
+    }
+  }
+
+  return undefined;
 }
 
 function getText(element: Element, selectors: string[]): string | null {
@@ -253,32 +417,101 @@ function detectSponsored(element: Element): boolean {
 }
 
 function parseSalaryRange(text: string): JobData["salaryRange"] | undefined {
-  const match = text.match(
-    /(\$|£|€)?\s?(\d[\d,]*)(?:\s*-\s*(\$|£|€)?\s?(\d[\d,]*))?(?:\s*(?:per|a)?\s*(year|annum|month|week|day|hour))?/i
-  );
+  const cleanText = text.replace(/\s+/g, " ").trim();
 
-  if (!match) {
-    return undefined;
-  }
+  // Pattern 1: Range format - £50,000 - £70,000 or $80k-$100k
+  const rangePatterns = [
+    // Standard range: £50,000 - £70,000 per year
+    /([£$€])\s?([\d,]+(?:\.\d{2})?)\s*[k]?\s*[-–to]+\s*([£$€])?\s?([\d,]+(?:\.\d{2})?)\s*[k]?\s*(?:(?:per|a|\/)\s*(year|annum|month|week|day|hour|hr|pa))?/i,
+    // K format: £50k - £70k
+    /([£$€])\s?([\d.]+)\s*k\s*[-–to]+\s*([£$€])?\s?([\d.]+)\s*k\s*(?:(?:per|a|\/)\s*(year|annum|month|week|day|hour|hr|pa))?/i,
+    // Hourly: £15 - £20 per hour
+    /([£$€])\s?([\d.]+)\s*[-–to]+\s*([£$€])?\s?([\d.]+)\s*(?:per|a|\/)\s*(hour|hr)/i,
+    // Daily: £300 - £400 per day
+    /([£$€])\s?([\d,]+)\s*[-–to]+\s*([£$€])?\s?([\d,]+)\s*(?:per|a|\/)\s*(day)/i,
+  ];
 
-  const [, minCurrency, minValue, maxCurrency, maxValue, periodRaw] = match;
-  const parseNumber = (value?: string) => (value ? Number(value.replace(/,/g, "")) : undefined);
+  // Pattern 2: Single value - £50,000 or £50k
+  const singlePatterns = [
+    /([£$€])\s?([\d,]+(?:\.\d{2})?)\s*(?:(?:per|a|\/)\s*(year|annum|month|week|day|hour|hr|pa))?(?!\s*[-–to])/i,
+    /([£$€])\s?([\d.]+)\s*k\s*(?:(?:per|a|\/)\s*(year|annum|pa))?/i,
+  ];
 
-  const min = parseNumber(minValue);
-  const max = parseNumber(maxValue);
-  const currency = minCurrency || maxCurrency || undefined;
-  const period = periodRaw ? periodRaw.toLowerCase().replace("annum", "year") : "year";
-
-  if (!min && !max) {
-    return undefined;
-  }
-
-  return {
-    min,
-    max: max ?? min,
-    currency,
-    period,
+  const parseNumber = (value: string, isK: boolean = false): number => {
+    const cleaned = value.replace(/,/g, "");
+    const num = parseFloat(cleaned);
+    // Detect K format for small numbers
+    if (isK || (num < 500 && !value.includes(","))) {
+      return num * 1000;
+    }
+    return num;
   };
+
+  const normalizePeriod = (period?: string): string => {
+    if (!period) return "year";
+    const lower = period.toLowerCase();
+    if (lower === "annum" || lower === "pa") return "year";
+    if (lower === "hr") return "hour";
+    return lower;
+  };
+
+  // Try range patterns first
+  for (const pattern of rangePatterns) {
+    const match = cleanText.match(pattern);
+    if (match) {
+      const [, minCurrency, minValue, , maxValue, period] = match;
+      const isKFormat = cleanText.toLowerCase().includes("k");
+      const min = parseNumber(minValue, isKFormat && !minValue.includes(","));
+      const max = parseNumber(maxValue, isKFormat && !maxValue.includes(","));
+
+      if (min > 0 || max > 0) {
+        return {
+          min,
+          max: max || min,
+          currency: minCurrency,
+          period: normalizePeriod(period),
+        };
+      }
+    }
+  }
+
+  // Try single value patterns
+  for (const pattern of singlePatterns) {
+    const match = cleanText.match(pattern);
+    if (match) {
+      const [, currency, value, period] = match;
+      const isKFormat = cleanText.toLowerCase().includes("k");
+      const amount = parseNumber(value, isKFormat);
+
+      if (amount > 0) {
+        return {
+          min: amount,
+          max: amount,
+          currency,
+          period: normalizePeriod(period),
+        };
+      }
+    }
+  }
+
+  // Check for negotiable/DOE indicators
+  const negotiablePatterns = [
+    /competitive salary/i,
+    /salary negotiable/i,
+    /doe|depending on experience/i,
+    /market rate/i,
+  ];
+
+  if (negotiablePatterns.some(p => p.test(cleanText))) {
+    return {
+      min: undefined,
+      max: undefined,
+      currency: "£",
+      period: "year",
+    };
+  }
+
+  return undefined;
 }
 
 function normalizePostedDate(raw: string | null): string | undefined {

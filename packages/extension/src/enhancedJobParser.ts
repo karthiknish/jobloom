@@ -29,7 +29,7 @@ export interface EnhancedJobData {
   sponsorshipType: string;
   dateFound: string;
   source: string;
-  
+
   // Enhanced fields
   normalizedTitle: string;
   extractedKeywords: string[];
@@ -56,10 +56,10 @@ class FuzzyMatcher {
   // Calculate Levenshtein distance
   static levenshteinDistance(str1: string, str2: string): number {
     const matrix = Array(str2.length + 1).fill(null).map(() => Array(str1.length + 1).fill(null));
-    
+
     for (let i = 0; i <= str1.length; i++) matrix[0][i] = i;
     for (let j = 0; j <= str2.length; j++) matrix[j][0] = j;
-    
+
     for (let j = 1; j <= str2.length; j++) {
       for (let i = 1; i <= str1.length; i++) {
         const indicator = str1[i - 1] === str2[j - 1] ? 0 : 1;
@@ -70,7 +70,7 @@ class FuzzyMatcher {
         );
       }
     }
-    
+
     return matrix[str2.length][str1.length];
   }
 
@@ -78,9 +78,9 @@ class FuzzyMatcher {
   static similarity(str1: string, str2: string): number {
     const longer = str1.length > str2.length ? str1 : str2;
     const shorter = str1.length > str2.length ? str2 : str1;
-    
+
     if (longer.length === 0) return 1.0;
-    
+
     const distance = this.levenshteinDistance(longer, shorter);
     return (longer.length - distance) / longer.length;
   }
@@ -90,7 +90,7 @@ class FuzzyMatcher {
     const stopWords = new Set([
       'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'as', 'from', 'is', 'was', 'are', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'must', 'can', 'i', 'you', 'he', 'she', 'it', 'we', 'they', 'me', 'him', 'her', 'us', 'them', 'my', 'your', 'his', 'its', 'our', 'their'
     ]);
-    
+
     return text.toLowerCase()
       .replace(/[^\w\s]/g, ' ')
       .split(/\s+/)
@@ -101,10 +101,10 @@ class FuzzyMatcher {
   static wordOverlap(text1: string, text2: string): number {
     const words1 = new Set(this.extractWords(text1));
     const words2 = new Set(this.extractWords(text2));
-    
+
     const intersection = new Set([...words1].filter(x => words2.has(x)));
     const union = new Set([...words1, ...words2]);
-    
+
     return union.size > 0 ? intersection.size / union.size : 0;
   }
 }
@@ -136,7 +136,7 @@ class JobTitleNormalizer {
 
   static normalizeTitle(title: string): { normalized: string; seniority: string; keywords: string[] } {
     const lowerTitle = title.toLowerCase();
-    
+
     // Extract seniority
     let seniority = 'mid-level';
     for (const [level, variations] of Object.entries(this.SENIORITY_LEVELS)) {
@@ -190,7 +190,7 @@ class SalaryExtractor {
         const match = matches[0];
         const min = parseFloat(match[1].replace(/,/g, ''));
         const max = match[2] ? parseFloat(match[2].replace(/,/g, '')) : min;
-        
+
         // Determine period
         let period = 'annum';
         if (text.toLowerCase().includes('hour') || text.toLowerCase().includes('hr')) {
@@ -220,10 +220,10 @@ export class EnhancedJobParser {
   // Enhanced job extraction with multiple strategies
   static async extractJobFromPage(document: Document, url: string): Promise<EnhancedJobData | null> {
     const domain = new URL(url).hostname.toLowerCase();
-    
+
     // Try different extraction strategies based on the site
     let jobData = null;
-    
+
     if (domain.includes('linkedin.com')) {
       jobData = this.extractFromLinkedIn(document, url);
     } else if (domain.includes('indeed')) {
@@ -242,34 +242,92 @@ export class EnhancedJobParser {
 
   private static extractFromLinkedIn(document: Document, url: string): Partial<EnhancedJobData> | null {
     try {
-      // Extract job title
-      const titleElement = document.querySelector('h1.top-card-layout__title, .top-jobs-title, h1, .job-details-jobs-unified-top-card__job-title, .t-24');
+      // Try LD+JSON structured data first (most reliable)
+      const ldJson = this.extractLdJsonJobData(document);
+      if (ldJson) {
+        return {
+          ...ldJson,
+          url,
+          source: 'linkedin',
+          dateFound: new Date().toISOString(),
+        };
+      }
+
+      // Modern LinkedIn selectors (2024/2025) with fallbacks
+      const titleElement = document.querySelector(
+        '.job-details-jobs-unified-top-card__job-title, ' +
+        '.job-details-jobs-unified-top-card__job-title-link, ' +
+        'h1.top-card-layout__title, ' +
+        '.jobs-unified-top-card__job-title, ' +
+        'h1.t-24'
+      );
       const title = titleElement?.textContent?.trim() || '';
 
-      // Extract company
-      const companyElement = document.querySelector('.topcard__org-name-link, .top-jobs-company-name, [data-test-id="job-details-company-name"], .job-details-jobs-unified-top-card__company-name, .t-14');
+      const companyElement = document.querySelector(
+        '.job-details-jobs-unified-top-card__company-name, ' +
+        '.job-details-jobs-unified-top-card__primary-description-container a, ' +
+        '.topcard__org-name-link, ' +
+        '.jobs-unified-top-card__company-name'
+      );
       const company = companyElement?.textContent?.trim() || '';
 
-      // Extract location
-      const locationElement = document.querySelector('.topcard__flavor-row, .top-jobs-location, [data-test-id="job-details-location"], .job-details-jobs-unified-top-card__bullet');
+      const locationElement = document.querySelector(
+        '.job-details-jobs-unified-top-card__bullet, ' +
+        '.job-details-jobs-unified-top-card__primary-description-container .tvm__text, ' +
+        '.topcard__flavor--bullet, ' +
+        '.jobs-unified-top-card__bullet'
+      );
       const location = locationElement?.textContent?.trim() || '';
 
-      // Extract description
-      const descriptionElement = document.querySelector('div.show-more-less-html__markup, .jobs-description__content, .job-description-container, #job-details');
+      const descriptionElement = document.querySelector(
+        '.jobs-description__content, ' +
+        '.jobs-description-content__text, ' +
+        '#job-details, ' +
+        'div.show-more-less-html__markup'
+      );
       const description = descriptionElement?.innerHTML || '';
 
-      // Extract salary using enhanced patterns
-      const salaryText = document.querySelector('.compensation__salary, .job-salary, [data-test-id="job-details-salary"]')?.textContent || '';
+      // Enhanced salary extraction
+      const salaryElement = document.querySelector(
+        '.job-details-jobs-unified-top-card__job-insight--highlight, ' +
+        '.job-details-jobs-unified-top-card__job-insight span, ' +
+        '.compensation__salary, ' +
+        '.jobs-unified-top-card__salary-info'
+      );
+      const salaryText = salaryElement?.textContent || '';
       const salary = SalaryExtractor.extract(salaryText);
 
-      // Extract job details
-      const employmentType = document.querySelector('.job-criteria__text--criteria, [data-test-id="job-details-employment-type"]')?.textContent?.trim() || '';
-      const seniorityLevel = document.querySelector('.job-criteria__text--criteria, [data-test-id="job-details-seniority-level"]')?.textContent?.trim() || '';
-      const companySize = document.querySelector('.job-criteria__text--criteria, [data-test-id="job-details-company-size"]')?.textContent?.trim() || '';
+      // Extract job details from insight section
+      const insightElements = Array.from(document.querySelectorAll('.job-details-jobs-unified-top-card__job-insight'));
+      let employmentType = '';
+      let seniorityLevel = '';
+      let workplaceType = 'On-site';
 
-      // Extract posted date
-      const postedDateElement = document.querySelector('.posted-time-ago__text, .time-ago, [data-test-id="job-details-posted-date"]');
+      for (const insight of insightElements) {
+        const text = insight.textContent?.toLowerCase() || '';
+        if (text.includes('full-time') || text.includes('part-time') || text.includes('contract')) {
+          employmentType = insight.textContent?.trim() || '';
+        }
+        if (text.includes('entry') || text.includes('associate') || text.includes('mid-senior') || text.includes('director')) {
+          seniorityLevel = insight.textContent?.trim() || '';
+        }
+        if (text.includes('remote')) workplaceType = 'Remote';
+        if (text.includes('hybrid')) workplaceType = 'Hybrid';
+      }
+
+      const companySize = document.querySelector('.job-criteria__text--criteria')?.textContent?.trim() || '';
+
+      const postedDateElement = document.querySelector(
+        '.job-details-jobs-unified-top-card__primary-description-container time, ' +
+        '.jobs-unified-top-card__posted-date, ' +
+        '.posted-time-ago__text'
+      );
       const postedDate = postedDateElement?.textContent?.trim() || '';
+
+      // Extract applicant count
+      const applicantText = Array.from(insightElements)
+        .find(el => el.textContent?.includes('applicant'))?.textContent || '';
+      const applicantMatch = applicantText.match(/(\d+)\s*applicant/i);
 
       return {
         title,
@@ -284,13 +342,14 @@ export class EnhancedJobParser {
         postedDate,
         source: 'linkedin',
         dateFound: new Date().toISOString(),
-        isSponsored: false,
+        isSponsored: description.toLowerCase().includes('sponsored') || document.querySelector('[data-promoted="true"]') !== null,
         sponsorshipType: '',
         skills: [],
         requirements: [],
         benefits: [],
         qualifications: [],
-        remoteWork: location.toLowerCase().includes('remote'),
+        remoteWork: workplaceType === 'Remote' || location.toLowerCase().includes('remote'),
+        locationType: workplaceType,
         industry: '',
         applicationDeadline: ''
       };
@@ -300,6 +359,43 @@ export class EnhancedJobParser {
     }
   }
 
+  // Extract job data from LD+JSON structured data (most reliable source)
+  private static extractLdJsonJobData(document: Document): Partial<EnhancedJobData> | null {
+    try {
+      const scripts = Array.from(document.querySelectorAll('script[type="application/ld+json"]'));
+      for (const script of scripts) {
+        const content = script.textContent;
+        if (!content) continue;
+
+        const data = JSON.parse(content);
+        const jobPosting = data['@type'] === 'JobPosting' ? data : data['@graph']?.find((item: any) => item['@type'] === 'JobPosting');
+
+        if (jobPosting) {
+          return {
+            title: jobPosting.title || '',
+            company: jobPosting.hiringOrganization?.name || '',
+            location: jobPosting.jobLocation?.address?.addressLocality ||
+              jobPosting.jobLocation?.address?.addressRegion || '',
+            description: jobPosting.description || '',
+            salary: jobPosting.baseSalary ? {
+              min: jobPosting.baseSalary.value?.minValue,
+              max: jobPosting.baseSalary.value?.maxValue,
+              currency: jobPosting.baseSalary.currency || 'GBP',
+              period: 'year',
+              original: ''
+            } : undefined,
+            jobType: jobPosting.employmentType || '',
+            postedDate: jobPosting.datePosted || '',
+            applicationDeadline: jobPosting.validThrough || '',
+            remoteWork: jobPosting.jobLocationType === 'TELECOMMUTE',
+          };
+        }
+      }
+    } catch (e) {
+      // LD+JSON parsing failed, fall back to DOM extraction
+    }
+    return null;
+  }
   private static extractFromIndeed(document: Document, url: string): Partial<EnhancedJobData> | null {
     try {
       const title = document.querySelector('#jobTitleTextContainer, h1, .jobsearch-JobInfoHeader-title, [data-testid="job-title"]')?.textContent?.trim() || '';
@@ -343,7 +439,7 @@ export class EnhancedJobParser {
       const company = document.querySelector('[data-test="employer-name"], .JobDetails_jobDetailsHeader__...')?.textContent?.trim() || '';
       const location = document.querySelector('[data-test="location"], .JobDetails_location__...')?.textContent?.trim() || '';
       const description = document.querySelector('[class*="JobDetails_jobDescription"], .jobDescriptionContent')?.innerHTML || '';
-      
+
       return {
         title,
         company,
@@ -434,11 +530,11 @@ export class EnhancedJobParser {
 
     // Detect sponsorship from description
     const descriptionSponsorship = this.detectSponsorshipInDescription(description);
-    
+
     // Check official sponsorship register
     let isSponsored = descriptionSponsorship.isSponsored;
     let sponsorshipType = descriptionSponsorship.type;
-    
+
     if (baseData.company) {
       try {
         const sponsorRecord = await fetchSponsorRecord(baseData.company);
@@ -556,7 +652,7 @@ export class EnhancedJobParser {
     const requirements: string[] = [];
     const reqPattern = /(?:requirements?|qualifications?|essential|must have|needed)[\s:]*([^.]*(?:\.[^.]*){0,2})/gi;
     const matches = [...description.matchAll(reqPattern)];
-    
+
     for (const match of matches) {
       const text = match[1].trim();
       if (text.length > 10) {
@@ -571,7 +667,7 @@ export class EnhancedJobParser {
     const benefits: string[] = [];
     const benefitPattern = /(?:benefits?|perks?|offer|package|includes?)[\s:]*([^.]*(?:\.[^.]*){0,2})/gi;
     const matches = [...description.matchAll(benefitPattern)];
-    
+
     for (const match of matches) {
       const text = match[1].trim();
       if (text.length > 10) {
@@ -586,7 +682,7 @@ export class EnhancedJobParser {
     const qualifications: string[] = [];
     const qualPattern = /(?:degree|bachelor|master|phd|mba|qualification|certified)[^.]*/gi;
     const matches = [...description.matchAll(qualPattern)];
-    
+
     for (const match of matches) {
       const text = match[0].trim();
       if (text.length > 5) {
@@ -617,7 +713,7 @@ export class EnhancedJobParser {
 
   private static extractDepartment(title: string, description: string): string {
     const text = (title + ' ' + description).toLowerCase();
-    
+
     const departments = {
       'engineering': ['software', 'developer', 'engineer', 'technical', 'devops', 'backend', 'frontend'],
       'product': ['product manager', 'product owner', 'product design'],
@@ -677,8 +773,8 @@ export class EnhancedJobParser {
 
       // Keyword matching
       for (const keyword of keywords) {
-        if (soc.jobType.toLowerCase().includes(keyword) || 
-            soc.relatedTitles?.some((title: string) => title.toLowerCase().includes(keyword))) {
+        if (soc.jobType.toLowerCase().includes(keyword) ||
+          soc.relatedTitles?.some((title: string) => title.toLowerCase().includes(keyword))) {
           score += 0.1;
           matchedKeywords.push(keyword);
         }

@@ -9,55 +9,82 @@ html {
   --font-sans: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: var(--font-geist-mono), "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace;
 
-  /* Premium color palette with better contrast and depth */
-  --color-background: #fafafa;
+  /* Unified Emerald/Slate Color Palette (matches extension theme.ts) */
+  --color-background: #f8fafc;
+  /* Slate 50 */
   --color-foreground: #0f172a;
+  /* Slate 900 */
 
-  --color-muted: #f8fafc;
+  --color-muted: #f1f5f9;
+  /* Slate 100 */
   --color-muted-foreground: #64748b;
+  /* Slate 500 */
 
   --color-popover: #ffffff;
   --color-popover-foreground: #0f172a;
 
   --color-border: #e2e8f0;
+  /* Slate 200 */
   --color-input: #e2e8f0;
+  /* Slate 200 */
 
   --color-card: #ffffff;
   --color-card-foreground: #0f172a;
 
-  --color-primary: #0f766e;
+  /* Primary: Emerald 500 (#10b981) - matches extension */
+  --color-primary: #10b981;
   --color-primary-foreground: #ffffff;
 
+  /* Secondary: Slate 100 */
   --color-secondary: #f1f5f9;
   --color-secondary-foreground: #334155;
+  /* Slate 700 */
 
+  /* Accent: Emerald 50 with Emerald 800 text */
   --color-accent: #ecfdf5;
   --color-accent-foreground: #064e3b;
 
-  --color-destructive: #dc2626;
+  /* Destructive: Red 500 */
+  --color-destructive: #ef4444;
   --color-destructive-foreground: #ffffff;
 
-  --color-success: #059669;
-  --color-info: #0284c7;
-  --color-warning: #d97706;
+  /* Status colors */
+  --color-success: #10b981;
+  /* Emerald 500 - same as primary */
+  --color-info: #3b82f6;
+  /* Blue 500 */
+  --color-warning: #f59e0b;
+  /* Amber 500 */
 
+  /* Ring: Emerald 500 for focus states */
   --color-ring: #10b981;
 
+  /* Soft semantic colors */
   --color-neutral-soft: #f8fafc;
   --color-success-soft: #d1fae5;
+  /* Emerald 100 */
   --color-success-strong: #065f46;
+  /* Emerald 800 */
   --color-destructive-soft: #fee2e2;
+  /* Red 100 */
   --color-destructive-strong: #991b1b;
+  /* Red 800 */
   --color-info-soft: #dbeafe;
-  --color-info-strong: #1e3a8a;
+  /* Blue 100 */
+  --color-info-strong: #1e40af;
+  /* Blue 800 */
   --color-warning-soft: #fef3c7;
+  /* Amber 100 */
   --color-warning-strong: #92400e;
+  /* Amber 800 */
 
-  /* Additional premium colors */
+  /* Surface colors */
   --color-surface: #ffffff;
   --color-surface-variant: #f8fafc;
   --color-outline: #cbd5e1;
+  /* Slate 300 */
   --color-outline-variant: #e2e8f0;
+  /* Slate 200 */
   --color-scrim: #000000;
   --color-shadow: rgba(0, 0, 0, 0.1);
   --color-shadow-strong: rgba(0, 0, 0, 0.25);
@@ -149,21 +176,21 @@ body {
 
 /* Premium shadows */
 .shadow-premium {
-  box-shadow: 
+  box-shadow:
     0 2px 4px -1px rgba(0, 0, 0, 0.06),
     0 4px 6px -1px rgba(0, 0, 0, 0.1),
     0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
 .shadow-premium-lg {
-  box-shadow: 
+  box-shadow:
     0 4px 6px -1px rgba(0, 0, 0, 0.1),
     0 10px 15px -3px rgba(0, 0, 0, 0.1),
     0 20px 25px -5px rgba(0, 0, 0, 0.1);
 }
 
 .shadow-premium-xl {
-  box-shadow: 
+  box-shadow:
     0 10px 15px -3px rgba(0, 0, 0, 0.1),
     0 20px 25px -5px rgba(0, 0, 0, 0.1),
     0 25px 50px -12px rgba(0, 0, 0, 0.25);
@@ -270,6 +297,7 @@ body {
     opacity: 0;
     transform: translateY(30px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -285,6 +313,7 @@ body {
     opacity: 0;
     transform: translateY(-30px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -300,6 +329,7 @@ body {
     opacity: 0;
     transform: scale(0.8);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -326,13 +356,12 @@ body {
 /* Premium loading states */
 .loading-shimmer,
 .animate-shimmer {
-  background: linear-gradient(90deg, 
-    rgba(148, 163, 184, 0.1) 0%, 
-    rgba(148, 163, 184, 0.3) 25%, 
-    rgba(148, 163, 184, 0.1) 50%, 
-    rgba(148, 163, 184, 0.3) 75%, 
-    rgba(148, 163, 184, 0.1) 100%
-  );
+  background: linear-gradient(90deg,
+      rgba(148, 163, 184, 0.1) 0%,
+      rgba(148, 163, 184, 0.3) 25%,
+      rgba(148, 163, 184, 0.1) 50%,
+      rgba(148, 163, 184, 0.3) 75%,
+      rgba(148, 163, 184, 0.1) 100%);
   background-size: 200% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
 }
@@ -340,19 +369,19 @@ body {
 /* Dark mode shimmer variant */
 .dark .animate-shimmer,
 .dark .loading-shimmer {
-  background: linear-gradient(90deg, 
-    rgba(71, 85, 105, 0.2) 0%, 
-    rgba(71, 85, 105, 0.4) 25%, 
-    rgba(71, 85, 105, 0.2) 50%, 
-    rgba(71, 85, 105, 0.4) 75%, 
-    rgba(71, 85, 105, 0.2) 100%
-  );
+  background: linear-gradient(90deg,
+      rgba(71, 85, 105, 0.2) 0%,
+      rgba(71, 85, 105, 0.4) 25%,
+      rgba(71, 85, 105, 0.2) 50%,
+      rgba(71, 85, 105, 0.4) 75%,
+      rgba(71, 85, 105, 0.2) 100%);
 }
 
 @keyframes shimmer {
   0% {
     background-position: -200% 0;
   }
+
   100% {
     background-position: 200% 0;
   }
@@ -360,27 +389,25 @@ body {
 
 /* Enhanced skeleton shimmer */
 .skeleton-shimmer {
-  background: linear-gradient(90deg, 
-    var(--muted) 0%, 
-    var(--muted-foreground/20) 20%, 
-    var(--muted) 40%, 
-    var(--muted-foreground/20) 60%, 
-    var(--muted) 80%, 
-    var(--muted) 100%
-  );
+  background: linear-gradient(90deg,
+      var(--muted) 0%,
+      var(--muted-foreground/20) 20%,
+      var(--muted) 40%,
+      var(--muted-foreground/20) 60%,
+      var(--muted) 80%,
+      var(--muted) 100%);
   background-size: 200% 100%;
   animation: shimmer 2s ease-in-out infinite;
 }
 
 /* High visibility shimmer for loading states */
 .shimmer-high-visibility {
-  background: linear-gradient(90deg, 
-    rgba(59, 130, 246, 0.05) 0%, 
-    rgba(59, 130, 246, 0.15) 25%, 
-    rgba(59, 130, 246, 0.05) 50%, 
-    rgba(59, 130, 246, 0.15) 75%, 
-    rgba(59, 130, 246, 0.05) 100%
-  );
+  background: linear-gradient(90deg,
+      rgba(59, 130, 246, 0.05) 0%,
+      rgba(59, 130, 246, 0.15) 25%,
+      rgba(59, 130, 246, 0.05) 50%,
+      rgba(59, 130, 246, 0.15) 75%,
+      rgba(59, 130, 246, 0.05) 100%);
   background-size: 200% 100%;
   animation: shimmer 1.8s ease-in-out infinite;
   position: relative;
@@ -394,23 +421,22 @@ body {
   right: 0;
   bottom: 0;
   background: linear-gradient(90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.1) 50%,
-    transparent 100%
-  );
+      transparent 0%,
+      rgba(255, 255, 255, 0.1) 50%,
+      transparent 100%);
   animation: shimmer 1.5s ease-in-out infinite;
 }
 
 /* Premium spacing utilities */
-.space-premium > * + * {
+.space-premium>*+* {
   margin-top: 1.5rem;
 }
 
-.space-premium-sm > * + * {
+.space-premium-sm>*+* {
   margin-top: 1rem;
 }
 
-.space-premium-lg > * + * {
+.space-premium-lg>*+* {
   margin-top: 2rem;
 }
 
@@ -534,15 +560,15 @@ body {
   .text-premium-3xl {
     @apply text-3xl;
   }
-  
+
   .text-premium-2xl {
     @apply text-2xl;
   }
-  
+
   .text-premium-xl {
     @apply text-xl;
   }
-  
+
   .text-premium-lg {
     @apply text-lg;
   }
@@ -550,12 +576,13 @@ body {
 
 /* Premium print styles */
 @media print {
+
   .shadow-premium,
   .shadow-premium-lg,
   .shadow-premium-xl {
     box-shadow: none;
   }
-  
+
   .surface-premium,
   .surface-premium-elevated {
     background: white;

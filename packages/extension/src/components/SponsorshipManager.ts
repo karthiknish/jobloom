@@ -2,6 +2,15 @@ import { sponsorBatchLimiter } from "../rateLimiter";
 import { get } from "../apiClient";
 import { fetchSponsorRecord as fetchSponsorLookup, SponsorLookupResult } from "../sponsorship/lookup";
 import { JobDescriptionData } from "../jobDescriptionParser";
+import {
+  UK_SALARY_THRESHOLDS,
+  UK_HOURLY_RATES,
+  UK_THRESHOLD_INFO,
+  UK_RQF_LEVELS,
+  UkThresholdType,
+  getApplicableThreshold,
+  formatSalaryGBP,
+} from "../ukVisaConstants";
 
 // Sponsorship lookup cache & concurrency limiter utilities
 const sponsorshipCache = new Map<string, SponsorshipRecord | null>();
@@ -13,6 +22,16 @@ interface SocCodeDetails {
   jobType: string;
   relatedTitles: string[];
   eligibility: string;
+  /** Occupation-specific minimum salary from 2024 ASHE data */
+  goingRate?: number;
+  /** RQF skill level (3-6+). July 2025 requires RQF 6 for most roles */
+  rqfLevel?: number;
+  /** Whether this occupation is on the Immigration Salary List */
+  isOnISL?: boolean;
+  /** Whether this occupation is on the Temporary Shortage List (expires Dec 2026) */
+  isOnTSL?: boolean;
+  /** Whether this is a Health & Care eligible role */
+  isHealthCare?: boolean;
 }
 
 export interface UkEligibilityAssessment {
@@ -24,6 +43,16 @@ export interface UkEligibilityAssessment {
   salaryThreshold?: number;
   salaryOffered?: number;
   meetsSalaryRequirement?: boolean;
+  /** Type of threshold applied (general, isl, new_entrant, etc) */
+  thresholdType?: UkThresholdType;
+  /** Whether the occupation is on the Immigration Salary List */
+  isOnISL?: boolean;
+  /** Whether the occupation is on the Temporary Shortage List */
+  isOnTSL?: boolean;
+  /** RQF skill level of the occupation */
+  rqfLevel?: number;
+  /** Required hourly rate */
+  hourlyRateRequired?: number;
 }
 
 export interface SponsorshipRecord {
@@ -176,10 +205,10 @@ export class SponsorshipManager {
       const relevantSalary = jobDescription.salary.min ?? jobDescription.salary.max;
 
       if (typeof relevantSalary === "number") {
-        const socThreshold = jobDescription.socCode
+        const thresholdResult = jobDescription.socCode
           ? this.getMinimumSalaryForSOC(jobDescription.socCode)
-          : 25600;
-        enhanced.isAboveMinimumThreshold = relevantSalary >= socThreshold;
+          : { threshold: UK_SALARY_THRESHOLDS.GENERAL, thresholdType: 'general' as UkThresholdType, hourlyRate: UK_HOURLY_RATES.STANDARD };
+        enhanced.isAboveMinimumThreshold = relevantSalary >= thresholdResult.threshold;
       } else {
         enhanced.isAboveMinimumThreshold = undefined;
       }
@@ -235,40 +264,49 @@ export class SponsorshipManager {
     return routeSkills[sponsorRoute.toLowerCase()] || [];
   }
 
-  static getMinimumSalaryForSOC(socCode: string): number {
-    const minimumSalaries: Record<string, number> = {
-      "1111": 62400,
-      "1120": 45900,
-      "1131": 45900,
-      "1132": 41500,
-      "1150": 52500,
-      "2136": 45900,
-      "2135": 45900,
-      "2137": 35100,
-      "2139": 45900,
-      "3543": 37900,
-      "2473": 29100,
-      "2211": 45900,
-      "2212": 29100,
-      "2213": 37900,
-      "2214": 41500,
-      "2122": 45900,
-      "2123": 45900,
-      "2126": 45900,
-      "2315": 33500,
-      "4131": 29100,
-      "2431": 45900,
-      "4111": 25600,
-      "3533": 37900,
-      "3534": 45900,
-      "5311": 29100,
-      "5312": 29100,
-      "5434": 29100,
-      "9234": 25600,
-      "9235": 25600,
-    };
+  /**
+   * Get the minimum salary threshold for a SOC code
+   * Uses occupation-specific going rates from Firebase when available,
+   * otherwise falls back to general threshold based on category
+   */
+  static getMinimumSalaryForSOC(
+    socCode: string,
+    options: {
+      goingRate?: number;
+      isOnISL?: boolean;
+      isOnTSL?: boolean;
+      isHealthCare?: boolean;
+      isNewEntrant?: boolean;
+    } = {}
+  ): { threshold: number; thresholdType: UkThresholdType; hourlyRate: number } {
+    const { goingRate, isOnISL, isOnTSL, isHealthCare, isNewEntrant } = options;
 
-    return minimumSalaries[socCode] ?? 25600;
+    // Determine which threshold category applies
+    const thresholdInfo = getApplicableThreshold({
+      isOnISL,
+      isOnTSL,
+      isHealthCare,
+      isNewEntrant,
+    });
+
+    // The minimum is the higher of: category threshold OR occupation going rate
+    const categoryThreshold = thresholdInfo.annualSalary;
+    const effectiveThreshold = goingRate ? Math.max(categoryThreshold, goingRate) : categoryThreshold;
+
+    return {
+      threshold: effectiveThreshold,
+      thresholdType: thresholdInfo.type,
+      hourlyRate: thresholdInfo.hourlyRate,
+    };
+  }
+
+  /**
+   * @deprecated Use getMinimumSalaryForSOC with options instead
+   * Legacy method for backward compatibility - returns just the threshold number
+   */
+  static getMinimumSalaryThreshold(socCode: string, goingRate?: number): number {
+    const result = this.getMinimumSalaryForSOC(socCode, { goingRate });
+    return result.threshold;
   }
 
   static clearCache(): void {
@@ -310,6 +348,12 @@ export class SponsorshipManager {
           jobType: details.jobType ?? details.title ?? "",
           relatedTitles: details.relatedTitles ?? [],
           eligibility: details.eligibility ?? "Unknown",
+          // New fields for July 2025 compliance
+          goingRate: typeof details.goingRate === 'number' ? details.goingRate : undefined,
+          rqfLevel: typeof details.rqfLevel === 'number' ? details.rqfLevel : undefined,
+          isOnISL: details.isOnISL === true,
+          isOnTSL: details.isOnTSL === true,
+          isHealthCare: details.isHealthCare === true,
         };
         socDetailsCache.set(normalized, mapped);
         return mapped;
@@ -335,8 +379,19 @@ export class SponsorshipManager {
     let eligible = true;
 
     const socCode = jobDescription.socCode;
-    const salaryThreshold = socCode ? this.getMinimumSalaryForSOC(socCode) : undefined;
     const offeredSalary = jobDescription.salary?.min ?? jobDescription.salary?.max;
+
+    // Determine threshold using SOC details from Firebase
+    const thresholdResult = socCode
+      ? this.getMinimumSalaryForSOC(socCode, {
+        goingRate: socDetails?.goingRate,
+        isOnISL: socDetails?.isOnISL,
+        isOnTSL: socDetails?.isOnTSL,
+        isHealthCare: socDetails?.isHealthCare,
+      })
+      : { threshold: UK_SALARY_THRESHOLDS.GENERAL, thresholdType: 'general' as UkThresholdType, hourlyRate: UK_HOURLY_RATES.STANDARD };
+
+    const salaryThreshold = thresholdResult.threshold;
 
     if (!socCode) {
       eligible = false;
@@ -345,29 +400,60 @@ export class SponsorshipManager {
 
     if (socDetails) {
       reasons.push(`SOC ${socDetails.code} (${socDetails.jobType}) classified as ${socDetails.eligibility}`);
+
       if (socDetails.eligibility.toLowerCase().includes("ineligible")) {
         eligible = false;
         reasons.push("Role not eligible under UK Skilled Worker visa");
+      }
+
+      // RQF Level check (July 2025 requires RQF 6 minimum)
+      if (typeof socDetails.rqfLevel === 'number') {
+        if (socDetails.rqfLevel < UK_RQF_LEVELS.MINIMUM_STANDARD) {
+          if (socDetails.isOnTSL) {
+            reasons.push(`RQF Level ${socDetails.rqfLevel} - eligible via Temporary Shortage List (until Dec 2026)`);
+          } else {
+            eligible = false;
+            reasons.push(`RQF Level ${socDetails.rqfLevel} - below required Level ${UK_RQF_LEVELS.MINIMUM_STANDARD} (bachelor's equivalent)`);
+          }
+        } else {
+          reasons.push(`RQF Level ${socDetails.rqfLevel} meets minimum skill requirement`);
+        }
+      }
+
+      // ISL/TSL status
+      if (socDetails.isOnISL) {
+        reasons.push("Occupation on Immigration Salary List (discounted threshold applies)");
+      }
+      if (socDetails.isOnTSL) {
+        reasons.push("Occupation on Temporary Shortage List (expires Dec 2026)");
+      }
+
+      // Going rate info
+      if (socDetails.goingRate) {
+        reasons.push(`Occupation going rate: ${formatSalaryGBP(socDetails.goingRate)}`);
       }
     } else if (socCode) {
       eligible = false;
       reasons.push("Unable to verify SOC code against UK Home Office list");
     }
 
+    // Enhanced threshold information
+    const thresholdLabel = UK_THRESHOLD_INFO[thresholdResult.thresholdType]?.label ?? 'General';
+
     if (salaryThreshold) {
       if (typeof offeredSalary === "number") {
         if (offeredSalary < salaryThreshold) {
           eligible = false;
           reasons.push(
-            `Salary £${this.formatSalary(offeredSalary)} below Skilled Worker minimum of £${this.formatSalary(salaryThreshold)}`
+            `Salary ${formatSalaryGBP(offeredSalary)} below ${thresholdLabel} minimum of ${formatSalaryGBP(salaryThreshold)}`
           );
         } else {
           reasons.push(
-            `Salary £${this.formatSalary(offeredSalary)} meets Skilled Worker minimum of £${this.formatSalary(salaryThreshold)}`
+            `Salary ${formatSalaryGBP(offeredSalary)} meets ${thresholdLabel} minimum of ${formatSalaryGBP(salaryThreshold)}`
           );
         }
       } else {
-        reasons.push(`Minimum salary requirement is £${this.formatSalary(salaryThreshold)} per year; salary not disclosed`);
+        reasons.push(`${thresholdLabel} minimum is ${formatSalaryGBP(salaryThreshold)} per year; salary not disclosed`);
       }
     }
 
@@ -392,9 +478,14 @@ export class SponsorshipManager {
       salaryThreshold,
       salaryOffered: typeof offeredSalary === "number" ? offeredSalary : undefined,
       meetsSalaryRequirement:
-        typeof offeredSalary === "number" && typeof salaryThreshold === "number"
+        typeof offeredSalary === "number"
           ? offeredSalary >= salaryThreshold
           : undefined,
+      thresholdType: thresholdResult.thresholdType,
+      hourlyRateRequired: thresholdResult.hourlyRate,
+      isOnISL: socDetails?.isOnISL,
+      isOnTSL: socDetails?.isOnTSL,
+      rqfLevel: socDetails?.rqfLevel,
     };
   }
 

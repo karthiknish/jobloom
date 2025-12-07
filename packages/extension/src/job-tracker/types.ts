@@ -29,6 +29,14 @@ export interface JobData {
   metadata?: {
     remote: boolean;
     seniority?: string;
+    /** Number of applicants for this job */
+    applicantCount?: number;
+    /** Whether job has LinkedIn Easy Apply */
+    easyApply?: boolean;
+    /** Remote, Hybrid, or On-site */
+    workplaceType?: string;
+    /** Company logo URL */
+    companyLogo?: string;
   };
 }
 

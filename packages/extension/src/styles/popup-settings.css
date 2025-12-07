@@ -1,0 +1,157 @@
+/**
+ * Popup Settings CSS
+ * Settings cards, toggles, and configuration UI
+ */
+
+/* Settings Grid */
+.settings-grid {
+    display: grid;
+    gap: 16px;
+}
+
+.setting-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    transition: border-color 0.2s;
+}
+
+.setting-card:hover {
+    border-color: var(--border-hover);
+}
+
+.setting-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.setting-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.setting-icon.blue {
+    background: #eff6ff;
+    color: var(--accent-blue);
+}
+
+.setting-icon.purple {
+    background: #f5f3ff;
+    color: var(--accent-purple);
+}
+
+.setting-icon.green {
+    background: #ecfdf5;
+    color: var(--primary);
+}
+
+.setting-icon.orange {
+    background: #fff7ed;
+    color: var(--accent-orange);
+}
+
+.setting-info {
+    flex: 1;
+}
+
+.setting-info h3 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.setting-info p {
+    margin: 2px 0 0;
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+.setting-footer {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+
+.setting-details {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+
+.info-box {
+    background: var(--bg-hover);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    font-size: 12px;
+}
+
+.info-box strong {
+    display: block;
+    margin-bottom: 8px;
+}
+
+.info-box ul {
+    margin: 0;
+    padding-left: 16px;
+}
+
+.info-box li {
+    margin-bottom: 4px;
+    color: var(--text-secondary);
+}
+
+/* Logout Section */
+.logout-wrapper {
+    width: 100%;
+    max-width: 300px;
+}
+
+.user-profile-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    margin-bottom: 16px;
+}
+
+.avatar-placeholder {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--bg-hover);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.user-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.user-name {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+.user-email {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+}
