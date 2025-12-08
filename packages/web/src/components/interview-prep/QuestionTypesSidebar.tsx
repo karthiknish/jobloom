@@ -112,11 +112,10 @@ export default function QuestionTypesSidebar({
               onClick={() => setSelectedCategory(category)}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className={`w-full text-left p-4 rounded-lg border interactive-depth depth-transition ${
-                selectedCategory === category
+              className={`w-full text-left p-4 rounded-lg border interactive-depth depth-transition ${selectedCategory === category
                   ? "border-primary bg-primary/5 card-depth-2 shadow-glow"
                   : "border-border hover:border-border/50 card-depth-1 hover-depth"
-              }`}
+                }`}
             >
               <div className="font-medium capitalize flex items-center gap-2">
                 {category === "behavioral" && (
@@ -168,11 +167,15 @@ export default function QuestionTypesSidebar({
               </span>
             </div>
             <Progress
-              value={(completedQuestions.length / getCurrentQuestions().length) * 100}
+              value={getCurrentQuestions().length > 0
+                ? (completedQuestions.length / getCurrentQuestions().length) * 100
+                : 0}
               className="h-2"
             />
             <div className="text-xs text-muted-foreground">
-              {Math.round((completedQuestions.length / getCurrentQuestions().length) * 100)}% complete
+              {getCurrentQuestions().length > 0
+                ? Math.round((completedQuestions.length / getCurrentQuestions().length) * 100)
+                : 0}% complete
             </div>
           </div>
         </CardContent>

@@ -246,10 +246,10 @@ Return ONLY the JSON array.
     const model = getModel();
     const result = await model.generateContent(prompt);
     const response = result.response.text().trim();
-    
+
     const cleaned = response.replace(/```json/gi, '').replace(/```/g, '').trim();
     const questions = JSON.parse(cleaned);
-    
+
     return Array.isArray(questions) ? questions : [];
   } catch (error) {
     console.error('AI Mock Interview Generation Error:', error);
@@ -286,8 +286,8 @@ export async function generateEditorContent(request: EditorContentRequest): Prom
   const formatGuide = format === 'bullet'
     ? 'Present the response as a bullet point list. Use <ul> and <li> tags for the list.'
     : format === 'html'
-    ? 'Output content as semantic HTML using <p>, <h2>, <h3>, <ul>, <li>, <strong>, <em> tags as appropriate. Do NOT use markdown formatting or code fences.'
-    : 'Use short paragraphs with clear transitions. Output as plain text without any markdown or code fences.';
+      ? 'Output content as semantic HTML using <p>, <h2>, <h3>, <ul>, <li>, <strong>, <em> tags as appropriate. Do NOT use markdown formatting or code fences.'
+      : 'Use short paragraphs with clear transitions. Output as plain text without any markdown or code fences.';
 
   const systemPrompt = `You are Hireall's editorial assistant helping create career content that is practical, original, and on-brand.
 
@@ -358,7 +358,7 @@ function sanitizeEditorContent(text: string, format: string): string {
         if (line.match(/^\d+\.\s/)) return line.replace(/^\d+\.\s/, '');
         return line;
       });
-    
+
     // Return as HTML unordered list
     return `<ul>\n${lines.map((line) => `  <li>${line}</li>`).join('\n')}\n</ul>`;
   }
@@ -476,8 +476,8 @@ Evaluate based on:
 Return only a number between 0-100 representing the ATS compatibility score.
 `;
 
-  const model = getModel();
-  const result = await model.generateContent(prompt);
+    const model = getModel();
+    const result = await model.generateContent(prompt);
     const response = result.response.text().trim();
 
     const score = parseInt(response.match(/\d+/)?.[0] || '75');
@@ -522,8 +522,8 @@ Return suggestions as a JSON array of strings.
 Example: ["Add more quantifiable achievements with specific metrics", "Incorporate additional job-specific keywords naturally"]
 `;
 
-  const model = getModel();
-  const result = await model.generateContent(prompt);
+    const model = getModel();
+    const result = await model.generateContent(prompt);
     const response = result.response.text().trim();
 
     try {
@@ -829,4 +829,170 @@ function calculateFallbackATSScore(content: string, keywords: string[]): number 
   }
 
   return Math.min(100, Math.round(score));
+}
+
+// ============================================
+// Interview Answer Evaluation
+// ============================================
+
+export interface InterviewAnswerEvaluationRequest {
+  question: string;
+  answer: string;
+  category: string;
+  difficulty: string;
+}
+
+export interface InterviewAnswerEvaluation {
+  overall_score: number;
+  content_score: number;
+  clarity_score: number;
+  relevance_score: number;
+  structure_score: number;
+  strengths: string[];
+  improvements: string[];
+  detailed_feedback: string;
+  suggestions: string[];
+  estimated_response_quality: "Poor" | "Fair" | "Good" | "Excellent";
+}
+
+/**
+ * Evaluate an interview answer using AI
+ */
+export async function evaluateInterviewAnswer(
+  request: InterviewAnswerEvaluationRequest
+): Promise<InterviewAnswerEvaluation> {
+  const { question, answer, category, difficulty } = request;
+
+  const prompt = `You are an expert interview coach. Evaluate this interview answer and provide comprehensive feedback.
+
+INTERVIEW QUESTION (${category} - ${difficulty}):
+"${question}"
+
+CANDIDATE'S ANSWER:
+"${answer}"
+
+Analyze the answer and return a JSON object with this exact structure:
+{
+  "overall_score": <number 0-100>,
+  "content_score": <number 0-100 - depth and substance of the answer>,
+  "clarity_score": <number 0-100 - how clear and articulate>,
+  "relevance_score": <number 0-100 - how well it addresses the question>,
+  "structure_score": <number 0-100 - use of STAR method or logical structure>,
+  "strengths": ["strength1", "strength2", ...],
+  "improvements": ["area to improve 1", "area to improve 2", ...],
+  "detailed_feedback": "A paragraph of constructive feedback",
+  "suggestions": ["specific suggestion 1", "specific suggestion 2", ...],
+  "estimated_response_quality": "Poor" | "Fair" | "Good" | "Excellent"
+}
+
+Evaluation criteria:
+- Content (25%): Depth, examples, specificity
+- Clarity (25%): Clear articulation, no rambling
+- Relevance (25%): Directly addresses all parts of the question
+- Structure (25%): STAR method for behavioral, logical flow for technical
+
+Quality thresholds:
+- Excellent: 85-100
+- Good: 70-84
+- Fair: 50-69
+- Poor: 0-49
+
+Be constructive and helpful. Return ONLY the JSON object.`;
+
+  try {
+    const model = getModel();
+    const result = await model.generateContent(prompt);
+    const response = result.response.text().trim();
+
+    // Parse AI response
+    const cleaned = response.replace(/```json/gi, '').replace(/```/g, '').trim();
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      return {
+        overall_score: Math.max(0, Math.min(100, parsed.overall_score || 50)),
+        content_score: Math.max(0, Math.min(100, parsed.content_score || 50)),
+        clarity_score: Math.max(0, Math.min(100, parsed.clarity_score || 50)),
+        relevance_score: Math.max(0, Math.min(100, parsed.relevance_score || 50)),
+        structure_score: Math.max(0, Math.min(100, parsed.structure_score || 50)),
+        strengths: Array.isArray(parsed.strengths) ? parsed.strengths : [],
+        improvements: Array.isArray(parsed.improvements) ? parsed.improvements : [],
+        detailed_feedback: parsed.detailed_feedback || "Unable to generate detailed feedback.",
+        suggestions: Array.isArray(parsed.suggestions) ? parsed.suggestions : [],
+        estimated_response_quality: parsed.estimated_response_quality || "Fair",
+      };
+    }
+
+    throw new Error("Invalid AI response format");
+  } catch (error) {
+    console.error("AI Interview Evaluation Error:", error);
+    // Return fallback evaluation based on heuristics
+    return generateFallbackEvaluation(question, answer, category, difficulty);
+  }
+}
+
+/**
+ * Fallback evaluation using heuristics when AI fails
+ */
+function generateFallbackEvaluation(
+  question: string,
+  answer: string,
+  category: string,
+  difficulty: string
+): InterviewAnswerEvaluation {
+  const wordCount = answer.split(/\s+/).length;
+  const hasSTAR =
+    answer.toLowerCase().includes("situation") ||
+    answer.toLowerCase().includes("task") ||
+    answer.toLowerCase().includes("action") ||
+    answer.toLowerCase().includes("result");
+
+  // Calculate scores based on answer characteristics
+  let content_score = Math.min(100, Math.max(20, (wordCount / 150) * 70 + 30));
+  let clarity_score = Math.min(100, Math.max(30, 100 - (answer.split(/[.!?]/).length > wordCount / 15 ? 20 : 0)));
+  let relevance_score = Math.min(100, Math.max(40, 70 + Math.random() * 20));
+  let structure_score = hasSTAR ? Math.min(100, 60 + Math.random() * 30) : Math.max(30, 40 + Math.random() * 20);
+
+  const overall_score = Math.round((content_score + clarity_score + relevance_score + structure_score) / 4);
+
+  const strengths: string[] = [];
+  const improvements: string[] = [];
+  const suggestions: string[] = [];
+
+  if (wordCount > 50) strengths.push("Good level of detail in your response");
+  if (hasSTAR) strengths.push("Good use of structured approach");
+  if (wordCount < 30) improvements.push("Answer could be more detailed with specific examples");
+  if (!hasSTAR && category === "behavioral") {
+    improvements.push("Consider using the STAR method for behavioral questions");
+    suggestions.push("Structure your answer: Situation, Task, Action, Result");
+  }
+
+  if (category === "technical") {
+    suggestions.push("For technical questions, walk through your problem-solving process step by step");
+  }
+  if (category === "leadership") {
+    suggestions.push("Highlight specific examples of your leadership impact and team influence");
+  }
+
+  const estimated_response_quality: "Poor" | "Fair" | "Good" | "Excellent" =
+    overall_score >= 85 ? "Excellent" :
+      overall_score >= 70 ? "Good" :
+        overall_score >= 50 ? "Fair" : "Poor";
+
+  return {
+    overall_score,
+    content_score: Math.round(content_score),
+    clarity_score: Math.round(clarity_score),
+    relevance_score: Math.round(relevance_score),
+    structure_score: Math.round(structure_score),
+    strengths: strengths.length > 0 ? strengths : ["You provided a response to the question"],
+    improvements: improvements.length > 0 ? improvements : ["Continue practicing to refine your answers"],
+    detailed_feedback: `Your answer received a score of ${overall_score}/100. ${overall_score >= 70
+        ? "This is a good response that demonstrates interview readiness."
+        : "This response has room for improvement."
+      } Focus on providing specific examples and structuring your answers clearly.`,
+    suggestions: suggestions.length > 0 ? suggestions : ["Practice with more questions to build confidence"],
+    estimated_response_quality,
+  };
 }
