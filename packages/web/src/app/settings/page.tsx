@@ -80,7 +80,7 @@ export default function SettingsPage() {
           if (response.ok) {
             const data = await response.json();
             const backendPrefs = data.preferences || {};
-            
+
             const userData = {
               profile: {
                 firstName: firebaseUser.displayName?.split(' ')[0] || "",
@@ -113,7 +113,7 @@ export default function SettingsPage() {
                 confirmPassword: "",
               },
             };
-            
+
             // Only update if the data has actually changed
             setFormData(prev => {
               if (JSON.stringify(prev) !== JSON.stringify(userData)) {
@@ -241,9 +241,10 @@ export default function SettingsPage() {
         const chromeApi = window.chrome;
         const chromeRuntime = chromeApi?.runtime;
         const storageSync = chromeApi?.storage?.sync;
-        if (storageSync?.set) {
+        const storageSyncSet = storageSync?.set?.bind(storageSync);
+        if (storageSyncSet) {
           await new Promise<void>((resolve, reject) => {
-            storageSync.set(syncData, () => {
+            storageSyncSet(syncData, () => {
               if (chromeRuntime?.lastError) {
                 reject(new Error(chromeRuntime.lastError.message || "Chrome runtime error"));
               } else {
