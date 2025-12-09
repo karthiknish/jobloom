@@ -26,7 +26,7 @@ export function ResumeScore({ score, enhanced = true, compact = false }: ResumeS
   }
 
   const getScoreLabel = (value: number) => {
-    if (value >= 80) return { text: "Excellent", color: "text-emerald-600", bg: "bg-emerald-50" };
+    if (value >= 80) return { text: "Excellent", color: "text-primary", bg: "bg-primary/10" };
     if (value >= 60) return { text: "Good", color: "text-amber-600", bg: "bg-amber-50" };
     if (value >= 40) return { text: "Fair", color: "text-orange-600", bg: "bg-orange-50" };
     return { text: "Needs Work", color: "text-red-600", bg: "bg-red-50" };
@@ -40,7 +40,7 @@ export function ResumeScore({ score, enhanced = true, compact = false }: ResumeS
   };
 
   const getBarColor = (value: number) => {
-    if (value >= 80) return "bg-emerald-500";
+    if (value >= 80) return "bg-primary";
     if (value >= 60) return "bg-amber-400";
     if (value >= 40) return "bg-orange-400";
     return "bg-red-400";
@@ -114,7 +114,7 @@ export function ResumeScore({ score, enhanced = true, compact = false }: ResumeS
           >
             <div className={cn(
               "w-10 h-10 mx-auto mb-1.5 rounded-lg flex items-center justify-center",
-              item.value >= 80 ? "bg-emerald-100 text-emerald-600" :
+              item.value >= 80 ? "bg-primary/20 text-primary" :
               item.value >= 60 ? "bg-amber-100 text-amber-600" :
               item.value >= 40 ? "bg-orange-100 text-orange-600" :
               "bg-red-100 text-red-600"
@@ -144,7 +144,7 @@ export function ResumeScore({ score, enhanced = true, compact = false }: ResumeS
               <div key={index} className="flex items-start gap-2">
                 <div className={cn(
                   "w-1 h-1 rounded-full mt-1.5 flex-shrink-0",
-                  score.overall >= 70 ? "bg-emerald-500" : "bg-amber-500"
+                  score.overall >= 70 ? "bg-primary" : "bg-amber-500"
                 )} />
                 <p className="text-xs text-muted-foreground line-clamp-2">{suggestion}</p>
               </div>

@@ -266,7 +266,7 @@ className="border-border focus:border-amber-500 focus:ring-amber-500"
         <Card className="border-0 bg-gradient-to-br from-emerald-50 to-green-50 shadow-lg">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-emerald-700">
+              <span className="text-sm text-primary">
                 {selectedIds.size} application{selectedIds.size !== 1 ? "s" : ""} selected
               </span>
               <div className="flex gap-2">
@@ -274,7 +274,7 @@ className="border-border focus:border-amber-500 focus:ring-amber-500"
                   variant="outline"
                   size="sm"
                   onClick={() => setSelectedIds(new Set())}
-                  className="text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+                  className="text-primary border-primary/30 hover:bg-primary/10"
                 >
                   Clear Selection
                 </Button>

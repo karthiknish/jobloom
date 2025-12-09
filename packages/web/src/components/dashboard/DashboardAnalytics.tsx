@@ -98,7 +98,7 @@ export function DashboardAnalytics({
                         interested: "bg-muted text-muted-foreground",
                         applied: "bg-sky-100 text-sky-800",
                         interviewing: "bg-teal-100 text-teal-800",
-                        offered: "bg-emerald-100 text-emerald-800",
+                        offered: "bg-primary/20 text-primary",
                         rejected: "bg-red-100 text-red-800",
                         withdrawn: "bg-muted text-muted-foreground",
                       }[application.status] ||
@@ -177,14 +177,14 @@ export function DashboardAnalytics({
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-lg">
+                <div className="flex items-center justify-between p-3 bg-primary/10 rounded-lg">
                   <div className="flex items-center">
-                    <div className="p-2 rounded-full bg-emerald-100">
-                      <CheckCircle className="h-4 w-4 text-emerald-600" />
+                    <div className="p-2 rounded-full bg-primary/20">
+                      <CheckCircle className="h-4 w-4 text-primary" />
                     </div>
                     <span className="ml-3 font-medium">Success Rate</span>
                   </div>
-                  <span className="text-lg font-bold text-emerald-600">
+                  <span className="text-lg font-bold text-primary">
                     {successRate}%
                   </span>
                 </div>
@@ -298,7 +298,7 @@ export function DashboardAnalytics({
                 </div>
                 <div className="w-full bg-muted rounded-full h-2">
                   <div
-                    className="bg-emerald-600 h-2 rounded-full transition-all duration-300"
+                    className="bg-primary h-2 rounded-full transition-all duration-300"
                     style={{
                       width: `${Math.min(
                         100,

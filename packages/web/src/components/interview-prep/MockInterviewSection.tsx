@@ -195,7 +195,7 @@ export default function MockInterviewSection() {
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
-      case "Easy": return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300";
+      case "Easy": return "bg-primary/20 text-primary dark:bg-primary/20 dark:text-primary";
       case "Medium": return "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300";
       case "Hard": return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300";
       default: return "bg-muted text-muted-foreground";
@@ -225,7 +225,7 @@ export default function MockInterviewSection() {
               <CheckCircle className="h-5 w-5 text-primary" />
               Interview Completed!
             </CardTitle>
-          </CardHeader>>
+          </CardHeader>
           <CardContent>
             <div className="text-center py-6">
               <h3 className="text-2xl font-bold mb-2">Great job!</h3>

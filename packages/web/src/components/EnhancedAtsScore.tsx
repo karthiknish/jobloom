@@ -46,8 +46,8 @@ export function EnhancedAtsScore({
   };
 
   const getScoreLabel = (value: number) => {
-    if (value >= 90) return { text: "Outstanding", color: "text-emerald-600", bg: "bg-emerald-50" };
-    if (value >= 80) return { text: "Excellent", color: "text-emerald-600", bg: "bg-emerald-50" };
+    if (value >= 90) return { text: "Outstanding", color: "text-primary", bg: "bg-primary/10" };
+    if (value >= 80) return { text: "Excellent", color: "text-primary", bg: "bg-primary/10" };
     if (value >= 70) return { text: "Good", color: "text-green-600", bg: "bg-green-50" };
     if (value >= 60) return { text: "Fair", color: "text-amber-600", bg: "bg-amber-50" };
     if (value >= 50) return { text: "Needs Work", color: "text-orange-600", bg: "bg-orange-50" };
@@ -56,7 +56,7 @@ export function EnhancedAtsScore({
 
   const getBarColor = (value: number, max: number) => {
     const percentage = (value / max) * 100;
-    if (percentage >= 80) return "bg-emerald-500";
+    if (percentage >= 80) return "bg-primary";
     if (percentage >= 60) return "bg-amber-400";
     if (percentage >= 40) return "bg-orange-400";
     return "bg-red-400";
@@ -179,7 +179,7 @@ export function EnhancedAtsScore({
       >
         <div className={cn(
           "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0",
-          percentage >= 80 ? "bg-emerald-100 text-emerald-600" :
+          percentage >= 80 ? "bg-primary/20 text-primary" :
           percentage >= 60 ? "bg-amber-100 text-amber-600" :
           percentage >= 40 ? "bg-orange-100 text-orange-600" :
           "bg-red-100 text-red-600"
@@ -282,7 +282,7 @@ export function EnhancedAtsScore({
           <Card className="border-0 shadow-sm bg-gray-50/50 dark:bg-gray-900/50">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Target className="w-4 h-4 text-emerald-600" />
+                <Target className="w-4 h-4 text-primary" />
                 Score Breakdown
               </CardTitle>
             </CardHeader>
@@ -299,9 +299,9 @@ export function EnhancedAtsScore({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Strengths */}
               {score.strengths && score.strengths.length > 0 && (
-                <Card className="border-0 shadow-sm bg-emerald-50/50 dark:bg-emerald-950/20">
+                <Card className="border-0 shadow-sm bg-primary/10/50 dark:bg-emerald-950/20">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-semibold flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
+                    <CardTitle className="text-sm font-semibold flex items-center gap-2 text-primary dark:text-emerald-400">
                       <CheckCircle2 className="w-4 h-4" />
                       Strengths
                     </CardTitle>
@@ -316,7 +316,7 @@ export function EnhancedAtsScore({
                         className="flex items-start gap-2"
                       >
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 mt-0.5 flex-shrink-0" />
-                        <p className="text-xs text-emerald-700 dark:text-emerald-300">{strength}</p>
+                        <p className="text-xs text-primary dark:text-emerald-300">{strength}</p>
                       </motion.div>
                     ))}
                   </CardContent>

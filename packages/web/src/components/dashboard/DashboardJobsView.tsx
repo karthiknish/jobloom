@@ -274,7 +274,7 @@ export function DashboardJobsView({
       ) : (
         <div className="rounded-2xl bg-gradient-to-br from-background via-muted/30 to-background p-12 text-center border border-border/50 shadow-sm">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-100 to-green-100 dark:from-emerald-900/50 dark:to-green-900/50">
-            <Briefcase className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
+            <Briefcase className="h-8 w-8 text-primary dark:text-emerald-400" />
           </div>
           <h3 className="mt-5 text-xl font-semibold text-foreground">
             No jobs yet

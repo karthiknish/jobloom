@@ -242,50 +242,27 @@ export class AuthManager {
   public async signInWithGoogle(): Promise<void> {
     try {
       popupUI.showLoading('google-auth-btn');
-      clearCachedAuthToken();
-
-      const result = await signInWithPopup(getAuthInstance(), getGoogleProvider());
-      const token = await result.user.getIdToken();
-
-      cacheAuthToken({
-        token,
-        userId: result.user.uid,
-        userEmail: result.user.email,
-        source: 'popup'
-      });
-
-      this.currentUser = result.user;
-      this.updateAuthUI(true);
-
-      popupUI.showSuccess('Successfully signed in with Google!');
-      popupUI.switchTab('jobs');
+      
+      // Chrome extensions cannot use signInWithPopup due to CSP restrictions.
+      // Instead, open the web app login page and let the user sign in there.
+      // The extension will sync auth state from the web app when opened.
+      const webAppUrl = sanitizeBaseUrl(DEFAULT_WEB_APP_URL);
+      const loginUrl = `${webAppUrl}/sign-in?source=extension&redirect=close`;
+      
+      // Open the web app login page
+      chrome.tabs.create({ url: loginUrl });
+      
+      // Show message to user
+      popupUI.showSuccess('Please sign in on the web page, then return here');
+      
+      // Close the popup after a short delay
+      setTimeout(() => {
+        window.close();
+      }, 1500);
 
     } catch (error: any) {
       console.error('Google sign in error:', error);
-      let errorMessage = 'Failed to sign in with Google. Please try again';
-
-      // Enhanced error handling
-      switch (error.code) {
-        case 'auth/popup-closed-by-user':
-          errorMessage = 'Sign-in popup was closed before completion';
-          break;
-        case 'auth/popup-blocked':
-          errorMessage = 'Sign-in popup was blocked by your browser. Please allow popups';
-          break;
-        case 'auth/cancelled-popup-request':
-          errorMessage = 'Sign-in was cancelled';
-          break;
-        case 'auth/network-request-failed':
-          errorMessage = 'Network error. Please check your connection and try again';
-          break;
-        case 'auth/popup-request-failed':
-          errorMessage = 'Failed to open sign-in popup. Please try again';
-          break;
-        default:
-          errorMessage = error.message || 'Google sign-in failed. Please try again';
-      }
-
-      this.showAuthError(errorMessage);
+      this.showAuthError('Failed to open sign-in page. Please try again');
     } finally {
       popupUI.hideLoading('google-auth-btn');
     }

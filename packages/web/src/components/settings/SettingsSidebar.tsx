@@ -41,7 +41,7 @@ export function SettingsSidebar({
           <div className="flex items-center gap-4 mb-6">
             <Avatar className="h-16 w-16">
               <AvatarImage src={user?.photoURL || ''} alt={user?.displayName || 'User'} />
-              <AvatarFallback className="text-lg bg-emerald-100 text-emerald-600">
+              <AvatarFallback className="text-lg bg-primary/20 text-primary">
                 {user?.displayName?.[0] || 'U'}
               </AvatarFallback>
             </Avatar>

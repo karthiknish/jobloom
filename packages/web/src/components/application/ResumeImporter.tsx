@@ -696,7 +696,7 @@ export function ResumeImporter({ onImport }: ResumeImporterProps) {
                                 variant="outline" 
                                 className={cn(
                                   "text-xs",
-                                  listScore >= 80 ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
+                                  listScore >= 80 ? "bg-primary/10 text-primary border-primary/30" :
                                   listScore >= 60 ? "bg-amber-50 text-amber-700 border-amber-200" :
                                   listScore >= 40 ? "bg-orange-50 text-orange-700 border-orange-200" :
                                   "bg-red-50 text-red-700 border-red-200"
@@ -795,14 +795,14 @@ export function ResumeImporter({ onImport }: ResumeImporterProps) {
                     <div className="flex items-center gap-2">
                       <div className={cn(
                         "p-1.5 rounded-lg",
-                        displayAtsScore >= 80 ? "bg-emerald-100" :
+                        displayAtsScore >= 80 ? "bg-primary/20" :
                         displayAtsScore >= 60 ? "bg-amber-100" :
                         displayAtsScore >= 40 ? "bg-orange-100" :
                         "bg-red-100"
                       )}>
                         <Zap className={cn(
                           "h-4 w-4",
-                          displayAtsScore >= 80 ? "text-emerald-600" :
+                          displayAtsScore >= 80 ? "text-primary" :
                           displayAtsScore >= 60 ? "text-amber-600" :
                           displayAtsScore >= 40 ? "text-orange-600" :
                           "text-red-600"
@@ -814,7 +814,7 @@ export function ResumeImporter({ onImport }: ResumeImporterProps) {
                     </div>
                     <span className={cn(
                       "text-lg font-bold px-2.5 py-0.5 rounded-full",
-                      displayAtsScore >= 80 ? "bg-emerald-100 text-emerald-700" :
+                      displayAtsScore >= 80 ? "bg-primary/20 text-primary" :
                       displayAtsScore >= 60 ? "bg-amber-100 text-amber-700" :
                       displayAtsScore >= 40 ? "bg-orange-100 text-orange-700" :
                       "bg-red-100 text-red-700"
@@ -826,7 +826,7 @@ export function ResumeImporter({ onImport }: ResumeImporterProps) {
                     <div 
                       className={cn(
                         "h-full rounded-full transition-all duration-500",
-                        displayAtsScore >= 80 ? "bg-emerald-500" :
+                        displayAtsScore >= 80 ? "bg-primary" :
                         displayAtsScore >= 60 ? "bg-amber-400" :
                         displayAtsScore >= 40 ? "bg-orange-400" :
                         "bg-red-400"

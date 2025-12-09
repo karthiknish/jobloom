@@ -119,7 +119,7 @@ export function JobHoverCard({ application, children, onViewDetails }: JobHoverC
           {/* Special Badges */}
           <div className="flex flex-wrap gap-1">
             {application.job?.isSponsored && (
-              <Badge variant="outline" className="border-emerald-500 text-emerald-700 text-xs">
+              <Badge variant="outline" className="border-primary text-primary text-xs">
                 🇬🇧 Sponsored
               </Badge>
             )}

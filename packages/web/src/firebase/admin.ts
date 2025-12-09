@@ -74,19 +74,8 @@ const svcB64 = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64;
 try {
   let serviceAccount = null;
 
-  // Method 1: Load from hireall-4f106-firebase-adminsdk-fbsvc-2e91c28cd6.json (prioritize this)
-  try {
-    const keyPath = join(process.cwd(), "hireall-4f106-firebase-adminsdk-fbsvc-2e91c28cd6.json");
-    if (existsSync(keyPath)) {
-      serviceAccount = JSON.parse(readFileSync(keyPath, "utf8"));
-      console.log("Loaded service account from hireall-4f106-firebase-adminsdk-fbsvc-2e91c28cd6.json");
-    }
-  } catch (error) {
-    console.warn("Failed to load hireall-4f106-firebase-adminsdk-fbsvc-2e91c28cd6.json:", error);
-  }
-
-  // Method 2: Base64 encoded service account JSON from env
-  if (!serviceAccount && svcB64) {
+  // Method 1: Base64 encoded service account JSON from env (prioritize this)
+  if (svcB64) {
     try {
       serviceAccount = JSON.parse(Buffer.from(svcB64, "base64").toString("utf8"));
       console.log('Loaded service account from FIREBASE_SERVICE_ACCOUNT_BASE64');
@@ -95,7 +84,7 @@ try {
     }
   }
 
-  // Method 3: Raw service account JSON from env
+  // Method 2: Raw service account JSON from env
   if (!serviceAccount && svcJson) {
     try {
       serviceAccount = JSON.parse(svcJson);
@@ -105,7 +94,7 @@ try {
     }
   }
 
-  // Method 4: Create service account from individual env vars
+  // Method 3: Create service account from individual env vars
   if (!serviceAccount && process.env.FIREBASE_PRIVATE_KEY) {
     try {
       serviceAccount = {
@@ -124,6 +113,19 @@ try {
       console.log('Loaded service account from individual environment variables');
     } catch (error) {
       console.warn('Failed to create service account from env vars:', error);
+    }
+  }
+
+  // Method 4: Load from JSON file (development fallback)
+  if (!serviceAccount) {
+    try {
+      const keyPath = join(process.cwd(), "jobloom-6a4cd-firebase-adminsdk-fbsvc-aed875c457.json");
+      if (existsSync(keyPath)) {
+        serviceAccount = JSON.parse(readFileSync(keyPath, "utf8"));
+        console.log("Loaded service account from jobloom-6a4cd-firebase-adminsdk-fbsvc-aed875c457.json");
+      }
+    } catch (error) {
+      console.warn("Failed to load jobloom-6a4cd-firebase-adminsdk-fbsvc-aed875c457.json:", error);
     }
   }
 

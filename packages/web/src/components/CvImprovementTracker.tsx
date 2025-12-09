@@ -282,7 +282,7 @@ export function CvImprovementTracker({ analyses }: CvImprovementTrackerProps) {
                     </div>
                     <span
                       className={`text-sm font-medium ${
-                        milestone.achieved ? "text-emerald-800" : "text-foreground"
+                        milestone.achieved ? "text-primary" : "text-foreground"
                       }`}
                     >
                       {milestone.label}

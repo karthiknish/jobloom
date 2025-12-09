@@ -110,6 +110,11 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
 
   // Verify the ID token
   const decoded = await verifyIdToken(idToken);
+  
+  if (!decoded) {
+    throw createAuthError("Failed to verify ID token", ERROR_CODES.INVALID_TOKEN);
+  }
+  
   await validateUserSession(decoded);
 
   // Create session with enhanced security

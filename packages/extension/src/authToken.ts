@@ -227,21 +227,8 @@ async function getTokenFromHireallTab(forceRefresh: boolean): Promise<CachedAuth
           chrome.scripting.executeScript({
             target: { tabId: tab.id! },
             func: () => {
-              // Try to get token from global function (async)
-              if (typeof (window as any).getHireallAuthToken === 'function') {
-                try {
-                  const result = (window as any).getHireallAuthToken();
-                  if (result && typeof result.then === 'function') {
-                    // Return a marker that this needs async handling
-                    return { needsAsync: true };
-                  }
-                  return result;
-                } catch (e) {
-                  console.debug('getHireallAuthToken failed:', e);
-                }
-              }
-              
-              // Try to get token from localStorage
+              // Get token from localStorage (populated by ExtensionAuthBridge)
+              // Note: getHireallAuthToken is async and can't return Promises from executeScript
               try {
                 const localToken = localStorage.getItem('hireall_auth_token');
                 const userData = localStorage.getItem('hireall_user_data');
@@ -268,15 +255,7 @@ async function getTokenFromHireallTab(forceRefresh: boolean): Promise<CachedAuth
               return;
             }
             
-            const scriptResult = result[0].result;
-            // Handle async marker - need to retry via message
-            if (scriptResult?.needsAsync) {
-              // Fallback for async case - just use what we have
-              resolve(null);
-              return;
-            }
-            
-            resolve(scriptResult);
+            resolve(result[0].result);
           });
         }
       });
@@ -404,7 +383,8 @@ export async function acquireIdToken(
       }
     }
 
-    console.warn("Hireall: Failed to acquire ID token from all sources");
+    // This is expected when user is not signed in - use debug level, not warn
+    console.debug("Hireall: No auth token available (user may not be signed in)");
     return null;
   } catch (error) {
     console.warn("Hireall: Failed to acquire ID token:", error);

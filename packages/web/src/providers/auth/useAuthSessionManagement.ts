@@ -29,14 +29,14 @@ export function useAuthSessionManagement(
 
     try {
       if (user) {
-        const payload = JSON.stringify({ id: user.uid });
-        (window as any).__firebase_user = { id: user.uid };
+        const payload = JSON.stringify({ id: user.uid, email: user.email });
+        (window as any).__firebase_user = { id: user.uid, email: user.email };
         localStorage.setItem("__firebase_user", payload);
         document.cookie = `__firebase_user=${encodeURIComponent(
           payload
         )}; path=/; max-age=604800; samesite=strict`;
         window.postMessage(
-          { type: "FIREBASE_AUTH_SUCCESS", uid: user.uid },
+          { type: "FIREBASE_AUTH_SUCCESS", uid: user.uid, email: user.email },
           window.location.origin
         );
       } else {

@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "webpack --mode development --watch",
     "build": "tsc --noEmit && webpack --mode production",
-    "build:dev": "tsc --noEmit && WEB_APP_URL=http://localhost:3000 webpack --mode production",
+    "build:dev": "tsc --noEmit && WEB_APP_URL=http://localhost:3000 webpack --mode development",
     "build:prod": "tsc --noEmit && WEB_APP_URL=https://hireall.app webpack --mode production",
     "build:test": "cp .env.test .env && tsc --noEmit && webpack --mode production",
     "lint": "eslint src --ext .ts,.js",

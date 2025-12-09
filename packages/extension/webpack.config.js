@@ -40,29 +40,10 @@ module.exports = (env, argv) => {
       filename: "[name].js",
       path: path.resolve(__dirname, "dist"),
       clean: true,
-      // Production optimizations
-      ...(isProduction && {
-        filename: "[name].[contenthash].js",
-      }),
     },
     optimization: {
       minimize: isProduction,
-      splitChunks: isProduction ? {
-        chunks: 'all',
-        cacheGroups: {
-          vendor: {
-            test: /[\\/]node_modules[\\/]/,
-            name: 'vendors',
-            chunks: 'all',
-          },
-          common: {
-            name: 'common',
-            minChunks: 2,
-            chunks: 'all',
-            enforce: true,
-          },
-        },
-      } : false,
+      splitChunks: false,
     },
     performance: {
       hints: isProduction ? 'warning' : false,
@@ -129,6 +110,8 @@ module.exports = (env, argv) => {
             { from: "manifest.json", to: "manifest.json" },
             { from: "src/popup.html", to: "popup.html" },
             { from: "src/popup.css", to: "popup.css" },
+            { from: "src/styles", to: "styles", noErrorOnMissing: true },
+            { from: "src/animations.css", to: "animations.css", noErrorOnMissing: true },
             { from: "public", to: ".", noErrorOnMissing: true },
             { from: "src/styles.css", to: "styles.css", noErrorOnMissing: true },
           ],

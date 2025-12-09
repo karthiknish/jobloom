@@ -107,8 +107,8 @@ export function ExtensionIntegration({ userId }: ExtensionIntegrationProps) {
     if (typeof window !== 'undefined' && userId) {
       const sendAuthToExtension = async () => {
         try {
-          // Get fresh auth token and user data
-          const authResponse = await extensionAuthBridge.getAuthToken(true);
+          // Get cached auth token (don't force refresh to avoid quota issues)
+          const authResponse = await extensionAuthBridge.getAuthToken(false);
           
           if (authResponse.success && authResponse.token) {
             // Post message to extension
@@ -196,12 +196,12 @@ export function ExtensionIntegration({ userId }: ExtensionIntegrationProps) {
           <div className="flex items-center gap-3">
             <div className={`p-2.5 rounded-xl ${
               isExtensionInstalled 
-                ? "bg-emerald-100 dark:bg-emerald-900/50" 
+                ? "bg-primary/20 dark:bg-emerald-900/50" 
                 : "bg-blue-100 dark:bg-blue-900/50"
             }`}>
               <Chrome className={`h-6 w-6 ${
                 isExtensionInstalled 
-                  ? "text-emerald-600 dark:text-emerald-400" 
+                  ? "text-primary dark:text-emerald-400" 
                   : "text-blue-600 dark:text-blue-400"
               }`} />
             </div>
@@ -216,7 +216,7 @@ export function ExtensionIntegration({ userId }: ExtensionIntegrationProps) {
             </div>
           </div>
           {isExtensionInstalled && (
-            <Badge className="bg-emerald-500 hover:bg-emerald-500 text-white gap-1">
+            <Badge className="bg-primary hover:bg-primary text-white gap-1">
               <CheckCircle className="h-3 w-3" />
               Active
             </Badge>
@@ -269,13 +269,13 @@ export function ExtensionIntegration({ userId }: ExtensionIntegrationProps) {
                 <TooltipTrigger asChild>
                   <motion.div 
                     whileHover={{ scale: 1.02 }}
-                    className="bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/30 dark:to-green-950/30 rounded-xl p-4 text-center border border-emerald-100 dark:border-emerald-900/50 cursor-help"
+                    className="bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/30 dark:to-green-950/30 rounded-xl p-4 text-center border border-primary/20 dark:border-emerald-900/50 cursor-help"
                   >
-                    <Zap className="h-5 w-5 text-emerald-600 dark:text-emerald-400 mx-auto mb-2" />
-                    <p className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
+                    <Zap className="h-5 w-5 text-primary dark:text-emerald-400 mx-auto mb-2" />
+                    <p className="text-2xl font-bold text-primary dark:text-emerald-100">
                       Active
                     </p>
-                    <p className="text-xs text-emerald-600/80 dark:text-emerald-400/80">Status</p>
+                    <p className="text-xs text-primary/80 dark:text-emerald-400/80">Status</p>
                   </motion.div>
                 </TooltipTrigger>
                 <TooltipContent>

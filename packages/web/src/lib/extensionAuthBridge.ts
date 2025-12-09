@@ -45,6 +45,12 @@ class ExtensionAuthBridge {
     // Listen for auth state changes and notify extension
     this.setupAuthStateListener();
     
+    // Expose Firebase auth object for extension content script access
+    const auth = getAuthClient();
+    if (auth) {
+      (window as any).__firebase_auth = auth;
+    }
+    
     // Set up global function for extension to call
     // Make it return a Promise that the extension can await
     (window as any).getHireallAuthToken = async (forceRefresh?: boolean): Promise<ExtensionAuthResponse> => {
@@ -215,7 +221,18 @@ class ExtensionAuthBridge {
         return { success: false, error: 'No authenticated user' };
       }
 
-      const token = await user.getIdToken(forceRefresh);
+      let token: string;
+      try {
+        token = await user.getIdToken(forceRefresh);
+      } catch (networkError: any) {
+        // If network refresh fails, try to get cached token
+        if (forceRefresh && networkError?.code === 'auth/network-request-failed') {
+          console.warn('[ExtensionAuthBridge] Network error, falling back to cached token');
+          token = await user.getIdToken(false);
+        } else {
+          throw networkError;
+        }
+      }
       
       return {
         token,

@@ -103,14 +103,14 @@ export function CvAnalysisHistory({ analyses, optimistic }: CvAnalysisHistoryPro
   };
 
   const getScoreColor = (score: number) => {
-    if (score >= 80) return "text-emerald-600";
+    if (score >= 80) return "text-primary";
     if (score >= 60) return "text-amber-500";
     if (score >= 40) return "text-orange-500";
     return "text-red-500";
   };
 
   const getScoreBg = (score: number) => {
-    if (score >= 80) return "bg-emerald-100 text-emerald-700";
+    if (score >= 80) return "bg-primary/20 text-primary";
     if (score >= 60) return "bg-amber-100 text-amber-700";
     if (score >= 40) return "bg-orange-100 text-orange-700";
     return "bg-red-100 text-red-700";
@@ -304,7 +304,7 @@ export function CvAnalysisHistory({ analyses, optimistic }: CvAnalysisHistoryPro
                               <span
                                 className={`font-semibold px-2.5 py-0.5 rounded-full text-xs ${
                                   analysis.atsCompatibility.score >= 80
-                                    ? "bg-emerald-100 text-emerald-700"
+                                    ? "bg-primary/20 text-primary"
                                     : analysis.atsCompatibility.score >= 60
                                     ? "bg-amber-100 text-amber-700"
                                     : analysis.atsCompatibility.score >= 40
