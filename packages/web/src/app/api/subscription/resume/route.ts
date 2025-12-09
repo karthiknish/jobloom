@@ -7,8 +7,9 @@ import { FieldValue } from "@/firebase/admin";
 import { checkServerRateLimit } from "@/lib/rateLimiter";
 import type Stripe from "stripe";
 
-const stripe = getStripeClient();
-const db = getAdminDb();
+// Lazy initialization - called inside handlers
+function getStripe() { return getStripeClient(); }
+function getDb() { return getAdminDb(); }
 
 function validateAuthorizationHeader(authHeader: string | null): { isValid: boolean; token?: string; error?: string } {
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -82,7 +83,7 @@ export async function POST(request: NextRequest) {
       return setSecurityHeaders(response);
     }
 
-    const userDoc = await db.collection("users").doc(userId).get();
+    const userDoc = await getDb().collection("users").doc(userId).get();
     const userData = userDoc.data() as Record<string, any> | undefined;
 
     const subscriptionId = userData?.subscriptionId;
@@ -94,7 +95,7 @@ export async function POST(request: NextRequest) {
       return setSecurityHeaders(response);
     }
 
-    const stripeSubscriptionResponse = await stripe.subscriptions.retrieve(subscriptionId, {
+    const stripeSubscriptionResponse = await getStripe().subscriptions.retrieve(subscriptionId, {
       expand: ["latest_invoice.payment_intent"],
     });
     const stripeSubscription = stripeSubscriptionResponse as Stripe.Subscription;
@@ -113,7 +114,7 @@ export async function POST(request: NextRequest) {
       return setSecurityHeaders(response);
     }
 
-    const updatedSubscriptionResponse = await stripe.subscriptions.update(subscriptionId, {
+    const updatedSubscriptionResponse = await getStripe().subscriptions.update(subscriptionId, {
       cancel_at_period_end: false,
     });
     const updatedSubscription = updatedSubscriptionResponse as Stripe.Subscription;
@@ -124,7 +125,7 @@ export async function POST(request: NextRequest) {
       plan: (updatedSubscription.metadata?.plan ?? userData?.plan ?? "premium") as string,
     });
 
-    await db.collection("users").doc(userId).set({
+    await getDb().collection("users").doc(userId).set({
       subscriptionId: updatedSubscription.id,
       stripeCustomerId: updatedSubscription.customer as string,
       updatedAt: FieldValue.serverTimestamp(),

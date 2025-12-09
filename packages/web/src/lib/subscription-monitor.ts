@@ -3,8 +3,9 @@ import { getStripeClient } from "@/lib/stripe";
 import { upsertSubscriptionFromStripe, ValidationError, DatabaseError } from "@/lib/subscriptions";
 import Stripe from "stripe";
 
-const db = getAdminDb();
-const stripe = getStripeClient();
+// Lazy initialization - called inside functions
+function getDb() { return getAdminDb(); }
+function getStripe() { return getStripeClient(); }
 
 // Monitoring configuration
 const MONITORING_CONFIG = {
@@ -46,7 +47,7 @@ export interface SystemHealth {
 export async function checkSubscriptionHealth(subscriptionId: string): Promise<SubscriptionHealth> {
   try {
     // Get subscription from database
-    const subscriptionDoc = await db.collection("subscriptions").doc(subscriptionId).get();
+    const subscriptionDoc = await getDb().collection("subscriptions").doc(subscriptionId).get();
     if (!subscriptionDoc.exists) {
       throw new Error(`Subscription ${subscriptionId} not found in database`);
     }
@@ -64,7 +65,7 @@ export async function checkSubscriptionHealth(subscriptionId: string): Promise<S
     const issues: string[] = [];
 
     try {
-      stripeSubscription = await stripe.subscriptions.retrieve(subscriptionId);
+      stripeSubscription = await getStripe().subscriptions.retrieve(subscriptionId);
       stripeSyncStatus = "synced";
     } catch (error) {
       issues.push("Failed to retrieve subscription from Stripe");
@@ -160,7 +161,7 @@ export async function checkSubscriptionHealth(subscriptionId: string): Promise<S
 
 export async function checkSystemHealth(): Promise<SystemHealth> {
   try {
-    const subscriptionsQuery = await db.collection("subscriptions").get();
+    const subscriptionsQuery = await getDb().collection("subscriptions").get();
     const subscriptions = subscriptionsQuery.docs;
 
     let healthyCount = 0;
@@ -234,7 +235,7 @@ export async function recoverSubscription(subscriptionId: string): Promise<boole
     console.log(`Attempting to recover subscription ${subscriptionId}`);
     
     // Get current database state
-    const subscriptionDoc = await db.collection("subscriptions").doc(subscriptionId).get();
+    const subscriptionDoc = await getDb().collection("subscriptions").doc(subscriptionId).get();
     if (!subscriptionDoc.exists) {
       console.error(`Subscription ${subscriptionId} not found in database`);
       return false;
@@ -249,7 +250,7 @@ export async function recoverSubscription(subscriptionId: string): Promise<boole
     }
 
     // Get fresh data from Stripe
-    const stripeSubscription = await stripe.subscriptions.retrieve(subscriptionId);
+    const stripeSubscription = await getStripe().subscriptions.retrieve(subscriptionId);
     
     // Sync with database
     await upsertSubscriptionFromStripe({
@@ -259,7 +260,7 @@ export async function recoverSubscription(subscriptionId: string): Promise<boole
     });
 
     // Log recovery
-    await db.collection("subscriptionRecoveryLogs").add({
+    await getDb().collection("subscriptionRecoveryLogs").add({
       subscriptionId,
       userId,
       recoveryTime: FieldValue.serverTimestamp(),
@@ -276,7 +277,7 @@ export async function recoverSubscription(subscriptionId: string): Promise<boole
     
     // Log failed recovery
     try {
-      await db.collection("subscriptionRecoveryLogs").add({
+      await getDb().collection("subscriptionRecoveryLogs").add({
         subscriptionId,
         userId: "unknown",
         recoveryTime: FieldValue.serverTimestamp(),
@@ -296,7 +297,7 @@ export async function recoverStaleSubscriptions(): Promise<{ recovered: number; 
   try {
     const staleThreshold = Date.now() - MONITORING_CONFIG.staleThreshold;
     
-    const staleQuery = await db.collection("subscriptions")
+    const staleQuery = await getDb().collection("subscriptions")
       .where("updatedAt", "<", Timestamp.fromMillis(staleThreshold))
       .where("status", "==", "active")
       .get();
@@ -354,7 +355,7 @@ export function startSubscriptionMonitoring(): void {
       console.log("System health check completed:", systemHealth);
       
       // Store health check results
-      await db.collection("systemHealthLogs").add({
+      await getDb().collection("systemHealthLogs").add({
         ...systemHealth,
         timestamp: FieldValue.serverTimestamp(),
       });

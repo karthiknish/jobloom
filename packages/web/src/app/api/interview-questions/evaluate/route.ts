@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifySessionFromRequest } from "@/lib/auth/session";
 import { evaluateInterviewAnswer } from "@/services/ai/geminiService";
+import { getAdminDb } from "@/firebase/admin";
 
 interface AnswerEvaluationRequest {
   question: string;
@@ -17,6 +18,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "Unauthorized", code: "AUTH_REQUIRED" },
         { status: 401 }
+      );
+    }
+
+    // Check for premium subscription
+    const db = getAdminDb();
+    const userDoc = await db.collection("users").doc(decodedToken.uid).get();
+    const userData = userDoc.data();
+
+    const isPremium = userData?.subscription?.tier === "premium" ||
+                      userData?.subscription?.tier === "enterprise" ||
+                      userData?.subscriptionId;
+
+    if (!isPremium) {
+      return NextResponse.json(
+        { 
+          error: "Premium subscription required for AI interview evaluation",
+          code: "PREMIUM_REQUIRED",
+          upgradeUrl: "/upgrade"
+        },
+        { status: 403 }
       );
     }
 

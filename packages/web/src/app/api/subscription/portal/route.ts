@@ -3,8 +3,9 @@ import { getAdminDb } from "@/firebase/admin";
 import { authenticateRequest } from "@/lib/api/auth";
 import { getStripeClient, getStripeSuccessUrl } from "@/lib/stripe";
 
-const stripe = getStripeClient();
-const db = getAdminDb();
+// Lazy initialization - called inside handlers
+function getStripe() { return getStripeClient(); }
+function getDb() { return getAdminDb(); }
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,7 +27,7 @@ export async function POST(request: NextRequest) {
 
   const userId = auth.token.uid;
 
-    const userDoc = await db.collection("users").doc(userId).get();
+    const userDoc = await getDb().collection("users").doc(userId).get();
     const userData = userDoc.data() as Record<string, any> | undefined;
 
     const stripeCustomerId = userData?.stripeCustomerId;
@@ -44,12 +45,12 @@ export async function POST(request: NextRequest) {
 
   const returnUrl = getStripeSuccessUrl(origin).replace("?session_id={CHECKOUT_SESSION_ID}", "");
 
-    const portalSession = await stripe.billingPortal.sessions.create({
+    const portalSession = await getStripe().billingPortal.sessions.create({
       customer: stripeCustomerId,
       return_url: `${returnUrl}`,
     });
 
-    await db.collection("users").doc(userId).set({
+    await getDb().collection("users").doc(userId).set({
       stripeCustomerPortalUrl: portalSession.url,
     }, { merge: true });
 

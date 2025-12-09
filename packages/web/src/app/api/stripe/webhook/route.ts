@@ -15,13 +15,14 @@ import { ERROR_CODES } from "@/lib/api/errorCodes";
 
 export const runtime = "nodejs";
 
-const stripe = getStripeClient();
-const db = getAdminDb();
+// Lazy initialization - called inside handlers
+function getStripe() { return getStripeClient(); }
+function getDb() { return getAdminDb(); }
 
 // Webhook event logging
 async function logWebhookEvent(event: Stripe.Event, status: "success" | "error", error?: string) {
   try {
-    await db.collection("webhookLogs").add({
+    await getDb().collection("webhookLogs").add({
       eventId: event.id,
       type: event.type,
       status,
@@ -75,7 +76,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       throw new Error(`Checkout session missing necessary metadata: subscriptionId=${subscriptionId}, userId=${userId}`);
     }
 
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    const subscription = await getStripe().subscriptions.retrieve(subscriptionId);
 
     await upsertSubscriptionFromStripe({
       subscription,
@@ -83,7 +84,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       plan,
     });
 
-    await db.collection("subscriptionCheckouts").doc(session.id).set(
+    await getDb().collection("subscriptionCheckouts").doc(session.id).set(
       {
         status: "completed",
         subscriptionId,
@@ -121,14 +122,14 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     }
 
     // Mark subscription as cancelled in database
-    await db.collection("subscriptions").doc(subscription.id).update({
+    await getDb().collection("subscriptions").doc(subscription.id).update({
       status: "cancelled",
       cancelAtPeriodEnd: true,
       updatedAt: FieldValue.serverTimestamp(),
     });
 
     // Update user record to reflect cancellation
-    await db.collection("users").doc(userId).update({
+    await getDb().collection("users").doc(userId).update({
       plan: "free",
       subscriptionCancelledAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
@@ -145,7 +146,7 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
         : invoiceData.subscription.id;
       
       // Update subscription payment status
-      await db.collection("subscriptions").doc(subscriptionId).update({
+      await getDb().collection("subscriptions").doc(subscriptionId).update({
         lastPaymentAt: FieldValue.serverTimestamp(),
         lastPaymentAmount: invoice.amount_paid / 100,
         lastPaymentCurrency: invoice.currency,
@@ -164,7 +165,7 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
         : invoiceData.subscription.id;
       
       // Mark subscription as having payment issues
-      await db.collection("subscriptions").doc(subscriptionId).update({
+      await getDb().collection("subscriptions").doc(subscriptionId).update({
         paymentFailedAt: FieldValue.serverTimestamp(),
         paymentFailedAmount: invoice.amount_due / 100,
         paymentFailedCurrency: invoice.currency,
@@ -172,11 +173,11 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
       });
 
       // Get subscription to update user record
-      const subscriptionDoc = await db.collection("subscriptions").doc(subscriptionId).get();
+      const subscriptionDoc = await getDb().collection("subscriptions").doc(subscriptionId).get();
       if (subscriptionDoc.exists) {
         const subscriptionData = subscriptionDoc.data();
         if (subscriptionData?.userId) {
-          await db.collection("users").doc(subscriptionData.userId).update({
+          await getDb().collection("users").doc(subscriptionData.userId).update({
             paymentFailedAt: FieldValue.serverTimestamp(),
             updatedAt: FieldValue.serverTimestamp(),
           });
@@ -189,7 +190,7 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
 async function handleCustomerUpdated(customer: Stripe.Customer) {
   return await withWebhookRetry(async () => {
     // Update customer information in database
-    const userQuery = await db.collection("users")
+    const userQuery = await getDb().collection("users")
       .where("stripeCustomerId", "==", customer.id)
       .limit(1)
       .get();
@@ -220,7 +221,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
   let event: Stripe.Event;
 
   try {
-    event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
+    event = getStripe().webhooks.constructEvent(rawBody, signature, webhookSecret);
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : "Unknown signature verification error";
     console.error("Failed to verify Stripe webhook signature:", errorMessage);

@@ -3,7 +3,8 @@ import { authenticateRequest } from "@/lib/api/auth";
 import { getStripeClient } from "@/lib/stripe";
 import { upsertSubscriptionFromStripe } from "@/lib/subscriptions";
 
-const stripe = getStripeClient();
+// Lazy initialization - called inside handlers
+function getStripe() { return getStripeClient(); }
 
 interface UpgradeRequestBody {
   sessionId?: string;
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing Stripe session ID" }, { status: 400 });
     }
 
-    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    const session = await getStripe().checkout.sessions.retrieve(sessionId);
 
     if (!session) {
       return NextResponse.json({ error: "Checkout session not found" }, { status: 404 });
@@ -62,7 +63,7 @@ export async function POST(request: NextRequest) {
     const plan = session.metadata?.plan ?? "premium";
     const billingCycle = session.metadata?.billingCycle ?? undefined;
 
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    const subscription = await getStripe().subscriptions.retrieve(subscriptionId);
 
     await upsertSubscriptionFromStripe({
       subscription,

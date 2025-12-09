@@ -7,8 +7,9 @@ import { upsertSubscriptionFromStripe, ValidationError, DatabaseError } from "@/
 import { FieldValue } from "@/firebase/admin";
 import { checkServerRateLimit } from "@/lib/rateLimiter";
 
-const stripe = getStripeClient();
-const db = getAdminDb();
+// Lazy initialization - called inside handlers
+function getStripe() { return getStripeClient(); }
+function getDb() { return getAdminDb(); }
 
 function validateAuthorizationHeader(authHeader: string | null): { isValid: boolean; token?: string; error?: string } {
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -69,7 +70,7 @@ export async function POST(request: NextRequest) {
       return setSecurityHeaders(response);
     }
 
-    const userDoc = await db.collection("users").doc(userId).get();
+    const userDoc = await getDb().collection("users").doc(userId).get();
     const userData = userDoc.data() as Record<string, any> | undefined;
 
     const subscriptionId = userData?.subscriptionId;
@@ -81,7 +82,7 @@ export async function POST(request: NextRequest) {
       return setSecurityHeaders(response);
     }
 
-    const stripeSubscription = (await stripe.subscriptions.retrieve(subscriptionId, {
+    const stripeSubscription = (await getStripe().subscriptions.retrieve(subscriptionId, {
       expand: ["latest_invoice.payment_intent"],
     })) as Stripe.Subscription;
 
@@ -105,7 +106,7 @@ export async function POST(request: NextRequest) {
       return setSecurityHeaders(response);
     }
 
-    const updatedSubscription = (await stripe.subscriptions.update(subscriptionId, {
+    const updatedSubscription = (await getStripe().subscriptions.update(subscriptionId, {
       cancel_at_period_end: true,
     })) as Stripe.Subscription;
 
@@ -117,7 +118,7 @@ export async function POST(request: NextRequest) {
       plan: (updatedSubscription.metadata?.plan ?? userData?.plan ?? "premium") as string,
     });
 
-    await db.collection("users").doc(userId).set({
+    await getDb().collection("users").doc(userId).set({
       subscriptionId: updatedSubscription.id,
       stripeCustomerId: updatedSubscription.customer as string,
       updatedAt: FieldValue.serverTimestamp(),
