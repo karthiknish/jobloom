@@ -14,8 +14,8 @@ export function BentoFeatures() {
     {
       title: "AI Resume Builder",
       description: "Create ATS-optimized resumes in minutes. Our AI analyzes job descriptions and tailors your resume to match keywords perfectly.",
-      header: <div className="flex flex-1 w-full h-full min-h-[6rem] rounded-xl bg-gradient-to-br from-neutral-100 to-neutral-200 border border-neutral-100" />,
-      icon: <FileText className="h-4 w-4 text-neutral-500" />,
+      header: <div className="flex flex-1 w-full h-full min-h-[6rem] rounded-xl bg-gradient-to-br from-muted to-muted/50 border border-border" />,
+      icon: <FileText className="h-4 w-4 text-muted-foreground" />,
       className: "md:col-span-2",
       cta: "Build Resume",
       href: "/resume-builder"
@@ -50,13 +50,13 @@ export function BentoFeatures() {
   ];
 
   return (
-    <section className="py-24 bg-slate-50" id="features">
+    <section className="py-24 bg-muted/30" id="features">
       <div className="container px-4 md:px-6 mx-auto">
         <div className="max-w-3xl mx-auto text-center mb-16">
-          <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-slate-900 mb-4">
+          <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-foreground mb-4">
             Everything you need to get hired.
           </h2>
-          <p className="text-lg text-slate-600">
+          <p className="text-lg text-muted-foreground">
             Stop juggling multiple tools. HireAll brings your entire job search into one powerful workspace.
           </p>
         </div>

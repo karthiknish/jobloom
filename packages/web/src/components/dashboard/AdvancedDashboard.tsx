@@ -187,9 +187,9 @@ export function AdvancedDashboard() {
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background pt-16">
       {/* Premium background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 right-20 w-96 h-96 bg-emerald-500/3 rounded-full filter blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-20 left-20 w-80 h-80 bg-teal-500/3 rounded-full filter blur-2xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-br from-emerald-500/2 to-teal-500/2 rounded-full filter blur-3xl"></div>
+        <div className="absolute top-20 right-20 w-96 h-96 bg-primary/5 rounded-full filter blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-20 left-20 w-80 h-80 bg-primary/5 rounded-full filter blur-2xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-br from-primary/5 to-primary/5 rounded-full filter blur-3xl"></div>
       </div>
 
       <div className="relative z-10">
@@ -209,7 +209,7 @@ export function AdvancedDashboard() {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-6 p-5 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 rounded-2xl text-white shadow-xl relative overflow-hidden"
+            className="mb-6 p-5 bg-gradient-to-r from-primary via-primary/90 to-primary/80 rounded-2xl text-primary-foreground shadow-xl relative overflow-hidden"
           >
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl"></div>
             <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full -ml-12 -mb-12 blur-2xl"></div>
@@ -220,7 +220,7 @@ export function AdvancedDashboard() {
                 </div>
                 <div>
                   <h2 className="text-xl font-bold mb-1">Kickstart your job search</h2>
-                  <p className="text-emerald-100 max-w-xl text-sm">
+                  <p className="text-primary-foreground/90 max-w-xl text-sm">
                     You&apos;ve added your first applications. Import more jobs using the browser extension or optimize your resume with our AI CV Evaluator.
                   </p>
                 </div>
@@ -230,7 +230,7 @@ export function AdvancedDashboard() {
                   onClick={() => setShowImportModal(true)}
                   variant="secondary" 
                   size="sm"
-                  className="bg-white text-emerald-600 hover:bg-emerald-50 border-0 shadow-lg"
+                  className="bg-white text-primary hover:bg-white/90 border-0 shadow-lg"
                 >
                   Import Jobs
                 </Button>
@@ -370,7 +370,7 @@ export function AdvancedDashboard() {
               >
                 <TabsTrigger
                   value="dashboard"
-                  className="px-5 py-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-green-500 data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300 rounded-lg font-medium text-sm"
+                  className="px-5 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-300 rounded-lg font-medium text-sm"
                 >
                   Overview
                 </TabsTrigger>
@@ -381,7 +381,7 @@ export function AdvancedDashboard() {
               >
                 <TabsTrigger
                   value="jobs"
-                  className="px-5 py-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-green-500 data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300 rounded-lg font-medium text-sm"
+                  className="px-5 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-300 rounded-lg font-medium text-sm"
                 >
                   Jobs <Badge variant="secondary" className="ml-1.5 text-[10px] px-1.5 py-0 bg-muted/80">{applications?.length || 0}</Badge>
                 </TabsTrigger>
@@ -392,7 +392,7 @@ export function AdvancedDashboard() {
               >
                 <TabsTrigger
                   value="analytics"
-                  className="px-5 py-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-green-500 data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300 rounded-lg font-medium text-sm"
+                  className="px-5 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-300 rounded-lg font-medium text-sm"
                 >
                   Analytics
                 </TabsTrigger>

@@ -187,7 +187,7 @@ export default function ContactPage() {
                   <motion.p 
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="text-sm text-amber-500 font-medium"
+                    className="text-sm text-amber-500 dark:text-amber-400 font-medium"
                   >
                     {message.length > 1000 ? "Maximum length exceeded." : "Almost at character limit."}
                   </motion.p>

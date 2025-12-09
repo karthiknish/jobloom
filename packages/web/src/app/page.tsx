@@ -4,7 +4,6 @@ import { KineticHero } from "@/components/homepage/KineticHero";
 import { BentoFeatures } from "@/components/homepage/BentoFeatures";
 import { KineticHowItWorks } from "@/components/homepage/KineticHowItWorks";
 import FAQSection from "@/components/custom/FAQSection";
-import TestimonialSection from "@/components/custom/TestimonialSection";
 
 export default function Home() {
   return (
@@ -12,7 +11,6 @@ export default function Home() {
       <KineticHero />
       <BentoFeatures />
       <KineticHowItWorks />
-      <TestimonialSection />
       <FAQSection />
     </div>
   );

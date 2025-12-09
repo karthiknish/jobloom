@@ -58,7 +58,7 @@ function WelcomeInner() {
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ type: "spring", stiffness: 260, damping: 20 }}
-              className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-green-500/10 text-green-500 mb-6"
+              className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-primary/10 text-primary mb-6"
             >
               <CheckCircle className="h-12 w-12" />
             </motion.div>
@@ -99,21 +99,21 @@ function WelcomeInner() {
               className="grid grid-cols-1 md:grid-cols-3 gap-6"
             >
               <div className="text-center space-y-3 p-4 rounded-xl bg-background/50 border border-border/50 hover:border-primary/20 transition-colors">
-                <div className="mx-auto h-12 w-12 rounded-full bg-blue-500/10 flex items-center justify-center">
+                <div className="mx-auto h-12 w-12 rounded-full bg-blue-500/10 dark:bg-blue-900/20 flex items-center justify-center">
                   <Target className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                 </div>
                 <h3 className="font-semibold text-foreground">Track Applications</h3>
                 <p className="text-sm text-muted-foreground">Monitor all your job applications in one place</p>
               </div>
               <div className="text-center space-y-3 p-4 rounded-xl bg-background/50 border border-border/50 hover:border-primary/20 transition-colors">
-                <div className="mx-auto h-12 w-12 rounded-full bg-green-500/10 flex items-center justify-center">
-                  <Sparkles className="h-6 w-6 text-green-600 dark:text-green-400" />
+                <div className="mx-auto h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Sparkles className="h-6 w-6 text-primary" />
                 </div>
                 <h3 className="font-semibold text-foreground">AI-Powered Tools</h3>
                 <p className="text-sm text-muted-foreground">Resume analysis and cover letter generation</p>
               </div>
               <div className="text-center space-y-3 p-4 rounded-xl bg-background/50 border border-border/50 hover:border-primary/20 transition-colors">
-                <div className="mx-auto h-12 w-12 rounded-full bg-purple-500/10 flex items-center justify-center">
+                <div className="mx-auto h-12 w-12 rounded-full bg-purple-500/10 dark:bg-purple-900/20 flex items-center justify-center">
                   <Zap className="h-6 w-6 text-purple-600 dark:text-purple-400" />
                 </div>
                 <h3 className="font-semibold text-foreground">Browser Extension</h3>

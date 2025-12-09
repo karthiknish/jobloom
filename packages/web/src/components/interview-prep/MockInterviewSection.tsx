@@ -195,10 +195,10 @@ export default function MockInterviewSection() {
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
-      case "Easy": return "bg-green-100 text-green-800";
-      case "Medium": return "bg-yellow-100 text-yellow-800";
-      case "Hard": return "bg-red-100 text-red-800";
-      default: return "bg-gray-100 text-gray-800";
+      case "Easy": return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300";
+      case "Medium": return "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300";
+      case "Hard": return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300";
+      default: return "bg-muted text-muted-foreground";
     }
   };
 
@@ -222,10 +222,10 @@ export default function MockInterviewSection() {
         <Card className="border-border">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-600" />
+              <CheckCircle className="h-5 w-5 text-primary" />
               Interview Completed!
             </CardTitle>
-          </CardHeader>
+          </CardHeader>>
           <CardContent>
             <div className="text-center py-6">
               <h3 className="text-2xl font-bold mb-2">Great job!</h3>
@@ -302,7 +302,7 @@ export default function MockInterviewSection() {
               </div>
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-muted-foreground" />
-                <span className={`font-mono ${timeRemaining < 60 ? "text-red-600" : ""}`}>
+                <span className={`font-mono ${timeRemaining < 60 ? "text-destructive" : ""}`}>
                   {formatTime(timeRemaining)}
                 </span>
               </div>

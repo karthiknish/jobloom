@@ -434,7 +434,7 @@ function SignUpInner() {
                               ? passwordStrength <= 2
                                 ? 'bg-destructive shadow-[0_0_8px_rgba(239,68,68,0.5)]'
                                 : passwordStrength <= 3
-                                ? 'bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.5)]'
+                                ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]'
                                 : 'bg-primary shadow-[0_0_8px_rgba(16,185,129,0.5)]'
                               : 'bg-muted'
                           }`}
@@ -444,7 +444,7 @@ function SignUpInner() {
                     <div className="flex items-center justify-between text-xs">
                       <span className={`font-semibold transition-colors duration-300 ${
                         passwordStrength <= 2 ? 'text-destructive' : 
-                        passwordStrength <= 3 ? 'text-yellow-600' : 
+                        passwordStrength <= 3 ? 'text-amber-600' : 
                         'text-primary'
                       }`}>
                         {passwordStrength === 0 && 'Very weak'}
@@ -477,7 +477,7 @@ function SignUpInner() {
                 )}
                 
                 {passwordError && (
-                  <p className="text-sm text-red-600 mt-1">{passwordError}</p>
+                  <p className="text-sm text-destructive mt-1">{passwordError}</p>
                 )}
               </div>
 

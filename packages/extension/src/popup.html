@@ -30,6 +30,27 @@
     <!-- Main Content Area -->
     <main class="app-content">
       
+      <!-- Premium Upgrade Banner (shown for free users) -->
+      <div id="premium-banner" class="premium-banner hidden">
+        <div class="premium-banner-content">
+          <div class="premium-banner-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+            </svg>
+          </div>
+          <div class="premium-banner-text">
+            <span class="premium-banner-title">Upgrade to Premium</span>
+            <span class="premium-banner-desc">Unlimited tracking, advanced analytics & more</span>
+          </div>
+          <button id="premium-upgrade-btn" class="premium-banner-btn">
+            Upgrade
+          </button>
+          <button id="premium-banner-dismiss" class="premium-banner-close" title="Dismiss">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+      </div>
+
       <!-- Jobs Tab (Dashboard) -->
       <div class="tab-view active" id="jobs-content">
         <!-- Hero Stats (Bento Style) -->
@@ -231,8 +252,51 @@
               <div class="user-info">
                 <div class="user-name">Logged In</div>
                 <div class="user-email" id="user-email-display">user@example.com</div>
+                <div class="user-plan-badge" id="user-plan-badge">
+                  <span class="plan-badge free">Free Plan</span>
+                </div>
               </div>
             </div>
+            
+            <!-- Premium Upgrade Card (shown for free users) -->
+            <div id="premium-upgrade-card" class="premium-upgrade-card hidden">
+              <div class="premium-card-header">
+                <div class="premium-card-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+                  </svg>
+                </div>
+                <div>
+                  <h3 class="premium-card-title">Unlock Premium</h3>
+                  <p class="premium-card-price">£5.99/month</p>
+                </div>
+              </div>
+              <ul class="premium-features-list">
+                <li>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  Unlimited job tracking
+                </li>
+                <li>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  Advanced analytics & insights
+                </li>
+                <li>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  Unlimited CV analysis
+                </li>
+                <li>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  Priority support
+                </li>
+              </ul>
+              <button id="upgrade-now-btn" class="btn-upgrade">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+                </svg>
+                Upgrade to Premium
+              </button>
+            </div>
+            
             <button class="btn-danger full-width" id="signout-btn">Sign Out</button>
           </div>
         </div>

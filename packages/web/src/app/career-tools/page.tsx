@@ -199,20 +199,20 @@ export default function CareerToolsPage() {
       <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background pt-16">
         {/* Premium background elements */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-20 right-20 w-96 h-96 bg-primary/2 rounded-full filter blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-20 left-20 w-80 h-80 bg-secondary/2 rounded-full filter blur-2xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+          <div className="absolute top-20 right-20 w-96 h-96 bg-primary/5 rounded-full filter blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-20 left-20 w-80 h-80 bg-secondary/5 rounded-full filter blur-2xl animate-pulse" style={{ animationDelay: '1s' }}></div>
         </div>
 
         {/* Hero Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-r from-primary via-primary/90 to-secondary shadow-xl relative z-10"
+          className="bg-gradient-to-r from-primary via-primary/90 to-primary/80 shadow-xl relative z-10"
         >
           <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="space-y-2">
-                <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">Career Tools</h1>
+                <h1 className="text-3xl sm:text-4xl font-bold text-primary-foreground tracking-tight">Career Tools</h1>
                 <p className="text-base sm:text-lg text-primary-foreground/90 max-w-2xl leading-relaxed">
                   Build professional resumes, generate cover letters, and optimize your CV with AI-powered tools
                 </p>
@@ -534,7 +534,7 @@ export default function CareerToolsPage() {
                         <Card>
                           <CardHeader className="pb-3">
                             <CardTitle className="text-base flex items-center gap-2">
-                              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                              <span className="w-2 h-2 rounded-full bg-primary" />
                               Resume Score
                             </CardTitle>
                           </CardHeader>
@@ -571,11 +571,11 @@ export default function CareerToolsPage() {
                         </Card>
 
                         {/* Tips Card */}
-                        <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-100 dark:border-blue-900/50">
+                        <Card className="bg-muted/50 border-border">
                           <CardHeader className="pb-2">
-                            <CardTitle className="text-sm text-blue-700 dark:text-blue-400">💡 Pro Tips</CardTitle>
+                            <CardTitle className="text-sm text-foreground">💡 Pro Tips</CardTitle>
                           </CardHeader>
-                          <CardContent className="text-xs text-blue-600 dark:text-blue-300 space-y-2">
+                          <CardContent className="text-xs text-muted-foreground space-y-2">
                             <p>• Use action verbs like "Led", "Developed", "Achieved"</p>
                             <p>• Include metrics and numbers when possible</p>
                             <p>• Tailor your resume to each job application</p>

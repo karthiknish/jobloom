@@ -20,7 +20,7 @@ export function KineticHero() {
   }, []);
 
   return (
-    <section className="relative pt-20 pb-16 md:pt-32 md:pb-24 overflow-hidden bg-white">
+    <section className="relative pt-20 pb-16 md:pt-32 md:pb-24 overflow-hidden bg-background">
       <div className="container px-4 md:px-6 mx-auto">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           
@@ -30,37 +30,37 @@ export function KineticHero() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm font-medium text-slate-800"
+              className="inline-flex items-center rounded-full border border-border bg-muted/50 px-3 py-1 text-sm font-medium text-foreground"
             >
               <span className="flex h-2 w-2 rounded-full bg-primary mr-2 animate-pulse"></span>
               v2.0 Now Live
             </motion.div>
 
-            <h1 className="text-5xl md:text-7xl font-black tracking-tighter text-slate-900 leading-[1.1]">
+            <h1 className="text-5xl md:text-7xl font-black tracking-tighter text-foreground leading-[1.1]">
               DON'T JUST APPLY. <br />
               GET <span className="text-primary inline-block min-w-[300px]">
                 {words[index]}
               </span>
             </h1>
 
-            <p className="text-xl text-slate-600 max-w-lg leading-relaxed">
+            <p className="text-xl text-muted-foreground max-w-lg leading-relaxed">
               The job market is noisy. We provide the signal. 
               Our AI tools cut through the ATS clutter and put your profile on top of the stack.
             </p>
 
             <div className="flex flex-wrap gap-4">
-              <Button size="lg" className="h-14 px-8 text-lg rounded-full bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 transition-all hover:scale-105">
+              <Button size="lg" className="h-14 px-8 text-lg rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-105">
                 Start Building Free <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
-              <Button size="lg" variant="outline" className="h-14 px-8 text-lg rounded-full border-2 hover:bg-slate-50">
+              <Button size="lg" variant="outline" className="h-14 px-8 text-lg rounded-full border-2 hover:bg-muted">
                 View Demo
               </Button>
             </div>
 
-            <div className="pt-8 flex items-center gap-4 text-sm text-slate-500 font-medium">
+            <div className="pt-8 flex items-center gap-4 text-sm text-muted-foreground font-medium">
               <div className="flex -space-x-2">
                 {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="h-8 w-8 rounded-full border-2 border-white bg-slate-200 flex items-center justify-center text-xs overflow-hidden">
+                  <div key={i} className="h-8 w-8 rounded-full border-2 border-background bg-muted flex items-center justify-center text-xs overflow-hidden">
                     <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i}`} alt="User" />
                   </div>
                 ))}
@@ -82,11 +82,11 @@ export function KineticHero() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="col-span-2 bg-white rounded-2xl shadow-xl border border-slate-100 p-6 flex items-center justify-between"
+                className="col-span-2 bg-card rounded-2xl shadow-xl border border-border p-6 flex items-center justify-between"
               >
                 <div>
-                  <h3 className="font-bold text-slate-800">Resume Score</h3>
-                  <p className="text-slate-500 text-sm">Optimized for ATS</p>
+                  <h3 className="font-bold text-foreground">Resume Score</h3>
+                  <p className="text-muted-foreground text-sm">Optimized for ATS</p>
                 </div>
                 <div className="h-16 w-16 rounded-full border-4 border-primary/20 border-t-primary flex items-center justify-center font-bold text-xl text-primary">
                   98
@@ -124,19 +124,19 @@ export function KineticHero() {
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.6 }}
-                className="bg-white rounded-2xl shadow-xl border border-slate-100 p-6 flex flex-col justify-center"
+                className="bg-card rounded-2xl shadow-xl border border-border p-6 flex flex-col justify-center"
               >
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                  <div className="h-10 w-10 rounded-full bg-success/10 flex items-center justify-center text-success">
                     <CheckCircle className="h-6 w-6" />
                   </div>
                   <div>
-                    <h4 className="font-bold text-sm">Perfect Match</h4>
-                    <p className="text-xs text-slate-500">Senior Developer</p>
+                    <h4 className="font-bold text-sm text-foreground">Perfect Match</h4>
+                    <p className="text-xs text-muted-foreground">Senior Developer</p>
                   </div>
                 </div>
-                <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                  <div className="bg-green-500 h-full w-[92%]"></div>
+                <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
+                  <div className="bg-success h-full w-[92%]"></div>
                 </div>
               </motion.div>
 
@@ -158,10 +158,10 @@ export function KineticHero() {
       </div>
 
       {/* Marquee Strip */}
-      <div className="mt-20 border-y border-slate-100 bg-slate-50/50 py-8">
+      <div className="mt-20 border-y border-border bg-muted/30 py-8">
         <Marquee pauseOnHover className="[--duration:30s]">
           {["Google", "Microsoft", "Amazon", "Netflix", "Meta", "Spotify", "Airbnb", "Uber"].map((company) => (
-            <div key={company} className="mx-8 text-xl font-bold text-slate-300 uppercase tracking-widest">
+            <div key={company} className="mx-8 text-xl font-bold text-muted-foreground/50 uppercase tracking-widest">
               {company}
             </div>
           ))}

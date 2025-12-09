@@ -3,6 +3,8 @@ import { jobManager } from "../components/Jobs/JobManager";
 import { settingsManager } from "../components/Settings/SettingsManager";
 import { popupUI } from "../components/UI/PopupUI";
 import { sanitizeBaseUrl, DEFAULT_WEB_APP_URL } from "../constants";
+import { fetchSubscriptionStatus } from "../rateLimiter";
+import type { SubscriptionStatus } from "../rateLimiter";
 import {
   signInWithGoogle,
   signInWithEmail,
@@ -15,6 +17,7 @@ import {
 export class PopupController {
   private static instance: PopupController;
   private isInitialized = false;
+  private currentPlan: string = 'free';
 
   private constructor() { }
 
@@ -38,6 +41,7 @@ export class PopupController {
 
       // Setup event listeners
       this.setupEventListeners();
+      this.setupPremiumBannerListeners();
 
       // Try to sync auth state from web app first
       const syncedFromWebApp = await authManager.attemptSyncFromWebApp();
@@ -45,6 +49,7 @@ export class PopupController {
       // Load initial data if authenticated (either from sync or existing Firebase state)
       if (authManager.isAuthenticated()) {
         await this.loadInitialData();
+        await this.loadSubscriptionStatus();
       }
 
       this.isInitialized = true;
@@ -316,11 +321,114 @@ export class PopupController {
 
     try {
       await this.loadInitialData();
+      await this.loadSubscriptionStatus();
       popupUI.showSuccess('Data refreshed');
     } catch (error) {
       console.error('Error refreshing data:', error);
       popupUI.showError('Failed to refresh data');
     }
+  }
+
+  private setupPremiumBannerListeners(): void {
+    // Premium banner dismiss button
+    const dismissBtn = document.getElementById('premium-banner-dismiss');
+    if (dismissBtn) {
+      dismissBtn.addEventListener('click', () => {
+        this.dismissPremiumBanner();
+      });
+    }
+
+    // Premium banner upgrade button
+    const bannerUpgradeBtn = document.getElementById('premium-upgrade-btn');
+    if (bannerUpgradeBtn) {
+      bannerUpgradeBtn.addEventListener('click', () => {
+        this.openUpgradePage();
+      });
+    }
+
+    // Premium upgrade card button (in account tab)
+    const upgradeNowBtn = document.getElementById('upgrade-now-btn');
+    if (upgradeNowBtn) {
+      upgradeNowBtn.addEventListener('click', () => {
+        this.openUpgradePage();
+      });
+    }
+  }
+
+  private async loadSubscriptionStatus(): Promise<void> {
+    try {
+      const status: SubscriptionStatus | null = await fetchSubscriptionStatus();
+      
+      if (status) {
+        // Determine plan from various possible fields
+        const plan = status.plan || status.subscription?.plan || 'free';
+        this.currentPlan = plan;
+        this.updatePremiumUI(plan);
+      } else {
+        this.currentPlan = 'free';
+        this.updatePremiumUI('free');
+      }
+    } catch (error) {
+      console.error('Error loading subscription status:', error);
+      // Default to free plan on error
+      this.currentPlan = 'free';
+      this.updatePremiumUI('free');
+    }
+  }
+
+  private updatePremiumUI(plan: string): void {
+    const isPremium = plan === 'premium' || plan === 'admin';
+    
+    // Update plan badge
+    const planBadge = document.querySelector('#user-plan-badge .plan-badge');
+    if (planBadge) {
+      if (isPremium) {
+        planBadge.textContent = '✨ Premium';
+        planBadge.classList.remove('free');
+        planBadge.classList.add('premium');
+      } else {
+        planBadge.textContent = 'Free Plan';
+        planBadge.classList.remove('premium');
+        planBadge.classList.add('free');
+      }
+    }
+
+    // Show/hide premium banner (top of content area)
+    const premiumBanner = document.getElementById('premium-banner');
+    if (premiumBanner) {
+      // Check if banner was dismissed
+      chrome.storage.local.get(['premiumBannerDismissed'], (result) => {
+        if (!isPremium && !result.premiumBannerDismissed) {
+          premiumBanner.classList.remove('hidden');
+        } else {
+          premiumBanner.classList.add('hidden');
+        }
+      });
+    }
+
+    // Show/hide premium upgrade card (in account tab)
+    const premiumCard = document.getElementById('premium-upgrade-card');
+    if (premiumCard) {
+      if (isPremium) {
+        premiumCard.classList.add('hidden');
+      } else {
+        premiumCard.classList.remove('hidden');
+      }
+    }
+  }
+
+  private dismissPremiumBanner(): void {
+    const premiumBanner = document.getElementById('premium-banner');
+    if (premiumBanner) {
+      premiumBanner.classList.add('hidden');
+      // Remember dismissal for this session
+      chrome.storage.local.set({ premiumBannerDismissed: true });
+    }
+  }
+
+  private openUpgradePage(): void {
+    const upgradeUrl = sanitizeBaseUrl(DEFAULT_WEB_APP_URL) + '/upgrade';
+    chrome.tabs.create({ url: upgradeUrl });
   }
 
 

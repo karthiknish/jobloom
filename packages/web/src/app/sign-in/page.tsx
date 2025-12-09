@@ -389,7 +389,7 @@ function SignInInner() {
                             animate={{ scale: 1 }}
                             className="ml-2 flex items-center text-xs text-muted-foreground"
                           >
-                            <div className="w-2 h-2 bg-green-500 rounded-full mr-1" />
+                            <div className="w-2 h-2 bg-primary rounded-full mr-1" />
                             <span>Last used</span>
                           </motion.div>
                         )}
@@ -438,7 +438,7 @@ function SignInInner() {
                         <motion.div
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}
-                          className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full"
+                          className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full"
                           title="Last used method"
                         />
                       )}

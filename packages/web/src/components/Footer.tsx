@@ -16,7 +16,7 @@ export default function Footer() {
       className="text-foreground"
     >
       {/* Decorative gradient top border */}
-      <div className="h-1 bg-gradient-to-r from-primary via-secondary to-pink-500" />
+      <div className="h-1 bg-gradient-to-r from-primary via-primary/80 to-secondary" />
 
       {/* Main footer */}
       <div className="bg-primary text-primary-foreground">

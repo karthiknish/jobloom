@@ -74,8 +74,8 @@ export default function ProgressDashboard({
               <CardTitle className="text-sm font-medium">
                 Average Score
               </CardTitle>
-              <div className="bg-yellow-100 rounded-lg w-8 h-8 flex items-center justify-center">
-                <Star className="h-4 w-4 text-yellow-600" />
+              <div className="bg-amber-100 dark:bg-amber-900/30 rounded-lg w-8 h-8 flex items-center justify-center">
+                <Star className="h-4 w-4 text-amber-600 dark:text-amber-400" />
               </div>
             </CardHeader>
             <CardContent>
