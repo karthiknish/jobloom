@@ -43,15 +43,38 @@ export default function InterviewPrepPage() {
   const [interviewQuestions, setInterviewQuestions] = useState(defaultQuestions);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState("behavioral");
+  const [selectedIndustry, setSelectedIndustry] = useState<string>("all");
+  const [industries, setIndustries] = useState<string[]>([]);
+  const [totalQuestions, setTotalQuestions] = useState(0);
 
-  // Fetch interview questions on component mount
+  // Industry display names
+  const industryLabels: Record<string, string> = {
+    all: "All Industries",
+    general: "General",
+    technology: "Technology / Software",
+    finance: "Finance / Banking",
+    healthcare: "Healthcare",
+    marketing: "Marketing / Sales",
+    consulting: "Consulting",
+    "data-science": "Data Science / Analytics",
+  };
+
+  // Fetch interview questions when industry changes
   useEffect(() => {
     const fetchQuestions = async () => {
+      setLoading(true);
       try {
-        const response = await fetch("/api/interview-questions/authenticated");
+        const industryParam = selectedIndustry !== "all" ? `?industry=${selectedIndustry}` : "";
+        const response = await fetch(`/api/interview-questions/authenticated${industryParam}`);
         if (response.ok) {
           const data = await response.json();
           setInterviewQuestions(data.data);
+          if (data.industries) {
+            setIndustries(data.industries);
+          }
+          if (data.totalQuestions !== undefined) {
+            setTotalQuestions(data.totalQuestions);
+          }
         }
       } catch (error) {
         console.error("Failed to fetch interview questions:", error);
@@ -61,7 +84,8 @@ export default function InterviewPrepPage() {
     };
 
     fetchQuestions();
-  }, []);
+  }, [selectedIndustry]);
+
 
   const getCurrentQuestions = () => {
     return interviewQuestions[selectedCategory as keyof typeof interviewQuestions] || [];
@@ -129,6 +153,36 @@ export default function InterviewPrepPage() {
                 onValueChange={setActiveTab}
                 className="space-y-8"
               >
+              {/* Industry Selector */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-4">
+                  <label htmlFor="industry-select" className="text-sm font-medium text-muted-foreground">
+                    Filter by Industry:
+                  </label>
+                  <select
+                    id="industry-select"
+                    value={selectedIndustry}
+                    onChange={(e) => {
+                      setSelectedIndustry(e.target.value);
+                      setCurrentQuestion(0);
+                    }}
+                    className="px-3 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 min-w-[200px]"
+                  >
+                    <option value="all">All Industries</option>
+                    {industries.map((industry) => (
+                      <option key={industry} value={industry}>
+                        {industryLabels[industry] || industry}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {totalQuestions > 0 && (
+                  <span className="text-sm text-muted-foreground">
+                    {totalQuestions} questions available
+                  </span>
+                )}
+              </div>
+
               <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="practice">Practice Questions</TabsTrigger>
                 <TabsTrigger value="tips">Interview Tips</TabsTrigger>

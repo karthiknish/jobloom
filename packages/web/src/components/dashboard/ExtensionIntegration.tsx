@@ -17,6 +17,12 @@ import {
   Sparkles
 } from "lucide-react";
 import { extensionAuthBridge } from "@/lib/extensionAuthBridge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface ExtensionIntegrationProps {
   userId: string;
@@ -76,11 +82,11 @@ export function ExtensionIntegration({ userId }: ExtensionIntegrationProps) {
         // Verify message origin for security
         if (event.origin !== window.location.origin) return;
 
-        if (event.data.type === 'JOBOOK_EXTENSION_STATUS') {
+        if (event.data.type === 'HIREALL_EXTENSION_STATUS') {
           setIsExtensionInstalled(true);
           setJobsDetected((event.data.jobsDetected as number) || 0);
           setLastSync(event.data.lastSync ? new Date(event.data.lastSync as string | number) : null);
-        } else if (event.data.type === 'JOobook_EXTENSION_ERROR') {
+        } else if (event.data.type === 'HIREALL_EXTENSION_ERROR') {
           console.error('Extension error:', event.data.message);
         }
       } catch (error) {
@@ -107,7 +113,7 @@ export function ExtensionIntegration({ userId }: ExtensionIntegrationProps) {
           if (authResponse.success && authResponse.token) {
             // Post message to extension
             window.postMessage({
-              type: 'JOBOOK_USER_AUTH',
+              type: 'HIREALL_USER_AUTH',
               userId: userId,
               token: authResponse.token,
               userEmail: authResponse.userEmail,
@@ -160,7 +166,7 @@ export function ExtensionIntegration({ userId }: ExtensionIntegrationProps) {
       const authResponse = await extensionAuthBridge.getAuthToken(true);
       window.postMessage(
         {
-          type: "JOBOOK_FORCE_SYNC",
+          type: "HIREALL_FORCE_SYNC",
           userId: userId,
           token: authResponse.token,
           userEmail: authResponse.userEmail,
@@ -221,40 +227,63 @@ export function ExtensionIntegration({ userId }: ExtensionIntegrationProps) {
         {isExtensionInstalled ? (
           <div className="space-y-5">
             {/* Stats Grid */}
+            <TooltipProvider>
             <div className="grid grid-cols-3 gap-3">
-              <motion.div 
-                whileHover={{ scale: 1.02 }}
-                className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-xl p-4 text-center border border-blue-100 dark:border-blue-900/50"
-              >
-                <Briefcase className="h-5 w-5 text-blue-600 dark:text-blue-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
-                  {jobsDetected}
-                </p>
-                <p className="text-xs text-blue-600/80 dark:text-blue-400/80">Jobs Saved</p>
-              </motion.div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <motion.div 
+                    whileHover={{ scale: 1.02 }}
+                    className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-xl p-4 text-center border border-blue-100 dark:border-blue-900/50 cursor-help"
+                  >
+                    <Briefcase className="h-5 w-5 text-blue-600 dark:text-blue-400 mx-auto mb-2" />
+                    <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+                      {jobsDetected}
+                    </p>
+                    <p className="text-xs text-blue-600/80 dark:text-blue-400/80">Jobs Saved</p>
+                  </motion.div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Total jobs saved from job boards via the extension</p>
+                </TooltipContent>
+              </Tooltip>
 
-              <motion.div 
-                whileHover={{ scale: 1.02 }}
-                className="bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-teal-950/30 dark:to-cyan-950/30 rounded-xl p-4 text-center border border-teal-100 dark:border-teal-900/50"
-              >
-                <Clock className="h-5 w-5 text-teal-600 dark:text-teal-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-teal-900 dark:text-teal-100">
-                  {lastSync ? lastSync.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "--:--"}
-                </p>
-                <p className="text-xs text-teal-600/80 dark:text-teal-400/80">Last Sync</p>
-              </motion.div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <motion.div 
+                    whileHover={{ scale: 1.02 }}
+                    className="bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-teal-950/30 dark:to-cyan-950/30 rounded-xl p-4 text-center border border-teal-100 dark:border-teal-900/50 cursor-help"
+                  >
+                    <Clock className="h-5 w-5 text-teal-600 dark:text-teal-400 mx-auto mb-2" />
+                    <p className="text-2xl font-bold text-teal-900 dark:text-teal-100">
+                      {lastSync ? lastSync.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "--:--"}
+                    </p>
+                    <p className="text-xs text-teal-600/80 dark:text-teal-400/80">Last Sync</p>
+                  </motion.div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>When data was last synced from the extension</p>
+                </TooltipContent>
+              </Tooltip>
 
-              <motion.div 
-                whileHover={{ scale: 1.02 }}
-                className="bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/30 dark:to-green-950/30 rounded-xl p-4 text-center border border-emerald-100 dark:border-emerald-900/50"
-              >
-                <Zap className="h-5 w-5 text-emerald-600 dark:text-emerald-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
-                  Active
-                </p>
-                <p className="text-xs text-emerald-600/80 dark:text-emerald-400/80">Status</p>
-              </motion.div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <motion.div 
+                    whileHover={{ scale: 1.02 }}
+                    className="bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/30 dark:to-green-950/30 rounded-xl p-4 text-center border border-emerald-100 dark:border-emerald-900/50 cursor-help"
+                  >
+                    <Zap className="h-5 w-5 text-emerald-600 dark:text-emerald-400 mx-auto mb-2" />
+                    <p className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
+                      Active
+                    </p>
+                    <p className="text-xs text-emerald-600/80 dark:text-emerald-400/80">Status</p>
+                  </motion.div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Extension is connected and ready to sync</p>
+                </TooltipContent>
+              </Tooltip>
             </div>
+            </TooltipProvider>
 
             {/* Sync Button */}
             <Button

@@ -48,8 +48,8 @@ export function validateEmail(email: string): boolean {
 
 // Phone number validation (basic)
 export function validatePhone(phone: string): boolean {
-  const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
-  const cleanPhone = phone.replace(/[\s\-\(\)\.]/g, '');
+  const phoneRegex = /^[+]?[1-9][\d]{0,15}$/;
+  const cleanPhone = phone.replace(/[\s\-().]/g, '');
   return phoneRegex.test(cleanPhone);
 }
 
@@ -69,7 +69,7 @@ export function sanitizeFileName(filename: string): string {
 
   // Remove path separators and dangerous characters
   return filename
-    .replace(/[\/\\:*?"<>|]/g, '_')
+    .replace(/[/\\:*?"<>|]/g, '_')
     .replace(/\.\./g, '_')
     .replace(/^\.+/, '')
     .substring(0, 255); // Limit length
@@ -81,7 +81,7 @@ export function sanitizeString(input: string, maxLength: number = 1000): string 
 
   return input
     .trim()
-    .replace(/[<>\"'&]/g, '') // Remove HTML entities
+    .replace(/[<>"'&]/g, '') // Remove HTML entities
     .substring(0, maxLength);
 }
 

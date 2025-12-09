@@ -7,11 +7,12 @@ import { ExtensionIntegration } from "@/components/dashboard/ExtensionIntegratio
 import { JobStatsDashboard } from "@/components/dashboard/JobStatsDashboard";
 import { JobList } from "@/components/dashboard/JobList";
 import { ExportCsvButton } from "@/components/dashboard/ExportCsvButton";
+import { ExportPdfButton } from "@/components/dashboard/ExportPdfButton";
 import { FeatureGate } from "@/components/UpgradePrompt";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { FileText } from "lucide-react";
-import { showSuccess } from "@/components/ui/Toast";
+import { showSuccess, showError } from "@/components/ui/Toast";
 
 interface DashboardWidgetsProps {
   jobStats: any;
@@ -149,6 +150,19 @@ export function useDashboardWidgets({
                     dateFound: a.job?.dateFound,
                     appliedDate: a.appliedDate,
                     source: a.job?.source,
+                    salary: a.job?.salary,
+                    sponsored: a.job?.isSponsored,
+                  }))}
+                />
+                <ExportPdfButton
+                  fileName="applications.pdf"
+                  title="My Job Applications"
+                  rows={safeApplications.map((a) => ({
+                    title: a.job?.title,
+                    company: a.job?.company,
+                    location: a.job?.location,
+                    status: a.status,
+                    appliedDate: a.appliedDate,
                     salary: a.job?.salary,
                     sponsored: a.job?.isSponsored,
                   }))}

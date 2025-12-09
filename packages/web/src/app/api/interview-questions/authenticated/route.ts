@@ -354,6 +354,19 @@ const defaultInterviewQuestions = {
   ]
 };
 
+// Industry types
+const INDUSTRIES = [
+  "general",
+  "technology",
+  "finance",
+  "healthcare",
+  "marketing",
+  "consulting",
+  "data-science",
+] as const;
+
+type Industry = (typeof INDUSTRIES)[number];
+
 export async function GET(request: NextRequest) {
   try {
     // Verify session
@@ -364,6 +377,10 @@ export async function GET(request: NextRequest) {
         { status: 401 }
       );
     }
+
+    // Get query parameters
+    const { searchParams } = new URL(request.url);
+    const industryFilter = searchParams.get("industry") as Industry | null;
 
     // Try to fetch from Firestore first
     try {
@@ -382,13 +399,29 @@ export async function GET(request: NextRequest) {
         };
 
         snapshot.forEach((doc) => {
-          const docData = doc.data() as { type?: string;[key: string]: unknown };
+          const docData = doc.data() as { type?: string; industry?: string; [key: string]: unknown };
           const question = { id: doc.id, ...docData };
           const type = docData.type;
+          
+          // Apply industry filter if provided
+          // Include questions that match the filter OR are "general"
+          if (industryFilter) {
+            const questionIndustry = docData.industry || "general";
+            if (questionIndustry !== industryFilter && questionIndustry !== "general") {
+              return; // Skip this question
+            }
+          }
+          
           if (type && interviewQuestions[type]) {
             interviewQuestions[type].push(question);
           }
         });
+
+        // Calculate counts per category
+        const categoryCounts: Record<string, number> = {};
+        for (const [type, questions] of Object.entries(interviewQuestions)) {
+          categoryCounts[type] = questions.length;
+        }
 
         // Check if we have meaningful data
         const totalQuestions = Object.values(interviewQuestions).reduce(
@@ -401,6 +434,9 @@ export async function GET(request: NextRequest) {
             success: true,
             data: interviewQuestions,
             source: "firestore",
+            industries: INDUSTRIES,
+            selectedIndustry: industryFilter || "all",
+            categoryCounts,
             totalQuestions,
           });
         }
@@ -409,18 +445,34 @@ export async function GET(request: NextRequest) {
       console.warn("Firestore fetch failed, using fallback data:", firestoreError);
     }
 
-    // Fallback to default questions
-    const totalQuestions = Object.values(defaultInterviewQuestions).reduce(
+    // Fallback to default questions (apply industry filter if needed)
+    let filteredQuestions = { ...defaultInterviewQuestions };
+    
+    if (industryFilter) {
+      // Fallback data doesn't have industry field, so return all as "general"
+      // In production, the Firestore data would have proper industry filtering
+    }
+
+    // Calculate counts per category for fallback
+    const categoryCounts: Record<string, number> = {};
+    for (const [type, questions] of Object.entries(filteredQuestions)) {
+      categoryCounts[type] = questions.length;
+    }
+
+    const totalQuestions = Object.values(filteredQuestions).reduce(
       (sum, arr) => sum + arr.length,
       0
     );
 
     return NextResponse.json({
       success: true,
-      data: defaultInterviewQuestions,
+      data: filteredQuestions,
       source: "fallback",
+      industries: INDUSTRIES,
+      selectedIndustry: industryFilter || "all",
+      categoryCounts,
       totalQuestions,
-      message: "Using default questions. Run /api/interview-questions/setup to populate Firestore."
+      message: "Using default questions. Run /api/interview-questions/setup to populate Firestore with industry-specific questions."
     });
   } catch (error) {
     console.error("Error fetching interview questions:", error);
@@ -434,3 +486,4 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+

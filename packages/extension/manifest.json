@@ -1,16 +1,15 @@
 {
   "manifest_version": 3,
-  "name": "HireAll Extension v1.0.2",
+  "name": "HireAll - Job Tracker",
   "version": "1.0.2",
   "description": "LinkedIn job sponsored highlighting and application tracking",
   "permissions": ["activeTab", "storage", "tabs"],
   "host_permissions": [
     "https://*.linkedin.com/*",
-    "http://localhost:3000/*"
+    "https://*.hireall.app/*"
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self';",
-    "content_scripts": "script-src 'self'; object-src 'none';"
+    "extension_pages": "script-src 'self'; object-src 'self';"
   },
   "background": {
     "service_worker": "background.js"

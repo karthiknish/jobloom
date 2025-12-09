@@ -366,7 +366,9 @@ export const dashboardApi = {
               userId: j.userId,
             };
           }
-        } catch {}
+        } catch {
+          // Silently ignore job fetch failures - the application still works without job data
+        }
       }
       apps.push(app);
     }

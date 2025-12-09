@@ -31,7 +31,7 @@ export default function ConnectExtensionClient() {
 
   const syncExtensionSettings = async () => {
     try {
-      window.postMessage({ type: "JOBLOOM_REQUEST_SETTINGS_SYNC" }, window.location.origin);
+      window.postMessage({ type: "HIREALL_REQUEST_SETTINGS_SYNC" }, window.location.origin);
       showSuccess("Requested settings sync. Check your extension.");
     } catch (error) {
       console.error('Failed to sync extension settings:', error);

@@ -4,6 +4,12 @@ import * as React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export type KanbanStatus =
   | "interested"
@@ -123,22 +129,40 @@ export function KanbanBoard({
     withdrawn: <Badge variant="secondary" className="bg-gray-100 text-gray-700 hover:bg-gray-200">Withdrawn</Badge>,
   } as const;
 
+  const statusTooltips: Record<KanbanStatus, string> = {
+    interested: "Jobs you're considering applying to",
+    applied: "Applications you've submitted",
+    interviewing: "Actively interviewing with the company",
+    offered: "You've received an offer!",
+    rejected: "Applications that weren't successful",
+    withdrawn: "Applications you chose to withdraw",
+  };
+
   return (
     <div className="overflow-x-auto pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
       <div className="flex gap-4 min-w-max pb-2">
       {columns.map((col) => (
         <div key={col} className="w-80 flex-shrink-0 flex flex-col bg-muted/30 rounded-xl border border-border/50 max-h-[calc(100vh-220px)]">
-          <div className="p-3 flex items-center justify-between border-b border-border/50 bg-background/50 backdrop-blur-sm rounded-t-xl sticky top-0 z-10">
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-sm capitalize text-foreground/80">{col}</span>
-              <span className="bg-muted text-muted-foreground text-xs px-2 py-0.5 rounded-full font-medium">
-                {byCol[col].length}
-              </span>
+          <TooltipProvider>
+            <div className="p-3 flex items-center justify-between border-b border-border/50 bg-background/50 backdrop-blur-sm rounded-t-xl sticky top-0 z-10">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-2 cursor-help">
+                    <span className="font-semibold text-sm capitalize text-foreground/80">{col}</span>
+                    <span className="bg-muted text-muted-foreground text-xs px-2 py-0.5 rounded-full font-medium">
+                      {byCol[col].length}
+                    </span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{statusTooltips[col]}</p>
+                </TooltipContent>
+              </Tooltip>
+              <div className="scale-90 origin-right">
+                {statusBadge[col]}
+              </div>
             </div>
-            <div className="scale-90 origin-right">
-              {statusBadge[col]}
-            </div>
-          </div>
+          </TooltipProvider>
           
           <div
             onDragOver={onDragOver}

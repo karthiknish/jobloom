@@ -1,6 +1,24 @@
 {
   "indexes": [
     {
+      "collectionGroup": "interviewQuestions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "industry",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "type",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "cvAnalyses",
       "queryScope": "COLLECTION",
       "fields": [

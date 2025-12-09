@@ -420,7 +420,7 @@ window.addEventListener("message", (event) => {
   if (event.origin !== window.location.origin) return;
 
   // Handle new auth bridge messages
-  if (event.data.type === "JOBOOK_USER_AUTH" || event.data.type === "HIREDALL_AUTH_RESPONSE") {
+  if (event.data.type === "HIREALL_USER_AUTH" || event.data.type === "HIREDALL_AUTH_RESPONSE") {
     console.log("[WebApp Content] Received auth message from web app:", event.data.type);
     
     if (event.data.token && event.data.userId) {
@@ -450,7 +450,7 @@ window.addEventListener("message", (event) => {
     }
   }
 
-  if (event.data.type === "JOBOOK_FORCE_SYNC") {
+  if (event.data.type === "HIREALL_FORCE_SYNC") {
     console.log('[WebApp Content] Force sync requested');
     
     // Get fresh token from web app and notify background
@@ -533,7 +533,7 @@ window.addEventListener("message", (event) => {
   }
 
   // Web page requests the extension to send settings to web (for syncing)
-  if (event.data.type === "JOBLOOM_REQUEST_SETTINGS_SYNC") {
+  if (event.data.type === "HIREALL_REQUEST_SETTINGS_SYNC") {
     try {
       // Read extension settings and relay to background for upload if needed
       chrome.storage.sync.get([

@@ -1,6 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyIdToken, isUserAdmin, getAdminDb } from "@/firebase/admin";
 
+// Industry types
+const INDUSTRIES = [
+  "general",
+  "technology",
+  "finance",
+  "healthcare",
+  "marketing",
+  "consulting",
+  "data-science",
+] as const;
+
+type Industry = (typeof INDUSTRIES)[number];
+
+interface InterviewQuestion {
+  id: string;
+  question: string;
+  category: string;
+  tips: string[];
+  difficulty: "Easy" | "Medium" | "Hard";
+  tags: string[];
+  type: string;
+  industry: Industry;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const authHeader = request.headers.get("authorization");
@@ -25,11 +49,12 @@ export async function POST(request: NextRequest) {
     const batch = db.batch();
     let questionCount = 0;
 
-    // Interview questions data
-    const interviewQuestions = {
+    // Comprehensive interview questions with industry field
+    const interviewQuestions: Record<string, InterviewQuestion[]> = {
       behavioral: [
+        // General behavioral questions
         {
-          id: "1",
+          id: "b1",
           question: "Tell me about a time when you faced a challenging situation at work. How did you handle it?",
           category: "Problem Solving",
           tips: [
@@ -40,10 +65,11 @@ export async function POST(request: NextRequest) {
           difficulty: "Medium",
           tags: ["problem-solving", "leadership", "resilience"],
           type: "behavioral",
+          industry: "general",
         },
         {
-          id: "2",
-          question: "Describe a time when you had to work with a difficult team member. How did you manage the situation?",
+          id: "b2",
+          question: "Describe a time when you had to work with a difficult team member.",
           category: "Teamwork",
           tips: [
             "Stay professional and focus on facts",
@@ -53,9 +79,10 @@ export async function POST(request: NextRequest) {
           difficulty: "Medium",
           tags: ["teamwork", "communication", "conflict-resolution"],
           type: "behavioral",
+          industry: "general",
         },
         {
-          id: "3",
+          id: "b3",
           question: "Give an example of a goal you set and how you achieved it.",
           category: "Achievement",
           tips: [
@@ -66,9 +93,10 @@ export async function POST(request: NextRequest) {
           difficulty: "Easy",
           tags: ["achievement", "goal-setting", "planning"],
           type: "behavioral",
+          industry: "general",
         },
         {
-          id: "4",
+          id: "b4",
           question: "Tell me about a time when you failed. How did you handle it?",
           category: "Failure & Learning",
           tips: [
@@ -79,9 +107,10 @@ export async function POST(request: NextRequest) {
           difficulty: "Medium",
           tags: ["failure", "learning", "growth", "accountability"],
           type: "behavioral",
+          industry: "general",
         },
         {
-          id: "5",
+          id: "b5",
           question: "Describe a situation where you had to learn something new quickly.",
           category: "Adaptability",
           tips: [
@@ -92,76 +121,187 @@ export async function POST(request: NextRequest) {
           difficulty: "Easy",
           tags: ["learning", "adaptability", "growth"],
           type: "behavioral",
+          industry: "general",
+        },
+        // Technology-specific behavioral
+        {
+          id: "b6",
+          question: "Tell me about a time when you had to debug a critical production issue under pressure.",
+          category: "Problem Solving",
+          tips: [
+            "Explain your debugging methodology",
+            "Highlight collaboration with team",
+            "Mention preventive measures taken afterward",
+          ],
+          difficulty: "Hard",
+          tags: ["debugging", "pressure", "problem-solving"],
+          type: "behavioral",
+          industry: "technology",
         },
         {
-          id: "6",
-          question: "Tell me about a time when you had to make a difficult decision.",
+          id: "b7",
+          question: "Describe a time when you had to push back on technical requirements.",
+          category: "Communication",
+          tips: [
+            "Show how you presented alternatives",
+            "Demonstrate stakeholder management",
+            "Focus on outcomes achieved",
+          ],
+          difficulty: "Medium",
+          tags: ["communication", "stakeholder-management", "negotiation"],
+          type: "behavioral",
+          industry: "technology",
+        },
+        // Finance-specific behavioral
+        {
+          id: "b8",
+          question: "Tell me about a time when you identified a significant financial discrepancy.",
+          category: "Attention to Detail",
+          tips: [
+            "Explain your discovery process",
+            "Show the impact of your finding",
+            "Highlight compliance considerations",
+          ],
+          difficulty: "Medium",
+          tags: ["attention-to-detail", "compliance", "analysis"],
+          type: "behavioral",
+          industry: "finance",
+        },
+        {
+          id: "b9",
+          question: "Describe a situation where you had to make a quick decision with limited data.",
           category: "Decision Making",
           tips: [
-            "Explain your thought process",
-            "Consider alternatives you explored",
-            "Show how you evaluated options",
+            "Explain your risk assessment approach",
+            "Show how you managed uncertainty",
+            "Discuss the outcome and learnings",
+          ],
+          difficulty: "Hard",
+          tags: ["decision-making", "risk-management", "analysis"],
+          type: "behavioral",
+          industry: "finance",
+        },
+        // Healthcare-specific behavioral
+        {
+          id: "b10",
+          question: "Tell me about a time when you had to handle a difficult patient or family situation.",
+          category: "Patient Care",
+          tips: [
+            "Show empathy and professionalism",
+            "Explain your communication approach",
+            "Focus on patient outcomes",
           ],
           difficulty: "Medium",
-          tags: ["decision-making", "analysis", "leadership"],
+          tags: ["patient-care", "communication", "empathy"],
           type: "behavioral",
+          industry: "healthcare",
         },
         {
-          id: "7",
-          question: "Describe a time when you went above and beyond for a customer/client.",
-          category: "Customer Service",
+          id: "b11",
+          question: "Describe a situation where you identified a potential safety concern.",
+          category: "Safety",
           tips: [
-            "Quantify the impact of your actions",
-            "Show initiative and problem-solving",
-            "Connect to company values",
+            "Explain your observation and assessment",
+            "Show how you escalated appropriately",
+            "Highlight preventive actions taken",
           ],
           difficulty: "Medium",
-          tags: ["customer-service", "initiative", "problem-solving"],
+          tags: ["safety", "compliance", "attention-to-detail"],
           type: "behavioral",
+          industry: "healthcare",
         },
+        // Marketing-specific behavioral
         {
-          id: "8",
-          question: "Tell me about a time when you had to manage multiple priorities.",
-          category: "Time Management",
+          id: "b12",
+          question: "Tell me about a campaign that didn't perform as expected. What did you learn?",
+          category: "Campaign Analysis",
           tips: [
-            "Explain your prioritization strategy",
-            "Show how you stayed organized",
-            "Demonstrate results achieved",
-          ],
-          difficulty: "Easy",
-          tags: ["time-management", "organization", "prioritization"],
-          type: "behavioral",
-        },
-        {
-          id: "9",
-          question: "Describe a situation where you received constructive criticism.",
-          category: "Feedback",
-          tips: [
-            "Show openness to feedback",
-            "Explain how you implemented changes",
-            "Demonstrate growth from the experience",
+            "Be honest about what went wrong",
+            "Show your analytical approach",
+            "Explain improvements made afterward",
           ],
           difficulty: "Medium",
-          tags: ["feedback", "growth", "communication"],
+          tags: ["campaign-analysis", "learning", "marketing"],
           type: "behavioral",
+          industry: "marketing",
         },
         {
-          id: "10",
-          question: "Tell me about a time when you mentored or helped a colleague.",
-          category: "Leadership",
+          id: "b13",
+          question: "Describe a time when you had to pivot a marketing strategy mid-campaign.",
+          category: "Adaptability",
           tips: [
-            "Show your ability to develop others",
-            "Explain your approach to mentoring",
-            "Quantify the impact when possible",
+            "Explain the signals that triggered the pivot",
+            "Show quick decision-making",
+            "Highlight the results of the change",
           ],
           difficulty: "Medium",
-          tags: ["leadership", "mentoring", "team-development"],
+          tags: ["adaptability", "strategy", "decision-making"],
           type: "behavioral",
+          industry: "marketing",
+        },
+        // Consulting-specific behavioral
+        {
+          id: "b14",
+          question: "Tell me about a time when you had to manage multiple client expectations.",
+          category: "Client Management",
+          tips: [
+            "Show prioritization skills",
+            "Explain your communication strategy",
+            "Focus on client satisfaction outcomes",
+          ],
+          difficulty: "Hard",
+          tags: ["client-management", "prioritization", "communication"],
+          type: "behavioral",
+          industry: "consulting",
+        },
+        {
+          id: "b15",
+          question: "Describe a situation where you had to deliver bad news to a client.",
+          category: "Communication",
+          tips: [
+            "Show empathy and professionalism",
+            "Explain how you prepared solutions",
+            "Focus on maintaining the relationship",
+          ],
+          difficulty: "Hard",
+          tags: ["communication", "client-management", "problem-solving"],
+          type: "behavioral",
+          industry: "consulting",
+        },
+        // Data Science-specific behavioral
+        {
+          id: "b16",
+          question: "Tell me about a time when your analysis led to a significant business decision.",
+          category: "Business Impact",
+          tips: [
+            "Quantify the business impact",
+            "Explain your methodology",
+            "Show stakeholder communication",
+          ],
+          difficulty: "Medium",
+          tags: ["business-impact", "analysis", "communication"],
+          type: "behavioral",
+          industry: "data-science",
+        },
+        {
+          id: "b17",
+          question: "Describe a situation where you had to explain complex technical findings to non-technical stakeholders.",
+          category: "Communication",
+          tips: [
+            "Show your storytelling approach",
+            "Explain visualization techniques used",
+            "Focus on actionable insights",
+          ],
+          difficulty: "Medium",
+          tags: ["communication", "stakeholder-management", "storytelling"],
+          type: "behavioral",
+          industry: "data-science",
         },
       ],
       technical: [
+        // Technology-specific technical
         {
-          id: "11",
+          id: "t1",
           question: "Explain the difference between let, const, and var in JavaScript.",
           category: "JavaScript",
           tips: [
@@ -172,9 +312,10 @@ export async function POST(request: NextRequest) {
           difficulty: "Easy",
           tags: ["javascript", "variables", "scope"],
           type: "technical",
+          industry: "technology",
         },
         {
-          id: "12",
+          id: "t2",
           question: "How do you optimize a React application's performance?",
           category: "React",
           tips: [
@@ -185,9 +326,10 @@ export async function POST(request: NextRequest) {
           difficulty: "Medium",
           tags: ["react", "performance", "optimization"],
           type: "technical",
+          industry: "technology",
         },
         {
-          id: "13",
+          id: "t3",
           question: "What is the difference between SQL and NoSQL databases?",
           category: "Databases",
           tips: [
@@ -198,22 +340,10 @@ export async function POST(request: NextRequest) {
           difficulty: "Medium",
           tags: ["databases", "sql", "nosql", "architecture"],
           type: "technical",
+          industry: "technology",
         },
         {
-          id: "14",
-          question: "How do you handle errors in your code?",
-          category: "Error Handling",
-          tips: [
-            "Explain try-catch blocks and error types",
-            "Discuss logging and monitoring",
-            "Show graceful degradation strategies",
-          ],
-          difficulty: "Medium",
-          tags: ["error-handling", "debugging", "reliability"],
-          type: "technical",
-        },
-        {
-          id: "15",
+          id: "t4",
           question: "Explain RESTful API design principles.",
           category: "API Design",
           tips: [
@@ -224,9 +354,10 @@ export async function POST(request: NextRequest) {
           difficulty: "Medium",
           tags: ["api", "rest", "design", "architecture"],
           type: "technical",
+          industry: "technology",
         },
         {
-          id: "16",
+          id: "t5",
           question: "How do you approach debugging a complex issue?",
           category: "Debugging",
           tips: [
@@ -237,63 +368,214 @@ export async function POST(request: NextRequest) {
           difficulty: "Medium",
           tags: ["debugging", "problem-solving", "tools"],
           type: "technical",
+          industry: "technology",
         },
         {
-          id: "17",
-          question: "What are design patterns and why are they important?",
-          category: "Software Design",
+          id: "t6",
+          question: "Explain microservices architecture and its trade-offs.",
+          category: "Architecture",
           tips: [
-            "Explain common patterns (Singleton, Factory, Observer)",
-            "Discuss benefits and use cases",
-            "Show real-world application",
+            "Compare with monolithic architecture",
+            "Discuss scaling benefits and complexity costs",
+            "Mention communication patterns",
           ],
           difficulty: "Hard",
-          tags: ["design-patterns", "architecture", "best-practices"],
+          tags: ["microservices", "architecture", "scaling"],
           type: "technical",
+          industry: "technology",
+        },
+        // Finance-specific technical
+        {
+          id: "t7",
+          question: "Walk me through how you would build a DCF model.",
+          category: "Financial Modeling",
+          tips: [
+            "Explain WACC calculation",
+            "Discuss cash flow projections",
+            "Cover terminal value approaches",
+          ],
+          difficulty: "Hard",
+          tags: ["dcf", "valuation", "financial-modeling"],
+          type: "technical",
+          industry: "finance",
         },
         {
-          id: "18",
-          question: "How do you ensure code quality and maintainability?",
-          category: "Code Quality",
+          id: "t8",
+          question: "How would you assess the credit risk of a company?",
+          category: "Credit Analysis",
           tips: [
-            "Discuss testing strategies",
-            "Explain code reviews and standards",
-            "Mention documentation and refactoring",
+            "Cover financial ratios",
+            "Discuss industry factors",
+            "Mention qualitative assessments",
           ],
           difficulty: "Medium",
-          tags: ["testing", "code-quality", "maintenance"],
+          tags: ["credit-risk", "analysis", "ratios"],
           type: "technical",
+          industry: "finance",
         },
         {
-          id: "19",
-          question: "Explain the concept of asynchronous programming.",
-          category: "Async Programming",
+          id: "t9",
+          question: "Explain the Black-Scholes option pricing model.",
+          category: "Derivatives",
           tips: [
-            "Cover callbacks, promises, and async/await",
-            "Explain event loops and concurrency",
-            "Discuss real-world applications",
+            "Cover the key inputs",
+            "Explain assumptions and limitations",
+            "Discuss practical applications",
+          ],
+          difficulty: "Hard",
+          tags: ["options", "derivatives", "pricing"],
+          type: "technical",
+          industry: "finance",
+        },
+        // Healthcare-specific technical
+        {
+          id: "t10",
+          question: "How do you ensure HIPAA compliance in healthcare IT systems?",
+          category: "Compliance",
+          tips: [
+            "Cover PHI protection requirements",
+            "Discuss access controls",
+            "Mention audit and monitoring",
           ],
           difficulty: "Medium",
-          tags: ["async", "concurrency", "javascript", "programming"],
+          tags: ["hipaa", "compliance", "security"],
           type: "technical",
+          industry: "healthcare",
         },
         {
-          id: "20",
-          question: "How do you approach code reviews?",
-          category: "Code Review",
+          id: "t11",
+          question: "Explain the difference between ICD-10 and CPT codes.",
+          category: "Medical Coding",
           tips: [
-            "Explain what you look for in reviews",
-            "Discuss constructive feedback approaches",
-            "Show how you handle disagreements",
+            "Cover diagnosis vs procedure coding",
+            "Explain use cases for each",
+            "Mention billing implications",
           ],
           difficulty: "Easy",
-          tags: ["code-review", "collaboration", "best-practices"],
+          tags: ["medical-coding", "icd-10", "cpt"],
           type: "technical",
+          industry: "healthcare",
+        },
+        // Marketing-specific technical
+        {
+          id: "t12",
+          question: "How would you set up a multi-touch attribution model?",
+          category: "Marketing Analytics",
+          tips: [
+            "Compare different attribution models",
+            "Discuss data requirements",
+            "Cover implementation challenges",
+          ],
+          difficulty: "Hard",
+          tags: ["attribution", "analytics", "marketing"],
+          type: "technical",
+          industry: "marketing",
+        },
+        {
+          id: "t13",
+          question: "Explain how you would optimize a Google Ads campaign.",
+          category: "Digital Marketing",
+          tips: [
+            "Cover keyword strategy",
+            "Discuss bidding approaches",
+            "Mention quality score optimization",
+          ],
+          difficulty: "Medium",
+          tags: ["google-ads", "ppc", "optimization"],
+          type: "technical",
+          industry: "marketing",
+        },
+        // Data Science-specific technical
+        {
+          id: "t14",
+          question: "Explain the difference between supervised and unsupervised learning.",
+          category: "Machine Learning",
+          tips: [
+            "Give examples of each",
+            "Discuss when to use each approach",
+            "Cover common algorithms",
+          ],
+          difficulty: "Easy",
+          tags: ["machine-learning", "supervised", "unsupervised"],
+          type: "technical",
+          industry: "data-science",
+        },
+        {
+          id: "t15",
+          question: "How do you handle imbalanced datasets?",
+          category: "Data Processing",
+          tips: [
+            "Cover sampling techniques",
+            "Discuss algorithm selection",
+            "Mention evaluation metrics",
+          ],
+          difficulty: "Medium",
+          tags: ["imbalanced-data", "sampling", "machine-learning"],
+          type: "technical",
+          industry: "data-science",
+        },
+        {
+          id: "t16",
+          question: "Explain the bias-variance tradeoff.",
+          category: "Machine Learning",
+          tips: [
+            "Define both concepts clearly",
+            "Discuss their relationship",
+            "Show how to balance them",
+          ],
+          difficulty: "Medium",
+          tags: ["bias", "variance", "overfitting", "machine-learning"],
+          type: "technical",
+          industry: "data-science",
+        },
+        {
+          id: "t17",
+          question: "How would you design an A/B test for a new feature?",
+          category: "Experimentation",
+          tips: [
+            "Cover hypothesis formulation",
+            "Discuss sample size calculation",
+            "Explain statistical significance",
+          ],
+          difficulty: "Medium",
+          tags: ["ab-testing", "experimentation", "statistics"],
+          type: "technical",
+          industry: "data-science",
+        },
+        // Consulting-specific technical
+        {
+          id: "t18",
+          question: "Walk me through a market sizing analysis.",
+          category: "Market Analysis",
+          tips: [
+            "Cover top-down and bottom-up approaches",
+            "Explain key assumptions",
+            "Show sensitivity analysis",
+          ],
+          difficulty: "Medium",
+          tags: ["market-sizing", "analysis", "strategy"],
+          type: "technical",
+          industry: "consulting",
+        },
+        {
+          id: "t19",
+          question: "How would you structure a profitability analysis?",
+          category: "Business Analysis",
+          tips: [
+            "Break down revenue and cost drivers",
+            "Use issue trees",
+            "Focus on actionable insights",
+          ],
+          difficulty: "Medium",
+          tags: ["profitability", "analysis", "strategy"],
+          type: "technical",
+          industry: "consulting",
         },
       ],
       situational: [
+        // General situational
         {
-          id: "21",
+          id: "s1",
           question: "How would you handle a situation where a project deadline is approaching and you're falling behind?",
           category: "Project Management",
           tips: [
@@ -304,9 +586,10 @@ export async function POST(request: NextRequest) {
           difficulty: "Medium",
           tags: ["project-management", "communication", "prioritization"],
           type: "situational",
+          industry: "general",
         },
         {
-          id: "22",
+          id: "s2",
           question: "If you were given a project with unclear requirements, how would you proceed?",
           category: "Requirements Gathering",
           tips: [
@@ -317,9 +600,10 @@ export async function POST(request: NextRequest) {
           difficulty: "Medium",
           tags: ["requirements", "communication", "planning"],
           type: "situational",
+          industry: "general",
         },
         {
-          id: "23",
+          id: "s3",
           question: "How would you handle a disagreement with your manager about project direction?",
           category: "Conflict Resolution",
           tips: [
@@ -330,74 +614,10 @@ export async function POST(request: NextRequest) {
           difficulty: "Hard",
           tags: ["conflict-resolution", "communication", "leadership"],
           type: "situational",
+          industry: "general",
         },
         {
-          id: "24",
-          question: "If you discovered a critical bug in production right before a major deadline, what would you do?",
-          category: "Crisis Management",
-          tips: [
-            "Assess the severity and impact",
-            "Communicate with stakeholders immediately",
-            "Balance fixing the bug with meeting the deadline",
-          ],
-          difficulty: "Hard",
-          tags: ["crisis-management", "prioritization", "communication"],
-          type: "situational",
-        },
-        {
-          id: "25",
-          question: "How would you approach onboarding a new team member?",
-          category: "Team Building",
-          tips: [
-            "Create a structured onboarding plan",
-            "Pair with experienced team members",
-            "Set clear expectations and goals",
-          ],
-          difficulty: "Easy",
-          tags: ["team-building", "mentoring", "leadership"],
-          type: "situational",
-        },
-        {
-          id: "26",
-          question: "If you were asked to take on additional responsibilities without additional compensation, how would you respond?",
-          category: "Career Development",
-          tips: [
-            "Assess the value to your career growth",
-            "Discuss compensation expectations",
-            "Consider the bigger picture for your role",
-          ],
-          difficulty: "Medium",
-          tags: ["career-development", "negotiation", "compensation"],
-          type: "situational",
-        },
-        {
-          id: "27",
-          question: "How would you handle a situation where a client is unhappy with your work?",
-          category: "Client Management",
-          tips: [
-            "Listen actively to their concerns",
-            "Take ownership of the issue",
-            "Propose solutions and follow through",
-          ],
-          difficulty: "Medium",
-          tags: ["client-management", "communication", "problem-solving"],
-          type: "situational",
-        },
-        {
-          id: "28",
-          question: "If you were working on a team project and noticed one team member wasn't contributing, what would you do?",
-          category: "Team Dynamics",
-          tips: [
-            "Address the issue privately first",
-            "Understand if there are underlying issues",
-            "Escalate to manager if necessary",
-          ],
-          difficulty: "Medium",
-          tags: ["team-dynamics", "communication", "leadership"],
-          type: "situational",
-        },
-        {
-          id: "29",
+          id: "s4",
           question: "How would you prioritize tasks when everything seems equally important?",
           category: "Task Prioritization",
           tips: [
@@ -408,24 +628,101 @@ export async function POST(request: NextRequest) {
           difficulty: "Easy",
           tags: ["prioritization", "time-management", "decision-making"],
           type: "situational",
+          industry: "general",
+        },
+        // Technology-specific situational
+        {
+          id: "s5",
+          question: "If you discovered a critical security vulnerability in production, what would you do?",
+          category: "Security",
+          tips: [
+            "Assess severity and impact immediately",
+            "Follow incident response procedures",
+            "Balance speed with thoroughness",
+          ],
+          difficulty: "Hard",
+          tags: ["security", "incident-response", "crisis-management"],
+          type: "situational",
+          industry: "technology",
         },
         {
-          id: "30",
-          question: "If you were asked to learn a new technology quickly for a project, how would you approach it?",
-          category: "Learning",
+          id: "s6",
+          question: "How would you handle a situation where a junior developer's code is slowing down the team?",
+          category: "Team Management",
           tips: [
-            "Create a learning plan with milestones",
-            "Use multiple resources (docs, tutorials, courses)",
-            "Apply learning through small projects",
+            "Approach with mentorship mindset",
+            "Provide constructive feedback",
+            "Create improvement plan",
           ],
-          difficulty: "Easy",
-          tags: ["learning", "adaptability", "self-improvement"],
+          difficulty: "Medium",
+          tags: ["mentoring", "code-review", "team-management"],
           type: "situational",
+          industry: "technology",
+        },
+        // Finance-specific situational
+        {
+          id: "s7",
+          question: "If you found an error in a financial report that's already been submitted, what would you do?",
+          category: "Compliance",
+          tips: [
+            "Assess materiality of the error",
+            "Follow proper escalation procedures",
+            "Document everything",
+          ],
+          difficulty: "Hard",
+          tags: ["compliance", "error-handling", "communication"],
+          type: "situational",
+          industry: "finance",
+        },
+        {
+          id: "s8",
+          question: "How would you handle a client requesting an aggressive valuation?",
+          category: "Client Management",
+          tips: [
+            "Maintain professional integrity",
+            "Explain methodology and limitations",
+            "Propose alternatives within bounds",
+          ],
+          difficulty: "Hard",
+          tags: ["client-management", "integrity", "valuation"],
+          type: "situational",
+          industry: "finance",
+        },
+        // Healthcare-specific situational
+        {
+          id: "s9",
+          question: "How would you handle a situation where a physician disagrees with your recommendation?",
+          category: "Collaboration",
+          tips: [
+            "Present evidence-based rationale",
+            "Listen to their clinical perspective",
+            "Focus on patient outcomes",
+          ],
+          difficulty: "Medium",
+          tags: ["collaboration", "communication", "patient-care"],
+          type: "situational",
+          industry: "healthcare",
+        },
+        // Consulting-specific situational
+        {
+          id: "s10",
+          question: "How would you handle a client who keeps changing project scope?",
+          category: "Client Management",
+          tips: [
+            "Document scope changes formally",
+            "Communicate impact on timeline and budget",
+            "Maintain positive relationship",
+          ],
+          difficulty: "Medium",
+          tags: ["scope-management", "client-management", "communication"],
+          type: "situational",
+          industry: "consulting",
         },
       ],
       leadership: [
+        // General leadership
         {
-          id: "31",
+          id: "l1",
           question: "Tell me about a time when you led a team through a challenging project.",
           category: "Team Leadership",
           tips: [
@@ -436,9 +733,10 @@ export async function POST(request: NextRequest) {
           difficulty: "Hard",
           tags: ["leadership", "team-management", "project-delivery"],
           type: "leadership",
+          industry: "general",
         },
         {
-          id: "32",
+          id: "l2",
           question: "How do you motivate team members who seem disengaged?",
           category: "Motivation",
           tips: [
@@ -449,9 +747,10 @@ export async function POST(request: NextRequest) {
           difficulty: "Medium",
           tags: ["motivation", "leadership", "team-building"],
           type: "leadership",
+          industry: "general",
         },
         {
-          id: "33",
+          id: "l3",
           question: "Describe how you handle performance issues with a team member.",
           category: "Performance Management",
           tips: [
@@ -462,9 +761,10 @@ export async function POST(request: NextRequest) {
           difficulty: "Hard",
           tags: ["performance-management", "feedback", "leadership"],
           type: "leadership",
+          industry: "general",
         },
         {
-          id: "34",
+          id: "l4",
           question: "How do you balance technical work with leadership responsibilities?",
           category: "Work-Life Balance",
           tips: [
@@ -475,24 +775,28 @@ export async function POST(request: NextRequest) {
           difficulty: "Medium",
           tags: ["leadership", "balance", "delegation"],
           type: "leadership",
+          industry: "general",
         },
+        // Technology-specific leadership
         {
-          id: "35",
-          question: "Tell me about a time when you had to make a tough decision that affected your team.",
-          category: "Difficult Decisions",
+          id: "l5",
+          question: "How do you drive technical decisions in a team with diverse opinions?",
+          category: "Technical Leadership",
           tips: [
-            "Explain your decision-making process",
-            "Show empathy for team impact",
-            "Demonstrate accountability for outcomes",
+            "Create structured decision frameworks",
+            "Encourage data-driven discussions",
+            "Build consensus while making timely decisions",
           ],
           difficulty: "Hard",
-          tags: ["decision-making", "leadership", "accountability"],
+          tags: ["technical-leadership", "decision-making", "consensus"],
           type: "leadership",
+          industry: "technology",
         },
       ],
       systemDesign: [
+        // Technology-specific system design
         {
-          id: "36",
+          id: "sd1",
           question: "How would you design a URL shortening service like bit.ly?",
           category: "System Design",
           tips: [
@@ -503,9 +807,10 @@ export async function POST(request: NextRequest) {
           difficulty: "Hard",
           tags: ["system-design", "scalability", "architecture"],
           type: "systemDesign",
+          industry: "technology",
         },
         {
-          id: "37",
+          id: "sd2",
           question: "Design a notification system for a social media platform.",
           category: "System Design",
           tips: [
@@ -516,24 +821,41 @@ export async function POST(request: NextRequest) {
           difficulty: "Hard",
           tags: ["system-design", "real-time", "scalability"],
           type: "systemDesign",
+          industry: "technology",
         },
         {
-          id: "38",
-          question: "How would you design a file storage system like Dropbox?",
+          id: "sd3",
+          question: "How would you design a rate limiting system?",
           category: "System Design",
           tips: [
-            "Consider file synchronization",
-            "Think about conflict resolution",
-            "Address security and privacy concerns",
+            "Discuss different algorithms (token bucket, sliding window)",
+            "Consider distributed scenarios",
+            "Address edge cases",
           ],
           difficulty: "Hard",
-          tags: ["system-design", "file-systems", "sync", "security"],
+          tags: ["system-design", "rate-limiting", "distributed-systems"],
           type: "systemDesign",
+          industry: "technology",
+        },
+        {
+          id: "sd4",
+          question: "Design a real-time chat application.",
+          category: "System Design",
+          tips: [
+            "Consider WebSocket vs polling",
+            "Address message delivery guarantees",
+            "Think about scaling for millions of users",
+          ],
+          difficulty: "Hard",
+          tags: ["system-design", "real-time", "chat", "websocket"],
+          type: "systemDesign",
+          industry: "technology",
         },
       ],
       productSense: [
+        // General product sense
         {
-          id: "39",
+          id: "ps1",
           question: "How would you improve the user experience of a product you're familiar with?",
           category: "Product Thinking",
           tips: [
@@ -544,9 +866,10 @@ export async function POST(request: NextRequest) {
           difficulty: "Medium",
           tags: ["product-thinking", "ux", "improvement"],
           type: "productSense",
+          industry: "general",
         },
         {
-          id: "40",
+          id: "ps2",
           question: "How do you prioritize features for a new product release?",
           category: "Product Management",
           tips: [
@@ -557,6 +880,37 @@ export async function POST(request: NextRequest) {
           difficulty: "Medium",
           tags: ["product-management", "prioritization", "strategy"],
           type: "productSense",
+          industry: "general",
+        },
+        // Technology product sense
+        {
+          id: "ps3",
+          question: "How would you measure the success of a new API feature?",
+          category: "Product Metrics",
+          tips: [
+            "Define adoption and usage metrics",
+            "Consider developer experience indicators",
+            "Track error rates and performance",
+          ],
+          difficulty: "Medium",
+          tags: ["metrics", "api", "product-management"],
+          type: "productSense",
+          industry: "technology",
+        },
+        // Marketing product sense
+        {
+          id: "ps4",
+          question: "How would you approach launching a product in a new market?",
+          category: "Go-to-Market",
+          tips: [
+            "Research market dynamics and competition",
+            "Define target segments and positioning",
+            "Plan channel strategy and messaging",
+          ],
+          difficulty: "Hard",
+          tags: ["go-to-market", "strategy", "launch"],
+          type: "productSense",
+          industry: "marketing",
         },
       ],
     };
@@ -577,12 +931,22 @@ export async function POST(request: NextRequest) {
     // Commit the batch
     await batch.commit();
 
+    // Count by industry
+    const industryCounts: Record<string, number> = {};
+    for (const questions of Object.values(interviewQuestions)) {
+      for (const q of questions) {
+        industryCounts[q.industry] = (industryCounts[q.industry] || 0) + 1;
+      }
+    }
+
     return NextResponse.json({
       success: true,
       message: `Successfully saved ${questionCount} interview questions to Firebase`,
       data: {
         totalQuestions: questionCount,
         categories: Object.keys(interviewQuestions),
+        industries: INDUSTRIES,
+        questionsByIndustry: industryCounts,
       },
     });
   } catch (error) {
