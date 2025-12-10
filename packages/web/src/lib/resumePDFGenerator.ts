@@ -1,10 +1,121 @@
 /**
  * Resume PDF Generation Utility
  * Provides functionality to generate professional PDF resumes with multiple templates
+ * Uses Hireall brand colors for consistent theming
  */
 
 import jsPDF from 'jspdf';
 import { ResumeData } from '@/types/resume';
+
+// ============ THEME COLOR SYSTEM ============
+
+/**
+ * Hireall brand colors converted from HSL to RGB
+ * Primary: HSL 160 84% 39% → RGB (16, 183, 127) - Teal/Green
+ */
+interface ThemeColor {
+  r: number;
+  g: number;
+  b: number;
+}
+
+interface ColorScheme {
+  primary: ThemeColor;
+  secondary: ThemeColor;
+  accent: ThemeColor;
+  text: ThemeColor;
+  textLight: ThemeColor;
+  background: ThemeColor;
+  border: ThemeColor;
+}
+
+// Hireall brand color schemes
+const COLOR_SCHEMES: Record<string, ColorScheme> = {
+  // Default Hireall teal theme
+  hireall: {
+    primary: { r: 16, g: 183, b: 127 },      // Teal - main brand color
+    secondary: { r: 15, g: 118, b: 110 },    // Darker teal
+    accent: { r: 45, g: 212, b: 191 },       // Lighter teal
+    text: { r: 31, g: 41, b: 55 },           // Dark gray
+    textLight: { r: 107, g: 114, b: 128 },   // Medium gray
+    background: { r: 249, g: 250, b: 251 },  // Light gray
+    border: { r: 209, g: 213, b: 219 },      // Border gray
+  },
+  // Professional blue
+  blue: {
+    primary: { r: 37, g: 99, b: 235 },
+    secondary: { r: 30, g: 64, b: 175 },
+    accent: { r: 96, g: 165, b: 250 },
+    text: { r: 31, g: 41, b: 55 },
+    textLight: { r: 107, g: 114, b: 128 },
+    background: { r: 239, g: 246, b: 255 },
+    border: { r: 191, g: 219, b: 254 },
+  },
+  // Elegant gray
+  gray: {
+    primary: { r: 55, g: 65, b: 81 },
+    secondary: { r: 31, g: 41, b: 55 },
+    accent: { r: 107, g: 114, b: 128 },
+    text: { r: 31, g: 41, b: 55 },
+    textLight: { r: 107, g: 114, b: 128 },
+    background: { r: 249, g: 250, b: 251 },
+    border: { r: 209, g: 213, b: 219 },
+  },
+  // Nature green
+  green: {
+    primary: { r: 22, g: 163, b: 74 },
+    secondary: { r: 21, g: 128, b: 61 },
+    accent: { r: 74, g: 222, b: 128 },
+    text: { r: 31, g: 41, b: 55 },
+    textLight: { r: 107, g: 114, b: 128 },
+    background: { r: 240, g: 253, b: 244 },
+    border: { r: 187, g: 247, b: 208 },
+  },
+  // Creative purple
+  purple: {
+    primary: { r: 147, g: 51, b: 234 },
+    secondary: { r: 126, g: 34, b: 206 },
+    accent: { r: 192, g: 132, b: 252 },
+    text: { r: 31, g: 41, b: 55 },
+    textLight: { r: 107, g: 114, b: 128 },
+    background: { r: 250, g: 245, b: 255 },
+    border: { r: 233, g: 213, b: 255 },
+  },
+  // Warm orange
+  orange: {
+    primary: { r: 234, g: 88, b: 12 },
+    secondary: { r: 194, g: 65, b: 12 },
+    accent: { r: 251, g: 146, b: 60 },
+    text: { r: 31, g: 41, b: 55 },
+    textLight: { r: 107, g: 114, b: 128 },
+    background: { r: 255, g: 247, b: 237 },
+    border: { r: 254, g: 215, b: 170 },
+  },
+};
+
+/**
+ * Get color scheme by name, defaults to Hireall theme
+ */
+function getColorScheme(name?: string): ColorScheme {
+  return COLOR_SCHEMES[name || 'hireall'] || COLOR_SCHEMES.hireall;
+}
+
+/**
+ * Apply color to PDF
+ */
+function applyTextColor(pdf: jsPDF, color: ThemeColor): void {
+  pdf.setTextColor(color.r, color.g, color.b);
+}
+
+function applyFillColor(pdf: jsPDF, color: ThemeColor): void {
+  pdf.setFillColor(color.r, color.g, color.b);
+}
+
+function applyDrawColor(pdf: jsPDF, color: ThemeColor): void {
+  pdf.setDrawColor(color.r, color.g, color.b);
+}
+
+// ============ END THEME COLOR SYSTEM ============
 
 export interface ResumePDFOptions {
   template?: 'modern' | 'classic' | 'creative' | 'minimal' | 'executive' | 'academic' | 'tech' | 'startup' | 'technical';
@@ -13,7 +124,7 @@ export interface ResumePDFOptions {
   margin?: number;
   font?: 'helvetica' | 'times' | 'courier';
   includePhoto?: boolean;
-  colorScheme?: 'blue' | 'gray' | 'green' | 'purple' | 'orange';
+  colorScheme?: 'hireall' | 'blue' | 'gray' | 'green' | 'purple' | 'orange';
 }
 
 export interface ResumeMetadata {
@@ -32,7 +143,7 @@ export class ResumePDFGenerator {
     margin: 15,
     font: 'helvetica',
     includePhoto: false,
-    colorScheme: 'blue'
+    colorScheme: 'hireall'  // Default to Hireall brand colors
   };
 
   /**
@@ -391,11 +502,23 @@ export class ResumePDFGenerator {
    * Helper methods for adding sections
    */
   private static addHeader(pdf: jsPDF, data: ResumeData, opts: ResumePDFOptions, pageWidth: number, currentY: number): number {
+    const colors = getColorScheme(opts.colorScheme);
+    
+    // Name in primary color
+    applyTextColor(pdf, colors.primary);
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(20);
+    pdf.setFontSize(22);
     pdf.text(data.personalInfo.fullName, opts.margin!, currentY);
     currentY += 10;
 
+    // Accent line under name
+    applyDrawColor(pdf, colors.primary);
+    pdf.setLineWidth(0.5);
+    pdf.line(opts.margin!, currentY, opts.margin! + 50, currentY);
+    currentY += 5;
+
+    // Contact info in text light color
+    applyTextColor(pdf, colors.textLight);
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(10);
     
@@ -403,30 +526,31 @@ export class ResumePDFGenerator {
       data.personalInfo.email,
       data.personalInfo.phone,
       data.personalInfo.location
-    ];
+    ].filter(Boolean);
 
-    contactInfo.forEach(info => {
-      if (info) {
-        pdf.text(info, opts.margin!, currentY);
-        currentY += 5;
-      }
-    });
+    // Display contact info on one line with separator
+    if (contactInfo.length > 0) {
+      pdf.text(contactInfo.join('  •  '), opts.margin!, currentY);
+      currentY += 6;
+    }
 
-    // Social links
+    // Social links in primary color
     const socialLinks = [
       { label: 'LinkedIn', url: data.personalInfo.linkedin },
       { label: 'GitHub', url: data.personalInfo.github },
       { label: 'Website', url: data.personalInfo.website }
-    ];
+    ].filter(link => link.url);
 
-    const validLinks = socialLinks.filter(link => link.url);
-    if (validLinks.length > 0) {
-      currentY += 3;
-      validLinks.forEach(link => {
-        pdf.text(`${link.label}: ${link.url}`, opts.margin!, currentY);
-        currentY += 5;
-      });
+    if (socialLinks.length > 0) {
+      applyTextColor(pdf, colors.secondary);
+      pdf.setFontSize(9);
+      const linksText = socialLinks.map(link => `${link.label}: ${link.url}`).join('  |  ');
+      pdf.text(linksText, opts.margin!, currentY);
+      currentY += 5;
     }
+
+    // Reset to default text color
+    applyTextColor(pdf, colors.text);
 
     return currentY;
   }
@@ -440,11 +564,22 @@ export class ResumePDFGenerator {
     currentY: number,
     lineHeight: number
   ): number {
+    const colors = getColorScheme(opts.colorScheme);
+    
+    // Section title in primary color
+    applyTextColor(pdf, colors.primary);
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(12);
     pdf.text(title, opts.margin!, currentY);
     currentY += lineHeight;
+    
+    // Small accent line under section title
+    applyDrawColor(pdf, colors.accent);
+    pdf.setLineWidth(0.3);
+    pdf.line(opts.margin!, currentY - lineHeight + 5, opts.margin! + 40, currentY - lineHeight + 5);
 
+    // Content in regular text color
+    applyTextColor(pdf, colors.text);
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(opts.fontSize!);
     

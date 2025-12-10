@@ -12,6 +12,7 @@ import MobileNavigation from "@/components/MobileNavigation";
 import { AnalyticsProvider } from "@/providers/analytics-provider";
 import { SeoHead } from "@/components/SeoHead";
 import EmailVerificationBanner from "@/components/EmailVerificationBanner";
+import { ReportIssue } from "@/components/ReportIssue";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -45,6 +46,7 @@ export default function RootLayout({
               <MobileNavigation />
               <AppToaster />
               <Chatbot />
+              <ReportIssue position="bottom-left" />
             </AnalyticsProvider>
           </SubscriptionProvider>
         </FirebaseAuthProvider>

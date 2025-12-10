@@ -28,6 +28,90 @@ import {
 import { ERROR_CODES } from "@/lib/api/errorCodes";
 import { analyzeResume, type ResumeAnalysisResponse } from "@/services/ai/geminiService";
 
+// ============ ROBUSTNESS UTILITIES ============
+
+// Retry configuration for database operations
+const DB_MAX_RETRIES = 3;
+const DB_INITIAL_DELAY_MS = 500;
+const DB_MAX_DELAY_MS = 5000;
+
+/**
+ * Retry a database operation with exponential backoff
+ */
+async function withRetry<T>(
+  operation: () => Promise<T>,
+  operationName: string,
+  maxRetries: number = DB_MAX_RETRIES
+): Promise<T> {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      console.warn(`[CV Upload] ${operationName} attempt ${attempt + 1}/${maxRetries} failed:`, lastError.message);
+      
+      // Don't retry on validation errors
+      if (lastError.message.includes('validation') || lastError.message.includes('invalid')) {
+        throw lastError;
+      }
+      
+      // Wait before retry (except on last attempt)
+      if (attempt < maxRetries - 1) {
+        const delay = Math.min(DB_INITIAL_DELAY_MS * Math.pow(2, attempt), DB_MAX_DELAY_MS);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+  
+  throw lastError || new Error(`${operationName} failed after ${maxRetries} attempts`);
+}
+
+/**
+ * Validate PDF content before processing
+ */
+function validatePDFContent(buffer: Buffer): { valid: boolean; error?: string } {
+  // Check minimum size (a valid PDF is at least a few KB)
+  if (buffer.length < 100) {
+    return { valid: false, error: 'PDF file appears to be empty or corrupted' };
+  }
+  
+  // Check PDF header signature
+  const header = buffer.slice(0, 8).toString('utf8');
+  if (!header.startsWith('%PDF')) {
+    return { valid: false, error: 'Invalid PDF file format - missing PDF header' };
+  }
+  
+  // Check for EOF marker (PDFs should end with %%EOF)
+  const trailer = buffer.slice(-1024).toString('utf8');
+  if (!trailer.includes('%%EOF')) {
+    console.warn('[CV Upload] PDF missing %%EOF marker - may be truncated');
+    // Don't fail, just warn - some valid PDFs omit this
+  }
+  
+  return { valid: true };
+}
+
+/**
+ * Sanitize extracted text from PDF
+ */
+function sanitizeExtractedText(text: string): string {
+  return text
+    // Remove null bytes
+    .replace(/\0/g, '')
+    // Remove control characters except newlines and tabs
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+    // Normalize whitespace
+    .replace(/\s+/g, ' ')
+    // Remove very long strings without spaces (likely binary data)
+    .replace(/\S{500,}/g, ' ')
+    // Trim
+    .trim();
+}
+
+// ============ END ROBUSTNESS UTILITIES ============
+
 // Use dynamic import for pdf-parse to avoid build-time file access issue
 type PDFParseResult = { text: string };
 const parsePDF = async (buffer: Buffer): Promise<PDFParseResult> => {
@@ -380,20 +464,34 @@ async function performCvAnalysis(
   }
 }
 
-// Extract text from PDF using pdf-parse
-// Extract text from PDF using pdf-parse
+// Extract text from PDF using pdf-parse with validation and retry
 async function extractTextFromPDF(buffer: Buffer): Promise<string> {
-  try {
-    const data = await parsePDF(buffer);
-    // Clean up the text: remove excessive whitespace, null bytes, etc.
-    return data.text.replace(/\0/g, '').trim();
-  } catch (error) {
-    console.error("Error parsing PDF:", error);
-    // Fallback or rethrow depending on desired behavior. 
-    // For now, we'll return a generic error message in the text so analysis fails gracefully-ish
-    // or throw to let the main handler catch it.
-    throw new Error("Failed to extract text from PDF file.");
+  // Validate PDF content first
+  const validation = validatePDFContent(buffer);
+  if (!validation.valid) {
+    throw new Error(validation.error || 'Invalid PDF file');
   }
+  
+  // Attempt extraction with retry
+  return withRetry(async () => {
+    const data = await parsePDF(buffer);
+    
+    // Validate extracted text
+    const text = data.text || '';
+    if (text.length < 10) {
+      throw new Error('PDF appears to have no extractable text content');
+    }
+    
+    // Sanitize the extracted text
+    const sanitized = sanitizeExtractedText(text);
+    
+    // Check if meaningful content remains after sanitization
+    if (sanitized.length < 50) {
+      console.warn('[CV Upload] Extracted text is very short after sanitization');
+    }
+    
+    return sanitized;
+  }, 'PDF text extraction', 2); // Only 2 retries for PDF parsing
 }
 
 function mergeUniqueStrings(

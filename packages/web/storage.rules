@@ -1,13 +1,103 @@
 rules_version = '2';
 service firebase.storage {
+  // Storage Security Rules for HireAll Platform
+  // ============================================
+  // Supports:
+  // - CV/Resume uploads (PDF, DOC, DOCX)
+  // - Profile photos
+  // - Portfolio assets
+  // - Blog images (admin only)
+  //
+  // Last Updated: December 2024
+
   match /b/{bucket}/o {
-    // CV uploads path: cv-uploads/{userId}/{fileName}
+    
+    // ============ CV UPLOADS ============
+    // Path: cv-uploads/{userId}/{fileName}
     match /cv-uploads/{userId}/{fileName} {
+      // Users can read their own CV uploads
       allow read: if request.auth != null && request.auth.uid == userId;
-      allow write: if request.auth != null && request.auth.uid == userId && request.resource.size < 5 * 1024 * 1024;
+      
+      // Users can upload CVs with restrictions
+      allow write: if request.auth != null 
+        && request.auth.uid == userId
+        && request.resource.size < 10 * 1024 * 1024  // Max 10MB
+        && (request.resource.contentType.matches('application/pdf')
+            || request.resource.contentType.matches('application/msword')
+            || request.resource.contentType.matches('application/vnd.openxmlformats-officedocument.wordprocessingml.document'));
     }
 
-    // Deny everything else by default (override with additional matches as needed)
+    // ============ PROFILE PHOTOS ============
+    // Path: profile-photos/{userId}/{fileName}
+    match /profile-photos/{userId}/{fileName} {
+      // Anyone can read profile photos (public avatars)
+      allow read: if true;
+      
+      // Users can upload their own profile photo
+      allow write: if request.auth != null 
+        && request.auth.uid == userId
+        && request.resource.size < 5 * 1024 * 1024  // Max 5MB
+        && request.resource.contentType.matches('image/.*');
+    }
+
+    // ============ PORTFOLIO ASSETS ============
+    // Path: portfolios/{userId}/{fileName}
+    match /portfolios/{userId}/{fileName} {
+      // Portfolio assets are public
+      allow read: if true;
+      
+      // Users can upload their own portfolio assets
+      allow write: if request.auth != null 
+        && request.auth.uid == userId
+        && request.resource.size < 20 * 1024 * 1024  // Max 20MB
+        && (request.resource.contentType.matches('image/.*')
+            || request.resource.contentType.matches('application/pdf')
+            || request.resource.contentType.matches('video/.*'));
+    }
+
+    // ============ RESUME EXPORTS ============
+    // Path: resume-exports/{userId}/{fileName}
+    match /resume-exports/{userId}/{fileName} {
+      // Users can read their own resume exports
+      allow read: if request.auth != null && request.auth.uid == userId;
+      
+      // Server-side only writes (generated PDFs)
+      allow write: if false;
+    }
+
+    // ============ BLOG IMAGES (Admin only) ============
+    // Path: blog-images/{fileName}
+    match /blog-images/{fileName} {
+      // Public read for blog images
+      allow read: if true;
+      
+      // Only admins can upload blog images
+      // Note: Admin check requires Firestore lookup, which isn't available in Storage rules
+      // Use Cloud Functions or server-side uploads for blog images
+      allow write: if false;
+    }
+
+    // ============ PUBLIC ASSETS ============
+    // Path: public/{fileName}
+    match /public/{fileName} {
+      allow read: if true;
+      allow write: if false; // Server-side only
+    }
+
+    // ============ TEMP UPLOADS ============
+    // Path: temp/{userId}/{fileName}
+    // For processing uploads before moving to final location
+    match /temp/{userId}/{fileName} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      
+      allow write: if request.auth != null 
+        && request.auth.uid == userId
+        && request.resource.size < 25 * 1024 * 1024;  // Max 25MB
+      
+      // Auto-delete after 24 hours via Cloud Function
+    }
+
+    // ============ FALLBACK - DENY ALL ============
     match /{allPaths=**} {
       allow read, write: if false;
     }
