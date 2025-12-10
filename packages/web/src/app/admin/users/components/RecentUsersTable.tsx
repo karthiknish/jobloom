@@ -71,7 +71,7 @@ export function RecentUsersTable({ users, title, description, isAdmin = false }:
                                         </AvatarFallback>
                                     </Avatar>
                                     <div className="min-w-0">
-                                        <p className="truncate text-sm font-medium text-gray-900">
+                                        <p className="truncate text-sm font-medium text-foreground">
                                             {user.name || (isAdmin ? "Unnamed Admin" : "Unnamed User")}
                                         </p>
                                         <p className="text-xs text-muted-foreground truncate">

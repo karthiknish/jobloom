@@ -184,13 +184,13 @@ const MenuBar = ({ editor }: { editor: any }) => {
   return (
     <div className="border-b border-border p-2 flex flex-wrap gap-1 items-center bg-muted/30 sticky top-0 z-10 backdrop-blur-sm">
       {/* AI Content Generation */}
-      <div className="flex items-center gap-1 mr-2 bg-emerald-50 dark:bg-emerald-950/30 p-1 rounded-md border border-emerald-200 dark:border-emerald-800">
+      <div className="flex items-center gap-1 mr-2 bg-emerald-50 p-1 rounded-md border border-emerald-200">
         <Popover>
           <PopoverTrigger asChild>
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 px-2 gap-1 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/50"
+              className="h-8 px-2 gap-1 text-emerald-700 hover:bg-emerald-100"
             >
               <Sparkles className="h-4 w-4" />
               <span className="text-xs font-medium hidden sm:inline">AI Assist</span>
@@ -206,7 +206,7 @@ const MenuBar = ({ editor }: { editor: any }) => {
                       key={idx}
                       variant="ghost"
                       size="sm"
-                      className="justify-start h-8 text-xs hover:bg-emerald-50 dark:hover:bg-emerald-900/30"
+                      className="justify-start h-8 text-xs hover:bg-emerald-50"
                       onClick={() => generateContent(action.prompt, action.options)}
                       disabled={isGenerating}
                     >
@@ -694,7 +694,7 @@ export function TiptapEditor({
         </FloatingMenu>
       )}
 
-      <div className="bg-white dark:bg-background min-h-[400px]">
+      <div className="bg-white min-h-[400px]">
         <EditorContent editor={editor} />
       </div>
       

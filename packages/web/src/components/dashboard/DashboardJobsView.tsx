@@ -89,7 +89,7 @@ export function DashboardJobsView({
           />
 
           {/* View Toggle & Export Actions */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-3 bg-gradient-to-r from-muted/50 via-muted/30 to-muted/50 rounded-xl border border-border/50">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-3 bg-muted/50 rounded-xl border border-border/50">
             {/* View Mode Toggle */}
             <div className="flex items-center gap-2 bg-background p-1 rounded-lg border border-border/50 shadow-sm">
               <button
@@ -272,9 +272,9 @@ export function DashboardJobsView({
           )}
         </>
       ) : (
-        <div className="rounded-2xl bg-gradient-to-br from-background via-muted/30 to-background p-12 text-center border border-border/50 shadow-sm">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-100 to-green-100 dark:from-emerald-900/50 dark:to-green-900/50">
-            <Briefcase className="h-8 w-8 text-primary dark:text-emerald-400" />
+        <div className="rounded-2xl bg-card p-12 text-center border border-border/50 shadow-sm">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/20">
+            <Briefcase className="h-8 w-8 text-primary" />
           </div>
           <h3 className="mt-5 text-xl font-semibold text-foreground">
             No jobs yet

@@ -247,7 +247,7 @@ export default function EmailMarketingPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">{templates.length}</div>
+              <div className="text-2xl font-bold text-foreground">{templates.length}</div>
             </CardContent>
           </Card>
 
@@ -259,7 +259,7 @@ export default function EmailMarketingPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">{campaigns.filter(c => c.status !== 'draft').length}</div>
+              <div className="text-2xl font-bold text-foreground">{campaigns.filter(c => c.status !== 'draft').length}</div>
             </CardContent>
           </Card>
 
@@ -271,7 +271,7 @@ export default function EmailMarketingPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">
+              <div className="text-2xl font-bold text-foreground">
                 {campaigns.reduce((sum, c) => sum + c.metrics.sent, 0)}
               </div>
             </CardContent>
@@ -285,7 +285,7 @@ export default function EmailMarketingPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">
+              <div className="text-2xl font-bold text-foreground">
                 {campaigns.reduce((sum, c) => sum + c.metrics.opened, 0) > 0 
                   ? Math.round((campaigns.reduce((sum, c) => sum + c.metrics.opened, 0) / 
                       campaigns.reduce((sum, c) => sum + c.metrics.sent, 0)) * 100)
@@ -298,15 +298,15 @@ export default function EmailMarketingPage() {
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
           <TabsList className="grid w-full grid-cols-3 h-12 bg-gray-100 p-1 rounded-xl border border-gray-200">
-            <TabsTrigger value="templates" className="text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-lg text-gray-600 data-[state=active]:text-gray-900">
+            <TabsTrigger value="templates" className="text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-lg text-gray-600 data-[state=active]:text-foreground">
               <FileText className="h-4 w-4 mr-2" />
               Templates
             </TabsTrigger>
-            <TabsTrigger value="campaigns" className="text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-lg text-gray-600 data-[state=active]:text-gray-900">
+            <TabsTrigger value="campaigns" className="text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-lg text-gray-600 data-[state=active]:text-foreground">
               <Send className="h-4 w-4 mr-2" />
               Campaigns
             </TabsTrigger>
-            <TabsTrigger value="email-list" className="text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-lg text-gray-600 data-[state=active]:text-gray-900">
+            <TabsTrigger value="email-list" className="text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-lg text-gray-600 data-[state=active]:text-foreground">
               <Users className="h-4 w-4 mr-2" />
               Email List
             </TabsTrigger>

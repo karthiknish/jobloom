@@ -440,11 +440,11 @@ ${data.experience}
       animate="visible"
     >
       {/* Header */}
-      <Card className="border-none shadow-md bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20">
+      <Card className="border-border shadow-md bg-card">
         <CardHeader>
           <CardTitle className="flex items-center gap-3 text-2xl">
-            <div className="p-2 bg-purple-600 rounded-lg shadow-sm">
-              <Wand2 className="h-6 w-6 text-white" />
+            <div className="p-2 bg-primary rounded-lg shadow-sm">
+              <Wand2 className="h-6 w-6 text-primary-foreground" />
             </div>
             AI Resume Generator
           </CardTitle>
@@ -709,10 +709,10 @@ ${data.experience}
             {generatedResume ? (
               <div className="space-y-6">
                 {/* ATS Score */}
-                <div className="p-5 bg-white dark:bg-card rounded-xl border shadow-sm">
+                <div className="p-5 bg-white rounded-xl border shadow-sm">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-md">
+                      <div className="p-1.5 bg-blue-100 rounded-md">
                         <Target className={cn("h-4 w-4", themeColors.primary.text)} />
                       </div>
                       <span className="font-semibold">ATS Score</span>
@@ -763,14 +763,14 @@ ${data.experience}
 
                 {/* Suggestions */}
                 {generatedResume.suggestions.length > 0 && (
-                  <div className="p-4 bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/30 rounded-xl">
-                    <h4 className="font-medium mb-3 flex items-center gap-2 text-amber-700 dark:text-amber-400">
+                  <div className="p-4 bg-amber-50 border border-amber-100 rounded-xl">
+                    <h4 className="font-medium mb-3 flex items-center gap-2 text-amber-700">
                       <Lightbulb className={cn("h-4 w-4", themeColors.primary.text)} />
                       AI Suggestions
                     </h4>
                     <ul className="space-y-2">
                       {generatedResume.suggestions.map((suggestion, index) => (
-                        <li key={index} className="flex items-start gap-2 text-sm text-amber-800 dark:text-amber-300">
+                        <li key={index} className="flex items-start gap-2 text-sm text-amber-800">
                           <Star className={cn("h-4 w-4 mt-0.5 flex-shrink-0", themeColors.warning.icon)} />
                           {suggestion}
                         </li>

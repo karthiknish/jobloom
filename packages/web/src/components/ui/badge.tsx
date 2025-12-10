@@ -18,7 +18,7 @@ const badgeVariants = cva(
         outline: "text-foreground",
         orange: cn("border-transparent", themeColors.warning.bg, themeColors.warning.text),
         purple: cn("border-transparent", themeColors.primary.bg, themeColors.primary.text),
-        teal: cn("border-transparent bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-400"),
+        teal: cn("border-transparent bg-teal-100 text-teal-800"),
         green: cn("border-transparent", themeColors.success.bg, themeColors.success.text),
         yellow: cn("border-transparent", themeColors.warning.bg, themeColors.warning.text),
       },

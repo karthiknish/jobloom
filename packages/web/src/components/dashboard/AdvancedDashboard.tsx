@@ -116,21 +116,21 @@ export function AdvancedDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-accent/10 to-background mt-14">
+      <div className="min-h-screen bg-background mt-14">
         <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
           <div className="space-y-8">
-            <div className="h-8 bg-gradient-to-r from-muted via-muted-foreground/20 to-muted animate-shimmer-v2 rounded w-1/4 skeleton-shimmer"></div>
+            <div className="h-8 bg-muted animate-pulse rounded w-1/4"></div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {[...Array(4)].map((_, i) => (
                 <div
                   key={i}
-                  className="h-32 bg-gradient-to-r from-muted via-muted-foreground/20 to-muted animate-shimmer-v2 rounded-lg shadow-sm skeleton-shimmer"
+                  className="h-32 bg-muted animate-pulse rounded-lg shadow-sm"
                 ></div>
               ))}
             </div>
             <div className="space-y-6">
-              <div className="h-64 bg-gradient-to-r from-muted via-muted-foreground/20 to-muted animate-shimmer-v2 rounded-lg shadow-sm skeleton-shimmer"></div>
-              <div className="h-64 bg-gradient-to-r from-muted via-muted-foreground/20 to-muted animate-shimmer-v2 rounded-lg shadow-sm skeleton-shimmer"></div>
+              <div className="h-64 bg-muted animate-pulse rounded-lg shadow-sm"></div>
+              <div className="h-64 bg-muted animate-pulse rounded-lg shadow-sm"></div>
             </div>
           </div>
         </div>
@@ -184,12 +184,11 @@ export function AdvancedDashboard() {
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background pt-16">
-      {/* Premium background elements */}
+    <div className="min-h-screen bg-background pt-16">
+      {/* Clean background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 right-20 w-96 h-96 bg-primary/5 rounded-full filter blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-20 left-20 w-80 h-80 bg-primary/5 rounded-full filter blur-2xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-br from-primary/5 to-primary/5 rounded-full filter blur-3xl"></div>
+        <div className="absolute top-20 right-20 w-96 h-96 bg-muted/30 rounded-full filter blur-3xl"></div>
+        <div className="absolute bottom-20 left-20 w-80 h-80 bg-muted/20 rounded-full filter blur-2xl"></div>
       </div>
 
       <div className="relative z-10">
@@ -209,18 +208,16 @@ export function AdvancedDashboard() {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-6 p-5 bg-gradient-to-r from-primary via-primary/90 to-primary/80 rounded-2xl text-primary-foreground shadow-xl relative overflow-hidden"
+            className="mb-6 p-5 bg-primary rounded-2xl text-primary-foreground shadow-lg"
           >
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl"></div>
-            <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full -ml-12 -mb-12 blur-2xl"></div>
-            <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-5">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-5">
               <div className="flex items-start gap-4">
-                <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-                  <Sparkles className="h-6 w-6 text-white" />
+                <div className="p-3 bg-primary-foreground/20 rounded-xl">
+                  <Sparkles className="h-6 w-6 text-primary-foreground" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold mb-1">Kickstart your job search</h2>
-                  <p className="text-primary-foreground/90 max-w-xl text-sm">
+                  <h2 className="text-xl font-bold mb-1 text-primary-foreground">Kickstart your job search</h2>
+                  <p className="text-primary-foreground/80 max-w-xl text-sm">
                     You&apos;ve added your first applications. Import more jobs using the browser extension or optimize your resume with our AI CV Evaluator.
                   </p>
                 </div>
@@ -230,7 +227,7 @@ export function AdvancedDashboard() {
                   onClick={() => setShowImportModal(true)}
                   variant="secondary" 
                   size="sm"
-                  className="bg-white text-primary hover:bg-white/90 border-0 shadow-lg"
+                  className="shadow-md"
                 >
                   Import Jobs
                 </Button>
@@ -238,7 +235,7 @@ export function AdvancedDashboard() {
                   onClick={() => window.location.href = '/career-tools'}
                   variant="outline" 
                   size="sm"
-                  className="bg-transparent text-white border-white/30 hover:bg-white/10 hover:text-white"
+                  className="text-primary-foreground border-primary-foreground/30 hover:bg-primary-foreground/10"
                 >
                   Optimize CV
                 </Button>
@@ -258,16 +255,16 @@ export function AdvancedDashboard() {
             {/* Total Applications */}
             <motion.div
               whileHover={{ scale: 1.02, y: -2 }}
-              className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40 border border-blue-100 dark:border-blue-900/50 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300"
+              className="bg-card border border-border rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300"
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-blue-600 dark:text-blue-400 text-xs font-medium mb-0.5">Total Jobs</p>
-                  <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">{applications?.length || 0}</p>
-                  <p className="text-[10px] text-blue-600/70 dark:text-blue-400/70 mt-0.5">Tracking</p>
+                  <p className="text-muted-foreground text-xs font-medium mb-0.5">Total Jobs</p>
+                  <p className="text-2xl font-bold text-foreground">{applications?.length || 0}</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">Tracking</p>
                 </div>
-                <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/50 rounded-lg flex items-center justify-center">
-                  <Briefcase className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center">
+                  <Briefcase className="w-5 h-5 text-foreground" />
                 </div>
               </div>
             </motion.div>
@@ -275,20 +272,20 @@ export function AdvancedDashboard() {
             {/* Sponsored Jobs */}
             <motion.div
               whileHover={{ scale: 1.02, y: -2 }}
-              className="bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/40 dark:to-green-950/40 border border-emerald-100 dark:border-emerald-900/50 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300"
+              className="bg-card border border-border rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300"
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-emerald-600 dark:text-emerald-400 text-xs font-medium mb-0.5">Sponsored</p>
-                  <p className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
+                  <p className="text-muted-foreground text-xs font-medium mb-0.5">Sponsored</p>
+                  <p className="text-2xl font-bold text-foreground">
                     {applications?.filter(app => app.job?.isSponsored).length || 0}
                   </p>
-                  <p className="text-[10px] text-emerald-600/70 dark:text-emerald-400/70 mt-0.5">
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
                     {((applications?.filter(app => app.job?.isSponsored).length || 0) / (applications?.length || 1) * 100).toFixed(0)}% of total
                   </p>
                 </div>
-                <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/50 rounded-lg flex items-center justify-center">
-                  <Target className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center">
+                  <Target className="w-5 h-5 text-foreground" />
                 </div>
               </div>
             </motion.div>
@@ -296,22 +293,22 @@ export function AdvancedDashboard() {
             {/* Interview Rate */}
             <motion.div
               whileHover={{ scale: 1.02, y: -2 }}
-              className="bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-teal-950/40 dark:to-cyan-950/40 border border-teal-100 dark:border-teal-900/50 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300"
+              className="bg-card border border-border rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300"
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-teal-600 dark:text-teal-400 text-xs font-medium mb-0.5">Interview Rate</p>
-                  <p className="text-2xl font-bold text-teal-900 dark:text-teal-100">
+                  <p className="text-muted-foreground text-xs font-medium mb-0.5">Interview Rate</p>
+                  <p className="text-2xl font-bold text-foreground">
                     {(() => {
                       const applied = applications?.filter(app => app.status === 'applied').length || 0;
                       const interviewing = applications?.filter(app => app.status === 'interviewing').length || 0;
                       return applied > 0 ? Math.round((interviewing / applied) * 100) : 0;
                     })()}%
                   </p>
-                  <p className="text-[10px] text-teal-600/70 dark:text-teal-400/70 mt-0.5">Success rate</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">Success rate</p>
                 </div>
-                <div className="w-10 h-10 bg-teal-100 dark:bg-teal-900/50 rounded-lg flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+                <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center">
+                  <TrendingUp className="w-5 h-5 text-foreground" />
                 </div>
               </div>
             </motion.div>
@@ -319,12 +316,12 @@ export function AdvancedDashboard() {
             {/* This Week Activity */}
             <motion.div
               whileHover={{ scale: 1.02, y: -2 }}
-              className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/40 border border-amber-100 dark:border-amber-900/50 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300"
+              className="bg-card border border-border rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300"
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-amber-600 dark:text-amber-400 text-xs font-medium mb-0.5">This Week</p>
-                  <p className="text-2xl font-bold text-amber-900 dark:text-amber-100">
+                  <p className="text-muted-foreground text-xs font-medium mb-0.5">This Week</p>
+                  <p className="text-2xl font-bold text-foreground">
                     {(() => {
                       const weekAgo = new Date();
                       weekAgo.setDate(weekAgo.getDate() - 7);
@@ -333,10 +330,10 @@ export function AdvancedDashboard() {
                       ).length || 0;
                     })()}
                   </p>
-                  <p className="text-[10px] text-amber-600/70 dark:text-amber-400/70 mt-0.5">New jobs added</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">New jobs added</p>
                 </div>
-                <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/50 rounded-lg flex items-center justify-center">
-                  <Calendar className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center">
+                  <Calendar className="w-5 h-5 text-foreground" />
                 </div>
               </div>
             </motion.div>

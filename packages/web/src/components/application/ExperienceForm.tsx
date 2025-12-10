@@ -274,8 +274,8 @@ export function ExperienceForm({ data, onChange }: ExperienceFormProps) {
                 <div className="space-y-2">
                   {exp.achievements.map((achievement, achIndex) => (
                     <div key={achIndex} className="flex gap-2 items-start">
-                      <div className="w-6 h-6 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center flex-shrink-0 mt-1.5">
-                        <span className="text-xs font-medium text-amber-700 dark:text-amber-400">
+                      <div className="w-6 h-6 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1.5">
+                        <span className="text-xs font-medium text-amber-700">
                           {achIndex + 1}
                         </span>
                       </div>
@@ -299,7 +299,7 @@ export function ExperienceForm({ data, onChange }: ExperienceFormProps) {
                   ))}
                 </div>
 
-                <p className="text-xs text-muted-foreground bg-amber-50 dark:bg-amber-950/30 p-3 rounded-lg border border-amber-100 dark:border-amber-900/50">
+                <p className="text-xs text-muted-foreground bg-amber-50 p-3 rounded-lg border border-amber-100">
                   💡 <strong>Pro tip:</strong> Use the STAR method (Situation, Task, Action, Result) and include specific numbers. Example: &ldquo;Reduced page load time by 40%, improving user retention by 15%&rdquo;
                 </p>
               </div>

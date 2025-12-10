@@ -40,14 +40,13 @@ export function DashboardHeader({
   const greeting = getGreeting();
 
   return (
-    <div className="bg-gradient-to-r from-background via-background to-emerald-50/30 dark:to-emerald-950/10 backdrop-blur-2xl border-b border-border/50 shadow-sm">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-gradient-to-r from-primary via-primary/90 to-primary/80 shadow-xl relative z-10"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45, ease: "easeOut" }}
-          className="flex flex-col lg:flex-row justify-between items-start lg:items-center py-6 gap-5"
-        >
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center py-8 gap-5">
           {/* Left Section - Title & User Info */}
           <div className="flex items-start md:items-center gap-4">
             <motion.div
@@ -55,7 +54,7 @@ export function DashboardHeader({
               animate={{ scale: 1, rotate: 0, opacity: 1 }}
               transition={{ type: "spring", stiffness: 260, damping: 18 }}
               whileHover={{ scale: 1.05, rotate: 2 }}
-              className="h-12 w-12 md:h-14 md:w-14 rounded-2xl bg-gradient-to-br from-emerald-500 via-green-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20"
+              className="h-12 w-12 md:h-14 md:w-14 rounded-2xl bg-white/20 flex items-center justify-center shadow-lg"
             >
               <Briefcase className="h-6 w-6 md:h-7 md:w-7 text-white" />
             </motion.div>
@@ -64,7 +63,7 @@ export function DashboardHeader({
                 initial={{ opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.05, duration: 0.35 }}
-                className="text-2xl md:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-foreground via-emerald-800 to-emerald-700 dark:via-emerald-400 dark:to-emerald-300 bg-clip-text text-transparent"
+                className="text-2xl md:text-3xl lg:text-4xl font-bold text-primary-foreground"
               >
                 Job Dashboard
               </motion.h1>
@@ -74,9 +73,9 @@ export function DashboardHeader({
                 transition={{ delay: 0.12, duration: 0.35 }}
                 className="flex flex-wrap items-center gap-2 md:gap-3 mt-1.5"
               >
-                <p className="text-sm md:text-base text-muted-foreground font-medium">
+                <p className="text-sm md:text-base text-primary-foreground/80 font-medium">
                   {greeting},{" "}
-                  <span className="text-foreground font-semibold">
+                  <span className="text-white font-semibold">
                     {user?.displayName?.split(' ')[0] || user?.email?.split('@')[0] || 'User'}
                   </span>
                 </p>
@@ -84,8 +83,8 @@ export function DashboardHeader({
                   variant={plan === "premium" ? "default" : "secondary"}
                   className={`text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm transition-all duration-300 ${
                     plan === "premium"
-                      ? "bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-md hover:shadow-lg"
-                      : "bg-muted/80 text-muted-foreground hover:bg-muted"
+                      ? "bg-primary text-primary-foreground shadow-md hover:shadow-lg"
+                      : "bg-white text-foreground border border-border hover:bg-gray-50"
                   }`}
                 >
                   {plan === "premium" ? (
@@ -105,7 +104,7 @@ export function DashboardHeader({
                   limits.cvAnalysesPerMonth !== -1 && (
                     <Badge
                       variant="outline"
-                      className="text-xs font-medium border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 hidden sm:inline-flex"
+                      className="text-xs font-medium border-emerald-200 text-emerald-700 bg-emerald-50 hidden sm:inline-flex"
                     >
                       <Zap className="h-3 w-3 mr-1" />
                       {currentUsage.cvAnalyses}/
@@ -131,7 +130,7 @@ export function DashboardHeader({
                     <Button
                       onClick={onImportJobs}
                       size="sm"
-                      className="shadow-md hover:shadow-lg transition-all duration-300 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white border-0 gap-2"
+                      className="shadow-md hover:shadow-lg transition-all duration-300 bg-primary hover:bg-primary/90 text-primary-foreground border-0 gap-2"
                     >
                       <Chrome className="h-4 w-4" />
                       <span className="hidden sm:inline">Import from Extension</span>
@@ -155,7 +154,7 @@ export function DashboardHeader({
                       onClick={onAddJob}
                       variant="default"
                       size="sm"
-                      className="shadow-md hover:shadow-lg transition-all duration-300 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white border-0 gap-2"
+                      className="shadow-md hover:shadow-lg transition-all duration-300 bg-secondary hover:bg-secondary/90 text-secondary-foreground border-0 gap-2"
                     >
                       <FilePlus className="h-4 w-4" />
                       <span className="hidden sm:inline">Add Job</span>
@@ -178,7 +177,7 @@ export function DashboardHeader({
                       onClick={onAddApplication}
                       variant="outline"
                       size="sm"
-                      className="shadow-sm hover:shadow-md transition-all duration-300 border-border/60 hover:border-emerald-300 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30 gap-2"
+                      className="shadow-sm hover:shadow-md transition-all duration-300 border-border/60 hover:border-emerald-300 hover:bg-emerald-50/50 gap-2"
                     >
                       <ClipboardList className="h-4 w-4" />
                       <span className="hidden sm:inline">Track Application</span>
@@ -191,8 +190,8 @@ export function DashboardHeader({
               </Tooltip>
             </TooltipProvider>
           </div>
-        </motion.div>
+        </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

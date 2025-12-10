@@ -196,7 +196,7 @@ export function PersonalInfoForm({ data, onChange }: PersonalInfoFormProps) {
             />
           </div>
         </div>
-        <p className="text-xs text-muted-foreground bg-blue-50 dark:bg-blue-950/30 p-3 rounded-lg border border-blue-100 dark:border-blue-900/50">
+        <p className="text-xs text-muted-foreground bg-blue-50 p-3 rounded-lg border border-blue-100">
           💡 <strong>Tip:</strong> Adding LinkedIn and GitHub profiles can increase your callback rate by up to 40%
         </p>
       </div>

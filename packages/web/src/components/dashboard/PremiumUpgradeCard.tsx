@@ -67,18 +67,18 @@ export function PremiumUpgradeCard({
       <motion.div
         initial={{ opacity: 0, y: 5 }}
         animate={{ opacity: 1, y: 0 }}
-        className={`flex items-center justify-between p-3 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border border-amber-200 dark:border-amber-800/50 rounded-lg ${className}`}
+        className={`flex items-center justify-between p-3 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-lg ${className}`}
       >
         <div className="flex items-center gap-2">
-          <div className="p-1.5 bg-amber-100 dark:bg-amber-900/50 rounded-full">
-            <Crown className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+          <div className="p-1.5 bg-amber-100 rounded-full">
+            <Crown className="h-3.5 w-3.5 text-amber-600" />
           </div>
-          <span className="text-sm font-medium text-amber-900 dark:text-amber-100">
+          <span className="text-sm font-medium text-amber-900">
             {featureInfo.title}
           </span>
         </div>
         <Link href="/upgrade">
-          <Button size="sm" variant="ghost" className="text-amber-600 hover:text-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/50 text-xs">
+          <Button size="sm" variant="ghost" className="text-amber-600 hover:text-amber-700 hover:bg-amber-100 text-xs">
             Upgrade
           </Button>
         </Link>
@@ -186,12 +186,12 @@ export function PremiumUpgradeCard({
       {dismissible && (
         <button
           onClick={handleDismiss}
-          className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors z-10"
+          className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-black/5 transition-colors z-10"
         >
           <X className="h-4 w-4 text-muted-foreground" />
         </button>
       )}
-      <Card className="overflow-hidden border-amber-200/50 dark:border-amber-800/30 bg-gradient-to-r from-amber-50/80 via-orange-50/80 to-amber-50/80 dark:from-amber-950/30 dark:via-orange-950/30 dark:to-amber-950/30">
+      <Card className="overflow-hidden border-amber-200/50 bg-gradient-to-r from-amber-50/80 via-orange-50/80 to-amber-50/80">
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row md:items-center gap-6">
             <div className="flex items-start gap-4 flex-1">
@@ -203,7 +203,7 @@ export function PremiumUpgradeCard({
                   <h3 className="font-bold text-lg text-foreground">
                     Upgrade to Premium
                   </h3>
-                  <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300 text-[10px] border-0">
+                  <Badge className="bg-amber-100 text-amber-700 text-[10px] border-0">
                     Limited Offer
                   </Badge>
                 </div>

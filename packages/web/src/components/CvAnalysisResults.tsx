@@ -60,12 +60,12 @@ export function CvAnalysisResults({ analysis }: CvAnalysisResultsProps) {
           {/* ATS Quick Summary */}
           {analysis.atsCompatibility &&
             analysis.atsCompatibility.score < 80 && (
-              <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-900/50">
-                <h4 className="text-sm font-medium text-amber-800 dark:text-amber-200 mb-2 flex items-center">
+              <div className="mt-4 p-4 bg-amber-50 rounded-lg border border-amber-200">
+                <h4 className="text-sm font-medium text-amber-800 mb-2 flex items-center">
                   <AlertTriangle className="h-4 w-4 mr-2 text-amber-500" />
                   ATS Optimization Recommended
                 </h4>
-                <p className="text-sm text-amber-700 dark:text-amber-300">
+                <p className="text-sm text-amber-700">
                   Your CV scores {analysis.atsCompatibility.score}/100 on ATS compatibility. 
                   Review the breakdown below for specific improvements to increase your chances 
                   of passing automated screening systems.

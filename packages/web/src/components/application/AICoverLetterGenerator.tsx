@@ -263,11 +263,11 @@ Sincerely,
       animate="visible"
     >
       {/* Header */}
-      <Card className="border-none shadow-md bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
+      <Card className="border-border shadow-md bg-card">
         <CardHeader>
           <CardTitle className="flex items-center gap-3 text-2xl">
-            <div className="p-2 bg-blue-600 rounded-lg shadow-sm">
-              <Brain className="h-6 w-6 text-white" />
+            <div className="p-2 bg-primary rounded-lg shadow-sm">
+              <Brain className="h-6 w-6 text-primary-foreground" />
             </div>
             AI Cover Letter Generator
           </CardTitle>
@@ -523,11 +523,11 @@ Sincerely,
             {generatedLetter ? (
               <div className="space-y-6">
                 {/* ATS Score */}
-                <div className="p-5 bg-white dark:bg-card rounded-xl border shadow-sm">
+                <div className="p-5 bg-white rounded-xl border shadow-sm">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-md">
-                        <Target className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                      <div className="p-1.5 bg-blue-100 rounded-md">
+                        <Target className="h-4 w-4 text-blue-600" />
                       </div>
                       <span className="font-semibold">ATS Score</span>
                     </div>
@@ -550,7 +550,7 @@ Sincerely,
                     </h4>
                     <div className="flex flex-wrap gap-2">
                       {generatedLetter.keywords.map(keyword => (
-                        <Badge key={keyword} variant="outline" className="bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-900/50 px-2 py-1">
+                        <Badge key={keyword} variant="outline" className="bg-green-50 text-green-700 border-green-200 px-2 py-1">
                           <CheckCircle2 className="h-3 w-3 mr-1" />
                           {keyword}
                         </Badge>
@@ -576,14 +576,14 @@ Sincerely,
                 </div>
 
                 {generatedLetter.deepResearch && generatedLetter.researchInsights && generatedLetter.researchInsights.length > 0 && (
-                  <div className="p-4 bg-purple-50 dark:bg-purple-900/10 border border-purple-100 dark:border-purple-900/30 rounded-xl">
-                    <h4 className="font-medium mb-3 flex items-center gap-2 text-purple-700 dark:text-purple-400">
+                  <div className="p-4 bg-purple-50 border border-purple-100 rounded-xl">
+                    <h4 className="font-medium mb-3 flex items-center gap-2 text-purple-700">
                       <Star className="h-4 w-4" />
                       Research Highlights
                     </h4>
                     <ul className="space-y-2">
                       {generatedLetter.researchInsights.map((insight, idx) => (
-                        <li key={idx} className="flex items-start gap-2 text-sm text-purple-800 dark:text-purple-300">
+                        <li key={idx} className="flex items-start gap-2 text-sm text-purple-800">
                           <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-purple-400 flex-shrink-0" />
                           {insight}
                         </li>
@@ -594,14 +594,14 @@ Sincerely,
 
                 {/* Improvements */}
                 {generatedLetter.improvements.length > 0 && (
-                  <div className="p-4 bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/30 rounded-xl">
-                    <h4 className="font-medium mb-3 flex items-center gap-2 text-amber-700 dark:text-amber-400">
+                  <div className="p-4 bg-amber-50 border border-amber-100 rounded-xl">
+                    <h4 className="font-medium mb-3 flex items-center gap-2 text-amber-700">
                       <TrendingUp className="h-4 w-4" />
                       Suggestions for Improvement
                     </h4>
                     <ul className="space-y-2">
                       {generatedLetter.improvements.map((improvement, index) => (
-                        <li key={index} className="flex items-start gap-2 text-sm text-amber-800 dark:text-amber-300">
+                        <li key={index} className="flex items-start gap-2 text-sm text-amber-800">
                           <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0 opacity-70" />
                           {improvement}
                         </li>

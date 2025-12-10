@@ -81,7 +81,7 @@ export function EnhancedAtsScore({
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="8"
-                className="text-gray-100 dark:text-gray-800"
+                className="text-gray-100"
               />
               <motion.circle
                 cx="50"
@@ -98,7 +98,7 @@ export function EnhancedAtsScore({
               />
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-lg font-bold text-gray-900 dark:text-white">{score.overall}</span>
+              <span className="text-lg font-bold text-gray-900">{score.overall}</span>
             </div>
           </div>
           <div className="flex-1 min-w-0">
@@ -127,7 +127,7 @@ export function EnhancedAtsScore({
                   <span className="text-muted-foreground">{item.label}</span>
                   <span className="font-medium">{Math.round((item.value / item.max) * 100)}%</span>
                 </div>
-                <div className="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
                   <motion.div
                     className={cn("h-full rounded-full", getBarColor(item.value, item.max))}
                     initial={{ width: 0 }}
@@ -142,7 +142,7 @@ export function EnhancedAtsScore({
 
         {/* Top Suggestion */}
         {score.suggestions && score.suggestions.length > 0 && (
-          <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
+          <div className="pt-2 border-t border-gray-100">
             <div className="flex items-start gap-2">
               <Sparkles className="w-3.5 h-3.5 text-amber-500 mt-0.5 flex-shrink-0" />
               <p className="text-xs text-muted-foreground line-clamp-2">
@@ -188,10 +188,10 @@ export function EnhancedAtsScore({
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex justify-between items-center mb-1">
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</span>
+            <span className="text-sm font-medium text-gray-700">{label}</span>
             <span className="text-sm font-semibold tabular-nums">{percentage}%</span>
           </div>
-          <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
             <motion.div
               className={cn("h-full rounded-full", getBarColor(value, max))}
               initial={{ width: 0 }}
@@ -225,7 +225,7 @@ export function EnhancedAtsScore({
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="10"
-                className="text-gray-100 dark:text-gray-800"
+                className="text-gray-100"
               />
               <motion.circle
                 cx="50"
@@ -248,7 +248,7 @@ export function EnhancedAtsScore({
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.3, duration: 0.5, type: "spring" }}
                 className={cn(
-                  "text-3xl font-bold bg-gradient-to-br bg-clip-text text-transparent",
+                  "text-3xl font-bold text-foreground",
                   getScoreGradient(score.overall)
                 )}
               >
@@ -279,7 +279,7 @@ export function EnhancedAtsScore({
       {showDetailed && score.breakdown && (
         <>
           {/* Score Breakdown */}
-          <Card className="border-0 shadow-sm bg-gray-50/50 dark:bg-gray-900/50">
+          <Card className="border-0 shadow-sm bg-gray-50/50">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
                 <Target className="w-4 h-4 text-primary" />
@@ -299,9 +299,9 @@ export function EnhancedAtsScore({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Strengths */}
               {score.strengths && score.strengths.length > 0 && (
-                <Card className="border-0 shadow-sm bg-primary/10/50 dark:bg-emerald-950/20">
+                <Card className="border-0 shadow-sm bg-primary/10/50">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-semibold flex items-center gap-2 text-primary dark:text-emerald-400">
+                    <CardTitle className="text-sm font-semibold flex items-center gap-2 text-primary">
                       <CheckCircle2 className="w-4 h-4" />
                       Strengths
                     </CardTitle>
@@ -316,7 +316,7 @@ export function EnhancedAtsScore({
                         className="flex items-start gap-2"
                       >
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 mt-0.5 flex-shrink-0" />
-                        <p className="text-xs text-primary dark:text-emerald-300">{strength}</p>
+                        <p className="text-xs text-primary">{strength}</p>
                       </motion.div>
                     ))}
                   </CardContent>
@@ -325,9 +325,9 @@ export function EnhancedAtsScore({
 
               {/* Critical Issues */}
               {score.criticalIssues && score.criticalIssues.length > 0 && (
-                <Card className="border-0 shadow-sm bg-red-50/50 dark:bg-red-950/20">
+                <Card className="border-0 shadow-sm bg-red-50/50">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-semibold flex items-center gap-2 text-red-700 dark:text-red-400">
+                    <CardTitle className="text-sm font-semibold flex items-center gap-2 text-red-700">
                       <AlertTriangle className="w-4 h-4" />
                       To Fix
                     </CardTitle>
@@ -342,7 +342,7 @@ export function EnhancedAtsScore({
                         className="flex items-start gap-2"
                       >
                         <AlertTriangle className="w-3.5 h-3.5 text-red-500 mt-0.5 flex-shrink-0" />
-                        <p className="text-xs text-red-700 dark:text-red-300">{issue}</p>
+                        <p className="text-xs text-red-700">{issue}</p>
                       </motion.div>
                     ))}
                   </CardContent>
@@ -370,10 +370,10 @@ export function EnhancedAtsScore({
                     initial={animated ? { opacity: 0, y: 10 } : false}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 * index }}
-                    className="flex items-start gap-2 p-2 rounded-lg bg-blue-50/50 dark:bg-blue-950/20"
+                    className="flex items-start gap-2 p-2 rounded-lg bg-blue-50/50"
                   >
                     <Info className="w-3.5 h-3.5 text-blue-500 mt-0.5 flex-shrink-0" />
-                    <p className="text-xs text-blue-700 dark:text-blue-300">{suggestion}</p>
+                    <p className="text-xs text-blue-700">{suggestion}</p>
                   </motion.div>
                 ))}
               </CardContent>

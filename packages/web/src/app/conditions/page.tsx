@@ -131,9 +131,9 @@ export default function ConditionsPage() {
         >
           <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 backdrop-blur-sm">
             <div className="flex items-start">
-              <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 mr-3 flex-shrink-0" />
+              <Info className="h-5 w-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" />
               <div>
-                <p className="text-blue-800 dark:text-blue-200 text-sm sm:text-base">
+                <p className="text-blue-800 text-sm sm:text-base">
                   These conditions ensure a safe, respectful, and productive
                   environment for all Hireall users. Violation of these
                   conditions may result in account suspension or termination.
@@ -152,7 +152,7 @@ export default function ConditionsPage() {
         >
           <Card className="card-premium-elevated border-0 bg-surface overflow-hidden">
             <CardContent className="p-8 sm:p-12">
-              <div className="prose prose-lg max-w-none dark:prose-invert">
+              <div className="prose prose-lg max-w-none">
                 <div className="grid gap-12">
                   <section className="relative pl-8 border-l-2 border-primary/20">
                     <div className="absolute -left-[9px] top-0 h-4 w-4 rounded-full bg-primary ring-4 ring-background" />
@@ -191,9 +191,9 @@ export default function ConditionsPage() {
                     </h2>
                     <div className="space-y-6">
                       <div>
-                        <h3 className="text-lg font-medium mb-2 text-green-600 dark:text-green-400">Acceptable Content</h3>
+                        <h3 className="text-lg font-medium mb-2 text-green-600">Acceptable Content</h3>
                         <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
-                          <ul className="text-green-800 dark:text-green-200 space-y-1 text-sm">
+                          <ul className="text-green-800 space-y-1 text-sm">
                             <li>• Professional CVs and resumes</li>
                             <li>• Job application data and notes</li>
                             <li>• Career-related discussions and advice</li>
@@ -203,9 +203,9 @@ export default function ConditionsPage() {
                         </div>
                       </div>
                       <div>
-                        <h3 className="text-lg font-medium mb-2 text-red-600 dark:text-red-400">Prohibited Content</h3>
+                        <h3 className="text-lg font-medium mb-2 text-red-600">Prohibited Content</h3>
                         <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
-                          <ul className="text-red-800 dark:text-red-200 space-y-1 text-sm">
+                          <ul className="text-red-800 space-y-1 text-sm">
                             <li>• False or misleading information</li>
                             <li>• Discriminatory or harassing content</li>
                             <li>• Copyrighted material without permission</li>
@@ -246,10 +246,10 @@ export default function ConditionsPage() {
                     </h2>
                     <div className="bg-red-500/5 border border-red-500/10 rounded-lg p-6">
                       <div className="flex items-center mb-4">
-                        <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 mr-2" />
-                        <h4 className="font-medium text-red-900 dark:text-red-100">Strictly Forbidden</h4>
+                        <AlertTriangle className="h-5 w-5 text-red-600 mr-2" />
+                        <h4 className="font-medium text-red-900">Strictly Forbidden</h4>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-red-800 dark:text-red-200">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-red-800">
                         <div>
                           <h5 className="font-medium mb-2 text-sm uppercase tracking-wide opacity-80">Security Violations</h5>
                           <ul className="text-sm space-y-1">

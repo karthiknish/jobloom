@@ -65,11 +65,11 @@ export function HeroSection() {
             className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-foreground leading-[1.1] tracking-tight"
           >
             <div className="relative">
-              <span className="relative z-10 bg-gradient-to-r from-foreground via-foreground to-primary bg-clip-text text-transparent">Never Miss a</span>
+              <span className="relative z-10 text-foreground">Never Miss a</span>
               <div className="absolute -bottom-2 left-0 right-0 h-4 bg-gradient-to-r from-primary/20 to-primary/10 rounded-full -z-10 transform -rotate-1 blur-sm"></div>
             </div>
             <div className="block mt-4 relative">
-              <span className="relative z-10 font-serif bg-gradient-to-r from-primary via-primary/90 to-primary/80 bg-clip-text text-transparent">Sponsored Opportunity</span>
+              <span className="relative z-10 font-serif text-primary">Sponsored Opportunity</span>
               <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-primary/50 rounded-full blur-sm"></div>
               <Sparkles className="absolute -top-2 -right-8 h-6 w-6 text-primary animate-pulse" />
             </div>
@@ -83,9 +83,9 @@ export function HeroSection() {
           >
             <div className="relative">
               <span className="font-semibold text-foreground">Highlight sponsored jobs on any job board</span> and get instant 
-              <span className="text-primary font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent"> UK sponsorship eligibility</span>, 
-              <span className="text-secondary font-bold bg-gradient-to-r from-secondary to-secondary/60 bg-clip-text text-transparent"> ATS optimization</span>, and 
-              <span className="text-accent font-bold bg-gradient-to-r from-accent to-accent/60 bg-clip-text text-transparent"> AI-powered improvements</span> — 
+              <span className="text-primary font-bold"> UK sponsorship eligibility</span>, 
+              <span className="text-secondary font-bold"> ATS optimization</span>, and 
+              <span className="text-accent font-bold"> AI-powered improvements</span> — 
               all in one seamless workflow.
             </div>
           </motion.p>

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyIdToken } from "@/firebase/admin";
+import { withAuth, type AuthContext } from "@/lib/api/withAuth";
 import { createFirestoreCollection } from "@/firebase/firestore";
 import { getAdminFirestore } from "@/firebase/admin";
 
@@ -138,230 +138,167 @@ function handleError(error: unknown): NextResponse {
 }
 
 // GET /api/app/jobs/[jobId] - Get a specific job
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ jobId: string }> }
-) {
-  try {
-    const { jobId } = await params;
-    
-    // Validate job ID
-    validateJobId(jobId);
+export const GET = withAuth<{ jobId: string }>(
+  async (request, { user, token }, params) => {
+    try {
+      const jobId = params?.jobId;
+      
+      if (!jobId) {
+        throw new ValidationError('Job ID is required', 'jobId');
+      }
+      
+      // Validate job ID
+      validateJobId(jobId);
 
-    // Validate authorization header
-    const authHeader = request.headers.get("authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      throw new AuthorizationError("Missing or invalid authorization header");
-    }
+      // Check if mock token for development
+      const isMockToken = process.env.NODE_ENV === "development" && 
+        token.includes("bW9jay1zaWduYXR1cmUtZm9yLXRlc3Rpbmc");
 
-    // Verify token
-    const token = authHeader.substring(7);
+      if (isMockToken) {
+        // Return mock job data for testing
+        return NextResponse.json({ 
+          job: {
+            _id: jobId,
+            title: "Mock Job Title",
+            company: "Mock Company",
+            location: "Mock Location",
+            url: "https://example.com/mock-job",
+            userId: user.uid
+          },
+          message: 'Job retrieved successfully (mock)'
+        });
+      }
 
-    // In development with mock tokens, skip Firebase operations for testing
-    const isMockToken = process.env.NODE_ENV === "development" && 
-      token.includes("bW9jay1zaWduYXR1cmUtZm9yLXRlc3Rpbmc");
+      // Initialize Firestore
+      const jobsCollection = createFirestoreCollection<any>('jobs');
 
-    let decodedToken;
-    if (isMockToken) {
-      decodedToken = {
-        uid: "test-user-123",
-        email: "test@example.com",
-        email_verified: true
-      };
-    } else {
-      decodedToken = await verifyIdToken(token);
-    }
+      // Get specific job
+      const job = await jobsCollection.get(jobId);
+      
+      if (!job) {
+        throw new DatabaseError('Job not found', 'get');
+      }
 
-    if (!decodedToken) {
-      throw new AuthorizationError("Invalid authentication token");
-    }
-
-    if (isMockToken) {
-      // Return mock job data for testing
       return NextResponse.json({ 
-        job: {
-          _id: jobId,
-          title: "Mock Job Title",
-          company: "Mock Company",
-          location: "Mock Location",
-          url: "https://example.com/mock-job",
-          userId: decodedToken.uid
-        },
-        message: 'Job retrieved successfully (mock)'
+        job,
+        message: 'Job retrieved successfully'
       });
+
+    } catch (error) {
+      return handleError(error);
     }
-
-    // Initialize Firestore
-    const jobsCollection = createFirestoreCollection<any>('jobs');
-
-    // Get specific job
-    const job = await jobsCollection.get(jobId);
-    
-    if (!job) {
-      throw new DatabaseError('Job not found', 'get');
-    }
-
-    return NextResponse.json({ 
-      job,
-      message: 'Job retrieved successfully'
-    });
-
-  } catch (error) {
-    return handleError(error);
   }
-}
+);
 
 // PUT /api/app/jobs/[jobId] - Update a job
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ jobId: string }> }
-) {
-  try {
-    const { jobId } = await params;
-    
-    // Validate job ID
-    validateJobId(jobId);
-
-    // Validate authorization header
-    const authHeader = request.headers.get("authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      throw new AuthorizationError("Missing or invalid authorization header");
-    }
-
-    // Verify token
-    const token = authHeader.substring(7);
-
-    // In development with mock tokens, skip Firebase operations for testing
-    const isMockToken = process.env.NODE_ENV === "development" && 
-      token.includes("bW9jay1zaWduYXR1cmUtZm9yLXRlc3Rpbmc");
-
-    let decodedToken;
-    if (isMockToken) {
-      decodedToken = {
-        uid: "test-user-123",
-        email: "test@example.com",
-        email_verified: true
-      };
-    } else {
-      decodedToken = await verifyIdToken(token);
-    }
-
-    if (!decodedToken) {
-      throw new AuthorizationError("Invalid authentication token");
-    }
-
-    // Parse and validate request body
-    let updateData;
+export const PUT = withAuth<{ jobId: string }>(
+  async (request, { user, token }, params) => {
     try {
-      updateData = await request.json();
-    } catch (parseError) {
-      throw new ValidationError("Invalid JSON in request body");
-    }
+      const jobId = params?.jobId;
+      
+      if (!jobId) {
+        throw new ValidationError('Job ID is required', 'jobId');
+      }
+      
+      // Validate job ID
+      validateJobId(jobId);
 
-    // Validate update data
-    validateUpdateData(updateData);
+      // Check if mock token for development
+      const isMockToken = process.env.NODE_ENV === "development" && 
+        token.includes("bW9jay1zaWduYXR1cmUtZm9yLXRlc3Rpbmc");
 
-    if (isMockToken) {
-      // Return mock success response for testing
+      // Parse and validate request body
+      let updateData;
+      try {
+        updateData = await request.json();
+      } catch (parseError) {
+        throw new ValidationError("Invalid JSON in request body");
+      }
+
+      // Validate update data
+      validateUpdateData(updateData);
+
+      if (isMockToken) {
+        // Return mock success response for testing
+        return NextResponse.json({ 
+          message: 'Job updated successfully (mock)'
+        });
+      }
+
+      // Initialize Firestore
+      const jobsCollection = createFirestoreCollection<any>('jobs');
+
+      // First, check if job exists and user has permission
+      const existingJob = await jobsCollection.get(jobId);
+      if (!existingJob) {
+        throw new DatabaseError('Job not found', 'get');
+      }
+
+      // Verify user owns the job
+      if (existingJob.userId !== user.uid) {
+        throw new AuthorizationError("You do not have permission to update this job");
+      }
+
+      // Update job
+      await jobsCollection.update(jobId, updateData);
+
       return NextResponse.json({ 
-        message: 'Job updated successfully (mock)'
+        message: 'Job updated successfully'
       });
+
+    } catch (error) {
+      return handleError(error);
     }
-
-    // Initialize Firestore
-    const jobsCollection = createFirestoreCollection<any>('jobs');
-
-    // First, check if job exists and user has permission
-    const existingJob = await jobsCollection.get(jobId);
-    if (!existingJob) {
-      throw new DatabaseError('Job not found', 'get');
-    }
-
-    // Verify user owns the job
-    if (existingJob.userId !== decodedToken.uid) {
-      throw new AuthorizationError("You do not have permission to update this job");
-    }
-
-    // Update job
-    await jobsCollection.update(jobId, updateData);
-
-    return NextResponse.json({ 
-      message: 'Job updated successfully'
-    });
-
-  } catch (error) {
-    return handleError(error);
   }
-}
+);
 
 // DELETE /api/app/jobs/[jobId] - Delete a job
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ jobId: string }> }
-) {
-  try {
-    const { jobId } = await params;
-    
-    // Validate job ID
-    validateJobId(jobId);
+export const DELETE = withAuth<{ jobId: string }>(
+  async (request, { user, token }, params) => {
+    try {
+      const jobId = params?.jobId;
+      
+      if (!jobId) {
+        throw new ValidationError('Job ID is required', 'jobId');
+      }
+      
+      // Validate job ID
+      validateJobId(jobId);
 
-    // Validate authorization header
-    const authHeader = request.headers.get("authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      throw new AuthorizationError("Missing or invalid authorization header");
-    }
+      // Check if mock token for development
+      const isMockToken = process.env.NODE_ENV === "development" && 
+        token.includes("bW9jay1zaWduYXR1cmUtZm9yLXRlc3Rpbmc");
 
-    // Verify token
-    const token = authHeader.substring(7);
+      if (isMockToken) {
+        // Return mock success response for testing
+        return NextResponse.json({ 
+          message: 'Job deleted successfully (mock)'
+        });
+      }
 
-    // In development with mock tokens, skip Firebase operations for testing
-    const isMockToken = process.env.NODE_ENV === "development" && 
-      token.includes("bW9jay1zaWduYXR1cmUtZm9yLXRlc3Rpbmc");
+      // Initialize Firestore
+      const jobsCollection = createFirestoreCollection<any>('jobs');
 
-    let decodedToken;
-    if (isMockToken) {
-      decodedToken = {
-        uid: "test-user-123",
-        email: "test@example.com",
-        email_verified: true
-      };
-    } else {
-      decodedToken = await verifyIdToken(token);
-    }
+      // First, check if job exists and user has permission
+      const existingJob = await jobsCollection.get(jobId);
+      if (!existingJob) {
+        throw new DatabaseError('Job not found', 'get');
+      }
 
-    if (!decodedToken) {
-      throw new AuthorizationError("Invalid authentication token");
-    }
+      // Verify user owns the job
+      if (existingJob.userId !== user.uid) {
+        throw new AuthorizationError("You do not have permission to delete this job");
+      }
 
-    if (isMockToken) {
-      // Return mock success response for testing
+      // Delete job
+      await jobsCollection.delete(jobId);
+
       return NextResponse.json({ 
-        message: 'Job deleted successfully (mock)'
+        message: 'Job deleted successfully'
       });
+
+    } catch (error) {
+      return handleError(error);
     }
-
-    // Initialize Firestore
-    const jobsCollection = createFirestoreCollection<any>('jobs');
-
-    // First, check if job exists and user has permission
-    const existingJob = await jobsCollection.get(jobId);
-    if (!existingJob) {
-      throw new DatabaseError('Job not found', 'get');
-    }
-
-    // Verify user owns the job
-    if (existingJob.userId !== decodedToken.uid) {
-      throw new AuthorizationError("You do not have permission to delete this job");
-    }
-
-    // Delete job
-    await jobsCollection.delete(jobId);
-
-    return NextResponse.json({ 
-      message: 'Job deleted successfully'
-    });
-
-  } catch (error) {
-    return handleError(error);
   }
-}
+);

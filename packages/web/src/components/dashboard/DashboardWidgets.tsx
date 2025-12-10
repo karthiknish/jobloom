@@ -75,7 +75,7 @@ export function useDashboardWidgets({
                   stiffness: 180,
                   damping: 12,
                 }}
-                className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-emerald-100 to-emerald-100 rounded-full flex items-center justify-center shadow-lg"
+                className="w-16 h-16 mx-auto mb-4 bg-primary/20 rounded-full flex items-center justify-center shadow-lg"
               >
                 <svg
                   className="w-8 h-8 text-emerald-500"

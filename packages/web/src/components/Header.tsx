@@ -55,13 +55,13 @@ export default function Header() {
     { href: "#how-it-works", label: "How it Works" },
     { href: "#features", label: "Features" },
     { href: "#testimonials", label: "Testimonials" },
+    { href: "/volunteer", label: "Volunteer" },
   ];
 
   const userLinks = [
     { href: "/dashboard", label: "Dashboard" },
     { href: "/career-tools", label: "Career Tools" },
-    { href: "/interview-prep", label: "Interview Prep" },
-
+    { href: "/volunteer", label: "Volunteer" },
   ];
 
   const adminLinks = [{ href: "/admin", label: "Admin Panel" }];

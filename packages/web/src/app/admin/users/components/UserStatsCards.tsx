@@ -25,7 +25,7 @@ export function UserStatsCards({ stats }: UserStatsCardsProps) {
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold text-gray-900">{stats.totalUsers}</div>
+                    <div className="text-2xl font-bold text-foreground">{stats.totalUsers}</div>
                     <p className="text-xs text-muted-foreground mt-1">
                         +{stats.newUsersThisMonth} this month
                     </p>
@@ -40,7 +40,7 @@ export function UserStatsCards({ stats }: UserStatsCardsProps) {
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold text-gray-900">{stats.activeUsers}</div>
+                    <div className="text-2xl font-bold text-foreground">{stats.activeUsers}</div>
                     <p className="text-xs text-muted-foreground mt-1">Recently active</p>
                 </CardContent>
             </Card>
@@ -53,7 +53,7 @@ export function UserStatsCards({ stats }: UserStatsCardsProps) {
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold text-gray-900">{stats.adminUsers}</div>
+                    <div className="text-2xl font-bold text-foreground">{stats.adminUsers}</div>
                     <p className="text-xs text-muted-foreground mt-1">System administrators</p>
                 </CardContent>
             </Card>
@@ -66,7 +66,7 @@ export function UserStatsCards({ stats }: UserStatsCardsProps) {
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold text-gray-900">{stats.recentLogins}</div>
+                    <div className="text-2xl font-bold text-foreground">{stats.recentLogins}</div>
                     <p className="text-xs text-muted-foreground mt-1">Last 7 days</p>
                 </CardContent>
             </Card>

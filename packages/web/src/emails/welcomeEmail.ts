@@ -10,12 +10,14 @@ interface WelcomeEmailTemplateProps {
 }
 
 const brandColor = COLORS.brand;
-const brandLight = COLORS.brandLight;
+const accentColor = COLORS.accent;
 const backgroundColor = COLORS.backgroundLight;
 const textColor = COLORS.text;
 const mutedTextColor = COLORS.mutedText;
 const cardBackground = COLORS.cardBackground;
 const borderColor = COLORS.border;
+const buttonBg = COLORS.buttonBg;
+const buttonText = COLORS.buttonText;
 const defaultDashboardUrl = "https://hireall.app/dashboard";
 const defaultSettingsUrl = "https://hireall.app/settings";
 
@@ -69,13 +71,13 @@ export function renderWelcomeEmailHtml({
                 <tr>
                   <td style="text-align:center; padding-bottom:24px;">
                     <div style="display:inline-flex; align-items:center; gap:12px;">
-                      <div style="width:44px; height:44px; border-radius:12px; background:${brandColor}; display:flex; align-items:center; justify-content:center; color:#ffffff; font-size:22px; font-weight:600;">H</div>
+                      <div style="width:44px; height:44px; border-radius:12px; background:${buttonBg}; display:flex; align-items:center; justify-content:center; color:#ffffff; font-size:22px; font-weight:600;">H</div>
                       <span style="font-size:22px; font-weight:700; letter-spacing:-0.4px; color:${textColor};">Hireall</span>
                     </div>
                   </td>
                 </tr>
                 <tr>
-                  <td class="card" style="background:${cardBackground}; border-radius:16px; box-shadow:0 20px 50px -20px rgba(5, 150, 105, 0.35); padding:40px 48px; border:1px solid ${borderColor};">
+                  <td class="card" style="background:${cardBackground}; border-radius:16px; box-shadow:0 4px 12px rgba(0, 0, 0, 0.1); padding:40px 48px; border:1px solid ${borderColor};">
                     <p style="margin:0 0 12px; font-size:18px; font-weight:600;">${greeting}</p>
                     <h1 style="margin:0 0 16px; font-size:28px; line-height:1.3; font-weight:700; letter-spacing:-0.6px;">Welcome to your smarter job search</h1>
                     <p style="margin:0 0 16px; font-size:16px; line-height:1.6; color:${mutedTextColor};">
@@ -93,7 +95,7 @@ export function renderWelcomeEmailHtml({
                       <tbody>
                         <tr>
                           <td>
-                            <a class="cta-button" href="${dashboardUrl}" target="_blank" rel="noopener" style="display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:14px 26px; border-radius:999px; background:linear-gradient(135deg, ${brandColor} 0%, ${brandLight} 100%); color:#ffffff; font-size:16px; font-weight:600; text-decoration:none; box-shadow:0 10px 25px -12px rgba(5, 150, 105, 0.7);">
+                            <a class="cta-button" href="${dashboardUrl}" target="_blank" rel="noopener" style="display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:14px 26px; border-radius:8px; background:${buttonBg}; color:${buttonText}; font-size:16px; font-weight:600; text-decoration:none; box-shadow:0 2px 8px rgba(0, 0, 0, 0.12);">
                               Jump into your dashboard
                             </a>
                           </td>
@@ -106,7 +108,7 @@ export function renderWelcomeEmailHtml({
                           <td style="padding:18px 24px; border:1px solid ${borderColor}; border-radius:12px; background:${backgroundColor};">
                             <p style="margin:0 0 12px; font-size:15px; font-weight:600; color:${textColor};">Need a hand?</p>
                             <p style="margin:0; font-size:14px; line-height:1.6; color:${mutedTextColor};">
-                              We love hearing from job seekers. Reply to this email or reach us anytime at <a href="mailto:support@hireall.app" style="color:${brandColor}; text-decoration:none;">support@hireall.app</a>.
+                              We love hearing from job seekers. Reply to this email or reach us anytime at <a href="mailto:support@hireall.app" style="color:${accentColor}; text-decoration:none;">support@hireall.app</a>.
                             </p>
                           </td>
                         </tr>
@@ -122,7 +124,7 @@ export function renderWelcomeEmailHtml({
                 </tr>
                 <tr>
                   <td style="text-align:center; padding-top:8px; font-size:12px; color:${mutedTextColor};">
-                    Manage notifications from your <a href="${settingsUrl}" style="color:${brandColor}; text-decoration:none;">settings</a> anytime.
+                    Manage notifications from your <a href="${settingsUrl}" style="color:${accentColor}; text-decoration:none;">settings</a> anytime.
                   </td>
                 </tr>
               </tbody>

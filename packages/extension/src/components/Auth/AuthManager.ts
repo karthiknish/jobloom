@@ -5,9 +5,8 @@ import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
   signOut as firebaseSignOut,
-  signInWithPopup,
 } from "../../firebase";
-import { cacheAuthToken, clearCachedAuthToken, acquireIdToken } from "../../authToken";
+import { cacheAuthToken, clearCachedAuthToken, acquireIdToken, getCachedUserInfo } from "../../authToken";
 import { ExtensionMessageHandler } from "../ExtensionMessageHandler";
 import { sanitizeBaseUrl, DEFAULT_WEB_APP_URL } from "../../constants";
 import { get } from "../../apiClient";
@@ -243,26 +242,66 @@ export class AuthManager {
     try {
       popupUI.showLoading('google-auth-btn');
       
-      // Chrome extensions cannot use signInWithPopup due to CSP restrictions.
-      // Instead, open the web app login page and let the user sign in there.
-      // The extension will sync auth state from the web app when opened.
-      const webAppUrl = sanitizeBaseUrl(DEFAULT_WEB_APP_URL);
-      const loginUrl = `${webAppUrl}/sign-in?source=extension&redirect=close`;
+      // Import and use the Chrome Identity API-based Google sign-in
+      const { signInWithGoogle: firebaseSignInWithGoogle } = await import("../../firebase");
       
-      // Open the web app login page
-      chrome.tabs.create({ url: loginUrl });
+      const user = await firebaseSignInWithGoogle();
       
-      // Show message to user
-      popupUI.showSuccess('Please sign in on the web page, then return here');
+      // Update current user
+      this.currentUser = user;
       
-      // Close the popup after a short delay
-      setTimeout(() => {
-        window.close();
-      }, 1500);
+      // Cache the token
+      const token = await user.getIdToken();
+      await cacheAuthToken({
+        token,
+        userId: user.uid,
+        userEmail: user.email,
+        source: 'popup'
+      });
+
+      // Store in sync storage
+      if (typeof chrome !== 'undefined' && chrome.storage?.sync) {
+        await chrome.storage.sync.set({
+          firebaseUid: user.uid,
+          userId: user.uid,
+          userEmail: user.email
+        });
+      }
+
+      this.updateAuthUI(true);
+      popupUI.showSuccess('Signed in with Google!');
+      popupUI.switchTab('jobs');
+
+      // Notify background script
+      if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
+        chrome.runtime.sendMessage({
+          type: 'AUTH_STATE_CHANGED',
+          payload: {
+            isAuthenticated: true,
+            userId: user.uid,
+            email: user.email,
+            token: token,
+            source: 'google_signin'
+          }
+        }).catch((err) => {
+          console.debug('Failed to notify background:', err);
+        });
+      }
 
     } catch (error: any) {
       console.error('Google sign in error:', error);
-      this.showAuthError('Failed to open sign-in page. Please try again');
+      
+      // Provide user-friendly error messages
+      let errorMessage = 'Google sign-in failed. Please try again.';
+      if (error?.code === 'auth/invalid-credential') {
+        errorMessage = 'Invalid credentials. Please try signing in again.';
+      } else if (error?.message?.includes('Identity API')) {
+        errorMessage = 'Google sign-in not available. Please check your Chrome account.';
+      } else if (error?.message?.includes('user denied')) {
+        errorMessage = 'Sign-in was cancelled.';
+      }
+      
+      this.showAuthError(errorMessage);
     } finally {
       popupUI.hideLoading('google-auth-btn');
     }
@@ -376,27 +415,28 @@ export class AuthManager {
         return false;
       }
 
-      console.debug('AuthManager: Token acquired, checking Firebase auth state...');
+      console.debug('AuthManager: Token acquired, checking cached user info...');
 
-      // Update current user state
-      const auth = getAuthInstance();
-      if (auth.currentUser) {
-        this.currentUser = auth.currentUser;
-
-        // Cache the token properly
-        await cacheAuthToken({
-          token,
-          userId: auth.currentUser.uid,
-          userEmail: auth.currentUser.email,
-          source: 'popup'
-        });
+      // Get user info from cached token (this works even when auth.currentUser is null)
+      const cachedInfo = await getCachedUserInfo();
+      
+      if (cachedInfo?.isValid && cachedInfo.userId) {
+        // We have valid cached user info - use it directly
+        // Create a pseudo-user object for the UI
+        this.currentUser = {
+          uid: cachedInfo.userId,
+          email: cachedInfo.userEmail || null,
+          displayName: null,
+          emailVerified: true, // Assume verified if they have a valid token
+          photoURL: null
+        };
 
         // Store in sync storage
         if (typeof chrome !== 'undefined' && chrome.storage?.sync) {
           await chrome.storage.sync.set({
-            firebaseUid: auth.currentUser.uid,
-            userId: auth.currentUser.uid,
-            userEmail: auth.currentUser.email
+            firebaseUid: cachedInfo.userId,
+            userId: cachedInfo.userId,
+            userEmail: cachedInfo.userEmail
           });
         }
 
@@ -408,8 +448,8 @@ export class AuthManager {
             type: 'AUTH_STATE_CHANGED',
             payload: {
               isAuthenticated: true,
-              userId: this.currentUser.uid,
-              email: this.currentUser.email,
+              userId: cachedInfo.userId,
+              email: cachedInfo.userEmail,
               token: token,
               source: 'webapp_sync'
             }
@@ -423,7 +463,17 @@ export class AuthManager {
         return true;
       }
 
-      console.debug('AuthManager: Firebase auth has no current user after token acquisition');
+      // Fallback: Check if Firebase auth has a user (for direct extension sign-in)
+      const auth = getAuthInstance();
+      if (auth.currentUser) {
+        this.currentUser = auth.currentUser;
+        this.updateAuthUI(true);
+        popupUI.showSuccess('Signed in');
+        popupUI.switchTab('jobs');
+        return true;
+      }
+
+      console.debug('AuthManager: No valid user info found');
       return false;
     } catch (error) {
       console.error('Sync from web app error:', error);
@@ -506,25 +556,25 @@ export class AuthManager {
   }
 
   private showAuthError(message: string): void {
-    const authError = document.getElementById("auth-error") as HTMLElement;
-    const authSuccess = document.getElementById("auth-success") as HTMLElement;
-
-    if (authSuccess) authSuccess.style.display = "none";
-    if (authError) {
-      authError.textContent = message;
-      authError.style.display = "block";
-      popupUI.shakeElement('auth-error');
-    }
+    // Only show toast notification - no inline error message
+    popupUI.showError(message);
   }
 
   private showAuthSuccess(message: string): void {
     const authError = document.getElementById("auth-error") as HTMLElement;
     const authSuccess = document.getElementById("auth-success") as HTMLElement;
 
-    if (authError) authError.style.display = "none";
+    // Hide error message
+    if (authError) {
+      authError.style.display = "none";
+      authError.classList.add("hidden");
+    }
+
+    // Show success message
     if (authSuccess) {
       authSuccess.textContent = message;
       authSuccess.style.display = "block";
+      authSuccess.classList.remove("hidden");
     }
   }
 
@@ -532,8 +582,14 @@ export class AuthManager {
     const authError = document.getElementById("auth-error") as HTMLElement;
     const authSuccess = document.getElementById("auth-success") as HTMLElement;
 
-    if (authError) authError.style.display = "none";
-    if (authSuccess) authSuccess.style.display = "none";
+    if (authError) {
+      authError.style.display = "none";
+      authError.classList.add("hidden");
+    }
+    if (authSuccess) {
+      authSuccess.style.display = "none";
+      authSuccess.classList.add("hidden");
+    }
   }
 }
 

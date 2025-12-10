@@ -1,25 +1,22 @@
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
 import { 
   getAuth, 
-  initializeAuth, 
-  browserLocalPersistence, 
-  indexedDBLocalPersistence, 
-  inMemoryPersistence, 
-  browserPopupRedirectResolver, 
   GoogleAuthProvider,
   signInWithEmailAndPassword as firebaseSignInWithEmailAndPassword,
   createUserWithEmailAndPassword as firebaseCreateUserWithEmailAndPassword,
   onAuthStateChanged as firebaseOnAuthStateChanged,
   signOut as firebaseSignOut,
-  signInWithPopup as firebaseSignInWithPopup,
   sendPasswordResetEmail as firebaseSendPasswordResetEmail,
-  Auth,
-  User,
-  setPersistence
-} from 'firebase/auth';
+  signInWithCredential as firebaseSignInWithCredential,
+} from 'firebase/auth/web-extension';
+
+// Import types from firebase/auth (web-extension re-exports these)
+import type { Auth, User } from 'firebase/auth';
 
 // Lightweight Firebase bootstrap for the extension popup only.
-// Relies on env vars injected at build time via webpack DefinePlugin.
+// Uses firebase/auth/web-extension per Firebase Chrome extension docs:
+// https://firebase.google.com/docs/auth/web/chrome-extension
+// This entry point handles persistence automatically for Chrome extensions.
 
 import { getEnv } from "./env";
 import { logger } from "./utils/logger";
@@ -85,41 +82,16 @@ export function getAuthInstance(): Auth {
   
   const firebaseApp = ensureFirebase();
   
-  // Try to initialize auth with persistence for session sharing with web app
-  // Use the same persistence order as the web app for compatibility
+  // firebase/auth/web-extension handles persistence automatically
+  // No need to configure persistence manually like with firebase/auth
   try {
-    cachedAuth = initializeAuth(firebaseApp, {
-      persistence: [
-        indexedDBLocalPersistence,  // Primary: Cross-session persistence
-        browserLocalPersistence,    // Fallback: Local storage
-        inMemoryPersistence,        // Last resort: Memory only
-      ],
-      popupRedirectResolver: browserPopupRedirectResolver,
-    });
+    cachedAuth = getAuth(firebaseApp);
     authInitialized = true;
-    logger.debug('Firebase', 'Firebase Auth initialized with persistence');
+    logger.debug('Firebase', 'Firebase Auth initialized (web-extension)');
     return cachedAuth;
   } catch (error: any) {
-    // If auth was already initialized (e.g., multiple getAuthInstance calls), use getAuth
-    if (error?.code === 'auth/already-initialized') {
-      cachedAuth = getAuth(firebaseApp);
-      authInitialized = true;
-      return cachedAuth;
-    }
-    
-    // Fall back to regular getAuth if initializeAuth fails
-    logger.warn('Firebase', 'Failed to initialize auth with persistence, falling back to getAuth', { error });
-    cachedAuth = getAuth(firebaseApp);
-    
-    // Try to set persistence on the existing auth instance
-    setPersistence(cachedAuth, indexedDBLocalPersistence)
-      .catch(() => setPersistence(cachedAuth!, browserLocalPersistence))
-      .catch((persistenceError) => {
-        logger.warn('Firebase', 'Failed to set persistence', { error: persistenceError });
-      });
-    
-    authInitialized = true;
-    return cachedAuth;
+    logger.error('Firebase', 'Failed to initialize auth', { error });
+    throw error;
   }
 }
 
@@ -146,9 +118,9 @@ export function signOut(auth: Auth) {
   return Promise.resolve(firebaseSignOut(auth));
 }
 
-export function signInWithPopup(auth: Auth, provider: GoogleAuthProvider) {
-  return Promise.resolve(firebaseSignInWithPopup(auth, provider));
-}
+// Note: signInWithPopup is NOT supported in Chrome extensions due to Manifest V3 restrictions.
+// For Google Sign-In, we open the web app and sync the auth state.
+// See: https://firebase.google.com/docs/auth/web/chrome-extension#use_offscreen_documents
 
 /**
  * Get the current auth user synchronously (may be null if not signed in or not ready)
@@ -219,11 +191,55 @@ export function getFirebaseStatus(): FirebaseStatus {
   };
 }
 
+/**
+ * Sign in with Google using Chrome Identity API.
+ * This works independently in the extension without needing popups.
+ * Uses chrome.identity.getAuthToken to get an OAuth token from the user's
+ * signed-in Google account in Chrome, then authenticates with Firebase.
+ */
 export const signInWithGoogle = async (): Promise<User> => {
-  const auth = getAuthInstance();
-  const provider = new GoogleAuthProvider();
-  const result = await firebaseSignInWithPopup(auth, provider);
-  return result.user;
+  if (typeof chrome === 'undefined' || !chrome.identity?.getAuthToken) {
+    throw new Error('Chrome Identity API not available');
+  }
+
+  try {
+    // Get OAuth token from Chrome's account system
+    const authResult = await chrome.identity.getAuthToken({ interactive: true });
+    
+    if (!authResult?.token) {
+      throw new Error('Failed to get auth token from Chrome');
+    }
+
+    logger.debug('Firebase', 'Got OAuth token from Chrome Identity API');
+
+    // Create Firebase credential from the OAuth token
+    const credential = GoogleAuthProvider.credential(null, authResult.token);
+    
+    // Sign in to Firebase with the credential
+    const auth = getAuthInstance();
+    const result = await firebaseSignInWithCredential(auth, credential);
+    
+    logger.debug('Firebase', 'Successfully signed in with Google', { uid: result.user.uid });
+    
+    return result.user;
+  } catch (error: any) {
+    // If token was cached and invalid, clear it and retry
+    if (error?.code === 'auth/invalid-credential' && chrome.identity?.removeCachedAuthToken) {
+      try {
+        const authResult = await chrome.identity.getAuthToken({ interactive: false });
+        if (authResult?.token) {
+          await chrome.identity.removeCachedAuthToken({ token: authResult.token });
+          // Retry with fresh token
+          return signInWithGoogle();
+        }
+      } catch (retryError) {
+        logger.warn('Firebase', 'Failed to clear cached token', { error: retryError });
+      }
+    }
+    
+    logger.error('Firebase', 'Google sign-in failed', { error });
+    throw error;
+  }
 };
 
 export const sendPasswordReset = async (email: string): Promise<void> => {
@@ -247,3 +263,6 @@ export const signUpWithEmail = async (email: string, password: string): Promise<
   const result = await firebaseCreateUserWithEmailAndPassword(auth, email, password);
   return result.user;
 };
+
+// Re-export types for convenience
+export type { Auth, User };

@@ -67,7 +67,7 @@ export default function PrivacyPolicy() {
         >
           <Card className="card-premium-elevated border-0 bg-surface overflow-hidden">
             <CardContent className="p-8 sm:p-12">
-              <div className="prose prose-lg max-w-none dark:prose-invert">
+              <div className="prose prose-lg max-w-none">
                 <p className="lead text-xl text-muted-foreground mb-12">
                   Your privacy is important to us. This Privacy Policy explains how
                   Hireall (&ldquo;we&rdquo;, &ldquo;our&rdquo;, or &ldquo;us&rdquo;) collects, uses, and protects your personal information when you use our website, Chrome extension, and related services (collectively, the &ldquo;Service&rdquo;).

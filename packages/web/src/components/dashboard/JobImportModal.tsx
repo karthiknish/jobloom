@@ -376,7 +376,7 @@ export function JobImportModal({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0">
-        <DialogHeader className="p-6 pb-4 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 border-b border-border/50">
+        <DialogHeader className="p-6 pb-4 bg-gradient-to-r from-emerald-50 to-teal-50 border-b border-border/50">
           <DialogTitle className="text-xl font-bold flex items-center gap-2">
             <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
               <Download className="h-5 w-5 text-white" />
@@ -400,8 +400,8 @@ export function JobImportModal({
                 onClick={() => setImportMethod("extension")}
                 className={`relative p-4 rounded-xl border-2 transition-all duration-200 text-left ${
                   importMethod === "extension"
-                    ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 shadow-md"
-                    : "border-border hover:border-emerald-200 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20"
+                    ? "border-emerald-500 bg-emerald-50 shadow-md"
+                    : "border-border hover:border-emerald-200 hover:bg-emerald-50/50"
                 }`}
               >
                 {importMethod === "extension" && (
@@ -412,7 +412,7 @@ export function JobImportModal({
                 <div className="flex flex-col items-center gap-2">
                   <div className={`p-2.5 rounded-lg ${
                     importMethod === "extension"
-                      ? "bg-emerald-100 dark:bg-emerald-900/50"
+                      ? "bg-emerald-100"
                       : "bg-muted"
                   }`}>
                     <Chrome className={`h-5 w-5 ${
@@ -420,7 +420,7 @@ export function JobImportModal({
                     }`} />
                   </div>
                   <span className={`font-medium text-sm ${
-                    importMethod === "extension" ? "text-emerald-700 dark:text-emerald-300" : "text-foreground"
+                    importMethod === "extension" ? "text-emerald-700" : "text-foreground"
                   }`}>Extension</span>
                   <span className="text-xs text-muted-foreground text-center">Saved jobs</span>
                 </div>
@@ -438,8 +438,8 @@ export function JobImportModal({
                 onClick={() => setImportMethod("csv")}
                 className={`relative p-4 rounded-xl border-2 transition-all duration-200 text-left ${
                   importMethod === "csv"
-                    ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 shadow-md"
-                    : "border-border hover:border-emerald-200 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20"
+                    ? "border-emerald-500 bg-emerald-50 shadow-md"
+                    : "border-border hover:border-emerald-200 hover:bg-emerald-50/50"
                 }`}
               >
                 {importMethod === "csv" && (
@@ -450,7 +450,7 @@ export function JobImportModal({
                 <div className="flex flex-col items-center gap-2">
                   <div className={`p-2.5 rounded-lg ${
                     importMethod === "csv"
-                      ? "bg-emerald-100 dark:bg-emerald-900/50"
+                      ? "bg-emerald-100"
                       : "bg-muted"
                   }`}>
                     <FileSpreadsheet className={`h-5 w-5 ${
@@ -458,7 +458,7 @@ export function JobImportModal({
                     }`} />
                   </div>
                   <span className={`font-medium text-sm ${
-                    importMethod === "csv" ? "text-emerald-700 dark:text-emerald-300" : "text-foreground"
+                    importMethod === "csv" ? "text-emerald-700" : "text-foreground"
                   }`}>CSV File</span>
                   <span className="text-xs text-muted-foreground text-center">Spreadsheet</span>
                 </div>
@@ -471,8 +471,8 @@ export function JobImportModal({
                 onClick={() => setImportMethod("api")}
                 className={`relative p-4 rounded-xl border-2 transition-all duration-200 text-left ${
                   importMethod === "api"
-                    ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30 shadow-md"
-                    : "border-border hover:border-blue-200 hover:bg-blue-50/50 dark:hover:bg-blue-950/20"
+                    ? "border-blue-500 bg-blue-50 shadow-md"
+                    : "border-border hover:border-blue-200 hover:bg-blue-50/50"
                 }`}
               >
                 {importMethod === "api" && (
@@ -483,7 +483,7 @@ export function JobImportModal({
                 <div className="flex flex-col items-center gap-2">
                   <div className={`p-2.5 rounded-lg ${
                     importMethod === "api"
-                      ? "bg-blue-100 dark:bg-blue-900/50"
+                      ? "bg-blue-100"
                       : "bg-muted"
                   }`}>
                     <Globe className={`h-5 w-5 ${
@@ -491,7 +491,7 @@ export function JobImportModal({
                     }`} />
                   </div>
                   <span className={`font-medium text-sm ${
-                    importMethod === "api" ? "text-blue-700 dark:text-blue-300" : "text-foreground"
+                    importMethod === "api" ? "text-blue-700" : "text-foreground"
                   }`}>Job Boards</span>
                   <span className="text-xs text-muted-foreground text-center">LinkedIn, etc.</span>
                 </div>
@@ -512,16 +512,16 @@ export function JobImportModal({
                 className="space-y-4"
               >
                 {!isExtensionInstalled ? (
-                  <div className="rounded-xl bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 border border-emerald-200 dark:border-emerald-800 p-6">
+                  <div className="rounded-xl bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 p-6">
                     <div className="flex items-start gap-4">
-                      <div className="p-3 bg-emerald-100 dark:bg-emerald-900/50 rounded-xl">
+                      <div className="p-3 bg-emerald-100 rounded-xl">
                         <Chrome className="h-8 w-8 text-emerald-600" />
                       </div>
                       <div className="flex-1">
-                        <h3 className="font-semibold text-emerald-900 dark:text-emerald-100 mb-2">
+                        <h3 className="font-semibold text-emerald-900 mb-2">
                           Install the Hireall Extension
                         </h3>
-                        <p className="text-sm text-emerald-700 dark:text-emerald-300 mb-4">
+                        <p className="text-sm text-emerald-700 mb-4">
                           Save jobs from LinkedIn, Indeed, Glassdoor, and more with one click. 
                           Jobs are automatically synced to your dashboard.
                         </p>
@@ -552,7 +552,7 @@ export function JobImportModal({
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <CheckCircle className="h-4 w-4 text-green-500" />
-                        <span className="text-sm font-medium text-green-700 dark:text-green-400">
+                        <span className="text-sm font-medium text-green-700">
                           Extension Connected
                         </span>
                       </div>
@@ -614,7 +614,7 @@ export function JobImportModal({
                                 onClick={() => toggleJobSelection(jobId)}
                                 className={`p-3 rounded-lg border cursor-pointer transition-all ${
                                   isSelected
-                                    ? "border-emerald-300 bg-emerald-50 dark:bg-emerald-950/30"
+                                    ? "border-emerald-300 bg-emerald-50"
                                     : "border-border hover:border-emerald-200 hover:bg-muted/50"
                                 }`}
                               >
@@ -734,13 +734,13 @@ export function JobImportModal({
                   </div>
                 </div>
 
-                <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 p-4">
+                <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-4">
                   <div className="flex justify-between items-center">
                     <div>
-                      <h4 className="text-sm font-medium text-emerald-900 dark:text-emerald-100">
+                      <h4 className="text-sm font-medium text-emerald-900">
                         Need a template?
                       </h4>
-                      <p className="text-xs text-emerald-700 dark:text-emerald-300 mt-0.5">
+                      <p className="text-xs text-emerald-700 mt-0.5">
                         Download our sample CSV to get started
                       </p>
                     </div>
@@ -825,14 +825,14 @@ export function JobImportModal({
                   />
                 </div>
 
-                <div className="rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 p-4">
+                <div className="rounded-xl bg-amber-50 border border-amber-200 p-4">
                   <div className="flex gap-3">
                     <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
                     <div>
-                      <h3 className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                      <h3 className="text-sm font-medium text-amber-800">
                         API Integration Note
                       </h3>
-                      <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">
+                      <p className="mt-1 text-xs text-amber-700">
                         Job board API integrations require proper authentication and have rate limits. 
                         For best results, use the browser extension to save jobs directly.
                       </p>

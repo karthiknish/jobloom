@@ -40,7 +40,7 @@ export function SubscriptionDistribution({ stats }: SubscriptionDistributionProp
                                 <span className="capitalize text-sm font-medium text-gray-700">{plan}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <div className="text-sm font-medium text-gray-900">{count as number}</div>
+                                <div className="text-sm font-medium text-foreground">{count as number}</div>
                                 <div className="w-24 h-2 bg-gray-100 rounded-full overflow-hidden">
                                     <div
                                         className={`h-full rounded-full transition-all duration-300 ${getPlanColor(plan)}`}

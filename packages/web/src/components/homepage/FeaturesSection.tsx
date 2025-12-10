@@ -111,7 +111,7 @@ export function FeaturesSection() {
             className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-6 leading-tight"
           >
             Everything You Need to Land Your
-            <span className="block bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent"> Dream Job in the UK</span>
+            <span className="block text-primary"> Dream Job in the UK</span>
           </motion.h2>
           
           <motion.p 

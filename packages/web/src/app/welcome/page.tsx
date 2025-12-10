@@ -99,8 +99,8 @@ function WelcomeInner() {
               className="grid grid-cols-1 md:grid-cols-3 gap-6"
             >
               <div className="text-center space-y-3 p-4 rounded-xl bg-background/50 border border-border/50 hover:border-primary/20 transition-colors">
-                <div className="mx-auto h-12 w-12 rounded-full bg-blue-500/10 dark:bg-blue-900/20 flex items-center justify-center">
-                  <Target className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                <div className="mx-auto h-12 w-12 rounded-full bg-blue-500/10 flex items-center justify-center">
+                  <Target className="h-6 w-6 text-blue-600" />
                 </div>
                 <h3 className="font-semibold text-foreground">Track Applications</h3>
                 <p className="text-sm text-muted-foreground">Monitor all your job applications in one place</p>
@@ -113,8 +113,8 @@ function WelcomeInner() {
                 <p className="text-sm text-muted-foreground">Resume analysis and cover letter generation</p>
               </div>
               <div className="text-center space-y-3 p-4 rounded-xl bg-background/50 border border-border/50 hover:border-primary/20 transition-colors">
-                <div className="mx-auto h-12 w-12 rounded-full bg-purple-500/10 dark:bg-purple-900/20 flex items-center justify-center">
-                  <Zap className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                <div className="mx-auto h-12 w-12 rounded-full bg-purple-500/10 flex items-center justify-center">
+                  <Zap className="h-6 w-6 text-purple-600" />
                 </div>
                 <h3 className="font-semibold text-foreground">Browser Extension</h3>
                 <p className="text-sm text-muted-foreground">Save jobs from any job board instantly</p>

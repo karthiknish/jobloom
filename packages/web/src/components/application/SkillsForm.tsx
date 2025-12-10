@@ -310,7 +310,7 @@ export function SkillsForm({ data, onChange }: SkillsFormProps) {
 
       {/* Tips */}
       {data.length > 0 && (
-        <div className="text-xs text-muted-foreground bg-blue-50 dark:bg-blue-950/30 p-4 rounded-lg border border-blue-100 dark:border-blue-900/50 space-y-1">
+        <div className="text-xs text-muted-foreground bg-blue-50 p-4 rounded-lg border border-blue-100 space-y-1">
           <p className="font-medium text-foreground">💡 Skills Tips:</p>
           <ul className="list-disc list-inside space-y-0.5">
             <li>Include a mix of technical skills and soft skills</li>

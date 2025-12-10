@@ -189,20 +189,20 @@ export function ExtensionIntegration({ userId }: ExtensionIntegrationProps) {
     <Card className="overflow-hidden border-0 shadow-lg">
       <CardHeader className={`pb-4 ${
         isExtensionInstalled 
-          ? "bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-950/30 dark:to-green-950/30" 
-          : "bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30"
+          ? "bg-card" 
+          : "bg-card"
       }`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className={`p-2.5 rounded-xl ${
               isExtensionInstalled 
-                ? "bg-primary/20 dark:bg-emerald-900/50" 
-                : "bg-blue-100 dark:bg-blue-900/50"
+                ? "bg-primary/20" 
+                : "bg-blue-100"
             }`}>
               <Chrome className={`h-6 w-6 ${
                 isExtensionInstalled 
-                  ? "text-primary dark:text-emerald-400" 
-                  : "text-blue-600 dark:text-blue-400"
+                  ? "text-primary" 
+                  : "text-blue-600"
               }`} />
             </div>
             <div>
@@ -233,13 +233,13 @@ export function ExtensionIntegration({ userId }: ExtensionIntegrationProps) {
                 <TooltipTrigger asChild>
                   <motion.div 
                     whileHover={{ scale: 1.02 }}
-                    className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-xl p-4 text-center border border-blue-100 dark:border-blue-900/50 cursor-help"
+                    className="bg-card rounded-xl p-4 text-center border border-blue-100 cursor-help"
                   >
-                    <Briefcase className="h-5 w-5 text-blue-600 dark:text-blue-400 mx-auto mb-2" />
-                    <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+                    <Briefcase className="h-5 w-5 text-blue-600 mx-auto mb-2" />
+                    <p className="text-2xl font-bold text-blue-900">
                       {jobsDetected}
                     </p>
-                    <p className="text-xs text-blue-600/80 dark:text-blue-400/80">Jobs Saved</p>
+                    <p className="text-xs text-blue-600/80">Jobs Saved</p>
                   </motion.div>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -251,13 +251,13 @@ export function ExtensionIntegration({ userId }: ExtensionIntegrationProps) {
                 <TooltipTrigger asChild>
                   <motion.div 
                     whileHover={{ scale: 1.02 }}
-                    className="bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-teal-950/30 dark:to-cyan-950/30 rounded-xl p-4 text-center border border-teal-100 dark:border-teal-900/50 cursor-help"
+                    className="bg-card rounded-xl p-4 text-center border border-teal-100 cursor-help"
                   >
-                    <Clock className="h-5 w-5 text-teal-600 dark:text-teal-400 mx-auto mb-2" />
-                    <p className="text-2xl font-bold text-teal-900 dark:text-teal-100">
+                    <Clock className="h-5 w-5 text-teal-600 mx-auto mb-2" />
+                    <p className="text-2xl font-bold text-teal-900">
                       {lastSync ? lastSync.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "--:--"}
                     </p>
-                    <p className="text-xs text-teal-600/80 dark:text-teal-400/80">Last Sync</p>
+                    <p className="text-xs text-teal-600/80">Last Sync</p>
                   </motion.div>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -269,13 +269,13 @@ export function ExtensionIntegration({ userId }: ExtensionIntegrationProps) {
                 <TooltipTrigger asChild>
                   <motion.div 
                     whileHover={{ scale: 1.02 }}
-                    className="bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/30 dark:to-green-950/30 rounded-xl p-4 text-center border border-primary/20 dark:border-emerald-900/50 cursor-help"
+                    className="bg-card rounded-xl p-4 text-center border border-primary/20 cursor-help"
                   >
-                    <Zap className="h-5 w-5 text-primary dark:text-emerald-400 mx-auto mb-2" />
-                    <p className="text-2xl font-bold text-primary dark:text-emerald-100">
+                    <Zap className="h-5 w-5 text-primary mx-auto mb-2" />
+                    <p className="text-2xl font-bold text-primary">
                       Active
                     </p>
-                    <p className="text-xs text-primary/80 dark:text-emerald-400/80">Status</p>
+                    <p className="text-xs text-primary/80">Status</p>
                   </motion.div>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -287,7 +287,7 @@ export function ExtensionIntegration({ userId }: ExtensionIntegrationProps) {
 
             {/* Sync Button */}
             <Button
-              className="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white gap-2"
+              className="w-full bg-primary hover:from-emerald-700 hover:to-green-700 text-white gap-2"
               onClick={handleForceSync}
               disabled={isSyncing}
             >
@@ -298,13 +298,13 @@ export function ExtensionIntegration({ userId }: ExtensionIntegrationProps) {
         ) : (
           <div className="space-y-5">
             {/* Warning Banner */}
-            <div className="flex items-center gap-3 p-3 bg-amber-50 dark:bg-amber-950/30 rounded-xl border border-amber-200 dark:border-amber-800">
+            <div className="flex items-center gap-3 p-3 bg-amber-50 rounded-xl border border-amber-200">
               <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0" />
               <div>
-                <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                <p className="text-sm font-medium text-amber-800">
                   Extension Not Installed
                 </p>
-                <p className="text-xs text-amber-700 dark:text-amber-300">
+                <p className="text-xs text-amber-700">
                   Install to save jobs automatically from job boards
                 </p>
               </div>
@@ -325,7 +325,7 @@ export function ExtensionIntegration({ userId }: ExtensionIntegrationProps) {
                   transition={{ delay: index * 0.1 }}
                   className="flex items-center gap-3"
                 >
-                  <span className="flex items-center justify-center w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-sm font-semibold">
+                  <span className="flex items-center justify-center w-7 h-7 rounded-full bg-blue-100 text-blue-700 text-sm font-semibold">
                     {item.step}
                   </span>
                   <span className="text-sm text-muted-foreground">{item.text}</span>
@@ -335,7 +335,7 @@ export function ExtensionIntegration({ userId }: ExtensionIntegrationProps) {
 
             {/* Install Button */}
             <Button 
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white gap-2"
+              className="w-full bg-primary hover:from-blue-700 hover:to-indigo-700 text-white gap-2"
               asChild
             >
               <a

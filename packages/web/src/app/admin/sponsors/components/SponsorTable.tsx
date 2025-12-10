@@ -204,7 +204,7 @@ export function SponsorTable({
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <div className="font-medium text-gray-900">{sponsor.name}</div>
+                      <div className="font-medium text-foreground">{sponsor.name}</div>
                       {sponsor.aliases && sponsor.aliases.length > 0 && (
                         <div className="text-xs text-muted-foreground">
                           {sponsor.aliases.slice(0, 2).join(", ")}

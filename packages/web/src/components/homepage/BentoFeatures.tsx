@@ -30,13 +30,13 @@ export function BentoFeatures() {
       href: "/cover-letter"
     },
     {
-      title: "Interview Coach",
-      description: "Practice with AI that simulates real interview scenarios and gives instant feedback.",
+      title: "Volunteer Program",
+      description: "Gain real experience working with UK clients. Build your portfolio while helping others.",
       header: <div className="flex flex-1 w-full h-full min-h-[6rem] rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100" />,
       icon: <MessageSquare className="h-4 w-4 text-blue-500" />,
       className: "md:col-span-1",
-      cta: "Start Practice",
-      href: "/interview-prep"
+      cta: "Learn More",
+      href: "/volunteer"
     },
     {
       title: "Application Tracker",

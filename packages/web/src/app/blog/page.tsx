@@ -96,7 +96,7 @@ export default function BlogPage() {
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
       <div className="relative bg-muted/30 border-b border-border/50 overflow-hidden">
-        <div className="absolute inset-0 bg-grid-black/[0.02] dark:bg-grid-white/[0.02]" />
+        <div className="absolute inset-0 bg-grid-black/[0.02]" />
         <div className="max-w-7xl mx-auto py-20 px-4 sm:px-6 lg:px-8 relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -108,7 +108,7 @@ export default function BlogPage() {
               <Sparkles className="w-3 h-3 mr-2" />
               Career Insights & Tips
             </Badge>
-            <h1 className="text-4xl font-bold sm:text-5xl lg:text-6xl tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">
+            <h1 className="text-4xl font-bold sm:text-5xl lg:text-6xl tracking-tight mb-6 text-foreground">
               The HireAll Blog
             </h1>
             <p className="text-xl text-muted-foreground leading-relaxed">

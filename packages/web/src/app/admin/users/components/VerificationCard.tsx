@@ -26,7 +26,7 @@ export function VerificationCard({ stats }: VerificationCardProps) {
                         </div>
                         <span className="text-sm font-medium text-gray-700">Verified</span>
                     </div>
-                    <span className="text-sm font-semibold text-gray-900">
+                    <span className="text-sm font-semibold text-foreground">
                         {stats.verified}{" "}
                         <span className="text-muted-foreground font-normal">
                             ({stats.verificationRate}%)
@@ -41,7 +41,7 @@ export function VerificationCard({ stats }: VerificationCardProps) {
                         </div>
                         <span className="text-sm font-medium text-gray-700">Unverified</span>
                     </div>
-                    <span className="text-sm font-semibold text-gray-900">{stats.unverified}</span>
+                    <span className="text-sm font-semibold text-foreground">{stats.unverified}</span>
                 </div>
 
                 <div className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition-colors">
@@ -51,7 +51,7 @@ export function VerificationCard({ stats }: VerificationCardProps) {
                         </div>
                         <span className="text-sm font-medium text-gray-700">Never logged in</span>
                     </div>
-                    <span className="text-sm font-semibold text-gray-900">{stats.neverLoggedIn}</span>
+                    <span className="text-sm font-semibold text-foreground">{stats.neverLoggedIn}</span>
                 </div>
 
                 <div className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition-colors">
@@ -61,7 +61,7 @@ export function VerificationCard({ stats }: VerificationCardProps) {
                         </div>
                         <span className="text-sm font-medium text-gray-700">Dormant (&gt; 30 days)</span>
                     </div>
-                    <span className="text-sm font-semibold text-gray-900">{stats.dormant}</span>
+                    <span className="text-sm font-semibold text-foreground">{stats.dormant}</span>
                 </div>
             </CardContent>
         </Card>

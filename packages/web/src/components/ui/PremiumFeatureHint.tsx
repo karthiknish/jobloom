@@ -92,12 +92,12 @@ export function PremiumFeatureHint({
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
-          className={`inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30 border border-amber-200 dark:border-amber-800/50 rounded-full text-xs ${className}`}
+          className={`inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-amber-100 to-orange-100 border border-amber-200 rounded-full text-xs ${className}`}
         >
-          <span className="text-amber-600 dark:text-amber-400">
+          <span className="text-amber-600">
             {defaultIcon}
           </span>
-          <span className="font-medium text-amber-800 dark:text-amber-200">
+          <span className="font-medium text-amber-800">
             {title}
           </span>
           <Link href="/upgrade">
@@ -129,12 +129,12 @@ export function PremiumFeatureHint({
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
-          className={`relative p-4 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/40 border border-amber-200 dark:border-amber-800/50 rounded-xl ${className}`}
+          className={`relative p-4 bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-xl ${className}`}
         >
           {dismissible && (
             <button
               onClick={handleDismiss}
-              className="absolute top-2 right-2 p-1 rounded-full hover:bg-amber-200/50 dark:hover:bg-amber-800/50 text-amber-500"
+              className="absolute top-2 right-2 p-1 rounded-full hover:bg-amber-200/50 text-amber-500"
             >
               <X className="h-4 w-4" />
             </button>
@@ -144,10 +144,10 @@ export function PremiumFeatureHint({
               {defaultIcon}
             </div>
             <div className="flex-1 min-w-0">
-              <h4 className="font-semibold text-amber-900 dark:text-amber-100 mb-1">
+              <h4 className="font-semibold text-amber-900 mb-1">
                 {title}
               </h4>
-              <p className="text-sm text-amber-700 dark:text-amber-300 mb-3">
+              <p className="text-sm text-amber-700 mb-3">
                 {description}
               </p>
               <Link href="/upgrade">

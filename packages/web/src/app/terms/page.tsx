@@ -71,7 +71,7 @@ export default function TermsOfService() {
         >
           <Card className="card-premium-elevated border-0 bg-surface overflow-hidden">
             <CardContent className="p-8 sm:p-12">
-              <div className="prose prose-lg max-w-none dark:prose-invert">
+              <div className="prose prose-lg max-w-none">
                 <p className="lead text-xl text-muted-foreground mb-12">
                   Welcome to Hireall! These Terms of Service (&ldquo;Terms&rdquo;) govern your use of the Hireall platform, Chrome extension, and related services (collectively, the &ldquo;Service&rdquo;). By accessing or using the Service, you agree to be bound by these Terms.
                 </p>

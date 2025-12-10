@@ -186,11 +186,11 @@ export function JobList({
   return (
     <div className="space-y-6">
       {/* Filters and Search */}
-      <Card className="border-0 bg-gradient-to-br from-background via-amber-50/30 to-background shadow-lg">
+      <Card className="border-0 bg-card shadow-lg">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-xl bg-gradient-to-r from-amber-600 to-amber-600 bg-clip-text text-transparent">
+              <CardTitle className="text-xl text-amber-600">
                 Job Filters
               </CardTitle>
               <CardDescription className="text-base">
@@ -263,7 +263,7 @@ className="border-border focus:border-amber-500 focus:ring-amber-500"
 
       {/* Bulk Actions */}
       {selectedIds.size > 0 && (
-        <Card className="border-0 bg-gradient-to-br from-emerald-50 to-green-50 shadow-lg">
+        <Card className="border-0 bg-card shadow-lg">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <span className="text-sm text-primary">
@@ -308,7 +308,7 @@ className="border-border focus:border-amber-500 focus:ring-amber-500"
             animate={{ opacity: 1, y: 0 }}
             className="mt-6"
           >
-            <Card className="bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200 shadow-lg">
+            <Card className="bg-card border-amber-200 shadow-lg">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">

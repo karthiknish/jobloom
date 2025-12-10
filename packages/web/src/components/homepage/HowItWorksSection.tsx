@@ -115,7 +115,7 @@ export function HowItWorksSection() {
                   {/* Step Number and Icon */}
                   <div className="relative mb-6">
                     <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-white to-white/50 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-md">
-                      <span className="text-3xl font-bold bg-gradient-to-br from-primary to-primary/60 bg-clip-text text-transparent">{step.step}</span>
+                      <span className="text-3xl font-bold text-primary">{step.step}</span>
                     </div>
                     
                     {/* Floating Icon */}

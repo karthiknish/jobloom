@@ -31,7 +31,7 @@ export function SponsorCharts({ stats }: SponsorChartsProps) {
       {/* Sponsorship Type Distribution */}
       <Card className="border-gray-200">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-gray-900">
+          <CardTitle className="flex items-center gap-2 text-foreground">
             <BarChart3 className="h-5 w-5 text-gray-500" />
             Sponsorship Type Distribution
           </CardTitle>
@@ -57,7 +57,7 @@ export function SponsorCharts({ stats }: SponsorChartsProps) {
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="text-sm font-medium text-gray-900">{count as number}</div>
+                    <div className="text-sm font-medium text-foreground">{count as number}</div>
                     <div className="w-24 h-2 bg-gray-100 rounded-full overflow-hidden">
                       <div
                         className="h-full bg-blue-500 transition-all duration-300"
@@ -80,7 +80,7 @@ export function SponsorCharts({ stats }: SponsorChartsProps) {
       {/* Industry Breakdown */}
       <Card className="border-gray-200">
         <CardHeader>
-          <CardTitle className="text-gray-900">Industry Breakdown</CardTitle>
+          <CardTitle className="text-foreground">Industry Breakdown</CardTitle>
           <CardDescription>Top industries represented</CardDescription>
         </CardHeader>
         <CardContent>
@@ -97,7 +97,7 @@ export function SponsorCharts({ stats }: SponsorChartsProps) {
                     {industry || "Unknown"}
                   </span>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-gray-900">{count as number}</span>
+                    <span className="text-sm font-medium text-foreground">{count as number}</span>
                     <div className="w-16 h-2 bg-gray-100 rounded-full overflow-hidden">
                       <div
                         className="h-full bg-purple-500 transition-all duration-300"

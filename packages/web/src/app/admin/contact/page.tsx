@@ -456,7 +456,7 @@ export default function AdminContactDashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">{contactStats.total}</div>
+              <div className="text-2xl font-bold text-foreground">{contactStats.total}</div>
               <p className="text-xs text-gray-500 mt-1">Across all time</p>
             </CardContent>
           </Card>
@@ -469,7 +469,7 @@ export default function AdminContactDashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">{contactStats.open}</div>
+              <div className="text-2xl font-bold text-foreground">{contactStats.open}</div>
               <p className="text-xs text-gray-500 mt-1">
                 {contactStats.unread} new • {contactStats.open - contactStats.unread} read
               </p>
@@ -484,7 +484,7 @@ export default function AdminContactDashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">{contactStats.responseRate}%</div>
+              <div className="text-2xl font-bold text-foreground">{contactStats.responseRate}%</div>
               <p className="text-xs text-gray-500 mt-1">
                 {contactStats.responded} responded • {contactStats.archived} archived
               </p>
@@ -499,7 +499,7 @@ export default function AdminContactDashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">
+              <div className="text-2xl font-bold text-foreground">
                 {contactStats.averageResponseHours !== null
                   ? `${contactStats.averageResponseHours}h`
                   : "—"}
@@ -520,7 +520,7 @@ export default function AdminContactDashboard() {
         >
           <Card className="border-gray-200 shadow-sm">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg text-gray-900">
+              <CardTitle className="flex items-center gap-2 text-lg text-foreground">
                 <Filter className="h-5 w-5 text-primary" />
                 Quick actions
               </CardTitle>
@@ -556,7 +556,7 @@ export default function AdminContactDashboard() {
 
           <Card className="border-gray-200 shadow-sm xl:col-span-2">
             <CardHeader>
-              <CardTitle className="text-lg text-gray-900">Recent inbound messages</CardTitle>
+              <CardTitle className="text-lg text-foreground">Recent inbound messages</CardTitle>
               <CardDescription className="text-gray-500">Latest conversations awaiting action</CardDescription>
             </CardHeader>
             <CardContent>
@@ -571,7 +571,7 @@ export default function AdminContactDashboard() {
                     >
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium truncate text-gray-900">
+                          <span className="font-medium truncate text-foreground">
                             {contact.subject || "(No subject)"}
                           </span>
                           {getStatusBadge(contact.status)}
@@ -586,7 +586,7 @@ export default function AdminContactDashboard() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="self-start text-gray-500 hover:text-gray-900"
+                        className="self-start text-gray-500 hover:text-foreground"
                         onClick={() => handleOpenDetails(contact)}
                       >
                         <Eye className="h-4 w-4 mr-2" /> View
@@ -607,7 +607,7 @@ export default function AdminContactDashboard() {
           className="border rounded-lg border-gray-200 bg-white shadow-sm"
         >
           <CardHeader>
-            <CardTitle className="text-gray-900">Contact submissions</CardTitle>
+            <CardTitle className="text-foreground">Contact submissions</CardTitle>
             <CardDescription className="text-gray-500">
               {filteredContacts.length} conversations match your filters
             </CardDescription>
@@ -658,7 +658,7 @@ export default function AdminContactDashboard() {
                     >
                       <TableCell>
                         <div className="flex flex-col">
-                          <span className="font-medium text-gray-900">{contact.name}</span>
+                          <span className="font-medium text-foreground">{contact.name}</span>
                           <span className="text-sm text-gray-500 truncate">
                             {contact.email}
                           </span>
@@ -683,12 +683,12 @@ export default function AdminContactDashboard() {
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0 text-gray-500 hover:text-gray-900">
+                            <Button variant="ghost" className="h-8 w-8 p-0 text-gray-500 hover:text-foreground">
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="border-gray-200">
-                            <DropdownMenuLabel className="text-gray-900">Actions</DropdownMenuLabel>
+                            <DropdownMenuLabel className="text-foreground">Actions</DropdownMenuLabel>
                             <DropdownMenuItem onClick={() => handleOpenDetails(contact)} className="text-gray-700 focus:bg-gray-100">
                               <Eye className="h-4 w-4 mr-2" /> View details
                             </DropdownMenuItem>

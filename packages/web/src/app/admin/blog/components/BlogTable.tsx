@@ -93,7 +93,7 @@ export function BlogTable({
                 />
               </TableCell>
               <TableCell className="font-medium max-w-xs">
-                <div className="truncate text-gray-900" title={post.title}>
+                <div className="truncate text-foreground" title={post.title}>
                   {post.title}
                 </div>
               </TableCell>
@@ -130,7 +130,7 @@ export function BlogTable({
               <TableCell className="text-right">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0 text-gray-500 hover:text-gray-900">
+                    <Button variant="ghost" className="h-8 w-8 p-0 text-gray-500 hover:text-foreground">
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>

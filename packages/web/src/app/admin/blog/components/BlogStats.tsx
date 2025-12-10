@@ -81,7 +81,7 @@ export function BlogStats({ stats }: BlogStatsProps) {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
+              <div className="text-2xl font-bold text-foreground">{stat.value}</div>
               <p className="text-xs text-muted-foreground mt-1">
                 {stat.description}
               </p>

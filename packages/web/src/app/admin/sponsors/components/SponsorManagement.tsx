@@ -298,7 +298,7 @@ export function SponsorManagement() {
       <motion.div variants={itemVariants}>
         <Card className="overflow-hidden border-gray-200 bg-white">
           <CardHeader className="bg-gray-50 border-b border-gray-200">
-            <CardTitle className="text-gray-900">Sponsored Companies</CardTitle>
+            <CardTitle className="text-foreground">Sponsored Companies</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {sponsoredCompanies && sponsoredCompanies.length > 0 ? (

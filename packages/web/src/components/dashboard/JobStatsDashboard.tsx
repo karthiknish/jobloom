@@ -69,14 +69,14 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
-                  <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg">
+                  <div className="p-4 rounded-2xl bg-blue-500 shadow-lg">
                     <Briefcase className="h-6 w-6 text-white" />
                   </div>
                   <div className="ml-4">
                     <p className="text-sm font-medium text-muted-foreground">
                       Total Jobs
                     </p>
-                    <p className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
+                    <p className="text-3xl font-bold text-blue-600">
                       {stats.totalJobs}
                     </p>
                   </div>
@@ -104,14 +104,14 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
-                  <div className="p-4 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 shadow-lg">
+                  <div className="p-4 rounded-2xl bg-orange-500 shadow-lg">
                     <MapPin className="h-8 w-8 text-white" />
                   </div>
                   <div className="ml-4">
                     <p className="text-sm font-medium text-muted-foreground">
                       Sponsored Jobs
                     </p>
-                    <p className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-orange-800 bg-clip-text text-transparent">
+                    <p className="text-3xl font-bold text-orange-600">
                       {stats.sponsoredJobs}
                     </p>
                   </div>
@@ -139,14 +139,14 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
-                  <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-lg">
+                  <div className="p-4 rounded-2xl bg-primary shadow-lg">
                     <Zap className="w-6 h-6 text-white" />
                   </div>
                   <div className="ml-4">
                     <p className="text-sm font-medium text-muted-foreground">
                       Active Applications
                     </p>
-                    <p className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-800 bg-clip-text text-transparent">
+                    <p className="text-3xl font-bold text-primary">
                       {stats.totalApplications}
                     </p>
                   </div>
@@ -174,14 +174,14 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
-                  <div className="p-4 rounded-2xl bg-gradient-to-br from-teal-500 to-teal-600 shadow-lg">
+                  <div className="p-4 rounded-2xl bg-teal-500 shadow-lg">
                     <TrendingUp className="h-8 w-8 text-white" />
                   </div>
                   <div className="ml-4">
                     <p className="text-sm font-medium text-muted-foreground">
                       Today&apos;s Jobs
                     </p>
-                    <p className="text-3xl font-bold bg-gradient-to-r from-teal-600 to-teal-800 bg-clip-text text-transparent">
+                    <p className="text-3xl font-bold text-teal-600">
                       {stats.jobsToday}
                     </p>
                   </div>
@@ -284,9 +284,9 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <div className="group/insight flex items-center justify-between p-4 bg-gradient-to-r from-muted to-muted/80   rounded-xl hover:from-muted/80 hover:to-muted/60   transition-all duration-300 cursor-help">
+                      <div className="group/insight flex items-center justify-between p-4 bg-card border   rounded-xl hover:from-muted/80 hover:to-muted/60   transition-all duration-300 cursor-help">
                         <div className="flex items-center">
-                          <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-md group-hover/insight:shadow-lg transition-shadow">
+                          <div className="p-3 rounded-xl bg-blue-500 shadow-md group-hover/insight:shadow-lg transition-shadow">
                             <Building className="w-5 h-5 text-white" />
                           </div>
                           <div className="ml-4">
@@ -298,7 +298,7 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
                             </p>
                           </div>
                         </div>
-                        <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
+                        <span className="text-2xl font-bold text-blue-600">
                           {stats.recruitmentAgencyJobs || 0}
                         </span>
                       </div>
@@ -312,9 +312,9 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <div className="group/insight flex items-center justify-between p-4 bg-gradient-to-r from-orange-50 to-orange-100   rounded-xl hover:from-orange-100 hover:to-orange-200   transition-all duration-300 cursor-help">
+                      <div className="group/insight flex items-center justify-between p-4 bg-card   rounded-xl hover:from-orange-100 hover:to-orange-200   transition-all duration-300 cursor-help">
                         <div className="flex items-center">
-                          <div className="p-3 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 shadow-md group-hover/insight:shadow-lg transition-shadow">
+                          <div className="p-3 rounded-xl bg-orange-500 shadow-md group-hover/insight:shadow-lg transition-shadow">
                             <MapPin className="h-6 w-6 text-white" />
                           </div>
                           <div className="ml-4">
@@ -326,7 +326,7 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
                             </p>
                           </div>
                         </div>
-                        <span className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-orange-800 bg-clip-text text-transparent">
+                        <span className="text-2xl font-bold text-orange-600">
                           {getPercentage(stats.sponsoredJobs, stats.totalJobs)}%
                         </span>
                       </div>
@@ -337,9 +337,9 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
                   </Tooltip>
                 </TooltipProvider>
 
-                <div className="group/insight flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-green-100   rounded-xl hover:from-green-100 hover:to-green-200   transition-all duration-300">
+                <div className="group/insight flex items-center justify-between p-4 bg-card   rounded-xl hover:from-green-100 hover:to-green-200   transition-all duration-300">
                   <div className="flex items-center">
-                    <div className="p-3 rounded-xl bg-gradient-to-br from-green-500 to-green-600 shadow-md group-hover/insight:shadow-lg transition-shadow">
+                    <div className="p-3 rounded-xl bg-green-500 shadow-md group-hover/insight:shadow-lg transition-shadow">
                       <TrendingUp className="h-6 w-6 text-white" />
                     </div>
                     <div className="ml-4">
@@ -351,7 +351,7 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
                       </p>
                     </div>
                   </div>
-                  <span className="text-2xl font-bold bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent">
+                  <span className="text-2xl font-bold text-green-600">
                     {getPercentage(stats.totalApplications, stats.totalJobs)}%
                   </span>
                 </div>

@@ -19,12 +19,6 @@ const navigationItems = [
     icon: Home,
     requiresAuth: false,
   },
-    {
-    name: "Interview",
-    href: "/interview-prep",
-    icon: MessageSquare,
-    requiresAuth: true,
-  },
   {
     name: "Resume Builder",
     href: "/resume-builder",

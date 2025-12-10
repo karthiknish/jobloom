@@ -144,6 +144,31 @@ export async function cacheAuthToken(params: {
   await writeCachedAuthToken(cache);
 }
 
+/**
+ * Get cached user info from the stored auth token.
+ * This returns user info even when Firebase auth.currentUser is null
+ * (e.g., when token was acquired from web app with separate auth state).
+ */
+export async function getCachedUserInfo(): Promise<{
+  userId?: string;
+  userEmail?: string;
+  token?: string;
+  isValid: boolean;
+} | null> {
+  const cached = await readCachedAuthToken();
+  if (!cached) {
+    return null;
+  }
+
+  const isValid = cached.expiresAt && cached.expiresAt > Date.now();
+  return {
+    userId: cached.userId,
+    userEmail: cached.userEmail,
+    token: isValid ? cached.token : undefined,
+    isValid: !!isValid
+  };
+}
+
 export async function clearCachedAuthToken(): Promise<void> {
   try {
     // Clear the main auth token

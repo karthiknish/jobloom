@@ -145,7 +145,7 @@ export default function AdminPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">--</div>
+              <div className="text-2xl font-bold text-foreground">--</div>
               <p className="text-xs text-muted-foreground mt-1">
                 +0% from last month
               </p>
@@ -159,7 +159,7 @@ export default function AdminPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">--</div>
+              <div className="text-2xl font-bold text-foreground">--</div>
               <p className="text-xs text-muted-foreground mt-1">
                 +0% from last month
               </p>
@@ -173,7 +173,7 @@ export default function AdminPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">--</div>
+              <div className="text-2xl font-bold text-foreground">--</div>
               <p className="text-xs text-muted-foreground mt-1">
                 +0 new this week
               </p>
@@ -187,7 +187,7 @@ export default function AdminPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">--</div>
+              <div className="text-2xl font-bold text-foreground">--</div>
               <p className="text-xs text-muted-foreground mt-1">
                 Requires attention
               </p>
@@ -213,7 +213,7 @@ export default function AdminPage() {
                       <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-blue-600 group-hover:scale-105 transition-transform">
                         <Users className="h-5 w-5" />
                       </div>
-                      <div className="font-semibold text-gray-900">User Management</div>
+                      <div className="font-semibold text-foreground">User Management</div>
                       <ArrowUpRight className="ml-auto h-4 w-4 text-gray-400 opacity-0 -translate-x-2 transition-all group-hover:opacity-100 group-hover:translate-x-0" />
                     </div>
                     <p className="text-sm text-muted-foreground">
@@ -226,7 +226,7 @@ export default function AdminPage() {
                       <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100 text-green-600 group-hover:scale-105 transition-transform">
                         <Building2 className="h-5 w-5" />
                       </div>
-                      <div className="font-semibold text-gray-900">Sponsors</div>
+                      <div className="font-semibold text-foreground">Sponsors</div>
                       <ArrowUpRight className="ml-auto h-4 w-4 text-gray-400 opacity-0 -translate-x-2 transition-all group-hover:opacity-100 group-hover:translate-x-0" />
                     </div>
                     <p className="text-sm text-muted-foreground">
@@ -239,7 +239,7 @@ export default function AdminPage() {
                       <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100 text-purple-600 group-hover:scale-105 transition-transform">
                         <FileText className="h-5 w-5" />
                       </div>
-                      <div className="font-semibold text-gray-900">Blog Posts</div>
+                      <div className="font-semibold text-foreground">Blog Posts</div>
                       <ArrowUpRight className="ml-auto h-4 w-4 text-gray-400 opacity-0 -translate-x-2 transition-all group-hover:opacity-100 group-hover:translate-x-0" />
                     </div>
                     <p className="text-sm text-muted-foreground">
@@ -252,7 +252,7 @@ export default function AdminPage() {
                       <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-100 text-orange-600 group-hover:scale-105 transition-transform">
                         <MessageSquare className="h-5 w-5" />
                       </div>
-                      <div className="font-semibold text-gray-900">Inquiries</div>
+                      <div className="font-semibold text-foreground">Inquiries</div>
                       <ArrowUpRight className="ml-auto h-4 w-4 text-gray-400 opacity-0 -translate-x-2 transition-all group-hover:opacity-100 group-hover:translate-x-0" />
                     </div>
                     <p className="text-sm text-muted-foreground">
@@ -321,7 +321,7 @@ export default function AdminPage() {
                   <div className="rounded-lg bg-gray-50 p-4 border border-gray-100">
                     <div className="flex items-center gap-2 mb-2">
                       <ShieldCheck className="h-4 w-4 text-primary" />
-                      <span className="text-sm font-medium text-gray-900">Security Status</span>
+                      <span className="text-sm font-medium text-foreground">Security Status</span>
                     </div>
                     <p className="text-xs text-muted-foreground leading-relaxed">
                       No security incidents reported in the last 24 hours. All systems are running normally.

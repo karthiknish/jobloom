@@ -153,11 +153,82 @@ export const RATE_LIMITS: Record<string, RateLimitConfig> = {
 
 export type UserTier = 'free' | 'premium' | 'admin';
 
+// Enhanced rate limiting state with sliding window support
+interface EnhancedRateLimitState extends RateLimitState {
+  requests: number[];  // Array of timestamps for sliding window
+  burstCount: number;  // Requests in last 5 seconds  
+  lastBurstCheck: number;
+}
+
 // In-memory rate limiting store for server-side
 // In production, this should be replaced with Redis or similar
-const serverRateLimitStore = new Map<string, RateLimitState>();
+const serverRateLimitStore = new Map<string, EnhancedRateLimitState>();
+
+// Abuse detection thresholds
 const ABUSE_VIOLATION_THRESHOLD = 5;
-const ABUSE_LOCK_WINDOW_MS = 15 * 60 * 1000;
+const ABUSE_LOCK_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+const BURST_WINDOW_MS = 5000; // 5 seconds
+const BURST_THRESHOLD_MULTIPLIER = 0.5; // Max 50% of allowed requests in burst window
+const CLEANUP_INTERVAL_MS = 60 * 1000; // Clean up every minute
+const MAX_STORE_SIZE = 10000; // Max number of tracked identifiers
+
+// Auto-cleanup expired entries
+let lastCleanup = Date.now();
+
+function performCleanup(): void {
+  const now = Date.now();
+  if (now - lastCleanup < CLEANUP_INTERVAL_MS) return;
+  
+  lastCleanup = now;
+  let cleaned = 0;
+  
+  for (const [key, state] of serverRateLimitStore.entries()) {
+    // Remove entries that haven't been accessed in 2x the window time
+    const maxAge = (state.resetTime - state.lastRequest) * 2 || 120000;
+    if (now - state.lastRequest > maxAge) {
+      serverRateLimitStore.delete(key);
+      cleaned++;
+    }
+  }
+  
+  // If still too large, remove oldest entries
+  if (serverRateLimitStore.size > MAX_STORE_SIZE) {
+    const entries = Array.from(serverRateLimitStore.entries())
+      .sort((a, b) => a[1].lastRequest - b[1].lastRequest);
+    
+    const toRemove = entries.slice(0, serverRateLimitStore.size - MAX_STORE_SIZE + 1000);
+    for (const [key] of toRemove) {
+      serverRateLimitStore.delete(key);
+      cleaned++;
+    }
+  }
+  
+  if (cleaned > 0) {
+    console.log(`[RateLimiter] Cleaned up ${cleaned} expired entries, ${serverRateLimitStore.size} remaining`);
+  }
+}
+
+// Sliding window rate limit check with burst protection
+function checkSlidingWindow(
+  state: EnhancedRateLimitState,
+  config: RateLimitConfig,
+  now: number
+): { allowed: boolean; burstExceeded: boolean } {
+  // Clean old requests outside the window
+  const windowStart = now - config.windowMs;
+  state.requests = state.requests.filter(ts => ts > windowStart);
+  
+  // Check burst (too many requests in short period)
+  const burstWindowStart = now - BURST_WINDOW_MS;
+  const burstCount = state.requests.filter(ts => ts > burstWindowStart).length;
+  const burstLimit = Math.ceil(config.maxRequests * BURST_THRESHOLD_MULTIPLIER);
+  const burstExceeded = burstCount >= burstLimit;
+  
+  // Check overall limit
+  const allowed = state.requests.length < config.maxRequests && !burstExceeded;
+  
+  return { allowed, burstExceeded };
+}
 
 // Client-side rate limiting utilities
 export class ClientRateLimiter {
@@ -266,19 +337,25 @@ export function checkServerRateLimit(
   config?: Partial<RateLimitConfig>,
   userTier: UserTier = 'free'
 ): RateLimitResult {
+  // Perform cleanup periodically
+  performCleanup();
+  
   const rateLimitConfig = { ...getRateLimitConfig(endpoint, userTier), ...config };
   const now = Date.now();
   const stateKey = `${identifier}:${endpoint}:${userTier}`;
-  const state = serverRateLimitStore.get(stateKey);
+  let state = serverRateLimitStore.get(stateKey);
 
-  // If no state exists or window has expired, reset
-  if (!state || now > state.resetTime) {
-    const newState: RateLimitState = {
+  // If no state exists, create new one
+  if (!state) {
+    const newState: EnhancedRateLimitState = {
       count: 1,
       resetTime: now + rateLimitConfig.windowMs,
       lastRequest: now,
       violations: 0,
       lockedUntil: undefined,
+      requests: [now],
+      burstCount: 1,
+      lastBurstCheck: now,
     };
     serverRateLimitStore.set(stateKey, newState);
     return {
@@ -293,17 +370,9 @@ export function checkServerRateLimit(
     };
   }
 
-  if (state.lockedUntil && now >= state.lockedUntil) {
-    state.lockedUntil = undefined;
-    state.count = 1;
-    state.resetTime = now + rateLimitConfig.windowMs;
-    state.lastRequest = now;
-    state.violations = 0;
-  }
-
-  const lockedUntil = (state as any).lockedUntil as number | undefined;
-  if (lockedUntil && now < lockedUntil) {
-    const resetIn = lockedUntil - now;
+  // Check if locked out due to abuse
+  if (state.lockedUntil && now < state.lockedUntil) {
+    const resetIn = state.lockedUntil - now;
     return {
       allowed: false,
       resetIn,
@@ -316,19 +385,48 @@ export function checkServerRateLimit(
     };
   }
 
-  // Check if we've exceeded the limit
-  if (state.count >= rateLimitConfig.maxRequests) {
-    const resetIn = state.resetTime - now;
+  // Clear lockout if expired
+  if (state.lockedUntil && now >= state.lockedUntil) {
+    state.lockedUntil = undefined;
+    state.violations = Math.max(0, (state.violations || 0) - 1); // Gradually reduce violations
+    state.requests = [];
+  }
+
+  // Use sliding window check
+  const slidingResult = checkSlidingWindow(state, rateLimitConfig, now);
+  
+  // Check if we've exceeded the limit or burst threshold
+  if (!slidingResult.allowed) {
+    const resetIn = rateLimitConfig.windowMs;
     
     // Increment violation count for potential penalties
     state.violations = (state.violations || 0) + 1;
     
-    // Add progressive delays for repeat violators
-    const penaltyDelay = Math.min(state.violations * 5000, 60000); // Max 1 minute penalty
+    // Exponential backoff penalty for repeat violators
+    const penaltyMultiplier = Math.pow(2, Math.min(state.violations - 1, 5)); // Max 32x
+    const basePenalty = 5000; // 5 seconds base
+    const penaltyDelay = Math.min(basePenalty * penaltyMultiplier, 300000); // Max 5 minutes
 
-    if (state.violations >= ABUSE_VIOLATION_THRESHOLD && !lockedUntil) {
-      const lockUntil = now + ABUSE_LOCK_WINDOW_MS;
-      (state as any).lockedUntil = lockUntil;
+    // Log burst abuse
+    if (slidingResult.burstExceeded) {
+      SecurityLogger.logSecurityEvent({
+        type: "suspicious_request",
+        severity: "medium",
+        ip: identifier,
+        details: {
+          endpoint,
+          reason: "burst_detected",
+          burstCount: state.requests.filter(ts => ts > now - BURST_WINDOW_MS).length,
+          violations: state.violations,
+        },
+      });
+    }
+
+    // Lock out severe abusers
+    if (state.violations >= ABUSE_VIOLATION_THRESHOLD) {
+      const lockDuration = ABUSE_LOCK_WINDOW_MS * Math.min(state.violations - ABUSE_VIOLATION_THRESHOLD + 1, 4);
+      state.lockedUntil = now + lockDuration;
+      
       SecurityLogger.logSecurityEvent({
         type: "suspicious_request",
         severity: "high",
@@ -336,16 +434,18 @@ export function checkServerRateLimit(
         details: {
           endpoint,
           violations: state.violations,
-          lockoutMs: ABUSE_LOCK_WINDOW_MS,
+          lockoutMs: lockDuration,
+          reason: "repeated_violations",
         },
       });
+      
       return {
         allowed: false,
-        resetIn: lockUntil - now,
+        resetIn: lockDuration,
         remaining: 0,
         maxRequests: rateLimitConfig.maxRequests,
         identifier,
-        retryAfter: Math.ceil((lockUntil - now) / 1000),
+        retryAfter: Math.ceil(lockDuration / 1000),
         violations: state.violations,
         abuseDetected: true,
       };
@@ -353,24 +453,35 @@ export function checkServerRateLimit(
     
     return {
       allowed: false,
-      resetIn: resetIn > 0 ? resetIn + penaltyDelay : penaltyDelay,
+      resetIn: resetIn + penaltyDelay,
       remaining: 0,
       maxRequests: rateLimitConfig.maxRequests,
       identifier,
       retryAfter: Math.ceil((resetIn + penaltyDelay) / 1000),
       violations: state.violations,
-      abuseDetected: false,
+      abuseDetected: slidingResult.burstExceeded,
     };
   }
 
-  // Increment counter and allow request
-  state.count++;
+  // Request allowed - add to sliding window
+  state.requests.push(now);
+  state.count = state.requests.length;
   state.lastRequest = now;
+
+  // Gradually decrease violations for good behavior
+  if (state.violations && state.violations > 0) {
+    // If it's been a while since last request, reduce violations
+    const timeSinceLastBurstCheck = now - state.lastBurstCheck;
+    if (timeSinceLastBurstCheck > rateLimitConfig.windowMs * 2) {
+      state.violations = Math.max(0, state.violations - 1);
+      state.lastBurstCheck = now;
+    }
+  }
 
   return {
     allowed: true,
-    remaining: rateLimitConfig.maxRequests - state.count,
-    resetIn: state.resetTime - now,
+    remaining: rateLimitConfig.maxRequests - state.requests.length,
+    resetIn: rateLimitConfig.windowMs,
     maxRequests: rateLimitConfig.maxRequests,
     identifier,
     retryAfter: 0,

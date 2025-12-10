@@ -463,7 +463,7 @@ export default function AdminUserDashboardClient() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-gray-900">{userStats.totalUsers}</div>
+                <div className="text-2xl font-bold text-foreground">{userStats.totalUsers}</div>
                 <p className="text-xs text-muted-foreground mt-1">
                   +{userStats.newUsersThisMonth} this month
                 </p>
@@ -478,7 +478,7 @@ export default function AdminUserDashboardClient() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-gray-900">{userStats.activeUsers}</div>
+                <div className="text-2xl font-bold text-foreground">{userStats.activeUsers}</div>
                 <p className="text-xs text-muted-foreground mt-1">
                   Recently active
                 </p>
@@ -493,7 +493,7 @@ export default function AdminUserDashboardClient() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-gray-900">{userStats.adminUsers}</div>
+                <div className="text-2xl font-bold text-foreground">{userStats.adminUsers}</div>
                 <p className="text-xs text-muted-foreground mt-1">
                   System administrators
                 </p>
@@ -508,7 +508,7 @@ export default function AdminUserDashboardClient() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-gray-900">{userStats.recentLogins}</div>
+                <div className="text-2xl font-bold text-foreground">{userStats.recentLogins}</div>
                 <p className="text-xs text-muted-foreground mt-1">
                   Last 7 days
                 </p>
@@ -552,7 +552,7 @@ export default function AdminUserDashboardClient() {
                         <span className="capitalize text-sm font-medium text-gray-700">{plan}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="text-sm font-medium text-gray-900">{count as number}</div>
+                        <div className="text-sm font-medium text-foreground">{count as number}</div>
                         <div className="w-24 h-2 bg-gray-100 rounded-full overflow-hidden">
                           <div
                             className={`h-full rounded-full transition-all duration-300 ${
@@ -595,7 +595,7 @@ export default function AdminUserDashboardClient() {
                     </div>
                     <span className="text-sm font-medium text-gray-700">Verified</span>
                   </div>
-                  <span className="text-sm font-semibold text-gray-900">
+                  <span className="text-sm font-semibold text-foreground">
                     {verificationStats.verified} <span className="text-muted-foreground font-normal">({verificationStats.verificationRate}%)</span>
                   </span>
                 </div>
@@ -606,7 +606,7 @@ export default function AdminUserDashboardClient() {
                     </div>
                     <span className="text-sm font-medium text-gray-700">Unverified</span>
                   </div>
-                  <span className="text-sm font-semibold text-gray-900">
+                  <span className="text-sm font-semibold text-foreground">
                     {verificationStats.unverified}
                   </span>
                 </div>
@@ -617,7 +617,7 @@ export default function AdminUserDashboardClient() {
                     </div>
                     <span className="text-sm font-medium text-gray-700">Never logged in</span>
                   </div>
-                  <span className="text-sm font-semibold text-gray-900">
+                  <span className="text-sm font-semibold text-foreground">
                     {verificationStats.neverLoggedIn}
                   </span>
                 </div>
@@ -628,7 +628,7 @@ export default function AdminUserDashboardClient() {
                     </div>
                     <span className="text-sm font-medium text-gray-700">Dormant (&gt; 30 days)</span>
                   </div>
-                  <span className="text-sm font-semibold text-gray-900">
+                  <span className="text-sm font-semibold text-foreground">
                     {verificationStats.dormant}
                   </span>
                 </div>
@@ -734,7 +734,7 @@ export default function AdminUserDashboardClient() {
                               </AvatarFallback>
                             </Avatar>
                             <div className="min-w-0">
-                              <p className="truncate text-sm font-medium text-gray-900">
+                              <p className="truncate text-sm font-medium text-foreground">
                                 {recentUser.name || "Unnamed User"}
                               </p>
                               <p className="text-xs text-muted-foreground truncate">
@@ -785,7 +785,7 @@ export default function AdminUserDashboardClient() {
                               </AvatarFallback>
                             </Avatar>
                             <div className="min-w-0">
-                              <p className="truncate font-medium text-sm text-gray-900">
+                              <p className="truncate font-medium text-sm text-foreground">
                                 {adminUser.name || "Unnamed Admin"}
                               </p>
                               <p className="text-xs text-muted-foreground truncate">
@@ -889,7 +889,7 @@ export default function AdminUserDashboardClient() {
                               </AvatarFallback>
                             </Avatar>
                             <div className="min-w-0 flex-1">
-                              <div className="font-medium truncate text-gray-900">
+                              <div className="font-medium truncate text-foreground">
                                 {user.name || 'No name'}
                               </div>
                               <div className="text-xs text-muted-foreground truncate">

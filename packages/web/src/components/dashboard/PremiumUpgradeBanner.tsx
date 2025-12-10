@@ -25,7 +25,7 @@ export function PremiumUpgradeBanner({ className = "", compact = false }: Premiu
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className={`bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20 rounded-lg p-3 ${className}`}
+        className={`bg-card border border-border rounded-lg p-3 ${className}`}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -33,7 +33,7 @@ export function PremiumUpgradeBanner({ className = "", compact = false }: Premiu
             <span className="text-sm font-medium text-primary">Upgrade to Premium</span>
           </div>
           <Link href="/upgrade">
-            <Button size="sm" className="bg-gradient-to-r from-primary to-secondary text-white text-xs">
+            <Button size="sm" className="bg-primary text-primary-foreground text-xs">
               Upgrade
             </Button>
           </Link>
@@ -48,7 +48,7 @@ export function PremiumUpgradeBanner({ className = "", compact = false }: Premiu
       animate={{ opacity: 1, y: 0 }}
       className={className}
     >
-      <Card className="bg-gradient-to-r from-primary/5 to-secondary/5 border-primary/20">
+      <Card className="bg-card border-border">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -81,7 +81,7 @@ export function PremiumUpgradeBanner({ className = "", compact = false }: Premiu
                 £5.99/month
               </Badge>
               <Link href="/upgrade">
-                <Button className="bg-gradient-to-r from-primary to-secondary text-white">
+                <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
                   <Crown className="h-4 w-4 mr-2" />
                   Upgrade Now
                 </Button>

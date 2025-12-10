@@ -83,7 +83,7 @@ export function SponsorStats({ stats }: SponsorStatsProps) {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
+              <div className="text-2xl font-bold text-foreground">{stat.value}</div>
               <p className="text-xs text-gray-500 mt-1">
                 {stat.description}
               </p>
