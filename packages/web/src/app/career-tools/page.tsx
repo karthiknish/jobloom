@@ -5,9 +5,9 @@ import { motion } from "framer-motion";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { useSubscription } from "@/providers/subscription-provider";
 import { FeatureGate } from "@/components/UpgradePrompt";
-import { calculateEnhancedATSScore } from "@/lib/enhancedAts";
+import { calculateResumeScore as calculateAtsResumeScore } from "@/lib/ats";
 import type { ResumeData as CVResumeData } from "@/types/resume";
-import type { ResumeScore as ATSResumeScore } from "@/lib/enhancedAts";
+import type { ResumeScore as ATSResumeScore } from "@/lib/ats";
 import type { ResumeData as AdvancedResumeData } from "@/components/application/types";
 import { useCvEvaluator } from "@/hooks/useCvEvaluator";
 import { ensureFirebaseApp } from "@/firebase/client";
@@ -155,7 +155,7 @@ export default function CareerToolsPage() {
   const handleResumeUpdate = (resume: CVResumeData, targetRole?: string, industry?: string) => {
     setCurrentResume(resume);
     if (resume && targetRole) {
-      const score = calculateEnhancedATSScore(resume, { targetRole, industry });
+      const score = calculateAtsResumeScore(resume, { targetRole, industry });
       setCurrentAtsScore(score);
     }
   };

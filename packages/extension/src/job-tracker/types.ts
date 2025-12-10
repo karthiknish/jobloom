@@ -37,6 +37,10 @@ export interface JobData {
     workplaceType?: string;
     /** Company logo URL */
     companyLogo?: string;
+    /** Method used for extraction (normal, fallback, empty) */
+    extractionMethod?: string;
+    /** True if site is not supported */
+    unsupportedSite?: boolean;
   };
 }
 

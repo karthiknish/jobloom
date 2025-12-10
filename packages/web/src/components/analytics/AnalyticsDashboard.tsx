@@ -108,7 +108,7 @@ export function AnalyticsDashboard() {
       }
 
       const token = await auth.currentUser.getIdToken();
-      const response = await fetch("/api/app/analytics", {
+      const response = await fetch("/api/admin/analytics", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -119,7 +119,46 @@ export function AnalyticsDashboard() {
         throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
+      const rawData = await response.json();
+      
+      // Transform new API response to existing interface
+      const data: AnalyticsData = {
+        users: {
+          total: rawData.users?.total || 0,
+          newLast30Days: rawData.users?.newThisMonth || 0,
+          activeLast7Days: rawData.activeUsers?.weekly || 0,
+          premium: rawData.users?.premium || 0,
+          free: rawData.users?.free || 0,
+          conversionRate: rawData.users?.total > 0 
+            ? Math.round((rawData.users?.premium / rawData.users?.total) * 10000) / 100 
+            : 0,
+          activeRate: rawData.users?.total > 0 
+            ? Math.round((rawData.activeUsers?.weekly / rawData.users?.total) * 10000) / 100 
+            : 0,
+        },
+        content: {
+          blogPosts: 0, // Not included in new API
+          publishedPosts: 0,
+          blogViews: 0,
+        },
+        platform: {
+          sponsors: 0,
+          contactSubmissions: 0,
+          cvAnalyses: rawData.features?.cvAnalyses || 0,
+          jobsSaved: rawData.applications?.total || 0,
+        },
+        engagement: {
+          bounceRate: 0,
+          avgSessionDuration: 0,
+        },
+        topPages: [],
+        userActions: rawData.events?.top?.map((e: any) => ({
+          action: e.event,
+          count: e.count,
+        })) || [],
+        timestamp: Date.now(),
+      };
+      
       setAnalyticsData(data);
     } catch (err) {
       console.error('Failed to load analytics data:', err);

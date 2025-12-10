@@ -1,7 +1,7 @@
 "use client";
 
-import { AdvancedDashboard } from "@/components/dashboard/AdvancedDashboard";
+import { Dashboard } from "@/components/dashboard/Dashboard";
 
-export default function Dashboard() {
-  return <AdvancedDashboard />;
+export default function DashboardPage() {
+  return <Dashboard />;
 }

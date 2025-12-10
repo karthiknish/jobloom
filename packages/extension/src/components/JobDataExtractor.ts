@@ -1,450 +1,330 @@
+/**
+ * JobDataExtractor - LinkedIn-Only Job Extraction
+ * 
+ * This extractor is specifically optimized for LinkedIn job pages.
+ * It validates that the current page is LinkedIn before extracting data.
+ */
+
 import { extractLinkedInJob } from "../job-tracker/jobExtractor";
 import type { JobData } from "../job-tracker/types";
 
 export type { JobData } from "../job-tracker/types";
 
-type SelectorMap = Record<string, string[]>;
+// ============ CONSTANTS ============
+const LINKEDIN_DOMAINS = ["linkedin.com", "www.linkedin.com"] as const;
 
-export class JobDataExtractor {
-  static detectSite(): string {
-    const hostname = window.location.hostname.toLowerCase();
+const LINKEDIN_JOB_URL_PATTERNS = [
+  /linkedin\.com\/jobs\/view\//,
+  /linkedin\.com\/jobs\/search\//,
+  /linkedin\.com\/jobs\/collections\//,
+] as const;
 
-    if (hostname.includes("linkedin")) return "linkedin";
-    if (hostname.includes("indeed")) return "indeed";
-    if (hostname.includes("reed")) return "reed";
-    if (hostname.includes("totaljobs")) return "totaljobs";
-    if (hostname.includes("glassdoor")) return "glassdoor";
-    if (hostname.includes("ziprecruiter")) return "ziprecruiter";
-    if (hostname.includes("monster")) return "monster";
+// LinkedIn-specific job card selectors (2024/2025 design)
+const LINKEDIN_JOB_CARD_SELECTORS = [
+  // Job search results page
+  ".jobs-search-results__list-item",
+  ".job-card-container",
+  ".scaffold-layout__list-item",
+  // Job collections
+  ".jobs-job-board-list__item",
+  // Recommended jobs
+  ".discovery-templates-entity-item",
+  // Job detail page (the entire detail container)
+  ".jobs-details",
+  ".jobs-unified-top-card",
+] as const;
 
-    return "unknown";
-  }
+// ============ VALIDATION ============
+export interface ValidationResult {
+  isValid: boolean;
+  isLinkedIn: boolean;
+  isJobPage: boolean;
+  errorMessage?: string;
+}
 
-  static extractJobData(element: Element): JobData {
-    const site = this.detectSite();
-    if (site === "linkedin") {
-      try {
-        return extractLinkedInJob(element);
-      } catch (error) {
-        console.warn("Hireall: LinkedIn extraction fallback", error);
-      }
-    }
+export function validatePage(): ValidationResult {
+  const hostname = window.location.hostname.toLowerCase();
+  const href = window.location.href;
 
-    const title = this.getFirstMatch(element, this.TITLE_SELECTORS[site]) ?? "Unknown role";
-    const company = this.getFirstMatch(element, this.COMPANY_SELECTORS[site]) ?? "Unknown company";
-    const location = this.getFirstMatch(element, this.LOCATION_SELECTORS[site]) ?? "Location not listed";
-    const url = this.getLink(element, this.URL_SELECTORS[site]) ?? window.location.href;
-
-    const description = this.extractDescription(element, site) ?? undefined;
-    const salary = this.extractSalary(element, site) ?? undefined;
-    const postedDate = this.getFirstMatch(element, this.POSTED_DATE_SELECTORS[site]) ?? undefined;
-    const textSnapshot = (element.textContent ?? "").toLowerCase();
-    const details = this.extractDetails(element, description);
-    const remoteFlag = this.detectRemote(textSnapshot);
-    const salaryRange = salary ? this.parseSalaryRange(salary) : undefined;
-    const seniority = this.detectSeniority(textSnapshot);
-
+  // Check if we're on LinkedIn
+  const isLinkedIn = LINKEDIN_DOMAINS.some(domain => hostname.includes(domain));
+  if (!isLinkedIn) {
     return {
-      title,
-      company,
-      location,
-      url,
-      description,
-      salary,
-      salaryRange,
-      postedDate,
-      jobType: this.detectJobType(textSnapshot),
-      experienceLevel: this.detectExperienceLevel(textSnapshot),
-      remoteWork: remoteFlag,
-      skills: details.skills.length ? details.skills : undefined,
-      requirements: details.requirements.length ? details.requirements : undefined,
-      benefits: details.benefits.length ? details.benefits : undefined,
-      isSponsored: this.detectSponsored(element, site),
-      dateFound: new Date().toISOString(),
-      source: site,
-      metadata: {
-        remote: remoteFlag,
-        seniority,
-      },
+      isValid: false,
+      isLinkedIn: false,
+      isJobPage: false,
+      errorMessage: "HireAll job extraction only works on LinkedIn. Please navigate to LinkedIn Jobs.",
     };
   }
 
-  static findJobCards(): Element[] {
-    const site = this.detectSite();
-    const selectors = this.JOB_CARD_SELECTORS[site] ?? this.JOB_CARD_SELECTORS.unknown;
-    const matches = new Set<Element>();
+  // Check if we're on a jobs page
+  const isJobPage = LINKEDIN_JOB_URL_PATTERNS.some(pattern => pattern.test(href));
+  if (!isJobPage) {
+    return {
+      isValid: false,
+      isLinkedIn: true,
+      isJobPage: false,
+      errorMessage: "Please navigate to a LinkedIn Jobs page to use job extraction.",
+    };
+  }
 
-    selectors.forEach((selector) => {
-      document.querySelectorAll(selector).forEach((node) => {
-        if (node instanceof Element) {
-          matches.add(node);
-        }
+  return {
+    isValid: true,
+    isLinkedIn: true,
+    isJobPage: true,
+  };
+}
+
+// ============ SITE DETECTION ============
+export function detectSite(): "linkedin" | "unsupported" {
+  const hostname = window.location.hostname.toLowerCase();
+  return LINKEDIN_DOMAINS.some(domain => hostname.includes(domain)) 
+    ? "linkedin" 
+    : "unsupported";
+}
+
+export function isLinkedIn(): boolean {
+  return detectSite() === "linkedin";
+}
+
+// ============ JOB DATA EXTRACTION ============
+export interface ExtractionResult {
+  success: boolean;
+  data?: JobData;
+  error?: string;
+  confidence: number;
+}
+
+/**
+ * Extract job data from a LinkedIn element with validation and error handling
+ */
+export function extractJobData(element: Element): JobData {
+  // Validate we're on LinkedIn
+  if (!isLinkedIn()) {
+    console.warn("HireAll: Job extraction is only supported on LinkedIn");
+    return createEmptyJobData("unsupported");
+  }
+
+  try {
+    const jobData = extractLinkedInJob(element);
+    
+    // Validate extracted data
+    if (!isValidJobData(jobData)) {
+      console.warn("HireAll: Extracted job data is incomplete", {
+        title: jobData.title,
+        company: jobData.company,
       });
-    });
-
-    return Array.from(matches);
-  }
-
-  private static readonly TITLE_SELECTORS: SelectorMap = {
-    linkedin: [
-      "h1.top-card-layout__title",
-      ".jobs-unified-top-card__job-title",
-      ".job-card-list__title",
-      ".job-card-container__link",
-      ".t-24",
-      ".job-details-jobs-unified-top-card__job-title"
-    ],
-    indeed: [
-      "[data-testid='jobTitle']", 
-      ".jobTitle", 
-      ".jobtitle", 
-      ".jobTitle-text",
-      "#jobTitleTextContainer",
-      ".jobsearch-JobInfoHeader-title"
-    ],
-    reed: [".job-title", "h1", "h2"],
-    totaljobs: ["[data-automation='job-title']", ".job-title", "h2"],
-    glassdoor: ["[data-test='job-title']", ".job-title", "h2"],
-    ziprecruiter: ["h1", ".job_title"],
-    monster: ["h1", ".job-title"],
-    unknown: ["h1", "h2", "[data-testid*='title']", ".job-title"],
-  };
-
-  private static readonly COMPANY_SELECTORS: SelectorMap = {
-    linkedin: [
-      "a.topcard__org-name-link",
-      "span.topcard__flavor",
-      ".job-card-container__primary-description",
-      ".job-card-list__company",
-      ".job-details-jobs-unified-top-card__company-name",
-      ".t-14"
-    ],
-    indeed: [
-      "[data-testid='companyName']", 
-      ".companyName", 
-      ".company",
-      "[data-testid='inlineHeader-companyName']",
-      "[data-company-name='true']"
-    ],
-    reed: [".company", "[data-testid='company-name']"],
-    totaljobs: ["[data-automation='jobCompany']", ".company"],
-    glassdoor: ["[data-test='employer-name']", ".job-info__company"],
-    ziprecruiter: [".hiring-company", ".company_name"],
-    monster: [".company", ".company-name"],
-    unknown: [".company", ".employer", "[data-testid*='company']"],
-  };
-
-  private static readonly LOCATION_SELECTORS: SelectorMap = {
-    linkedin: [
-      "span.topcard__flavor--bullet",
-      ".jobs-unified-top-card__bullet",
-      ".job-card-container__metadata-item",
-    ],
-    indeed: ["[data-testid='text-location']", ".companyLocation", ".jobLocation", ".location"],
-    reed: [".location", "[data-testid='location']"],
-    totaljobs: ["[data-automation='job-location']", ".location"],
-    glassdoor: ["[data-test='location']", ".location"],
-    ziprecruiter: [".location", "[itemprop='addressLocality']"],
-    monster: [".location", "[data-testid='location']"],
-    unknown: [".location", ".job-location", "[data-testid*='location']"],
-  };
-
-  private static readonly URL_SELECTORS: SelectorMap = {
-    linkedin: ["a[data-control-name='job_card_click']", "a[href*='/jobs/view']"],
-    indeed: ["a[data-testid='jobTitle']", "a.jobtitle"],
-    reed: ["a[href*='/jobs/']"],
-    totaljobs: ["a[href*='/job/']"],
-    glassdoor: ["a[data-test='job-title-link']"],
-    ziprecruiter: ["a[href*='/jobs/']"],
-    monster: ["a[href*='/job/']"],
-    unknown: ["a[href*='/job']", "a[href*='viewjob']"],
-  };
-
-  private static readonly POSTED_DATE_SELECTORS: SelectorMap = {
-    linkedin: [
-      "span.topcard__flavor--metadata",
-      ".jobs-unified-top-card__posted-date",
-      ".job-card-container__listed-time",
-    ],
-    indeed: [".date", "[data-testid='myJobsStateDate']"],
-    reed: [".posted-date", "[data-testid='posted-date']"],
-    totaljobs: ["[data-automation='job-date']", ".date"],
-    glassdoor: ["[data-test='job-age']", ".job-info__age"],
-    ziprecruiter: [".job-age"],
-    monster: ["time", ".posted"],
-    unknown: [".date", "time", "[data-testid*='posted']"],
-  };
-
-  private static readonly JOB_CARD_SELECTORS: SelectorMap = {
-    linkedin: [".jobs-search-results__list-item", ".job-card-container"],
-    indeed: [".jobsearch-SerpJobCard", "[data-testid='result']"],
-    reed: [".job-result", ".job-card"],
-    totaljobs: ["[data-automation='job-card']", ".job-card"],
-    glassdoor: ["[data-test='jobListing']", ".job-card"],
-    ziprecruiter: ["article", ".job-result"],
-    monster: [".card-content", ".job-card"],
-    unknown: ["article", "li", "div[data-job-id]"],
-  };
-
-  private static getFirstMatch(element: Element, selectors: string[] = []): string | null {
-    for (const selector of selectors) {
-      try {
-        const node = element.querySelector(selector);
-        const value = node?.textContent?.trim();
-        if (value) {
-          return value;
-        }
-      } catch {
-        // Ignore invalid selectors
-      }
     }
 
-    return null;
-  }
-
-  private static getLink(element: Element, selectors: string[] = []): string | null {
-    for (const selector of selectors) {
-      try {
-        const node = element.querySelector(selector);
-        if (!node) continue;
-
-        if (node instanceof HTMLAnchorElement && node.href) {
-          return node.href;
-        }
-
-        const href = (node as HTMLElement).getAttribute("href") || (node as any).href;
-        if (href) {
-          return new URL(href, window.location.href).toString();
-        }
-      } catch {
-        // Ignore invalid selectors
-      }
-    }
-
-    return null;
-  }
-
-  private static extractDescription(element: Element, site: string): string | undefined {
-    const selectorsBySite: SelectorMap = {
-      linkedin: [
-        ".jobs-description__content",
-        ".jobs-box__html-content",
-        ".jobs-description-content__text",
-      ],
-      indeed: ["#jobDescriptionText", ".jobsearch-jobDescriptionText"],
-      reed: [".job-description", "[data-testid='jobDescription']"],
-      totaljobs: ["[data-automation='job-description']", ".job-description"],
-      glassdoor: ["[data-test='jobDescriptionContent']", ".job-details__content"],
-      ziprecruiter: [".job_details", "[data-company-name]"],
-      monster: [".job-description", "section[data-testid='job-details']"],
-      unknown: ["[data-testid*='description']", ".description", "article"],
-    };
-
-    return this.getFirstMatch(element, selectorsBySite[site] ?? selectorsBySite.unknown) ?? undefined;
-  }
-
-  private static extractSalary(element: Element, site: string): string | null {
-    const selectorsBySite: SelectorMap = {
-      linkedin: [
-        ".jobs-unified-top-card__salary-info",
-        ".job-card-container__salary",
-      ],
-      indeed: [
-        "[data-testid='salary']",
-        "[data-testid='detailSalary']",
-        ".salary-snippet-container",
-      ],
-      reed: [".salary", "[data-testid='salary']"],
-      totaljobs: ["[data-automation='job-salary']", ".salary"],
-      glassdoor: ["[data-test='detailSalary']", ".salary"],
-      ziprecruiter: [".job-salary"],
-      monster: [".salary", "[data-testid='salary']"],
-      unknown: [".salary", "[data-testid*='salary']"],
-    };
-
-    return this.getFirstMatch(element, selectorsBySite[site] ?? selectorsBySite.unknown);
-  }
-
-  private static extractDetails(
-    element: Element,
-    description?: string | null
-  ): { requirements: string[]; benefits: string[]; skills: string[] } {
-    const bulletItems = Array.from(element.querySelectorAll("li"))
-      .map((item) => item.textContent?.trim())
-      .filter((text): text is string => !!text)
-      .map(this.normalizeWhitespace);
-
-    const sentences = (description ?? "")
-      .split(/[\n.]+/)
-      .map((line) => line.trim())
-      .filter((line) => line.length >= 6 && line.length <= 160);
-
-    const requirementKeywords = [
-      "require",
-      "must",
-      "need",
-      "responsible",
-      "experience",
-      "knowledge",
-      "ability",
-      "background",
-      "qualification",
-      "certification",
-      "essential",
-    ];
-    const benefitKeywords = [
-      "benefit",
-      "bonus",
-      "package",
-      "holiday",
-      "pension",
-      "insurance",
-      "support",
-      "allowance",
-      "perk",
-      "wellbeing",
-      "well-being",
-      "leave",
-      "flexible",
-    ];
-    const skillIndicators = [
-      "skill",
-      "proficient",
-      "proficiency",
-      "experience",
-      "knowledge",
-      "familiar",
-      "ability",
-      "competent",
-      "expertise",
-      "capable",
-    ];
-
-    const requirements = new Set<string>();
-    const benefits = new Set<string>();
-    const skills = new Set<string>();
-
-    const categorize = (text: string) => {
-      const lower = text.toLowerCase();
-      if (benefitKeywords.some((keyword) => lower.includes(keyword))) {
-        benefits.add(text);
-        return;
-      }
-
-      if (requirementKeywords.some((keyword) => lower.includes(keyword)) || /^\d+\+?\s*year/.test(lower)) {
-        requirements.add(text);
-        return;
-      }
-
-      if (skillIndicators.some((keyword) => lower.includes(keyword))) {
-        skills.add(text);
-      }
-    };
-
-    bulletItems.forEach(categorize);
-    sentences.forEach(categorize);
-
-    return {
-      requirements: this.limitList(Array.from(requirements), 8),
-      benefits: this.limitList(Array.from(benefits), 6),
-      skills: this.limitList(Array.from(skills), 10),
-    };
-  }
-
-  private static detectJobType(text: string): string | undefined {
-    if (text.includes("full-time") || text.includes("full time")) return "Full-time";
-    if (text.includes("part-time") || text.includes("part time")) return "Part-time";
-    if (text.includes("contract")) return "Contract";
-    if (text.includes("temporary")) return "Temporary";
-    if (text.includes("intern")) return "Internship";
-    if (text.includes("freelance") || text.includes("consultant")) return "Freelance";
-    return undefined;
-  }
-
-  private static detectExperienceLevel(text: string): string | undefined {
-    if (text.includes("graduate") || text.includes("entry level")) return "Entry Level";
-    if (text.includes("junior") || text.includes("associate")) return "Early Career";
-    if (text.includes("mid level") || text.includes("mid-level") || text.includes("experienced")) return "Mid Level";
-    if (text.includes("senior") || text.includes("lead")) return "Senior Level";
-    if (text.includes("director") || text.includes("principal") || text.includes("executive")) return "Leadership";
-    return undefined;
-  }
-
-  private static detectRemote(text: string): boolean {
-    return ["remote", "work from home", "hybrid", "flexible location", "distributed"].some((keyword) =>
-      text.includes(keyword)
-    );
-  }
-
-  private static detectSeniority(text: string): string | undefined {
-    if (text.includes("graduate") || text.includes("entry")) return "entry";
-    if (text.includes("junior")) return "junior";
-    if (text.includes("mid") || text.includes("experienced")) return "mid";
-    if (text.includes("senior") || text.includes("lead")) return "senior";
-    if (text.includes("director") || text.includes("principal")) return "leadership";
-    return undefined;
-  }
-
-  private static parseSalaryRange(text: string): JobData["salaryRange"] | undefined {
-    const match = text.match(
-      /(\$|£|€)?\s?(\d[\d,]*)(?:\s*-\s*(\$|£|€)?\s?(\d[\d,]*))?(?:\s*(?:per|a)?\s*(year|annum|month|week|day|hour))?/i
-    );
-
-    if (!match) {
-      return undefined;
-    }
-
-    const [, minCurrency, minValue, maxCurrency, maxValue, periodRaw] = match;
-    const parseNumber = (value?: string) => (value ? Number(value.replace(/,/g, "")) : undefined);
-
-    const min = parseNumber(minValue);
-    const max = parseNumber(maxValue);
-    const currency = minCurrency || maxCurrency || undefined;
-    const period = periodRaw ? periodRaw.toLowerCase().replace("annum", "year") : "year";
-
-    if (!min && !max) {
-      return undefined;
-    }
-
-    return {
-      min,
-      max: max ?? min,
-      currency,
-      period,
-    };
-  }
-
-  private static normalizeWhitespace(value: string): string {
-    return value.replace(/\s+/g, " ").trim();
-  }
-
-  private static limitList<T>(items: T[], max: number): T[] {
-    return items.slice(0, max);
-  }
-
-  private static detectSponsored(element: Element, site: string): boolean {
-    const sponsoredSelectors: SelectorMap = {
-      linkedin: ["[data-promoted='true']", "[data-search-id*='promoted']"],
-      indeed: ["[data-testid='sponsored-tag']", "[data-tn-component='sponsoredJob']"],
-      reed: [".sponsored"],
-      totaljobs: [".sponsored"],
-      glassdoor: [".sponsored"],
-      ziprecruiter: [".sponsored"],
-      monster: [".sponsored"],
-      unknown: [".sponsored", "[data-promoted='true']"],
-    };
-
-    const keywordMatches = ["sponsored", "promoted", "advertisement"].some((keyword) => {
-      const text = element.textContent?.toLowerCase() || "";
-      // Check for exact word match or specific phrases
-      return text.includes(` ${keyword} `) || 
-             text.startsWith(`${keyword} `) || 
-             text.endsWith(` ${keyword}`) || 
-             text === keyword;
-    });
-
-    const selectorMatch = !!this.getFirstMatch(element, sponsoredSelectors[site] ?? sponsoredSelectors.unknown);
-
-    return selectorMatch || keywordMatches;
+    return jobData;
+  } catch (error) {
+    console.error("HireAll: LinkedIn extraction failed", error);
+    return createFallbackJobData(element);
   }
 }
+
+/**
+ * Extract job data with confidence scoring
+ */
+export function extractJobDataWithConfidence(element: Element): ExtractionResult {
+  if (!isLinkedIn()) {
+    return {
+      success: false,
+      error: "Job extraction is only supported on LinkedIn",
+      confidence: 0,
+    };
+  }
+
+  try {
+    const jobData = extractLinkedInJob(element);
+    const confidence = calculateConfidence(jobData);
+
+    if (confidence < 0.3) {
+      return {
+        success: false,
+        data: jobData,
+        error: "Low confidence extraction - data may be incomplete",
+        confidence,
+      };
+    }
+
+    return {
+      success: true,
+      data: jobData,
+      confidence,
+    };
+  } catch (error) {
+    const fallback = createFallbackJobData(element);
+    return {
+      success: false,
+      data: fallback,
+      error: error instanceof Error ? error.message : "Extraction failed",
+      confidence: 0.1,
+    };
+  }
+}
+
+/**
+ * Validate that job data has minimum required fields
+ */
+function isValidJobData(data: JobData): boolean {
+  return !!(
+    data.title &&
+    data.title !== "Unknown role" &&
+    data.company &&
+    data.company !== "Unknown company" &&
+    data.title.length >= 2 &&
+    data.company.length >= 2
+  );
+}
+
+/**
+ * Calculate confidence score for extracted data (0-1)
+ */
+function calculateConfidence(data: JobData): number {
+  let score = 0;
+  const weights = {
+    title: 0.25,
+    company: 0.25,
+    location: 0.1,
+    url: 0.1,
+    description: 0.15,
+    salary: 0.05,
+    postedDate: 0.05,
+    jobType: 0.05,
+  };
+
+  if (data.title && data.title !== "Unknown role") score += weights.title;
+  if (data.company && data.company !== "Unknown company") score += weights.company;
+  if (data.location && data.location !== "Location not listed") score += weights.location;
+  if (data.url && data.url.includes("linkedin.com/jobs")) score += weights.url;
+  if (data.description && data.description.length > 100) score += weights.description;
+  if (data.salary) score += weights.salary;
+  if (data.postedDate) score += weights.postedDate;
+  if (data.jobType) score += weights.jobType;
+
+  return Math.min(score, 1);
+}
+
+// ============ JOB CARD DETECTION ============
+/**
+ * Find all job cards on the current LinkedIn page
+ */
+export function findJobCards(): Element[] {
+  if (!isLinkedIn()) {
+    console.warn("HireAll: findJobCards only works on LinkedIn");
+    return [];
+  }
+
+  const matches = new Set<Element>();
+
+  for (const selector of LINKEDIN_JOB_CARD_SELECTORS) {
+    try {
+      document.querySelectorAll(selector).forEach((node) => {
+        if (node instanceof Element) {
+          // Avoid duplicate cards
+          if (!isDuplicateCard(matches, node)) {
+            matches.add(node);
+          }
+        }
+      });
+    } catch {
+      // Ignore invalid selector errors
+    }
+  }
+
+  const cards = Array.from(matches);
+  console.debug(`HireAll: Found ${cards.length} job cards on LinkedIn`);
+  return cards;
+}
+
+/**
+ * Check if a card is a duplicate of an existing one
+ */
+function isDuplicateCard(existingCards: Set<Element>, newCard: Element): boolean {
+  // Check if the new card contains an existing card or vice versa
+  for (const existing of existingCards) {
+    if (existing.contains(newCard) || newCard.contains(existing)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// ============ FALLBACK EXTRACTION ============
+/**
+ * Create fallback job data using basic selectors when primary extraction fails
+ */
+function createFallbackJobData(element: Element): JobData {
+  const textContent = element.textContent || "";
+  
+  // Try to extract title from any heading
+  const title = 
+    element.querySelector("h1, h2, h3, [class*='title']")?.textContent?.trim() ||
+    "Unknown role";
+
+  // Try to extract company
+  const company = 
+    element.querySelector("[class*='company'], a[href*='/company/']")?.textContent?.trim() ||
+    "Unknown company";
+
+  // Try to extract location
+  const location = 
+    element.querySelector("[class*='location'], [class*='bullet']")?.textContent?.trim() ||
+    "Location not listed";
+
+  return {
+    title: normalizeText(title),
+    company: normalizeText(company),
+    location: normalizeText(location),
+    url: window.location.href,
+    source: "linkedin",
+    dateFound: new Date().toISOString(),
+    isSponsored: false,
+    metadata: {
+      remote: false,
+      extractionMethod: "fallback",
+    },
+  };
+}
+
+/**
+ * Create empty job data for unsupported sites
+ */
+function createEmptyJobData(source: string): JobData {
+  return {
+    title: "Unknown role",
+    company: "Unknown company",
+    location: "Location not listed",
+    url: window.location.href,
+    source,
+    dateFound: new Date().toISOString(),
+    isSponsored: false,
+    metadata: {
+      remote: false,
+      extractionMethod: "empty",
+      unsupportedSite: true,
+    },
+  };
+}
+
+/**
+ * Normalize text by removing excess whitespace
+ */
+function normalizeText(text: string): string {
+  return text.replace(/\s+/g, " ").trim();
+}
+
+// ============ DEPRECATED EXPORTS (for backwards compatibility) ============
+/**
+ * @deprecated Use detectSite() instead
+ */
+export const JobDataExtractor = {
+  detectSite,
+  extractJobData,
+  findJobCards,
+  /** @deprecated LinkedIn only - always returns "linkedin" or "unsupported" */
+  detectSiteOld: detectSite,
+};
+
+export default JobDataExtractor;

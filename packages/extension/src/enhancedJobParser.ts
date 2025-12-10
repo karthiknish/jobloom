@@ -217,27 +217,39 @@ class SalaryExtractor {
 
 // Main enhanced job parser
 export class EnhancedJobParser {
-  // Enhanced job extraction with multiple strategies
+  // Enhanced job extraction - LinkedIn only
   static async extractJobFromPage(document: Document, url: string): Promise<EnhancedJobData | null> {
     const domain = new URL(url).hostname.toLowerCase();
 
-    // Try different extraction strategies based on the site
-    let jobData = null;
-
-    if (domain.includes('linkedin.com')) {
-      jobData = this.extractFromLinkedIn(document, url);
-    } else if (domain.includes('indeed')) {
-      jobData = this.extractFromIndeed(document, url);
-    } else if (domain.includes('glassdoor')) {
-      jobData = this.extractFromGlassdoor(document, url);
-    } else {
-      jobData = this.extractFromGeneric(document, url);
+    // Only support LinkedIn
+    if (!domain.includes('linkedin.com')) {
+      console.warn('HireAll: Job extraction only supports LinkedIn. Current domain:', domain);
+      return null;
     }
 
+    const jobData = this.extractFromLinkedIn(document, url);
     if (!jobData) return null;
 
     // Enhance the extracted data
     return this.enhanceJobData(jobData, document);
+  }
+
+  /**
+   * Check if the current page is a supported job site
+   */
+  static isSupportedSite(url: string): boolean {
+    const domain = new URL(url).hostname.toLowerCase();
+    return domain.includes('linkedin.com');
+  }
+
+  /**
+   * Get a user-friendly message about site support
+   */
+  static getSupportMessage(url: string): string {
+    if (this.isSupportedSite(url)) {
+      return 'LinkedIn is supported for job extraction.';
+    }
+    return 'HireAll job extraction only works on LinkedIn. Please navigate to LinkedIn Jobs to use this feature.';
   }
 
   private static extractFromLinkedIn(document: Document, url: string): Partial<EnhancedJobData> | null {

@@ -9,7 +9,7 @@ import {
 } from "@/utils/security";
 import {
   evaluateAtsCompatibilityFromText,
-  getIndustryKeywordSet,
+  getKeywordsForIndustry,
 } from "@/lib/ats";
 import {
   getUploadLimitsForUser,
@@ -770,8 +770,8 @@ async function analyzeCvText(
 
   const missingSkills = Array.from(new Set(missingKeywords.slice(0, 10)));
 
-  const industryKeywords = getIndustryKeywordSet(normalizedIndustry);
-  const industryMatches = industryKeywords.filter((keyword) =>
+  const industryKeywords = getKeywordsForIndustry(normalizedIndustry ?? '');
+  const industryMatches = industryKeywords.filter((keyword: string) =>
     lowerText.includes(keyword.toLowerCase())
   );
   const industryAlignmentScore = industryKeywords.length
@@ -802,7 +802,7 @@ async function analyzeCvText(
   const keywordAnalysis = {
     presentKeywords: presentKeywords.slice(0, 25),
     missingKeywords: missingKeywords.slice(0, 25),
-    keywordDensity: atsEvaluation.keywordDensity,
+    keywordDensity: presentKeywords.length > 0 ? Math.round((presentKeywords.length / (presentKeywords.length + missingKeywords.length)) * 100) : 0,
   };
 
   return {
@@ -813,9 +813,8 @@ async function analyzeCvText(
     missingSkills,
     atsCompatibility: {
       score: atsEvaluation.score,
-      issues: atsEvaluation.issues,
+      issues: atsEvaluation.issues.map(i => i.title),
       suggestions: Array.from(new Set(baseSuggestions)),
-      breakdown: atsEvaluation.breakdown,
     },
     keywordAnalysis,
     sectionAnalysis,

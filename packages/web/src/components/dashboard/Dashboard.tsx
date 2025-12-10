@@ -41,7 +41,7 @@ import { FileText, Target, TrendingUp, Calendar, Briefcase, Sparkles } from "luc
 
 
 
-export function AdvancedDashboard() {
+export function Dashboard() {
   const { user, loading } = useFirebaseAuth();
   const { plan } = useSubscription();
 
@@ -440,6 +440,8 @@ export function AdvancedDashboard() {
             onDeleteApplication={handleDeleteApplicationWrapper}
             onViewApplication={handleViewApplication}
             onChanged={refetchApplications}
+            onAddJob={() => setShowJobForm(true)}
+            onImport={() => setShowImportModal(true)}
           />
         )}
 

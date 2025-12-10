@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import type { ResumeScore } from "@/lib/enhancedAts";
+import type { ResumeScore } from "@/lib/ats";
 import { cn } from "@/lib/utils";
 
 interface EnhancedAtsScoreProps {

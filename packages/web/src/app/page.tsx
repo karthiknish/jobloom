@@ -2,6 +2,7 @@
 
 import { KineticHero } from "@/components/homepage/KineticHero";
 import { BentoFeatures } from "@/components/homepage/BentoFeatures";
+import { UKVisaCheckerSection } from "@/components/homepage/UKVisaCheckerSection";
 import { KineticHowItWorks } from "@/components/homepage/KineticHowItWorks";
 import FAQSection from "@/components/custom/FAQSection";
 
@@ -10,8 +11,10 @@ export default function Home() {
     <div className="min-h-screen bg-background font-sans selection:bg-primary/20">
       <KineticHero />
       <BentoFeatures />
+      <UKVisaCheckerSection />
       <KineticHowItWorks />
       <FAQSection />
     </div>
   );
 }
+

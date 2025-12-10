@@ -19,9 +19,10 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { calculateEnhancedATSScore } from "@/lib/enhancedAts";
+import { calculateResumeScore } from "@/lib/ats";
+import type { ResumeScore } from "@/lib/ats";
 import type { ResumeData } from "@/types/resume";
-import type { ResumeScore } from "@/lib/enhancedAts";
+
 
 interface RealTimeAtsFeedbackProps {
   resume: ResumeData;
@@ -62,7 +63,7 @@ export function RealTimeAtsFeedback({
 
     // Simulate processing time for better UX
     setTimeout(() => {
-      const newScore = calculateEnhancedATSScore(resume, { targetRole, industry });
+      const newScore = calculateResumeScore(resume, { targetRole, industry });
       setScore(newScore);
 
       if (onScoreUpdate) {
@@ -107,18 +108,18 @@ export function RealTimeAtsFeedback({
 
     // Keyword analysis
     if (score.detailedMetrics) {
-      const { keywordDensity, actionVerbUsage, quantificationScore } = score.detailedMetrics;
+      const { keywordDensity, actionVerbCount, quantifiedAchievements } = score.detailedMetrics;
 
-      if (keywordDensity < 1) {
+      if (keywordDensity < 30) {
         items.push({
           id: 'keywords-low',
           type: 'warning',
-          message: 'Low keyword density detected',
+          message: 'Low keyword diversity detected',
           impact: 'high',
           field: 'skills',
           suggestion: 'Add more industry-specific keywords relevant to your target role'
         });
-      } else if (keywordDensity > 8) {
+      } else if (keywordDensity > 80) {
         items.push({
           id: 'keywords-high',
           type: 'info',
@@ -128,7 +129,7 @@ export function RealTimeAtsFeedback({
         });
       }
 
-      if (actionVerbUsage < 30) {
+      if (actionVerbCount < 5) {
         items.push({
           id: 'action-verbs-low',
           type: 'warning',
@@ -139,7 +140,7 @@ export function RealTimeAtsFeedback({
         });
       }
 
-      if (quantificationScore < 40) {
+      if (quantifiedAchievements < 3) {
         items.push({
           id: 'metrics-low',
           type: 'warning',
@@ -443,8 +444,8 @@ export function RealTimeAtsFeedback({
                           <span>{detailedMetrics.keywordDensity.toFixed(1)}%</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span>Action Verb Usage</span>
-                          <span>{detailedMetrics.actionVerbUsage.toFixed(1)}%</span>
+                          <span>Action Verbs</span>
+                          <span>{detailedMetrics.actionVerbCount}</span>
                         </div>
                       </div>
                     </div>
@@ -453,16 +454,16 @@ export function RealTimeAtsFeedback({
                       <h4 className="font-medium mb-2">Quality Metrics</h4>
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
-                          <span>Quantification</span>
-                          <span>{detailedMetrics.quantificationScore.toFixed(0)}%</span>
+                          <span>Quantified Achievements</span>
+                          <span>{detailedMetrics.quantifiedAchievements}</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span>Professional Language</span>
-                          <span>{detailedMetrics.professionalLanguage.toFixed(1)}/1000</span>
+                          <span>Soft Skills</span>
+                          <span>{detailedMetrics.softSkillCount}</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span>Section Completeness</span>
-                          <span>{detailedMetrics.sectionCompleteness.toFixed(0)}%</span>
+                          <span>Sections Found</span>
+                          <span>{detailedMetrics.sectionsFound.length}/5</span>
                         </div>
                       </div>
                     </div>

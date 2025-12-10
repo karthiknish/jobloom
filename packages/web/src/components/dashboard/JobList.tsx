@@ -61,6 +61,9 @@ interface JobListProps {
   onDeleteApplication: (applicationId: string) => void;
   onViewApplication: (application: Application) => void;
   onChanged?: () => void;
+  // Optional external selection control
+  selectedIds?: Set<string>;
+  onToggleSelection?: (id: string) => void;
 }
 
 export function JobList({
@@ -69,18 +72,42 @@ export function JobList({
   onDeleteApplication: _onDeleteApplication,
   onViewApplication,
   onChanged,
+  selectedIds: externalSelectedIds,
+  onToggleSelection,
 }: JobListProps) {
   const { plan } = useSubscription();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [showRecruitmentAgency, setShowRecruitmentAgency] = useState(true);
   const [sortBy, setSortBy] = useState("dateFound");
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [internalSelectedIds, setInternalSelectedIds] = useState<Set<string>>(new Set());
   const [_viewsOpen, _setViewsOpen] = useState(false);
   const [_remindersOpen, _setRemindersOpen] = useState(false);
   const [_reminderEnable, _setReminderEnable] = useState(false);
   const [_reminderDate, _setReminderDate] = useState("");
   const [_savedViews, _setSavedViews] = useState<{ [key: string]: any }>({});
+
+  // Use external selection if provided, otherwise use internal
+  const selectedIds = externalSelectedIds ?? internalSelectedIds;
+  const setSelectedIds = onToggleSelection 
+    ? undefined // When external, don't allow direct set
+    : setInternalSelectedIds;
+  
+  const toggleSelection = (id: string) => {
+    if (onToggleSelection) {
+      onToggleSelection(id);
+    } else {
+      setInternalSelectedIds(prev => {
+        const next = new Set(prev);
+        if (next.has(id)) {
+          next.delete(id);
+        } else {
+          next.add(id);
+        }
+        return next;
+      });
+    }
+  };
 
   // Restore filters from localStorage
   useEffect(() => {
@@ -175,7 +202,7 @@ export function JobList({
         )
       );
       showSuccess("Applications deleted", `${selectedIds.size} applications have been removed.`);
-      setSelectedIds(new Set());
+      setInternalSelectedIds(new Set());
       onChanged?.();
     } catch (error) {
       showError("Delete failed", "Unable to delete applications. Please try again.");
@@ -273,7 +300,7 @@ className="border-border focus:border-amber-500 focus:ring-amber-500"
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setSelectedIds(new Set())}
+                  onClick={() => setInternalSelectedIds(new Set())}
                   className="text-primary border-primary/30 hover:bg-primary/10"
                 >
                   Clear Selection

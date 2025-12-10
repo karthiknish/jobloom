@@ -1,16 +1,19 @@
 "use client";
 
-import React from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Application } from "@/types/dashboard";
 import { JobList } from "@/components/dashboard/JobList";
 import { KanbanBoard } from "@/components/dashboard/KanbanBoard";
-import { ExportCsvButton } from "@/components/dashboard/ExportCsvButton";
 import { DashboardFilters } from "@/components/dashboard/DashboardFilters";
+import { BulkActionsBar, ApplicationStatus } from "@/components/dashboard/BulkActionsBar";
+import { ExportOptionsDropdown } from "@/components/dashboard/ExportOptionsDropdown";
+import { KeyboardShortcutsDialog } from "@/components/dashboard/KeyboardShortcutsDialog";
+import { useBulkSelection } from "@/hooks/useBulkSelection";
+import { useKeyboardShortcuts, createDashboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FeatureGate } from "@/components/UpgradePrompt";
-import { FileText, LayoutList, LayoutGrid, Download, Briefcase } from "lucide-react";
+import { LayoutList, LayoutGrid, Briefcase, Keyboard } from "lucide-react";
 import { filterApplications, getUniqueCompanies } from "@/utils/dashboard";
 import { slideInUp } from "@/styles/animations";
 
@@ -28,6 +31,8 @@ interface DashboardJobsViewProps {
   onDeleteApplication: (application: Application) => void;
   onViewApplication: (application: Application) => void;
   onChanged: () => void;
+  onAddJob?: () => void;
+  onImport?: () => void;
 }
 
 export function DashboardJobsView({
@@ -44,27 +49,140 @@ export function DashboardJobsView({
   onDeleteApplication,
   onViewApplication,
   onChanged,
+  onAddJob,
+  onImport,
 }: DashboardJobsViewProps) {
   // Ensure applications is always an array
   const safeApplications = Array.isArray(applications) ? applications : [];
   
-  // Create wrapper function for JobList which expects applicationId
-  const handleDeleteApplicationForJobList = (applicationId: string) => {
-    // Find the application by ID and call the delete function
+  // Filtered applications
+  const filteredApplications = useMemo(() => 
+    filterApplications(safeApplications, statusFilter, searchTerm, companyFilter),
+    [safeApplications, statusFilter, searchTerm, companyFilter]
+  );
+  
+  // Unique companies for filter
+  const uniqueCompanies = useMemo(() => 
+    getUniqueCompanies(safeApplications),
+    [safeApplications]
+  );
+  
+  // Get all application IDs for bulk selection
+  const allIds = useMemo(() => 
+    filteredApplications.map(app => app._id),
+    [filteredApplications]
+  );
+  
+  // Bulk selection hook
+  const bulkSelection = useBulkSelection(allIds);
+  
+  // Keyboard shortcuts dialog
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  
+  // Search input ref for focus
+  const searchInputRef = React.useRef<HTMLInputElement>(null);
+  
+  // Keyboard shortcuts
+  const shortcuts = useMemo(() => createDashboardShortcuts({
+    onSearch: () => searchInputRef.current?.focus(),
+    onNewJob: onAddJob,
+    onImport: onImport,
+    onEscape: () => bulkSelection.clearSelection(),
+    onHelp: () => setShowShortcuts(true),
+    onSelectAll: () => bulkSelection.toggleSelectAll(),
+    onDelete: bulkSelection.hasSelection 
+      ? () => handleBulkDelete() 
+      : undefined,
+  }), [onAddJob, onImport, bulkSelection]);
+  
+  useKeyboardShortcuts(shortcuts);
+
+  const hasApplications = safeApplications.length > 0;
+
+  // Wrapper for delete that takes applicationId
+  const handleDeleteApplicationForJobList = useCallback((applicationId: string) => {
     const application = safeApplications.find(app => app._id === applicationId);
     if (application) {
       onDeleteApplication(application);
     }
-  };
-  const filteredApplications = filterApplications(
-    safeApplications,
-    statusFilter,
-    searchTerm,
-    companyFilter
-  );
-  const uniqueCompanies = getUniqueCompanies(safeApplications);
+  }, [safeApplications, onDeleteApplication]);
 
-  const hasApplications = safeApplications.length > 0;
+  // Bulk status change handler
+  const handleBulkStatusChange = async (status: ApplicationStatus) => {
+    try {
+      const { dashboardApi } = await import("@/utils/api/dashboard");
+      await Promise.all(
+        bulkSelection.selectedArray.map(id => 
+          dashboardApi.updateApplicationStatus(id, status)
+        )
+      );
+      bulkSelection.clearSelection();
+      onChanged();
+    } catch (e: any) {
+      const { showError } = await import("@/components/ui/Toast");
+      showError(e?.message || "Bulk update failed");
+    }
+  };
+
+  // Bulk delete handler
+  const handleBulkDelete = async () => {
+    try {
+      const { dashboardApi } = await import("@/utils/api/dashboard");
+      await Promise.all(
+        bulkSelection.selectedArray.map(id => 
+          dashboardApi.deleteApplication(id)
+        )
+      );
+      bulkSelection.clearSelection();
+      onChanged();
+    } catch (e: any) {
+      const { showError } = await import("@/components/ui/Toast");
+      showError(e?.message || "Bulk delete failed");
+    }
+  };
+
+  // Bulk export handler
+  const handleBulkExport = (format: "csv" | "json") => {
+    const selectedApps = filteredApplications.filter(app => 
+      bulkSelection.selectedIds.has(app._id)
+    );
+    
+    if (format === "csv") {
+      const headers = ["Title", "Company", "Location", "Status", "Date Found", "Salary"];
+      const rows = selectedApps.map(app => [
+        app.job?.title || "",
+        app.job?.company || "",
+        app.job?.location || "",
+        app.status || "",
+        app.job?.dateFound || "",
+        app.job?.salary || "",
+      ]);
+      const csv = [headers.join(","), ...rows.map(row => row.map(cell => `"${cell}"`).join(","))].join("\n");
+      downloadFile(csv, "selected-jobs.csv", "text/csv");
+    } else {
+      const json = JSON.stringify(selectedApps.map(app => ({
+        title: app.job?.title,
+        company: app.job?.company,
+        location: app.job?.location,
+        status: app.status,
+        dateFound: app.job?.dateFound,
+        salary: app.job?.salary,
+      })), null, 2);
+      downloadFile(json, "selected-jobs.json", "application/json");
+    }
+  };
+
+  const downloadFile = (content: string, filename: string, mimeType: string) => {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <motion.div
@@ -75,6 +193,19 @@ export function DashboardJobsView({
     >
       {hasApplications ? (
         <>
+          {/* Bulk Actions Bar */}
+          <BulkActionsBar
+            selectedCount={bulkSelection.selectedCount}
+            totalCount={filteredApplications.length}
+            isAllSelected={bulkSelection.isAllSelected}
+            isPartiallySelected={bulkSelection.isPartiallySelected}
+            onToggleSelectAll={bulkSelection.toggleSelectAll}
+            onClearSelection={bulkSelection.clearSelection}
+            onBulkStatusChange={handleBulkStatusChange}
+            onBulkDelete={handleBulkDelete}
+            onBulkExport={handleBulkExport}
+          />
+
           {/* Advanced Filters */}
           <DashboardFilters
             searchTerm={searchTerm}
@@ -96,7 +227,7 @@ export function DashboardJobsView({
                 onClick={() => setBoardMode("list")}
                 className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
                   boardMode === "list"
-                    ? "bg-gradient-to-r from-emerald-500 to-green-500 text-white shadow-md"
+                    ? "bg-primary text-primary-foreground shadow-md"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                 }`}
               >
@@ -107,7 +238,7 @@ export function DashboardJobsView({
                 onClick={() => setBoardMode("kanban")}
                 className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
                   boardMode === "kanban"
-                    ? "bg-gradient-to-r from-emerald-500 to-green-500 text-white shadow-md"
+                    ? "bg-primary text-primary-foreground shadow-md"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                 }`}
               >
@@ -121,94 +252,24 @@ export function DashboardJobsView({
               {filteredApplications.length} of {safeApplications.length} jobs
             </Badge>
             
-            {/* Export Actions */}
-            <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-              <ExportCsvButton
-                fileName="filtered-applications.csv"
-                rows={filteredApplications.map((a) => ({
-                  id: a._id,
-                  title: a.job?.title,
-                  company: a.job?.company,
-                  location: a.job?.location,
-                  status: a.status,
-                  dateFound: a.job?.dateFound,
-                  appliedDate: a.appliedDate,
-                  source: a.job?.source,
-                  salary: a.job?.salary,
-                }))}
+            {/* Actions */}
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+              {/* Enhanced Export */}
+              <ExportOptionsDropdown
+                applications={filteredApplications}
+                selectedIds={bulkSelection.selectedArray}
               />
-              <FeatureGate
-                feature="exportFormats"
-                requires="json"
-                fallback={
-                  <Button size="sm" variant="outline" disabled className="h-9 gap-2">
-                    <Download className="h-4 w-4" />
-                    JSON <Badge variant="secondary" className="ml-1 text-[10px] px-1 py-0">Pro</Badge>
-                  </Button>
-                }
+              
+              {/* Keyboard Shortcuts Button */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-2"
+                onClick={() => setShowShortcuts(true)}
               >
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-9 gap-2"
-                  onClick={() => {
-                    // Export as JSON
-                    const data = filteredApplications.map((a) => ({
-                      id: a._id,
-                      title: a.job?.title,
-                      company: a.job?.company,
-                      location: a.job?.location,
-                      status: a.status,
-                      dateFound: a.job?.dateFound,
-                      appliedDate: a.appliedDate,
-                      source: a.job?.source,
-                      salary: a.job?.salary,
-                      notes: a.notes,
-                      interviewDates: a.interviewDates,
-                      followUpDate: a.followUpDate,
-                    }));
-                    const blob = new Blob(
-                      [JSON.stringify(data, null, 2)],
-                      { type: "application/json" }
-                    );
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement("a");
-                    a.href = url;
-                    a.download = "applications-export.json";
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                  }}
-                >
-                  <Download className="h-4 w-4" />
-                  JSON
-                </Button>
-
-                {/* PDF Export - Premium Only */}
-                <FeatureGate
-                  feature="exportFormats"
-                  requires="pdf"
-                  fallback={
-                    <Button size="sm" variant="outline" disabled className="h-9 gap-2">
-                      <FileText className="h-4 w-4" />
-                      PDF <Badge variant="secondary" className="ml-1 text-[10px] px-1 py-0">Pro</Badge>
-                    </Button>
-                  }
-                >
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-9 gap-2"
-                    onClick={() => {
-                      // Mock PDF export - would integrate with PDF library
-                    }}
-                  >
-                    <FileText className="h-4 w-4" />
-                    PDF
-                  </Button>
-                </FeatureGate>
-              </FeatureGate>
+                <Keyboard className="h-4 w-4" />
+                <span className="hidden sm:inline">Shortcuts</span>
+              </Button>
             </div>
           </div>
 
@@ -229,7 +290,6 @@ export function DashboardJobsView({
               onReorder={async (draggedId, targetStatus, beforeId) => {
                 try {
                   const { dashboardApi } = await import("@/utils/api/dashboard");
-                  // Compute an order value
                   const col = safeApplications.filter(
                     (a) => a.status === targetStatus
                   );
@@ -268,6 +328,8 @@ export function DashboardJobsView({
               onDeleteApplication={handleDeleteApplicationForJobList}
               onViewApplication={(app) => onViewApplication(app)}
               onChanged={onChanged}
+              selectedIds={bulkSelection.selectedIds}
+              onToggleSelection={bulkSelection.toggleSelection}
             />
           )}
         </>
@@ -284,6 +346,13 @@ export function DashboardJobsView({
           </p>
         </div>
       )}
+
+      {/* Keyboard Shortcuts Dialog */}
+      <KeyboardShortcutsDialog
+        open={showShortcuts}
+        onOpenChange={setShowShortcuts}
+        shortcuts={shortcuts}
+      />
     </motion.div>
   );
 }

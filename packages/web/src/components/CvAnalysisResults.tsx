@@ -77,7 +77,7 @@ export function CvAnalysisResults({ analysis }: CvAnalysisResultsProps) {
 
       {/* Enhanced ATS Score Display */}
       {analysis.atsCompatibility ? (
-        <EnhancedAtsScore
+      <EnhancedAtsScore
           score={{
             overall: analysis.overallScore || 0,
             ats: analysis.atsCompatibility.score,
@@ -91,7 +91,6 @@ export function CvAnalysisResults({ analysis }: CvAnalysisResultsProps) {
               readability: analysis.atsCompatibility.breakdown?.readability || 0,
               formatting: analysis.atsCompatibility.breakdown?.formatting || 0,
               impact: analysis.atsCompatibility.breakdown?.extras || 0,
-              modernization: analysis.atsCompatibility.breakdown?.extras || 0
             },
             strengths: analysis.strengths || [],
             criticalIssues: analysis.atsCompatibility.issues || []

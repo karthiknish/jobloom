@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { RealTimeAtsFeedback } from "./RealTimeAtsFeedback";
-import { calculateEnhancedATSScore } from "@/lib/enhancedAts";
+import { calculateResumeScore } from "@/lib/ats";
 import type { ResumeData } from "@/types/resume";
 import {
   Card,

@@ -9,7 +9,7 @@ import {
 } from "@/utils/security";
 import {
   evaluateAtsCompatibilityFromText,
-  getIndustryKeywordSet,
+  getKeywordsForIndustry,
 } from "@/lib/ats";
 import {
   getUploadLimitsForUser,
@@ -154,9 +154,9 @@ async function analyzeCvText(
     // Industry keyword analysis
     let industryScore = 0;
     if (industry) {
-      const industryKeywords = getIndustryKeywordSet(industry);
-      const matchedKeywords = text.toLowerCase().match(new RegExp(industryKeywords.join('|'), 'gi')) || [];
-      industryScore = Math.min((matchedKeywords.length / industryKeywords.length) * 100, 100);
+      const industryKeywords = getKeywordsForIndustry(industry);
+      const matchedCount = industryKeywords.filter((kw: string) => text.toLowerCase().includes(kw.toLowerCase())).length;
+      industryScore = industryKeywords.length > 0 ? Math.min((matchedCount / industryKeywords.length) * 100, 100) : 0;
     }
 
     // ATS compatibility scoring

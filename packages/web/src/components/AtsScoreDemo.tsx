@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EnhancedAtsScore } from "./EnhancedAtsScore";
 import { RealTimeAtsFeedback } from "./RealTimeAtsFeedback";
-import { calculateEnhancedATSScore } from "@/lib/enhancedAts";
+import { calculateResumeScore } from "@/lib/ats";
 import type { ResumeData } from "@/types/resume";
 import { RefreshCw, Play, Settings } from "lucide-react";
 import { themeColors } from "@/styles/theme-colors";
@@ -147,7 +147,7 @@ export function AtsScoreDemo() {
     }
   };
 
-  const currentScore = calculateEnhancedATSScore(resume, { targetRole, industry });
+  const currentScore = calculateResumeScore(resume, { targetRole, industry });
 
   return (
     <div className="space-y-6 p-6 max-w-6xl mx-auto">
@@ -303,12 +303,12 @@ export function AtsScoreDemo() {
                   <span>{(currentScore.detailedMetrics?.keywordDensity || 0).toFixed(1)}%</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Action Verb Usage:</span>
-                  <span>{(currentScore.detailedMetrics?.actionVerbUsage || 0).toFixed(1)}%</span>
+                  <span>Action Verbs Found:</span>
+                  <span>{currentScore.detailedMetrics?.actionVerbCount || 0}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Professional Language:</span>
-                  <span>{(currentScore.detailedMetrics?.professionalLanguage || 0).toFixed(1)}/1000</span>
+                  <span>Soft Skills Found:</span>
+                  <span>{currentScore.detailedMetrics?.softSkillCount || 0}</span>
                 </div>
               </div>
             </div>
@@ -317,20 +317,20 @@ export function AtsScoreDemo() {
               <h4 className={cn("font-semibold mb-3", themeColors.info.text)}>Quality Metrics</h4>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span>Quantification Score:</span>
-                  <span>{(currentScore.detailedMetrics?.quantificationScore || 0).toFixed(0)}%</span>
+                  <span>Quantified Achievements:</span>
+                  <span>{currentScore.detailedMetrics?.quantifiedAchievements || 0}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Technical Terms:</span>
-                  <span>{(currentScore.detailedMetrics?.technicalTerms || 0).toFixed(1)}/1000</span>
+                  <span>Technical Keywords:</span>
+                  <span>{currentScore.detailedMetrics?.technicalKeywordCount || 0}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Industry Alignment:</span>
-                  <span>{(currentScore.detailedMetrics?.industryAlignment || 0).toFixed(0)}%</span>
+                  <span>Sections Found:</span>
+                  <span>{currentScore.detailedMetrics?.sectionsFound?.length || 0}/5</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Modernization Score:</span>
-                  <span>{currentScore.breakdown?.modernization || 0}/75</span>
+                  <span>Impact Score:</span>
+                  <span>{currentScore.breakdown?.impact || 0}/100</span>
                 </div>
               </div>
             </div>
