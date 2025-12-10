@@ -12,6 +12,106 @@ import {
   formatSalaryGBP,
 } from "../ukVisaConstants";
 
+// ============ RETRY UTILITIES ============
+const MAX_RETRIES = 3;
+const INITIAL_DELAY_MS = 500;
+const MAX_DELAY_MS = 5000;
+
+interface RetryConfig {
+  maxRetries?: number;
+  initialDelay?: number;
+  maxDelay?: number;
+  shouldRetry?: (error: unknown) => boolean;
+}
+
+/**
+ * Execute a function with exponential backoff retry
+ */
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  operationName: string,
+  config: RetryConfig = {}
+): Promise<T> {
+  const {
+    maxRetries = MAX_RETRIES,
+    initialDelay = INITIAL_DELAY_MS,
+    maxDelay = MAX_DELAY_MS,
+    shouldRetry = defaultShouldRetry,
+  } = config;
+
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error: unknown) {
+      lastError = error;
+
+      // Check if we should retry this error
+      if (!shouldRetry(error) || attempt === maxRetries) {
+        console.warn(`Hireall: ${operationName} failed after ${attempt} attempts:`, error);
+        throw error;
+      }
+
+      // Calculate delay with exponential backoff and jitter
+      const baseDelay = initialDelay * Math.pow(2, attempt - 1);
+      const jitter = Math.random() * 0.3 * baseDelay; // 0-30% jitter
+      const delay = Math.min(baseDelay + jitter, maxDelay);
+
+      console.debug(`Hireall: ${operationName} attempt ${attempt} failed, retrying in ${Math.round(delay)}ms`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+
+  throw lastError;
+}
+
+/**
+ * Default retry condition - retry on network/timeout errors, not on auth/validation errors
+ */
+function defaultShouldRetry(error: unknown): boolean {
+  if (!error) return false;
+
+  // Don't retry auth errors
+  if (error && typeof error === 'object') {
+    const statusCode = (error as any).statusCode;
+    if (statusCode === 401 || statusCode === 403 || statusCode === 400 || statusCode === 404) {
+      return false;
+    }
+
+    // Don't retry rate limit errors (should use rate limiter instead)
+    if ((error as any).rateLimitInfo) {
+      return false;
+    }
+  }
+
+  // Check for network-related error messages
+  const message = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
+  
+  // Retry on network errors, timeouts, and server errors
+  if (
+    message.includes('timeout') ||
+    message.includes('network') ||
+    message.includes('failed to fetch') ||
+    message.includes('aborted') ||
+    message.includes('unavailable') ||
+    message.includes('econnreset') ||
+    message.includes('socket hang up')
+  ) {
+    return true;
+  }
+
+  // Retry on 5xx server errors
+  if (error && typeof error === 'object') {
+    const statusCode = (error as any).statusCode;
+    if (statusCode && statusCode >= 500 && statusCode < 600) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 // Sponsorship lookup cache & concurrency limiter utilities
 const sponsorshipCache = new Map<string, SponsorshipRecord | null>();
 const sponsorshipInFlight = new Map<string, Promise<SponsorshipRecord | null>>();
@@ -102,7 +202,11 @@ export class SponsorshipManager {
     const lookupPromise = this.runWithSponsorLimit(async () => {
       console.debug("Hireall: Making API call for sponsor lookup:", company);
       try {
-        const sponsorRecord = await fetchSponsorLookup(company);
+        // Use retry wrapper for robust API calls
+        const sponsorRecord = await withRetry(
+          () => fetchSponsorLookup(company),
+          `sponsorLookup(${company})`
+        );
         if (sponsorRecord) {
           const baseRecord = this.mapApiRecordToSponsorship(sponsorRecord);
           sponsorshipCache.set(key, baseRecord);
@@ -340,7 +444,11 @@ export class SponsorshipManager {
     }
 
     try {
-      const response = await get<any>("/api/soc-codes/authenticated", { code: normalized, limit: 1 }, true);
+      // Use retry wrapper for robust SOC code lookups
+      const response = await withRetry(
+        () => get<any>("/api/soc-codes/authenticated", { code: normalized, limit: 1 }, true),
+        `fetchSocDetails(${normalized})`
+      );
       const details = response.results?.[0];
       if (details) {
         const mapped: SocCodeDetails = {

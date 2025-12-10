@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createFirestoreCollection } from "@/firebase/firestore";
+import { createFirestoreCollection, createQueryBuilder } from "@/firebase/firestore";
 import { applyCorsHeaders, preflightResponse } from "@/lib/api/cors";
 import { authenticateRequest } from "@/lib/api/auth";
 
@@ -140,6 +140,65 @@ function handleError(error: unknown): NextResponse {
   }, { status: 500 });
 }
 
+// Retry utilities for database operations
+const MAX_RETRIES = 3;
+const INITIAL_DELAY_MS = 500;
+
+async function withRetry<T>(
+  operation: () => Promise<T>,
+  operationName: string
+): Promise<T> {
+  let lastError: unknown;
+  
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      return await operation();
+    } catch (error: unknown) {
+      lastError = error;
+      
+      // Don't retry validation or auth errors
+      if (error instanceof ValidationError || error instanceof AuthorizationError) {
+        throw error;
+      }
+      
+      // Check if it's a retryable Firebase error
+      const isRetryable = error && typeof error === 'object' && 'code' in error &&
+        ['unavailable', 'deadline-exceeded', 'resource-exhausted'].includes((error as { code: string }).code);
+      
+      if (!isRetryable || attempt === MAX_RETRIES) {
+        console.error(`${operationName} failed after ${attempt} attempts:`, error);
+        throw error;
+      }
+      
+      // Exponential backoff
+      const delay = INITIAL_DELAY_MS * Math.pow(2, attempt - 1);
+      console.warn(`${operationName} failed, retrying in ${delay}ms (attempt ${attempt}/${MAX_RETRIES})`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  
+  throw lastError;
+}
+
+// Check for duplicate jobs by URL
+async function checkDuplicateJob(
+  jobsCollection: ReturnType<typeof createFirestoreCollection>,
+  url: string,
+  userId: string
+): Promise<boolean> {
+  try {
+    const queryBuilder = createQueryBuilder()
+      .where('userId', '==', userId)
+      .where('url', '==', url.trim());
+    const existingJobs = await jobsCollection.query(queryBuilder.build());
+    return existingJobs.length > 0;
+  } catch (error) {
+    // If query fails, assume no duplicate to not block job creation
+    console.warn('Duplicate check failed:', error);
+    return false;
+  }
+}
+
 // POST /api/app/jobs - Create a new job
 export async function POST(request: NextRequest) {
   try {
@@ -187,6 +246,21 @@ export async function POST(request: NextRequest) {
     // Initialize Firestore
     const jobsCollection = createFirestoreCollection<any>('jobs');
 
+    // Check for duplicate job (by URL)
+    if (jobData.url) {
+      const isDuplicate = await checkDuplicateJob(jobsCollection, jobData.url, jobData.userId);
+      if (isDuplicate) {
+        return applyCorsHeaders(
+          NextResponse.json({ 
+            error: "A job with this URL already exists in your board",
+            code: "DUPLICATE_JOB",
+            field: "url"
+          }, { status: 409 }),
+          request,
+        );
+      }
+    }
+
     // Create job object with comprehensive LinkedIn data
     const jobDataToCreate = {
       title: jobData.title.trim(),
@@ -213,8 +287,11 @@ export async function POST(request: NextRequest) {
       userId: jobData.userId,
     };
 
-    // Create job in Firestore
-    const createdJob = await jobsCollection.create(jobDataToCreate);
+    // Create job in Firestore with retry
+    const createdJob = await withRetry(
+      () => jobsCollection.create(jobDataToCreate),
+      'createJob'
+    );
 
     return applyCorsHeaders(
       NextResponse.json({ 
