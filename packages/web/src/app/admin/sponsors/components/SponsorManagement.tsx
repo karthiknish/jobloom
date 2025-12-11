@@ -14,6 +14,7 @@ import { SponsorTable } from "./SponsorTable";
 import { SponsorCharts } from "./SponsorCharts";
 import { CreateSponsorDialog, type CreateSponsorData } from "./CreateSponsorDialog";
 import { exportToCsv } from "@/utils/exportToCsv";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Sponsor {
   _id: string;
@@ -228,8 +229,72 @@ export function SponsorManagement() {
   if (!isReady) {
     return (
       <AdminLayout title="Sponsors">
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="space-y-8">
+          {/* Header Skeleton */}
+          <div className="flex items-center justify-between">
+            <div className="space-y-2">
+              <Skeleton className="h-9 w-64" />
+              <Skeleton className="h-5 w-96" />
+            </div>
+          </div>
+
+          {/* Stats Cards Skeleton */}
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Card key={i} className="border-gray-200">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-8 w-8 rounded-lg" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-8 w-16 mb-2" />
+                  <Skeleton className="h-3 w-32" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Filters Skeleton */}
+          <Card className="p-4 border-gray-200 bg-white">
+            <div className="flex flex-wrap gap-4">
+              <Skeleton className="h-10 w-64" />
+              <Skeleton className="h-10 w-40" />
+              <Skeleton className="h-10 w-40" />
+              <Skeleton className="h-10 w-40" />
+              <div className="ml-auto flex gap-2">
+                <Skeleton className="h-10 w-32" />
+                <Skeleton className="h-10 w-10" />
+                <Skeleton className="h-10 w-10" />
+              </div>
+            </div>
+          </Card>
+
+          {/* Table Skeleton */}
+          <Card className="overflow-hidden border-gray-200 bg-white">
+            <CardHeader className="bg-gray-50 border-b border-gray-200">
+              <Skeleton className="h-6 w-48" />
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="divide-y divide-gray-100">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="flex items-center justify-between p-4">
+                    <div className="flex items-center gap-4">
+                      <Skeleton className="h-10 w-10 rounded-md" />
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-40" />
+                        <Skeleton className="h-3 w-24" />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <Skeleton className="h-6 w-20 rounded-full" />
+                      <Skeleton className="h-6 w-16 rounded-full" />
+                      <Skeleton className="h-8 w-8 rounded-md" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </AdminLayout>
     );

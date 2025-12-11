@@ -20,14 +20,14 @@ const navigationItems = [
     requiresAuth: false,
   },
   {
-    name: "Resume Builder",
-    href: "/resume-builder",
+    name: "Tools",
+    href: "/career-tools",
     icon: FileText,
-    requiresAuth: true,
+    requiresAuth: false,
   },
   {
     name: "Profile",
-    href: "/account",
+    href: "/settings",
     icon: User,
     requiresAuth: true,
   },
@@ -73,7 +73,7 @@ export default function MobileNavigation() {
             >
               <motion.div
                 whileTap={{ scale: 0.95 }}
-                className="flex flex-col items-center"
+                className="flex flex-col items-center w-full"
               >
                 <item.icon
                   className={cn(
@@ -82,7 +82,7 @@ export default function MobileNavigation() {
                   )}
                 />
                 <span className={cn(
-                  "text-xs font-medium truncate max-w-full",
+                  "text-xs font-medium w-full text-center",
                   isActive ? "text-primary" : "text-current"
                 )}>
                   {item.name}

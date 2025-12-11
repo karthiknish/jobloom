@@ -59,7 +59,7 @@ export function SponsorFilters({
             />
           </div>
           
-          <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0">
+          <div className="flex flex-wrap gap-2">
             <Select value={industryFilter} onValueChange={onIndustryFilterChange}>
               <SelectTrigger className="w-[160px] border-gray-200">
                 <div className="flex items-center gap-2">
@@ -111,7 +111,7 @@ export function SponsorFilters({
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-2 self-end md:self-auto">
+        <div className="flex flex-wrap items-center justify-end gap-2 self-stretch md:self-auto">
           <Button variant="outline" size="icon" onClick={onRefresh} title="Refresh" className="border-gray-200 hover:bg-gray-50">
             <RefreshCw className="h-4 w-4 text-gray-500" />
           </Button>

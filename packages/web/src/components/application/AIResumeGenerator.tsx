@@ -40,6 +40,14 @@ import { themeColors, themeUtils } from "@/styles/theme-colors";
 import { cn } from "@/lib/utils";
 
 interface ResumeData {
+  // Personal Details
+  fullName: string;
+  email: string;
+  phone: string;
+  location: string;
+  linkedin: string;
+  website: string;
+  // Professional Info
   jobTitle: string;
   experience: string;
   skills: string[];
@@ -79,6 +87,14 @@ export function AIResumeGenerator() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedResume, setGeneratedResume] = useState<GeneratedResume | null>(null);
   const [formData, setFormData] = useState<ResumeData>({
+    // Personal Details
+    fullName: user?.displayName || "",
+    email: user?.email || "",
+    phone: "",
+    location: "",
+    linkedin: "",
+    website: "",
+    // Professional Info
     jobTitle: "",
     experience: "",
     skills: [],
@@ -119,14 +135,31 @@ export function AIResumeGenerator() {
     { value: "tech", label: "Tech", description: "For technical roles" },
   ];
 
+  const canGenerate = Boolean(formData.jobTitle.trim() && formData.experience.trim());
+
   const generateResume = async () => {
-    if (!formData.jobTitle || !formData.experience) {
+    if (!canGenerate) {
       showError("Missing Information", "Please fill in the required fields.");
       return;
     }
 
     if (plan === "free") {
-      showError("Upgrade Required", "AI resume generation is a premium feature. Please upgrade to unlock.");
+      const mockResume: GeneratedResume = {
+        content: generateMockResumeContent(formData),
+        sections: {
+          summary: generateMockSummary(formData),
+          experience: generateMockExperience(formData),
+          skills: formData.skills.join(", "),
+          education: formData.education || "Bachelor's Degree in relevant field",
+        },
+        atsScore: 85,
+        keywords: extractKeywords(formData),
+        suggestions: generateMockSuggestions(formData),
+        wordCount: 350,
+      };
+
+      setGeneratedResume(mockResume);
+      showInfo("Demo Mode", "This is a sample resume. Upgrade for full AI generation.");
       return;
     }
 
@@ -134,6 +167,9 @@ export function AIResumeGenerator() {
     
     try {
       const token = await user?.getIdToken();
+      if (!token) {
+        throw new Error("Not authenticated");
+      }
       const response = await fetch("/api/ai/resume", {
         method: "POST",
         headers: {
@@ -147,17 +183,26 @@ export function AIResumeGenerator() {
         }),
       });
 
+      const payload = await response.json().catch(() => null);
+
       if (!response.ok) {
-        throw new Error("Failed to generate resume");
+        const message =
+          (payload && typeof payload === "object" && "error" in payload && typeof (payload as any).error === "string"
+            ? (payload as any).error
+            : "Failed to generate resume");
+        throw new Error(message);
       }
 
-      const data = await response.json();
-      setGeneratedResume(data);
+      if (!payload) {
+        throw new Error("Invalid response from server");
+      }
+
+      setGeneratedResume(payload as GeneratedResume);
       showSuccess("Success", "Your resume has been generated!");
     } catch (error: any) {
       console.error("Resume generation error:", error);
-      
-      // Fallback to mock data for development
+
+      // Fallback to mock data (network/API issues)
       const mockResume: GeneratedResume = {
         content: generateMockResumeContent(formData),
         sections: {
@@ -173,7 +218,10 @@ export function AIResumeGenerator() {
       };
       
       setGeneratedResume(mockResume);
-      showInfo("Demo Mode", "This is a sample resume. Upgrade for full AI generation.");
+
+      const message = error instanceof Error ? error.message : "AI generation failed";
+      showError("Generation Failed", message);
+      showInfo("Fallback Used", "Showing a fallback resume so you can keep going.");
     } finally {
       setIsGenerating(false);
     }
@@ -286,14 +334,14 @@ ${data.experience}
       // Convert generated resume content to structured resume data
       const resumeData = {
         personalInfo: {
-          fullName: user?.displayName || 'Your Name',
-          email: user?.email || 'your.email@example.com',
-          phone: '(555) 123-4567',
-          location: 'Your City, State',
+          fullName: formData.fullName || user?.displayName || 'Your Name',
+          email: formData.email || user?.email || 'your.email@example.com',
+          phone: formData.phone || '',
+          location: formData.location || '',
           summary: generatedResume.sections.summary || 'Professional summary',
-          linkedin: '',
+          linkedin: formData.linkedin || '',
           github: '',
-          website: ''
+          website: formData.website || ''
         },
         experience: [{
           id: '1',
@@ -367,14 +415,14 @@ ${data.experience}
       // Convert generated resume content to structured resume data
       const resumeData = {
         personalInfo: {
-          fullName: user?.displayName || 'Your Name',
-          email: user?.email || 'your.email@example.com',
-          phone: '(555) 123-4567',
-          location: 'Your City, State',
+          fullName: formData.fullName || user?.displayName || 'Your Name',
+          email: formData.email || user?.email || 'your.email@example.com',
+          phone: formData.phone || '',
+          location: formData.location || '',
           summary: generatedResume.sections.summary || 'Professional summary',
-          linkedin: '',
+          linkedin: formData.linkedin || '',
           github: '',
-          website: ''
+          website: formData.website || ''
         },
         experience: [{
           id: '1',
@@ -487,10 +535,91 @@ ${data.experience}
               Your Information
             </CardTitle>
             <CardDescription>
-              Provide details about your background and target role
+              Provide your personal details and background for the resume
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6 pt-6">
+            {/* Personal Details Section */}
+            <div className="space-y-4">
+              <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                <span className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center text-xs font-bold text-primary">1</span>
+                Personal Details
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="fullName">
+                    Full Name <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="fullName"
+                    placeholder="John Doe"
+                    value={formData.fullName}
+                    onChange={(e) => setFormData(prev => ({ ...prev, fullName: e.target.value }))}
+                    className="bg-background"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">
+                    Email <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="john@example.com"
+                    value={formData.email}
+                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                    className="bg-background"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone</Label>
+                  <Input
+                    id="phone"
+                    placeholder="(555) 123-4567"
+                    value={formData.phone}
+                    onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                    className="bg-background"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="location">Location</Label>
+                  <Input
+                    id="location"
+                    placeholder="San Francisco, CA"
+                    value={formData.location}
+                    onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                    className="bg-background"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="linkedin">LinkedIn URL</Label>
+                  <Input
+                    id="linkedin"
+                    placeholder="linkedin.com/in/johndoe"
+                    value={formData.linkedin}
+                    onChange={(e) => setFormData(prev => ({ ...prev, linkedin: e.target.value }))}
+                    className="bg-background"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="website">Website / Portfolio</Label>
+                  <Input
+                    id="website"
+                    placeholder="johndoe.com"
+                    value={formData.website}
+                    onChange={(e) => setFormData(prev => ({ ...prev, website: e.target.value }))}
+                    className="bg-background"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Professional Info Section */}
+            <div className="space-y-4 pt-4 border-t">
+              <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                <span className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center text-xs font-bold text-primary">2</span>
+                Target Role
+              </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="space-y-2">
                 <Label htmlFor="jobTitle" className="flex items-center gap-2">
@@ -559,7 +688,12 @@ ${data.experience}
                   placeholder="Add a skill..."
                   value={skillInput}
                   onChange={(e) => setSkillInput(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && addSkill()}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addSkill();
+                    }
+                  }}
                   className="bg-background"
                 />
                 <Button type="button" onClick={addSkill} size="sm" variant="secondary">
@@ -610,9 +744,13 @@ ${data.experience}
                 </Select>
               </div>
             </div>
+            </div>
 
             <div className="space-y-4 pt-4 border-t">
-              <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">AI Options</h4>
+              <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                <span className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center text-xs font-bold text-primary">3</span>
+                AI Options
+              </h4>
               <div className="grid grid-cols-1 gap-3">
                 <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border">
                   <div className="space-y-0.5">
@@ -641,7 +779,7 @@ ${data.experience}
 
             <Button 
               onClick={generateResume} 
-              disabled={isGenerating || plan === "free"}
+              disabled={isGenerating || !canGenerate}
               className="w-full h-12 text-lg font-medium shadow-lg hover:shadow-xl transition-all"
             >
               {isGenerating ? (
@@ -668,7 +806,7 @@ ${data.experience}
                 Generated Resume
               </span>
               {generatedResume && (
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button size="sm" variant="outline" onClick={copyToClipboard}>
                     <Copy className="h-4 w-4 mr-1" />
                     Copy

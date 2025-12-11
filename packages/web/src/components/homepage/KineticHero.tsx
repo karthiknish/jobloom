@@ -38,7 +38,7 @@ export function KineticHero() {
 
             <h1 className="text-5xl md:text-7xl font-black tracking-tighter text-foreground leading-[1.1]">
               DON'T JUST APPLY. <br />
-              GET <span className="text-primary inline-block min-w-[300px]">
+              GET <span className="text-primary inline-block min-w-0 sm:min-w-[300px]">
                 {words[index]}
               </span>
             </h1>
@@ -57,16 +57,6 @@ export function KineticHero() {
               </Button>
             </div>
 
-            <div className="pt-8 flex items-center gap-4 text-sm text-muted-foreground font-medium">
-              <div className="flex -space-x-2">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="h-8 w-8 rounded-full border-2 border-background bg-muted flex items-center justify-center text-xs overflow-hidden">
-                    <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i}`} alt="User" />
-                  </div>
-                ))}
-              </div>
-              <p>Joined by 40,000+ job seekers</p>
-            </div>
           </div>
 
           {/* Right: Bento-style Hero Visual */}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   Bug,
@@ -21,7 +21,7 @@ import {
 import { format, formatDistanceToNow } from "date-fns";
 import toast from "react-hot-toast";
 
-import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { useApiQuery, useApiMutation } from "@/hooks/useApi";
 import { adminApi } from "@/utils/api/admin";
 import { exportToCsv } from "@/utils/exportToCsv";
@@ -67,6 +67,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import type { ContactSubmission } from "@/types/api";
 
@@ -113,26 +114,14 @@ function isIssueReport(contact: ContactSubmission): boolean {
 }
 
 export default function AdminReportsPage() {
-  const { user } = useFirebaseAuth();
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const { isAdmin, isLoading: adminLoading, userRecord } = useAdminAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<IssueType>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedReport, setSelectedReport] = useState<ContactSubmission | null>(null);
   const [showDetails, setShowDetails] = useState(false);
 
-  const loadUserRecord = useCallback(() => {
-    if (user && user.uid) {
-      return adminApi.getUserByFirebaseUid(user.uid);
-    }
-    return Promise.reject(new Error("No user"));
-  }, [user?.uid]);
-
-  const { data: userRecord } = useApiQuery(loadUserRecord, [user?.uid], {
-    enabled: !!user?.uid,
-  });
-
-  const canFetchAdminData = userRecord?.isAdmin === true;
+  const canFetchAdminData = isAdmin === true;
 
   const loadContacts = useCallback(
     () => adminApi.getAllContactSubmissions(),
@@ -144,15 +133,9 @@ export default function AdminReportsPage() {
     loading: contactsLoading,
     error: contactsError,
     refetch: refetchContacts,
-  } = useApiQuery(loadContacts, [userRecord?._id, userRecord?.isAdmin], {
+  } = useApiQuery(loadContacts, [userRecord?._id, isAdmin], {
     enabled: canFetchAdminData,
   });
-
-  useEffect(() => {
-    if (userRecord) {
-      setIsAdmin(userRecord.isAdmin === true);
-    }
-  }, [userRecord]);
 
   const { mutate: updateContact, loading: updateLoading } = useApiMutation(
     ({
@@ -270,20 +253,72 @@ export default function AdminReportsPage() {
     toast.success(`Exported ${filteredReports.length} reports`);
   };
 
-  if (!user) {
+  if (adminLoading) {
     return (
       <AdminLayout title="Issue Reports">
-        <div>Please sign in to access the admin panel.</div>
-      </AdminLayout>
-    );
-  }
-
-  if (isAdmin === null) {
-    return (
-      <AdminLayout title="Issue Reports">
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Checking admin permissions...
+        <div className="space-y-6">
+          {/* Header Skeleton */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Skeleton className="h-12 w-12 rounded-xl" />
+              <div className="space-y-2">
+                <Skeleton className="h-8 w-40" />
+                <Skeleton className="h-4 w-64" />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Skeleton className="h-10 w-24" />
+              <Skeleton className="h-10 w-24" />
+            </div>
+          </div>
+          
+          {/* Stats Skeleton */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <Card key={i}>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-4 w-4" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-8 w-12" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          
+          {/* Table Skeleton */}
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-36 mb-2" />
+              <Skeleton className="h-4 w-48" />
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-4 mb-6">
+                <Skeleton className="h-10 flex-1" />
+                <Skeleton className="h-10 w-40" />
+                <Skeleton className="h-10 w-32" />
+              </div>
+              <div className="space-y-3">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="flex items-center justify-between py-3 border-b">
+                    <div className="flex items-center gap-4">
+                      <Skeleton className="h-6 w-24 rounded-full" />
+                      <div className="space-y-1">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-3 w-40" />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <Skeleton className="h-6 w-16 rounded-full" />
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-8 w-8" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </AdminLayout>
     );
@@ -300,7 +335,7 @@ export default function AdminReportsPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between"
+          className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
         >
           <div className="flex items-center gap-4">
             <div className="h-12 w-12 rounded-xl bg-red-100 flex items-center justify-center">
@@ -314,7 +349,7 @@ export default function AdminReportsPage() {
             </div>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex w-full flex-wrap gap-2 sm:w-auto">
             <Button variant="outline" onClick={handleExport}>
               <Download className="h-4 w-4 mr-2" />
               Export
@@ -421,7 +456,7 @@ export default function AdminReportsPage() {
                 </div>
 
                 <Select value={typeFilter} onValueChange={(v: IssueType) => setTypeFilter(v)}>
-                  <SelectTrigger className="w-[160px]">
+                  <SelectTrigger className="w-full sm:w-[160px]">
                     <SelectValue placeholder="Type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -434,7 +469,7 @@ export default function AdminReportsPage() {
                 </Select>
 
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-[140px]">
+                  <SelectTrigger className="w-full sm:w-[140px]">
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -447,8 +482,8 @@ export default function AdminReportsPage() {
                 </Select>
               </div>
 
-              <div className="rounded-md border overflow-hidden">
-                <Table>
+              <div className="rounded-md border overflow-x-auto">
+                <Table className="min-w-[760px]">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Type</TableHead>

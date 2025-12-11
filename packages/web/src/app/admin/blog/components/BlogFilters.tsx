@@ -33,8 +33,8 @@ export function BlogFilters({
 }: BlogFiltersProps) {
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex flex-1 items-center gap-4">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-1 flex-col gap-4 sm:flex-row sm:items-center">
+        <div className="relative w-full flex-1 sm:max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <Input
             placeholder="Search posts..."
@@ -44,7 +44,7 @@ export function BlogFilters({
           />
         </div>
         <Select value={statusFilter} onValueChange={onStatusFilterChange}>
-          <SelectTrigger className="w-[180px] border-gray-200">
+          <SelectTrigger className="w-full sm:w-[180px] border-gray-200">
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
           <SelectContent>
@@ -56,7 +56,7 @@ export function BlogFilters({
         </Select>
       </div>
       
-      <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         {selectedCount > 0 && (
           <Badge variant="secondary" className="gap-1 bg-gray-100 text-gray-700">
             {selectedCount} selected
@@ -70,7 +70,7 @@ export function BlogFilters({
             </Button>
           </Badge>
         )}
-        <Button onClick={onCreatePost}>
+        <Button onClick={onCreatePost} className="w-full sm:w-auto">
           <Plus className="mr-2 h-4 w-4" />
           New Post
         </Button>

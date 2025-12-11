@@ -3,6 +3,7 @@ import { JobStatus, createJobItemHTML, updateJobStatusDisplay } from "../../util
 import { popupUI } from "../UI/PopupUI";
 import { fetchSponsorRecord } from "../../sponsorship/lookup";
 import { safeChromeStorageGet } from "../../utils/safeStorage";
+import { isLikelyPlaceholderCompany, normalizeCompanyName } from "../../utils/companyName";
 
 export class JobManager {
   private static instance: JobManager;
@@ -32,7 +33,7 @@ export class JobManager {
       const pendingEntries = pendingJobs.map((p: any) => ({
         id: p.id || `pending-${Date.now()}`,
         title: p.jobData.title,
-        company: p.jobData.company,
+        company: normalizeCompanyName(p.jobData.company || ""),
         location: p.jobData.location,
         url: p.jobData.url,
         status: p.status,
@@ -69,7 +70,7 @@ export class JobManager {
       const mappedJobs: JobStatus[] = filteredJobs.map(job => ({
         id: job.id,
         title: job.title,
-        company: job.company,
+        company: normalizeCompanyName(job.company || ""),
         location: job.location,
         status: job.status,
         sponsored: (job as any).isSponsored || (job as any).sponsorshipInfo?.isSponsored || false,
@@ -195,6 +196,16 @@ export class JobManager {
     try {
       const sponsorBtn = document.getElementById(`sponsor-btn-${jobId}`) as HTMLElement;
       const sponsorStatus = document.getElementById(`sponsor-status-${jobId}`) as HTMLElement;
+
+      const normalizedCompany = normalizeCompanyName(companyName);
+      if (!normalizedCompany || isLikelyPlaceholderCompany(normalizedCompany)) {
+        if (sponsorBtn) sponsorBtn.style.display = '';
+        if (sponsorStatus) {
+          sponsorStatus.className = "sponsor-status error";
+          sponsorStatus.textContent = "❌ Company name missing";
+        }
+        return;
+      }
       
       if (sponsorBtn) sponsorBtn.style.display = 'none';
       if (sponsorStatus) {
@@ -202,7 +213,7 @@ export class JobManager {
         sponsorStatus.innerHTML = '<div class="spinner-small"></div> Checking...';
       }
       
-      const record = await fetchSponsorRecord(companyName);
+      const record = await fetchSponsorRecord(normalizedCompany);
 
       if (!record) {
         sponsorStatus!.className = "sponsor-status not-licensed";

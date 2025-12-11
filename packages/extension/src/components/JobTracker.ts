@@ -9,6 +9,7 @@ import {
 import { EnhancedJobBoardManager } from "../enhancedAddToBoard";
 import EnhancedJobParser, { type EnhancedJobData } from "../enhancedJobParser";
 import { UKJobDescriptionParser, type JobDescriptionData } from "../jobDescriptionParser";
+import { isLikelyPlaceholderCompany, normalizeCompanyName } from "../utils/companyName";
 
 export interface SponsorshipCheckResult {
   company: string;
@@ -183,6 +184,15 @@ export class JobTracker {
       for (const card of cards) {
         this.ensureCardControls(card);
         const jobData = JobDataExtractor.extractJobData(card);
+
+        if (!jobData.company || isLikelyPlaceholderCompany(jobData.company)) {
+          console.debug("Hireall: Skipping sponsorship check (missing company)", {
+            title: jobData.title,
+            company: jobData.company,
+          });
+          continue;
+        }
+
         const result = await this.checkSponsorship(jobData, card);
 
         if (result.isSponsored) {
@@ -238,6 +248,22 @@ export class JobTracker {
   }
 
   private async checkSponsorship(jobData: JobData, card?: Element): Promise<SponsorshipCheckResult> {
+    const normalizedCompany = normalizeCompanyName(jobData.company);
+    if (!normalizedCompany || isLikelyPlaceholderCompany(normalizedCompany)) {
+      return {
+        company: jobData.company,
+        source: jobData.source,
+        isSponsored: false,
+        sponsorshipType: null,
+        status: "error",
+        confidence: 0,
+        matchedName: null,
+        sponsorData: null,
+      };
+    }
+
+    jobData.company = normalizedCompany;
+
     const jobContext = await this.buildJobDescriptionData(jobData, card);
     const cacheKey = this.buildSponsorshipCacheKey(jobData.company, jobContext);
     const cached = this.sponsorCache.get(cacheKey);
@@ -539,10 +565,16 @@ export class JobTracker {
     const originalLabel = button.innerHTML;
     const jobData = JobDataExtractor.extractJobData(card);
 
-    if (jobData.company.trim().length < 2) {
-      UIComponents.showToast("Company information missing for sponsor check", { type: "warning" });
+    const normalizedCompany = normalizeCompanyName(jobData.company);
+    if (!normalizedCompany || normalizedCompany.length < 2 || isLikelyPlaceholderCompany(normalizedCompany)) {
+      UIComponents.showToast(
+        "Couldn't detect the company name for this job. Open the job details and try again.",
+        { type: "warning" }
+      );
       return;
     }
+
+    jobData.company = normalizedCompany;
 
     button.disabled = true;
     button.innerHTML = `${UIComponents.createIcon("clock", 12, "#fff")} <span>Checking...</span>`;
@@ -575,10 +607,26 @@ export class JobTracker {
     const originalLabel = button.innerHTML;
     const jobData = JobDataExtractor.extractJobData(card);
 
-    if (jobData.company.trim().length < 2 || jobData.title.trim().length < 2) {
-      UIComponents.showToast("Missing required job information", { type: "warning" });
+    const normalizedCompany = normalizeCompanyName(jobData.company);
+    const normalizedTitle = (jobData.title || "").replace(/\s+/g, " ").trim();
+
+    if (!normalizedCompany || isLikelyPlaceholderCompany(normalizedCompany) || normalizedCompany.length < 2) {
+      UIComponents.showToast(
+        "Couldn't detect the company name for this job. Open the job details and try again.",
+        { type: "warning" }
+      );
       return;
     }
+
+    if (!normalizedTitle || normalizedTitle.length < 2 || normalizedTitle.toLowerCase() === "unknown role") {
+      UIComponents.showToast("Missing required job title", { type: "warning" });
+      return;
+    }
+
+    jobData.company = normalizedCompany;
+    jobData.title = normalizedTitle;
+
+    // (Validation performed above)
 
     button.disabled = true;
     button.innerHTML = `${UIComponents.createIcon("clock", 12, "#fff")} <span>Adding...</span>`;

@@ -74,22 +74,22 @@ export function DataTable<TData, TValue>({
   return (
     <div className="w-full space-y-4">
       {/* Search and Column Visibility */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         {searchKey && (
-          <div className="flex items-center space-x-2">
+          <div className="flex w-full items-center gap-2 sm:w-auto">
             <Input
               placeholder={searchPlaceholder}
               value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ""}
               onChange={(event) =>
                 table.getColumn(searchKey)?.setFilterValue(event.target.value)
               }
-              className="h-9 w-[250px]"
+              className="h-9 w-full sm:w-[250px]"
             />
           </div>
         )}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto">
+            <Button variant="outline" className="sm:ml-auto">
               Columns <ChevronDownIcon className="ml-2 h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -115,7 +115,8 @@ export function DataTable<TData, TValue>({
 
       {/* Data Table */}
       <div className="rounded-md border border-border/70 bg-card/50 backdrop-blur-sm">
-        <Table>
+        <div className="w-full overflow-x-auto">
+          <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
@@ -157,16 +158,17 @@ export function DataTable<TData, TValue>({
               </TableRow>
             )}
           </TableBody>
-        </Table>
+          </Table>
+        </div>
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-end space-x-2 py-4">
+      <div className="flex flex-col gap-2 py-4 sm:flex-row sm:items-center sm:justify-end sm:gap-4">
         <div className="flex-1 text-sm text-muted-foreground">
           {table.getFilteredSelectedRowModel().rows.length} of{" "}
           {table.getFilteredRowModel().rows.length} row(s) selected.
         </div>
-        <div className="space-x-2">
+        <div className="flex flex-wrap gap-2 sm:flex-nowrap sm:justify-end">
           <Button
             variant="outline"
             size="sm"

@@ -81,6 +81,21 @@ export function DashboardJobsView({
   
   // Search input ref for focus
   const searchInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Bulk delete handler (defined before use in keyboard shortcuts)
+  const handleBulkDelete = useCallback(async () => {
+    try {
+      const { dashboardApi } = await import("@/utils/api/dashboard");
+      await Promise.all(
+        bulkSelection.selectedArray.map((id) => dashboardApi.deleteApplication(id))
+      );
+      bulkSelection.clearSelection();
+      onChanged();
+    } catch (e: any) {
+      const { showError } = await import("@/components/ui/Toast");
+      showError(e?.message || "Bulk delete failed");
+    }
+  }, [bulkSelection, onChanged]);
   
   // Keyboard shortcuts
   const shortcuts = useMemo(() => createDashboardShortcuts({
@@ -91,9 +106,9 @@ export function DashboardJobsView({
     onHelp: () => setShowShortcuts(true),
     onSelectAll: () => bulkSelection.toggleSelectAll(),
     onDelete: bulkSelection.hasSelection 
-      ? () => handleBulkDelete() 
+      ? () => void handleBulkDelete()
       : undefined,
-  }), [onAddJob, onImport, bulkSelection]);
+  }), [onAddJob, onImport, bulkSelection, handleBulkDelete]);
   
   useKeyboardShortcuts(shortcuts);
 
@@ -121,23 +136,6 @@ export function DashboardJobsView({
     } catch (e: any) {
       const { showError } = await import("@/components/ui/Toast");
       showError(e?.message || "Bulk update failed");
-    }
-  };
-
-  // Bulk delete handler
-  const handleBulkDelete = async () => {
-    try {
-      const { dashboardApi } = await import("@/utils/api/dashboard");
-      await Promise.all(
-        bulkSelection.selectedArray.map(id => 
-          dashboardApi.deleteApplication(id)
-        )
-      );
-      bulkSelection.clearSelection();
-      onChanged();
-    } catch (e: any) {
-      const { showError } = await import("@/components/ui/Toast");
-      showError(e?.message || "Bulk delete failed");
     }
   };
 

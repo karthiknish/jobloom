@@ -129,7 +129,7 @@ export function WelcomeDialog({ onStartTour, onSkip }: WelcomeDialogProps) {
             Here's what you can do with Hireall:
           </p>
           
-          <div className="grid grid-cols-2 gap-3 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
             {features.map((feature, index) => (
               <motion.div
                 key={feature.title}
@@ -148,7 +148,7 @@ export function WelcomeDialog({ onStartTour, onSkip }: WelcomeDialogProps) {
           </div>
 
           {/* Actions */}
-          <div className="flex gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row">
             <Button
               variant="outline"
               className="flex-1"

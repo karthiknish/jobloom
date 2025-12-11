@@ -7,6 +7,7 @@
 
 import { extractLinkedInJob } from "../job-tracker/jobExtractor";
 import type { JobData } from "../job-tracker/types";
+import { isLikelyPlaceholderCompany, normalizeCompanyName } from "../utils/companyName";
 
 export type { JobData } from "../job-tracker/types";
 
@@ -107,6 +108,15 @@ export function extractJobData(element: Element): JobData {
 
   try {
     const jobData = extractLinkedInJob(element);
+
+    // Normalize and harden company extraction (critical for sponsor lookups).
+    const normalizedCompany = normalizeCompanyName(jobData.company);
+    if (!normalizedCompany || isLikelyPlaceholderCompany(normalizedCompany)) {
+      const fallbackCompany = extractLinkedInCompanyFallback(element);
+      jobData.company = fallbackCompany ? normalizeCompanyName(fallbackCompany) : "";
+    } else {
+      jobData.company = normalizedCompany;
+    }
     
     // Validate extracted data
     if (!isValidJobData(jobData)) {
@@ -121,6 +131,94 @@ export function extractJobData(element: Element): JobData {
     console.error("HireAll: LinkedIn extraction failed", error);
     return createFallbackJobData(element);
   }
+}
+
+function extractLinkedInCompanyFallback(element: Element): string | null {
+  const selectors = [
+    // Job detail page (new/legacy)
+    ".job-details-jobs-unified-top-card__company-name a",
+    ".job-details-jobs-unified-top-card__company-name",
+    ".job-details-jobs-unified-top-card__primary-description-container a",
+    ".jobs-unified-top-card__company-name a",
+    ".jobs-unified-top-card__company-name",
+    "a.topcard__org-name-link",
+    // Job cards
+    "a.job-card-container__company-name",
+    ".job-card-container__primary-description",
+    ".job-card-list__company",
+    ".artdeco-entity-lockup__subtitle",
+    "a[href*='/company/']",
+    "[data-test='company-name']",
+  ];
+
+  for (const root of [element, document.documentElement]) {
+    for (const selector of selectors) {
+      try {
+        const node = root.querySelector(selector);
+        const text = node?.textContent?.trim();
+        const normalized = text ? normalizeCompanyName(text) : "";
+        if (normalized && !isLikelyPlaceholderCompany(normalized)) {
+          return normalized;
+        }
+      } catch {
+        // ignore selector errors
+      }
+    }
+  }
+
+  // Try JSON-LD JobPosting schema (when present)
+  try {
+    const scripts = Array.from(document.querySelectorAll("script[type='application/ld+json']"));
+    for (const script of scripts) {
+      const raw = script.textContent?.trim();
+      if (!raw) continue;
+      let parsed: any;
+      try {
+        parsed = JSON.parse(raw);
+      } catch {
+        continue;
+      }
+
+      const nodes = Array.isArray(parsed) ? parsed : [parsed];
+      for (const node of nodes) {
+        const hiringOrgName =
+          node?.hiringOrganization?.name ||
+          node?.hiringOrganization?.legalName ||
+          node?.hiringOrganization ||
+          node?.organization?.name;
+
+        if (typeof hiringOrgName === "string") {
+          const normalized = normalizeCompanyName(hiringOrgName);
+          if (normalized && !isLikelyPlaceholderCompany(normalized)) {
+            return normalized;
+          }
+        }
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  // Try parsing LinkedIn og:title: "Role at Company | LinkedIn"
+  try {
+    const ogTitle = document
+      .querySelector<HTMLMetaElement>("meta[property='og:title']")
+      ?.getAttribute("content")
+      ?.trim();
+    if (ogTitle) {
+      const match = ogTitle.match(/\sat\s(.+?)\s\|\sLinkedIn/i);
+      if (match?.[1]) {
+        const normalized = normalizeCompanyName(match[1]);
+        if (normalized && !isLikelyPlaceholderCompany(normalized)) {
+          return normalized;
+        }
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  return null;
 }
 
 /**
@@ -264,8 +362,9 @@ function createFallbackJobData(element: Element): JobData {
     "Unknown role";
 
   // Try to extract company
-  const company = 
+  const company =
     element.querySelector("[class*='company'], a[href*='/company/']")?.textContent?.trim() ||
+    extractLinkedInCompanyFallback(element) ||
     "Unknown company";
 
   // Try to extract location

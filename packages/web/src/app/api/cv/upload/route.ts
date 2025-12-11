@@ -112,11 +112,34 @@ function sanitizeExtractedText(text: string): string {
 
 // ============ END ROBUSTNESS UTILITIES ============
 
-// Use dynamic import for pdf-parse to avoid build-time file access issue
-type PDFParseResult = { text: string };
+// Use dynamic import for pdf-parse with workaround for test file bug
+// The pdf-parse library tries to load './test/data/05-versions-space.pdf' during init
+// We work around this by providing custom options that skip the default behavior
+type PDFParseResult = { text: string; numpages?: number; info?: any };
 const parsePDF = async (buffer: Buffer): Promise<PDFParseResult> => {
+  // Dynamic import to avoid build-time issues
   const pdfParse = (await import('pdf-parse')).default;
-  return pdfParse(buffer);
+  
+  // Pass the buffer with options that prevent test file loading
+  // The pagerender option prevents the default render that causes issues
+  return pdfParse(buffer, {
+    // Maximum pages to parse (0 = all)
+    max: 0,
+    // Custom page render function to avoid the test file issue
+    pagerender: function(pageData: any) {
+      const render_options = {
+        normalizeWhitespace: true,
+        disableCombineTextItems: false
+      };
+      return pageData.getTextContent(render_options).then(function(textContent: any) {
+        let text = '';
+        for (const item of textContent.items) {
+          text += (item as any).str + ' ';
+        }
+        return text;
+      });
+    }
+  });
 };
 
 // Initialize Firebase Admin if not already initialized (for storage)
@@ -138,6 +161,16 @@ async function checkSubscriptionLimits(
     // Get user record to find subscription info
     const userDoc = await db.collection("users").doc(userId).get();
     const userData = userDoc.data();
+
+    // Admin users have unlimited access
+    if (userData?.isAdmin === true) {
+      return {
+        allowed: true,
+        plan: "admin",
+        currentUsage: 0,
+        limit: -1, // Unlimited
+      };
+    }
 
     let plan = "free";
     if (userData?.subscriptionId) {
@@ -815,6 +848,23 @@ async function analyzeCvText(
       score: atsEvaluation.score,
       issues: atsEvaluation.issues.map(i => i.title),
       suggestions: Array.from(new Set(baseSuggestions)),
+      breakdown: {
+        structure: clampValue(
+          (hasSummary ? 20 : 0) + (hasExperience ? 30 : 0) + (hasEducation ? 20 : 0) + (hasContact ? 15 : 0) + (hasSkills ? 15 : 0),
+          0, 50
+        ),
+        keywords: clampValue(Math.round(keywordCoverage * 0.35), 0, 35),
+        formatting: clampValue(atsEvaluation.score >= 70 ? 15 : atsEvaluation.score >= 50 ? 10 : 5, 0, 15),
+        readability: clampValue(
+          (wordCount >= 300 && wordCount <= 1200 ? 10 : 5) + 
+          (actionVerbCount >= 5 ? 5 : 0),
+          0, 15
+        ),
+        extras: clampValue(
+          (hasProjects ? 5 : 0) + (hasCertifications ? 5 : 0) + (hasMetrics ? 5 : 0),
+          0, 15
+        ),
+      },
     },
     keywordAnalysis,
     sectionAnalysis,

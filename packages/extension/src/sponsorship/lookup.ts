@@ -1,5 +1,6 @@
 import { sponsorBatchLimiter } from "../rateLimiter";
 import { get } from "../apiClient";
+import { buildCompanyQueryCandidates, isLikelyPlaceholderCompany, normalizeCompanyName } from "../utils/companyName";
 
 export interface SponsorLookupResult {
   id?: string;
@@ -84,8 +85,10 @@ async function runWithSponsorLimit<T>(fn: () => Promise<T>): Promise<T> {
 }
 
 export async function fetchSponsorRecord(company: string): Promise<SponsorLookupResult | null> {
-  const key = company?.trim().toLowerCase();
-  if (!key) {
+  const normalizedCompany = normalizeCompanyName(company);
+  const key = normalizedCompany.toLowerCase();
+
+  if (!key || isLikelyPlaceholderCompany(normalizedCompany)) {
     return null;
   }
 
@@ -99,21 +102,33 @@ export async function fetchSponsorRecord(company: string): Promise<SponsorLookup
 
   const lookupPromise = runWithSponsorLimit(async () => {
     try {
-      const response = await get<any>("/api/app/sponsorship/companies", { q: company, limit: 10 });
+      const candidates = buildCompanyQueryCandidates(normalizedCompany);
+      for (const candidate of candidates) {
+        const candidateKey = candidate.toLowerCase();
+        if (sponsorshipCache.has(candidateKey)) {
+          const cached = sponsorshipCache.get(candidateKey) ?? null;
+          sponsorshipCache.set(key, cached);
+          return cached;
+        }
 
-      const resultsArray = Array.isArray(response?.results)
-        ? response.results
-        : Array.isArray(response?.companies)
-          ? response.companies
-          : response?.result
-            ? [response.result]
-            : [];
+        const response = await get<any>("/api/app/sponsorship/companies", { q: candidate, limit: 10 });
 
-      const normalized = normalizeSponsorRecord(resultsArray[0] ?? null);
+        const resultsArray = Array.isArray(response?.results)
+          ? response.results
+          : Array.isArray(response?.companies)
+            ? response.companies
+            : response?.result
+              ? [response.result]
+              : [];
 
-      if (normalized) {
-        sponsorshipCache.set(key, normalized);
-        return normalized;
+        const normalized = normalizeSponsorRecord(resultsArray[0] ?? null);
+        if (normalized) {
+          sponsorshipCache.set(candidateKey, normalized);
+          sponsorshipCache.set(key, normalized);
+          return normalized;
+        }
+
+        sponsorshipCache.set(candidateKey, null);
       }
 
       sponsorshipCache.set(key, null);

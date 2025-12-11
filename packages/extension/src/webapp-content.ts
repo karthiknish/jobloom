@@ -3,7 +3,7 @@
 import { ExtensionSecurityLogger } from "./security";
 import { put } from "./apiClient";
 import { ExtensionMessageHandler } from "./components/ExtensionMessageHandler";
-import { cacheAuthToken } from "./authToken";
+import { cacheAuthToken, clearCachedAuthToken } from "./authToken";
 
 // Content script for the web app to handle authentication communication
 let authSuccessSent = false; // Prevent duplicate auth success messages
@@ -419,34 +419,77 @@ window.addEventListener("message", (event) => {
   // Only accept messages from the same origin
   if (event.origin !== window.location.origin) return;
 
-  // Handle new auth bridge messages
-  if (event.data.type === "HIREALL_USER_AUTH" || event.data.type === "HIREDALL_AUTH_RESPONSE") {
-    console.log("[WebApp Content] Received auth message from web app:", event.data.type);
-    
-    if (event.data.token && event.data.userId) {
-      // Cache the token from web app
-      cacheAuthToken({
-        token: event.data.token,
-        userId: event.data.userId,
-        userEmail: event.data.userEmail,
-        source: "webapp"
-      }).then(() => {
-        // Notify background script about the auth state
-        chrome.runtime.sendMessage({
-          type: 'AUTH_STATE_CHANGED',
-          payload: {
-            isAuthenticated: true,
-            userId: event.data.userId,
-            email: event.data.userEmail,
-            token: event.data.token,
-            source: 'webapp_content'
+  // Handle auth bridge messages (support multiple legacy/new message types)
+  const messageType = (event as any)?.data?.type;
+  if (
+    messageType === "HIREALL_USER_AUTH" ||
+    messageType === "HIREDALL_AUTH_RESPONSE" ||
+    messageType === "HIREDALL_AUTH_STATE_CHANGED" ||
+    messageType === "HIREALL_AUTH_STATE_CHANGED"
+  ) {
+    console.log("[WebApp Content] Received auth message from web app:", messageType);
+
+    // Some web-side events explicitly indicate logout
+    if ((event as any)?.data?.isAuthenticated === false) {
+      clearCachedAuthToken().catch(() => undefined);
+      try {
+        chrome.storage.sync.remove(["firebaseUid", "userId", "userEmail", "sessionToken"], () => {
+          if (chrome.runtime?.lastError) {
+            ExtensionSecurityLogger.log(
+              "Failed to clear auth storage on auth-state logout",
+              chrome.runtime.lastError.message
+            );
           }
         });
-        
-        console.log('[WebApp Content] Auth state synced from web app');
-      }).catch((error) => {
-        console.error('[WebApp Content] Failed to cache auth token:', error);
-      });
+      } catch {
+        // ignore
+      }
+
+      // Notify background script so it can clear its cached token too
+      try {
+        chrome.runtime.sendMessage({
+          type: "AUTH_STATE_CHANGED",
+          payload: {
+            isAuthenticated: false,
+            source: "webapp_content",
+          },
+        });
+      } catch {
+        // ignore
+      }
+
+      return;
+    }
+
+    if ((event as any)?.data?.token && (event as any)?.data?.userId) {
+      const token = String((event as any).data.token);
+      const userId = String((event as any).data.userId);
+      const userEmail = (event as any)?.data?.userEmail ? String((event as any).data.userEmail) : undefined;
+
+      cacheAuthToken({
+        token,
+        userId,
+        userEmail,
+        source: "webapp",
+      })
+        .then(() => {
+          // Notify background script about the auth state
+          chrome.runtime.sendMessage({
+            type: "AUTH_STATE_CHANGED",
+            payload: {
+              isAuthenticated: true,
+              userId,
+              email: userEmail,
+              token,
+              source: "webapp_content",
+            },
+          });
+
+          console.log("[WebApp Content] Auth state synced from web app");
+        })
+        .catch((error) => {
+          console.error("[WebApp Content] Failed to cache auth token:", error);
+        });
     }
   }
 
@@ -499,6 +542,7 @@ window.addEventListener("message", (event) => {
   // Handle Firebase authentication logout message
   if (event.data.type === "FIREBASE_AUTH_LOGOUT") {
     console.log("Received logout message from web app");
+    clearCachedAuthToken().catch(() => undefined);
     // Clear auth data from chrome storage
     chrome.storage.sync.remove(["firebaseUid", "userId"], () => {
       if (chrome.runtime?.lastError) {
@@ -507,6 +551,19 @@ window.addEventListener("message", (event) => {
         console.log("Cleared auth storage on logout");
       }
     });
+
+    // Notify background so it can clear cached token
+    try {
+      chrome.runtime.sendMessage({
+        type: "AUTH_STATE_CHANGED",
+        payload: {
+          isAuthenticated: false,
+          source: "webapp_content",
+        },
+      });
+    } catch {
+      // ignore
+    }
   }
 
   if (event.data.type === "HIREALL_EXTENSION_UPDATE_PREFS") {

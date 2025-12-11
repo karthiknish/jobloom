@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Mail,
@@ -14,11 +14,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { showSuccess, showError } from "@/components/ui/Toast";
-import { useApiQuery } from "@/hooks/useApi";
-import { adminApi } from "@/utils/api/admin";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { AdminAccessDenied } from "@/components/admin/AdminAccessDenied";
 import { EmailTemplate, EmailCampaign } from "@/config/emailTemplates";
 import { AdminLayout } from "@/components/admin/AdminLayout";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Import components
 import { EmailMarketingHeader } from "@/components/admin/email-marketing/EmailMarketingHeader";
@@ -28,7 +28,7 @@ import { EmailList } from "@/components/admin/email-marketing/EmailList";
 
 export default function EmailMarketingPage() {
   const { user } = useFirebaseAuth();
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const { isAdmin, isLoading: adminLoading } = useAdminAuth();
   const [activeTab, setActiveTab] = useState("templates");
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [campaigns, setCampaigns] = useState<EmailCampaign[]>([]);
@@ -36,32 +36,11 @@ export default function EmailMarketingPage() {
   const [emailListStats, setEmailListStats] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
 
-  // Check if user is admin
-  const loadUserRecord = useCallback(() => {
-    if (user && user.uid) {
-      return adminApi.getUserByFirebaseUid(user.uid);
-    }
-    return Promise.reject(new Error("No user"));
-  }, [user?.uid]);
-
-  const { data: userRecord } = useApiQuery(
-    loadUserRecord,
-    [user?.uid],
-    { enabled: !!user?.uid }
-  );
-
-  // Check admin status
-  useEffect(() => {
-    if (userRecord) {
-      setIsAdmin(userRecord.isAdmin === true);
-    }
-  }, [userRecord]);
-
   // Fetch data
   useEffect(() => {
-    if (!user) return;
+    if (!user || !isAdmin) return;
     fetchInitialData();
-  }, [user]);
+  }, [user, isAdmin]);
 
   const fetchInitialData = async () => {
     try {
@@ -170,27 +149,58 @@ export default function EmailMarketingPage() {
     }
   };
 
-  if (!user) {
+  if (adminLoading) {
     return (
       <AdminLayout title="Email Marketing">
-        <div className="flex items-center justify-center h-[50vh]">
-          <div className="text-center">
-            <p className="mb-4">Please sign in to access email marketing.</p>
-            <a className="underline" href="/sign-in">Sign in</a>
+        <div className="space-y-8">
+          {/* Header Skeleton */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-2">
+              <Skeleton className="h-9 w-48" />
+              <Skeleton className="h-4 w-80" />
+            </div>
+            <div className="flex gap-3">
+              <Skeleton className="h-10 w-28" />
+              <Skeleton className="h-10 w-28" />
+            </div>
           </div>
-        </div>
-      </AdminLayout>
-    );
-  }
-
-  if (isAdmin === null) {
-    return (
-      <AdminLayout title="Email Marketing">
-        <div className="flex items-center justify-center h-[50vh]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-4 text-muted-foreground">Checking admin access...</p>
+          
+          {/* Stats Skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            {[1, 2, 3, 4].map((i) => (
+              <Card key={i} className="border-gray-200">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-8 w-8 rounded-full" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-8 w-12" />
+                </CardContent>
+              </Card>
+            ))}
           </div>
+          
+          {/* Tabs Skeleton */}
+          <Skeleton className="h-12 w-full rounded-xl" />
+          
+          {/* Content Skeleton */}
+          <Card className="border-gray-200">
+            <CardHeader>
+              <Skeleton className="h-6 w-32 mb-2" />
+              <Skeleton className="h-4 w-64" />
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="space-y-1">
+                    <Skeleton className="h-5 w-40" />
+                    <Skeleton className="h-4 w-64" />
+                  </div>
+                  <Skeleton className="h-10 w-24" />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
         </div>
       </AdminLayout>
     );
@@ -297,7 +307,7 @@ export default function EmailMarketingPage() {
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-          <TabsList className="grid w-full grid-cols-3 h-12 bg-gray-100 p-1 rounded-xl border border-gray-200">
+          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 bg-gray-100 p-1 rounded-xl border border-gray-200">
             <TabsTrigger value="templates" className="text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-lg text-gray-600 data-[state=active]:text-foreground">
               <FileText className="h-4 w-4 mr-2" />
               Templates

@@ -72,6 +72,8 @@ import {
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { showError, showSuccess, showWarning } from "@/components/ui/Toast";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { exportToCsv } from "@/utils/exportToCsv";
 
 // Mirror of UserRecord (plus optional UI-only props) from adminApi
@@ -99,7 +101,7 @@ interface UserStats {
 
 export default function AdminUserDashboardClient() {
   const { user } = useFirebaseAuth();
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const { isAdmin, isLoading: adminLoading, userRecord } = useAdminAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [planFilter, setPlanFilter] = useState<string>("all");
@@ -108,21 +110,7 @@ export default function AdminUserDashboardClient() {
   const [showCreateUser, setShowCreateUser] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Check admin status
-  const loadUserRecord = useCallback(() => {
-    if (user && user.uid) {
-      return adminApi.getUserByFirebaseUid(user.uid);
-    }
-    return Promise.reject(new Error("No user"));
-  }, [user?.uid]);
-
-  const { data: userRecord } = useApiQuery(
-    loadUserRecord,
-    [user?.uid],
-    { enabled: !!user?.uid }
-  );
-
-  const canFetchAdminData = userRecord?.isAdmin === true;
+  const canFetchAdminData = isAdmin === true;
 
   // Fetch user stats
   const loadUserStats = useCallback(
@@ -132,7 +120,7 @@ export default function AdminUserDashboardClient() {
 
   const { data: userStats, refetch: refetchStats } = useApiQuery(
     loadUserStats,
-    [userRecord?._id, userRecord?.isAdmin],
+    [userRecord?._id, isAdmin],
     { enabled: canFetchAdminData }
   );
 
@@ -144,15 +132,9 @@ export default function AdminUserDashboardClient() {
 
   const { data: usersData, refetch: refetchUsers } = useApiQuery(
     loadAllUsers,
-    [userRecord?._id, userRecord?.isAdmin],
+    [userRecord?._id, isAdmin],
     { enabled: canFetchAdminData }
   );
-
-  useEffect(() => {
-    if (userRecord) {
-      setIsAdmin(userRecord.isAdmin === true);
-    }
-  }, [userRecord]);
 
   // Admin action mutations
   const { mutate: setAdminUser } = useApiMutation((userId: string) => {
@@ -407,10 +389,117 @@ export default function AdminUserDashboardClient() {
     );
   }
 
-  if (isAdmin === null) {
+  if (adminLoading) {
     return (
       <AdminLayout title="User Dashboard">
-        <div>Checking admin permissions...</div>
+        <div className="space-y-6">
+          {/* Header Skeleton */}
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <Skeleton className="h-12 w-12 rounded-xl" />
+              <div className="space-y-2">
+                <Skeleton className="h-8 w-48" />
+                <Skeleton className="h-4 w-72" />
+              </div>
+            </div>
+            <Skeleton className="h-10 w-28" />
+          </div>
+
+          {/* Stats Cards Skeleton */}
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Card key={i} className="border-gray-200">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-8 w-8 rounded-lg" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-8 w-16 mb-2" />
+                  <Skeleton className="h-3 w-32" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Distribution & Verification Skeleton */}
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+            <Card className="xl:col-span-2 border-gray-200">
+              <CardHeader>
+                <Skeleton className="h-6 w-48 mb-2" />
+                <Skeleton className="h-4 w-64" />
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="w-3 h-3 rounded-full" />
+                      <Skeleton className="h-4 w-20" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Skeleton className="h-4 w-8" />
+                      <Skeleton className="w-24 h-2 rounded-full" />
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            <Card className="border-gray-200">
+              <CardHeader>
+                <Skeleton className="h-6 w-40 mb-2" />
+                <Skeleton className="h-4 w-48" />
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="flex items-center justify-between p-2">
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="h-8 w-8 rounded-full" />
+                      <Skeleton className="h-4 w-24" />
+                    </div>
+                    <Skeleton className="h-4 w-12" />
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Users Table Skeleton */}
+          <Card className="border-gray-200">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <Skeleton className="h-6 w-24 mb-2" />
+                  <Skeleton className="h-4 w-48" />
+                </div>
+                <div className="flex gap-2">
+                  <Skeleton className="h-10 w-64" />
+                  <Skeleton className="h-10 w-32" />
+                  <Skeleton className="h-10 w-32" />
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="h-10 w-10 rounded-full" />
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-3 w-48" />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <Skeleton className="h-6 w-16 rounded-full" />
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-8 w-8 rounded-md" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </AdminLayout>
     );
   }
@@ -429,7 +518,7 @@ export default function AdminUserDashboardClient() {
           transition={{ delay: 0.05 }}
           className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4"
         >
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex items-center gap-4">
               <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
                 <Users className="h-6 w-6 text-primary" />
@@ -440,7 +529,7 @@ export default function AdminUserDashboardClient() {
               </div>
             </div>
 
-            <Button onClick={() => setShowCreateUser(true)}>
+            <Button onClick={() => setShowCreateUser(true)} className="w-full sm:w-auto">
               <UserPlus className="h-4 w-4 mr-2" />
               Add User
             </Button>
@@ -836,7 +925,7 @@ export default function AdminUserDashboardClient() {
                 </div>
 
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-[150px] border-gray-200">
+                  <SelectTrigger className="w-full sm:w-[150px] border-gray-200">
                     <SelectValue placeholder="Filter by status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -849,7 +938,7 @@ export default function AdminUserDashboardClient() {
                 </Select>
 
                 <Select value={planFilter} onValueChange={setPlanFilter}>
-                  <SelectTrigger className="w-[150px] border-gray-200">
+                  <SelectTrigger className="w-full sm:w-[150px] border-gray-200">
                     <SelectValue placeholder="Filter by plan" />
                   </SelectTrigger>
                   <SelectContent>
@@ -862,8 +951,8 @@ export default function AdminUserDashboardClient() {
               </div>
 
               {/* Users Table */}
-              <div className="rounded-lg border border-gray-200 overflow-hidden">
-                <Table>
+              <div className="rounded-lg border border-gray-200 overflow-x-auto">
+                <Table className="min-w-[980px]">
                   <TableHeader className="bg-gray-50">
                     <TableRow className="border-gray-200">
                       <TableHead className="font-semibold text-gray-600">User</TableHead>

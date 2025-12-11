@@ -1,8 +1,12 @@
 import { getAuthInstance } from "./firebase";
 
 const AUTH_TOKEN_STORAGE_KEY = "hireallAuthToken";
+const AUTH_FAILURE_COUNT_KEY = "hireallAuthFailureCount";
+const AUTH_LAST_FAILURE_KEY = "hireallAuthLastFailure";
 const TOKEN_SAFETY_BUFFER_MS = 30 * 1000; // subtract 30 seconds to avoid edge expirations
 const DEFAULT_TOKEN_TTL_MS = 55 * 60 * 1000; // refresh slightly before Firebase's 60 minute expiry
+const MAX_CONSECUTIVE_FAILURES = 3; // Clear stale auth after this many failures
+const FAILURE_RESET_INTERVAL_MS = 5 * 60 * 1000; // Reset failure count after 5 minutes
 
 export interface CachedAuthToken {
   token: string;
@@ -11,6 +15,11 @@ export interface CachedAuthToken {
   userEmail?: string;
   source?: "popup" | "webapp" | "background" | "tab";
   updatedAt: number;
+}
+
+interface AuthFailureTracker {
+  consecutiveFailures: number;
+  lastFailureTime: number;
 }
 
 function isChromeStorageAvailable(): boolean {
@@ -35,6 +44,103 @@ function canAccessTabsApi(): boolean {
 
 function canMessageBackground(): boolean {
   return typeof chrome !== "undefined" && typeof chrome.runtime?.sendMessage === "function";
+}
+
+/**
+ * Track authentication failures to detect stale auth state
+ */
+async function trackAuthFailure(): Promise<AuthFailureTracker> {
+  if (!isChromeStorageAvailable()) {
+    return { consecutiveFailures: 0, lastFailureTime: 0 };
+  }
+
+  return new Promise((resolve) => {
+    chrome.storage.local.get([AUTH_FAILURE_COUNT_KEY, AUTH_LAST_FAILURE_KEY], (result) => {
+      const now = Date.now();
+      let consecutiveFailures = result[AUTH_FAILURE_COUNT_KEY] || 0;
+      const lastFailureTime = result[AUTH_LAST_FAILURE_KEY] || 0;
+
+      // Reset counter if enough time has passed since last failure
+      if (now - lastFailureTime > FAILURE_RESET_INTERVAL_MS) {
+        consecutiveFailures = 0;
+      }
+
+      consecutiveFailures++;
+
+      chrome.storage.local.set({
+        [AUTH_FAILURE_COUNT_KEY]: consecutiveFailures,
+        [AUTH_LAST_FAILURE_KEY]: now,
+      }, () => {
+        resolve({ consecutiveFailures, lastFailureTime: now });
+      });
+    });
+  });
+}
+
+/**
+ * Reset failure counter on successful auth
+ */
+async function resetAuthFailureCounter(): Promise<void> {
+  if (!isChromeStorageAvailable()) {
+    return;
+  }
+
+  return new Promise((resolve) => {
+    chrome.storage.local.remove([AUTH_FAILURE_COUNT_KEY, AUTH_LAST_FAILURE_KEY], () => {
+      resolve();
+    });
+  });
+}
+
+/**
+ * Clear stale authentication state from storage when auth is consistently failing
+ * This helps recover from situations where userId is stored but token is unavailable
+ */
+export async function clearStaleAuthState(): Promise<void> {
+  console.info("Hireall: Clearing stale authentication state due to repeated failures");
+  
+  if (!isChromeStorageAvailable()) {
+    return;
+  }
+
+  return new Promise((resolve) => {
+    // Clear from local storage
+    chrome.storage.local.remove([
+      AUTH_TOKEN_STORAGE_KEY,
+      AUTH_FAILURE_COUNT_KEY,
+      AUTH_LAST_FAILURE_KEY,
+      'hireallUserData',
+      'hireallSessionData',
+      'hireallLastAuthSync',
+      'hireallFirebaseUid'
+    ], () => {
+      // Also clear from sync storage to fully reset auth state
+      chrome.storage.sync.remove(['firebaseUid', 'userId', 'userEmail'], () => {
+        if (chrome.runtime.lastError) {
+          console.warn('Failed to clear stale auth state:', chrome.runtime.lastError);
+        } else {
+          console.info('Hireall: Stale auth state cleared successfully');
+        }
+        resolve();
+      });
+    });
+  });
+}
+
+/**
+ * Check if we should clear stale auth due to repeated failures
+ */
+async function shouldClearStaleAuth(): Promise<boolean> {
+  if (!isChromeStorageAvailable()) {
+    return false;
+  }
+
+  return new Promise((resolve) => {
+    chrome.storage.local.get([AUTH_FAILURE_COUNT_KEY], (result) => {
+      const failures = result[AUTH_FAILURE_COUNT_KEY] || 0;
+      resolve(failures >= MAX_CONSECUTIVE_FAILURES);
+    });
+  });
 }
 
 async function readCachedAuthToken(): Promise<CachedAuthToken | null> {
@@ -375,44 +481,97 @@ async function requestTokenFromBackground(forceRefresh: boolean): Promise<Cached
 
 export async function acquireIdToken(
   forceRefresh = false,
-  options?: { skipMessageFallback?: boolean }
+  options?: { skipMessageFallback?: boolean; isAuthenticatedContext?: boolean }
 ): Promise<string | null> {
   try {
+    // Check if we should clear stale auth before attempting
+    if (await shouldClearStaleAuth()) {
+      console.warn("Hireall: Too many consecutive auth failures detected, clearing stale state");
+      await clearStaleAuthState();
+      // Return null immediately after clearing - let next attempt start fresh
+      return null;
+    }
+
     const cached = await getValidCachedToken(forceRefresh);
     if (cached) {
-      console.debug("Hireall: Using cached auth token");
+      console.debug("Hireall: Using cached auth token", {
+        source: cached.source,
+        expiresIn: Math.round((cached.expiresAt - Date.now()) / 1000) + "s"
+      });
+      await resetAuthFailureCounter();
       return cached.token;
     }
 
-    console.debug("Hireall: No valid cached token, attempting to acquire fresh token");
+    console.debug("Hireall: No valid cached token, attempting to acquire fresh token", {
+      forceRefresh,
+      isExtension: isExtensionPage(),
+      canAccessTabs: canAccessTabsApi(),
+      canMessageBg: canMessageBackground()
+    });
 
+    // Try Firebase auth first (only works in extension pages)
     const firebaseToken = await getTokenFromFirebase(forceRefresh);
     if (firebaseToken) {
-      console.debug("Hireall: Acquired token from Firebase auth");
+      console.debug("Hireall: Acquired token from Firebase auth", {
+        userId: firebaseToken.userId,
+        source: "firebase"
+      });
+      await resetAuthFailureCounter();
       return firebaseToken.token;
     }
 
+    // Try getting token from HireAll web app tab
     if (canAccessTabsApi()) {
+      console.debug("Hireall: Attempting to get token from web app tab");
       const tabToken = await getTokenFromHireallTab(forceRefresh);
       if (tabToken) {
-        console.debug("Hireall: Acquired token from Hireall tab");
+        console.debug("Hireall: Acquired token from Hireall tab", {
+          userId: tabToken.userId,
+          source: "tab"
+        });
+        await resetAuthFailureCounter();
         return tabToken.token;
       }
+      console.debug("Hireall: No token available from web app tabs");
     }
 
+    // Try background script as fallback
     if (!options?.skipMessageFallback) {
+      console.debug("Hireall: Attempting to get token from background script");
       const backgroundToken = await requestTokenFromBackground(forceRefresh);
       if (backgroundToken) {
-        console.debug("Hireall: Acquired token from background script");
+        console.debug("Hireall: Acquired token from background script", {
+          userId: backgroundToken.userId,
+          source: "background"
+        });
+        await resetAuthFailureCounter();
         return backgroundToken.token;
       }
+      console.debug("Hireall: No token available from background script");
     }
 
-    // This is expected when user is not signed in - use debug level, not warn
-    console.debug("Hireall: No auth token available (user may not be signed in)");
+    // Track this failure if we expected to be authenticated
+    if (options?.isAuthenticatedContext) {
+      const tracker = await trackAuthFailure();
+      console.warn("Hireall: Token acquisition failed in authenticated context", {
+        consecutiveFailures: tracker.consecutiveFailures,
+        maxFailures: MAX_CONSECUTIVE_FAILURES,
+        willClearOnNextFailure: tracker.consecutiveFailures >= MAX_CONSECUTIVE_FAILURES - 1
+      });
+    } else {
+      // User not signed in - expected case, use debug level
+      console.debug("Hireall: No auth token available (user may not be signed in)");
+    }
+
     return null;
   } catch (error) {
     console.warn("Hireall: Failed to acquire ID token:", error);
+    
+    // Track failures on exceptions too
+    if (options?.isAuthenticatedContext) {
+      await trackAuthFailure();
+    }
+    
     return null;
   }
 }

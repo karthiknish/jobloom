@@ -54,14 +54,15 @@ export async function ensureCsrfCookie(
 }
 
 function extractCsrfCandidate(request: NextRequest): string | undefined {
+  // Always check the primary CSRF header first
   const header = request.headers.get(CSRF_HEADER_NAME);
   if (header) return header;
 
-  if (request.headers.get("content-type")?.includes("application/json")) {
-    const csrfFromHeader = request.headers.get("x-xsrf-token");
-    if (csrfFromHeader) return csrfFromHeader;
-  }
+  // Also check alternative header names
+  const xsrfHeader = request.headers.get("x-xsrf-token");
+  if (xsrfHeader) return xsrfHeader;
 
+  // Check URL parameter as fallback (for file uploads and other edge cases)
   const urlToken = request.nextUrl.searchParams.get("_csrf");
   if (urlToken) return urlToken;
 

@@ -3,7 +3,7 @@ import { post } from "./apiClient";
 import { checkRateLimit, initRateLimitCleanup, fetchSubscriptionStatus } from "./rateLimiter";
 import type { SubscriptionStatus } from "./rateLimiter";
 import { startRateLimitMonitoring } from "./rateLimitStatus";
-import { cacheAuthToken, acquireIdToken } from "./authToken";
+import { cacheAuthToken, acquireIdToken, clearCachedAuthToken } from "./authToken";
 import {
   validateMessage,
   validateUrl,
@@ -224,6 +224,30 @@ chrome.runtime.onMessage.addListener(async (request: any, sender: chrome.runtime
       hasUserId: !!request.payload.userId,
       source: request.payload.source
     });
+
+    if (request.payload.isAuthenticated === false) {
+      try {
+        await clearCachedAuthToken();
+      } catch (error) {
+        logger.warn("Background", "Failed to clear cached auth token on logout", {
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+
+      await new Promise<void>((resolve) => {
+        chrome.storage.sync.remove(["firebaseUid", "userId", "userEmail", "sessionToken"], () => {
+          if (chrome.runtime.lastError) {
+            logger.warn("Background", "Failed to clear sync auth identifiers on logout", {
+              error: chrome.runtime.lastError.message
+            });
+          }
+          resolve();
+        });
+      });
+
+      sendResponse({ success: true });
+      return true;
+    }
     
     if (request.payload.isAuthenticated && request.payload.token) {
       try {

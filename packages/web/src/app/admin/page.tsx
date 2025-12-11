@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
-import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   Users,
@@ -14,8 +13,7 @@ import {
   ArrowUpRight,
   ShieldCheck,
 } from "lucide-react";
-import { useApiQuery } from "../../hooks/useApi";
-import { adminApi } from "../../utils/api/admin";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { AdminLayout } from "../../components/admin/AdminLayout";
 import { AdminAccessDenied } from "../../components/admin/AdminAccessDenied";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,73 +22,88 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function AdminPage() {
   const { user, isInitialized, loading } = useFirebaseAuth();
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-
-  // Check if user is admin
-  const loadUserRecord = useCallback(() => {
-    if (user && user.uid) {
-      return adminApi.getUserByFirebaseUid(user.uid);
-    }
-    return Promise.reject(new Error("No user"));
-  }, [user?.uid]);
-
-  const { data: userRecord, loading: userRecordLoading, error: userRecordError } = useApiQuery(
-    loadUserRecord,
-    [user?.uid],
-    { enabled: !!user?.uid },
-    "admin-user-record"
-  );
-
-  // Check admin status
-  useEffect(() => {
-    if (userRecord !== undefined) {
-      // userRecord is loaded - check if admin (null means user not found = not admin)
-      setIsAdmin(userRecord?.isAdmin === true);
-    } else if (userRecordError) {
-      // Error loading user record - treat as not admin
-      console.error('Error loading user record for admin check:', userRecordError);
-      setIsAdmin(false);
-    }
-  }, [userRecord, userRecordError]);
-
-  // Also handle case where query completed but userRecord is null
-  useEffect(() => {
-    if (!userRecordLoading && userRecord === null && isAdmin === null) {
-      // Query completed, no user record found - not admin
-      setIsAdmin(false);
-    }
-  }, [userRecordLoading, userRecord, isAdmin]);
+  const { isAdmin, isLoading: adminLoading } = useAdminAuth();
 
   // Show loading state while authentication is initializing
-  if (loading || !isInitialized) {
+  if (loading || !isInitialized || adminLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          <p className="text-muted-foreground">Loading admin panel...</p>
+      <AdminLayout title="Dashboard">
+        <div className="space-y-8">
+          {/* Header Skeleton */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="space-y-2">
+              <Skeleton className="h-9 w-72" />
+              <Skeleton className="h-5 w-96" />
+            </div>
+            <div className="flex gap-2">
+              <Skeleton className="h-10 w-32" />
+              <Skeleton className="h-10 w-24" />
+            </div>
+          </div>
+          
+          {/* Stats Skeleton */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Card key={i} className="border-gray-200">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-8 w-8 rounded-lg" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-8 w-12 mb-2" />
+                  <Skeleton className="h-3 w-32" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Main Content Skeleton */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+            <Card className="col-span-4 border-gray-200">
+              <CardHeader>
+                <Skeleton className="h-6 w-40 mb-2" />
+                <Skeleton className="h-4 w-64" />
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 md:grid-cols-2">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="p-4 rounded-xl border border-gray-100">
+                      <div className="flex items-center gap-3 mb-3">
+                        <Skeleton className="h-10 w-10 rounded-lg" />
+                        <Skeleton className="h-5 w-32" />
+                      </div>
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-3/4 mt-1" />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="col-span-3 border-gray-200">
+              <CardHeader>
+                <Skeleton className="h-6 w-32 mb-2" />
+                <Skeleton className="h-4 w-48" />
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Skeleton className="h-12 w-full rounded-lg" />
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="space-y-2">
+                    <div className="flex justify-between">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-4 w-16" />
+                    </div>
+                    <Skeleton className="h-2 w-full rounded-full" />
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
         </div>
-      </div>
+      </AdminLayout>
     );
   }
 
-  if (!user) {
-    return <AdminAccessDenied />;
-  }
-
-  // Show loading state while checking admin status
-  if (isAdmin === null) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          <p className="text-muted-foreground">Verifying permissions...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show access denied if user is not admin
-  if (!isAdmin) {
+  if (!user || !isAdmin) {
     return <AdminAccessDenied />;
   }
 

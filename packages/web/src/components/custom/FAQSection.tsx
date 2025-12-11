@@ -5,6 +5,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { generateFAQSchema } from "@/lib/structured-data";
 
 const faqs = [
   {
@@ -29,9 +30,20 @@ const faqs = [
   },
 ];
 
+// Generate FAQ structured data for SEO
+const faqSchema = generateFAQSchema(
+  faqs.map((faq) => ({ question: faq.q, answer: faq.a }))
+);
+
 export default function FAQSection() {
   return (
     <section className="py-20 bg-muted/30">
+      {/* FAQ Structured Data for SEO */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+      
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-3xl font-bold text-foreground sm:text-4xl font-serif">

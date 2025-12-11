@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { UploadCloud, CheckCircle2, Loader2, Lightbulb } from "lucide-react";
+import { UploadCloud, CheckCircle2, Loader2, Lightbulb, FileText, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
@@ -36,6 +36,31 @@ interface CvUploadFormProps {
   currentResume?: ResumeData;
   currentAtsScore?: any;
   setCurrentAtsScore?: (score: any) => void;
+}
+
+// Analysis step component for loading overlay
+function AnalysisStep({ step, label, active }: { step: number; label: string; active: boolean }) {
+  return (
+    <motion.div 
+      className="flex items-center gap-3"
+      initial={{ opacity: 0, x: -10 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: step * 0.3 }}
+    >
+      <motion.div 
+        className={`h-6 w-6 rounded-full flex items-center justify-center text-xs font-medium ${
+          active ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+        }`}
+        animate={active ? { scale: [1, 1.2, 1] } : {}}
+        transition={{ duration: 1, repeat: active ? Infinity : 0, delay: step * 0.5 }}
+      >
+        {active ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+      </motion.div>
+      <span className={`text-sm ${active ? 'text-foreground' : 'text-muted-foreground'}`}>
+        {label}
+      </span>
+    </motion.div>
+  );
 }
 
 interface UploadLimits {
@@ -323,7 +348,7 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted, onResum
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* File Upload Area */}
             <motion.div
-              className={`relative border-2 border-dashed rounded-lg p-8 transition-all duration-300 ${
+              className={`relative border-2 border-dashed rounded-lg p-8 transition-all duration-300 cursor-pointer ${
                 dragActive
                   ? "border-primary bg-primary/5 shadow-lg"
                   : "border-muted-foreground/25 hover:border-muted-foreground/50 hover:shadow-md"
@@ -332,6 +357,7 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted, onResum
               onDragLeave={handleDrag}
               onDragOver={handleDrag}
               onDrop={handleDrop}
+              onClick={() => document.getElementById('file-upload')?.click()}
               animate={{ scale: dragActive ? 1.02 : 1 }}
               transition={{ type: "spring", stiffness: 260, damping: 20 }}
             >
@@ -344,21 +370,19 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted, onResum
                   <UploadCloud className="h-8 w-8 text-primary" />
                 </motion.div>
                 <div className="mt-6">
-                  <Label htmlFor="file-upload" className="cursor-pointer">
-                    <span className="mt-2 block text-base font-medium text-foreground">
-                      {file
-                        ? file.name
-                        : "Drop your CV here or click to browse"}
-                    </span>
-                    <Input
-                      id="file-upload"
-                      name="file-upload"
-                      type="file"
-                      className="sr-only"
-                      accept=".pdf,.txt"
-                      onChange={handleFileChange}
-                    />
-                  </Label>
+                  <span className="mt-2 block text-base font-medium text-foreground">
+                    {file
+                      ? file.name
+                      : "Drop your CV here or click to browse"}
+                  </span>
+                  <Input
+                    id="file-upload"
+                    name="file-upload"
+                    type="file"
+                    className="sr-only"
+                    accept=".pdf,.txt"
+                    onChange={handleFileChange}
+                  />
                   {file && (
                     <motion.p 
                       initial={{ opacity: 0, y: -10 }}
@@ -472,7 +496,7 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted, onResum
               {uploading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Analyzing your CV with AI...
+                  Uploading...
                 </>
               ) : (
                 "Analyze CV"
@@ -481,6 +505,69 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted, onResum
           </motion.div>
         </CardFooter>
       </Card>
+
+      {/* Enhanced Loading Overlay */}
+      {uploading && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center"
+        >
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-card border border-border rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4"
+          >
+            <div className="text-center space-y-6">
+              {/* Animated Icon */}
+              <motion.div 
+                className="mx-auto h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center"
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                >
+                  <FileText className="h-10 w-10 text-primary" />
+                </motion.div>
+              </motion.div>
+
+              <div>
+                <h3 className="text-xl font-semibold text-foreground mb-2">
+                  Analyzing Your CV
+                </h3>
+                <p className="text-muted-foreground text-sm">
+                  Our AI is reviewing your resume for optimization opportunities
+                </p>
+              </div>
+
+              {/* Progress Steps */}
+              <div className="space-y-3 text-left">
+                <AnalysisStep step={1} label="Uploading document" active={true} />
+                <AnalysisStep step={2} label="Extracting content" active={true} />
+                <AnalysisStep step={3} label="Analyzing structure" active={true} />
+                <AnalysisStep step={4} label="Generating insights" active={true} />
+              </div>
+
+              {/* Animated Progress Bar */}
+              <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+                <motion.div
+                  className="h-full bg-gradient-to-r from-primary to-emerald-500"
+                  initial={{ width: "0%" }}
+                  animate={{ width: "100%" }}
+                  transition={{ duration: 8, ease: "easeInOut" }}
+                />
+              </div>
+
+              <p className="text-xs text-muted-foreground">
+                This usually takes 5-10 seconds
+              </p>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
 
       {/* Real-time ATS Feedback Section */}
       {(targetRole || industry) && (

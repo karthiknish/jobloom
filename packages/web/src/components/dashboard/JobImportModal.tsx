@@ -392,7 +392,7 @@ export function JobImportModal({
           {/* Import Method Selection */}
           <div className="space-y-3">
             <Label className="text-sm font-semibold text-foreground">Choose Import Method</Label>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {/* Extension Import */}
               <motion.button
                 whileHover={{ scale: 1.02 }}

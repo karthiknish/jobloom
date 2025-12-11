@@ -252,41 +252,13 @@ export default function Header() {
                     </Link>
                   </SheetTitle>
                 </SheetHeader>
-                <div className="flex flex-col items-center space-y-6 mt-6 h-full">
-                  <nav className="flex flex-col space-y-4 items-center">
+                <div className="flex flex-col space-y-6 mt-6 h-full">
+                  <nav className="flex flex-col space-y-4">
                     <NavItems />
                   </nav>
-                  <div className="pt-4 border-t mt-auto flex justify-center">
+                  <div className="pt-4 border-t mt-auto">
                     <AuthButtons />
                   </div>
-                  {isSignedIn && (
-                    <div className="pt-4 border-t border-border">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <Avatar className="h-10 w-10">
-                            <AvatarImage
-                              src={user?.photoURL || undefined}
-                              alt={user?.displayName || "User"}
-                            />
-                            <AvatarFallback>
-                              {user?.displayName?.charAt(0) ||
-                                user?.email?.charAt(0) ||
-                                "U"}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="text-sm font-medium">
-                              {user?.displayName || user?.email}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {user?.email}
-                            </p>
-                          </div>
-                        </div>
-                        {/* Sign-out handled inside Account or via a simple button elsewhere */}
-                      </div>
-                    </div>
-                  )}
                 </div>
               </SheetContent>
             </Sheet>

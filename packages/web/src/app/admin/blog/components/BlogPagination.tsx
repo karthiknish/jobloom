@@ -53,11 +53,11 @@ export function BlogPagination({
   const endItem = Math.min(currentPage * pageSize, totalItems);
 
   return (
-    <div className="flex items-center justify-between px-2 py-4">
+    <div className="flex flex-col gap-3 px-2 py-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="text-sm text-gray-500">
         Showing {startItem} to {endItem} of {totalItems} posts
       </div>
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center gap-2 overflow-x-auto">
         <Button
           variant="outline"
           size="sm"

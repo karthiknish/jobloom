@@ -61,7 +61,8 @@ export function Dashboard() {
       user && user.uid
         ? dashboardApi.getUserByFirebaseUid(user.uid)
         : Promise.reject(new Error("No user")),
-    [user?.uid]
+    [user?.uid],
+    { enabled: !!user?.uid }
   );
 
   // Fetch applications

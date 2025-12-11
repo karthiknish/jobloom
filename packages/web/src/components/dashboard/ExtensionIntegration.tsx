@@ -228,7 +228,7 @@ export function ExtensionIntegration({ userId }: ExtensionIntegrationProps) {
           <div className="space-y-5">
             {/* Stats Grid */}
             <TooltipProvider>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <motion.div 

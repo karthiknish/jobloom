@@ -21,6 +21,8 @@ import {
   BarChart3,
   PanelLeftClose,
   PanelLeft,
+  Heart,
+  Bug,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
@@ -55,6 +57,11 @@ const sidebarItems = [
     icon: Building2,
   },
   {
+    title: "Volunteers",
+    href: "/admin/volunteers",
+    icon: Heart,
+  },
+  {
     title: "Blog",
     href: "/admin/blog",
     icon: FileText,
@@ -63,6 +70,11 @@ const sidebarItems = [
     title: "Contact",
     href: "/admin/contact",
     icon: MessageSquare,
+  },
+  {
+    title: "Reports",
+    href: "/admin/reports",
+    icon: Bug,
   },
   {
     title: "Analytics",

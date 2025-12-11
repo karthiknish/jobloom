@@ -65,6 +65,12 @@ export default function SettingsPage() {
 
   const [originalData, setOriginalData] = useState(formData);
 
+  const sanitizeNonNegativeNumber = (value: unknown, fallback: number) => {
+    const asNumber = typeof value === "number" ? value : Number(value);
+    if (!Number.isFinite(asNumber)) return fallback;
+    return Math.max(0, asNumber);
+  };
+
   useEffect(() => {
     const loadUserPreferences = async () => {
       if (!userLoading && firebaseUser) {
@@ -80,6 +86,7 @@ export default function SettingsPage() {
           if (response.ok) {
             const data = await response.json();
             const backendPrefs = data.preferences || {};
+            const minimumSalary = sanitizeNonNegativeNumber(backendPrefs.minimumSalary, 38700);
 
             const userData = {
               profile: {
@@ -92,7 +99,7 @@ export default function SettingsPage() {
               preferences: {
                 emailNotifications: backendPrefs.emailNotifications ?? true,
                 pushNotifications: backendPrefs.pushNotifications ?? false,
-                newsletter: backendPrefs.marketingEmails ?? true,
+                newsletter: backendPrefs.newsletter ?? backendPrefs.marketingEmails ?? true,
                 marketingEmails: backendPrefs.marketingEmails ?? false,
                 theme: backendPrefs.theme ?? "light",
                 // Extension-specific preferences from backend
@@ -103,7 +110,7 @@ export default function SettingsPage() {
                 educationStatus: backendPrefs.educationStatus ?? "none",
                 phdStatus: backendPrefs.phdStatus ?? "none",
                 professionalStatus: backendPrefs.professionalStatus ?? "none",
-                minimumSalary: backendPrefs.minimumSalary ?? 38700,
+                minimumSalary,
                 jobCategories: backendPrefs.jobCategories ?? [] as string[],
                 locationPreference: backendPrefs.locationPreference ?? "uk",
               },
@@ -167,17 +174,33 @@ export default function SettingsPage() {
     };
 
     loadUserPreferences();
-  }, [userLoading, firebaseUser]);
+  }, [userLoading, firebaseUser, toast]);
 
-  const handleInputChange = (section: string, field: string, value: string | boolean | number | string[]) => {
+  useEffect(() => {
+    const currentComparable = {
+      profile: formData.profile,
+      preferences: formData.preferences,
+    };
+    const originalComparable = {
+      profile: originalData.profile,
+      preferences: originalData.preferences,
+    };
+    setHasChanges(JSON.stringify(currentComparable) !== JSON.stringify(originalComparable));
+  }, [formData.profile, formData.preferences, originalData.profile, originalData.preferences]);
+
+  const handleInputChange = (section: string, field: string, value: any) => {
+    const sanitizedValue =
+      section === "preferences" && field === "minimumSalary"
+        ? sanitizeNonNegativeNumber(value, formData.preferences.minimumSalary)
+        : value;
+
     setFormData(prev => ({
       ...prev,
       [section]: {
         ...prev[section as keyof typeof prev],
-        [field]: value,
+        [field]: sanitizedValue,
       },
     }));
-    setHasChanges(true);
   };
 
   const handleSave = async () => {
@@ -188,6 +211,11 @@ export default function SettingsPage() {
         return;
       }
 
+      const preferencesToSave = {
+        ...formData.preferences,
+        minimumSalary: sanitizeNonNegativeNumber(formData.preferences.minimumSalary, 0),
+      };
+
       // Save preferences to backend
       const token = await firebaseUser.getIdToken();
       const response = await fetch("/api/settings/preferences", {
@@ -197,7 +225,7 @@ export default function SettingsPage() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          preferences: formData.preferences
+          preferences: preferencesToSave,
         }),
       });
 
@@ -224,7 +252,7 @@ export default function SettingsPage() {
           educationStatus: formData.preferences.educationStatus === 'bachelor' ? 'graduateVisa' : formData.preferences.educationStatus,
           phdStatus: formData.preferences.phdStatus === 'completed' ? 'stemPhd' : formData.preferences.phdStatus === 'in-progress' ? 'nonStemPhD' : 'none',
           professionalStatus: formData.preferences.professionalStatus,
-          minimumSalary: formData.preferences.minimumSalary,
+          minimumSalary: preferencesToSave.minimumSalary,
           jobCategories: formData.preferences.jobCategories,
           locationPreference: formData.preferences.locationPreference,
         },
@@ -271,8 +299,11 @@ export default function SettingsPage() {
         );
       }
 
-      setOriginalData(formData);
-      setHasChanges(false);
+      setOriginalData({
+        ...formData,
+        preferences: preferencesToSave,
+        security: originalData.security,
+      });
       toast.success(TOAST_MESSAGES.SETTINGS.PROFILE_SAVED);
     } catch (error) {
       console.error("Error saving preferences:", error);

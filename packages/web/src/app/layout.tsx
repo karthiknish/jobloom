@@ -11,9 +11,17 @@ import Chatbot from "@/components/Chatbot";
 import MobileNavigation from "@/components/MobileNavigation";
 import { AnalyticsProvider } from "@/providers/analytics-provider";
 import { PerformanceProvider } from "@/providers/performance-provider";
-import { SeoHead } from "@/components/SeoHead";
+import { JsonLd } from "@/components/JsonLd";
 import EmailVerificationBanner from "@/components/EmailVerificationBanner";
 import { ReportIssue } from "@/components/ReportIssue";
+import { rootMetadata } from "@/metadata";
+import {
+  generateOrganizationSchema,
+  generateWebSiteSchema,
+} from "@/lib/structured-data";
+
+// Export server-side metadata for SSR
+export const metadata = rootMetadata;
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -21,6 +29,10 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
 };
+
+// Generate JSON-LD schemas
+const organizationSchema = generateOrganizationSchema();
+const webSiteSchema = generateWebSiteSchema();
 
 export default function RootLayout({
   children,
@@ -30,7 +42,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <SeoHead />
+        {/* Structured Data - renders server-side for SEO */}
+        <JsonLd data={organizationSchema} />
+        <JsonLd data={webSiteSchema} />
       </head>
       <body
         suppressHydrationWarning

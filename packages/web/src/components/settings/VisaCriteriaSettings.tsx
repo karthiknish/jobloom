@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { Shield, GraduationCap as _GraduationCap, Briefcase as _Briefcase, Target as _Target } from "lucide-react";
+import { Shield } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -168,7 +168,14 @@ export function VisaCriteriaSettings({ formData, onInputChange }: VisaCriteriaSe
                 <Input
                   type="number"
                   value={formData.preferences.minimumSalary}
-                  onChange={(e) => onInputChange("preferences", "minimumSalary", e.target.value)}
+                  onChange={(e) => {
+                    const valueAsNumber = e.currentTarget.valueAsNumber;
+                    onInputChange(
+                      "preferences",
+                      "minimumSalary",
+                      Number.isFinite(valueAsNumber) ? Math.max(0, valueAsNumber) : 0
+                    );
+                  }}
                   placeholder="38700"
                   className="input-premium"
                 />

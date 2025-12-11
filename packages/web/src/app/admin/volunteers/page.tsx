@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   Users,
@@ -20,7 +20,7 @@ import {
 import { format, formatDistanceToNow } from "date-fns";
 import toast from "react-hot-toast";
 
-import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { useApiQuery, useApiMutation } from "@/hooks/useApi";
 import { adminApi } from "@/utils/api/admin";
 import { exportToCsv } from "@/utils/exportToCsv";
@@ -66,6 +66,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import type { ContactSubmission } from "@/types/api";
 
@@ -115,27 +116,13 @@ const parseVolunteerData = (message: string) => {
 };
 
 export default function AdminVolunteerDashboard() {
-  const { user } = useFirebaseAuth();
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const { isAdmin, isLoading: adminLoading, userRecord } = useAdminAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedVolunteer, setSelectedVolunteer] = useState<ContactSubmission | null>(null);
   const [showDetails, setShowDetails] = useState(false);
 
-  const loadUserRecord = useCallback(() => {
-    if (user && user.uid) {
-      return adminApi.getUserByFirebaseUid(user.uid);
-    }
-    return Promise.reject(new Error("No user"));
-  }, [user?.uid]);
-
-  const { data: userRecord } = useApiQuery(
-    loadUserRecord,
-    [user?.uid],
-    { enabled: !!user?.uid }
-  );
-
-  const canFetchAdminData = userRecord?.isAdmin === true;
+  const canFetchAdminData = isAdmin === true;
 
   const loadContacts = useCallback(
     () => adminApi.getAllContactSubmissions(),
@@ -149,7 +136,7 @@ export default function AdminVolunteerDashboard() {
     refetch: refetchContacts,
   } = useApiQuery(
     loadContacts,
-    [userRecord?._id, userRecord?.isAdmin],
+    [userRecord?._id, isAdmin],
     { enabled: canFetchAdminData }
   );
 
@@ -158,12 +145,6 @@ export default function AdminVolunteerDashboard() {
     const contacts = allContacts ?? [];
     return contacts.filter(isVolunteerApplication);
   }, [allContacts]);
-
-  useEffect(() => {
-    if (userRecord) {
-      setIsAdmin(userRecord.isAdmin === true);
-    }
-  }, [userRecord]);
 
   const { mutate: updateContact, loading: updateLoading } = useApiMutation(
     ({
@@ -295,20 +276,79 @@ export default function AdminVolunteerDashboard() {
     window.open(mailto, "_blank");
   };
 
-  if (!user) {
+  if (adminLoading) {
     return (
       <AdminLayout title="Volunteers">
-        <div>Please sign in to access the admin panel.</div>
-      </AdminLayout>
-    );
-  }
-
-  if (isAdmin === null) {
-    return (
-      <AdminLayout title="Volunteers">
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Checking admin permissions...
+        <div className="space-y-6">
+          {/* Header Skeleton */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Skeleton className="h-12 w-12 rounded-xl" />
+              <div className="space-y-2">
+                <Skeleton className="h-8 w-48" />
+                <Skeleton className="h-4 w-64" />
+              </div>
+            </div>
+            <Skeleton className="h-10 w-24" />
+          </div>
+          
+          {/* Stats Skeleton */}
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Card key={i} className="border-gray-200">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-8 w-8 rounded-full" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-8 w-12" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          
+          {/* Quick Actions Skeleton */}
+          <Card className="border-gray-200">
+            <CardHeader>
+              <Skeleton className="h-5 w-32" />
+            </CardHeader>
+            <CardContent className="flex gap-3">
+              <Skeleton className="h-10 w-36" />
+              <Skeleton className="h-10 w-48" />
+              <Skeleton className="h-10 w-32" />
+            </CardContent>
+          </Card>
+          
+          {/* Table Skeleton */}
+          <Card className="border-gray-200">
+            <CardHeader>
+              <Skeleton className="h-6 w-32 mb-2" />
+              <Skeleton className="h-4 w-48" />
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-4 mb-6">
+                <Skeleton className="h-10 flex-1" />
+                <Skeleton className="h-10 w-44" />
+              </div>
+              <div className="space-y-3">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="flex items-center justify-between py-3 border-b">
+                    <div className="flex items-center gap-4">
+                      <div className="space-y-1">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-3 w-48" />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-6 w-16 rounded-full" />
+                      <Skeleton className="h-8 w-8" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </AdminLayout>
     );
@@ -325,7 +365,7 @@ export default function AdminVolunteerDashboard() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between"
+          className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
         >
           <div className="flex items-center gap-4">
             <div className="h-12 w-12 rounded-xl bg-blue-100 flex items-center justify-center">
@@ -339,7 +379,12 @@ export default function AdminVolunteerDashboard() {
             </div>
           </div>
 
-          <Button variant="outline" onClick={() => refetchContacts()} disabled={contactsLoading}>
+          <Button
+            variant="outline"
+            onClick={() => refetchContacts()}
+            disabled={contactsLoading}
+            className="w-full sm:w-auto"
+          >
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
@@ -471,7 +516,7 @@ export default function AdminVolunteerDashboard() {
               </div>
 
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[180px] border-gray-200">
+                <SelectTrigger className="w-full sm:w-[180px] border-gray-200">
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -484,8 +529,8 @@ export default function AdminVolunteerDashboard() {
               </Select>
             </div>
 
-            <div className="rounded-md border border-gray-200 overflow-hidden">
-              <Table>
+            <div className="rounded-md border border-gray-200 overflow-x-auto">
+              <Table className="min-w-[860px]">
                 <TableHeader className="bg-gray-50">
                   <TableRow className="border-gray-200">
                     <TableHead className="text-gray-600 font-medium">Name & Email</TableHead>

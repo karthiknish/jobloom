@@ -637,93 +637,126 @@ export function ResumeImporter({ onImport }: ResumeImporterProps) {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Analyses</CardTitle>
-              <CardDescription>Recent resume imports</CardDescription>
+          <Card className="border-0 shadow-md">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-primary" />
+                    Your Analyses
+                  </CardTitle>
+                  <CardDescription className="text-xs mt-1">
+                    {analyses.length === 0 
+                      ? "No resumes imported yet" 
+                      : `${analyses.length} resume${analyses.length > 1 ? 's' : ''} analyzed`
+                    }
+                  </CardDescription>
+                </div>
+                {analyses.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleRefresh}
+                    disabled={isRefreshing}
+                    className="h-8 w-8 p-0"
+                  >
+                    <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
+                  </Button>
+                )}
+              </div>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="p-0">
               {analyses.length === 0 ? (
-                <p className="text-sm text-gray-500">
-                  No resume analyses yet. Upload a file to get started.
-                </p>
+                <div className="p-6 text-center">
+                  <div className="mx-auto w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3">
+                    <FileText className="h-6 w-6 text-gray-400" />
+                  </div>
+                  <p className="text-sm text-gray-500 mb-2">
+                    No resume analyses yet
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    Upload a resume to get started
+                  </p>
+                </div>
               ) : (
-                analyses.map((analysis) => {
-                  const listScore = clampToPercentage(
-                    analysis.atsScore ?? analysis.overallScore
-                  );
+                <div className="divide-y divide-gray-100 max-h-[400px] overflow-y-auto">
+                  {analyses.map((analysis) => {
+                    const listScore = clampToPercentage(
+                      analysis.atsScore ?? analysis.overallScore
+                    );
+                    const isSelected = selectedAnalysis?.id === analysis.id;
+                    const isPending = analysis.status === "pending" || analysis.status === "processing";
 
-                  return (
-                    <Button
-                      key={analysis.id}
-                      type="button"
-                      variant="ghost"
-                      onClick={() => setSelectedAnalysisId(analysis.id)}
-                      className={cn(
-                        "w-full justify-start rounded-lg border p-3 transition",
-                        selectedAnalysis?.id === analysis.id
-                          ? "border-primary/60 bg-primary/10"
-                          : "border-border hover:border-border/80"
-                      )}
-                      asChild
-                    >
+                    return (
                       <div
+                        key={analysis.id}
                         role="button"
                         tabIndex={0}
+                        onClick={() => setSelectedAnalysisId(analysis.id)}
                         onKeyDown={(event) => {
                           if (event.key === "Enter" || event.key === " ") {
                             event.preventDefault();
                             setSelectedAnalysisId(analysis.id);
                           }
                         }}
-                        className="flex w-full items-start justify-between"
+                        className={cn(
+                          "w-full p-4 text-left cursor-pointer transition-all hover:bg-gray-50",
+                          isSelected && "bg-primary/5 border-l-2 border-l-primary"
+                        )}
                       >
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <FileText className="h-4 w-4 text-gray-500" />
-                            <span className="truncate text-sm font-medium">
-                              {analysis.fileName}
-                            </span>
-                          </div>
-                          <div className="mt-2 flex flex-wrap items-center gap-2">
-                            <Badge
-                              className={`text-xs border ${statusClasses[analysis.status]}`}
-                            >
-                              {statusLabels[analysis.status]}
-                            </Badge>
-                            {typeof listScore === "number" && (
-                              <Badge 
-                                variant="outline" 
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="truncate text-sm font-medium text-gray-900">
+                                {analysis.fileName}
+                              </span>
+                              {isPending && (
+                                <Loader2 className="h-3 w-3 animate-spin text-primary" />
+                              )}
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2 mb-2">
+                              <Badge
+                                variant="outline"
                                 className={cn(
-                                  "text-xs",
-                                  listScore >= 80 ? "bg-primary/10 text-primary border-primary/30" :
-                                  listScore >= 60 ? "bg-amber-50 text-amber-700 border-amber-200" :
-                                  listScore >= 40 ? "bg-orange-50 text-orange-700 border-orange-200" :
-                                  "bg-red-50 text-red-700 border-red-200"
+                                  "text-[10px] px-1.5 py-0 h-5",
+                                  statusClasses[analysis.status]
                                 )}
                               >
-                                ATS: {listScore}
+                                {statusLabels[analysis.status]}
                               </Badge>
-                            )}
+                              {typeof listScore === "number" && !isPending && (
+                                <div className={cn(
+                                  "flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full",
+                                  listScore >= 80 ? "bg-primary/10 text-primary" :
+                                  listScore >= 60 ? "bg-amber-50 text-amber-700" :
+                                  listScore >= 40 ? "bg-orange-50 text-orange-700" :
+                                  "bg-red-50 text-red-700"
+                                )}>
+                                  <Zap className="h-3 w-3" />
+                                  {listScore}
+                                </div>
+                              )}
+                            </div>
+                            <div className="text-[11px] text-gray-400">
+                              {formatFileSize(analysis.fileSize)} • {formatTimestamp(analysis.createdAt)}
+                            </div>
                           </div>
-                          <div className="mt-2 text-xs text-gray-500">
-                            {formatFileSize(analysis.fileSize)} • {formatTimestamp(analysis.createdAt)}
-                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0 text-gray-400 hover:text-red-500 hover:bg-red-50"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleDeleteAnalysis(analysis.id);
+                            }}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            handleDeleteAnalysis(analysis.id);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
                       </div>
-                    </Button>
-                  );
-                })
+                    );
+                  })}
+                </div>
               )}
             </CardContent>
           </Card>

@@ -608,6 +608,11 @@ class ApiClient {
       });
     }
 
+    // Get CSRF token from cookie
+    const csrfToken = typeof document !== 'undefined' 
+      ? document.cookie.split('; ').find(row => row.startsWith('__csrf-token='))?.split('=')[1]
+      : undefined;
+
     return this.request<T>(endpoint, {
       ...config,
       method: 'POST',
@@ -615,7 +620,9 @@ class ApiClient {
       headers: {
         // Don't set Content-Type for FormData (browser sets it with boundary)
         ...(config?.headers ?? {}),
-        'Authorization': await this.getAuthToken()
+        'Authorization': await this.getAuthToken(),
+        // Include CSRF token for security
+        ...(csrfToken ? { 'x-csrf-token': csrfToken } : {})
       }
     }, options);
   }

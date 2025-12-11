@@ -1,0 +1,17 @@
+# *
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /settings/
+Disallow: /sign-in
+Disallow: /sign-up
+Disallow: /verify-email
+Disallow: /auth/
+
+# Host
+Host: https://hireall.app
+
+# Sitemaps
+Sitemap: https://hireall.app/sitemap.xml

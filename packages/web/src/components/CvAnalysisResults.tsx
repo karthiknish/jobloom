@@ -195,34 +195,83 @@ export function CvAnalysisResults({ analysis }: CvAnalysisResultsProps) {
 
       {/* Recommendations */}
       {analysis.recommendations && analysis.recommendations.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Lightbulb className="h-4 w-4 mr-2 text-secondary" />
+        <Card className="border-0 shadow-lg overflow-hidden">
+          <CardHeader className="bg-primary text-primary-foreground pb-4">
+            <CardTitle className="flex items-center text-primary-foreground">
+              <Lightbulb className="h-5 w-5 mr-2 fill-yellow-300 text-yellow-300" />
               Actionable Recommendations
             </CardTitle>
+            <p className="text-primary-foreground/80 text-sm mt-1">
+              Follow these steps to improve your resume score
+            </p>
           </CardHeader>
-          <CardContent>
-            <ul className="space-y-3">
+          <CardContent className="p-0">
+            <div className="divide-y divide-gray-100">
               {analysis.recommendations.map(
-                (recommendation: string, index: number) => (
-                  <li key={index} className="flex items-start">
-                    <Check className="w-4 h-4 text-secondary mr-2 mt-1 flex-shrink-0" />
-                    <span className="text-foreground">{recommendation}</span>
-                  </li>
-                )
+                (recommendation: string, index: number) => {
+                  // Determine priority based on keywords
+                  const isHighPriority = recommendation.toLowerCase().includes('contact') || 
+                                         recommendation.toLowerCase().includes('table') ||
+                                         recommendation.toLowerCase().includes('metrics');
+                  const isMediumPriority = recommendation.toLowerCase().includes('keyword') || 
+                                           recommendation.toLowerCase().includes('summary');
+                  
+                  return (
+                    <div 
+                      key={index} 
+                      className="flex items-start gap-4 p-4 hover:bg-gray-50 transition-colors"
+                    >
+                      <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                        isHighPriority 
+                          ? 'bg-red-100 text-red-600' 
+                          : isMediumPriority 
+                            ? 'bg-amber-100 text-amber-600' 
+                            : 'bg-emerald-100 text-emerald-600'
+                      }`}>
+                        {index + 1}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-foreground font-medium">{recommendation}</p>
+                        <div className="mt-1">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                            isHighPriority 
+                              ? 'bg-red-50 text-red-700' 
+                              : isMediumPriority 
+                                ? 'bg-amber-50 text-amber-700' 
+                                : 'bg-emerald-50 text-emerald-700'
+                          }`}>
+                            {isHighPriority ? 'High Priority' : isMediumPriority ? 'Medium Priority' : 'Quick Win'}
+                          </span>
+                        </div>
+                      </div>
+                      <Check className={`w-5 h-5 flex-shrink-0 ${
+                        isHighPriority 
+                          ? 'text-red-400' 
+                          : isMediumPriority 
+                            ? 'text-amber-400' 
+                            : 'text-emerald-400'
+                      }`} />
+                    </div>
+                  );
+                }
               )}
-            </ul>
-            <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
-              <h5 className="text-sm font-medium text-blue-900 mb-2">
-                <Rocket className="h-4 w-4 mr-2" /> Pro Tip for ATS
-                Optimization:
-              </h5>
-              <p className="text-sm text-blue-800">
-                Focus on incorporating the missing keywords identified above
-                throughout your CV, especially in your job descriptions and
-                skills section. Use natural language and avoid keyword stuffing.
-              </p>
+            </div>
+            <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-t border-blue-100">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                  <Rocket className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <h5 className="text-sm font-semibold text-blue-900 mb-1">
+                    Pro Tip: ATS Optimization
+                  </h5>
+                  <p className="text-sm text-blue-700 leading-relaxed">
+                    Incorporate the missing keywords naturally throughout your CV, 
+                    especially in job descriptions and skills. Avoid keyword stuffing 
+                    — recruiters notice! Focus on authentic, impactful language.
+                  </p>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>

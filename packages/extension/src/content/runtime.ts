@@ -134,26 +134,49 @@ async function ensureAuthenticatedFeatures(jobTracker: JobTracker): Promise<void
     logger.info("ContentRuntime", "Initializing authenticated features");
 
     try {
-      const { acquireIdToken } = await import("../authToken");
-      const testToken = await acquireIdToken();
+      const { acquireIdToken, clearStaleAuthState } = await import("../authToken");
+      
+      // Use isAuthenticatedContext: true since we believe user is authenticated
+      const testToken = await acquireIdToken(false, { isAuthenticatedContext: true });
 
       if (!testToken) {
-        logger.warn("ContentRuntime", "User appears authenticated but token acquisition failed");
+        logger.warn("ContentRuntime", "User appears authenticated but token acquisition failed", {
+          hostname: window.location.hostname,
+          isHireallSite: window.location.hostname.includes("hireall")
+        });
 
+        // Try syncing auth state from an open HireAll tab
         try {
+          logger.debug("ContentRuntime", "Attempting auth sync from HireAll tabs");
           const syncResult = await ExtensionMessageHandler.sendMessage("syncAuthState", {}, 3);
+          
           if (syncResult?.userId) {
-            const retestToken = await acquireIdToken(true);
+            logger.info("ContentRuntime", "Auth sync returned userId, retrying token acquisition", {
+              userId: syncResult.userId
+            });
+            
+            const retestToken = await acquireIdToken(true, { isAuthenticatedContext: true });
             if (!retestToken) {
-              logger.error("ContentRuntime", "Failed to acquire token even after auth sync", {
+              logger.error("ContentRuntime", "Failed to acquire token even after auth sync - clearing stale state", {
                 userId: syncResult.userId,
               });
+              // Clear stale auth state since sync returned user but token still fails
+              await clearStaleAuthState();
               return;
             }
+            
+            logger.info("ContentRuntime", "Token acquired successfully after auth sync");
+          } else {
+            logger.debug("ContentRuntime", "Auth sync returned no userId - user may not be signed into web app");
+            // Clear stale extension auth state since web app has no user
+            await clearStaleAuthState();
+            return;
           }
         } catch (syncError) {
+          const errorMessage = syncError instanceof Error ? syncError.message : String(syncError);
           logger.error("ContentRuntime", "Auth sync failed during token verification", {
-            error: syncError instanceof Error ? syncError.message : String(syncError),
+            error: errorMessage,
+            errorType: syncError instanceof Error ? syncError.name : typeof syncError
           });
           return;
         }

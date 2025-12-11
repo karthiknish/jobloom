@@ -59,8 +59,8 @@ export function BlogTable({
   const isIndeterminate = selectedPosts.length > 0 && selectedPosts.length < posts.length;
 
   return (
-    <div className="rounded-md border border-gray-200 overflow-hidden">
-      <Table>
+    <div className="rounded-md border border-gray-200 overflow-x-auto">
+      <Table className="min-w-[980px]">
         <TableHeader className="bg-gray-50">
           <TableRow className="hover:bg-transparent border-gray-200">
             <TableHead className="w-12">

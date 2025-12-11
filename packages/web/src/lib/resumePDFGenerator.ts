@@ -287,6 +287,16 @@ export class ResumePDFGenerator {
       currentY = this.addProjectsSection(pdf, data.projects, opts, contentWidth, currentY, lineHeight);
     }
 
+    // Certifications
+    if (data.certifications && data.certifications.length > 0) {
+      currentY = this.addCertificationsSection(pdf, data.certifications, opts, contentWidth, currentY, lineHeight);
+    }
+
+    // Languages
+    if (data.languages && data.languages.length > 0) {
+      currentY = this.addLanguagesSection(pdf, data.languages, opts, contentWidth, currentY, lineHeight);
+    }
+
     return currentY;
   }
 
@@ -329,6 +339,21 @@ export class ResumePDFGenerator {
 
     if (data.skills.length > 0) {
       currentY = this.addSkillsSection(pdf, data.skills, opts, contentWidth, currentY, lineHeight);
+    }
+
+    // Projects
+    if (data.projects.length > 0) {
+      currentY = this.addProjectsSection(pdf, data.projects, opts, contentWidth, currentY, lineHeight);
+    }
+
+    // Certifications
+    if (data.certifications && data.certifications.length > 0) {
+      currentY = this.addCertificationsSection(pdf, data.certifications, opts, contentWidth, currentY, lineHeight);
+    }
+
+    // Languages
+    if (data.languages && data.languages.length > 0) {
+      currentY = this.addLanguagesSection(pdf, data.languages, opts, contentWidth, currentY, lineHeight);
     }
 
     return currentY;
@@ -774,6 +799,19 @@ export class ResumePDFGenerator {
         });
       }
 
+      // Project links
+      const links: string[] = [];
+      if (project.link) links.push(`Link: ${project.link}`);
+      if (project.github) links.push(`GitHub: ${project.github}`);
+      if (links.length > 0) {
+        pdf.setFontSize(9);
+        pdf.setTextColor(107, 114, 128); // Gray for links
+        pdf.text(links.join('  •  '), opts.margin!, currentY);
+        currentY += lineHeight;
+        pdf.setTextColor(31, 41, 55); // Reset to dark
+        pdf.setFontSize(10);
+      }
+
       currentY += lineHeight * 0.5;
     });
 
@@ -1168,6 +1206,95 @@ export class ResumePDFGenerator {
       currentY += lineHeight * 0.5;
     });
 
+    return currentY;
+  }
+
+  // ============ CERTIFICATIONS SECTION ============
+  private static addCertificationsSection(
+    pdf: jsPDF,
+    certifications: NonNullable<ResumeData['certifications']>,
+    opts: ResumePDFOptions,
+    contentWidth: number,
+    currentY: number,
+    lineHeight: number
+  ): number {
+    const colors = getColorScheme(opts.colorScheme);
+    
+    applyTextColor(pdf, colors.primary);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(12);
+    pdf.text('CERTIFICATIONS', opts.margin!, currentY);
+    currentY += lineHeight;
+    
+    applyDrawColor(pdf, colors.accent);
+    pdf.setLineWidth(0.3);
+    pdf.line(opts.margin!, currentY - lineHeight + 5, opts.margin! + 40, currentY - lineHeight + 5);
+
+    applyTextColor(pdf, colors.text);
+    certifications.forEach(cert => {
+      if (currentY > pdf.internal.pageSize.getHeight() - opts.margin! - 20) {
+        pdf.addPage();
+        currentY = opts.margin!;
+      }
+
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(11);
+      pdf.text(cert.name, opts.margin!, currentY);
+      currentY += lineHeight;
+
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(10);
+      applyTextColor(pdf, colors.textLight);
+      pdf.text(`${cert.issuer} • ${cert.date}`, opts.margin!, currentY);
+      currentY += lineHeight;
+
+      if (cert.credentialId) {
+        pdf.text(`Credential ID: ${cert.credentialId}`, opts.margin!, currentY);
+        currentY += lineHeight;
+      }
+
+      applyTextColor(pdf, colors.text);
+      currentY += lineHeight * 0.3;
+    });
+
+    currentY += lineHeight * 0.5;
+    return currentY;
+  }
+
+  // ============ LANGUAGES SECTION ============
+  private static addLanguagesSection(
+    pdf: jsPDF,
+    languages: NonNullable<ResumeData['languages']>,
+    opts: ResumePDFOptions,
+    contentWidth: number,
+    currentY: number,
+    lineHeight: number
+  ): number {
+    const colors = getColorScheme(opts.colorScheme);
+    
+    applyTextColor(pdf, colors.primary);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(12);
+    pdf.text('LANGUAGES', opts.margin!, currentY);
+    currentY += lineHeight;
+    
+    applyDrawColor(pdf, colors.accent);
+    pdf.setLineWidth(0.3);
+    pdf.line(opts.margin!, currentY - lineHeight + 5, opts.margin! + 40, currentY - lineHeight + 5);
+
+    applyTextColor(pdf, colors.text);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(10);
+
+    // Display languages in a compact format
+    const languageText = languages.map(lang => `${lang.language} (${lang.proficiency})`).join('  •  ');
+    const langLines = pdf.splitTextToSize(languageText, contentWidth);
+    langLines.forEach((line: string) => {
+      pdf.text(line, opts.margin!, currentY);
+      currentY += lineHeight;
+    });
+
+    currentY += lineHeight * 0.5;
     return currentY;
   }
 

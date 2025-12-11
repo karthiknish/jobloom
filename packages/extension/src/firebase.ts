@@ -21,6 +21,10 @@ import type { Auth, User } from 'firebase/auth';
 import { getEnv } from "./env";
 import { logger } from "./utils/logger";
 
+// Web OAuth Client ID for launchWebAuthFlow (from Google Cloud Console)
+// This is different from the Chrome extension client ID in manifest.json
+const GOOGLE_WEB_CLIENT_ID = getEnv("GOOGLE_WEB_CLIENT_ID") || getEnv("NEXT_PUBLIC_GOOGLE_WEB_CLIENT_ID") || "";
+
 const firebaseConfig = {
   apiKey: getEnv("NEXT_PUBLIC_FIREBASE_API_KEY", ""),
   authDomain:
@@ -192,28 +196,103 @@ export function getFirebaseStatus(): FirebaseStatus {
 }
 
 /**
- * Sign in with Google using Chrome Identity API.
- * This works independently in the extension without needing popups.
- * Uses chrome.identity.getAuthToken to get an OAuth token from the user's
- * signed-in Google account in Chrome, then authenticates with Firebase.
+ * Fallback: Sign in with Google using getAuthToken (requires Chrome browser sign-in enabled)
+ */
+const signInWithGoogleToken = async (): Promise<User> => {
+  if (!chrome.identity?.getAuthToken) {
+    throw new Error('Chrome Identity API not available');
+  }
+
+  // Get OAuth token from Chrome's account system
+  const authResult = await chrome.identity.getAuthToken({ interactive: true });
+  
+  if (!authResult?.token) {
+    throw new Error('Failed to get auth token from Chrome. Please ensure Chrome browser sign-in is enabled.');
+  }
+
+  logger.debug('Firebase', 'Got OAuth token from Chrome Identity API');
+
+  // Create Firebase credential from the OAuth token
+  const credential = GoogleAuthProvider.credential(null, authResult.token);
+  
+  // Sign in to Firebase with the credential
+  const auth = getAuthInstance();
+  const result = await firebaseSignInWithCredential(auth, credential);
+  
+  logger.debug('Firebase', 'Successfully signed in with Google (token method)', { uid: result.user.uid });
+  
+  return result.user;
+};
+
+/**
+ * Sign in with Google using launchWebAuthFlow.
+ * This works universally without requiring Chrome browser sign-in to be enabled.
+ * Opens a popup window for the user to authenticate with Google.
  */
 export const signInWithGoogle = async (): Promise<User> => {
-  if (typeof chrome === 'undefined' || !chrome.identity?.getAuthToken) {
+  if (typeof chrome === 'undefined' || !chrome.identity?.launchWebAuthFlow) {
     throw new Error('Chrome Identity API not available');
   }
 
   try {
-    // Get OAuth token from Chrome's account system
-    const authResult = await chrome.identity.getAuthToken({ interactive: true });
-    
-    if (!authResult?.token) {
-      throw new Error('Failed to get auth token from Chrome');
+    // Get the redirect URL for the extension
+    const redirectUrl = chrome.identity.getRedirectURL();
+    logger.debug('Firebase', 'Redirect URL:', redirectUrl);
+
+    // Check if we have the web client ID configured
+    if (!GOOGLE_WEB_CLIENT_ID) {
+      logger.warn('Firebase', 'GOOGLE_WEB_CLIENT_ID not configured, falling back to getAuthToken');
+      return signInWithGoogleToken();
     }
 
-    logger.debug('Firebase', 'Got OAuth token from Chrome Identity API');
+    // Build the OAuth URL
+    const scopes = ['openid', 'email', 'profile'].join(' ');
+    
+    const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+    authUrl.searchParams.set('client_id', GOOGLE_WEB_CLIENT_ID);
+    authUrl.searchParams.set('redirect_uri', redirectUrl);
+    authUrl.searchParams.set('response_type', 'token');
+    authUrl.searchParams.set('scope', scopes);
+    authUrl.searchParams.set('prompt', 'select_account');
+
+    logger.debug('Firebase', 'Launching web auth flow...');
+
+    // Launch the auth flow
+    const responseUrl = await new Promise<string>((resolve, reject) => {
+      chrome.identity.launchWebAuthFlow(
+        {
+          url: authUrl.toString(),
+          interactive: true,
+        },
+        (callbackUrl) => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message));
+            return;
+          }
+          if (!callbackUrl) {
+            reject(new Error('No callback URL received'));
+            return;
+          }
+          resolve(callbackUrl);
+        }
+      );
+    });
+
+    logger.debug('Firebase', 'Auth flow completed, parsing response...');
+
+    // Extract the access token from the callback URL
+    const url = new URL(responseUrl);
+    const hashParams = new URLSearchParams(url.hash.substring(1));
+    const accessToken = hashParams.get('access_token');
+
+    if (!accessToken) {
+      throw new Error('No access token in response');
+    }
+
+    logger.debug('Firebase', 'Got access token from web auth flow');
 
     // Create Firebase credential from the OAuth token
-    const credential = GoogleAuthProvider.credential(null, authResult.token);
+    const credential = GoogleAuthProvider.credential(null, accessToken);
     
     // Sign in to Firebase with the credential
     const auth = getAuthInstance();
@@ -223,21 +302,16 @@ export const signInWithGoogle = async (): Promise<User> => {
     
     return result.user;
   } catch (error: any) {
-    // If token was cached and invalid, clear it and retry
-    if (error?.code === 'auth/invalid-credential' && chrome.identity?.removeCachedAuthToken) {
-      try {
-        const authResult = await chrome.identity.getAuthToken({ interactive: false });
-        if (authResult?.token) {
-          await chrome.identity.removeCachedAuthToken({ token: authResult.token });
-          // Retry with fresh token
-          return signInWithGoogle();
-        }
-      } catch (retryError) {
-        logger.warn('Firebase', 'Failed to clear cached token', { error: retryError });
-      }
+    logger.error('Firebase', 'Google sign-in failed', { error });
+    
+    // Provide user-friendly error messages
+    if (error.message?.includes('user denied') || error.message?.includes('canceled')) {
+      throw new Error('Sign-in was cancelled');
+    }
+    if (error.message?.includes('popup')) {
+      throw new Error('Sign-in popup was blocked. Please allow popups for this extension.');
     }
     
-    logger.error('Firebase', 'Google sign-in failed', { error });
     throw error;
   }
 };

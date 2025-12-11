@@ -1,4 +1,5 @@
 import { fetchSponsorRecord } from './sponsorship/lookup';
+import { isLikelyPlaceholderCompany, normalizeCompanyName } from './utils/companyName';
 
 // Enhanced job description parser with fuzzy matching and improved SOC code detection
 export interface EnhancedJobData {
@@ -521,6 +522,11 @@ export class EnhancedJobParser {
   public static async enhanceJobData(baseData: Partial<EnhancedJobData>, document: Document): Promise<EnhancedJobData | null> {
     if (!baseData.title) return null;
 
+    if (typeof baseData.company === 'string') {
+      const normalizedCompany = normalizeCompanyName(baseData.company);
+      baseData.company = isLikelyPlaceholderCompany(normalizedCompany) ? '' : normalizedCompany;
+    }
+
     // Normalize job title
     const { normalized, seniority, keywords } = JobTitleNormalizer.normalizeTitle(baseData.title);
 
@@ -547,7 +553,7 @@ export class EnhancedJobParser {
     let isSponsored = descriptionSponsorship.isSponsored;
     let sponsorshipType = descriptionSponsorship.type;
 
-    if (baseData.company) {
+    if (baseData.company && !isLikelyPlaceholderCompany(baseData.company)) {
       try {
         const sponsorRecord = await fetchSponsorRecord(baseData.company);
         if (sponsorRecord && sponsorRecord.eligibleForSponsorship) {

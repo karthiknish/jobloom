@@ -8,9 +8,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
-import { getAuth, EmailAuthProvider, reauthenticateWithCredential, updatePassword, signOut as firebaseSignOut } from "firebase/auth";
+import { getAuth, EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "firebase/auth";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 
 interface SecuritySettingsProps {
@@ -30,6 +41,23 @@ export function SecuritySettings({ formData, onInputChange, user }: SecuritySett
   const router = useRouter();
   const { signOut } = useFirebaseAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteConfirmationText, setDeleteConfirmationText] = useState("");
+  const [deleteReason, setDeleteReason] = useState("");
+
+  const deletePhrase = "DELETE_MY_ACCOUNT_PERMANENTLY";
+
+  const getResponseErrorMessage = async (response: Response) => {
+    const contentType = response.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      const data = await response.json().catch(() => null);
+      const maybeError = data?.error || data?.message;
+      if (typeof maybeError === "string" && maybeError.trim()) return maybeError;
+    }
+    const text = await response.text().catch(() => "");
+    if (text && text.trim()) return text;
+    return `Request failed (${response.status})`;
+  };
 
   const handleLogout = async () => {
     setIsLoading(true);
@@ -50,6 +78,29 @@ export function SecuritySettings({ formData, onInputChange, user }: SecuritySett
       return;
     }
 
+    const auth = getAuth();
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      toast.error("Authentication Error", "You must be signed in to change your password.");
+      return;
+    }
+
+    const hasPasswordProvider = (currentUser.providerData || []).some(
+      (provider) => provider?.providerId === "password"
+    );
+    if (!hasPasswordProvider) {
+      toast.error(
+        "Password Change Unavailable",
+        "Your account uses social sign-in. Change your password via your identity provider or add a password sign-in method."
+      );
+      return;
+    }
+
+    if (!currentUser.email) {
+      toast.error("Authentication Error", "No email address found for your account.");
+      return;
+    }
+
     if (formData.security.newPassword !== formData.security.confirmPassword) {
       toast.error("Password Mismatch", "New passwords do not match.");
       return;
@@ -67,17 +118,14 @@ export function SecuritySettings({ formData, onInputChange, user }: SecuritySett
 
     setIsLoading(true);
     try {
-      const token = await user.getIdToken();
-      
       // First verify the current password by trying to sign in with it
-      const auth = getAuth();
-      const credential = EmailAuthProvider.credential(user.email || "", formData.security.currentPassword);
+      const credential = EmailAuthProvider.credential(currentUser.email, formData.security.currentPassword);
       
       // Reauthenticate user
-      await reauthenticateWithCredential(auth.currentUser!, credential);
+      await reauthenticateWithCredential(currentUser, credential);
       
       // Update password
-      await updatePassword(auth.currentUser!, formData.security.newPassword);
+      await updatePassword(currentUser, formData.security.newPassword);
       
       toast.success(
         "Password Changed",
@@ -122,8 +170,7 @@ export function SecuritySettings({ formData, onInputChange, user }: SecuritySett
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to export data");
+        throw new Error(await getResponseErrorMessage(response));
       }
 
       const responseData = await response.json();
@@ -158,19 +205,7 @@ export function SecuritySettings({ formData, onInputChange, user }: SecuritySett
     }
   };
 
-  const handleAccountDeletion = async () => {
-    // First show a prompt to get confirmation text
-    const confirmation = prompt(
-      "To permanently delete your account, type: DELETE_MY_ACCOUNT_PERMANENTLY\n\nThis action cannot be undone and will delete all your data."
-    );
-    
-    if (confirmation !== "DELETE_MY_ACCOUNT_PERMANENTLY") {
-      return;
-    }
-
-    // Second confirmation
-    const reason = prompt("Optional: Please let us know why you're deleting your account (this helps us improve):");
-    
+  const handleAccountDeletion = async (confirmation: string, reason?: string) => {
     setIsLoading(true);
     try {
       const token = await user.getIdToken();
@@ -188,8 +223,7 @@ export function SecuritySettings({ formData, onInputChange, user }: SecuritySett
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to delete account");
+        throw new Error(await getResponseErrorMessage(response));
       }
 
       const result = await response.json();
@@ -199,9 +233,12 @@ export function SecuritySettings({ formData, onInputChange, user }: SecuritySett
         result.message || "Your account has been permanently deleted."
       );
       
+      setDeleteDialogOpen(false);
+      setDeleteConfirmationText("");
+      setDeleteReason("");
+
       // Sign out and redirect
-      const auth = getAuth();
-      await auth.signOut();
+      await signOut();
       router.push("/");
       
     } catch (error: any) {
@@ -341,15 +378,74 @@ export function SecuritySettings({ formData, onInputChange, user }: SecuritySett
                 </motion.div>
 
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                  <Button
-                    variant="outline"
-                    onClick={handleAccountDeletion}
-                    disabled={isLoading}
-                    className="btn-premium font-semibold border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                  <AlertDialog
+                    open={deleteDialogOpen}
+                    onOpenChange={(open) => {
+                      if (isLoading) return;
+                      setDeleteDialogOpen(open);
+                      if (!open) {
+                        setDeleteConfirmationText("");
+                        setDeleteReason("");
+                      }
+                    }}
                   >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    {isLoading ? "Deleting..." : "Delete Account"}
-                  </Button>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        disabled={isLoading}
+                        className="btn-premium font-semibold border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete Account
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete your account?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This is permanent and will delete all your data. To confirm, type <strong>{deletePhrase}</strong>.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="delete-confirmation">Confirmation phrase</Label>
+                          <Input
+                            id="delete-confirmation"
+                            value={deleteConfirmationText}
+                            onChange={(e) => setDeleteConfirmationText(e.target.value)}
+                            placeholder={deletePhrase}
+                            className="input-premium"
+                            autoComplete="off"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="delete-reason">Reason (optional)</Label>
+                          <Input
+                            id="delete-reason"
+                            value={deleteReason}
+                            onChange={(e) => setDeleteReason(e.target.value)}
+                            placeholder="Tell us what we could do better"
+                            className="input-premium"
+                          />
+                        </div>
+                      </div>
+
+                      <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          disabled={isLoading || deleteConfirmationText !== deletePhrase}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleAccountDeletion(deleteConfirmationText, deleteReason);
+                          }}
+                        >
+                          {isLoading ? "Deleting..." : "Delete permanently"}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </motion.div>
               </div>
 

@@ -84,14 +84,46 @@ export function AICoverLetterGenerator() {
   const [deepResearch, setDeepResearch] = useState(false);
   const [downloadingPDF, setDownloadingPDF] = useState(false);
 
+  const canGenerate = Boolean(
+    formData.jobTitle.trim() &&
+      formData.companyName.trim() &&
+      formData.jobDescription.trim().length >= 50
+  );
+
   const generateCoverLetter = async () => {
-    if (!formData.jobTitle || !formData.companyName || !formData.jobDescription) {
+    if (!formData.jobTitle.trim() || !formData.companyName.trim() || !formData.jobDescription.trim()) {
       showError("Missing Information", "Please fill in all required fields.");
       return;
     }
 
+    if (formData.jobDescription.trim().length < 50) {
+      showError("Job Description Too Short", "Please paste at least 50 characters of the job description.");
+      return;
+    }
+
     if (plan === "free") {
-      showError("Upgrade Required", "AI cover letter generation is a premium feature. Please upgrade to unlock.");
+      const mockLetter: GeneratedCoverLetter = {
+        content: `Dear Hiring Manager,\n\nI am writing to express my strong interest in the ${formData.jobTitle} position at ${formData.companyName}. With my background and skills, I am confident that I would be a valuable addition to your team.\n\n${formData.jobDescription.slice(0, 200)}... [This is a demo version]\n\n${formData.skills.length > 0 ? `My key skills include: ${formData.skills.join(", ")}.` : ""}\n\nI am excited about the opportunity to contribute to ${formData.companyName} and would welcome the chance to discuss how my experience aligns with your needs.\n\nThank you for your consideration.\n\nSincerely,\n[Your Name]`,
+        atsScore: 85,
+        keywords: ["leadership", "communication", "problem-solving", "teamwork"],
+        improvements: [
+          "Add specific quantifiable achievements",
+          "Include more company-specific keywords",
+          "Strengthen the opening statement",
+        ],
+        tone: formData.tone,
+        wordCount: 250,
+        deepResearch,
+        researchInsights: deepResearch
+          ? [
+              `Highlight how ${formData.companyName}'s culture aligns with your values`,
+              "Reference a recent company initiative to show research",
+            ]
+          : [],
+      };
+
+      setGeneratedLetter(mockLetter);
+      showInfo("Demo Mode", "This is a sample cover letter. Upgrade for full AI generation.");
       return;
     }
 
@@ -99,6 +131,9 @@ export function AICoverLetterGenerator() {
     
     try {
       const token = await user?.getIdToken();
+      if (!token) {
+        throw new Error("Not authenticated");
+      }
       const response = await fetch("/api/ai/cover-letter", {
         method: "POST",
         headers: {
@@ -113,12 +148,21 @@ export function AICoverLetterGenerator() {
         }),
       });
 
+      const payload = await response.json().catch(() => null);
+
       if (!response.ok) {
-        throw new Error("Failed to generate cover letter");
+        const message =
+          (payload && typeof payload === "object" && "error" in payload && typeof (payload as any).error === "string"
+            ? (payload as any).error
+            : "Failed to generate cover letter");
+        throw new Error(message);
       }
 
-      const data = await response.json();
-      setGeneratedLetter(data);
+      if (!payload) {
+        throw new Error("Invalid response from server");
+      }
+
+      setGeneratedLetter(payload as GeneratedCoverLetter);
       showSuccess("Success", "Your cover letter has been generated!");
     } catch (error: any) {
       console.error("Cover letter generation error:", error);
@@ -156,7 +200,10 @@ Sincerely,
       };
       
       setGeneratedLetter(mockLetter);
-      showInfo("Demo Mode", "This is a sample cover letter. Upgrade for full AI generation.");
+
+      const message = error instanceof Error ? error.message : "AI generation failed";
+      showError("Generation Failed", message);
+      showInfo("Fallback Used", "Showing a fallback cover letter so you can keep going.");
     } finally {
       setIsGenerating(false);
     }
@@ -374,7 +421,12 @@ Sincerely,
                   placeholder="Add a skill..."
                   value={skillInput}
                   onChange={(e) => setSkillInput(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && addSkill()}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addSkill();
+                    }
+                  }}
                   className="bg-background"
                 />
                 <Button type="button" onClick={addSkill} size="sm" variant="secondary">
@@ -464,7 +516,7 @@ Sincerely,
 
             <Button 
               onClick={generateCoverLetter} 
-              disabled={isGenerating || plan === "free"}
+              disabled={isGenerating || !canGenerate}
               className="w-full h-12 text-lg font-medium shadow-lg hover:shadow-xl transition-all"
             >
               {isGenerating ? (
@@ -491,7 +543,7 @@ Sincerely,
                 Generated Cover Letter
               </span>
               {generatedLetter && (
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button size="sm" variant="outline" onClick={copyToClipboard}>
                     <Copy className="h-4 w-4 mr-1" />
                     Copy

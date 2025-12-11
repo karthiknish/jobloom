@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Settings, RefreshCw, Save } from "lucide-react";
+import { ArrowLeft, RefreshCw, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 
@@ -26,8 +26,8 @@ export function SettingsHeader({ hasChanges, isLoading, onSave, onReset }: Setti
               onClick={() => router.push("/dashboard")}
               className="gap-2"
             >
-              <Settings className="h-4 w-4" />
-              Settings
+              <ArrowLeft className="h-4 w-4" />
+              Back to Dashboard
             </Button>
           </div>
           <div className="flex items-center gap-3">

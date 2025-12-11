@@ -269,7 +269,14 @@ export function PreferencesSettings({ formData, onInputChange }: PreferencesSett
                 <Input
                   type="number"
                   value={formData.preferences.minimumSalary}
-                  onChange={(e) => onInputChange("preferences", "minimumSalary", e.target.value)}
+                  onChange={(e) => {
+                    const valueAsNumber = e.currentTarget.valueAsNumber;
+                    onInputChange(
+                      "preferences",
+                      "minimumSalary",
+                      Number.isFinite(valueAsNumber) ? Math.max(0, valueAsNumber) : 0
+                    );
+                  }}
                   placeholder="50000"
                   className="input-premium"
                 />

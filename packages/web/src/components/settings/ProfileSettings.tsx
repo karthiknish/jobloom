@@ -2,13 +2,10 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
 
 interface ProfileSettingsProps {
   formData: {
@@ -25,8 +22,6 @@ interface ProfileSettingsProps {
 }
 
 export function ProfileSettings({ formData, onInputChange, firebaseUser }: ProfileSettingsProps) {
-  const toast = useToast();
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
