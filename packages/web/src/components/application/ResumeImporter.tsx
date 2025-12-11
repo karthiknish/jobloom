@@ -579,10 +579,10 @@ export function ResumeImporter({ onImport }: ResumeImporterProps) {
               <CardDescription>Supported formats: PDF, DOC, DOCX, TXT</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="rounded-lg border-2 border-dashed border-gray-300 p-6 text-center">
-                <UploadCloud className="mx-auto mb-4 h-12 w-12 text-gray-400" />
+              <div className="rounded-lg border-2 border-dashed border-border/60 bg-muted/10 p-6 text-center">
+                <UploadCloud className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
                 <div className="space-y-2">
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-muted-foreground">
                     Drag and drop your resume here, or click to browse
                   </p>
                   <input
@@ -613,8 +613,8 @@ export function ResumeImporter({ onImport }: ResumeImporterProps) {
               </div>
 
               <div className="space-y-2">
-                <p className="text-sm font-medium text-gray-800">Supported Formats:</p>
-                <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+                <p className="text-sm font-medium text-foreground">Supported Formats:</p>
+                <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
                   {supportedFormats.map((format) => (
                     <div key={format.extension} className="flex items-center gap-2">
                       <FileText className="h-3 w-3" />
@@ -668,18 +668,18 @@ export function ResumeImporter({ onImport }: ResumeImporterProps) {
             <CardContent className="p-0">
               {analyses.length === 0 ? (
                 <div className="p-6 text-center">
-                  <div className="mx-auto w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3">
-                    <FileText className="h-6 w-6 text-gray-400" />
+                  <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                    <FileText className="h-6 w-6 text-muted-foreground" />
                   </div>
-                  <p className="text-sm text-gray-500 mb-2">
+                  <p className="mb-2 text-sm text-muted-foreground">
                     No resume analyses yet
                   </p>
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-muted-foreground">
                     Upload a resume to get started
                   </p>
                 </div>
               ) : (
-                <div className="divide-y divide-gray-100 max-h-[400px] overflow-y-auto">
+                <div className="max-h-[400px] divide-y divide-border overflow-y-auto">
                   {analyses.map((analysis) => {
                     const listScore = clampToPercentage(
                       analysis.atsScore ?? analysis.overallScore
@@ -700,14 +700,14 @@ export function ResumeImporter({ onImport }: ResumeImporterProps) {
                           }
                         }}
                         className={cn(
-                          "w-full p-4 text-left cursor-pointer transition-all hover:bg-gray-50",
-                          isSelected && "bg-primary/5 border-l-2 border-l-primary"
+                          "w-full cursor-pointer p-4 text-left transition-all hover:bg-muted/40",
+                          isSelected && "border-l-2 border-l-primary bg-primary/5"
                         )}
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2 mb-1">
-                              <span className="truncate text-sm font-medium text-gray-900">
+                              <span className="truncate text-sm font-medium text-foreground">
                                 {analysis.fileName}
                               </span>
                               {isPending && (
@@ -737,14 +737,14 @@ export function ResumeImporter({ onImport }: ResumeImporterProps) {
                                 </div>
                               )}
                             </div>
-                            <div className="text-[11px] text-gray-400">
+                            <div className="text-[11px] text-muted-foreground">
                               {formatFileSize(analysis.fileSize)} • {formatTimestamp(analysis.createdAt)}
                             </div>
                           </div>
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-7 w-7 p-0 text-gray-400 hover:text-red-500 hover:bg-red-50"
+                            className="h-7 w-7 p-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                             onClick={(event) => {
                               event.stopPropagation();
                               handleDeleteAnalysis(analysis.id);
@@ -823,7 +823,7 @@ export function ResumeImporter({ onImport }: ResumeImporterProps) {
                   </Alert>
                 )}
 
-                <div className="space-y-3 rounded-lg bg-gray-50 p-4">
+                <div className="space-y-3 rounded-lg border border-border/60 bg-muted/20 p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className={cn(
@@ -841,7 +841,7 @@ export function ResumeImporter({ onImport }: ResumeImporterProps) {
                           "text-red-600"
                         )} />
                       </div>
-                      <span className="text-sm font-medium text-gray-700">
+                      <span className="text-sm font-medium text-foreground">
                         ATS Score
                       </span>
                     </div>
@@ -855,7 +855,7 @@ export function ResumeImporter({ onImport }: ResumeImporterProps) {
                       {displayAtsScore}
                     </span>
                   </div>
-                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-2 overflow-hidden rounded-full bg-muted">
                     <div 
                       className={cn(
                         "h-full rounded-full transition-all duration-500",
@@ -868,8 +868,8 @@ export function ResumeImporter({ onImport }: ResumeImporterProps) {
                     />
                   </div>
                   {atsIssues.length > 0 && (
-                    <div className="text-xs text-gray-600">
-                      <span className="font-medium text-gray-700">Top issues:</span>
+                    <div className="text-xs text-muted-foreground">
+                      <span className="font-medium text-foreground">Top issues:</span>
                       <ul className="mt-1 list-disc space-y-1 pl-4">
                         {atsIssues.map((issue) => (
                           <li key={issue}>{issue}</li>
@@ -886,7 +886,7 @@ export function ResumeImporter({ onImport }: ResumeImporterProps) {
                         <CheckCircle2 className={cn("h-4 w-4", themeColors.success.icon)} />
                         Strengths
                       </h4>
-                      <ul className="list-disc space-y-2 pl-4 text-sm text-gray-700">
+                      <ul className="list-disc space-y-2 pl-4 text-sm text-foreground">
                         {selectedAnalysis.strengths.map((item) => (
                           <li key={item}>{item}</li>
                         ))}
@@ -899,7 +899,7 @@ export function ResumeImporter({ onImport }: ResumeImporterProps) {
                         <AlertCircle className={cn("h-4 w-4", themeColors.warning.icon)} />
                         Improvements
                       </h4>
-                      <ul className="list-disc space-y-2 pl-4 text-sm text-gray-700">
+                      <ul className="list-disc space-y-2 pl-4 text-sm text-foreground">
                         {selectedAnalysis.weaknesses.map((item) => (
                           <li key={item}>{item}</li>
                         ))}
@@ -910,11 +910,11 @@ export function ResumeImporter({ onImport }: ResumeImporterProps) {
 
                 {selectedAnalysis.recommendations.length > 0 && (
                   <div>
-                    <h4 className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-800">
+                    <h4 className="mb-2 flex items-center gap-2 text-sm font-medium text-foreground">
                       <Zap className={cn("h-4 w-4", themeColors.info.icon)} />
                       Recommended Next Steps
                     </h4>
-                    <ul className="list-disc space-y-2 pl-4 text-sm text-gray-700">
+                    <ul className="list-disc space-y-2 pl-4 text-sm text-foreground">
                       {selectedAnalysis.recommendations.map((item) => (
                         <li key={item}>{item}</li>
                       ))}
@@ -924,7 +924,7 @@ export function ResumeImporter({ onImport }: ResumeImporterProps) {
 
                 {missingKeywords.length > 0 && (
                   <div>
-                    <h4 className="mb-2 text-sm font-medium text-gray-800">
+                    <h4 className="mb-2 text-sm font-medium text-foreground">
                       High-Impact Keywords to Add
                     </h4>
                     <div className="flex flex-wrap gap-2">
@@ -939,7 +939,7 @@ export function ResumeImporter({ onImport }: ResumeImporterProps) {
 
                 {presentKeywords.length > 0 && (
                   <div>
-                    <h4 className="mb-2 text-sm font-medium text-gray-800">Detected Keywords</h4>
+                    <h4 className="mb-2 text-sm font-medium text-foreground">Detected Keywords</h4>
                     <div className="flex flex-wrap gap-2">
                       {presentKeywords.map((keyword) => (
                         <Badge
