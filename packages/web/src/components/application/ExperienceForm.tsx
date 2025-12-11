@@ -94,7 +94,7 @@ export function ExperienceForm({ data, onChange }: ExperienceFormProps) {
           <div
             key={exp.id}
             className={cn(
-              "relative border rounded-xl overflow-hidden transition-all duration-200",
+              "relative border rounded-xl overflow-hidden motion-surface",
               "hover:shadow-md hover:border-primary/20",
               exp.current && "ring-2 ring-primary/20 border-primary/30"
             )}

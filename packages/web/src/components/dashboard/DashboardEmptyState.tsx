@@ -103,7 +103,7 @@ export function DashboardEmptyState({
                 <Button
                   onClick={onImportJobs}
                   size="lg"
-                  className="w-full sm:w-auto shadow-lg hover:shadow-xl transition-all duration-300 bg-primary hover:from-emerald-700 hover:to-teal-700 text-white border-0 gap-2"
+                  className="w-full sm:w-auto shadow-lg hover:shadow-xl bg-primary hover:from-emerald-700 hover:to-teal-700 text-white border-0 gap-2"
                 >
                   <Chrome className="h-5 w-5" />
                   Import from Extension
@@ -117,7 +117,7 @@ export function DashboardEmptyState({
                   onClick={onAddJob}
                   variant="secondary"
                   size="lg"
-                  className="w-full sm:w-auto shadow-md hover:shadow-lg transition-all duration-300 gap-2"
+                  className="w-full sm:w-auto shadow-md hover:shadow-lg gap-2"
                 >
                   <FilePlus className="h-5 w-5" />
                   Add Job Manually
@@ -131,7 +131,7 @@ export function DashboardEmptyState({
                   onClick={onAddApplication}
                   variant="outline"
                   size="lg"
-                  className="w-full sm:w-auto shadow-md hover:shadow-lg transition-all duration-300 border-border hover:border-emerald-300 hover:bg-primary/10/50 gap-2"
+                  className="w-full sm:w-auto shadow-md hover:shadow-lg border-border hover:border-emerald-300 hover:bg-primary/10/50 gap-2"
                 >
                   Track Application
                   <ArrowRight className="h-4 w-4" />

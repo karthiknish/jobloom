@@ -1,5 +1,7 @@
 export type ToastType = "success" | "info" | "warning" | "error";
 
+import { DURATIONS, EASING, createTransition } from "../animations";
+
 const ICON_PATHS: Record<string, string> = {
   target: '<circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" />',
   clock:
@@ -52,7 +54,7 @@ export class UIComponents {
       font-size: 13px;
       color: #fff;
       box-shadow: 0 8px 20px rgba(15, 23, 42, 0.18);
-      animation: hireall-toast-in 150ms ease-out;
+      animation: hireall-toast-in ${DURATIONS.fast}ms ${EASING.easeOut};
       background: ${this.toastBackground(type)};
     `;
 
@@ -65,8 +67,8 @@ export class UIComponents {
     `;
 
     const remove = () => {
-      toast.style.animation = "hireall-toast-out 150ms ease-in forwards";
-      window.setTimeout(() => toast.remove(), 180);
+      toast.style.animation = `hireall-toast-out ${DURATIONS.fast}ms ${EASING.easeIn} forwards`;
+      window.setTimeout(() => toast.remove(), DURATIONS.fast + 40);
     };
 
     toast.querySelector("button")?.addEventListener("click", remove);
@@ -193,7 +195,7 @@ export class UIComponents {
       cursor: pointer;
       box-shadow: 0 12px 30px rgba(15, 118, 110, 0.25);
       background: ${background};
-      transition: transform 150ms ease, box-shadow 150ms ease;
+      transition: ${createTransition(["transform", "box-shadow"], "fast", "easeOut")};
     `;
   }
 

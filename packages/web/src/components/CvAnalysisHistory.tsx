@@ -242,7 +242,7 @@ export function CvAnalysisHistory({ analyses, optimistic }: CvAnalysisHistoryPro
             }}
             whileHover={{ y: -2, scale: 1.01 }}
           >
-            <Card className="shadow-sm border-border hover:shadow-md transition-all duration-200">
+            <Card className="shadow-sm border-border hover:shadow-md">
               <CardContent className="p-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex-1 min-w-0">

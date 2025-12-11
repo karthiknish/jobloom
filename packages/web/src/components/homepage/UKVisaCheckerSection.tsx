@@ -116,7 +116,7 @@ export function UKVisaCheckerSection() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: 0.1 * index }}
-                className="group p-6 rounded-2xl border border-border bg-card hover:shadow-lg transition-all duration-300"
+                className="group p-6 rounded-2xl border border-border bg-card hover:shadow-lg motion-surface"
               >
                 <div className={`inline-flex p-3 rounded-xl ${feature.bgColor} mb-4`}>
                   <feature.icon className={`h-6 w-6 ${feature.color}`} />
@@ -161,7 +161,7 @@ export function UKVisaCheckerSection() {
                   <Link href="/sign-up">
                     <Button className="w-full group">
                       Get the Free Extension
-                      <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                      <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 motion-control" />
                     </Button>
                   </Link>
                   <p className="text-xs text-center text-muted-foreground mt-3">

@@ -139,7 +139,7 @@ export function AdminLayout({ children, title }: AdminLayoutProps) {
         {/* Sidebar */}
         <aside
           className={cn(
-            "fixed inset-y-0 left-0 z-50 transform border-r border-gray-200 bg-white transition-all duration-300 ease-in-out lg:translate-x-0",
+            "fixed inset-y-0 left-0 z-50 transform border-r border-gray-200 bg-white motion-layout lg:translate-x-0",
             sidebarWidth,
             isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
           )}
@@ -187,7 +187,7 @@ export function AdminLayout({ children, title }: AdminLayoutProps) {
                       key={item.href}
                       href={item.href}
                       className={cn(
-                        "group relative flex items-center rounded-lg transition-all duration-200",
+                        "group relative flex items-center rounded-lg motion-control",
                         isCollapsed ? "justify-center p-3" : "px-3 py-2.5",
                         isActive
                           ? "bg-primary/10 text-primary shadow-sm"
@@ -366,7 +366,7 @@ export function AdminLayout({ children, title }: AdminLayoutProps) {
 
         {/* Main Content */}
         <div className={cn(
-          "transition-all duration-300 ease-in-out",
+          "motion-layout",
           isCollapsed ? "lg:pl-[72px]" : "lg:pl-64"
         )}>
           {/* Header */}

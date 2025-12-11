@@ -340,7 +340,7 @@ export function EmailTemplates({
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: index * 0.1 }}
           >
-            <Card className="group hover:shadow-lg transition-all duration-300 border-gray-200 shadow-sm">
+            <Card className="group hover:shadow-lg border-gray-200 shadow-sm">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">

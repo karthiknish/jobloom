@@ -261,7 +261,7 @@ export function UpgradePrompt({ feature }: UpgradePromptProps) {
                   <Button
                     onMouseEnter={() => setIsHovered(true)}
                     onMouseLeave={() => setIsHovered(false)}
-                    className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground font-semibold py-6 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 text-lg"
+                    className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground font-semibold py-6 px-8 rounded-xl shadow-lg hover:shadow-xl text-lg"
                     size="lg"
                   >
                     {isHovered ? "Upgrade Now" : "Upgrade to Premium"}

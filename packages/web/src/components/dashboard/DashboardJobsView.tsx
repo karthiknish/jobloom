@@ -223,7 +223,7 @@ export function DashboardJobsView({
             <div className="flex items-center gap-2 bg-background p-1 rounded-lg border border-border/50 shadow-sm">
               <button
                 onClick={() => setBoardMode("list")}
-                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md motion-control ${
                   boardMode === "list"
                     ? "bg-primary text-primary-foreground shadow-md"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
@@ -234,7 +234,7 @@ export function DashboardJobsView({
               </button>
               <button
                 onClick={() => setBoardMode("kanban")}
-                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md motion-control ${
                   boardMode === "kanban"
                     ? "bg-primary text-primary-foreground shadow-md"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/50"

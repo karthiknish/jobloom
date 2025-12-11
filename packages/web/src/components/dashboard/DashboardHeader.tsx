@@ -81,7 +81,7 @@ export function DashboardHeader({
                 </p>
                 <Badge
                   variant={plan === "premium" ? "default" : "secondary"}
-                  className={`text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm transition-all duration-300 ${
+                  className={`text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm motion-control ${
                     plan === "premium"
                       ? "bg-primary text-primary-foreground shadow-md hover:shadow-lg"
                       : "bg-white text-foreground border border-border hover:bg-gray-50"
@@ -130,7 +130,7 @@ export function DashboardHeader({
                     <Button
                       onClick={onImportJobs}
                       size="sm"
-                      className="shadow-md hover:shadow-lg transition-all duration-300 bg-primary hover:bg-primary/90 text-primary-foreground border-0 gap-2"
+                      className="shadow-md hover:shadow-lg bg-primary hover:bg-primary/90 text-primary-foreground border-0 gap-2"
                     >
                       <Chrome className="h-4 w-4" />
                       <span className="hidden sm:inline">Import from Extension</span>
@@ -154,7 +154,7 @@ export function DashboardHeader({
                       onClick={onAddJob}
                       variant="default"
                       size="sm"
-                      className="shadow-md hover:shadow-lg transition-all duration-300 bg-secondary hover:bg-secondary/90 text-secondary-foreground border-0 gap-2"
+                      className="shadow-md hover:shadow-lg bg-secondary hover:bg-secondary/90 text-secondary-foreground border-0 gap-2"
                     >
                       <FilePlus className="h-4 w-4" />
                       <span className="hidden sm:inline">Add Job</span>
@@ -177,7 +177,7 @@ export function DashboardHeader({
                       onClick={onAddApplication}
                       variant="outline"
                       size="sm"
-                      className="shadow-sm hover:shadow-md transition-all duration-300 border-border/60 hover:border-emerald-300 hover:bg-emerald-50/50 gap-2"
+                      className="shadow-sm hover:shadow-md border-border/60 hover:border-emerald-300 hover:bg-emerald-50/50 gap-2"
                     >
                       <ClipboardList className="h-4 w-4" />
                       <span className="hidden sm:inline">Track Application</span>

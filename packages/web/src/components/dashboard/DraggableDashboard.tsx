@@ -70,7 +70,7 @@ function SortableWidget({ widget, onToggleVisibility }: SortableWidgetProps) {
       exit={{ opacity: 0, y: -20 }}
       className={`relative ${isDragging ? 'z-50' : ''}`}
     >
-      <Card className={`transition-all duration-200 ${
+      <Card className={`${
         isDragging
           ? 'shadow-2xl scale-105 border-primary/50'
           : 'hover:shadow-lg card-depth-2'

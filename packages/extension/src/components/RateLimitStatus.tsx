@@ -1,6 +1,8 @@
 /**
  * Rate limit status indicator for the extension
  */
+import { createTransition } from "../animations";
+
 export class RateLimitStatus {
   private element: HTMLElement;
   private updateInterval: ReturnType<typeof setInterval> | null = null;
@@ -124,7 +126,7 @@ export class RateLimitStatus {
       .rate-limit-fill {
         height: 100%;
         border-radius: 3px;
-        transition: width 0.3s ease, background-color 0.3s ease;
+        transition: ${createTransition(["width", "background-color"], "normal", "easeInOut")};
         background: #10b981;
       }
 

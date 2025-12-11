@@ -64,7 +64,7 @@ export function TabsConfig({
     default: {
       list: "bg-muted/50 rounded-lg p-1",
       trigger: cn(
-        "rounded-md font-medium transition-all duration-200",
+        "rounded-md font-medium motion-control",
         "hover:bg-background hover:shadow-sm",
         "data-[state=active]:bg-background data-[state=active]:shadow-md",
         "data-[state=active]:text-foreground data-[state=active]:border border-emerald-200",
@@ -75,7 +75,7 @@ export function TabsConfig({
     pills: {
       list: "bg-transparent gap-2",
       trigger: cn(
-        "rounded-full font-medium transition-all duration-200",
+        "rounded-full font-medium motion-control",
         "hover:bg-emerald-50 hover:text-emerald-700",
         "data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-600 data-[state=active]:to-green-600",
         "data-[state=active]:text-white data-[state=active]:shadow-lg",
@@ -86,7 +86,7 @@ export function TabsConfig({
     underline: {
       list: "border-b border-border bg-transparent",
       trigger: cn(
-        "border-b-2 font-medium transition-all duration-200",
+        "border-b-2 font-medium motion-control",
         "hover:text-foreground hover:border-emerald-200",
         "data-[state=active]:text-emerald-700 data-[state=active]:border-emerald-600",
         "data-[state=inactive]:text-muted-foreground border-transparent"
@@ -96,7 +96,7 @@ export function TabsConfig({
     card: {
       list: "bg-transparent gap-2",
       trigger: cn(
-        "rounded-lg border font-medium transition-all duration-200",
+        "rounded-lg border font-medium motion-control",
         "hover:border-emerald-300 hover:bg-emerald-50",
         "data-[state=active]:border-emerald-600 data-[state=active]:bg-emerald-50",
         "data-[state=active]:text-emerald-900 data-[state=active]:shadow-sm",

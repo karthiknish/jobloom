@@ -1,5 +1,6 @@
 import { hexToRgb } from "./icons";
 import { HighlightConfig } from "./types";
+import { createTransition } from "../animations";
 
 const HIGHLIGHT_STYLE_ID = "hireall-job-highlight-style";
 const DEFAULT_ACCENTS: Record<HighlightConfig["status"], string> = {
@@ -66,7 +67,7 @@ function ensureStyles(): void {
       border-radius: 12px;
       border: 1px solid var(--hireall-border, rgba(37, 99, 235, 0.6));
       background: var(--hireall-surface, rgba(37, 99, 235, 0.12));
-      transition: border-color 150ms ease, background 150ms ease, box-shadow 150ms ease;
+      transition: ${createTransition(["border-color", "background", "box-shadow"], "fast", "easeInOut")};
       box-shadow: 0 6px 16px rgba(17, 24, 39, 0.08);
       overflow: hidden;
     }

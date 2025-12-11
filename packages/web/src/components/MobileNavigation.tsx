@@ -65,7 +65,7 @@ export default function MobileNavigation() {
               key={item.name}
               href={item.href}
               className={cn(
-                "flex flex-col items-center justify-center py-3 px-2 rounded-lg transition-all duration-200 min-w-0 flex-1 mobile-full-width",
+                "flex flex-col items-center justify-center py-3 px-2 rounded-lg motion-control min-w-0 flex-1 mobile-full-width",
                 isActive
                   ? "bg-primary/10 text-primary"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/50"

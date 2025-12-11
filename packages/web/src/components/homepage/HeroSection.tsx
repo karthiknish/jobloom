@@ -97,14 +97,14 @@ export function HeroSection() {
             className="flex flex-col sm:flex-row gap-4 justify-center items-center px-4"
           >
             <Link href="/sign-in">
-              <Button size="lg" className="w-full sm:w-auto text-lg px-8 py-4 h-14 group bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-primary/25 transition-all duration-300">
+              <Button size="lg" className="w-full sm:w-auto text-lg px-8 py-4 h-14 group bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-primary/25">
                 <Zap className="mr-2 h-5 w-5 group-hover:animate-pulse" />
                 Start Free Today
                 <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
               </Button>
             </Link>
             <Link href="/sign-up">
-              <Button variant="outline" size="lg" className="w-full sm:w-auto text-lg px-8 py-4 h-14 border-2 hover:bg-accent/10 hover:border-accent/50 hover:shadow-accent/10 transition-all duration-300">
+              <Button variant="outline" size="lg" className="w-full sm:w-auto text-lg px-8 py-4 h-14 border-2 hover:bg-accent/10 hover:border-accent/50 hover:shadow-accent/10">
                 <Shield className="mr-2 h-5 w-5" />
                 Create Account
               </Button>
@@ -123,8 +123,8 @@ export function HeroSection() {
               target="_blank"
               rel="noopener noreferrer"
             >
-              <Button variant="ghost" className="text-sm text-muted-foreground hover:text-foreground group hover:bg-accent/5 transition-all duration-300">
-                <div className="w-6 h-6 mr-2 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-md group-hover:shadow-lg group-hover:from-blue-600 group-hover:to-blue-700 transition-all">
+              <Button variant="ghost" className="text-sm text-muted-foreground hover:text-foreground group hover:bg-accent/5">
+                <div className="w-6 h-6 mr-2 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-md group-hover:shadow-lg group-hover:from-blue-600 group-hover:to-blue-700 motion-control">
                   <div className="w-3.5 h-3.5 bg-white rounded-sm"></div>
                 </div>
                 <span className="font-medium">Install Chrome Extension</span>

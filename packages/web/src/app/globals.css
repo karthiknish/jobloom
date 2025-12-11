@@ -71,6 +71,54 @@ html {
   /* #34d399 */
 }
 
+/*
+ * Centralized motion utilities
+ * Use these classes instead of ad-hoc transition/duration/ease combos.
+ */
+.motion-control {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform;
+  transition-duration: var(--motion-duration-fast);
+  transition-timing-function: var(--motion-ease-out);
+}
+
+.motion-surface {
+  transition-property: box-shadow, transform, border-color, background-color;
+  transition-duration: var(--motion-duration-medium);
+  transition-timing-function: var(--motion-ease-out);
+}
+
+.motion-progress {
+  transition-property: width, transform, opacity, background-color;
+  transition-duration: var(--motion-duration-medium);
+  transition-timing-function: var(--motion-ease-in-out);
+}
+
+.motion-layout {
+  transition-property: transform, width, height, padding-left, padding-right, margin-left, margin-right, opacity;
+  transition-duration: var(--motion-duration-medium);
+  transition-timing-function: var(--motion-ease-in-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-control,
+  .motion-surface,
+  .motion-progress,
+  .motion-layout,
+  .motion-fade-in,
+  .motion-fade-in-delayed,
+  .motion-slide-up,
+  .motion-scale-in,
+  .motion-fade-in-out,
+  .motion-card,
+  .motion-link,
+  .motion-button,
+  .motion-stagger > * {
+    transition-duration: 1ms !important;
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
 
 /* Map to shadcn token names so UI components pick these up */
 :root {

@@ -136,16 +136,16 @@ export function FeaturesSection() {
               whileHover={{ y: -5 }}
               className="group relative"
             >
-              <div className={`h-full p-8 rounded-2xl bg-gradient-to-br ${feature.gradient} border ${feature.borderColor} ${feature.hoverBorderColor} backdrop-blur-sm transition-all duration-300 hover:shadow-xl hover:shadow-primary/10`}>
+              <div className={`h-full p-8 rounded-2xl bg-gradient-to-br ${feature.gradient} border ${feature.borderColor} ${feature.hoverBorderColor} backdrop-blur-sm motion-surface hover:shadow-xl hover:shadow-primary/10`}>
                 {/* Animated Background Pattern */}
-                <div className={`absolute inset-0 bg-gradient-to-br ${feature.color} opacity-0 group-hover:opacity-5 rounded-2xl transition-opacity duration-300`}></div>
+                <div className={`absolute inset-0 bg-gradient-to-br ${feature.color} opacity-0 group-hover:opacity-5 rounded-2xl motion-control`}></div>
                 
                 <div className="relative z-10">
-                  <div className={`inline-flex p-4 rounded-2xl bg-gradient-to-br ${feature.color} text-white mb-6 shadow-lg group-hover:shadow-xl group-hover:scale-110 transition-all duration-300`}>
+                  <div className={`inline-flex p-4 rounded-2xl bg-gradient-to-br ${feature.color} text-white mb-6 shadow-lg group-hover:shadow-xl group-hover:scale-110 motion-control`}>
                     <feature.icon className="h-7 w-7" />
                   </div>
                   
-                  <h3 className="text-xl font-bold text-foreground mb-4 group-hover:text-primary transition-colors duration-300">
+                  <h3 className="text-xl font-bold text-foreground mb-4 group-hover:text-primary motion-control">
                     {feature.title}
                   </h3>
                   
@@ -176,11 +176,11 @@ export function FeaturesSection() {
               whileHover={{ scale: 1.05, y: -5 }}
               className="group"
             >
-              <div className={`text-center p-8 rounded-2xl ${stat.bgColor} border border-white/20 shadow-lg group-hover:shadow-xl transition-all duration-300 backdrop-blur-sm`}>
-                <div className={`inline-flex p-4 rounded-2xl ${stat.iconBg} text-white mx-auto mb-6 shadow-lg group-hover:shadow-xl group-hover:scale-110 transition-all duration-300`}>
+              <div className={`text-center p-8 rounded-2xl ${stat.bgColor} border border-white/20 shadow-lg group-hover:shadow-xl motion-surface backdrop-blur-sm`}>
+                <div className={`inline-flex p-4 rounded-2xl ${stat.iconBg} text-white mx-auto mb-6 shadow-lg group-hover:shadow-xl group-hover:scale-110 motion-control`}>
                   <stat.icon className="h-8 w-8" />
                 </div>
-                <h4 className={`font-bold text-xl text-foreground mb-3 group-hover:${stat.color} transition-colors duration-300`}>
+                <h4 className={`font-bold text-xl text-foreground mb-3 group-hover:${stat.color} motion-control`}>
                   {stat.title}
                 </h4>
                 <p className="text-muted-foreground leading-relaxed">

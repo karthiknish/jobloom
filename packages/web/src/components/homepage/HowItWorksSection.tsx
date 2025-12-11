@@ -111,10 +111,10 @@ export function HowItWorksSection() {
                   </div>
                 )}
                 
-                <div className={`relative p-8 rounded-2xl ${step.bgColor} border border-white/20 shadow-lg group-hover:shadow-xl transition-all duration-300 backdrop-blur-sm`}>
+                <div className={`relative p-8 rounded-2xl ${step.bgColor} border border-white/20 shadow-lg group-hover:shadow-xl motion-surface backdrop-blur-sm`}>
                   {/* Step Number and Icon */}
                   <div className="relative mb-6">
-                    <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-white to-white/50 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-md">
+                    <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-white to-white/50 flex items-center justify-center group-hover:scale-110 motion-control shadow-md">
                       <span className="text-3xl font-bold text-primary">{step.step}</span>
                     </div>
                     
@@ -122,7 +122,7 @@ export function HowItWorksSection() {
                     <motion.div 
                       animate={{ y: [0, -5, 0] }}
                       transition={{ duration: 2, repeat: Infinity, delay: index * 0.5 }}
-                      className="absolute -top-3 -right-3 w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-white shadow-lg group-hover:shadow-xl group-hover:scale-110 transition-all duration-300"
+                      className="absolute -top-3 -right-3 w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-white shadow-lg group-hover:shadow-xl group-hover:scale-110 motion-control"
                     >
                       <step.icon className="h-6 w-6" />
                     </motion.div>
@@ -155,14 +155,14 @@ export function HowItWorksSection() {
             whileHover={{ scale: 1.05 }}
             className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 shadow-lg group cursor-pointer"
           >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-white shadow-md group-hover:shadow-lg group-hover:scale-110 transition-all duration-300">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-white shadow-md group-hover:shadow-lg group-hover:scale-110 motion-control">
               <Download className="h-5 w-5" />
             </div>
             <div className="text-left">
               <div className="font-semibold text-foreground">Ready to get started?</div>
               <div className="text-sm text-muted-foreground">Free to use • No credit card required • Works everywhere</div>
             </div>
-            <ArrowRight className="h-5 w-5 text-primary group-hover:translate-x-1 transition-transform duration-300" />
+            <ArrowRight className="h-5 w-5 text-primary group-hover:translate-x-1 motion-control" />
           </motion.div>
         </motion.div>
       </div>

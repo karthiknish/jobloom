@@ -183,7 +183,7 @@ export function KanbanBoard({
                     onDragStart={onDragStart(a._id)}
                     className={`
                       group relative rounded-lg bg-card border border-border/60 p-3 shadow-sm 
-                      hover:shadow-md hover:border-primary/30 transition-all duration-200 cursor-grab active:cursor-grabbing
+                      hover:shadow-md hover:border-primary/30 motion-surface cursor-grab active:cursor-grabbing
                       ${draggedId === a._id ? 'opacity-50 ring-2 ring-primary ring-offset-2' : ''}
                     `}
                   >

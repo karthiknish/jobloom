@@ -348,7 +348,7 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted, onResum
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* File Upload Area */}
             <motion.div
-              className={`relative border-2 border-dashed rounded-lg p-8 transition-all duration-300 cursor-pointer ${
+              className={`relative border-2 border-dashed rounded-lg p-8 motion-surface cursor-pointer ${
                 dragActive
                   ? "border-primary bg-primary/5 shadow-lg"
                   : "border-muted-foreground/25 hover:border-muted-foreground/50 hover:shadow-md"

@@ -398,7 +398,7 @@ export function JobImportModal({
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setImportMethod("extension")}
-                className={`relative p-4 rounded-xl border-2 transition-all duration-200 text-left ${
+                className={`relative p-4 rounded-xl border-2 motion-control text-left ${
                   importMethod === "extension"
                     ? "border-emerald-500 bg-emerald-50 shadow-md"
                     : "border-border hover:border-emerald-200 hover:bg-emerald-50/50"
@@ -436,7 +436,7 @@ export function JobImportModal({
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setImportMethod("csv")}
-                className={`relative p-4 rounded-xl border-2 transition-all duration-200 text-left ${
+                className={`relative p-4 rounded-xl border-2 motion-control text-left ${
                   importMethod === "csv"
                     ? "border-emerald-500 bg-emerald-50 shadow-md"
                     : "border-border hover:border-emerald-200 hover:bg-emerald-50/50"
@@ -469,7 +469,7 @@ export function JobImportModal({
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setImportMethod("api")}
-                className={`relative p-4 rounded-xl border-2 transition-all duration-200 text-left ${
+                className={`relative p-4 rounded-xl border-2 motion-control text-left ${
                   importMethod === "api"
                     ? "border-blue-500 bg-blue-50 shadow-md"
                     : "border-border hover:border-blue-200 hover:bg-blue-50/50"

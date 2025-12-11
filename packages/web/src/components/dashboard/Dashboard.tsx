@@ -256,7 +256,7 @@ export function Dashboard() {
             {/* Total Applications */}
             <motion.div
               whileHover={{ scale: 1.02, y: -2 }}
-              className="bg-card border border-border rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300"
+              className="bg-card border border-border rounded-xl p-4 shadow-sm hover:shadow-md motion-surface"
             >
               <div className="flex items-center justify-between">
                 <div>
@@ -273,7 +273,7 @@ export function Dashboard() {
             {/* Sponsored Jobs */}
             <motion.div
               whileHover={{ scale: 1.02, y: -2 }}
-              className="bg-card border border-border rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300"
+              className="bg-card border border-border rounded-xl p-4 shadow-sm hover:shadow-md motion-surface"
             >
               <div className="flex items-center justify-between">
                 <div>
@@ -294,7 +294,7 @@ export function Dashboard() {
             {/* Interview Rate */}
             <motion.div
               whileHover={{ scale: 1.02, y: -2 }}
-              className="bg-card border border-border rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300"
+              className="bg-card border border-border rounded-xl p-4 shadow-sm hover:shadow-md motion-surface"
             >
               <div className="flex items-center justify-between">
                 <div>
@@ -317,7 +317,7 @@ export function Dashboard() {
             {/* This Week Activity */}
             <motion.div
               whileHover={{ scale: 1.02, y: -2 }}
-              className="bg-card border border-border rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300"
+              className="bg-card border border-border rounded-xl p-4 shadow-sm hover:shadow-md motion-surface"
             >
               <div className="flex items-center justify-between">
                 <div>
@@ -368,7 +368,7 @@ export function Dashboard() {
               >
                 <TabsTrigger
                   value="dashboard"
-                  className="px-5 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-300 rounded-lg font-medium text-sm"
+                  className="px-5 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md motion-control rounded-lg font-medium text-sm"
                 >
                   Overview
                 </TabsTrigger>
@@ -379,7 +379,7 @@ export function Dashboard() {
               >
                 <TabsTrigger
                   value="jobs"
-                  className="px-5 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-300 rounded-lg font-medium text-sm"
+                  className="px-5 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md motion-control rounded-lg font-medium text-sm"
                 >
                   Jobs <Badge variant="secondary" className="ml-1.5 text-[10px] px-1.5 py-0 bg-muted/80">{applications?.length || 0}</Badge>
                 </TabsTrigger>
@@ -390,7 +390,7 @@ export function Dashboard() {
               >
                 <TabsTrigger
                   value="analytics"
-                  className="px-5 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-300 rounded-lg font-medium text-sm"
+                  className="px-5 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md motion-control rounded-lg font-medium text-sm"
                 >
                   Analytics
                 </TabsTrigger>

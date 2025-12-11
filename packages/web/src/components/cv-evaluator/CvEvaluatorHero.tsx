@@ -42,7 +42,7 @@ export function CvEvaluatorHero({ showAdvanced, setShowAdvanced }: CvEvaluatorHe
                       variant="outline"
                       size="lg"
                       onClick={() => setShowAdvanced(!showAdvanced)}
-                      className="bg-white/10 border-white/20 text-white hover:bg-white/20 hover:border-white/30 transition-all duration-200"
+                      className="bg-white/10 border-white/20 text-white hover:bg-white/20 hover:border-white/30"
                     >
                       <Settings className="h-5 w-5" />
                     </Button>

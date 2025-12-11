@@ -64,12 +64,8 @@ export function AnalyticsProvider({
         await ensureFirebaseApp();
         await analyticsService.initialize();
         setIsInitialized(true);
-        
-        if (enableDebugMode) {
-          console.log('[AnalyticsProvider] Analytics initialized');
-        }
       } catch (error) {
-        console.error('[AnalyticsProvider] Failed to initialize analytics:', error);
+        // Intentionally no console logging here.
       }
     };
 
@@ -100,10 +96,6 @@ export function AnalyticsProvider({
 
     currentPageRef.current = pageName;
     pageStartTimeRef.current = Date.now();
-
-    if (enableDebugMode) {
-      console.log(`[AnalyticsProvider] Page view tracked: ${pageName}`);
-    }
   }, [pathname, isInitialized, autoPageViewTracking, enableDebugMode]);
 
   // Update user properties when user changes
@@ -120,10 +112,6 @@ export function AnalyticsProvider({
 
       analyticsService.setUserProperties(properties);
       setUserProperties(properties);
-
-      if (enableDebugMode) {
-        console.log('[AnalyticsProvider] User properties updated:', user.uid);
-      }
     } else {
       analyticsService.clearUserId();
       setUserProperties(null);

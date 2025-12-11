@@ -209,7 +209,7 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.4 }}
         >
-          <Card className="group hover:shadow-xl transition-shadow duration-300">
+          <Card className="group hover:shadow-xl">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <TrendingUp className="h-6 w-6" />
@@ -228,7 +228,7 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
                               status as keyof typeof statusVariants
                             ] || "secondary"
                           }
-                          className="px-3 py-1 font-medium shadow-sm group-hover/status:shadow-md transition-shadow"
+                          className="px-3 py-1 font-medium shadow-sm group-hover/status:shadow-md motion-control"
                         >
                           {statusLabels[status as keyof typeof statusLabels] ||
                             status}
@@ -272,7 +272,7 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.5 }}
         >
-          <Card className="group hover:shadow-xl transition-shadow duration-300">
+          <Card className="group hover:shadow-xl">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Building className="w-6 h-6 text-primary" />
@@ -284,9 +284,9 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <div className="group/insight flex items-center justify-between p-4 bg-card border   rounded-xl hover:from-muted/80 hover:to-muted/60   transition-all duration-300 cursor-help">
+                      <div className="group/insight flex items-center justify-between p-4 bg-card border rounded-xl hover:from-muted/80 hover:to-muted/60 motion-surface cursor-help">
                         <div className="flex items-center">
-                          <div className="p-3 rounded-xl bg-blue-500 shadow-md group-hover/insight:shadow-lg transition-shadow">
+                          <div className="p-3 rounded-xl bg-blue-500 shadow-md group-hover/insight:shadow-lg motion-control">
                             <Building className="w-5 h-5 text-white" />
                           </div>
                           <div className="ml-4">
@@ -312,9 +312,9 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <div className="group/insight flex items-center justify-between p-4 bg-card   rounded-xl hover:from-orange-100 hover:to-orange-200   transition-all duration-300 cursor-help">
+                      <div className="group/insight flex items-center justify-between p-4 bg-card rounded-xl hover:from-orange-100 hover:to-orange-200 motion-surface cursor-help">
                         <div className="flex items-center">
-                          <div className="p-3 rounded-xl bg-orange-500 shadow-md group-hover/insight:shadow-lg transition-shadow">
+                          <div className="p-3 rounded-xl bg-orange-500 shadow-md group-hover/insight:shadow-lg motion-control">
                             <MapPin className="h-6 w-6 text-white" />
                           </div>
                           <div className="ml-4">
@@ -337,9 +337,9 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
                   </Tooltip>
                 </TooltipProvider>
 
-                <div className="group/insight flex items-center justify-between p-4 bg-card   rounded-xl hover:from-green-100 hover:to-green-200   transition-all duration-300">
+                <div className="group/insight flex items-center justify-between p-4 bg-card rounded-xl hover:from-green-100 hover:to-green-200 motion-surface">
                   <div className="flex items-center">
-                    <div className="p-3 rounded-xl bg-green-500 shadow-md group-hover/insight:shadow-lg transition-shadow">
+                    <div className="p-3 rounded-xl bg-green-500 shadow-md group-hover/insight:shadow-lg motion-control">
                       <TrendingUp className="h-6 w-6 text-white" />
                     </div>
                     <div className="ml-4">

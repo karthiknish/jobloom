@@ -152,14 +152,14 @@ export function SkillsForm({ data, onChange }: SkillsFormProps) {
           <div
             key={index}
             className={cn(
-              "border rounded-xl overflow-hidden transition-all duration-200",
+              "border rounded-xl overflow-hidden motion-surface",
               "hover:shadow-md hover:border-primary/20"
             )}
           >
             {/* Category Header */}
             <div
               className={cn(
-                "flex items-center justify-between px-5 py-4 cursor-pointer transition-colors",
+                "flex items-center justify-between px-5 py-4 cursor-pointer motion-control",
                 "bg-gradient-to-r from-muted/50 to-muted/30 hover:from-muted/70 hover:to-muted/50"
               )}
               onClick={() => toggleCategory(index)}

@@ -4,9 +4,9 @@
 export const animations = {
   // Duration constants (in seconds)
   duration: {
-    fast: 0.15,
-    normal: 0.25,
-    slow: 0.35,
+    fast: 0.18,
+    normal: 0.26,
+    slow: 0.36,
     slower: 0.5,
     slowest: 0.75,
   },
@@ -17,9 +17,9 @@ export const animations = {
     linear: "linear",
     
     // Standard
-    easeIn: "cubic-bezier(0.4, 0, 1, 1)",
-    easeOut: "cubic-bezier(0, 0, 0.2, 1)",
-    easeInOut: "cubic-bezier(0.4, 0, 0.2, 1)",
+    easeIn: "cubic-bezier(0.32, 0, 0.67, 0)",
+    easeOut: "cubic-bezier(0.16, 1, 0.3, 1)",
+    easeInOut: "cubic-bezier(0.65, 0, 0.35, 1)",
     
     // Custom easing for specific effects
     smooth: "cubic-bezier(0.25, 0.46, 0.45, 0.94)",
@@ -35,13 +35,13 @@ export const animations = {
       initial: { opacity: 0 },
       animate: { opacity: 1 },
       exit: { opacity: 0 },
-      transition: { duration: 0.2, ease: "easeOut" },
+      transition: { duration: 0.18, ease: [0.16, 1, 0.3, 1] },
     },
 
     fadeOut: {
       initial: { opacity: 1 },
       animate: { opacity: 0 },
-      transition: { duration: 0.2, ease: "easeIn" },
+      transition: { duration: 0.18, ease: [0.32, 0, 0.67, 0] },
     },
 
     // Slide transitions
@@ -49,28 +49,28 @@ export const animations = {
       initial: { opacity: 0, y: -20 },
       animate: { opacity: 1, y: 0 },
       exit: { opacity: 0, y: -20 },
-      transition: { duration: 0.3, ease: "easeOut" },
+      transition: { duration: 0.26, ease: [0.16, 1, 0.3, 1] },
     },
 
     slideInFromBottom: {
       initial: { opacity: 0, y: 20 },
       animate: { opacity: 1, y: 0 },
       exit: { opacity: 0, y: 20 },
-      transition: { duration: 0.3, ease: "easeOut" },
+      transition: { duration: 0.26, ease: [0.16, 1, 0.3, 1] },
     },
 
     slideInFromLeft: {
       initial: { opacity: 0, x: -20 },
       animate: { opacity: 1, x: 0 },
       exit: { opacity: 0, x: -20 },
-      transition: { duration: 0.3, ease: "easeOut" },
+      transition: { duration: 0.26, ease: [0.16, 1, 0.3, 1] },
     },
 
     slideInFromRight: {
       initial: { opacity: 0, x: 20 },
       animate: { opacity: 1, x: 0 },
       exit: { opacity: 0, x: 20 },
-      transition: { duration: 0.3, ease: "easeOut" },
+      transition: { duration: 0.26, ease: [0.16, 1, 0.3, 1] },
     },
 
     // Scale transitions
@@ -78,13 +78,13 @@ export const animations = {
       initial: { opacity: 0, scale: 0.95 },
       animate: { opacity: 1, scale: 1 },
       exit: { opacity: 0, scale: 0.95 },
-      transition: { duration: 0.2, ease: "easeOut" },
+      transition: { duration: 0.18, ease: [0.16, 1, 0.3, 1] },
     },
 
     scaleOut: {
       initial: { opacity: 1, scale: 1 },
       animate: { opacity: 0, scale: 0.95 },
-      transition: { duration: 0.2, ease: "easeIn" },
+      transition: { duration: 0.18, ease: [0.32, 0, 0.67, 0] },
     },
 
     // Bounce effects
