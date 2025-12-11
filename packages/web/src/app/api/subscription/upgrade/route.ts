@@ -49,6 +49,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Session does not belong to this user" }, { status: 403 });
     }
 
+    // Ensure checkout is actually completed and paid before we persist entitlement.
+    // For subscriptions, Stripe typically sets session.status='complete' and payment_status='paid'.
+    if (session.status !== "complete") {
+      return NextResponse.json({ error: "Checkout session is not complete" }, { status: 409 });
+    }
+
+    if (session.payment_status !== "paid" && session.payment_status !== "no_payment_required") {
+      return NextResponse.json({ error: "Payment not confirmed for this checkout session" }, { status: 409 });
+    }
+
     const subscriptionId = typeof session.subscription === "string"
       ? session.subscription
       : session.subscription?.id;
@@ -60,8 +70,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const plan = session.metadata?.plan ?? "premium";
-    const billingCycle = session.metadata?.billingCycle ?? undefined;
+    const planFromMetadata = session.metadata?.plan ?? "premium";
+    if (planFromMetadata !== "premium") {
+      return NextResponse.json({ error: "Invalid plan in checkout session metadata" }, { status: 400 });
+    }
+
+    const plan = "premium";
 
     const subscription = await getStripe().subscriptions.retrieve(subscriptionId);
 

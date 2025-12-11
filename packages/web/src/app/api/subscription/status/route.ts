@@ -124,7 +124,10 @@ export async function GET(request: NextRequest) {
             collectionMethod: data.collectionMethod ?? null,
           };
 
-          if (subscription.plan in SUBSCRIPTION_LIMITS) {
+          // Only treat subscription tier as effective when it is currently usable.
+          // This matches server-side enforcement in usage-limited endpoints.
+          const isActive = subscription.status === "active";
+          if (isActive && subscription.plan in SUBSCRIPTION_LIMITS) {
             plan = subscription.plan;
           }
         }

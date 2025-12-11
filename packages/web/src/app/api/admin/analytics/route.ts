@@ -45,7 +45,11 @@ export async function GET(req: NextRequest) {
 
     // Calculate user metrics
     const totalUsers = users.length;
-    const premiumUsers = users.filter((u: any) => u.subscriptionPlan === 'premium').length;
+    const premiumUsers = users.filter((u: any) => {
+      const isPremiumActive = u.subscriptionStatus === 'active';
+      const isLegacyPremium = !u.subscriptionStatus && u.subscriptionPlan === 'premium';
+      return isPremiumActive || isLegacyPremium;
+    }).length;
     const freeUsers = totalUsers - premiumUsers;
     
     const newUsersToday = users.filter((u: any) => {

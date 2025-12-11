@@ -7,6 +7,7 @@ const db: Firestore = getAdminDb();
 
 interface CheckoutRequestBody {
   plan: "premium";
+  billingCycle?: "monthly" | "annual";
 }
 
 export async function POST(request: NextRequest) {
@@ -51,10 +52,53 @@ export async function POST(request: NextRequest) {
 
     const userRef = db.collection("users").doc(userId);
     const userDoc = await userRef.get();
-    const userData = userDoc.data() as { email?: string; stripeCustomerId?: string } | undefined;
+    const userData = userDoc.data() as
+      | { email?: string; stripeCustomerId?: string; subscriptionId?: string }
+      | undefined;
 
     if (!userData) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // If the user already has an active subscription, don't create another checkout session.
+    // This prevents accidental double-billing if UI state is stale.
+    const existingSubscriptionId = userData?.subscriptionId;
+    if (existingSubscriptionId) {
+      try {
+        const subDoc = await db.collection("subscriptions").doc(existingSubscriptionId).get();
+        const subData = subDoc.data() as any;
+
+        if (subData?.status === "active") {
+          return NextResponse.json(
+            {
+              error: subData?.cancelAtPeriodEnd
+                ? "You already have an active subscription that is set to cancel. You can resume it from settings."
+                : "You already have an active subscription.",
+              code: "SUBSCRIPTION_ALREADY_ACTIVE",
+              actions: {
+                resumeUrl: subData?.cancelAtPeriodEnd ? "/api/subscription/resume" : null,
+                portalUrl: "/api/subscription/portal",
+              },
+            },
+            { status: 409 }
+          );
+        }
+
+        if (subData?.status === "past_due" || subData?.status === "inactive") {
+          return NextResponse.json(
+            {
+              error: "Your subscription needs attention (payment or status issue). Please use the billing portal.",
+              code: "SUBSCRIPTION_REQUIRES_ACTION",
+              actions: {
+                portalUrl: "/api/subscription/portal",
+              },
+            },
+            { status: 409 }
+          );
+        }
+      } catch {
+        // If we can't read subscription state, proceed to create session (best-effort).
+      }
     }
 
     let stripeCustomerId = userData.stripeCustomerId;

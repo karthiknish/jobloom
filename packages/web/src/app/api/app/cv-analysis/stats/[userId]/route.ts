@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyIdToken, getAdminDb } from "@/firebase/admin";
+import { getAdminDb } from "@/firebase/admin";
+import { authenticateRequest } from "@/lib/api/auth";
 
 // Get Firestore instance using the centralized admin initialization
 const db = getAdminDb();
@@ -11,16 +12,13 @@ export async function GET(
 ) {
   const { userId } = await params;
   try {
-    const authHeader = request.headers.get("authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await authenticateRequest(request, { loadUser: true });
+    if (!auth.ok) {
+      return auth.response;
     }
 
-    const token = authHeader.substring(7);
-    const decodedToken = await verifyIdToken(token);
-
-    if (!decodedToken) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+    if (auth.token.uid !== userId && !auth.isAdmin) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     // Fetch CV analyses from Firestore

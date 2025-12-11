@@ -240,29 +240,45 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 });
     }
 
+    const userId = decodedToken.uid;
+
   debug.step = 'reading-form-data';
   const formData = await request.formData();
     const file = formData.get("file") as File;
-    const userId = formData.get("userId") as string;
+    const userIdProvided = formData.get("userId") as string | null;
     const targetRole = formData.get("targetRole") as string;
     const industry = formData.get("industry") as string;
 
     console.log("CV Upload request received:");
     console.log("- file:", file ? `${file.name} (${file.size} bytes)` : "null");
     console.log("- userId:", userId || "null");
+    console.log("- userIdProvided:", userIdProvided || "null");
     console.log("- targetRole:", targetRole || "null");
     console.log("- industry:", industry || "null");
 
-    if (!file || !userId) {
-      console.error("Missing required fields:", { file: !!file, userId: !!userId });
+    if (userIdProvided && userIdProvided !== userId) {
       SecurityLogger.logSecurityEvent({
         type: 'invalid_input',
-        userId: userId || 'unknown',
-        details: { missingFields: { file: !file, userId: !userId } },
+        userId,
+        details: { reason: 'user_id_mismatch', userIdProvided },
+        severity: 'high'
+      });
+      return NextResponse.json(
+        { error: "Forbidden" },
+        { status: 403 }
+      );
+    }
+
+    if (!file) {
+      console.error("Missing required fields:", { file: !!file });
+      SecurityLogger.logSecurityEvent({
+        type: 'invalid_input',
+        userId,
+        details: { missingFields: { file: !file } },
         severity: 'medium'
       });
       return NextResponse.json(
-        { error: "Missing file or userId", received: { file: !!file, userId: !!userId } },
+        { error: "Missing file", received: { file: !!file } },
         { status: 400 }
       );
     }

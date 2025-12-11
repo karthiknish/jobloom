@@ -42,7 +42,9 @@ export async function GET(request: NextRequest) {
         activeUsersLast7Days++;
       }
 
-      if (data.subscriptionStatus === 'active' || data.subscriptionPlan === 'premium') {
+      const isPremiumActive = data.subscriptionStatus === 'active';
+      const isLegacyPremium = !data.subscriptionStatus && data.subscriptionPlan === 'premium';
+      if (isPremiumActive || isLegacyPremium) {
         premiumUsers++;
       } else {
         freeUsers++;

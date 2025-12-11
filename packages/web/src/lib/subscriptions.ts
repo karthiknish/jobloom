@@ -217,6 +217,10 @@ export async function upsertSubscriptionFromStripe(options: {
     const billingCycle = inferBillingCycle(subscription);
     const subscriptionStatus = mapStripeStatus(subscription.status);
 
+    // Effective plan should reflect whether the subscription is currently usable.
+    // This keeps UI + server enforcement consistent (e.g. past_due/cancelled should not be treated as premium).
+    const effectiveUserPlan: SubscriptionPlan = subscriptionStatus === "active" ? resolvedPlan : "free";
+
     // Use retry logic for database operations
     await withRetry(async () => {
       await db.runTransaction(async (txn) => {
@@ -276,7 +280,10 @@ export async function upsertSubscriptionFromStripe(options: {
         {
           subscriptionId: subscription.id,
           stripeCustomerId: customerId,
-          plan: resolvedPlan,
+          // plan = effective plan used for gating in many places
+          plan: effectiveUserPlan,
+          // subscriptionPlan = the user's actual subscribed tier (useful for analytics/admin views)
+          subscriptionPlan: resolvedPlan,
           subscriptionStatus,
           subscriptionCancelAtPeriodEnd: subscription.cancel_at_period_end,
           subscriptionTrialEndsAt: trialEndTs ?? null,
