@@ -10,6 +10,7 @@ import Footer from "@/components/Footer";
 import Chatbot from "@/components/Chatbot";
 import MobileNavigation from "@/components/MobileNavigation";
 import { AnalyticsProvider } from "@/providers/analytics-provider";
+import { PerformanceProvider } from "@/providers/performance-provider";
 import { SeoHead } from "@/components/SeoHead";
 import EmailVerificationBanner from "@/components/EmailVerificationBanner";
 import { ReportIssue } from "@/components/ReportIssue";
@@ -39,14 +40,16 @@ export default function RootLayout({
         <FirebaseAuthProvider>
           <SubscriptionProvider>
             <AnalyticsProvider>
-              <Header />
-              <EmailVerificationBanner />
-              {children}
-              <Footer />
-              <MobileNavigation />
-              <AppToaster />
-              <Chatbot />
-              <ReportIssue position="bottom-left" />
+              <PerformanceProvider>
+                <Header />
+                <EmailVerificationBanner />
+                {children}
+                <Footer />
+                <MobileNavigation />
+                <AppToaster />
+                <Chatbot />
+                <ReportIssue position="bottom-left" />
+              </PerformanceProvider>
             </AnalyticsProvider>
           </SubscriptionProvider>
         </FirebaseAuthProvider>

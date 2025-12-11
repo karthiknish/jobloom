@@ -129,6 +129,33 @@ export const TIERED_RATE_LIMITS: Record<string, UserTierLimits> = {
     premium: { maxRequests: 120, windowMs: 60000 },
     admin: { maxRequests: 300, windowMs: 60000 },
   },
+
+  // AI operations - strict limits to protect Gemini API quota
+  'ai-generation': {
+    free: { maxRequests: 5, windowMs: 60000 },      // 5 per minute for free users
+    premium: { maxRequests: 20, windowMs: 60000 },  // 20 per minute for premium users
+    admin: { maxRequests: 50, windowMs: 60000 },    // 50 per minute for admins
+  },
+  'ai-cover-letter': {
+    free: { maxRequests: 3, windowMs: 60000 },      // 3 per minute
+    premium: { maxRequests: 15, windowMs: 60000 },  // 15 per minute
+    admin: { maxRequests: 30, windowMs: 60000 },    // 30 per minute
+  },
+  'ai-resume': {
+    free: { maxRequests: 3, windowMs: 60000 },
+    premium: { maxRequests: 15, windowMs: 60000 },
+    admin: { maxRequests: 30, windowMs: 60000 },
+  },
+  'ai-chatbot': {
+    free: { maxRequests: 10, windowMs: 60000 },     // 10 per minute (conversational)
+    premium: { maxRequests: 30, windowMs: 60000 },
+    admin: { maxRequests: 60, windowMs: 60000 },
+  },
+  'ai-editor': {
+    free: { maxRequests: 5, windowMs: 60000 },
+    premium: { maxRequests: 20, windowMs: 60000 },
+    admin: { maxRequests: 40, windowMs: 60000 },
+  },
 };
 
 // Default rate limits for backward compatibility

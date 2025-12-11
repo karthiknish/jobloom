@@ -1,10 +1,12 @@
 /**
  * Robust AI Client
  * 
- * Circuit breaker, retry logic, timeout, and caching for AI calls.
+ * Circuit breaker, retry logic, timeout, caching, rate limiting, and queue for AI calls.
  */
 
 import { GoogleGenerativeAI, type GenerativeModel } from '@google/generative-ai';
+import { checkServerRateLimit, type UserTier } from '@/lib/rateLimiter';
+import { aiQueue, AIQueueError, type RequestPriority } from './ai-queue';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 
@@ -132,16 +134,62 @@ export function getModel(modelName: string = DEFAULT_MODEL): GenerativeModel {
 export interface GenerateOptions {
   useCache?: boolean;
   operation?: string;
+  /** User ID for rate limiting */
+  userId?: string;
+  /** User tier for rate limit config */
+  userTier?: UserTier;
+  /** AI endpoint for rate limiting (e.g., 'ai-generation', 'ai-cover-letter') */
+  endpoint?: string;
+  /** Request priority in queue */
+  priority?: RequestPriority;
+  /** Skip queue and execute immediately (use with caution) */
+  skipQueue?: boolean;
+}
+
+/**
+ * Custom error for AI rate limiting
+ */
+export class AIRateLimitError extends Error {
+  constructor(
+    public retryAfter: number,
+    message?: string
+  ) {
+    super(message || `AI rate limit exceeded. Please try again in ${retryAfter} seconds.`);
+    this.name = 'AIRateLimitError';
+  }
 }
 
 export async function generateContentRobust(
   prompt: string,
   options: GenerateOptions = {}
 ): Promise<string> {
-  const { useCache = true, operation = 'AI generation' } = options;
+  const { 
+    useCache = true, 
+    operation = 'AI generation',
+    userId = 'anonymous',
+    userTier = 'free',
+    endpoint = 'ai-generation',
+    priority = 'normal',
+    skipQueue = false,
+  } = options;
+
+  // Check rate limit first
+  const rateCheck = checkServerRateLimit(userId, endpoint, undefined, userTier);
+  if (!rateCheck.allowed) {
+    console.warn(`[Gemini] Rate limit exceeded for ${userId} on ${endpoint}`);
+    throw new AIRateLimitError(
+      rateCheck.retryAfter || 60,
+      `AI rate limit exceeded. You can make ${rateCheck.maxRequests} requests per minute. Try again in ${rateCheck.retryAfter} seconds.`
+    );
+  }
 
   if (checkCircuitBreaker()) {
+    // Pause queue when circuit breaker is open
+    aiQueue.pause();
     throw new Error('AI service temporarily unavailable. Please try again in a moment.');
+  } else {
+    // Ensure queue is running when circuit breaker is closed
+    aiQueue.resume();
   }
 
   const cacheKey = getCacheKey(prompt);
@@ -150,42 +198,58 @@ export async function generateContentRobust(
     if (cached) return cached;
   }
 
-  let lastError: Error | null = null;
+  // Define the actual generation logic
+  const executeGeneration = async (): Promise<string> => {
+    let lastError: Error | null = null;
 
-  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-    try {
-      const model = getModel();
-      const result = await withTimeout(
-        model.generateContent(prompt),
-        TIMEOUT_MS,
-        operation
-      );
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      try {
+        const model = getModel();
+        const result = await withTimeout(
+          model.generateContent(prompt),
+          TIMEOUT_MS,
+          operation
+        );
 
-      const response = result.response.text().trim();
-      if (!response) throw new Error('Empty response from AI');
+        const response = result.response.text().trim();
+        if (!response) throw new Error('Empty response from AI');
 
-      recordSuccess();
-      if (useCache) cacheResponse(cacheKey, response);
+        recordSuccess();
+        if (useCache) cacheResponse(cacheKey, response);
 
-      return response;
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error));
-      console.warn(`[Gemini] Attempt ${attempt + 1}/${MAX_RETRIES} failed:`, lastError.message);
+        return response;
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        console.warn(`[Gemini] Attempt ${attempt + 1}/${MAX_RETRIES} failed:`, lastError.message);
 
-      if (lastError.message.includes('API key') || lastError.message.includes('not configured')) {
-        throw lastError;
-      }
+        if (lastError.message.includes('API key') || lastError.message.includes('not configured')) {
+          throw lastError;
+        }
 
-      if (attempt < MAX_RETRIES - 1) {
-        const delay = calculateBackoff(attempt);
-        console.log(`[Gemini] Retrying in ${Math.round(delay)}ms...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
+        // Check for rate limit errors from API
+        if (lastError.message.includes('429') || lastError.message.includes('rate limit') || lastError.message.includes('quota')) {
+          recordFailure();
+          throw new AIRateLimitError(60, 'Gemini API rate limit reached. Please try again later.');
+        }
+
+        if (attempt < MAX_RETRIES - 1) {
+          const delay = calculateBackoff(attempt);
+          console.log(`[Gemini] Retrying in ${Math.round(delay)}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
       }
     }
+
+    recordFailure();
+    throw lastError || new Error(`${operation} failed after ${MAX_RETRIES} attempts`);
+  };
+
+  // Execute through queue unless skipped
+  if (skipQueue) {
+    return executeGeneration();
   }
 
-  recordFailure();
-  throw lastError || new Error(`${operation} failed after ${MAX_RETRIES} attempts`);
+  return aiQueue.enqueue(executeGeneration, priority, userId);
 }
 
 // ============ JSON PARSING ============
