@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb } from "@/firebase/admin";
 import { verifySessionFromRequest } from "@/lib/auth/session";
+import { checkForSpam, recordSubmission } from "@/lib/spam-detection";
 
 interface Contact {
   id: string;
@@ -11,11 +12,20 @@ interface Contact {
   status: string;
   createdAt: string;
   updatedAt: string;
+  spamScore?: number;
+  isSpam?: boolean;
+  ip?: string;
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, email, message, subject } = await request.json();
+    const body = await request.json();
+    const { name, email, message, subject, honeypot, loadedAt, submittedAt } = body;
+
+    // Get client IP for rate limiting
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() 
+      || request.headers.get("x-real-ip") 
+      || "unknown";
 
     // Validate required fields
     if (!name || !email || !message) {
@@ -34,22 +44,63 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check for spam
+    const spamCheck = checkForSpam(
+      {
+        name: name.trim(),
+        email: email.toLowerCase().trim(),
+        message: message.trim(),
+        subject: subject?.trim(),
+        honeypot,
+        loadedAt: loadedAt ? Number(loadedAt) : undefined,
+        submittedAt: submittedAt ? Number(submittedAt) : Date.now(),
+      },
+      ip
+    );
+
+    // Block high-confidence spam immediately
+    if (spamCheck.shouldBlock) {
+      console.warn(`[Contact] Spam blocked from ${ip}:`, spamCheck.reasons);
+      // Return success to avoid giving spammers feedback
+      return NextResponse.json({
+        success: true,
+        message: "Thank you for your message. We'll be in touch soon.",
+        contactId: "blocked",
+      });
+    }
+
+    // Record submission for rate limiting
+    recordSubmission(ip);
+
     const db = getAdminDb();
     
-    // Create contact submission
+    // Create contact submission (flagged if suspected spam)
     const contactRef = db.collection('contacts').doc();
-    const contactData = {
+    const contactData: Partial<Contact> & { spamReasons?: string[] } = {
       id: contactRef.id,
       name: name.trim(),
       email: email.toLowerCase().trim(),
       message: message.trim(),
       subject: subject?.trim() || "General Inquiry",
-      status: "pending",
+      status: spamCheck.isSpam ? "spam" : "pending",
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      spamScore: spamCheck.score,
+      isSpam: spamCheck.isSpam,
+      ip: ip !== "unknown" ? ip : undefined,
     };
 
+    // Add spam reasons for admin review
+    if (spamCheck.isSpam && spamCheck.reasons.length > 0) {
+      contactData.spamReasons = spamCheck.reasons;
+    }
+
     await contactRef.set(contactData);
+
+    // Log spam detection for monitoring
+    if (spamCheck.score > 0) {
+      console.log(`[Contact] Submission from ${ip} - Score: ${spamCheck.score}, Spam: ${spamCheck.isSpam}, Reasons: ${spamCheck.reasons.join(', ')}`);
+    }
 
     return NextResponse.json({
       success: true,

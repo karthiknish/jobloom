@@ -5,7 +5,7 @@
   "description": "LinkedIn job sponsored highlighting and application tracking",
   "permissions": ["activeTab", "storage", "tabs", "identity"],
   "oauth2": {
-    "client_id": "105444066046533758791.apps.googleusercontent.com",
+    "client_id": "435727249201-m7shub7jknip68ajqh98c9vddq2m9qj5.apps.googleusercontent.com",
     "scopes": ["openid", "email", "profile"]
   },
   "host_permissions": [

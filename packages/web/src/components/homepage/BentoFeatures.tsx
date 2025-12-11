@@ -1,12 +1,10 @@
 import { BentoCard, BentoGrid } from "@/components/ui/BentoGrid";
+import Image from "next/image";
 import { 
   FileText, 
   PenTool, 
   MessageSquare, 
   LayoutDashboard, 
-  BarChart3,
-  Briefcase,
-  Sparkles
 } from "lucide-react";
 
 export function BentoFeatures() {
@@ -14,7 +12,17 @@ export function BentoFeatures() {
     {
       title: "AI Resume Builder",
       description: "Create ATS-optimized resumes in minutes. Our AI analyzes job descriptions and tailors your resume to match keywords perfectly.",
-      header: <div className="flex flex-1 w-full h-full min-h-[6rem] rounded-xl bg-gradient-to-br from-muted to-muted/50 border border-border" />,
+      header: (
+        <div className="flex flex-1 w-full h-full min-h-[6rem] rounded-xl overflow-hidden bg-gradient-to-br from-muted to-muted/50 border border-border">
+          <Image 
+            src="/images/bento/ai-resume-builder.png" 
+            alt="AI Resume Builder" 
+            width={400}
+            height={200}
+            className="w-full h-full object-cover"
+          />
+        </div>
+      ),
       icon: <FileText className="h-4 w-4 text-muted-foreground" />,
       className: "md:col-span-2",
       cta: "Build Resume",
@@ -23,7 +31,17 @@ export function BentoFeatures() {
     {
       title: "Smart Cover Letters",
       description: "Generate personalized cover letters that actually get read. No more generic templates.",
-      header: <div className="flex flex-1 w-full h-full min-h-[6rem] rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/10" />,
+      header: (
+        <div className="flex flex-1 w-full h-full min-h-[6rem] rounded-xl overflow-hidden bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/10">
+          <Image 
+            src="/images/bento/smart-cover-letter.png" 
+            alt="Smart Cover Letters" 
+            width={300}
+            height={200}
+            className="w-full h-full object-cover"
+          />
+        </div>
+      ),
       icon: <PenTool className="h-4 w-4 text-primary" />,
       className: "md:col-span-1",
       cta: "Write Letter",
@@ -32,7 +50,17 @@ export function BentoFeatures() {
     {
       title: "Volunteer Program",
       description: "Gain real experience working with UK clients. Build your portfolio while helping others.",
-      header: <div className="flex flex-1 w-full h-full min-h-[6rem] rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100" />,
+      header: (
+        <div className="flex flex-1 w-full h-full min-h-[6rem] rounded-xl overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100">
+          <Image 
+            src="/images/bento/volunteer-program.png" 
+            alt="Volunteer Program" 
+            width={300}
+            height={200}
+            className="w-full h-full object-cover"
+          />
+        </div>
+      ),
       icon: <MessageSquare className="h-4 w-4 text-blue-500" />,
       className: "md:col-span-1",
       cta: "Learn More",
@@ -41,7 +69,17 @@ export function BentoFeatures() {
     {
       title: "Application Tracker",
       description: "Kanban board to organize your job search. Never miss a follow-up again.",
-      header: <div className="flex flex-1 w-full h-full min-h-[6rem] rounded-xl bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-100" />,
+      header: (
+        <div className="flex flex-1 w-full h-full min-h-[6rem] rounded-xl overflow-hidden bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-100">
+          <Image 
+            src="/images/bento/application-tracker.png" 
+            alt="Application Tracker" 
+            width={400}
+            height={200}
+            className="w-full h-full object-cover"
+          />
+        </div>
+      ),
       icon: <LayoutDashboard className="h-4 w-4 text-orange-500" />,
       className: "md:col-span-2",
       cta: "View Board",
