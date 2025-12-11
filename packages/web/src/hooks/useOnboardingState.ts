@@ -17,6 +17,40 @@ export interface OnboardingState {
 
 const LOCAL_STORAGE_KEY = "hireall:onboarding";
 
+function readLegacyWelcomeSeen(): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem("hireall:welcome_seen") === "true";
+}
+
+function readLegacyCompletedTours(): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  const raw = localStorage.getItem("hireall:completed_tours");
+  if (!raw) return new Set();
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      return new Set(parsed.filter((v) => typeof v === "string"));
+    }
+  } catch {
+    // ignore
+  }
+  return new Set();
+}
+
+function applyLegacyMigrations(state: OnboardingState): OnboardingState {
+  if (typeof window === "undefined") return state;
+
+  const legacyWelcome = readLegacyWelcomeSeen();
+  const legacyTours = readLegacyCompletedTours();
+
+  return {
+    ...state,
+    hasSeenWelcome: state.hasSeenWelcome || legacyWelcome,
+    hasCompletedDashboardTour: state.hasCompletedDashboardTour || legacyTours.has("dashboard"),
+    hasCompletedCvTour: state.hasCompletedCvTour || legacyTours.has("cv_evaluator"),
+  };
+}
+
 const defaultState: OnboardingState = {
   hasSeenWelcome: false,
   hasCompletedDashboardTour: false,
@@ -43,7 +77,8 @@ export function useOnboardingState() {
           try {
             const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
             if (saved) {
-              setState({ ...defaultState, ...JSON.parse(saved) });
+                const merged = { ...defaultState, ...JSON.parse(saved) };
+                setState(applyLegacyMigrations(merged));
             }
           } catch {
             // Invalid JSON
@@ -64,18 +99,19 @@ export function useOnboardingState() {
         if (docSnap.exists()) {
           const data = docSnap.data();
           const onboarding = data?.onboarding || {};
-          setState({ ...defaultState, ...onboarding });
+          const merged = applyLegacyMigrations({ ...defaultState, ...onboarding });
+          setState(merged);
           
           // Sync to localStorage for offline access
           if (typeof window !== "undefined") {
-            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(onboarding));
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(merged));
           }
         } else {
           // No Firebase data, check localStorage
           if (typeof window !== "undefined") {
             const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
             if (saved) {
-              const parsed = { ...defaultState, ...JSON.parse(saved) };
+              const parsed = applyLegacyMigrations({ ...defaultState, ...JSON.parse(saved) });
               setState(parsed);
               // Migrate localStorage data to Firebase
               await setDoc(userSettingsRef, { onboarding: parsed }, { merge: true });
@@ -89,7 +125,8 @@ export function useOnboardingState() {
           try {
             const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
             if (saved) {
-              setState({ ...defaultState, ...JSON.parse(saved) });
+              const merged = applyLegacyMigrations({ ...defaultState, ...JSON.parse(saved) });
+              setState(merged);
             }
           } catch {
             // Invalid JSON
@@ -131,6 +168,15 @@ export function useOnboardingState() {
       // Save to localStorage immediately
       if (typeof window !== "undefined") {
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
+
+        // Keep legacy keys in sync for backwards compatibility.
+        if (updated.hasSeenWelcome) {
+          localStorage.setItem("hireall:welcome_seen", "true");
+        }
+        const legacyTours = new Set<string>();
+        if (updated.hasCompletedDashboardTour) legacyTours.add("dashboard");
+        if (updated.hasCompletedCvTour) legacyTours.add("cv_evaluator");
+        localStorage.setItem("hireall:completed_tours", JSON.stringify([...legacyTours]));
       }
       
       // Debounce Firebase save

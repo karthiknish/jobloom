@@ -49,18 +49,18 @@ export function exposeDiagnostics(): void {
   }
 
   (window as any).hireallDebugAuth = () => {
-    console.log("🔍 Running HireAll authentication diagnostics...");
+    console.log("Running HireAll authentication diagnostics...");
     AuthDiagnostics.runDiagnostics().then((diagnostics) => {
-      console.group("🔍 HireAll Extension Authentication Diagnostics");
+      console.group("HireAll Extension Authentication Diagnostics");
       console.log(AuthDiagnostics.formatDiagnostics(diagnostics));
       console.groupEnd();
     });
   };
 
   (window as any).hireallRepairAuth = async () => {
-    console.log("🔧 Attempting HireAll authentication repair...");
+    console.log("Attempting HireAll authentication repair...");
     const repaired = await AuthDiagnostics.attemptAuthRepair();
-    console.log(`Repair ${repaired ? "✅ successful" : "❌ failed"}`);
+    console.log(`Repair ${repaired ? "successful" : "failed"}`);
     if (repaired) {
       console.log("Please refresh the page to complete the repair.");
     }

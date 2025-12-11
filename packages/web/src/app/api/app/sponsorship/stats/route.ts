@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
   const requestId = generateRequestId();
 
   return withErrorHandling(async () => {
-    console.log('🔍 Sponsorship stats API called, requestId:', requestId);
+    console.log('Sponsorship stats API called, requestId:', requestId);
     
     // Validate authorization
     const auth = await authenticateRequest(request, {
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch sponsorship statistics
-    console.log('🔍 Fetching sponsorship statistics...');
+    console.log('Fetching sponsorship statistics...');
     
     // Initialize Firestore
     const db = getAdminDb();
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
     const totalSnapshot = await sponsorsRef.count().get();
     const totalSponsoredCompanies = totalSnapshot.data().count;
     
-    console.log('✅ Total sponsors count:', totalSponsoredCompanies);
+    console.log('Total sponsors count:', totalSponsoredCompanies);
     
     // For detailed stats, sample a subset of documents
     // In production, this should use aggregation queries or maintained counters
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
       ...doc.data()
     })) as SponsoredCompany[];
     
-    console.log('✅ Sampled', sampleCompanies.length, 'companies for stats calculation');
+    console.log('Sampled', sampleCompanies.length, 'companies for stats calculation');
     
     // Calculate industry statistics from sample
     const industryStats: Record<string, number> = {};

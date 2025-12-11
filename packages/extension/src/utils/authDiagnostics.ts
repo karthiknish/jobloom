@@ -142,10 +142,10 @@ export class AuthDiagnostics {
     const lines = [
       '=== Authentication Diagnostics ===',
       `Timestamp: ${diagnostics.timestamp}`,
-      `Chrome Storage Available: ${diagnostics.chromeStorageAvailable ? '✅' : '❌'}`,
-      `Extension Context Valid: ${diagnostics.extensionContextValid ? '✅' : '❌'}`,
-      `Has Stored Auth: ${diagnostics.hasStoredAuth ? '✅' : '❌'}`,
-      `Can Acquire Token: ${diagnostics.canAcquireToken ? '✅' : '❌'}`,
+      `Chrome Storage Available: ${diagnostics.chromeStorageAvailable ? 'OK' : 'FAIL'}`,
+      `Extension Context Valid: ${diagnostics.extensionContextValid ? 'OK' : 'FAIL'}`,
+      `Has Stored Auth: ${diagnostics.hasStoredAuth ? 'OK' : 'FAIL'}`,
+      `Can Acquire Token: ${diagnostics.canAcquireToken ? 'OK' : 'FAIL'}`,
     ];
 
     if (diagnostics.userId) {
@@ -166,16 +166,16 @@ export class AuthDiagnostics {
       lines.push('');
       lines.push('Errors:');
       diagnostics.errors.forEach(error => {
-        lines.push(`  ❌ ${error}`);
+        lines.push(`  - ${error}`);
       });
     }
 
     if (diagnostics.canAcquireToken && diagnostics.errors.length === 0) {
       lines.push('');
-      lines.push('✅ Authentication system appears to be working correctly');
+      lines.push('Authentication system appears to be working correctly');
     } else {
       lines.push('');
-      lines.push('❌ Authentication issues detected - see errors above');
+      lines.push('Authentication issues detected - see errors above');
       lines.push('');
       lines.push('Suggested fixes:');
       lines.push('1. Sign out and sign back in to the extension');
@@ -189,7 +189,7 @@ export class AuthDiagnostics {
 
   static logDiagnosticsToConsole(): void {
     this.runDiagnostics().then(diagnostics => {
-      console.group('🔍 HireAll Extension Authentication Diagnostics');
+      console.group('HireAll Extension Authentication Diagnostics');
       console.log(this.formatDiagnostics(diagnostics));
       console.groupEnd();
     });

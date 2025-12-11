@@ -3,14 +3,20 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import { TourProvider as ReactTourProvider, useTour, StepType } from "@reactour/tour";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
+import { useOnboardingState } from "@/hooks/useOnboardingState";
 import { Button } from "@/components/ui/button";
 import { X, ArrowRight, ArrowLeft, Check, Sparkles } from "lucide-react";
+
+const TOUR_IDS = {
+  dashboard: "dashboard",
+  cvEvaluator: "cv_evaluator",
+} as const;
 
 // Tour step definitions for different pages/flows
 export const DASHBOARD_TOUR_STEPS: StepType[] = [
   {
-    selector: '[data-tour="welcome"]',
-    content: "Welcome to Hireall! 🎉|Let's take a quick tour to help you get started with your job search dashboard.",
+    selector: 'body',
+    content: "Welcome to Hireall!|Let's take a quick tour to help you get started with your job search dashboard.",
     position: "center",
   },
   {
@@ -35,8 +41,8 @@ export const DASHBOARD_TOUR_STEPS: StepType[] = [
     position: "center",
   },
   {
-    selector: '[data-tour="complete"]',
-    content: "You're All Set! 🚀|Start adding jobs and tracking your applications. Good luck with your job search!",
+    selector: 'body',
+    content: "You're All Set!|Start adding jobs and tracking your applications. Good luck with your job search!",
     position: "center",
   },
 ];
@@ -81,13 +87,15 @@ function TourContent({
   currentStep, 
   totalSteps, 
   setIsOpen, 
-  setCurrentStep 
+  setCurrentStep,
+  onComplete,
 }: {
   content: string;
   currentStep: number;
   totalSteps: number;
   setIsOpen: (open: boolean) => void;
   setCurrentStep: (step: number | ((s: number) => number)) => void;
+  onComplete: () => void;
 }) {
   // Parse pipe-separated format: "Title|Body"
   const [title, body] = typeof content === 'string' && content.includes('|')
@@ -133,7 +141,10 @@ function TourContent({
           {isLast ? (
             <Button
               size="sm"
-              onClick={() => setIsOpen(false)}
+              onClick={() => {
+                onComplete();
+                setIsOpen(false);
+              }}
               className="gap-1"
             >
               <Check className="h-4 w-4" />
@@ -158,8 +169,21 @@ function TourContent({
 // Main Tour Provider
 export function OnboardingTourProvider({ children }: { children: React.ReactNode }) {
   const { user } = useFirebaseAuth();
+  const onboarding = useOnboardingState();
   const [completedTours, setCompletedTours] = useState<Set<string>>(new Set());
   const [activeTour, setActiveTour] = useState<StepType[]>(DASHBOARD_TOUR_STEPS);
+  const [activeTourId, setActiveTourId] = useState<string>(TOUR_IDS.dashboard);
+
+  const filterStepsForPage = useCallback((steps: StepType[]) => {
+    if (typeof window === "undefined") return steps;
+    return steps.filter((step) => {
+      if (typeof step.selector === "string") {
+        if (step.selector === "body") return true;
+        return !!document.querySelector(step.selector);
+      }
+      return !!step.selector;
+    });
+  }, []);
 
   // Load completed tours from localStorage
   useEffect(() => {
@@ -176,10 +200,21 @@ export function OnboardingTourProvider({ children }: { children: React.ReactNode
   }, []);
 
   const hasCompletedTour = useCallback((tourId: string) => {
+    if (tourId === TOUR_IDS.dashboard) return onboarding.hasCompletedDashboardTour || completedTours.has(tourId);
+    if (tourId === TOUR_IDS.cvEvaluator) return onboarding.hasCompletedCvTour || completedTours.has(tourId);
     return completedTours.has(tourId);
-  }, [completedTours]);
+  }, [completedTours, onboarding.hasCompletedDashboardTour, onboarding.hasCompletedCvTour]);
 
   const markTourComplete = useCallback((tourId: string) => {
+    if (tourId === TOUR_IDS.dashboard) {
+      onboarding.markDashboardTourComplete();
+      return;
+    }
+    if (tourId === TOUR_IDS.cvEvaluator) {
+      onboarding.markCvTourComplete();
+      return;
+    }
+
     setCompletedTours((prev) => {
       const next = new Set(prev);
       next.add(tourId);
@@ -188,20 +223,22 @@ export function OnboardingTourProvider({ children }: { children: React.ReactNode
       }
       return next;
     });
-  }, []);
+  }, [onboarding]);
 
   const shouldShowTour = useCallback((tourId: string) => {
     // Show tour if user is logged in and hasn't completed it
-    return !!user && !hasCompletedTour(tourId);
-  }, [user, hasCompletedTour]);
+    return !!user && onboarding.isLoaded && !hasCompletedTour(tourId);
+  }, [user, onboarding.isLoaded, hasCompletedTour]);
 
   const startDashboardTour = useCallback(() => {
-    setActiveTour(DASHBOARD_TOUR_STEPS);
-  }, []);
+    setActiveTourId(TOUR_IDS.dashboard);
+    setActiveTour(filterStepsForPage(DASHBOARD_TOUR_STEPS));
+  }, [filterStepsForPage]);
 
   const startCvEvaluatorTour = useCallback(() => {
-    setActiveTour(CV_EVALUATOR_TOUR_STEPS);
-  }, []);
+    setActiveTourId(TOUR_IDS.cvEvaluator);
+    setActiveTour(filterStepsForPage(CV_EVALUATOR_TOUR_STEPS));
+  }, [filterStepsForPage]);
 
   const contextValue: TourContextType = {
     startDashboardTour,
@@ -249,6 +286,7 @@ export function OnboardingTourProvider({ children }: { children: React.ReactNode
               totalSteps={steps.length}
               setIsOpen={setIsOpen}
               setCurrentStep={setCurrentStep}
+              onComplete={() => markTourComplete(activeTourId)}
             />
           </div>
         )}
@@ -267,13 +305,16 @@ export function OnboardingTourProvider({ children }: { children: React.ReactNode
 // Hook to trigger tour from anywhere
 export function useTourTrigger() {
   const tour = useTour();
-  const { markTourComplete, shouldShowTour } = useTourContext();
+  const { markTourComplete, startDashboardTour, startCvEvaluatorTour } = useTourContext();
 
   const startTour = useCallback((tourId: string) => {
-    if (shouldShowTour(tourId)) {
-      tour.setIsOpen(true);
+    if (tourId === TOUR_IDS.dashboard) {
+      startDashboardTour();
+    } else if (tourId === TOUR_IDS.cvEvaluator) {
+      startCvEvaluatorTour();
     }
-  }, [tour, shouldShowTour]);
+    tour.setIsOpen(true);
+  }, [tour, startDashboardTour, startCvEvaluatorTour]);
 
   const endTour = useCallback((tourId: string) => {
     tour.setIsOpen(false);

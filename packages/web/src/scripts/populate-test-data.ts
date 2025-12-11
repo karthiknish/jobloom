@@ -172,13 +172,13 @@ const testSponsors = [
 ];
 
 async function populateTestData() {
-  console.log('🚀 Starting to populate test data...');
+  console.log('Starting to populate test data...');
   
   try {
     const db = getAdminDb();
     
     // Clear existing data
-    console.log('🗑️  Clearing existing test data...');
+    console.log('Clearing existing test data...');
     const socSnapshot = await db.collection('socCodes').get();
     const sponsorSnapshot = await db.collection('sponsors').get();
     
@@ -193,33 +193,33 @@ async function populateTestData() {
     }
     
     // Add SOC codes
-    console.log('📊 Adding SOC codes...');
+    console.log('Adding SOC codes...');
     for (const socCode of testSOCCodes) {
       await db.collection('socCodes').add(socCode);
-      console.log(`✅ Added SOC code: ${socCode.code} - ${socCode.jobType}`);
+      console.log(`Added SOC code: ${socCode.code} - ${socCode.jobType}`);
     }
     
     // Add sponsors
-    console.log('🏢 Adding sponsors...');
+    console.log('Adding sponsors...');
     for (const sponsor of testSponsors) {
       await db.collection('sponsors').add(sponsor);
-      console.log(`✅ Added sponsor: ${sponsor.name} (${sponsor.city})`);
+      console.log(`Added sponsor: ${sponsor.name} (${sponsor.city})`);
     }
     
-    console.log('🎉 Test data populated successfully!');
-    console.log(`📊 Added ${testSOCCodes.length} SOC codes`);
-    console.log(`🏢 Added ${testSponsors.length} sponsors`);
+    console.log('Test data populated successfully!');
+    console.log(`Added ${testSOCCodes.length} SOC codes`);
+    console.log(`Added ${testSponsors.length} sponsors`);
     
     // Verify data was added
     const socCount = await db.collection('socCodes').count().get();
     const sponsorCount = await db.collection('sponsors').count().get();
     
-    console.log(`📈 Database now contains:`);
+    console.log('Database now contains:');
     console.log(`   - SOC codes: ${socCount.data().count}`);
     console.log(`   - Sponsors: ${sponsorCount.data().count}`);
     
   } catch (error) {
-    console.error('❌ Error populating test data:', error);
+    console.error('Error populating test data:', error);
     throw error;
   }
 }
@@ -228,11 +228,11 @@ async function populateTestData() {
 if (require.main === module) {
   populateTestData()
     .then(() => {
-      console.log('✅ Script completed successfully');
+      console.log('Script completed successfully');
       process.exit(0);
     })
     .catch((error) => {
-      console.error('❌ Script failed:', error);
+      console.error('Script failed:', error);
       process.exit(1);
     });
 }

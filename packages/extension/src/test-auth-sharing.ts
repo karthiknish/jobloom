@@ -28,15 +28,15 @@ export class AuthSharingTester {
       const token = await acquireIdToken(true, { skipMessageFallback: false });
       
       if (token) {
-        console.log("[AuthSharingTester] ✅ Successfully acquired token from web app");
+        console.log("[AuthSharingTester] Successfully acquired token from web app");
         console.log("[AuthSharingTester] Token length:", token.length);
         return true;
       } else {
-        console.log("[AuthSharingTester] ❌ Failed to acquire token from web app");
+        console.log("[AuthSharingTester] Failed to acquire token from web app");
         return false;
       }
     } catch (error) {
-      console.error("[AuthSharingTester] ❌ Error during token acquisition:", error);
+      console.error("[AuthSharingTester] Error during token acquisition:", error);
       return false;
     }
   }
@@ -51,15 +51,15 @@ export class AuthSharingTester {
       const auth = getAuthInstance();
       
       if (auth) {
-        console.log("[AuthSharingTester] ✅ Firebase auth instance initialized");
+        console.log("[AuthSharingTester] Firebase auth instance initialized");
         console.log("[AuthSharingTester] Current user:", auth.currentUser?.uid || "None");
         return true;
       } else {
-        console.log("[AuthSharingTester] ❌ Firebase auth instance not initialized");
+        console.log("[AuthSharingTester] Firebase auth instance not initialized");
         return false;
       }
     } catch (error) {
-      console.error("[AuthSharingTester] ❌ Error testing Firebase auth:", error);
+      console.error("[AuthSharingTester] Error testing Firebase auth:", error);
       return false;
     }
   }
@@ -73,15 +73,15 @@ export class AuthSharingTester {
     if (typeof window !== "undefined") {
       // Check if the global function is available
       if (typeof (window as any).getHireallAuthToken === "function") {
-        console.log("[AuthSharingTester] ✅ Web app auth bridge function available");
+        console.log("[AuthSharingTester] Web app auth bridge function available");
         return true;
       } else {
-        console.log("[AuthSharingTester] ❌ Web app auth bridge function not available");
+        console.log("[AuthSharingTester] Web app auth bridge function not available");
         return false;
       }
     }
     
-    console.log("[AuthSharingTester] ❌ Window object not available");
+    console.log("[AuthSharingTester] Window object not available");
     return false;
   }
   
@@ -92,7 +92,7 @@ export class AuthSharingTester {
     console.log("[AuthSharingTester] Testing direct communication with web app...");
     
     if (typeof window === "undefined") {
-      console.log("[AuthSharingTester] ❌ Window not available");
+      console.log("[AuthSharingTester] Window not available");
       return false;
     }
     
@@ -107,7 +107,7 @@ export class AuthSharingTester {
       // Wait for response
       return new Promise((resolve) => {
         const timeout = setTimeout(() => {
-          console.log("[AuthSharingTester] ❌ No response from web app within 5 seconds");
+          console.log("[AuthSharingTester] No response from web app within 5 seconds");
           resolve(false);
         }, 5000);
         
@@ -115,7 +115,7 @@ export class AuthSharingTester {
           if (event.data.type === "HIREDALL_AUTH_TEST_RESPONSE") {
             clearTimeout(timeout);
             window.removeEventListener("message", handleMessage);
-            console.log("[AuthSharingTester] ✅ Received response from web app");
+            console.log("[AuthSharingTester] Received response from web app");
             resolve(true);
           }
         };
@@ -123,7 +123,7 @@ export class AuthSharingTester {
         window.addEventListener("message", handleMessage);
       });
     } catch (error) {
-      console.error("[AuthSharingTester] ❌ Error testing web app communication:", error);
+      console.error("[AuthSharingTester] Error testing web app communication:", error);
       return false;
     }
   }
@@ -150,16 +150,16 @@ export class AuthSharingTester {
       const acquiredToken = await acquireIdToken(false, { skipMessageFallback: true });
       
       if (acquiredToken === testToken) {
-        console.log("[AuthSharingTester] ✅ Token caching and retrieval working");
+        console.log("[AuthSharingTester] Token caching and retrieval working");
         return true;
       } else {
-        console.log("[AuthSharingTester] ❌ Token caching failed");
+        console.log("[AuthSharingTester] Token caching failed");
         console.log("[AuthSharingTester] Expected:", testToken);
         console.log("[AuthSharingTester] Got:", acquiredToken);
         return false;
       }
     } catch (error) {
-      console.error("[AuthSharingTester] ❌ Error testing token caching:", error);
+      console.error("[AuthSharingTester] Error testing token caching:", error);
       return false;
     }
   }
@@ -168,7 +168,7 @@ export class AuthSharingTester {
    * Run all tests
    */
   public async runAllTests(): Promise<void> {
-    console.log("[AuthSharingTester] 🚀 Starting auth sharing tests...");
+    console.log("[AuthSharingTester] Starting auth sharing tests...");
     console.log("[AuthSharingTester] ======================================");
     
     const results = {
@@ -180,23 +180,23 @@ export class AuthSharingTester {
     };
     
     console.log("[AuthSharingTester] ======================================");
-    console.log("[AuthSharingTester] 📊 Test Results:");
-    console.log("[AuthSharingTester] Firebase Auth:", results.firebaseAuth ? "✅" : "❌");
-    console.log("[AuthSharingTester] Web App Bridge:", results.webAppBridge ? "✅" : "❌");
-    console.log("[AuthSharingTester] Token Caching:", results.tokenCaching ? "✅" : "❌");
-    console.log("[AuthSharingTester] Token Acquisition:", results.tokenAcquisition ? "✅" : "❌");
-    console.log("[AuthSharingTester] Web App Communication:", results.webAppCommunication ? "✅" : "❌");
+    console.log("[AuthSharingTester] Test Results:");
+    console.log("[AuthSharingTester] Firebase Auth:", results.firebaseAuth ? "OK" : "FAIL");
+    console.log("[AuthSharingTester] Web App Bridge:", results.webAppBridge ? "OK" : "FAIL");
+    console.log("[AuthSharingTester] Token Caching:", results.tokenCaching ? "OK" : "FAIL");
+    console.log("[AuthSharingTester] Token Acquisition:", results.tokenAcquisition ? "OK" : "FAIL");
+    console.log("[AuthSharingTester] Web App Communication:", results.webAppCommunication ? "OK" : "FAIL");
     
     const passedTests = Object.values(results).filter(Boolean).length;
     const totalTests = Object.keys(results).length;
     
     console.log("[AuthSharingTester] ======================================");
-    console.log(`[AuthSharingTester] 🎯 Overall: ${passedTests}/${totalTests} tests passed`);
+    console.log(`[AuthSharingTester] Overall: ${passedTests}/${totalTests} tests passed`);
     
     if (passedTests === totalTests) {
-      console.log("[AuthSharingTester] 🎉 All tests passed! Auth sharing is working correctly.");
+      console.log("[AuthSharingTester] All tests passed. Auth sharing is working correctly.");
     } else {
-      console.log("[AuthSharingTester] ⚠️  Some tests failed. Check the logs above for details.");
+      console.log("[AuthSharingTester] Some tests failed. Check the logs above for details.");
     }
   }
 }

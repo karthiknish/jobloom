@@ -35,7 +35,7 @@ const serviceAccountPath = process.env.SERVICE_ACCOUNT_PATH
   : DEFAULT_SERVICE_ACCOUNT_PATH;
 
 if (!fs.existsSync(serviceAccountPath)) {
-  console.error("❌ Service account file not found:", serviceAccountPath);
+  console.error("Service account file not found:", serviceAccountPath);
   console.error(
     "Set SERVICE_ACCOUNT_PATH to the Firebase admin JSON or place it at the default path."
   );
@@ -676,24 +676,24 @@ async function upsertPost(post) {
 }
 
 async function main() {
-  console.log("🚀 Seeding blog posts to Firestore project:", projectId);
-  console.log("👤 Author:", author);
-  console.log("🪪 Service account:", serviceAccountPath);
+  console.log("Seeding blog posts to Firestore project:", projectId);
+  console.log("Author:", author);
+  console.log("Service account:", serviceAccountPath);
 
   const results = [];
   for (const post of posts) {
     try {
       const result = await upsertPost(post);
-      console.log(`   ✅ ${result.action.toUpperCase()} - ${post.title} (slug: ${result.slug})`);
+      console.log(`   ${result.action.toUpperCase()} - ${post.title} (slug: ${result.slug})`);
       results.push(result);
       await new Promise((resolve) => setTimeout(resolve, 200));
     } catch (error) {
-      console.error(`   ❌ Failed to upsert "${post.title}":`, error.message);
+      console.error(`   FAILED to upsert "${post.title}":`, error.message);
       results.push({ action: "failed", title: post.title, error: error.message });
     }
   }
 
-  console.log("\n🎉 Seed complete. Summary: ");
+  console.log("\nSeed complete. Summary:");
   const summary = results.reduce(
     (acc, item) => {
       acc[item.action] = (acc[item.action] || 0) + 1;
@@ -708,7 +708,7 @@ async function main() {
     .map((item) => item.slug);
 
   if (createdSlugs.length) {
-    console.log("\n🔗 Seeded slugs:");
+    console.log("\nSeeded slugs:");
     createdSlugs.forEach((slug) => console.log(` - ${slug}`));
   }
 
@@ -716,6 +716,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error("💥 Seed script failed:", error);
+  console.error("Seed script failed:", error);
   process.exit(1);
 });

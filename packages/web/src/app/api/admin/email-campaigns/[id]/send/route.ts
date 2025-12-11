@@ -27,19 +27,28 @@ export async function POST(
     }
 
     const campaignRef = db.collection('emailCampaigns').doc(params.id);
-    const campaignDoc = await campaignRef.get();
-    
-    if (!campaignDoc.exists) {
-      return NextResponse.json({ error: 'Campaign not found' }, { status: 404 });
-    }
 
-    const campaign = campaignDoc.data();
+    // Transactionally mark campaign as sending to avoid double-send on concurrent requests.
+    const campaign = await db.runTransaction(async (tx) => {
+      const campaignDoc = await tx.get(campaignRef);
+      if (!campaignDoc.exists) {
+        return null;
+      }
+      const data = campaignDoc.data() as any;
+      if (!data) {
+        return null;
+      }
+      if (data.status === 'sent' || data.status === 'sending') {
+        return { __blocked: true, status: data.status };
+      }
+      tx.update(campaignRef, { status: 'sending', updatedAt: new Date().toISOString() });
+      return data;
+    });
+
     if (!campaign) {
       return NextResponse.json({ error: 'Campaign not found' }, { status: 404 });
     }
-
-    // Check if campaign is already sent or sending
-    if (campaign.status === 'sent' || campaign.status === 'sending') {
+    if ((campaign as any).__blocked) {
       return NextResponse.json({ error: 'Campaign already sent or currently sending' }, { status: 400 });
     }
 
@@ -55,14 +64,22 @@ export async function POST(
     }
 
     // Get recipients
-    let recipients: string[] = [];
+    let recipients: Array<{ userId?: string; email: string; displayName?: string; firstName?: string }> = [];
     
     if (campaign.recipients.type === 'all') {
       // Get all users who have opted in to emails
       const usersSnap = await db.collection('users')
         .where('emailPreferences.marketing', '==', true)
         .get();
-      recipients = usersSnap.docs.map((doc: any) => doc.data().email).filter(Boolean);
+      recipients = usersSnap.docs
+        .map((doc: any) => ({ userId: doc.id, ...(doc.data() || {}) }))
+        .map((u: any) => ({
+          userId: u.userId,
+          email: u.email,
+          displayName: u.displayName,
+          firstName: u.firstName,
+        }))
+        .filter((r: any) => typeof r.email === 'string' && r.email);
     } else if (campaign.recipients.type === 'segment') {
       // Get users by segment (you can customize this logic)
       const segment = campaign.recipients.segment;
@@ -77,55 +94,67 @@ export async function POST(
       }
       
       const usersSnap = await query.get();
-      recipients = usersSnap.docs.map((doc: any) => doc.data().email).filter(Boolean);
+      recipients = usersSnap.docs
+        .map((doc: any) => ({ userId: doc.id, ...(doc.data() || {}) }))
+        .map((u: any) => ({
+          userId: u.userId,
+          email: u.email,
+          displayName: u.displayName,
+          firstName: u.firstName,
+        }))
+        .filter((r: any) => typeof r.email === 'string' && r.email);
     } else if (campaign.recipients.type === 'custom' && campaign.recipients.customEmails) {
-      recipients = campaign.recipients.customEmails;
+      recipients = campaign.recipients.customEmails
+        .filter((e: any) => typeof e === 'string')
+        .map((email: string) => ({ email }));
     }
+
+    // De-dupe emails
+    const seen = new Set<string>();
+    recipients = recipients.filter((r) => {
+      const normalized = r.email.trim().toLowerCase();
+      if (!normalized) return false;
+      if (seen.has(normalized)) return false;
+      seen.add(normalized);
+      r.email = normalized;
+      return true;
+    });
 
     if (recipients.length === 0) {
       return NextResponse.json({ error: 'No recipients found' }, { status: 400 });
     }
 
-    // Update campaign status to sending
-    await campaignRef.update({
-      status: 'sending',
-      updatedAt: new Date().toISOString()
-    });
-
     // Prepare emails for bulk sending
-    const emails = [];
+    const appBaseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://hireall.app';
+    const emails: Array<any> = [];
     
-    for (const email of recipients) {
+    for (const recipient of recipients) {
       try {
-        // Get user data for personalization
-        const userDoc = await db.collection('users').where('email', '==', email).limit(1).get();
-        const userData = userDoc.docs[0]?.data();
-        
         // Prepare personalization variables
         const variables = {
-          firstName: userData?.displayName || userData?.firstName || 'there',
-          email: email,
-          dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`,
-          unsubscribeUrl: `${process.env.NEXT_PUBLIC_APP_URL}/unsubscribe?email=${encodeURIComponent(email)}`,
-          ...userData
+          firstName: recipient.displayName || recipient.firstName || 'there',
+          email: recipient.email,
+          dashboardUrl: `${appBaseUrl}/dashboard`,
+          unsubscribeUrl: `${appBaseUrl}/unsubscribe?email=${encodeURIComponent(recipient.email)}`,
         };
         
         // Personalize content
-        const personalizedHtml = personalizeTemplate(template.htmlContent, variables);
-        const personalizedText = personalizeTemplate(template.textContent, variables);
+        const personalizedHtml = personalizeTemplate(template.htmlContent, variables, { escapeHtml: true });
+        const personalizedText = personalizeTemplate(template.textContent, variables, { escapeHtml: false });
         const personalizedSubject = personalizeSubject(campaign.subject, variables);
         
         emails.push({
-          to: email,
+          to: recipient.email,
           subject: personalizedSubject,
           html: personalizedHtml,
           text: personalizedText,
           from: campaign.fromEmail,
-          replyTo: campaign.replyToEmail
+          replyTo: campaign.replyToEmail,
+          __userId: recipient.userId ?? null
         });
         
       } catch (error) {
-        console.error(`Failed to prepare email for ${email}:`, error);
+        console.error(`Failed to prepare email for ${recipient.email}:`, error);
       }
     }
 
@@ -153,7 +182,7 @@ export async function POST(
           messageId: result.messageId,
           error: result.error,
           sentAt: new Date().toISOString(),
-          userId: (await db.collection('users').where('email', '==', email.to).limit(1).get()).docs[0]?.id
+          userId: email.__userId
         });
       } catch (logError) {
         console.error('Failed to log email:', logError);

@@ -1188,7 +1188,7 @@ h6 {
  * EMOJI USAGE POLICY
  * ==================
  * Emojis are NOT allowed in this codebase. Use proper text, symbols, or Lucide React icons instead.
- * - Replace emojis with descriptive text or appropriate Unicode symbols (⚠, ✓, etc.)
+ * - Replace emojis with descriptive text (e.g., "Warning", "OK")
  * - Use Lucide React icons for UI elements and visual indicators
  * - Keep the codebase professional and accessible
  * - Emojis can cause rendering issues across different platforms and devices

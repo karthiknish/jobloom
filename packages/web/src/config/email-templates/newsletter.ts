@@ -10,7 +10,7 @@ export const newsletterTemplates: EmailTemplate[] = [
     name: 'Monthly Career Insights',
     description: 'Monthly newsletter with career tips, job market trends, and platform updates',
     category: 'newsletter',
-    subject: 'Your Monthly Career Insights from HireAll 📊',
+    subject: 'Your Monthly Career Insights from HireAll',
     htmlContent: `
       <!DOCTYPE html>
       <html>
@@ -32,7 +32,7 @@ export const newsletterTemplates: EmailTemplate[] = [
       <body>
         <div class="container">
           <div class="header">
-            <h1>Monthly Career Insights 📈</h1>
+            <h1>Monthly Career Insights</h1>
             <p>{{month}} {{year}} Edition</p>
           </div>
           <div class="content">
@@ -55,17 +55,17 @@ export const newsletterTemplates: EmailTemplate[] = [
             </div>
             
             <div class="article">
-              <h3>🔥 Hot Job Market Trends</h3>
+              <h3>Hot Job Market Trends</h3>
               <p>{{marketTrends}}</p>
             </div>
             
             <div class="article">
-              <h3>💡 Career Tip of the Month</h3>
+              <h3>Career Tip of the Month</h3>
               <p>{{careerTip}}</p>
             </div>
             
             <div class="article">
-              <h3>🚀 Platform Updates</h3>
+              <h3>Platform Updates</h3>
               <p>{{platformUpdates}}</p>
             </div>
             

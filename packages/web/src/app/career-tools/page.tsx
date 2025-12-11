@@ -541,7 +541,7 @@ export default function CareerToolsPage() {
                                       ? "bg-green-500 text-white"
                                       : "bg-muted text-muted-foreground group-hover:bg-muted-foreground/20"
                                 }`}>
-                                  {advancedResumeData.personalInfo.fullName && advancedResumeData.personalInfo.email ? "✓" : "1"}
+                                  {advancedResumeData.personalInfo.fullName && advancedResumeData.personalInfo.email ? "OK" : "1"}
                                 </div>
                                 <span className={`mt-2 text-xs font-medium transition-colors ${
                                   activeBuilderTab === "personal" ? "text-primary" : "text-muted-foreground"
@@ -569,7 +569,7 @@ export default function CareerToolsPage() {
                                       ? "bg-green-500 text-white"
                                       : "bg-muted text-muted-foreground group-hover:bg-muted-foreground/20"
                                 }`}>
-                                  {advancedResumeData.experience.length > 0 ? "✓" : "2"}
+                                  {advancedResumeData.experience.length > 0 ? "OK" : "2"}
                                 </div>
                                 <span className={`mt-2 text-xs font-medium transition-colors ${
                                   activeBuilderTab === "experience" ? "text-primary" : "text-muted-foreground"
@@ -597,7 +597,7 @@ export default function CareerToolsPage() {
                                       ? "bg-green-500 text-white"
                                       : "bg-muted text-muted-foreground group-hover:bg-muted-foreground/20"
                                 }`}>
-                                  {advancedResumeData.education.length > 0 ? "✓" : "3"}
+                                  {advancedResumeData.education.length > 0 ? "OK" : "3"}
                                 </div>
                                 <span className={`mt-2 text-xs font-medium transition-colors ${
                                   activeBuilderTab === "education" ? "text-primary" : "text-muted-foreground"
@@ -625,7 +625,7 @@ export default function CareerToolsPage() {
                                       ? "bg-green-500 text-white"
                                       : "bg-muted text-muted-foreground group-hover:bg-muted-foreground/20"
                                 }`}>
-                                  {advancedResumeData.skills.length > 0 ? "✓" : "4"}
+                                  {advancedResumeData.skills.length > 0 ? "OK" : "4"}
                                 </div>
                                 <span className={`mt-2 text-xs font-medium transition-colors ${
                                   activeBuilderTab === "skills" ? "text-primary" : "text-muted-foreground"
@@ -653,7 +653,7 @@ export default function CareerToolsPage() {
                                       ? "bg-green-500 text-white"
                                       : "bg-muted text-muted-foreground group-hover:bg-muted-foreground/20"
                                 }`}>
-                                  {advancedResumeData.projects.length > 0 ? "✓" : "5"}
+                                  {advancedResumeData.projects.length > 0 ? "OK" : "5"}
                                 </div>
                                 <span className={`mt-2 text-xs font-medium transition-colors ${
                                   activeBuilderTab === "projects" ? "text-primary" : "text-muted-foreground"
@@ -912,7 +912,7 @@ export default function CareerToolsPage() {
                         {/* Tips Card */}
                         <Card className="bg-muted/50 border-border">
                           <CardHeader className="pb-2">
-                            <CardTitle className="text-sm text-foreground">💡 Pro Tips</CardTitle>
+                            <CardTitle className="text-sm text-foreground">Pro Tips</CardTitle>
                           </CardHeader>
                           <CardContent className="text-xs text-muted-foreground space-y-2">
                             <p>• Use action verbs like "Led", "Developed", "Achieved"</p>

@@ -33,11 +33,11 @@ interface FormData {
   description: string;
 }
 
-const ISSUE_TYPES: { value: IssueType; label: string; icon: string }[] = [
-  { value: "bug", label: "Bug Report", icon: "🐛" },
-  { value: "feature", label: "Feature Request", icon: "✨" },
-  { value: "improvement", label: "Improvement Suggestion", icon: "💡" },
-  { value: "other", label: "Other", icon: "📝" },
+const ISSUE_TYPES: { value: IssueType; label: string }[] = [
+  { value: "bug", label: "Bug Report" },
+  { value: "feature", label: "Feature Request" },
+  { value: "improvement", label: "Improvement Suggestion" },
+  { value: "other", label: "Other" },
 ];
 
 export function ReportIssue({ position = "bottom-right", className = "" }: ReportIssueProps) {
@@ -260,10 +260,7 @@ Browser: ${typeof navigator !== "undefined" ? navigator.userAgent : "Unknown"}
                           <SelectContent>
                             {ISSUE_TYPES.map((type) => (
                               <SelectItem key={type.value} value={type.value}>
-                                <span className="flex items-center gap-2">
-                                  <span>{type.icon}</span>
-                                  <span>{type.label}</span>
-                                </span>
+                                {type.label}
                               </SelectItem>
                             ))}
                           </SelectContent>

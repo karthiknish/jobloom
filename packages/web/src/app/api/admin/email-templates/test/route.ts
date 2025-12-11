@@ -1,11 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb } from "@/firebase/admin";
+import { getAdminAuth } from "@/firebase/admin";
 import { defaultEmailTemplates } from "@/config/emailTemplates";
 
-// Test endpoint without authentication for debugging
+// Test endpoint (requires admin auth in non-development)
 export async function GET(request: NextRequest) {
   try {
-    console.log('🧪 Testing email templates API...');
+    if (process.env.NODE_ENV !== "development") {
+      const authHeader = request.headers.get("authorization");
+      if (!authHeader?.startsWith("Bearer ")) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      const token = authHeader.substring(7);
+      const decoded = await getAdminAuth().verifyIdToken(token);
+
+      const db = getAdminDb();
+      const userDoc = await db.collection("users").doc(decoded.uid).get();
+      const userData = userDoc.data();
+
+      if (!userData?.isAdmin) {
+        return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+      }
+    }
+
+    console.log('Testing email templates API...');
     
     // Get templates from Firestore or return defaults
     const db = getAdminDb();
@@ -13,7 +32,7 @@ export async function GET(request: NextRequest) {
     const templatesSnap = await templatesRef.get();
     
     if (templatesSnap.empty) {
-      console.log('📝 Initializing default templates...');
+      console.log('Initializing default templates...');
       // Initialize with default templates
       const batch = db.batch();
       defaultEmailTemplates.forEach(template => {
@@ -25,7 +44,7 @@ export async function GET(request: NextRequest) {
         });
       });
       await batch.commit();
-      console.log('✅ Default templates initialized');
+      console.log('Default templates initialized');
       
       return NextResponse.json({
         message: 'Default templates initialized',
@@ -38,7 +57,7 @@ export async function GET(request: NextRequest) {
       ...doc.data()
     }));
 
-    console.log(`✅ Found ${templates.length} templates`);
+    console.log(`Found ${templates.length} templates`);
 
     return NextResponse.json({
       message: 'Templates retrieved successfully',
@@ -46,7 +65,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ Test API error:', error);
+    console.error('Test API error:', error);
     return NextResponse.json(
       { 
         error: 'Test API failed', 

@@ -10,7 +10,7 @@ export const promotionalTemplates: EmailTemplate[] = [
     name: 'Premium Upgrade Reminder',
     description: 'Encourage free users to upgrade to premium with limited-time offer',
     category: 'promotional',
-    subject: '🔥 Limited Time: Unlock Premium Features for 50% Off!',
+    subject: 'Limited Time: Unlock Premium Features for 50% Off!',
     htmlContent: `
       <!DOCTYPE html>
       <html>
@@ -33,7 +33,7 @@ export const promotionalTemplates: EmailTemplate[] = [
       <body>
         <div class="container">
           <div class="header">
-            <h1>🔥 Exclusive Offer for {{firstName}}!</h1>
+            <h1>Exclusive Offer for {{firstName}}!</h1>
             <p>Upgrade to Premium and Transform Your Career</p>
           </div>
           <div class="content">
@@ -44,26 +44,26 @@ export const promotionalTemplates: EmailTemplate[] = [
             </div>
             
             <div class="timer">
-              <strong>⏰ Limited Time Offer!</strong><br>
+              <strong>Limited Time Offer!</strong><br>
               This special discount expires in {{offerExpiry}} hours
             </div>
             
-            <h3>🚀 What You'll Unlock with Premium:</h3>
+            <h3>What You'll Unlock with Premium:</h3>
             <div class="feature-grid">
               <div class="feature">
-                <h4>✨ Unlimited CV Analysis</h4>
+                <h4>Unlimited CV Analysis</h4>
                 <p>Analyze as many resumes as you need with detailed AI feedback</p>
               </div>
               <div class="feature">
-                <h4>🤖 AI Cover Letter Generator</h4>
+                <h4>AI Cover Letter Generator</h4>
                 <p>Create personalized cover letters in seconds</p>
               </div>
               <div class="feature">
-                <h4>📊 Advanced Analytics</h4>
+                <h4>Advanced Analytics</h4>
                 <p>Track your application success rate and optimize your strategy</p>
               </div>
               <div class="feature">
-                <h4>⚡ Priority Support</h4>
+                <h4>Priority Support</h4>
                 <p>Get faster responses from our career experts</p>
               </div>
             </div>
@@ -84,7 +84,7 @@ export const promotionalTemplates: EmailTemplate[] = [
       </html>
     `,
     textContent: `
-      🔥 Exclusive Offer for {{firstName}}!
+      Exclusive Offer for {{firstName}}!
       
       Upgrade to Premium and Transform Your Career
       
@@ -94,10 +94,10 @@ export const promotionalTemplates: EmailTemplate[] = [
       This special discount expires in {{offerExpiry}} hours
       
       What You'll Unlock with Premium:
-      ✨ Unlimited CV Analysis - Analyze as many resumes as you need
-      🤖 AI Cover Letter Generator - Create personalized cover letters
-      📊 Advanced Analytics - Track your application success rate
-      ⚡ Priority Support - Get faster responses from career experts
+      Unlimited CV Analysis - Analyze as many resumes as you need
+      AI Cover Letter Generator - Create personalized cover letters
+      Advanced Analytics - Track your application success rate
+      Priority Support - Get faster responses from career experts
       
       Claim your discount now: {{upgradeUrl}}
       

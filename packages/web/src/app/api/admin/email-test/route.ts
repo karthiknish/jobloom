@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    console.log('🧪 Testing Resend email sending...');
+    console.log('Testing Resend email sending...');
     console.log('To:', to);
     console.log('Subject:', subject);
 
@@ -49,14 +49,14 @@ export async function POST(request: NextRequest) {
     });
 
     if (result.success) {
-      console.log('✅ Email sent successfully:', result.messageId);
+      console.log('Email sent successfully:', result.messageId);
       return NextResponse.json({
         success: true,
         message: 'Test email sent successfully',
         messageId: result.messageId
       });
     } else {
-      console.error('❌ Email sending failed:', result.error);
+      console.error('Email sending failed:', result.error);
       return NextResponse.json({
         success: false,
         error: result.error
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('❌ Test API error:', error);
+    console.error('Test API error:', error);
     return NextResponse.json(
       { 
         error: 'Test API failed', 

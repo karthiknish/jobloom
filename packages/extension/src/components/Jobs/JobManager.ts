@@ -144,7 +144,7 @@ export class JobManager {
     const emptyHTML = `
       <div class="empty-state-container">
         <div class="empty-icon-wrapper">
-          <span>📋</span>
+          <span aria-hidden="true"></span>
         </div>
         <h3 class="empty-title">No jobs found</h3>
         <p class="empty-description">${errorMessage || 'Start highlighting jobs on job boards to see them here.'}</p>
@@ -202,7 +202,7 @@ export class JobManager {
         if (sponsorBtn) sponsorBtn.style.display = '';
         if (sponsorStatus) {
           sponsorStatus.className = "sponsor-status error";
-          sponsorStatus.textContent = "❌ Company name missing";
+          sponsorStatus.textContent = "Company name missing";
         }
         return;
       }
@@ -217,7 +217,7 @@ export class JobManager {
 
       if (!record) {
         sponsorStatus!.className = "sponsor-status not-licensed";
-        sponsorStatus!.innerHTML = '❌ Not found in sponsor register';
+        sponsorStatus!.innerHTML = 'Not found in sponsor register';
         return;
       }
 
@@ -227,22 +227,22 @@ export class JobManager {
 
       if (!isActive) {
         sponsorStatus!.className = "sponsor-status not-licensed";
-        sponsorStatus!.innerHTML = '⚠️ Sponsor inactive on UK register';
+        sponsorStatus!.innerHTML = 'Sponsor inactive on UK register';
         return;
       }
 
       if (isLicensed && isSkilledWorker) {
         sponsorStatus!.className = "sponsor-status licensed";
-        sponsorStatus!.innerHTML = '✅ Licensed Skilled Worker Sponsor';
+        sponsorStatus!.innerHTML = 'Licensed Skilled Worker Sponsor';
       } else if (isSkilledWorker) {
         sponsorStatus!.className = "sponsor-status licensed-alt";
-        sponsorStatus!.innerHTML = '📋 Skilled Worker Sponsor (license unverified)';
+        sponsorStatus!.innerHTML = 'Skilled Worker Sponsor (license unverified)';
       } else if (isLicensed) {
         sponsorStatus!.className = "sponsor-status licensed-alt";
-        sponsorStatus!.innerHTML = '📋 Licensed for other visa routes';
+        sponsorStatus!.innerHTML = 'Licensed for other visa routes';
       } else {
         sponsorStatus!.className = "sponsor-status not-licensed";
-        sponsorStatus!.innerHTML = '❌ Not a Skilled Worker sponsor';
+        sponsorStatus!.innerHTML = 'Not a Skilled Worker sponsor';
       }
       
     } catch (error: any) {
@@ -251,14 +251,14 @@ export class JobManager {
       
       if (error.code === 'NOT_LICENSED') {
         sponsorStatus!.className = "sponsor-status not-licensed";
-        sponsorStatus!.innerHTML = '🔒 License required. <a href="#" onclick="chrome.tabs.create({url: chrome.runtime.getURL(\'options.html\')})">Upgrade now</a>';
+        sponsorStatus!.innerHTML = 'License required. <a href="#" onclick="chrome.tabs.create({url: chrome.runtime.getURL(\'options.html\')})">Upgrade now</a>';
       } else if (error.rateLimitInfo) {
         const resetIn = Math.ceil((error.rateLimitInfo.resetIn || 0) / 1000);
         sponsorStatus!.className = "sponsor-status rate-limited";
-        sponsorStatus!.innerHTML = `⏱️ Rate limited. Try again in ${resetIn}s`;
+        sponsorStatus!.innerHTML = `Rate limited. Try again in ${resetIn}s`;
       } else {
         sponsorStatus!.className = "sponsor-status error";
-        sponsorStatus!.innerHTML = '❌ Error checking sponsor';
+        sponsorStatus!.innerHTML = 'Error checking sponsor';
       }
     }
   }
@@ -279,12 +279,12 @@ export class JobManager {
         eligibilityBadge.className = "job-badge badge-uk-eligible";
         eligibilityBadge.style.background = "rgba(5, 150, 105, 0.1)";
         eligibilityBadge.style.color = "#059669";
-        eligibilityBadge.textContent = "🇬🇧 UK Eligible";
+        eligibilityBadge.textContent = "UK Eligible";
       } else {
         eligibilityBadge.className = "job-badge badge-uk-ineligible";
         eligibilityBadge.style.background = "rgba(220, 38, 38, 0.1)";
         eligibilityBadge.style.color = "#dc2626";
-        eligibilityBadge.textContent = "🇬🇧 Not Eligible";
+        eligibilityBadge.textContent = "Not Eligible";
       }
       
     } catch (error) {

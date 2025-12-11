@@ -429,7 +429,7 @@ export class JobBoardManager {
       // Show success notification with job score
       const scoreText = jobScore >= 80 ? "High Priority" : jobScore >= 60 ? "Medium Priority" : "Standard Priority";
       await this.showNotification(
-        `✅ ${jobData.title} at ${jobData.company} added successfully! (${scoreText})`,
+        `${jobData.title} at ${jobData.company} added successfully (${scoreText})`,
         "success"
       );
 

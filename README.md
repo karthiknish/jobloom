@@ -9,10 +9,10 @@ A comprehensive job tracking solution consisting of:
 
 ## Features
 
-- 🎯 **Smart Job Detection**: Chrome extension highlights sponsored roles on job sites
-- 📋 **Job Board**: Track your job applications with status updates
-- 🔐 **Authentication**: Secure user accounts for personalized tracking
-- ☁️ **Sync**: Firestore backend ensures data consistency across devices
+- **Smart Job Detection**: Chrome extension highlights sponsored roles on job sites
+- **Job Board**: Track your job applications with status updates
+- **Authentication**: Secure user accounts for personalized tracking
+- **Sync**: Firestore backend ensures data consistency across devices
 
 ## Getting Started
 

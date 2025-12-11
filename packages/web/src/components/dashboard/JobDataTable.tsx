@@ -168,7 +168,7 @@ export function JobDataTable({
           <div className="space-y-1">
             {isSponsored && (
               <Badge variant="outline" className="border-primary text-primary text-xs">
-                🇬🇧 Sponsored
+                Sponsored
               </Badge>
             )}
             {row.original.job?.remoteWork && (

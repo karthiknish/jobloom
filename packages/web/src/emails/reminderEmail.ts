@@ -82,7 +82,7 @@ export function renderReminderEmailHtml({
       ${upcomingInterviews && upcomingInterviews.length > 0 ? `
       <!-- Upcoming Interviews -->
       <div style="margin-bottom:24px;">
-        <p style="margin:0 0 12px; font-size:16px; font-weight:600; color:${textColor};">📅 Upcoming Interviews</p>
+        <p style="margin:0 0 12px; font-size:16px; font-weight:600; color:${textColor};">Upcoming Interviews</p>
         ${upcomingInterviews.map(interview => `
         <div style="background:${backgroundColor}; border:1px solid ${borderColor}; border-radius:8px; padding:16px; margin-bottom:8px;">
           <p style="margin:0 0 4px; font-size:14px; font-weight:600; color:${textColor};">${interview.jobTitle}</p>
@@ -95,7 +95,7 @@ export function renderReminderEmailHtml({
       ${pendingFollowUps && pendingFollowUps.length > 0 ? `
       <!-- Pending Follow-ups -->
       <div style="margin-bottom:24px;">
-        <p style="margin:0 0 12px; font-size:16px; font-weight:600; color:${textColor};">📬 Follow-up Suggestions</p>
+        <p style="margin:0 0 12px; font-size:16px; font-weight:600; color:${textColor};">Follow-up Suggestions</p>
         <p style="margin:0 0 12px; font-size:14px; color:${mutedTextColor};">Consider following up on these applications:</p>
         ${pendingFollowUps.slice(0, 5).map(job => `
         <div style="background:${backgroundColor}; border:1px solid ${borderColor}; border-radius:8px; padding:16px; margin-bottom:8px;">
@@ -112,12 +112,12 @@ export function renderReminderEmailHtml({
       <div style="background:${backgroundColor}; border:1px solid ${borderColor}; border-radius:12px; padding:20px; margin-bottom:24px;">
         <p style="margin:0 0 4px; font-size:18px; font-weight:600; color:${textColor};">${jobTitle}</p>
         <p style="margin:0 0 12px; font-size:14px; color:${mutedTextColor};">${companyName}</p>
-        ${formattedDate ? `<p style="margin:0; font-size:14px; color:${accentColor}; font-weight:500;">📅 ${formattedDate}</p>` : ''}
+        ${formattedDate ? `<p style="margin:0; font-size:14px; color:${accentColor}; font-weight:500;">${formattedDate}</p>` : ''}
       </div>
 
       ${notes ? `
       <div style="background:#FEF3C7; border:1px solid #F59E0B; border-radius:8px; padding:16px; margin-bottom:24px;">
-        <p style="margin:0 0 8px; font-size:14px; font-weight:600; color:#92400E;">📝 Your notes:</p>
+        <p style="margin:0 0 8px; font-size:14px; font-weight:600; color:#92400E;">Your notes:</p>
         <p style="margin:0; font-size:14px; color:#92400E;">${notes}</p>
       </div>
       ` : ''}
@@ -223,12 +223,12 @@ export function renderReminderEmailText({
   let content = `${greeting},\n\n${header}\n\n`;
 
   if (reminderType === "weekly_digest") {
-    content += `📊 Your Stats\n`;
+    content += `Your Stats\n`;
     content += `• Total Applications: ${totalApplications || 0}\n`;
     content += `• Added This Week: ${applicationsThisWeek || 0}\n\n`;
 
     if (upcomingInterviews && upcomingInterviews.length > 0) {
-      content += `📅 Upcoming Interviews:\n`;
+      content += `Upcoming Interviews:\n`;
       upcomingInterviews.forEach(i => {
         content += `• ${i.jobTitle} at ${i.company} - ${format(new Date(i.date), "MMM d, h:mm a")}\n`;
       });
@@ -236,7 +236,7 @@ export function renderReminderEmailText({
     }
 
     if (pendingFollowUps && pendingFollowUps.length > 0) {
-      content += `📬 Consider Following Up:\n`;
+      content += `Consider Following Up:\n`;
       pendingFollowUps.slice(0, 5).forEach(j => {
         content += `• ${j.jobTitle} at ${j.company}\n`;
       });

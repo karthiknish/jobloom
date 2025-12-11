@@ -10,7 +10,7 @@ export const announcementTemplates: EmailTemplate[] = [
     name: 'New Feature Announcement',
     description: 'Announce new platform features and improvements',
     category: 'announcement',
-    subject: 'Exciting New Features on HireAll! 🎉',
+    subject: 'Exciting New Features on HireAll!',
     htmlContent: `
       <!DOCTYPE html>
       <html>
@@ -32,7 +32,7 @@ export const announcementTemplates: EmailTemplate[] = [
       <body>
         <div class="container">
           <div class="header">
-            <h1>Big News! 🚀</h1>
+            <h1>Big News!</h1>
             <p>We've launched exciting new features just for you</p>
           </div>
           <div class="content">
@@ -41,7 +41,6 @@ export const announcementTemplates: EmailTemplate[] = [
             
             {{#each features}}
             <div class="feature">
-              <div class="feature-icon">{{icon}}</div>
               <div class="feature-title">{{title}}</div>
               <p>{{description}}</p>
               <a href="{{learnMoreUrl}}" class="button">Learn More</a>
@@ -68,7 +67,7 @@ export const announcementTemplates: EmailTemplate[] = [
       We're excited to announce powerful new features to help advance your career!
       
       {{#each features}}
-      {{icon}} {{title}}
+      {{title}}
       {{description}}
       Learn more: {{learnMoreUrl}}
       

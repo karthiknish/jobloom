@@ -373,26 +373,26 @@ function generateSuggestions(
 
   // Critical issues first (high priority)
   if (!resumeData.personalInfo.summary) {
-    suggestions.push("🔴 Add a professional summary (3-4 sentences) highlighting your key qualifications and career focus");
+    suggestions.push("Critical: Add a professional summary (3-4 sentences) highlighting your key qualifications and career focus");
   } else if (resumeData.personalInfo.summary.length < 50) {
-    suggestions.push("🔴 Expand your professional summary to 100-300 characters for better ATS matching");
+    suggestions.push("Critical: Expand your professional summary to 100-300 characters for better ATS matching");
   }
 
   if (resumeData.experience.length === 0) {
-    suggestions.push("🔴 Add your work experience - this is critical for ATS systems and recruiters");
+    suggestions.push("Critical: Add your work experience - this is critical for ATS systems and recruiters");
   }
 
   if (!resumeData.personalInfo.email || !resumeData.personalInfo.phone) {
-    suggestions.push("🔴 Include both email and phone number for recruiters to contact you");
+    suggestions.push("Critical: Include both email and phone number for recruiters to contact you");
   }
 
   // Medium priority improvements
   if (completeness < 75) {
     if (resumeData.skills.length === 0) {
-      suggestions.push("🟡 Add a skills section with both technical and soft skills");
+      suggestions.push("Improve: Add a skills section with both technical and soft skills");
     }
     if (resumeData.education.length === 0) {
-      suggestions.push("🟡 Include your educational background");
+      suggestions.push("Improve: Include your educational background");
     }
   }
 
@@ -402,7 +402,7 @@ function generateSuggestions(
       fullText.includes(verb)
     ).length;
     if (actionVerbCount < 8) {
-      suggestions.push("🟡 Start achievement bullets with action verbs (Led, Developed, Achieved, Implemented)");
+      suggestions.push("Improve: Start achievement bullets with action verbs (Led, Developed, Achieved, Implemented)");
     }
 
     // Check for quantified achievements
@@ -410,27 +410,27 @@ function generateSuggestions(
       exp.achievements.some(a => /\d+/.test(a))
     );
     if (!hasQuantified) {
-      suggestions.push("🟡 Add quantified achievements with numbers, percentages, or dollar amounts");
+      suggestions.push("Improve: Add quantified achievements with numbers, percentages, or dollar amounts");
     }
   }
 
   if (impactScore < 70) {
-    suggestions.push("🟡 Strengthen bullet points with measurable results and specific outcomes");
-    suggestions.push("🟡 Include project outcomes and business impact where possible");
+    suggestions.push("Improve: Strengthen bullet points with measurable results and specific outcomes");
+    suggestions.push("Improve: Include project outcomes and business impact where possible");
   }
 
   // Nice-to-have improvements
   if (!resumeData.personalInfo.linkedin) {
-    suggestions.push("🟢 Add your LinkedIn profile URL to improve professional visibility");
+    suggestions.push("Nice to have: Add your LinkedIn profile URL to improve professional visibility");
   }
 
   if (resumeData.projects.length === 0 && completeness >= 70) {
-    suggestions.push("🟢 Consider adding 1-3 relevant projects to showcase your abilities");
+    suggestions.push("Nice to have: Consider adding 1-3 relevant projects to showcase your abilities");
   }
 
   // Success message if everything looks good
   if (suggestions.length === 0) {
-    suggestions.push("✅ Your resume looks well-optimized! Consider getting feedback from industry professionals");
+    suggestions.push("Looks good: Your resume looks well-optimized. Consider getting feedback from industry professionals");
   }
 
   return suggestions.slice(0, 6); // Return top 6 suggestions

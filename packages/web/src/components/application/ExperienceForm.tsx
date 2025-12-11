@@ -300,7 +300,7 @@ export function ExperienceForm({ data, onChange }: ExperienceFormProps) {
                 </div>
 
                 <p className="text-xs text-muted-foreground bg-amber-50 p-3 rounded-lg border border-amber-100">
-                  💡 <strong>Pro tip:</strong> Use the STAR method (Situation, Task, Action, Result) and include specific numbers. Example: &ldquo;Reduced page load time by 40%, improving user retention by 15%&rdquo;
+                  <strong>Pro tip:</strong> Use the STAR method (Situation, Task, Action, Result) and include specific numbers. Example: &ldquo;Reduced page load time by 40%, improving user retention by 15%&rdquo;
                 </p>
               </div>
             </div>

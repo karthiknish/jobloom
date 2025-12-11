@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('❌ Error exporting email list:', error);
+    console.error('Error exporting email list:', error);
     return NextResponse.json(
       { error: 'Failed to export email list' },
       { status: 500 }

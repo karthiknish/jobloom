@@ -129,7 +129,7 @@ export async function POST(req: NextRequest) {
 
         const result = await sendEmail({
           to: userEmail,
-          subject: `📊 Your Weekly Job Search Summary`,
+          subject: `Your Weekly Job Search Summary`,
           html,
           text,
         });

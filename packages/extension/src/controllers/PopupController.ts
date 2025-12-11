@@ -383,7 +383,7 @@ export class PopupController {
     const planBadge = document.querySelector('#user-plan-badge .plan-badge');
     if (planBadge) {
       if (isPremium) {
-        planBadge.textContent = '✨ Premium';
+        planBadge.textContent = 'Premium';
         planBadge.classList.remove('free');
         planBadge.classList.add('premium');
       } else {

@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
+import { useOnboardingState } from "@/hooks/useOnboardingState";
 import { 
   Sparkles, 
   Briefcase, 
@@ -28,38 +29,38 @@ interface WelcomeDialogProps {
 
 export function WelcomeDialog({ onStartTour, onSkip }: WelcomeDialogProps) {
   const { user } = useFirebaseAuth();
+  const onboarding = useOnboardingState();
   const [isOpen, setIsOpen] = useState(false);
   const [hasChecked, setHasChecked] = useState(false);
 
   useEffect(() => {
-    if (!hasChecked && user && typeof window !== "undefined") {
+    if (!hasChecked && user && onboarding.isLoaded && typeof window !== "undefined") {
       setHasChecked(true);
       
-      // Check if user has seen the welcome dialog
-      const hasSeenWelcome = localStorage.getItem("hireall:welcome_seen");
       const createdAt = user.metadata?.creationTime;
       
-      if (!hasSeenWelcome && createdAt) {
+      if (!onboarding.hasSeenWelcome && createdAt) {
         // Only show for users created in the last 24 hours
         const createdDate = new Date(createdAt);
         const hoursSinceCreated = (Date.now() - createdDate.getTime()) / (1000 * 60 * 60);
         
         if (hoursSinceCreated < 24) {
           // Small delay to let the page load
-          setTimeout(() => setIsOpen(true), 1000);
+          const timer = window.setTimeout(() => setIsOpen(true), 1000);
+          return () => window.clearTimeout(timer);
         }
       }
     }
-  }, [user, hasChecked]);
+  }, [user, hasChecked, onboarding.isLoaded, onboarding.hasSeenWelcome]);
 
   const handleStartTour = () => {
-    localStorage.setItem("hireall:welcome_seen", "true");
+    onboarding.markWelcomeSeen();
     setIsOpen(false);
     onStartTour?.();
   };
 
   const handleSkip = () => {
-    localStorage.setItem("hireall:welcome_seen", "true");
+    onboarding.markWelcomeSeen();
     setIsOpen(false);
     onSkip?.();
   };

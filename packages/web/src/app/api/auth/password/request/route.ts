@@ -1,33 +1,30 @@
 import { NextResponse } from "next/server";
-import { Resend } from "resend";
+import { z } from "zod";
 
 import { getAdminApp, getAdminAuth, getAdminDb, type UserRecord } from "@/firebase/admin";
 import { PASSWORD_RESET_SUBJECT, renderPasswordResetEmailHtml, renderPasswordResetEmailText } from "@/emails/passwordResetEmail";
+import { sendEmail } from "@/lib/resend";
 
-const resendApiKey = process.env.RESEND_API_KEY;
 const resendFrom = process.env.RESEND_FROM_EMAIL ?? "Hireall <hello@hireall.app>";
 const appUrl = process.env.HIREALL_WEB_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "https://hireall.app";
 const supportEmail = process.env.HIREALL_SUPPORT_EMAIL ?? "support@hireall.app";
 
-const resend = resendApiKey ? new Resend(resendApiKey) : null;
+const BodySchema = z.object({
+  email: z.string().trim().email(),
+  redirectUrl: z.string().url().optional(),
+});
 
 export async function POST(request: Request) {
   try {
-    const { email, redirectUrl } = await request.json().catch(() => ({ email: undefined }));
-
-    if (!email || typeof email !== "string") {
+    const parsed = BodySchema.safeParse(await request.json().catch(() => ({})));
+    if (!parsed.success) {
       return NextResponse.json(
-        { success: false, error: "Email address is required" },
+        { success: false, error: "Invalid request" },
         { status: 400 }
       );
     }
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return NextResponse.json(
-        { success: false, error: "Invalid email format" },
-        { status: 400 }
-      );
-    }
+    const { email, redirectUrl } = parsed.data;
 
     const admin = getAdminApp();
     const adminAuth = getAdminAuth();
@@ -68,15 +65,10 @@ export async function POST(request: Request) {
         used: false,
       });
 
-    const baseReset = redirectUrl && typeof redirectUrl === "string" ? redirectUrl : `${appUrl}/reset-password`;
+    const baseReset = redirectUrl ? redirectUrl : `${appUrl}/reset-password`;
     const url = new URL(baseReset);
     url.searchParams.set("token", randomToken);
     url.searchParams.set("email", email);
-
-    if (!resend) {
-      console.warn("Password reset email skipped: RESEND_API_KEY is not configured");
-      return NextResponse.json({ success: true, skipped: true });
-    }
 
     const resetUrlWithToken = url.toString();
 
@@ -96,7 +88,7 @@ export async function POST(request: Request) {
       signInUrl: `${appUrl}/sign-in`,
     });
 
-    await resend.emails.send({
+    const emailResult = await sendEmail({
       from: resendFrom,
       to: email,
       subject: PASSWORD_RESET_SUBJECT,
@@ -104,7 +96,12 @@ export async function POST(request: Request) {
       text,
     });
 
-    return NextResponse.json({ success: true });
+    if (!emailResult.success) {
+      // Keep response generic to avoid leaking info.
+      console.error("Password reset email send failed:", emailResult.error);
+    }
+
+    return NextResponse.json({ success: true, skipped: emailResult.skipped === true });
   } catch (error) {
     console.error("Failed to process password reset request", error);
     return NextResponse.json({ success: false, error: "Unable to process request" }, { status: 500 });

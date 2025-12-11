@@ -51,7 +51,7 @@ export const defaultEmailTemplates: EmailTemplate[] = [
     name: 'Welcome Newsletter',
     description: 'Welcome email for new subscribers with platform introduction',
     category: 'onboarding',
-    subject: 'Welcome to HireAll - Your Career Journey Starts Here! 🚀',
+    subject: 'Welcome to HireAll - Your Career Journey Starts Here!',
     htmlContent: `
       <!DOCTYPE html>
       <html>
@@ -71,7 +71,7 @@ export const defaultEmailTemplates: EmailTemplate[] = [
       <body>
         <div class="container">
           <div class="header">
-            <h1>Welcome to HireAll! 👋</h1>
+            <h1>Welcome to HireAll!</h1>
             <p>Your career transformation platform</p>
           </div>
           <div class="content">
@@ -79,12 +79,12 @@ export const defaultEmailTemplates: EmailTemplate[] = [
             <p>We're thrilled to have you join our community of professionals who are taking their careers to the next level!</p>
             
             <div class="feature">
-              <h3>📋 AI-Powered Resume Builder</h3>
+              <h3>AI-Powered Resume Builder</h3>
               <p>Let our AI help you craft the perfect resume that gets past ATS systems and impresses recruiters.</p>
             </div>
             
             <div class="feature">
-              <h3>💼 Job Discovery Platform</h3>
+              <h3>Job Discovery Platform</h3>
               <p>Find opportunities that match your skills and career aspirations with our smart job matching.</p>
             </div>
             
@@ -125,7 +125,7 @@ export const defaultEmailTemplates: EmailTemplate[] = [
     name: 'Premium Upgrade Reminder',
     description: 'Encourage free users to upgrade to premium with limited-time offer',
     category: 'promotional',
-    subject: '🔥 Limited Time: Unlock Premium Features for 50% Off!',
+    subject: 'Limited Time: Unlock Premium Features for 50% Off!',
     htmlContent: `
       <!DOCTYPE html>
       <html>
@@ -148,7 +148,7 @@ export const defaultEmailTemplates: EmailTemplate[] = [
       <body>
         <div class="container">
           <div class="header">
-            <h1>🔥 Exclusive Offer for {{firstName}}!</h1>
+            <h1>Exclusive Offer for {{firstName}}!</h1>
             <p>Upgrade to Premium and Transform Your Career</p>
           </div>
           <div class="content">
@@ -159,26 +159,26 @@ export const defaultEmailTemplates: EmailTemplate[] = [
             </div>
             
             <div class="timer">
-              <strong>⏰ Limited Time Offer!</strong><br>
+              <strong>Limited Time Offer!</strong><br>
               This special discount expires in {{offerExpiry}} hours
             </div>
             
-            <h3>🚀 What You'll Unlock with Premium:</h3>
+            <h3>What You'll Unlock with Premium:</h3>
             <div class="feature-grid">
               <div class="feature">
-                <h4>✨ Unlimited CV Analysis</h4>
+                <h4>Unlimited CV Analysis</h4>
                 <p>Analyze as many resumes as you need with detailed AI feedback</p>
               </div>
               <div class="feature">
-                <h4>🤖 AI Cover Letter Generator</h4>
+                <h4>AI Cover Letter Generator</h4>
                 <p>Create personalized cover letters in seconds</p>
               </div>
               <div class="feature">
-                <h4>📊 Advanced Analytics</h4>
+                <h4>Advanced Analytics</h4>
                 <p>Track your application success rate and optimize your strategy</p>
               </div>
               <div class="feature">
-                <h4>⚡ Priority Support</h4>
+                <h4>Priority Support</h4>
                 <p>Get faster responses from our career experts</p>
               </div>
             </div>
@@ -199,7 +199,7 @@ export const defaultEmailTemplates: EmailTemplate[] = [
       </html>
     `,
     textContent: `
-      🔥 Exclusive Offer for {{firstName}}!
+      Exclusive Offer for {{firstName}}!
       
       Upgrade to Premium and Transform Your Career
       
@@ -209,10 +209,10 @@ export const defaultEmailTemplates: EmailTemplate[] = [
       This special discount expires in {{offerExpiry}} hours
       
       What You'll Unlock with Premium:
-      ✨ Unlimited CV Analysis - Analyze as many resumes as you need
-      🤖 AI Cover Letter Generator - Create personalized cover letters
-      📊 Advanced Analytics - Track your application success rate
-      ⚡ Priority Support - Get faster responses from career experts
+      Unlimited CV Analysis - Analyze as many resumes as you need
+      AI Cover Letter Generator - Create personalized cover letters
+      Advanced Analytics - Track your application success rate
+      Priority Support - Get faster responses from career experts
       
       Claim your discount now: {{upgradeUrl}}
       
@@ -233,7 +233,7 @@ export const defaultEmailTemplates: EmailTemplate[] = [
     name: 'UK Sponsorship Guide',
     description: 'Comprehensive guide for UK visa sponsorship requirements and opportunities',
     category: 'marketing',
-    subject: '🇬🇧 Your Complete Guide to UK Sponsorship Opportunities',
+    subject: 'Your Complete Guide to UK Sponsorship Opportunities',
     htmlContent: `
       <!DOCTYPE html>
       <html>
@@ -260,7 +260,7 @@ export const defaultEmailTemplates: EmailTemplate[] = [
       <body>
         <div class="container">
           <div class="header">
-            <div class="uk-flag">🇬🇧</div>
+            <div class="uk-flag">UK</div>
             <h1>Your UK Sponsorship Guide</h1>
             <p>Everything you need to know about working in the UK</p>
           </div>
@@ -284,7 +284,7 @@ export const defaultEmailTemplates: EmailTemplate[] = [
             </div>
             
             <div class="guide-section">
-              <h3>📋 UK Visa Types for Work</h3>
+              <h3>UK Visa Types for Work</h3>
               <ul class="visa-list">
                 <li><strong>Skilled Worker Visa:</strong> For qualified professionals with a job offer from a licensed sponsor</li>
                 <li><strong>Global Talent Visa:</strong> For leaders in digital technology, arts, or science</li>
@@ -294,18 +294,18 @@ export const defaultEmailTemplates: EmailTemplate[] = [
             </div>
             
             <div class="guide-section">
-              <h3>🎯 Top Sponsorship Industries</h3>
+              <h3>Top Sponsorship Industries</h3>
               <p><strong>{{topIndustry1}}:</strong> {{industry1JobsCount}}+ opportunities</p>
               <p><strong>{{topIndustry2}}:</strong> {{industry2JobsCount}}+ opportunities</p>
               <p><strong>{{topIndustry3}}:</strong> {{industry3JobsCount}}+ opportunities</p>
             </div>
             
             <div class="tip">
-              <strong>💡 Pro Tip:</strong> {{sponsorshipTip}}
+              <strong>Pro Tip:</strong> {{sponsorshipTip}}
             </div>
             
             <div class="guide-section">
-              <h3>📈 Your Sponsorship Readiness Score</h3>
+              <h3>Your Sponsorship Readiness Score</h3>
               <p>Based on your profile, you have a <strong>{{readinessScore}}%</strong> chance of securing sponsorship!</p>
               <p><strong>Areas to improve:</strong> {{improvementAreas}}</p>
             </div>
@@ -322,7 +322,7 @@ export const defaultEmailTemplates: EmailTemplate[] = [
       </html>
     `,
     textContent: `
-      🇬🇧 Your UK Sponsorship Guide
+      Your UK Sponsorship Guide
       
       Hi {{firstName}},
       
@@ -363,7 +363,7 @@ export const defaultEmailTemplates: EmailTemplate[] = [
     name: 'Application Success Story',
     description: 'Share success stories and testimonials to encourage engagement',
     category: 'marketing',
-    subject: '🎉 How {{candidateName}} Landed Their Dream Job in the UK',
+    subject: 'How {{candidateName}} Landed Their Dream Job in the UK',
     htmlContent: `
       <!DOCTYPE html>
       <html>
@@ -391,7 +391,7 @@ export const defaultEmailTemplates: EmailTemplate[] = [
       <body>
         <div class="container">
           <div class="header">
-            <h1>🎉 Success Story Spotlight</h1>
+            <h1>Success Story Spotlight</h1>
             <p>Real results from real users</p>
           </div>
           <div class="content">
@@ -413,7 +413,7 @@ export const defaultEmailTemplates: EmailTemplate[] = [
               </div>
               
               <div class="journey">
-                <h4>🚀 The Journey</h4>
+                <h4>The Journey</h4>
                 <p><strong>Challenge:</strong> {{challenge}}</p>
                 <p><strong>Solution:</strong> {{solution}}</p>
                 <p><strong>Result:</strong> {{result}}</p>
@@ -436,7 +436,7 @@ export const defaultEmailTemplates: EmailTemplate[] = [
             </div>
             
             <div style="background: #fef3c7; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              <h4>💡 {{candidateName}}'s Top Tips</h4>
+              <h4>{{candidateName}}'s Top Tips</h4>
               <ul>
                 {{#each tips}}
                 <li>{{this}}</li>
@@ -456,7 +456,7 @@ export const defaultEmailTemplates: EmailTemplate[] = [
       </html>
     `,
     textContent: `
-      🎉 Success Story: {{candidateName}}'s Journey to {{candidateCompany}}
+      Success Story: {{candidateName}}'s Journey to {{candidateCompany}}
       
       Hi {{firstName}},
       
@@ -496,7 +496,7 @@ export const defaultEmailTemplates: EmailTemplate[] = [
     name: 'Monthly Career Insights',
     description: 'Monthly newsletter with career tips, job market trends, and platform updates',
     category: 'newsletter',
-    subject: 'Your Monthly Career Insights from HireAll 📊',
+    subject: 'Your Monthly Career Insights from HireAll',
     htmlContent: `
       <!DOCTYPE html>
       <html>
@@ -518,7 +518,7 @@ export const defaultEmailTemplates: EmailTemplate[] = [
       <body>
         <div class="container">
           <div class="header">
-            <h1>Monthly Career Insights 📈</h1>
+            <h1>Monthly Career Insights</h1>
             <p>{{month}} {{year}} Edition</p>
           </div>
           <div class="content">
@@ -541,17 +541,17 @@ export const defaultEmailTemplates: EmailTemplate[] = [
             </div>
             
             <div class="article">
-              <h3>🔥 Hot Job Market Trends</h3>
+              <h3>Hot Job Market Trends</h3>
               <p>{{marketTrends}}</p>
             </div>
             
             <div class="article">
-              <h3>💡 Career Tip of the Month</h3>
+              <h3>Career Tip of the Month</h3>
               <p>{{careerTip}}</p>
             </div>
             
             <div class="article">
-              <h3>🚀 Platform Updates</h3>
+              <h3>Platform Updates</h3>
               <p>{{platformUpdates}}</p>
             </div>
             
@@ -604,7 +604,7 @@ export const defaultEmailTemplates: EmailTemplate[] = [
     name: 'New Job Alert',
     description: 'Personalized job recommendations based on user profile and preferences',
     category: 'marketing',
-    subject: 'New Job Opportunities Matching Your Profile 💼',
+    subject: 'New Job Opportunities Matching Your Profile',
     htmlContent: `
       <!DOCTYPE html>
       <html>
@@ -629,7 +629,7 @@ export const defaultEmailTemplates: EmailTemplate[] = [
       <body>
         <div class="container">
           <div class="header">
-            <h1>New Job Matches! 🎯</h1>
+            <h1>New Job Matches</h1>
             <p>We found {{jobCount}} opportunities perfect for you</p>
           </div>
           <div class="content">
@@ -640,7 +640,7 @@ export const defaultEmailTemplates: EmailTemplate[] = [
             <div class="job-card">
               <div class="job-title">{{title}}</div>
               <div class="company">{{company}}</div>
-              <div class="location">📍 {{location}} • {{type}} • {{salary}}</div>
+              <div class="location">{{location}} • {{type}} • {{salary}}</div>
               <div class="skills">
                 {{#each skills}}
                 <span class="skill">{{this}}</span>
@@ -701,7 +701,7 @@ export const defaultEmailTemplates: EmailTemplate[] = [
     name: 'New Feature Announcement',
     description: 'Announce new platform features and improvements',
     category: 'announcement',
-    subject: 'Exciting New Features on HireAll! 🎉',
+    subject: 'Exciting New Features on HireAll!',
     htmlContent: `
       <!DOCTYPE html>
       <html>
@@ -723,7 +723,7 @@ export const defaultEmailTemplates: EmailTemplate[] = [
       <body>
         <div class="container">
           <div class="header">
-            <h1>Big News! 🚀</h1>
+            <h1>Big News!</h1>
             <p>We've launched exciting new features just for you</p>
           </div>
           <div class="content">
@@ -784,7 +784,7 @@ export const defaultEmailTemplates: EmailTemplate[] = [
     name: 'User Re-engagement Campaign',
     description: 'Re-engage inactive users with personalized content and incentives',
     category: 'marketing',
-    subject: 'We Miss You! Here\'s What\'s New on HireAll 👋',
+    subject: 'We Miss You! Here\'s What\'s New on HireAll',
     htmlContent: `
       <!DOCTYPE html>
       <html>
@@ -806,7 +806,7 @@ export const defaultEmailTemplates: EmailTemplate[] = [
       <body>
         <div class="container">
           <div class="header">
-            <h1>We Miss You! 💚</h1>
+            <h1>We Miss You!</h1>
             <p>It's been {{daysSinceLastLogin}} days since your last visit</p>
           </div>
           <div class="content">
@@ -814,7 +814,7 @@ export const defaultEmailTemplates: EmailTemplate[] = [
             <p>We noticed you haven't been around lately, and we wanted to let you know about the exciting things happening on HireAll!</p>
             
             <div class="offer">
-              <h3>🎁 Welcome Back Offer!</h3>
+              <h3>Welcome Back Offer</h3>
               <p>Get {{offerDiscount}} off premium features for the next {{offerDuration}} days</p>
               <a href="{{offerUrl}}" class="button">Claim Your Offer</a>
             </div>
@@ -859,7 +859,7 @@ export const defaultEmailTemplates: EmailTemplate[] = [
       
       It's been {{daysSinceLastLogin}} days since your last visit, and we wanted to share what's new!
       
-      🎁 Welcome Back Offer!
+      Welcome Back Offer
       Get {{offerDiscount}} off premium features for {{offerDuration}} days
       Claim now: {{offerUrl}}
       

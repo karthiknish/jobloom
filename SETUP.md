@@ -64,7 +64,7 @@
 
 2. **Chrome Extension**:
    - Visit job sites (LinkedIn, Indeed, etc.)
-   - Click "🎯 Check Sponsored Jobs" button in the extension popup or floating button
+   - Click "Check Sponsored Jobs" button in the extension popup or floating button
    - Extension queries the web app API (Firestore-backed) for sponsorship data
    - Sponsored jobs are highlighted based on database matches
    - Jobs are synced to your dashboard
@@ -78,31 +78,31 @@
 ## Features
 
 ### Chrome Extension
-- ✅ **On-demand sponsored job checking** (button click only)
-- ✅ **Company-based sponsorship matching** via Firestore database
-- ✅ **Fuzzy company name matching** with aliases support
-- ✅ Visual highlighting with color-coded badges
-- ✅ Site-specific job element detection
-- ✅ Support for major job sites (LinkedIn, Indeed, Glassdoor, Monster, ZipRecruiter)
-- ✅ Real-time sync with backend
-- ✅ Configurable Web App URL in extension settings
+- **On-demand sponsored job checking** (button click only)
+- **Company-based sponsorship matching** via Firestore database
+- **Fuzzy company name matching** with aliases support
+- Visual highlighting with color-coded badges
+- Site-specific job element detection
+- Support for major job sites (LinkedIn, Indeed, Glassdoor, Monster, ZipRecruiter)
+- Real-time sync with backend
+- Configurable Web App URL in extension settings
 
 ### Web Application
-- ✅ User authentication with Firebase Auth
-- ✅ Job application tracking
-- ✅ Status management (interested → applied → interviewing → offered/rejected)
-- ✅ Statistics dashboard
-- ✅ Real-time updates
+- User authentication with Firebase Auth
+- Job application tracking
+- Status management (interested → applied → interviewing → offered/rejected)
+- Statistics dashboard
+- Real-time updates
 
 ### Backend (Firebase + Firestore)
-- ✅ User management
-- ✅ Job storage and retrieval
-- ✅ Application status tracking
-- ✅ **Sponsored companies database** with company name and alias matching
-- ✅ **Fuzzy matching algorithm** for company name variations
-- ✅ Admin API for managing sponsored companies
-- ✅ Industry and sponsorship type categorization
-- ✅ Data persistence in Firestore
+- User management
+- Job storage and retrieval
+- Application status tracking
+- **Sponsored companies database** with company name and alias matching
+- **Fuzzy matching algorithm** for company name variations
+- Admin API for managing sponsored companies
+- Industry and sponsorship type categorization
+- Data persistence in Firestore
 
 ## Development
 

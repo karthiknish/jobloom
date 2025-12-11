@@ -10,7 +10,7 @@ export const onboardingTemplates: EmailTemplate[] = [
     name: 'Welcome Newsletter',
     description: 'Welcome email for new subscribers with platform introduction',
     category: 'onboarding',
-    subject: 'Welcome to HireAll - Your Career Journey Starts Here! 🚀',
+    subject: 'Welcome to HireAll - Your Career Journey Starts Here!',
     htmlContent: `
       <!DOCTYPE html>
       <html>
@@ -30,7 +30,7 @@ export const onboardingTemplates: EmailTemplate[] = [
       <body>
         <div class="container">
           <div class="header">
-            <h1>Welcome to HireAll! 👋</h1>
+            <h1>Welcome to HireAll!</h1>
             <p>Your career transformation platform</p>
           </div>
           <div class="content">
@@ -38,12 +38,12 @@ export const onboardingTemplates: EmailTemplate[] = [
             <p>We're thrilled to have you join our community of professionals who are taking their careers to the next level!</p>
             
             <div class="feature">
-              <h3>📋 AI-Powered Resume Builder</h3>
+              <h3>AI-Powered Resume Builder</h3>
               <p>Let our AI help you craft the perfect resume that gets past ATS systems and impresses recruiters.</p>
             </div>
             
             <div class="feature">
-              <h3>💼 Job Discovery Platform</h3>
+              <h3>Job Discovery Platform</h3>
               <p>Find opportunities that match your skills and career aspirations with our smart job matching.</p>
             </div>
             

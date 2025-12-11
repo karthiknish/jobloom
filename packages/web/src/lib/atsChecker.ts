@@ -92,7 +92,7 @@ export const ATS_BREAKING_PATTERNS = {
   
   // Special characters
   smartQuotes: /[''""]/g,
-  nonStandardBullets: /[•◦▪▫●○◆◇★☆]/g,
+  nonStandardBullets: /[•◦▪▫●○◆◇\u2605\u2606]/g,
   emDashes: /[—–]/g,
   
   // File issues

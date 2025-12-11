@@ -90,7 +90,7 @@ export class ErrorLogger {
 
     // Log errors to console
     if (process.env.NODE_ENV === 'development') {
-      console.error('🚨 API Error:', JSON.stringify(logEntry, null, 2));
+      console.error('API Error:', JSON.stringify(logEntry, null, 2));
     } else {
       const errorInfo = typeof logEntry.error === 'object' ? logEntry.error : { message: logEntry.error };
       console.error('API Error:', errorInfo);

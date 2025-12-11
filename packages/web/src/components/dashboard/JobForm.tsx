@@ -477,7 +477,7 @@ export function JobForm({ onSubmit, onCancel, initialData, isEditing = false }: 
                   onCheckedChange={(checked) => handleCheckboxChange("isSponsored", checked === true)}
                 />
                 <Label htmlFor="isSponsored" className="text-sm font-normal cursor-pointer">
-                  ✅ Visa Sponsorship
+                  Visa Sponsorship
                 </Label>
               </div>
               
@@ -488,7 +488,7 @@ export function JobForm({ onSubmit, onCancel, initialData, isEditing = false }: 
                   onCheckedChange={(checked) => handleCheckboxChange("isRecruitmentAgency", checked === true)}
                 />
                 <Label htmlFor="isRecruitmentAgency" className="text-sm font-normal cursor-pointer">
-                  🏢 Recruitment Agency
+                  Recruitment Agency
                 </Label>
               </div>
             </div>

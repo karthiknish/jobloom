@@ -113,7 +113,7 @@ export function logRequest(request: NextRequest, context: RequestContext): void 
 
   // Log in development
   if (process.env.NODE_ENV === 'development') {
-    console.log('📝 API Request:', logData);
+    console.log('API Request:', logData);
   }
 
   // Log to console for production monitoring
@@ -135,7 +135,7 @@ export function logResponse(response: Response, context: RequestContext): void {
 
   // Log in development
   if (process.env.NODE_ENV === 'development') {
-    console.log('📤 API Response:', logData);
+    console.log('API Response:', logData);
   }
 
   // Log to console for production monitoring

@@ -395,20 +395,20 @@ export function watchConnectionHealth(
  * Log connection health report to console for debugging
  */
 export function logHealthReport(report: ConnectionHealthReport): void {
-  const status = report.overall.healthy ? '✅' : report.overall.degraded ? '⚠️' : '❌';
+  const status = report.overall.healthy ? 'OK' : report.overall.degraded ? 'WARN' : 'FAIL';
   
   console.group(`${status} HireAll Connection Health Report`);
   console.log(`Timestamp: ${new Date(report.timestamp).toISOString()}`);
   
   console.group('API');
-  console.log(`Healthy: ${report.api.healthy ? '✅' : '❌'}`);
+  console.log(`Healthy: ${report.api.healthy ? 'OK' : 'FAIL'}`);
   if (report.api.latency) console.log(`Latency: ${report.api.latency}ms`);
   if (report.api.version) console.log(`Version: ${report.api.version}`);
   if (report.api.error) console.log(`Error: ${report.api.error}`);
   console.groupEnd();
   
   console.group('Firebase');
-  console.log(`Healthy: ${report.firebase.healthy ? '✅' : '❌'}`);
+  console.log(`Healthy: ${report.firebase.healthy ? 'OK' : 'FAIL'}`);
   console.log(`Initialized: ${report.firebase.initialized}`);
   console.log(`Auth Initialized: ${report.firebase.authInitialized}`);
   console.log(`Has User: ${report.firebase.hasUser}`);
@@ -416,7 +416,7 @@ export function logHealthReport(report: ConnectionHealthReport): void {
   console.groupEnd();
   
   console.group('Auth');
-  console.log(`Authenticated: ${report.auth.authenticated ? '✅' : '❌'}`);
+  console.log(`Authenticated: ${report.auth.authenticated ? 'OK' : 'FAIL'}`);
   console.log(`Token Valid: ${report.auth.tokenValid}`);
   if (report.auth.tokenSource) console.log(`Token Source: ${report.auth.tokenSource}`);
   if (report.auth.tokenExpiresIn) console.log(`Token Expires In: ${Math.round(report.auth.tokenExpiresIn / 1000)}s`);
@@ -424,7 +424,7 @@ export function logHealthReport(report: ConnectionHealthReport): void {
   console.groupEnd();
   
   console.group('Storage');
-  console.log(`Available: ${report.storage.available ? '✅' : '❌'}`);
+  console.log(`Available: ${report.storage.available ? 'OK' : 'FAIL'}`);
   console.log(`Local: ${report.storage.localAvailable}`);
   console.log(`Sync: ${report.storage.syncAvailable}`);
   if (report.storage.error) console.log(`Error: ${report.storage.error}`);

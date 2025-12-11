@@ -19,7 +19,7 @@ const STATUS_LABELS: Record<ApplicationStatus, string> = {
   saved: "Saved",
   applied: "Applied",
   interviewing: "Interviewing",
-  offered: "Offered 🎉",
+  offered: "Offered",
   rejected: "Not Selected",
   withdrawn: "Withdrawn",
 };
@@ -131,7 +131,7 @@ export function renderStatusChangeEmailHtml({
                 </div>
 
                 <!-- Tips Section -->
-                <p style="margin:0 0 12px; font-size:14px; font-weight:600; color:${textColor};">💡 Tips for this stage:</p>
+                <p style="margin:0 0 12px; font-size:14px; font-weight:600; color:${textColor};">Tips for this stage:</p>
                 <ul style="margin:0 0 24px; padding-left:20px; color:${mutedTextColor}; font-size:14px; line-height:1.7;">
                   ${tips.map(tip => `<li style="margin-bottom:8px;">${tip}</li>`).join('')}
                 </ul>

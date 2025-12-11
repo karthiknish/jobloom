@@ -17,7 +17,7 @@ const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
 
 if (!ADMIN_TOKEN) {
-  console.error('❌ Error: ADMIN_TOKEN environment variable is required');
+  console.error('Error: ADMIN_TOKEN environment variable is required');
   console.log('Usage: ADMIN_TOKEN=your_jwt_token node create-blog-posts.js');
   process.exit(1);
 }
@@ -130,24 +130,24 @@ async function createBlogPost(postData) {
 
 async function createBlogPosts() {
   try {
-    console.log('🚀 Starting blog posts creation via API...');
-    console.log(`📍 API URL: ${BASE_URL}/api/blog/admin/posts`);
-    console.log(`🔑 Using admin token: ${ADMIN_TOKEN.substring(0, 20)}...`);
+    console.log('Starting blog posts creation via API...');
+    console.log(`API URL: ${BASE_URL}/api/blog/admin/posts`);
+    console.log(`Using admin token: ${ADMIN_TOKEN.substring(0, 20)}...`);
 
     let successCount = 0;
     let errorCount = 0;
 
     for (let i = 0; i < sampleBlogPosts.length; i++) {
       const post = sampleBlogPosts[i];
-      console.log(`\n📝 Creating post ${i + 1}/${sampleBlogPosts.length}: "${post.title}"`);
+      console.log(`\nCreating post ${i + 1}/${sampleBlogPosts.length}: "${post.title}"`);
 
       const result = await createBlogPost(post);
 
       if (result.success) {
-        console.log(`   ✅ Success - Post ID: ${result.data.postId}, Slug: ${result.data.slug}`);
+        console.log(`   Success - Post ID: ${result.data.postId}, Slug: ${result.data.slug}`);
         successCount++;
       } else {
-        console.log(`   ❌ Failed - ${JSON.stringify(result.error)}`);
+        console.log(`   Failed - ${JSON.stringify(result.error)}`);
         if (result.status) {
           console.log(`   Status: ${result.status}`);
         }
@@ -158,13 +158,13 @@ async function createBlogPosts() {
       await new Promise(resolve => setTimeout(resolve, 500));
     }
 
-    console.log(`\n🎉 Blog posts creation complete!`);
-    console.log(`✅ Successful: ${successCount}`);
-    console.log(`❌ Failed: ${errorCount}`);
-    console.log(`📊 Total: ${sampleBlogPosts.length}`);
+    console.log(`\nBlog posts creation complete!`);
+    console.log(`Successful: ${successCount}`);
+    console.log(`Failed: ${errorCount}`);
+    console.log(`Total: ${sampleBlogPosts.length}`);
 
     if (successCount > 0) {
-      console.log('\n📝 Blog posts created:');
+      console.log('\nBlog posts created:');
       sampleBlogPosts.forEach((post, index) => {
         console.log(`${index + 1}. ${post.title}`);
         console.log(`   Category: ${post.category}`);
@@ -174,16 +174,16 @@ async function createBlogPosts() {
     }
 
   } catch (error) {
-    console.error('❌ Error creating blog posts:', error);
+    console.error('Error creating blog posts:', error);
     process.exit(1);
   }
 }
 
 // Run the script
 createBlogPosts().then(() => {
-  console.log('🎉 Blog posts creation complete!');
+  console.log('Blog posts creation complete!');
   process.exit(0);
 }).catch((error) => {
-  console.error('💥 Script failed:', error);
+  console.error('Script failed:', error);
   process.exit(1);
 });

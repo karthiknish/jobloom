@@ -289,7 +289,7 @@ export function ApplicationForm({
                   {statusOptions.find(opt => opt.value === formData.status)?.label || formData.status}
                 </Badge>
                 {application.job.isSponsored && (
-                  <Badge variant="orange">🇬🇧 Sponsored</Badge>
+                  <Badge variant="orange">Sponsored</Badge>
                 )}
                 {application.job.isRecruitmentAgency && (
                   <Badge variant="outline">Agency</Badge>

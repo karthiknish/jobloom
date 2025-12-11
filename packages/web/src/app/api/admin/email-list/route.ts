@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ Error fetching email list:', error);
+    console.error('Error fetching email list:', error);
     return NextResponse.json(
       { error: 'Failed to fetch email list' },
       { status: 500 }
@@ -179,7 +179,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ Error updating email list:', error);
+    console.error('Error updating email list:', error);
     return NextResponse.json(
       { error: 'Failed to update email list' },
       { status: 500 }

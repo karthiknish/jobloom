@@ -461,10 +461,10 @@ export default function AdminReportsPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Types</SelectItem>
-                    <SelectItem value="bug">🐛 Bug Reports</SelectItem>
-                    <SelectItem value="feature">✨ Features</SelectItem>
-                    <SelectItem value="improvement">💡 Improvements</SelectItem>
-                    <SelectItem value="other">📝 Other</SelectItem>
+                    <SelectItem value="bug">Bug Reports</SelectItem>
+                    <SelectItem value="feature">Features</SelectItem>
+                    <SelectItem value="improvement">Improvements</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
                 </Select>
 

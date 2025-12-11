@@ -61,28 +61,28 @@ async function createCompositeIndex() {
 
     if (response.ok) {
       const result = await response.json();
-      console.log('✅ Index creation request submitted successfully!');
+      console.log('Index creation request submitted successfully');
       console.log('Index name:', result.name);
       console.log('Status:', result.state);
-      console.log('\n📋 Index Details:');
+      console.log('\nIndex Details:');
       console.log('- Collection: cvAnalyses');
       console.log('- Fields: userId (ASC), createdAt (ASC)');
-      console.log('\n⏱️  The index will take 2-5 minutes to build.');
+      console.log('\nThe index will take 2-5 minutes to build.');
       console.log('You can check the status in Firebase Console → Firestore → Indexes');
     } else {
       const error = await response.json();
-      console.error('❌ Failed to create index:', error);
+      console.error('Failed to create index:', error);
 
       if (error.error && error.error.message.includes('already exists')) {
-        console.log('ℹ️  Index may already exist. This is normal if you\'ve created it before.');
+        console.log('Index may already exist. This is normal if you\'ve created it before.');
       }
     }
 
   } catch (error) {
-    console.error('❌ Error creating index:', error.message);
+    console.error('Error creating index:', error.message);
 
     // Provide fallback instructions
-    console.log('\n🔄 Fallback: Please create the index manually:');
+    console.log('\nFallback: Please create the index manually:');
     console.log('1. Go to: https://console.firebase.google.com/v1/r/project/hireall-4f106/firestore/indexes?create_composite=ClBwcm9qZWN0cy9oaXJlYWxsLTRmMTA2L2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy9jdkFuYWx5c2VzL2luZGV4ZXMvXxABGgoKBnVzZXJJZBABGg0KCWNyZWF0ZWRBdBABGgwKCF9fbmFtZV9fEAE');
     console.log('2. Or manually: Firebase Console → Firestore → Indexes → Create Index');
     console.log('   - Collection: cvAnalyses');

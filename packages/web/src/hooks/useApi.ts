@@ -162,7 +162,7 @@ function logApiError(error: EnhancedApiError, context?: {
 
   // Log errors
   if (process.env.NODE_ENV === 'development') {
-    console.error('🚨 API Error:', JSON.stringify(logData, null, 2));
+    console.error('API Error:', JSON.stringify(logData, null, 2));
   } else {
     console.error('API Error:', logData.error.code, logData.error.message);
   }
