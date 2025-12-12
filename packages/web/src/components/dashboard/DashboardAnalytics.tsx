@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FeatureGate } from "@/components/UpgradePrompt";
+import { useSubscription } from "@/providers/subscription-provider";
 import { TrendingUp, MapPin, CheckCircle, BarChart3 } from "lucide-react";
 import { CvAnalysisHistory } from "@/components/CvAnalysisHistory";
 import {
@@ -34,6 +35,8 @@ export function DashboardAnalytics({
   cvAnalyses,
   jobStats,
 }: DashboardAnalyticsProps) {
+  const { isAdmin } = useSubscription();
+
   // Ensure applications is always an array
   const safeApplications = Array.isArray(applications) ? applications : [];
   const safeCvAnalyses = Array.isArray(cvAnalyses) ? cvAnalyses : [];
@@ -57,15 +60,24 @@ export function DashboardAnalytics({
           <h2 className="text-2xl font-bold text-foreground">
             Analytics & Insights
           </h2>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Premium Feature</span>
+          {isAdmin ? (
             <Badge
               variant="secondary"
-              className="bg-gradient-to-r from-primary/20 to-secondary/20 text-primary border-primary/30"
+              className="bg-gradient-to-r from-emerald-500/15 to-emerald-500/5 text-emerald-700 border-emerald-500/30"
             >
-              Premium
+              Admin Access
             </Badge>
-          </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Premium Feature</span>
+              <Badge
+                variant="secondary"
+                className="bg-gradient-to-r from-primary/20 to-secondary/20 text-primary border-primary/30"
+              >
+                Premium
+              </Badge>
+            </div>
+          )}
         </div>
 
         {/* CV Analysis Section */}

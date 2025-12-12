@@ -16,6 +16,7 @@ export interface SubscriptionState {
   plan: SubscriptionPlan;
   limits: SubscriptionLimits;
   actions: SubscriptionActions;
+  isAdmin: boolean;
   currentUsage?: {
     cvAnalyses: number;
     applications: number;
@@ -43,6 +44,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     plan: "free",
     limits: SUBSCRIPTION_LIMITS.free,
     actions: {},
+    isAdmin: false,
     isLoading: true,
     error: null,
   });
@@ -59,6 +61,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         plan: "free",
         limits: SUBSCRIPTION_LIMITS.free,
         actions: {},
+        isAdmin: false,
         isLoading: false,
         error: null,
       });
@@ -105,6 +108,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
             limits: data.limits,
             currentUsage: data.currentUsage,
             actions,
+            isAdmin: data.isAdmin === true,
             isLoading: false,
             error: null,
           });
@@ -117,6 +121,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
             plan: "free",
             limits: SUBSCRIPTION_LIMITS.free,
             actions: {},
+            isAdmin: false,
             isLoading: false,
             error: null,
           });
@@ -128,6 +133,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
           plan: "free",
           limits: SUBSCRIPTION_LIMITS.free,
           actions: {},
+          isAdmin: false,
           isLoading: false,
           error: "Failed to load subscription information",
         });
@@ -150,6 +156,11 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       feature: keyof SubscriptionLimits,
       requiredValue?: boolean | number | string | Array<string | number>
     ): boolean => {
+      // Admin override: allow specific premium-only features for admins.
+      if (state.isAdmin && feature === "advancedAnalytics") {
+        return true;
+      }
+
       const value = state.limits[feature];
 
       if (typeof value === "boolean") {
@@ -193,7 +204,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
 
       return false;
     },
-    [state.limits]
+    [state.isAdmin, state.limits]
   );
 
   const canUseFeature = useCallback((feature: keyof SubscriptionLimits, currentUsage?: number): boolean => {
@@ -257,6 +268,7 @@ export function useSubscription() {
       plan: "free" as SubscriptionPlan,
       limits: SUBSCRIPTION_LIMITS.free,
       actions: {},
+      isAdmin: false,
       isLoading: false,
       error: null,
       hasFeature: () => false,

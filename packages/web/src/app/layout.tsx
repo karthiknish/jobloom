@@ -1,5 +1,6 @@
 import type { Viewport } from "next";
 import type { ReactNode } from "react";
+import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import FirebaseInitializer from "@/components/FirebaseInitializer";
 import { FirebaseAuthProvider } from "@/providers/firebase-auth-provider";
@@ -26,13 +27,24 @@ export const metadata = rootMetadata;
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  viewportFit: "cover",
 };
 
 // Generate JSON-LD schemas
 const organizationSchema = generateOrganizationSchema();
 const webSiteSchema = generateWebSiteSchema();
+
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-sans",
+});
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-serif",
+});
 
 export default function RootLayout({
   children,
@@ -48,8 +60,14 @@ export default function RootLayout({
       </head>
       <body
         suppressHydrationWarning
-        className="antialiased safe-area-inset-top safe-area-inset-bottom safe-area-inset-left safe-area-inset-right font-inter"
+        className={`${inter.variable} ${playfair.variable} antialiased safe-area-inset-top safe-area-inset-bottom safe-area-inset-left safe-area-inset-right font-sans pb-24 md:pb-0`}
       >
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-background focus:px-4 focus:py-2 focus:text-foreground focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-ring"
+        >
+          Skip to content
+        </a>
         <FirebaseInitializer />
         <FirebaseAuthProvider>
           <SubscriptionProvider>
@@ -57,7 +75,7 @@ export default function RootLayout({
               <PerformanceProvider>
                 <Header />
                 <EmailVerificationBanner />
-                {children}
+                <main id="main">{children}</main>
                 <Footer />
                 <MobileNavigation />
                 <AppToaster />

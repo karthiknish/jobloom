@@ -4,9 +4,14 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
 import { Separator } from "@/components/ui/separator";
+import { CHROME_EXTENSION_URL, GITHUB_URL, LINKEDIN_URL, TWITTER_URL, isExternalUrl } from "@/config/links";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+  const chromeIsExternal = isExternalUrl(CHROME_EXTENSION_URL);
+  const githubIsExternal = Boolean(GITHUB_URL) && isExternalUrl(GITHUB_URL);
+  const twitterIsExternal = isExternalUrl(TWITTER_URL);
+  const linkedinIsExternal = isExternalUrl(LINKEDIN_URL);
 
   return (
     <motion.footer
@@ -37,9 +42,9 @@ export default function Footer() {
           </div>
 
           {/* Product links */}
-          <div>
+          <div className="text-center sm:text-left">
             <h4 className="font-semibold mb-4">Product</h4>
-            <ul className="space-y-2 text-sm">
+            <ul className="space-y-2 text-sm flex flex-col items-center sm:items-start">
               <li>
                 <Link
                   href="/#how-it-works"
@@ -50,30 +55,32 @@ export default function Footer() {
               </li>
 
               <li>
-                <a
-                  href="https://chrome.google.com/webstore/detail/hireall"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-primary-foreground transition-colors"
-                >
-                  Chrome Extension
-                </a>
+                {chromeIsExternal ? (
+                  <a
+                    href={CHROME_EXTENSION_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-primary-foreground transition-colors"
+                  >
+                    Chrome Extension
+                  </a>
+                ) : (
+                  <Link
+                    href={CHROME_EXTENSION_URL}
+                    className="hover:text-primary-foreground transition-colors"
+                  >
+                    Chrome Extension
+                  </Link>
+                )}
               </li>
             </ul>
           </div>
 
           {/* Company links */}
-          <div>
+          <div className="text-center sm:text-left">
             <h4 className="font-semibold mb-4">Company</h4>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <Link
-                  href="/about"
-                  className="hover:text-primary-foreground transition-colors"
-                >
-                  About
-                </Link>
-              </li>
+            <ul className="space-y-2 text-sm flex flex-col items-center sm:items-start">
+            
               <li>
                 <Link
                   href="/blog"
@@ -84,19 +91,19 @@ export default function Footer() {
               </li>
               <li>
                 <Link
-                  href="/careers"
+                  href="/volunteer"
                   className="hover:text-primary-foreground transition-colors"
                 >
-                  Careers
+                  Volunteer
                 </Link>
               </li>
             </ul>
           </div>
 
           {/* Legal links */}
-          <div>
+          <div className="text-center sm:text-left">
             <h4 className="font-semibold mb-4">Legal</h4>
-            <ul className="space-y-2 text-sm">
+            <ul className="space-y-2 text-sm flex flex-col items-center sm:items-start">
               <li>
                 <Link
                   href="/privacy"
@@ -131,28 +138,30 @@ export default function Footer() {
           <p>© {currentYear} Hireall. All rights reserved.</p>
 
           <div className="flex space-x-6 mt-4 md:mt-0">
-            {/* GitHub */}
-            <a
-              href="https://github.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-foreground transition-colors"
-              aria-label="GitHub"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                className="w-5 h-5 fill-current"
-                aria-hidden="true"
+            {/* GitHub (optional) */}
+            {GITHUB_URL ? (
+              <a
+                href={GITHUB_URL}
+                target={githubIsExternal ? "_blank" : undefined}
+                rel={githubIsExternal ? "noopener noreferrer" : undefined}
+                className="hover:text-foreground transition-colors"
+                aria-label="GitHub"
               >
-                <path d="M12 0C5.37 0 0 5.37 0 12a12 12 0 008.21 11.44c.6.11.82-.26.82-.57v-2.23c-3.34.73-4.04-1.61-4.04-1.61-.55-1.4-1.34-1.77-1.34-1.77-1.1-.75.08-.74.08-.74 1.22.09 1.86 1.26 1.86 1.26 1.08 1.86 2.83 1.32 3.52 1 .11-.78.42-1.32.76-1.63-2.66-.3-5.46-1.33-5.46-5.93 0-1.31.47-2.38 1.25-3.22-.13-.3-.54-1.52.12-3.17 0 0 1-.32 3.3 1.23a11.52 11.52 0 016 0c2.3-1.55 3.29-1.23 3.29-1.23.66 1.65.25 2.87.12 3.17.78.84 1.25 1.91 1.25 3.22 0 4.61-2.8 5.62-5.47 5.92.43.37.81 1.1.81 2.22v3.29c0 .31.22.69.82.57A12 12 0 0024 12c0-6.63-5.37-12-12-12z" />
-              </svg>
-            </a>
+                <svg
+                  viewBox="0 0 24 24"
+                  className="w-5 h-5 fill-current"
+                  aria-hidden="true"
+                >
+                  <path d="M12 0C5.37 0 0 5.37 0 12a12 12 0 008.21 11.44c.6.11.82-.26.82-.57v-2.23c-3.34.73-4.04-1.61-4.04-1.61-.55-1.4-1.34-1.77-1.34-1.77-1.1-.75.08-.74.08-.74 1.22.09 1.86 1.26 1.86 1.26 1.08 1.86 2.83 1.32 3.52 1 .11-.78.42-1.32.76-1.63-2.66-.3-5.46-1.33-5.46-5.93 0-1.31.47-2.38 1.25-3.22-.13-.3-.54-1.52.12-3.17 0 0 1-.32 3.3 1.23a11.52 11.52 0 016 0c2.3-1.55 3.29-1.23 3.29-1.23.66 1.65.25 2.87.12 3.17.78.84 1.25 1.91 1.25 3.22 0 4.61-2.8 5.62-5.47 5.92.43.37.81 1.1.81 2.22v3.29c0 .31.22.69.82.57A12 12 0 0024 12c0-6.63-5.37-12-12-12z" />
+                </svg>
+              </a>
+            ) : null}
 
             {/* Twitter */}
             <a
-              href="https://twitter.com"
-              target="_blank"
-              rel="noopener noreferrer"
+              href={TWITTER_URL}
+              target={twitterIsExternal ? "_blank" : undefined}
+              rel={twitterIsExternal ? "noopener noreferrer" : undefined}
               className="hover:text-foreground transition-colors"
               aria-label="Twitter"
             >
@@ -167,9 +176,9 @@ export default function Footer() {
 
             {/* LinkedIn */}
             <a
-              href="https://linkedin.com"
-              target="_blank"
-              rel="noopener noreferrer"
+              href={LINKEDIN_URL}
+              target={linkedinIsExternal ? "_blank" : undefined}
+              rel={linkedinIsExternal ? "noopener noreferrer" : undefined}
               className="hover:text-foreground transition-colors"
               aria-label="LinkedIn"
             >

@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { CHROME_EXTENSION_ID, CHROME_EXTENSION_URL, isExternalUrl } from "@/config/links";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -56,7 +58,7 @@ export function ExtensionIntegration({ userId }: ExtensionIntegrationProps) {
         // Alternative check: try to access chrome extension API
         if (typeof window !== 'undefined' && (window as any).chrome && (window as any).chrome.runtime) {
           try {
-            (window as any).chrome.runtime.sendMessage('hireall_extension_id', { type: 'PING' }, (response: any) => {
+            (window as any).chrome.runtime.sendMessage(CHROME_EXTENSION_ID, { type: 'PING' }, (response: any) => {
               if (response && response.type === 'PONG') {
                 setIsExtensionInstalled(true);
               }
@@ -338,15 +340,22 @@ export function ExtensionIntegration({ userId }: ExtensionIntegrationProps) {
               className="w-full bg-primary hover:from-blue-700 hover:to-indigo-700 text-white gap-2"
               asChild
             >
-              <a
-                href="https://chrome.google.com/webstore/detail/hireall-extension"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Chrome className="h-4 w-4" />
-                Install Chrome Extension
-                <ExternalLink className="h-3 w-3" />
-              </a>
+              {isExternalUrl(CHROME_EXTENSION_URL) ? (
+                <a
+                  href={CHROME_EXTENSION_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Chrome className="h-4 w-4" />
+                  Install Chrome Extension
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              ) : (
+                <Link href={CHROME_EXTENSION_URL}>
+                  <Chrome className="h-4 w-4" />
+                  Install Chrome Extension
+                </Link>
+              )}
             </Button>
           </div>
         )}

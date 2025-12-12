@@ -28,7 +28,7 @@ export function KineticHowItWorks() {
           
           {steps.map((step, i) => (
             <div key={i} className="relative bg-background pt-4 md:pt-0">
-              <div className="text-6xl md:text-8xl font-black text-muted mb-6 select-none">
+              <div className="text-6xl md:text-8xl font-black text-muted-foreground/25 mb-6 select-none leading-none tabular-nums">
                 {step.num}
               </div>
               <h3 className="text-2xl font-bold text-foreground mb-3">

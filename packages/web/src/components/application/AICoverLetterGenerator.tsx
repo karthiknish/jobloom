@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Sparkles,
@@ -66,9 +66,10 @@ const containerVariants = {
 
 export function AICoverLetterGenerator() {
   const { user } = useFirebaseAuth();
-  const { plan } = useSubscription();
+  const { plan, isAdmin } = useSubscription();
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedLetter, setGeneratedLetter] = useState<GeneratedCoverLetter | null>(null);
+  const [editedContent, setEditedContent] = useState("");
   const [formData, setFormData] = useState<CoverLetterData>({
     jobTitle: "",
     companyName: "",
@@ -84,10 +85,13 @@ export function AICoverLetterGenerator() {
   const [deepResearch, setDeepResearch] = useState(false);
   const [downloadingPDF, setDownloadingPDF] = useState(false);
 
+  const jobDescriptionChars = formData.jobDescription.length;
+  const experienceChars = formData.experience.length;
+
   const canGenerate = Boolean(
     formData.jobTitle.trim() &&
       formData.companyName.trim() &&
-      formData.jobDescription.trim().length >= 50
+      formData.jobDescription.trim()
   );
 
   const generateCoverLetter = async () => {
@@ -101,7 +105,7 @@ export function AICoverLetterGenerator() {
       return;
     }
 
-    if (plan === "free") {
+    if (plan === "free" && !isAdmin) {
       const mockLetter: GeneratedCoverLetter = {
         content: `Dear Hiring Manager,\n\nI am writing to express my strong interest in the ${formData.jobTitle} position at ${formData.companyName}. With my background and skills, I am confident that I would be a valuable addition to your team.\n\n${formData.jobDescription.slice(0, 200)}... [This is a demo version]\n\n${formData.skills.length > 0 ? `My key skills include: ${formData.skills.join(", ")}.` : ""}\n\nI am excited about the opportunity to contribute to ${formData.companyName} and would welcome the chance to discuss how my experience aligns with your needs.\n\nThank you for your consideration.\n\nSincerely,\n[Your Name]`,
         atsScore: 85,
@@ -123,6 +127,7 @@ export function AICoverLetterGenerator() {
       };
 
       setGeneratedLetter(mockLetter);
+      setEditedContent(mockLetter.content);
       showInfo("Demo Mode", "This is a sample cover letter. Upgrade for full AI generation.");
       return;
     }
@@ -163,6 +168,7 @@ export function AICoverLetterGenerator() {
       }
 
       setGeneratedLetter(payload as GeneratedCoverLetter);
+      setEditedContent((payload as GeneratedCoverLetter).content ?? "");
       showSuccess("Success", "Your cover letter has been generated!");
     } catch (error: any) {
       console.error("Cover letter generation error:", error);
@@ -200,6 +206,7 @@ Sincerely,
       };
       
       setGeneratedLetter(mockLetter);
+      setEditedContent(mockLetter.content);
 
       const message = error instanceof Error ? error.message : "AI generation failed";
       showError("Generation Failed", message);
@@ -208,6 +215,20 @@ Sincerely,
       setIsGenerating(false);
     }
   };
+
+  useEffect(() => {
+    if (generatedLetter) {
+      setEditedContent(generatedLetter.content ?? "");
+    } else {
+      setEditedContent("");
+    }
+  }, [generatedLetter]);
+
+  const previewWordCount = useMemo(() => {
+    const content = (editedContent || "").trim();
+    if (!content) return 0;
+    return content.split(/\s+/).filter(Boolean).length;
+  }, [editedContent]);
 
   const addSkill = () => {
     if (skillInput.trim() && !formData.skills.includes(skillInput.trim())) {
@@ -229,7 +250,7 @@ Sincerely,
   const copyToClipboard = async () => {
     if (generatedLetter) {
       try {
-        await navigator.clipboard.writeText(generatedLetter.content);
+        await navigator.clipboard.writeText(editedContent || generatedLetter.content);
         showSuccess("Copied!", "Cover letter copied to clipboard.");
       } catch {
         showError("Failed to copy", "Please try again.");
@@ -245,9 +266,15 @@ Sincerely,
 
     try {
       setDownloadingPDF(true);
+
+      const contentToExport = (editedContent || generatedLetter.content || "").trim();
+      if (!contentToExport) {
+        showError("Missing Content", "Cover letter content is empty.");
+        return;
+      }
       
       // Validate content
-      const validation = PDFGenerator.validateContent(generatedLetter.content);
+      const validation = PDFGenerator.validateContent(contentToExport);
       if (!validation.valid) {
         showError("Validation Failed", validation.errors.join(', '));
         return;
@@ -268,7 +295,7 @@ Sincerely,
 
       // Generate and download PDF
       await PDFGenerator.generateAndDownloadCoverLetter(
-        generatedLetter.content,
+        contentToExport,
         metadata,
         undefined,
         {
@@ -323,7 +350,7 @@ Sincerely,
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {plan === "free" && (
+          {plan === "free" && !isAdmin && (
             <div className="ml-11 p-4 bg-amber-100/50 border border-amber-200 rounded-xl flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="p-1.5 bg-amber-100 rounded-full">
@@ -391,7 +418,19 @@ Sincerely,
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="jobDescription">Job Description <span className="text-red-500">*</span></Label>
+              <div className="flex items-end justify-between gap-3">
+                <Label htmlFor="jobDescription">
+                  Job Description <span className="text-red-500">*</span>
+                </Label>
+                <div className="text-xs text-muted-foreground tabular-nums">
+                  <span className={cn(jobDescriptionChars > 15000 ? "text-destructive" : undefined)}>
+                    {jobDescriptionChars}/15000
+                  </span>
+                  <span className={cn(jobDescriptionChars > 0 && jobDescriptionChars < 50 ? "text-amber-600" : "text-muted-foreground")}>
+                    {jobDescriptionChars < 50 ? ` • ${Math.max(0, 50 - jobDescriptionChars)} to min` : " • min met"}
+                  </span>
+                </div>
+              </div>
               <Textarea
                 id="jobDescription"
                 placeholder="Paste the full job description here..."
@@ -403,7 +442,14 @@ Sincerely,
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="experience">Your Relevant Experience</Label>
+              <div className="flex items-end justify-between gap-3">
+                <Label htmlFor="experience">Your Relevant Experience</Label>
+                <div className="text-xs text-muted-foreground tabular-nums">
+                  <span className={cn(experienceChars > 5000 ? "text-destructive" : undefined)}>
+                    {experienceChars}/5000
+                  </span>
+                </div>
+              </div>
               <Textarea
                 id="experience"
                 placeholder="Briefly describe your experience relevant to this role..."
@@ -531,6 +577,16 @@ Sincerely,
                 </>
               )}
             </Button>
+
+            {!canGenerate ? (
+              <p className="text-xs text-muted-foreground">
+                Fill Job Title, Company Name, and Job Description to generate.
+              </p>
+            ) : formData.jobDescription.trim().length < 50 ? (
+              <p className="text-xs text-muted-foreground">
+                Tip: paste at least 50 characters of the job description for best results.
+              </p>
+            ) : null}
           </CardContent>
         </Card>
 
@@ -616,15 +672,15 @@ Sincerely,
                   <div className="flex items-center justify-between">
                     <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">Preview</h4>
                     <div className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">
-                      {generatedLetter.wordCount} words • {generatedLetter.tone} tone
+                      {previewWordCount || generatedLetter.wordCount} words • {generatedLetter.tone} tone
                     </div>
                   </div>
                   
-                  <div className="p-8 bg-white text-black shadow-md border rounded-sm min-h-[400px] font-serif text-[11pt] leading-relaxed">
-                    <div className="whitespace-pre-wrap">
-                      {generatedLetter.content}
-                    </div>
-                  </div>
+                  <Textarea
+                    value={editedContent}
+                    onChange={(e) => setEditedContent(e.target.value)}
+                    className="min-h-[400px] p-8 bg-white text-black shadow-md border rounded-sm font-serif text-[11pt] leading-relaxed resize-y"
+                  />
                 </div>
 
                 {generatedLetter.deepResearch && generatedLetter.researchInsights && generatedLetter.researchInsights.length > 0 && (

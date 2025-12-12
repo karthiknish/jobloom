@@ -225,11 +225,12 @@ export async function POST(request: NextRequest) {
       }, { status: 404 });
     }
 
+    const isAdmin = userData.isAdmin === true;
     const isPremium = userData.subscription?.tier === 'premium' || 
                       userData.subscription?.tier === 'enterprise' ||
                       userData.subscriptionId; // Legacy check
 
-    if (!isPremium) {
+    if (!isPremium && !isAdmin) {
       return NextResponse.json({ 
         error: 'Premium subscription required for AI cover letter generation',
         code: 'PREMIUM_REQUIRED',

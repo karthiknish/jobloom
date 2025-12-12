@@ -4,8 +4,11 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle, Star, Cpu, Sparkles, Zap, Shield } from "lucide-react";
+import { CHROME_EXTENSION_URL, isExternalUrl } from "@/config/links";
 
 export function HeroSection() {
+  const chromeIsExternal = isExternalUrl(CHROME_EXTENSION_URL);
+
   return (
     <section className="relative overflow-hidden pt-8 pb-16 lg:pt-16 lg:pb-24">
       {/* Enhanced Animated Background */}
@@ -119,9 +122,9 @@ export function HeroSection() {
             className="mt-8 flex justify-center"
           >
             <Link 
-              href="https://chrome.google.com/webstore/detail/hireall-sponsored-job-fin/xxxxx"
-              target="_blank"
-              rel="noopener noreferrer"
+              href={CHROME_EXTENSION_URL}
+              target={chromeIsExternal ? "_blank" : undefined}
+              rel={chromeIsExternal ? "noopener noreferrer" : undefined}
             >
               <Button variant="ghost" className="text-sm text-muted-foreground hover:text-foreground group hover:bg-accent/5">
                 <div className="w-6 h-6 mr-2 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-md group-hover:shadow-lg group-hover:from-blue-600 group-hover:to-blue-700 motion-control">

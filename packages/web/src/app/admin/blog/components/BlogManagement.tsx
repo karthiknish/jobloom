@@ -16,6 +16,62 @@ import { BlogPagination } from "./BlogPagination";
 import { BulkActions } from "./BulkActions";
 import { CreatePostDialog, type CreatePostData } from "./CreatePostDialog";
 import type { BlogPost } from "@/types/api";
+import { Skeleton } from "@/components/ui/skeleton";
+
+function BlogManagementSkeleton() {
+  return (
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
+        <div className="space-y-2">
+          <Skeleton className="h-9 w-64" />
+          <Skeleton className="h-4 w-80" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Card key={i} className="border-none shadow-md">
+            <CardHeader className="space-y-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-8 w-16" />
+            </CardHeader>
+          </Card>
+        ))}
+      </div>
+
+      <Card className="p-4">
+        <div className="flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
+          <div className="flex-1">
+            <Skeleton className="h-10 w-full" />
+          </div>
+          <div className="flex gap-2">
+            <Skeleton className="h-10 w-32" />
+            <Skeleton className="h-10 w-40" />
+          </div>
+        </div>
+      </Card>
+
+      <Card className="overflow-hidden border-none shadow-md">
+        <CardHeader className="bg-muted/30">
+          <Skeleton className="h-6 w-32" />
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="p-4 space-y-3">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="flex items-center justify-between gap-4">
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-2/3" />
+                  <Skeleton className="h-3 w-1/3" />
+                </div>
+                <Skeleton className="h-8 w-24" />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
 
 export function BlogManagement() {
   const { user } = useFirebaseAuth();
@@ -56,14 +112,21 @@ export function BlogManagement() {
     return response.stats || response;
   }, []);
 
-  const { data: posts, refetch: refetchPosts } = useApiQuery(
+  const {
+    data: posts,
+    loading: postsLoading,
+    refetch: refetchPosts,
+  } = useApiQuery(
     () => fetchPosts(statusFilter),
     [isAdmin, statusFilter],
     { enabled: !!user && isAdmin === true },
     "admin-blog-posts"
   );
 
-  const { data: stats } = useApiQuery(
+  const {
+    data: stats,
+    loading: statsLoading,
+  } = useApiQuery(
     fetchStats,
     [user?.uid, isAdmin],
     { enabled: !!user && isAdmin === true },
@@ -210,7 +273,7 @@ export function BlogManagement() {
   if (isAdmin === null) {
     return (
       <AdminLayout title="Blog Management">
-        <div className="flex items-center justify-center h-64">Loading...</div>
+        <BlogManagementSkeleton />
       </AdminLayout>
     );
   }
@@ -257,7 +320,20 @@ export function BlogManagement() {
 
       {/* Stats Cards */}
       <motion.div variants={itemVariants}>
-        <BlogStats stats={stats} />
+        {statsLoading && !stats ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Card key={i} className="border-none shadow-md">
+                <CardHeader className="space-y-2">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-8 w-16" />
+                </CardHeader>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <BlogStats stats={stats} />
+        )}
       </motion.div>
 
       {/* Filters */}
@@ -295,7 +371,19 @@ export function BlogManagement() {
             <CardTitle>Blog Posts</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            {paginatedPosts.length > 0 ? (
+            {postsLoading && !posts ? (
+              <div className="p-4 space-y-3">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <div key={i} className="flex items-center justify-between gap-4">
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-4 w-2/3" />
+                      <Skeleton className="h-3 w-1/3" />
+                    </div>
+                    <Skeleton className="h-8 w-24" />
+                  </div>
+                ))}
+              </div>
+            ) : paginatedPosts.length > 0 ? (
               <>
                 <BlogTable
                   posts={paginatedPosts}

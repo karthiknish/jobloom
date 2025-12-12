@@ -4,12 +4,10 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { Menu, X, Settings, LogOut } from "lucide-react";
+import { Menu, Settings, LogOut } from "lucide-react";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { themeColors } from "@/styles/theme-colors";
-import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,37 +47,17 @@ export default function Header() {
     } else {
       setIsAdmin(false);
     }
-  }, [user?.uid]);
-
-  const navLinks = [
-    { href: "#how-it-works", label: "How it Works" },
-    { href: "#features", label: "Features" },
-    { href: "#testimonials", label: "Testimonials" },
-    { href: "/volunteer", label: "Volunteer" },
-  ];
+  }, [user]);
 
   const userLinks = [
     { href: "/dashboard", label: "Dashboard" },
     { href: "/career-tools", label: "Career Tools" },
-    { href: "/volunteer", label: "Volunteer" },
   ];
 
   const adminLinks = [{ href: "/admin", label: "Admin Panel" }];
 
   const NavItems = () => (
     <>
-      {!isSignedIn &&
-        navLinks.map((link) => (
-          <Link
-            key={link.href}
-            href={link.href}
-            className="text-muted-foreground hover:text-foreground transition-colors text-sm font-medium w-fit text-center py-2"
-            onClick={() => setIsMobileMenuOpen(false)}
-          >
-            {link.label}
-          </Link>
-        ))}
-
       {isSignedIn &&
         userLinks.map((link) => (
           <Link
@@ -194,7 +172,7 @@ export default function Header() {
       initial={{ y: -60, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: "spring", stiffness: 120, damping: 14 }}
-      className="fixed top-0 w-full bg-background/80 backdrop-blur-md z-50 border-b border safe-area-inset-top"
+      className="fixed top-0 w-full bg-background/80 backdrop-blur-md z-50 border-b border-border safe-area-inset-top"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 safe-area-inset-left safe-area-inset-right">
         <div className="flex justify-between items-center h-16 md:h-20">

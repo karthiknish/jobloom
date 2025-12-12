@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bug, X, Send, AlertTriangle, CheckCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -45,24 +45,39 @@ export function ReportIssue({ position = "bottom-right", className = "" }: Repor
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle");
-  const [formData, setFormData] = useState<FormData>({
-    name: "",
-    email: "",
+
+  const getInitialFormData = (): FormData => ({
+    name: user?.displayName || "",
+    email: user?.email || "",
     issueType: "bug",
     page: typeof window !== "undefined" ? window.location.pathname : "",
     description: "",
   });
 
-  // Pre-fill user data when available
-  useState(() => {
-    if (user) {
-      setFormData(prev => ({
-        ...prev,
-        name: user.displayName || "",
-        email: user.email || "",
-      }));
+  const [formData, setFormData] = useState<FormData>(() => getInitialFormData());
+
+  // Reset fields each time the modal opens so it doesn't feel "pre-filled"
+  useEffect(() => {
+    if (!isOpen) {
+      return;
     }
-  });
+
+    setSubmitStatus("idle");
+    setFormData(getInitialFormData());
+  }, [isOpen]);
+
+  // Pre-fill user data when available
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      name: user.displayName || prev.name,
+      email: user.email || prev.email,
+    }));
+  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -131,8 +146,8 @@ Browser: ${typeof navigator !== "undefined" ? navigator.userAgent : "Unknown"}
   };
 
   const positionClasses = {
-    "bottom-right": "bottom-6 right-6",
-    "bottom-left": "bottom-6 left-6",
+    "bottom-right": "bottom-24 right-6 md:bottom-6",
+    "bottom-left": "bottom-24 left-6 md:bottom-6",
   };
 
   return (

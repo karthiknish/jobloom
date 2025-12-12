@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
   Home,
-  MessageSquare,
+  LayoutDashboard,
   FileText,
   User
 } from "lucide-react";
@@ -18,6 +18,12 @@ const navigationItems = [
     href: "/",
     icon: Home,
     requiresAuth: false,
+  },
+  {
+    name: "Dashboard",
+    href: "/dashboard",
+    icon: LayoutDashboard,
+    requiresAuth: true,
   },
   {
     name: "Tools",
@@ -43,8 +49,8 @@ export default function MobileNavigation() {
   );
 
   // Don't show mobile nav on auth pages
-  const authPages = ['/sign-in', '/sign-up', '/verify-email'];
-  if (authPages.includes(pathname)) {
+  const authPages = ["/sign-in", "/sign-up", "/verify-email"];
+  if (authPages.includes(pathname) || pathname.startsWith("/auth/")) {
     return null;
   }
 

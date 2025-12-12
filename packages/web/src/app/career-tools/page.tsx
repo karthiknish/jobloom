@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
+import dynamic from "next/dynamic";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { FeatureGate } from "@/components/UpgradePrompt";
 import { calculateResumeScore as calculateAtsResumeScore } from "@/lib/ats";
@@ -17,6 +18,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { showSuccess, showError } from "@/components/ui/Toast";
 import { ErrorBoundaryWrapper } from "@/components/ui/error-boundary";
 import { NetworkError } from "@/components/ui/error-display";
+import { Skeleton, SkeletonButton, SkeletonText } from "@/components/ui/loading-skeleton";
 
 // CV Evaluator Components
 import { CvUploadSection } from "@/components/cv-evaluator/CvUploadSection";
@@ -27,7 +29,6 @@ import { CvStatsOverview } from "@/components/cv-evaluator";
 // Resume Builder Components
 import { AIResumeGenerator } from "@/components/application/AIResumeGenerator";
 import { AICoverLetterGenerator } from "@/components/application/AICoverLetterGenerator";
-import { ResumeImporter } from "@/components/application/ResumeImporter";
 import { PersonalInfoForm } from "@/components/application/PersonalInfoForm";
 import { ExperienceForm } from "@/components/application/ExperienceForm";
 import { SkillsForm } from "@/components/application/SkillsForm";
@@ -37,6 +38,50 @@ import { generateResumeId } from "@/components/application/utils";
 import ResumePDFGenerator from "@/lib/resumePDFGenerator";
 import { EducationSection } from "@/components/resume/EducationSection";
 import { ProjectsSection } from "@/components/resume/ProjectsSection";
+
+function ResumeImporterSkeleton() {
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <div className="space-y-2">
+            <Skeleton className="h-6 w-56" />
+            <Skeleton className="h-4 w-96 max-w-full" />
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Skeleton className="h-44 w-full" />
+          <div className="flex flex-wrap gap-2">
+            <SkeletonButton />
+            <SkeletonButton className="w-32" />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-5 w-44" />
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <SkeletonText lines={4} />
+          <div className="space-y-3">
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+const ResumeImporter = dynamic(
+  () => import("@/components/application/ResumeImporter").then((mod) => mod.ResumeImporter),
+  {
+    ssr: false,
+    loading: () => <ResumeImporterSkeleton />,
+  }
+);
 
 // Default advanced resume data
 const defaultAdvancedResumeData: AdvancedResumeData = {
@@ -59,6 +104,11 @@ const defaultAdvancedResumeData: AdvancedResumeData = {
 };
 
 export default function CareerToolsPage() {
+  const dashboardTabsListClassName =
+    "bg-background/80 backdrop-blur-sm p-1 rounded-xl border border-border/50 shadow-sm w-full flex flex-wrap gap-1 h-auto sm:inline-flex sm:w-auto sm:flex-nowrap";
+  const dashboardTabsTriggerClassName =
+    "px-5 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md motion-control rounded-lg font-medium text-sm";
+
   // Ensure Firebase initialized
   useEffect(() => {
     ensureFirebaseApp();
@@ -105,15 +155,55 @@ export default function CareerToolsPage() {
     }));
   }, [showManualResumeActions, advancedResumeData.education.length]);
 
-  const exportReadiness = useMemo(() => {
+  const manualBuilderProgress = useMemo(() => {
     const hasNameEmail =
       Boolean(advancedResumeData.personalInfo.fullName.trim()) &&
       Boolean(advancedResumeData.personalInfo.email.trim());
 
-    const hasExperience = advancedResumeData.experience.length > 0;
-    const hasEducation = advancedResumeData.education.length > 0;
-    const hasSkillsCategory = advancedResumeData.skills.length > 0;
+    const hasExperience = advancedResumeData.experience.some((entry) => {
+      return (
+        Boolean(entry.company?.trim()) ||
+        Boolean(entry.position?.trim()) ||
+        Boolean(entry.description?.trim()) ||
+        Boolean(entry.achievements?.some((item) => Boolean(item?.trim())))
+      );
+    });
 
+    const hasEducation = advancedResumeData.education.some((entry) => {
+      return (
+        Boolean(entry.institution?.trim()) ||
+        Boolean(entry.degree?.trim()) ||
+        Boolean(entry.field?.trim()) ||
+        Boolean(entry.graduationDate?.trim()) ||
+        Boolean(entry.gpa?.trim()) ||
+        Boolean(entry.honors?.trim())
+      );
+    });
+
+    const hasSkillsCategory = advancedResumeData.skills.some((group) => {
+      const hasAnySkill = group.skills?.some((skill) => Boolean(skill?.trim()));
+      return Boolean(group.category?.trim()) || Boolean(hasAnySkill);
+    });
+
+    const hasProjects = advancedResumeData.projects.some((project) => {
+      return (
+        Boolean(project.name?.trim()) ||
+        Boolean(project.description?.trim()) ||
+        Boolean(project.technologies?.some((tech) => Boolean(tech?.trim())))
+      );
+    });
+
+    return {
+      hasNameEmail,
+      hasExperience,
+      hasEducation,
+      hasSkillsCategory,
+      hasProjects,
+    };
+  }, [advancedResumeData]);
+
+  const exportReadiness = useMemo(() => {
+    const { hasNameEmail, hasExperience, hasEducation, hasSkillsCategory } = manualBuilderProgress;
     return {
       hasNameEmail,
       hasExperience,
@@ -121,13 +211,7 @@ export default function CareerToolsPage() {
       hasSkillsCategory,
       ready: hasNameEmail && hasExperience && hasEducation && hasSkillsCategory,
     };
-  }, [
-    advancedResumeData.personalInfo.fullName,
-    advancedResumeData.personalInfo.email,
-    advancedResumeData.experience.length,
-    advancedResumeData.education.length,
-    advancedResumeData.skills.length,
-  ]);
+  }, [manualBuilderProgress]);
 
   const {
     analyses: cvAnalyses,
@@ -428,16 +512,22 @@ export default function CareerToolsPage() {
           <FeatureGate>
             {/* Main Navigation Tabs */}
             <Tabs value={activeMainTab} onValueChange={setActiveMainTab} className="space-y-6">
-              <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 lg:w-auto lg:inline-flex">
-                <TabsTrigger value="cv-evaluator" className="text-sm">
-                  CV Evaluator
-                </TabsTrigger>
-                <TabsTrigger value="resume-builder" className="text-sm">
-                  Resume Builder
-                </TabsTrigger>
-                <TabsTrigger value="cover-letter" className="text-sm">
-                  Cover Letter
-                </TabsTrigger>
+              <TabsList className={dashboardTabsListClassName}>
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  <TabsTrigger value="cv-evaluator" className={dashboardTabsTriggerClassName}>
+                    CV Evaluator
+                  </TabsTrigger>
+                </motion.div>
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  <TabsTrigger value="resume-builder" className={dashboardTabsTriggerClassName}>
+                    Resume Builder
+                  </TabsTrigger>
+                </motion.div>
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  <TabsTrigger value="cover-letter" className={dashboardTabsTriggerClassName}>
+                    Cover Letter
+                  </TabsTrigger>
+                </motion.div>
               </TabsList>
 
               {/* CV Evaluator Tab Content */}
@@ -457,10 +547,22 @@ export default function CareerToolsPage() {
 
                     {/* CV Evaluator Sub-tabs */}
                     <Tabs value={cvActiveTab} onValueChange={setCvActiveTab} className="space-y-4">
-                      <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 lg:w-auto lg:inline-flex">
-                        <TabsTrigger value="upload" className="text-sm">Upload & Analyze</TabsTrigger>
-                        <TabsTrigger value="history" className="text-sm">History</TabsTrigger>
-                        <TabsTrigger value="progress" className="text-sm">Progress</TabsTrigger>
+                      <TabsList className={dashboardTabsListClassName}>
+                        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                          <TabsTrigger value="upload" className={dashboardTabsTriggerClassName}>
+                            Upload & Analyze
+                          </TabsTrigger>
+                        </motion.div>
+                        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                          <TabsTrigger value="history" className={dashboardTabsTriggerClassName}>
+                            History
+                          </TabsTrigger>
+                        </motion.div>
+                        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                          <TabsTrigger value="progress" className={dashboardTabsTriggerClassName}>
+                            Progress
+                          </TabsTrigger>
+                        </motion.div>
                       </TabsList>
 
                       <TabsContent value="upload">
@@ -510,10 +612,22 @@ export default function CareerToolsPage() {
               {/* Resume Builder Tab Content */}
               <TabsContent value="resume-builder" className="space-y-6">
                 <Tabs value={resumeActiveTab} onValueChange={setResumeActiveTab} className="space-y-4">
-                  <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 lg:w-auto lg:inline-flex">
-                    <TabsTrigger value="ai-generator" className="text-sm">AI Generator</TabsTrigger>
-                    <TabsTrigger value="manual-builder" className="text-sm">Manual Builder</TabsTrigger>
-                    <TabsTrigger value="import" className="text-sm">Import</TabsTrigger>
+                  <TabsList className={dashboardTabsListClassName}>
+                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                      <TabsTrigger value="ai-generator" className={dashboardTabsTriggerClassName}>
+                        AI Generator
+                      </TabsTrigger>
+                    </motion.div>
+                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                      <TabsTrigger value="manual-builder" className={dashboardTabsTriggerClassName}>
+                        Manual Builder
+                      </TabsTrigger>
+                    </motion.div>
+                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                      <TabsTrigger value="import" className={dashboardTabsTriggerClassName}>
+                        Import
+                      </TabsTrigger>
+                    </motion.div>
                   </TabsList>
 
                   <TabsContent value="ai-generator">
@@ -537,11 +651,11 @@ export default function CareerToolsPage() {
                                 <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
                                   activeBuilderTab === "personal" 
                                     ? "bg-primary text-primary-foreground shadow-lg scale-110" 
-                                    : advancedResumeData.personalInfo.fullName && advancedResumeData.personalInfo.email
+                                    : manualBuilderProgress.hasNameEmail
                                       ? "bg-green-500 text-white"
                                       : "bg-muted text-muted-foreground group-hover:bg-muted-foreground/20"
                                 }`}>
-                                  {advancedResumeData.personalInfo.fullName && advancedResumeData.personalInfo.email ? "OK" : "1"}
+                                  {manualBuilderProgress.hasNameEmail ? <CheckCircle2 className="h-5 w-5" /> : "1"}
                                 </div>
                                 <span className={`mt-2 text-xs font-medium transition-colors ${
                                   activeBuilderTab === "personal" ? "text-primary" : "text-muted-foreground"
@@ -552,7 +666,7 @@ export default function CareerToolsPage() {
 
                               {/* Connector */}
                               <div className={`flex-1 h-1 mx-2 rounded-full transition-colors ${
-                                advancedResumeData.personalInfo.fullName && advancedResumeData.personalInfo.email
+                                manualBuilderProgress.hasNameEmail
                                   ? "bg-green-500"
                                   : "bg-muted"
                               }`} />
@@ -565,11 +679,11 @@ export default function CareerToolsPage() {
                                 <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
                                   activeBuilderTab === "experience" 
                                     ? "bg-primary text-primary-foreground shadow-lg scale-110" 
-                                    : advancedResumeData.experience.length > 0
+                                    : manualBuilderProgress.hasExperience
                                       ? "bg-green-500 text-white"
                                       : "bg-muted text-muted-foreground group-hover:bg-muted-foreground/20"
                                 }`}>
-                                  {advancedResumeData.experience.length > 0 ? "OK" : "2"}
+                                  {manualBuilderProgress.hasExperience ? <CheckCircle2 className="h-5 w-5" /> : "2"}
                                 </div>
                                 <span className={`mt-2 text-xs font-medium transition-colors ${
                                   activeBuilderTab === "experience" ? "text-primary" : "text-muted-foreground"
@@ -580,7 +694,7 @@ export default function CareerToolsPage() {
 
                               {/* Connector */}
                               <div className={`flex-1 h-1 mx-2 rounded-full transition-colors ${
-                                advancedResumeData.experience.length > 0
+                                manualBuilderProgress.hasExperience
                                   ? "bg-green-500"
                                   : "bg-muted"
                               }`} />
@@ -593,11 +707,11 @@ export default function CareerToolsPage() {
                                 <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
                                   activeBuilderTab === "education" 
                                     ? "bg-primary text-primary-foreground shadow-lg scale-110" 
-                                    : advancedResumeData.education.length > 0
+                                    : manualBuilderProgress.hasEducation
                                       ? "bg-green-500 text-white"
                                       : "bg-muted text-muted-foreground group-hover:bg-muted-foreground/20"
                                 }`}>
-                                  {advancedResumeData.education.length > 0 ? "OK" : "3"}
+                                  {manualBuilderProgress.hasEducation ? <CheckCircle2 className="h-5 w-5" /> : "3"}
                                 </div>
                                 <span className={`mt-2 text-xs font-medium transition-colors ${
                                   activeBuilderTab === "education" ? "text-primary" : "text-muted-foreground"
@@ -608,7 +722,7 @@ export default function CareerToolsPage() {
 
                               {/* Connector */}
                               <div className={`flex-1 h-1 mx-2 rounded-full transition-colors ${
-                                advancedResumeData.education.length > 0
+                                manualBuilderProgress.hasEducation
                                   ? "bg-green-500"
                                   : "bg-muted"
                               }`} />
@@ -621,11 +735,11 @@ export default function CareerToolsPage() {
                                 <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
                                   activeBuilderTab === "skills" 
                                     ? "bg-primary text-primary-foreground shadow-lg scale-110" 
-                                    : advancedResumeData.skills.length > 0
+                                    : manualBuilderProgress.hasSkillsCategory
                                       ? "bg-green-500 text-white"
                                       : "bg-muted text-muted-foreground group-hover:bg-muted-foreground/20"
                                 }`}>
-                                  {advancedResumeData.skills.length > 0 ? "OK" : "4"}
+                                  {manualBuilderProgress.hasSkillsCategory ? <CheckCircle2 className="h-5 w-5" /> : "4"}
                                 </div>
                                 <span className={`mt-2 text-xs font-medium transition-colors ${
                                   activeBuilderTab === "skills" ? "text-primary" : "text-muted-foreground"
@@ -636,7 +750,7 @@ export default function CareerToolsPage() {
 
                               {/* Connector */}
                               <div className={`flex-1 h-1 mx-2 rounded-full transition-colors ${
-                                advancedResumeData.skills.length > 0
+                                manualBuilderProgress.hasSkillsCategory
                                   ? "bg-green-500"
                                   : "bg-muted"
                               }`} />
@@ -649,11 +763,11 @@ export default function CareerToolsPage() {
                                 <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
                                   activeBuilderTab === "projects" 
                                     ? "bg-primary text-primary-foreground shadow-lg scale-110" 
-                                    : advancedResumeData.projects.length > 0
+                                    : manualBuilderProgress.hasProjects
                                       ? "bg-green-500 text-white"
                                       : "bg-muted text-muted-foreground group-hover:bg-muted-foreground/20"
                                 }`}>
-                                  {advancedResumeData.projects.length > 0 ? "OK" : "5"}
+                                  {manualBuilderProgress.hasProjects ? <CheckCircle2 className="h-5 w-5" /> : "5"}
                                 </div>
                                 <span className={`mt-2 text-xs font-medium transition-colors ${
                                   activeBuilderTab === "projects" ? "text-primary" : "text-muted-foreground"
@@ -667,12 +781,32 @@ export default function CareerToolsPage() {
                         </Card>
 
                         <Tabs value={activeBuilderTab} onValueChange={setActiveBuilderTab} className="space-y-4">
-                          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 gap-2">
-                            <TabsTrigger value="personal">Personal Info</TabsTrigger>
-                            <TabsTrigger value="experience">Experience</TabsTrigger>
-                            <TabsTrigger value="education">Education</TabsTrigger>
-                            <TabsTrigger value="skills">Skills</TabsTrigger>
-                            <TabsTrigger value="projects">Projects</TabsTrigger>
+                          <TabsList className={dashboardTabsListClassName}>
+                            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                              <TabsTrigger value="personal" className={dashboardTabsTriggerClassName}>
+                                Personal Info
+                              </TabsTrigger>
+                            </motion.div>
+                            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                              <TabsTrigger value="experience" className={dashboardTabsTriggerClassName}>
+                                Experience
+                              </TabsTrigger>
+                            </motion.div>
+                            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                              <TabsTrigger value="education" className={dashboardTabsTriggerClassName}>
+                                Education
+                              </TabsTrigger>
+                            </motion.div>
+                            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                              <TabsTrigger value="skills" className={dashboardTabsTriggerClassName}>
+                                Skills
+                              </TabsTrigger>
+                            </motion.div>
+                            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                              <TabsTrigger value="projects" className={dashboardTabsTriggerClassName}>
+                                Projects
+                              </TabsTrigger>
+                            </motion.div>
                           </TabsList>
 
                           <TabsContent value="personal">

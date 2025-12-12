@@ -1,7 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Download, Target, RefreshCw, Check, ArrowRight, Sparkles, Zap } from "lucide-react";
+import { Download, Target, RefreshCw, Check, ArrowRight, Zap } from "lucide-react";
+import Link from "next/link";
 
 const steps = [
   {
@@ -153,16 +154,21 @@ export function HowItWorksSection() {
         >
           <motion.div 
             whileHover={{ scale: 1.05 }}
-            className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 shadow-lg group cursor-pointer"
+            className="inline-flex"
           >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-white shadow-md group-hover:shadow-lg group-hover:scale-110 motion-control">
-              <Download className="h-5 w-5" />
-            </div>
-            <div className="text-left">
-              <div className="font-semibold text-foreground">Ready to get started?</div>
-              <div className="text-sm text-muted-foreground">Free to use • No credit card required • Works everywhere</div>
-            </div>
-            <ArrowRight className="h-5 w-5 text-primary group-hover:translate-x-1 motion-control" />
+            <Link
+              href="/extension/connect"
+              className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 shadow-lg group"
+            >
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-white shadow-md group-hover:shadow-lg group-hover:scale-110 motion-control">
+                <Download className="h-5 w-5" />
+              </div>
+              <div className="text-left">
+                <div className="font-semibold text-foreground">Ready to get started?</div>
+                <div className="text-sm text-muted-foreground">Free to use • No credit card required • Works everywhere</div>
+              </div>
+              <ArrowRight className="h-5 w-5 text-primary group-hover:translate-x-1 motion-control" />
+            </Link>
           </motion.div>
         </motion.div>
       </div>

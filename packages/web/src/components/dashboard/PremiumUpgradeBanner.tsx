@@ -50,13 +50,13 @@ export function PremiumUpgradeBanner({ className = "", compact = false }: Premiu
     >
       <Card className="bg-card border-border">
         <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <div className="p-2 bg-primary/10 rounded-lg">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-6">
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-primary/10 rounded-lg flex-shrink-0">
                   <Crown className="h-5 w-5 text-primary" />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <h3 className="font-semibold text-foreground">Unlock Premium Features</h3>
                   <p className="text-sm text-muted-foreground">
                     Get unlimited CV analyses, advanced analytics, and priority support
@@ -64,7 +64,7 @@ export function PremiumUpgradeBanner({ className = "", compact = false }: Premiu
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 ml-4">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 lg:ml-2">
                 <div className="flex items-center gap-1">
                   <Zap className="h-4 w-4 text-primary" />
                   <span className="text-sm">Unlimited CV Analysis</span>
@@ -76,12 +76,15 @@ export function PremiumUpgradeBanner({ className = "", compact = false }: Premiu
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-start lg:justify-end">
+              <Badge
+                variant="secondary"
+                className="bg-primary/10 text-primary border-primary/20 w-fit"
+              >
                 £5.99/month
               </Badge>
-              <Link href="/upgrade">
-                <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
+              <Link href="/upgrade" className="w-full sm:w-auto">
+                <Button className="bg-primary hover:bg-primary/90 text-primary-foreground w-full sm:w-auto">
                   <Crown className="h-4 w-4 mr-2" />
                   Upgrade Now
                 </Button>

@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle, FileText, Sparkles, Zap } from "lucide-react";
 import Link from "next/link";
@@ -49,11 +49,22 @@ export function KineticHero() {
             </p>
 
             <div className="flex flex-wrap gap-4">
-              <Button size="lg" className="h-14 px-8 text-lg rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-105">
-                Start Building Free <ArrowRight className="ml-2 h-5 w-5" />
+              <Button
+                asChild
+                size="lg"
+                className="h-14 px-8 text-lg rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-105"
+              >
+                <Link href="/sign-up">
+                  Start Building Free <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
               </Button>
-              <Button size="lg" variant="outline" className="h-14 px-8 text-lg rounded-full border-2 hover:bg-muted">
-                View Demo
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className="h-14 px-8 text-lg rounded-full border-2 hover:bg-muted"
+              >
+                <Link href="/#how-it-works">View Demo</Link>
               </Button>
             </div>
 

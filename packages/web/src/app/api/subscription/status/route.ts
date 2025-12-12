@@ -201,6 +201,7 @@ export async function GET(request: NextRequest) {
       plan,
       limits,
       currentUsage,
+      isAdmin: userData?.isAdmin === true,
       actions: {
         customerPortalUrl,
         checkoutUrl,

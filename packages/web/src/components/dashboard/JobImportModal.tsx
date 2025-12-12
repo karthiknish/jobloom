@@ -47,6 +47,8 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { extensionAuthBridge } from "@/lib/extensionAuthBridge";
+import Link from "next/link";
+import { CHROME_EXTENSION_URL, isExternalUrl } from "@/config/links";
 
 interface JobImportModalProps {
   isOpen: boolean;
@@ -530,14 +532,21 @@ export function JobImportModal({
                             className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white"
                             asChild
                           >
-                            <a
-                              href="https://chrome.google.com/webstore/detail/hireall-extension"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              <Chrome className="h-4 w-4 mr-2" />
-                              Install Chrome Extension
-                            </a>
+                            {isExternalUrl(CHROME_EXTENSION_URL) ? (
+                              <a
+                                href={CHROME_EXTENSION_URL}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <Chrome className="h-4 w-4 mr-2" />
+                                Install Chrome Extension
+                              </a>
+                            ) : (
+                              <Link href={CHROME_EXTENSION_URL}>
+                                <Chrome className="h-4 w-4 mr-2" />
+                                Install Chrome Extension
+                              </Link>
+                            )}
                           </Button>
                           <Button variant="outline" onClick={() => setImportMethod("csv")}>
                             Use CSV Instead

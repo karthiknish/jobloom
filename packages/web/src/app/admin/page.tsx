@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { motion } from "framer-motion";
+import { useEffect, useMemo, useState } from "react";
 import {
   Users,
   Building2,
@@ -20,9 +21,77 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
+type DashboardStats = {
+  users: {
+    total: number;
+    growthPctFromLastMonth: number | null;
+  };
+  sponsors: {
+    active: number;
+    growthPctFromLastMonth: number | null;
+  };
+  blog: {
+    totalPosts: number;
+    newThisWeek: number;
+  };
+  inquiries: {
+    pending: number;
+  };
+};
+
 export default function AdminPage() {
   const { user, isInitialized, loading } = useFirebaseAuth();
   const { isAdmin, isLoading: adminLoading } = useAdminAuth();
+
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!user || !isInitialized || loading || adminLoading || !isAdmin) return;
+
+    let cancelled = false;
+
+    const load = async () => {
+      setStatsLoading(true);
+      try {
+        const token = await user.getIdToken();
+        const res = await fetch("/api/admin/dashboard/stats", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!res.ok) {
+          throw new Error(`Failed to load dashboard stats (${res.status})`);
+        }
+
+        const data = (await res.json()) as DashboardStats;
+        if (!cancelled) {
+          setStats(data);
+        }
+      } catch (error) {
+        console.error("Failed to load admin dashboard stats", error);
+        if (!cancelled) {
+          setStats(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setStatsLoading(false);
+        }
+      }
+    };
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [adminLoading, isAdmin, isInitialized, loading, user]);
+
+  const formatGrowthLabel = useMemo(() => {
+    return (pct: number | null) => {
+      if (pct == null) return "— from last month";
+      const sign = pct >= 0 ? "+" : "";
+      return `${sign}${pct}% from last month`;
+    };
+  }, []);
 
   // Show loading state while authentication is initializing
   if (loading || !isInitialized || adminLoading) {
@@ -158,10 +227,18 @@ export default function AdminPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">--</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                +0% from last month
-              </p>
+              <div className="text-2xl font-bold text-foreground">
+                {statsLoading ? <Skeleton className="h-7 w-16" /> : (stats?.users.total ?? "--")}
+              </div>
+              {statsLoading ? (
+                <div className="mt-1">
+                  <Skeleton className="h-3 w-28" />
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {formatGrowthLabel(stats?.users.growthPctFromLastMonth ?? null)}
+                </p>
+              )}
             </CardContent>
           </Card>
           <Card className="hover:bg-gray-50 transition-all duration-200 border-gray-200">
@@ -172,10 +249,18 @@ export default function AdminPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">--</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                +0% from last month
-              </p>
+              <div className="text-2xl font-bold text-foreground">
+                {statsLoading ? <Skeleton className="h-7 w-16" /> : (stats?.sponsors.active ?? "--")}
+              </div>
+              {statsLoading ? (
+                <div className="mt-1">
+                  <Skeleton className="h-3 w-28" />
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {formatGrowthLabel(stats?.sponsors.growthPctFromLastMonth ?? null)}
+                </p>
+              )}
             </CardContent>
           </Card>
           <Card className="hover:bg-gray-50 transition-all duration-200 border-gray-200">
@@ -186,10 +271,18 @@ export default function AdminPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">--</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                +0 new this week
-              </p>
+              <div className="text-2xl font-bold text-foreground">
+                {statsLoading ? <Skeleton className="h-7 w-16" /> : (stats?.blog.totalPosts ?? "--")}
+              </div>
+              {statsLoading ? (
+                <div className="mt-1">
+                  <Skeleton className="h-3 w-24" />
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {`+${stats?.blog.newThisWeek ?? 0} new this week`}
+                </p>
+              )}
             </CardContent>
           </Card>
           <Card className="hover:bg-gray-50 transition-all duration-200 border-gray-200">
@@ -200,10 +293,10 @@ export default function AdminPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">--</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Requires attention
-              </p>
+              <div className="text-2xl font-bold text-foreground">
+                {statsLoading ? <Skeleton className="h-7 w-16" /> : (stats?.inquiries.pending ?? "--")}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Requires attention</p>
             </CardContent>
           </Card>
         </motion.div>

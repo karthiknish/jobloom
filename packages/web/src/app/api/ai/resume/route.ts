@@ -80,7 +80,9 @@ export async function POST(request: NextRequest) {
     const userDoc = await db.collection("users").doc(decodedToken.uid).get();
     const userData = userDoc.data();
 
-    if (!userData || userData.subscription?.tier === "free") {
+    const isAdmin = userData?.isAdmin === true;
+
+    if (!userData || (userData.subscription?.tier === "free" && !isAdmin)) {
       return NextResponse.json(
         { error: "Premium subscription required for AI resume generation" },
         { status: 403 }

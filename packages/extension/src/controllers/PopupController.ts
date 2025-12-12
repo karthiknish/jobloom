@@ -115,17 +115,27 @@ export class PopupController {
     const submitBtn = document.getElementById('email-auth-submit');
     const toggleBtn = document.getElementById('auth-toggle-btn');
     const toggleText = document.getElementById('auth-toggle-text');
-    const formTitle = document.querySelector('#auth-view h2');
+    const formTitle = document.querySelector('#auth-content .auth-hero h2');
+    const formSubtitle = document.querySelector('#auth-content .auth-hero p');
+    const submitBtnText = submitBtn?.querySelector('.btn-text');
 
     // Toggle Sign In / Sign Up
     if (toggleBtn) {
       toggleBtn.addEventListener('click', () => {
         isSignUp = !isSignUp;
 
-        if (submitBtn) submitBtn.textContent = isSignUp ? 'Sign Up' : 'Sign In';
+        if (submitBtnText) {
+          submitBtnText.textContent = isSignUp ? 'Sign Up' : 'Sign In';
+        } else if (submitBtn) {
+          // Fallback for unexpected markup; avoid breaking the UI if the span is missing.
+          submitBtn.textContent = isSignUp ? 'Sign Up' : 'Sign In';
+        }
         if (toggleBtn) toggleBtn.textContent = isSignUp ? 'Sign In' : 'Sign Up';
         if (toggleText) toggleText.textContent = isSignUp ? 'Already have an account?' : "Don't have an account?";
         if (formTitle) formTitle.textContent = isSignUp ? 'Create Account' : 'Welcome Back';
+        if (formSubtitle) formSubtitle.textContent = isSignUp
+          ? 'Create your account to sync across devices.'
+          : 'Sync your job search across all devices.';
 
         authManager.clearAuthMessages();
       });

@@ -80,8 +80,6 @@ export class AuthManager {
 
   public async signIn(email: string, password: string): Promise<void> {
     try {
-      popupUI.showLoading('email-auth-submit');
-
       // Enhanced validation
       const emailError = validateEmail(email);
       const passwordError = validatePassword(password);
@@ -153,15 +151,11 @@ export class AuthManager {
       }
 
       this.showAuthError(errorMessage);
-    } finally {
-      popupUI.hideLoading('email-auth-submit');
     }
   }
 
   public async signUp(email: string, password: string): Promise<void> {
     try {
-      popupUI.showLoading('email-auth-submit');
-
       // Enhanced validation
       const emailError = validateEmail(email);
       const passwordError = validatePassword(password);
@@ -233,8 +227,6 @@ export class AuthManager {
       }
 
       this.showAuthError(errorMessage);
-    } finally {
-      popupUI.hideLoading('email-auth-submit');
     }
   }
 

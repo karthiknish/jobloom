@@ -83,7 +83,7 @@ const containerVariants = {
 
 export function AIResumeGenerator() {
   const { user } = useFirebaseAuth();
-  const { plan } = useSubscription();
+  const { plan, isAdmin } = useSubscription();
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedResume, setGeneratedResume] = useState<GeneratedResume | null>(null);
   const [formData, setFormData] = useState<ResumeData>({
@@ -143,7 +143,7 @@ export function AIResumeGenerator() {
       return;
     }
 
-    if (plan === "free") {
+    if (plan === "free" && !isAdmin) {
       const mockResume: GeneratedResume = {
         content: generateMockResumeContent(formData),
         sections: {
@@ -501,7 +501,7 @@ ${data.experience}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {plan === "free" && (
+          {plan === "free" && !isAdmin && (
             <div className="ml-11 p-4 bg-amber-100/50 border border-amber-200 rounded-xl flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="p-1.5 bg-amber-100 rounded-full">
