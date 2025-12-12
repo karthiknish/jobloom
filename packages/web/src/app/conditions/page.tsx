@@ -61,7 +61,7 @@ export default function ConditionsPage() {
               className="mt-8"
             >
               <Badge variant="outline" className="px-4 py-1 text-sm border-primary/20 bg-primary/5 text-primary">
-                Last updated: September 21, 2025
+                Last updated: December 12, 2025
               </Badge>
             </motion.div>
           </div>
@@ -367,7 +367,7 @@ export default function ConditionsPage() {
           className="mt-12 text-center text-sm text-muted-foreground"
         >
           <p>
-            These usage conditions were last updated on September 21, 2025. For
+            These usage conditions were last updated on December 12, 2025. For
             the most current version, please visit this page regularly.
           </p>
           <div className="mt-4 flex justify-center space-x-4">

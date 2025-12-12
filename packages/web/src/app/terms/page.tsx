@@ -56,7 +56,7 @@ export default function TermsOfService() {
               className="mt-8"
             >
               <Badge variant="outline" className="px-4 py-1 text-sm border-primary/20 bg-primary/5 text-primary">
-                Last updated: June 28, 2025
+                Last updated: December 12, 2025
               </Badge>
             </motion.div>
           </div>
@@ -149,8 +149,52 @@ export default function TermsOfService() {
                   <section className="relative pl-8 border-l-2 border-primary/20">
                     <div className="absolute -left-[9px] top-0 h-4 w-4 rounded-full bg-primary ring-4 ring-background" />
                     <h2 className="flex items-center text-2xl font-bold text-foreground mt-0 mb-4">
+                      <FileText className="mr-3 h-6 w-6 text-primary" />
+                      6. Subscriptions & Billing
+                    </h2>
+                    <p className="text-muted-foreground">
+                      Some parts of the Service may require a paid subscription. Prices, billing periods, renewal rules, and any applicable trial terms will be shown at checkout or in your account. Payments may be processed by third-party payment providers.
+                    </p>
+                  </section>
+
+                  <section className="relative pl-8 border-l-2 border-primary/20">
+                    <div className="absolute -left-[9px] top-0 h-4 w-4 rounded-full bg-primary ring-4 ring-background" />
+                    <h2 className="flex items-center text-2xl font-bold text-foreground mt-0 mb-4">
+                      <ClipboardList className="mr-3 h-6 w-6 text-primary" />
+                      7. AI Features
+                    </h2>
+                    <p className="text-muted-foreground">
+                      The Service may offer AI-assisted features (for example, generating or improving resumes and cover letters). AI outputs may be inaccurate or incomplete and should be reviewed before you rely on them. You are responsible for the content you submit and the decisions you make based on any output.
+                    </p>
+                  </section>
+
+                  <section className="relative pl-8 border-l-2 border-primary/20">
+                    <div className="absolute -left-[9px] top-0 h-4 w-4 rounded-full bg-primary ring-4 ring-background" />
+                    <h2 className="flex items-center text-2xl font-bold text-foreground mt-0 mb-4">
+                      <AlertTriangle className="mr-3 h-6 w-6 text-primary" />
+                      8. Disclaimers
+                    </h2>
+                    <p className="text-muted-foreground">
+                      The Service is provided on an “as is” and “as available” basis. To the maximum extent permitted by law, Hireall disclaims all warranties, whether express or implied, including implied warranties of merchantability, fitness for a particular purpose, and non-infringement.
+                    </p>
+                  </section>
+
+                  <section className="relative pl-8 border-l-2 border-primary/20">
+                    <div className="absolute -left-[9px] top-0 h-4 w-4 rounded-full bg-primary ring-4 ring-background" />
+                    <h2 className="flex items-center text-2xl font-bold text-foreground mt-0 mb-4">
+                      <Gavel className="mr-3 h-6 w-6 text-primary" />
+                      9. Limitation of Liability
+                    </h2>
+                    <p className="text-muted-foreground">
+                      To the maximum extent permitted by law, Hireall will not be liable for any indirect, incidental, special, consequential, or punitive damages, or any loss of profits or revenues, whether incurred directly or indirectly, arising from your use of the Service.
+                    </p>
+                  </section>
+
+                  <section className="relative pl-8 border-l-2 border-primary/20">
+                    <div className="absolute -left-[9px] top-0 h-4 w-4 rounded-full bg-primary ring-4 ring-background" />
+                    <h2 className="flex items-center text-2xl font-bold text-foreground mt-0 mb-4">
                       <HelpCircle className="mr-3 h-6 w-6 text-primary" />
-                      6. Contact
+                      10. Contact
                     </h2>
                     <p className="text-muted-foreground">
                       If you have questions about these Terms, please contact us at
@@ -161,6 +205,17 @@ export default function TermsOfService() {
                         support@hireall.app
                       </Link>
                       .
+                    </p>
+                  </section>
+
+                  <section className="relative pl-8 border-l-2 border-primary/20">
+                    <div className="absolute -left-[9px] top-0 h-4 w-4 rounded-full bg-primary ring-4 ring-background" />
+                    <h2 className="flex items-center text-2xl font-bold text-foreground mt-0 mb-4">
+                      <Scale className="mr-3 h-6 w-6 text-primary" />
+                      11. Changes to These Terms
+                    </h2>
+                    <p className="text-muted-foreground">
+                      We may update these Terms from time to time. If we make material changes, we will take reasonable steps to notify you (for example, by posting an updated version on this page). Your continued use of the Service after changes become effective means you accept the updated Terms.
                     </p>
                   </section>
                 </div>

@@ -52,7 +52,7 @@ export default function PrivacyPolicy() {
               className="mt-8"
             >
               <Badge variant="outline" className="px-4 py-1 text-sm border-primary/20 bg-primary/5 text-primary">
-                Last updated: June 28, 2025
+                Last updated: December 12, 2025
               </Badge>
             </motion.div>
           </div>
@@ -81,7 +81,8 @@ export default function PrivacyPolicy() {
                       1. Information We Collect
                     </h2>
                     <p className="text-muted-foreground">
-                      We collect information you provide directly, such as your name and email address when you create an account. We also automatically collect certain information when you use the Service, such as log data and device information. Our Chrome extension may collect the URLs of job listings you visit to identify sponsored postings.
+                      We collect information you provide directly, such as your name and email address when you create an account, plus any content you submit (for example, resumes, job descriptions, and notes). We also automatically collect certain information when you use the Service, such as log data and device information.
+                      Our Chrome extension may access the pages you visit in order to identify job listings and provide features like sponsored-label detection and application tracking.
                     </p>
                   </section>
 
@@ -92,7 +93,30 @@ export default function PrivacyPolicy() {
                       2. How We Use Information
                     </h2>
                     <p className="text-muted-foreground">
-                      We use your information to deliver and improve the Service, provide customer support, and communicate updates. We never sell your data.
+                      We use your information to deliver and improve the Service, provide customer support, communicate updates, prevent abuse, and maintain security.
+                      We do not sell your personal information.
+                    </p>
+                  </section>
+
+                  <section className="relative pl-8 border-l-2 border-primary/20">
+                    <div className="absolute -left-[9px] top-0 h-4 w-4 rounded-full bg-primary ring-4 ring-background" />
+                    <h2 className="flex items-center text-2xl font-bold text-foreground mt-0 mb-4">
+                      <Cookie className="mr-3 h-6 w-6 text-primary" />
+                      3. Cookies & Analytics
+                    </h2>
+                    <p className="text-muted-foreground">
+                      We may use cookies and similar technologies to keep you signed in, remember preferences, measure performance, and improve the Service. You can control cookies through your browser settings; some features may not function properly if cookies are disabled.
+                    </p>
+                  </section>
+
+                  <section className="relative pl-8 border-l-2 border-primary/20">
+                    <div className="absolute -left-[9px] top-0 h-4 w-4 rounded-full bg-primary ring-4 ring-background" />
+                    <h2 className="flex items-center text-2xl font-bold text-foreground mt-0 mb-4">
+                      <Share2 className="mr-3 h-6 w-6 text-primary" />
+                      4. Service Providers
+                    </h2>
+                    <p className="text-muted-foreground">
+                      We use trusted third-party service providers to operate the Service (for example, hosting, authentication, email delivery, analytics, payments, and AI processing). These providers may process personal information on our behalf to provide their services, subject to appropriate safeguards.
                     </p>
                   </section>
 
@@ -100,7 +124,7 @@ export default function PrivacyPolicy() {
                     <div className="absolute -left-[9px] top-0 h-4 w-4 rounded-full bg-primary ring-4 ring-background" />
                     <h2 className="flex items-center text-2xl font-bold text-foreground mt-0 mb-4">
                       <Lock className="mr-3 h-6 w-6 text-primary" />
-                      3. Data Security
+                      5. Data Security
                     </h2>
                     <p className="text-muted-foreground">
                       We employ industry-standard security measures—encryption in transit and at rest—to protect your data from unauthorized access.
@@ -111,7 +135,7 @@ export default function PrivacyPolicy() {
                     <div className="absolute -left-[9px] top-0 h-4 w-4 rounded-full bg-primary ring-4 ring-background" />
                     <h2 className="flex items-center text-2xl font-bold text-foreground mt-0 mb-4">
                       <Users className="mr-3 h-6 w-6 text-primary" />
-                      4. Your Choices
+                      6. Your Choices
                     </h2>
                     <p className="text-muted-foreground">
                       You may access, update, or delete your personal information at any time from your account dashboard or by contacting us.
@@ -121,8 +145,30 @@ export default function PrivacyPolicy() {
                   <section className="relative pl-8 border-l-2 border-primary/20">
                     <div className="absolute -left-[9px] top-0 h-4 w-4 rounded-full bg-primary ring-4 ring-background" />
                     <h2 className="flex items-center text-2xl font-bold text-foreground mt-0 mb-4">
+                      <Shield className="mr-3 h-6 w-6 text-primary" />
+                      7. Data Retention
+                    </h2>
+                    <p className="text-muted-foreground">
+                      We retain personal information for as long as needed to provide the Service and for legitimate business purposes (such as security, dispute resolution, and compliance). You can request deletion of your account data by contacting us.
+                    </p>
+                  </section>
+
+                  <section className="relative pl-8 border-l-2 border-primary/20">
+                    <div className="absolute -left-[9px] top-0 h-4 w-4 rounded-full bg-primary ring-4 ring-background" />
+                    <h2 className="flex items-center text-2xl font-bold text-foreground mt-0 mb-4">
+                      <ShieldCheck className="mr-3 h-6 w-6 text-primary" />
+                      8. Changes to This Policy
+                    </h2>
+                    <p className="text-muted-foreground">
+                      We may update this Privacy Policy from time to time. We will post the updated version on this page and update the “Last updated” date.
+                    </p>
+                  </section>
+
+                  <section className="relative pl-8 border-l-2 border-primary/20">
+                    <div className="absolute -left-[9px] top-0 h-4 w-4 rounded-full bg-primary ring-4 ring-background" />
+                    <h2 className="flex items-center text-2xl font-bold text-foreground mt-0 mb-4">
                       <Mail className="mr-3 h-6 w-6 text-primary" />
-                      5. Contact Us
+                      9. Contact Us
                     </h2>
                     <p className="text-muted-foreground">
                       If you have questions about this policy, email us at
