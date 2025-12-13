@@ -119,6 +119,10 @@ let subscriptionStatusCache: { value: SubscriptionStatus | null; fetchedAt: numb
 };
 const SUBSCRIPTION_STATUS_CACHE_MS = 30 * 1000;
 
+const SUBSCRIPTION_STATUS_TIMEOUT_MS = 5000;
+const SUBSCRIPTION_STATUS_PROXY_TIMEOUT_MS = 2000;
+const USER_TIER_LOOKUP_TIMEOUT_MS = 750;
+
 // Extension storage for user tier
 let currentUserTier: UserTier = 'free';
 let tierCheckTime = 0;
@@ -141,49 +145,82 @@ export async function fetchSubscriptionStatus(): Promise<SubscriptionStatus | nu
   const shouldProxyThroughBackground =
     typeof window !== "undefined" && window.location?.protocol !== "chrome-extension:";
 
-  if (shouldProxyThroughBackground && typeof chrome !== "undefined" && chrome.runtime?.id) {
-    return new Promise<SubscriptionStatus | null>((resolve) => {
-      chrome.runtime.sendMessage(
-        { action: "fetchSubscriptionStatus", target: "background" },
-        (response) => {
-          if (chrome.runtime.lastError) {
-            console.warn("Proxy subscription status fetch failed:", chrome.runtime.lastError?.message || JSON.stringify(chrome.runtime.lastError));
-            resolve(null);
-            return;
-          }
-
-          if (response?.success) {
-            resolve(response.status as SubscriptionStatus | null);
-          } else {
-            console.warn("Subscription status proxy returned error:", 
-              typeof response?.error === 'object' ? JSON.stringify(response.error) : response?.error);
-            resolve(null);
-          }
-        }
-      );
-    });
-  }
-
   subscriptionStatusInFlight = (async () => {
     try {
+      if (shouldProxyThroughBackground && typeof chrome !== "undefined" && chrome.runtime?.id) {
+        const proxyValue = await new Promise<SubscriptionStatus | null>((resolve) => {
+          let settled = false;
+          const timeoutId = setTimeout(() => {
+            if (settled) return;
+            settled = true;
+            console.debug(
+              `Hireall: Subscription status proxy timed out after ${SUBSCRIPTION_STATUS_PROXY_TIMEOUT_MS}ms; using fallback tier`
+            );
+            resolve(null);
+          }, SUBSCRIPTION_STATUS_PROXY_TIMEOUT_MS);
+
+          try {
+            chrome.runtime.sendMessage(
+              { action: "fetchSubscriptionStatus", target: "background" },
+              (response) => {
+                if (settled) return;
+                settled = true;
+                clearTimeout(timeoutId);
+
+                if (chrome.runtime.lastError) {
+                  console.warn(
+                    "Proxy subscription status fetch failed:",
+                    chrome.runtime.lastError?.message || JSON.stringify(chrome.runtime.lastError)
+                  );
+                  resolve(null);
+                  return;
+                }
+
+                if (response?.success) {
+                  resolve(response.status as SubscriptionStatus | null);
+                } else {
+                  console.warn(
+                    "Subscription status proxy returned error:",
+                    typeof response?.error === "object" ? JSON.stringify(response.error) : response?.error
+                  );
+                  resolve(null);
+                }
+              }
+            );
+          } catch (err) {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timeoutId);
+            console.warn("Proxy subscription status fetch threw:", err);
+            resolve(null);
+          }
+        });
+
+        subscriptionStatusCache = { value: proxyValue, fetchedAt: Date.now() };
+        return proxyValue;
+      }
+
       // Subscription status requires auth - pass true explicitly since path doesn't start with /api/app/
-      const value = await get<SubscriptionStatus>("/api/subscription/status", undefined, true);
+      const value = await get<SubscriptionStatus>("/api/subscription/status", undefined, true, {
+        timeout: SUBSCRIPTION_STATUS_TIMEOUT_MS,
+        retryCount: 0,
+      });
       subscriptionStatusCache = { value, fetchedAt: Date.now() };
       return value;
     } catch (error: unknown) {
-    const statusCode =
-      typeof error === "object" && error !== null && "status" in error
-        ? (error as { status?: number }).status
-        : undefined;
+      const statusCode =
+        typeof error === "object" && error !== null
+          ? ((error as any).statusCode ?? (error as any).status)
+          : undefined;
 
-    if (statusCode === 401 || statusCode === 403) {
-      chrome.storage.local.remove(["userTier"]);
-      await clearCachedAuthToken();
-    }
-    console.warn("Failed to fetch subscription status:", error);
-    // Cache the null briefly to avoid tight retry loops in the UI.
-    subscriptionStatusCache = { value: null, fetchedAt: Date.now() };
-    return null;
+      if (statusCode === 401 || statusCode === 403) {
+        chrome.storage.local.remove(["userTier"]);
+        await clearCachedAuthToken();
+      }
+      console.warn("Failed to fetch subscription status:", error);
+      // Cache the null briefly to avoid tight retry loops in the UI.
+      subscriptionStatusCache = { value: null, fetchedAt: Date.now() };
+      return null;
     }
   })();
 
@@ -191,6 +228,17 @@ export async function fetchSubscriptionStatus(): Promise<SubscriptionStatus | nu
     return await subscriptionStatusInFlight;
   } finally {
     subscriptionStatusInFlight = null;
+  }
+}
+
+async function getCurrentUserTierWithTimeout(timeoutMs: number): Promise<UserTier> {
+  try {
+    return await Promise.race([
+      getCurrentUserTier(),
+      new Promise<UserTier>((resolve) => setTimeout(() => resolve(currentUserTier), timeoutMs)),
+    ]);
+  } catch {
+    return currentUserTier;
   }
 }
 
@@ -317,7 +365,11 @@ export async function checkRateLimit(
   endpoint: string,
   config?: Partial<RateLimitConfig>
 ): Promise<{ allowed: boolean; resetIn?: number; remaining?: number; retryAfter?: number }> {
-  const userTier = tierLookupDepth > 0 ? currentUserTier : await getCurrentUserTier();
+  const userTier = tierLookupDepth > 0
+    ? currentUserTier
+    : (endpoint === 'sponsor-lookup'
+      ? await getCurrentUserTierWithTimeout(USER_TIER_LOOKUP_TIMEOUT_MS)
+      : await getCurrentUserTier());
   const rateLimitConfig = resolveRateLimitConfig(endpoint, config, userTier);
   const now = Date.now();
   const stateKey = `${endpoint}:${userTier}`;

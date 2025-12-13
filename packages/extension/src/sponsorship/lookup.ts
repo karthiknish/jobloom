@@ -1,4 +1,3 @@
-import { sponsorBatchLimiter } from "../rateLimiter";
 import { get, post } from "../apiClient";
 import { isLikelyPlaceholderCompany, normalizeCompanyName } from "../utils/companyName";
 
@@ -71,10 +70,6 @@ function mapCheckResponseToResult(response: SponsorCheckResponse): SponsorLookup
   };
 }
 
-async function runWithSponsorLimit<T>(fn: () => Promise<T>): Promise<T> {
-  return sponsorBatchLimiter.add(fn);
-}
-
 export interface SponsorLookupOptions {
   city?: string;
   location?: string;
@@ -105,10 +100,13 @@ export async function fetchSponsorRecord(
     return sponsorshipInFlight.get(cacheKey) ?? null;
   }
 
-  const lookupPromise = runWithSponsorLimit(async () => {
+  // NOTE: Do NOT wrap in runWithSponsorLimit here.
+  // SponsorshipManager.fetchSponsorRecord already handles batch limiting.
+  // Double-queuing causes deadlock where outer task waits for inner task that's behind it in queue.
+  const lookupPromise = (async () => {
     const startTime = Date.now();
     try {
-      console.debug(`[Hireall:Sponsor] Starting lookup for "${company}" at ${new Date().toISOString()}`);
+      console.log(`[Hireall:Sponsor] Starting API call for "${company}"`);
       
       // Use the new dedicated check endpoint - requires authentication
       const checkResponse = await post<SponsorCheckResponse>("/api/app/sponsorship/check", {
@@ -121,7 +119,10 @@ export async function fetchSponsorRecord(
       });
       
       const elapsed = Date.now() - startTime;
-      console.debug(`[Hireall:Sponsor] API responded in ${elapsed}ms for "${company}"`);
+      console.log(`[Hireall:Sponsor] API responded in ${elapsed}ms for "${company}"`, {
+        found: checkResponse.found,
+        confidence: checkResponse.matchDetails?.confidence,
+      });
 
 
       if (checkResponse.found && checkResponse.sponsor) {
@@ -153,7 +154,7 @@ export async function fetchSponsorRecord(
     } finally {
       sponsorshipInFlight.delete(cacheKey);
     }
-  });
+  })();
 
   sponsorshipInFlight.set(cacheKey, lookupPromise);
   return lookupPromise;

@@ -22,6 +22,7 @@ interface ApiResponse<T> {
 const DEFAULT_RETRY_COUNT = 2;
 const DEFAULT_RETRY_DELAY = 1000;
 const DEFAULT_TIMEOUT = 30000;
+const BACKGROUND_PROXY_TIMEOUT_BUFFER_MS = 2500;
 
 // Errors that should trigger a retry
 const RETRYABLE_STATUS_CODES = [408, 429, 500, 502, 503, 504];
@@ -125,6 +126,106 @@ function safeOrigin(url: string): string {
   }
 }
 
+function shouldProxyApiThroughBackground(): boolean {
+  // Content scripts execute in a page context where CORS applies (e.g. linkedin.com).
+  // Proxying via the background service worker avoids preflight/CORS failures.
+  try {
+    if (typeof window === 'undefined') return false;
+    if (window.location?.protocol === 'chrome-extension:') return false;
+    return typeof chrome !== 'undefined' && !!chrome.runtime?.id && typeof chrome.runtime?.sendMessage === 'function';
+  } catch {
+    return false;
+  }
+}
+
+async function proxyFetchViaBackground(params: {
+  url: string;
+  init: RequestInit;
+  timeoutMs: number;
+  requestId: string;
+}): Promise<{
+  status: number;
+  statusText: string;
+  headers: Record<string, string>;
+  contentType: string;
+  bodyText: string;
+}> {
+  const timeoutMs = Math.max(1000, params.timeoutMs + BACKGROUND_PROXY_TIMEOUT_BUFFER_MS);
+
+  console.log(`[Hireall] Proxying API via background`, {
+    requestId: params.requestId,
+    url: params.url,
+    method: params.init.method,
+    timeoutMs,
+  });
+
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const timeoutId = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      reject(new Error(`Background proxy timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+
+    try {
+      chrome.runtime.sendMessage(
+        {
+          action: 'apiProxy',
+          target: 'background',
+          data: {
+            url: params.url,
+            method: params.init.method || 'GET',
+            headers: params.init.headers || {},
+            body: params.init.body,
+            timeoutMs: params.timeoutMs,
+            requestId: params.requestId,
+          },
+        },
+        (response) => {
+          console.log(`[Hireall] Proxy callback invoked`, {
+            requestId: params.requestId,
+            settled,
+            hasResponse: !!response,
+            lastError: chrome.runtime?.lastError?.message,
+            responseSuccess: response?.success,
+            responseStatus: response?.status,
+          });
+
+          if (settled) return;
+          settled = true;
+          clearTimeout(timeoutId);
+
+          if (chrome.runtime?.lastError) {
+            console.warn(`[Hireall] Proxy lastError`, { requestId: params.requestId, error: chrome.runtime.lastError.message });
+            reject(new Error(chrome.runtime.lastError.message || 'Background proxy failed'));
+            return;
+          }
+
+          if (!response?.success) {
+            console.warn(`[Hireall] Proxy response not success`, { requestId: params.requestId, error: response?.error });
+            reject(new Error(response?.error || 'Background proxy failed'));
+            return;
+          }
+
+          console.log(`[Hireall] Proxy success`, { requestId: params.requestId, status: response.status });
+          resolve({
+            status: response.status,
+            statusText: response.statusText,
+            headers: response.headers || {},
+            contentType: response.contentType || '',
+            bodyText: response.bodyText || '',
+          });
+        }
+      );
+    } catch (error) {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeoutId);
+      reject(error);
+    }
+  });
+}
+
 export async function apiRequest<T = any>(opts: ApiOptions): Promise<T> {
   const { 
     path, 
@@ -143,6 +244,14 @@ export async function apiRequest<T = any>(opts: ApiOptions): Promise<T> {
   const requestId = createRequestId();
   const method = (rest.method || 'GET').toString().toUpperCase();
   const requestStart = Date.now();
+  const useProxy = shouldProxyApiThroughBackground();
+
+  console.log(`[Hireall] API request starting: ${method} ${path}`, {
+    requestId,
+    useProxy,
+    requiresAuth,
+    base,
+  });
 
   // Determine rate limit endpoint based on path
   let rateLimitEndpoint = 'general';
@@ -247,18 +356,35 @@ export async function apiRequest<T = any>(opts: ApiOptions): Promise<T> {
   for (let attempt = 0; attempt <= retryCount; attempt++) {
     try {
       const attemptStart = Date.now();
-      const res = await fetchWithTimeout(url, {
+      const requestInit: RequestInit = {
         ...rest,
         headers: finalHeaders,
         credentials: 'include',
-      }, timeout);
+      };
+
+      const useProxy = shouldProxyApiThroughBackground();
+      const resLike = useProxy
+        ? await proxyFetchViaBackground({ url, init: requestInit, timeoutMs: timeout, requestId })
+        : null;
+
+      const res = !useProxy
+        ? await fetchWithTimeout(url, requestInit, timeout)
+        : null;
 
       const attemptElapsedMs = Date.now() - attemptStart;
-      const serverRequestId = res.headers.get('x-request-id') || res.headers.get('x-amzn-requestid') || undefined;
+
+      const serverRequestId = useProxy
+        ? (resLike?.headers?.['x-request-id'] || resLike?.headers?.['x-amzn-requestid'] || undefined)
+        : (res!.headers.get('x-request-id') || res!.headers.get('x-amzn-requestid') || undefined);
 
       // Handle response
-      if (!res.ok) {
-        const text = await res.text();
+      const ok = useProxy ? (resLike!.status >= 200 && resLike!.status < 300) : res!.ok;
+      const status = useProxy ? resLike!.status : res!.status;
+      const statusText = useProxy ? resLike!.statusText : res!.statusText;
+      const contentType = useProxy ? (resLike!.contentType || resLike!.headers?.['content-type'] || '') : (res!.headers.get('content-type') || '');
+
+      if (!ok) {
+        const text = useProxy ? resLike!.bodyText : await res!.text();
         const preview = safePreview(text);
         let parsedBody: any = undefined;
         try {
@@ -267,20 +393,20 @@ export async function apiRequest<T = any>(opts: ApiOptions): Promise<T> {
           // ignore parse errors
         }
 
-        console.warn(`[Hireall:API] !! ${method} ${path} ${res.status} (${attemptElapsedMs}ms)`, {
+        console.warn(`[Hireall:API] !! ${method} ${path} ${status} (${attemptElapsedMs}ms)`, {
           requestId,
           attempt: attempt + 1,
           origin: safeOrigin(url),
-          status: res.status,
-          statusText: res.statusText,
+          status,
+          statusText,
           serverRequestId,
           bodyPreview: preview,
           body: parsedBody,
         });
         
         // Check if we should retry
-        if (shouldRetry(null, res.status) && attempt < retryCount) {
-          console.debug(`Hireall: Request to ${path} failed with status ${res.status}, retrying (attempt ${attempt + 1}/${retryCount})`);
+        if (shouldRetry(null, status) && attempt < retryCount) {
+          console.debug(`Hireall: Request to ${path} failed with status ${status}, retrying (attempt ${attempt + 1}/${retryCount})`);
           
           // Use exponential backoff with jitter
           const backoffMs = retryDelay * Math.pow(2, attempt) + Math.random() * 500;
@@ -289,10 +415,10 @@ export async function apiRequest<T = any>(opts: ApiOptions): Promise<T> {
         }
         
         // Handle specific error cases
-        let errorMessage = `API ${res.status} ${res.statusText}: ${text}`;
+        let errorMessage = `API ${status} ${statusText}: ${text}`;
         let errorCode = 'API_ERROR';
         
-        switch (res.status) {
+        switch (status) {
           case 401:
             errorMessage = 'Authentication failed. Please sign in again.';
             errorCode = 'AUTH_FAILED';
@@ -322,7 +448,7 @@ export async function apiRequest<T = any>(opts: ApiOptions): Promise<T> {
         }
         
         const error = new Error(errorMessage);
-        (error as any).statusCode = res.status;
+        (error as any).statusCode = status;
         (error as any).code = errorCode;
         (error as any).requestId = requestId;
         (error as any).endpoint = path;
@@ -348,7 +474,7 @@ export async function apiRequest<T = any>(opts: ApiOptions): Promise<T> {
         throw error;
       }
 
-      console.debug(`[Hireall:API] <- ${method} ${path} ${res.status} (${attemptElapsedMs}ms)`, {
+      console.debug(`[Hireall:API] <- ${method} ${path} ${status} (${attemptElapsedMs}ms)`, {
         requestId,
         attempt: attempt + 1,
         serverRequestId,
@@ -356,11 +482,12 @@ export async function apiRequest<T = any>(opts: ApiOptions): Promise<T> {
       });
       
       // Success - parse response
-      const ct = res.headers.get('content-type') || '';
-      if (ct.includes('application/json')) {
-        return (await res.json()) as T;
+      if (contentType.includes('application/json')) {
+        const bodyText = useProxy ? resLike!.bodyText : await res!.text();
+        return (bodyText ? JSON.parse(bodyText) : undefined) as T;
       }
-      return (await res.text()) as any;
+
+      return (useProxy ? resLike!.bodyText : await res!.text()) as any;
       
     } catch (error: any) {
       lastError = error;

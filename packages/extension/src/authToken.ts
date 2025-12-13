@@ -10,6 +10,10 @@ const DEFAULT_TOKEN_TTL_MS = 55 * 60 * 1000; // refresh slightly before Firebase
 const MAX_CONSECUTIVE_FAILURES = 3; // Clear stale auth after this many failures
 const FAILURE_RESET_INTERVAL_MS = 5 * 60 * 1000; // Reset failure count after 5 minutes
 
+const BACKGROUND_TOKEN_REQUEST_TIMEOUT_MS = 2500;
+const HIREALL_TAB_TOKEN_REQUEST_TIMEOUT_MS = 2000;
+const HIREALL_TAB_MAX_TABS_TO_TRY = 2;
+
 export interface CachedAuthToken {
   token: string;
   expiresAt: number;
@@ -323,7 +327,15 @@ async function getTokenFromHireallTab(forceRefresh: boolean): Promise<CachedAuth
     // Only attempt token extraction from actual HireAll web app tabs.
     // Falling back to the active tab can cause script injection attempts on unrelated sites
     // (e.g., LinkedIn), which is noisy and can trigger sandbox/CSP edge cases.
-    const candidateTabs = queryTabs;
+    const candidateTabs = queryTabs
+      .slice()
+      .sort((a, b) => {
+        // Prefer active + fully loaded tabs.
+        const aScore = (a?.active ? 2 : 0) + (a?.status === "complete" ? 1 : 0);
+        const bScore = (b?.active ? 2 : 0) + (b?.status === "complete" ? 1 : 0);
+        return bScore - aScore;
+      })
+      .slice(0, HIREALL_TAB_MAX_TABS_TO_TRY);
 
     if (!candidateTabs.length) {
       return null;
@@ -337,7 +349,7 @@ async function getTokenFromHireallTab(forceRefresh: boolean): Promise<CachedAuth
         const timeoutId = setTimeout(() => {
           console.debug('Hireall: Token request timed out for tab', tab.id);
           resolve(null);
-        }, 5000); // 5 second timeout
+        }, HIREALL_TAB_TOKEN_REQUEST_TIMEOUT_MS);
 
         // Method 1: Send message to get auth token via content script
         chrome.tabs.sendMessage(tab.id!, { action: "getAuthToken", forceRefresh, target: "webapp-content" }, (resp) => {
@@ -471,10 +483,28 @@ async function requestTokenFromBackground(forceRefresh: boolean): Promise<Cached
   }
 
   return new Promise((resolve) => {
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    let settled = false;
     try {
+      timeoutId = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        console.debug(
+          `Hireall: Background token request timed out after ${BACKGROUND_TOKEN_REQUEST_TIMEOUT_MS}ms`
+        );
+        resolve(null);
+      }, BACKGROUND_TOKEN_REQUEST_TIMEOUT_MS);
+
       chrome.runtime.sendMessage(
         { action: "acquireAuthToken", forceRefresh, target: "background" },
         (response) => {
+          if (settled) return;
+          settled = true;
+          if (timeoutId) {
+            clearTimeout(timeoutId);
+            timeoutId = null;
+          }
+
           if (chrome.runtime?.lastError) {
             resolve(null);
             return;
@@ -497,6 +527,10 @@ async function requestTokenFromBackground(forceRefresh: boolean): Promise<Cached
         }
       );
     } catch (error) {
+      if (!settled && timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
       console.warn("Failed to request token from background:", error);
       resolve(null);
     }
@@ -549,6 +583,21 @@ export async function acquireIdToken(
       console.debug("Hireall: Skipping Firebase auth in content script (sandboxed context)");
     }
 
+    // Try background script first (fast path); tab probing can be slow.
+    if (!options?.skipMessageFallback) {
+      console.debug("Hireall: Attempting to get token from background script");
+      const backgroundToken = await requestTokenFromBackground(forceRefresh);
+      if (backgroundToken) {
+        console.debug("Hireall: Acquired token from background script", {
+          userId: backgroundToken.userId,
+          source: "background"
+        });
+        await resetAuthFailureCounter();
+        return backgroundToken.token;
+      }
+      console.debug("Hireall: No token available from background script");
+    }
+
     // Try getting token from HireAll web app tab
     if (canAccessTabsApi()) {
       console.debug("Hireall: Attempting to get token from web app tab");
@@ -562,21 +611,6 @@ export async function acquireIdToken(
         return tabToken.token;
       }
       console.debug("Hireall: No token available from web app tabs");
-    }
-
-    // Try background script as fallback
-    if (!options?.skipMessageFallback) {
-      console.debug("Hireall: Attempting to get token from background script");
-      const backgroundToken = await requestTokenFromBackground(forceRefresh);
-      if (backgroundToken) {
-        console.debug("Hireall: Acquired token from background script", {
-          userId: backgroundToken.userId,
-          source: "background"
-        });
-        await resetAuthFailureCounter();
-        return backgroundToken.token;
-      }
-      console.debug("Hireall: No token available from background script");
     }
 
     // Track this failure if we expected to be authenticated

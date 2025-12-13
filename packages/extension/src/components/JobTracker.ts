@@ -286,9 +286,12 @@ export class JobTracker {
       console.debug("Hireall: Starting sponsorship lookup for", jobData.company);
       const lookupStart = Date.now();
       const slowLookupTimer = window.setTimeout(() => {
-        console.warn("Hireall: sponsor lookup is taking longer than expected", {
+        const elapsedMs = Date.now() - lookupStart;
+        console.warn(`Hireall: sponsor lookup slow (${elapsedMs}ms)`, {
           company: jobData.company,
-          elapsedMs: Date.now() - lookupStart,
+          elapsedMs,
+          cacheKey,
+          pageUrl: window.location.href,
         });
       }, 15000);
 
@@ -306,9 +309,12 @@ export class JobTracker {
         console.debug("Hireall: Starting UK eligibility assessment for", jobData.company);
         const eligibilityStart = Date.now();
         const slowEligibilityTimer = window.setTimeout(() => {
-          console.warn("Hireall: UK eligibility assessment is taking longer than expected", {
+          const elapsedMs = Date.now() - eligibilityStart;
+          console.warn(`Hireall: UK eligibility assessment slow (${elapsedMs}ms)`, {
             company: jobData.company,
-            elapsedMs: Date.now() - eligibilityStart,
+            elapsedMs,
+            cacheKey,
+            pageUrl: window.location.href,
           });
         }, 8000);
 
@@ -406,7 +412,8 @@ export class JobTracker {
     card.style.position = card.style.position || "relative";
 
     // Add border styling based on sponsorship result
-    const borderColor = result.isSponsored ? EXT_COLORS.success : EXT_COLORS.destructive;
+    // Green for sponsored, Orange for not sponsored
+    const borderColor = result.isSponsored ? EXT_COLORS.success : EXT_COLORS.accentOrange;
     const borderWidth = '3px';
     const borderStyle = 'solid';
 
@@ -421,12 +428,14 @@ export class JobTracker {
     if (!badge) {
       badge = document.createElement("div");
       badge.className = this.badgeClass;
+      const badgeBgColor = result.isSponsored ? EXT_COLORS.success : EXT_COLORS.accentOrange;
+      const badgeShadowColor = result.isSponsored ? 'rgba(5, 150, 105, 0.25)' : 'rgba(249, 115, 22, 0.25)';
       badge.style.cssText = `
         position: absolute;
         top: 12px;
         right: 12px;
         padding: 6px 10px;
-        background: ${EXT_COLORS.success};
+        background: ${badgeBgColor};
         color: #fff;
         font-size: 11px;
         font-weight: 600;
@@ -434,14 +443,16 @@ export class JobTracker {
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        box-shadow: 0 8px 18px rgba(5, 150, 105, 0.25);
+        box-shadow: 0 8px 18px ${badgeShadowColor};
         z-index: 2;
       `;
       card.appendChild(badge);
     }
 
-    const icon = UIComponents.createIcon("flag", 14, "#fff");
-    const label = result.sponsorshipType ? result.sponsorshipType.replace(/_/g, " ") : "Sponsored";
+    const icon = UIComponents.createIcon(result.isSponsored ? "flag" : "alertCircle", 14, "#fff");
+    const label = result.isSponsored 
+      ? (result.sponsorshipType ? result.sponsorshipType.replace(/_/g, " ") : "Sponsored")
+      : "Not Sponsored";
     const labelParts = [label];
     if (result.ukEligibility?.socCode) {
       const socLabel = result.ukEligibility.socEligibility
@@ -601,9 +612,8 @@ export class JobTracker {
     try {
       const result = await this.checkSponsorship(jobData, card);
       this.showSponsorToast(jobData, result);
-      if (result.isSponsored) {
-        this.highlightCard(card, result);
-      }
+      // Always highlight the card - green for sponsored, orange for not sponsored
+      this.highlightCard(card, result);
     } catch (error) {
       console.error("Hireall: sponsor check button failed", error);
       UIComponents.showToast("Sponsor check failed", { type: "error" });
@@ -811,10 +821,10 @@ export class JobTracker {
 
     const style = document.createElement("style");
     style.id = "hireall-jobtracker-styles";
+    // Note: Border/outline colors are applied dynamically in highlightCard()
+    // based on sponsorship status (green for sponsored, orange for not sponsored)
     style.textContent = `
       .${this.highlightClass} {
-        outline: 2px solid ${EXT_COLORS.success} !important;
-        box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.25) !important;
         border-radius: 12px;
       }
     `;

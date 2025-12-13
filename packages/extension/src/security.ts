@@ -190,7 +190,8 @@ export function validateMessage(message: any): boolean {
     'googleSignIn',
     'fetchSubscriptionStatus',
     'getAuthToken',
-    'acquireAuthToken'
+    'acquireAuthToken',
+    'apiProxy'
   ];
 
   if (!allowedActions.includes(message.action)) {
@@ -255,6 +256,21 @@ export function validateMessage(message: any): boolean {
         return false;
       }
       return true;
+    case 'apiProxy': {
+      // Background API proxy request.
+      // URL allowlisting is enforced in the background handler; here we only validate shape.
+      if (!isPlainObject(message.data)) return false;
+      const data = message.data as Record<string, unknown>;
+
+      if (typeof data.url !== 'string' || data.url.trim().length === 0) return false;
+      if (data.method !== undefined && typeof data.method !== 'string') return false;
+      if (data.headers !== undefined && !isPlainObject(data.headers)) return false;
+      if (data.body !== undefined && typeof data.body !== 'string') return false;
+      if (data.timeoutMs !== undefined && typeof data.timeoutMs !== 'number') return false;
+      if (data.requestId !== undefined && typeof data.requestId !== 'string') return false;
+
+      return true;
+    }
     default:
       return true;
   }

@@ -13,7 +13,9 @@
   },
   "host_permissions": [
     "https://*.linkedin.com/*",
-    "https://*.hireall.app/*"
+    "https://*.hireall.app/*",
+    "http://localhost:3000/*",
+    "http://127.0.0.1:3000/*"
   ],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self';"

@@ -48,9 +48,35 @@ chrome.runtime.onInstalled.addListener(() => {
 // Initialize security components
 const messageRateLimiter = new ExtensionRateLimiter(60000, 50); // 50 messages per minute
 const authRateLimiter = new ExtensionRateLimiter(15 * 60 * 1000, 5); // 5 auth attempts per 15 minutes
+const apiProxyRateLimiter = new ExtensionRateLimiter(60000, 400); // higher limit for API proxying
+
+function isAllowedProxyUrl(url: string, baseUrl: string): boolean {
+  try {
+    const requestUrl = new URL(url);
+    const base = new URL(sanitizeBaseUrl(baseUrl));
+
+    // Only allow requests to the configured API origin.
+    if (requestUrl.origin !== base.origin) return false;
+
+    // Only allow API routes.
+    return requestUrl.pathname.startsWith('/api/');
+  } catch {
+    return false;
+  }
+}
+
+async function fetchWithTimeoutInBackground(url: string, init: RequestInit, timeoutMs: number): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
 
 // Enhanced authentication rate limiting
-async function checkAuthRateLimit(identifier: string): Promise<{ allowed: boolean; retryAfter?: number }> {
+function checkAuthRateLimit(identifier: string): { allowed: boolean; retryAfter?: number } {
   const isAllowed = authRateLimiter.isAllowed(identifier);
   
   if (!isAllowed) {
@@ -199,8 +225,10 @@ async function syncAuthStateFromSite(options: { tabId?: number; userIdOverride?:
   });
 }
 
-// Handle messages from content script with security validation
-chrome.runtime.onMessage.addListener(async (request: any, sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void) => {
+// Handle messages from content script with security validation.
+// IMPORTANT: MV3 requires returning `true` synchronously to keep the message port open.
+// Do not mark this listener as `async`.
+chrome.runtime.onMessage.addListener((request: any, sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void) => {
   const startTime = Date.now();
   const senderId = sender.tab?.id?.toString() || 'unknown';
 
@@ -225,81 +253,87 @@ chrome.runtime.onMessage.addListener(async (request: any, sender: chrome.runtime
       source: request.payload.source
     });
 
-    if (request.payload.isAuthenticated === false) {
-      try {
-        await clearCachedAuthToken();
-      } catch (error) {
-        logger.warn("Background", "Failed to clear cached auth token on logout", {
-          error: error instanceof Error ? error.message : String(error)
-        });
-      }
-
-      await new Promise<void>((resolve) => {
-        chrome.storage.sync.remove(["firebaseUid", "userId", "userEmail", "sessionToken"], () => {
-          if (chrome.runtime.lastError) {
-            logger.warn("Background", "Failed to clear sync auth identifiers on logout", {
-              error: chrome.runtime.lastError.message
-            });
-          }
-          resolve();
-        });
-      });
-
-      sendResponse({ success: true });
-      return true;
-    }
-    
-    if (request.payload.isAuthenticated && request.payload.token) {
-      try {
-        await cacheAuthToken({
-          token: request.payload.token,
-          userId: request.payload.userId,
-          userEmail: request.payload.email,
-          source: "background"
-        });
-        
-        // Also store userId in sync storage for other components
-        if (request.payload.userId) {
-          await chrome.storage.sync.set({
-            firebaseUid: request.payload.userId,
-            userId: request.payload.userId,
-            userEmail: request.payload.email
+    void (async () => {
+      if (request.payload.isAuthenticated === false) {
+        try {
+          await clearCachedAuthToken();
+        } catch (error) {
+          logger.warn("Background", "Failed to clear cached auth token on logout", {
+            error: error instanceof Error ? error.message : String(error)
           });
         }
-        
-        logger.info("Background", "Auth state cached successfully");
-      } catch (error) {
-        logger.warn("Background", "Failed to cache auth state", {
-          error: error instanceof Error ? error.message : String(error)
+
+        await new Promise<void>((resolve) => {
+          chrome.storage.sync.remove(["firebaseUid", "userId", "userEmail", "sessionToken"], () => {
+            if (chrome.runtime.lastError) {
+              logger.warn("Background", "Failed to clear sync auth identifiers on logout", {
+                error: chrome.runtime.lastError.message
+              });
+            }
+            resolve();
+          });
         });
+
+        sendResponse({ success: true });
+        return;
       }
-    }
-    
-    sendResponse({ success: true });
+
+      if (request.payload.isAuthenticated && request.payload.token) {
+        try {
+          await cacheAuthToken({
+            token: request.payload.token,
+            userId: request.payload.userId,
+            userEmail: request.payload.email,
+            source: "background"
+          });
+
+          // Also store userId in sync storage for other components
+          if (request.payload.userId) {
+            await chrome.storage.sync.set({
+              firebaseUid: request.payload.userId,
+              userId: request.payload.userId,
+              userEmail: request.payload.email
+            });
+          }
+
+          logger.info("Background", "Auth state cached successfully");
+        } catch (error) {
+          logger.warn("Background", "Failed to cache auth state", {
+            error: error instanceof Error ? error.message : String(error)
+          });
+        }
+      }
+
+      sendResponse({ success: true });
+    })();
+
     return true;
   }
 
   // Handle FORCE_SYNC_REQUEST from content scripts
   if (request.type === 'FORCE_SYNC_REQUEST' && request.payload) {
     logger.info("Background", "Force sync request received");
-    
-    if (request.payload.token) {
-      try {
-        await cacheAuthToken({
-          token: request.payload.token,
-          userId: request.payload.userId,
-          userEmail: request.payload.userEmail,
-          source: "background"
-        });
-        logger.info("Background", "Force sync completed");
-      } catch (error) {
-        logger.warn("Background", "Force sync failed", {
-          error: error instanceof Error ? error.message : String(error)
-        });
+
+    void (async () => {
+      if (request.payload.token) {
+        try {
+          await cacheAuthToken({
+            token: request.payload.token,
+            userId: request.payload.userId,
+            userEmail: request.payload.userEmail,
+            source: "background"
+          });
+          logger.info("Background", "Force sync completed");
+        } catch (error) {
+          logger.warn("Background", "Force sync failed", {
+            error: error instanceof Error ? error.message : String(error)
+          });
+        }
       }
-    }
-    
-    sendResponse({ success: true });
+
+      sendResponse({ success: true });
+    })();
+
     return true;
   }
 
@@ -320,7 +354,14 @@ chrome.runtime.onMessage.addListener(async (request: any, sender: chrome.runtime
   }
 
   // Rate limiting
-  if (!messageRateLimiter.isAllowed(senderId)) {
+  if (request?.action === 'apiProxy') {
+    if (!apiProxyRateLimiter.isAllowed(senderId)) {
+      ExtensionSecurityLogger.logSuspiciousActivity('api_proxy_rate_limit_exceeded', { senderId });
+      logger.warn('Background', 'API proxy rate limit exceeded', { senderId });
+      sendResponse({ success: false, error: 'Rate limit exceeded' });
+      return;
+    }
+  } else if (!messageRateLimiter.isAllowed(senderId)) {
     ExtensionSecurityLogger.logSuspiciousActivity('rate_limit_exceeded', { senderId });
     logger.warn("Background", "Rate limit exceeded", { senderId });
     sendResponse({ error: 'Rate limit exceeded' });
@@ -419,6 +460,93 @@ chrome.runtime.onMessage.addListener(async (request: any, sender: chrome.runtime
         sendResponse({ success: false, error: error instanceof Error ? error.message : 'Unknown error' });
       });
     return true;
+  } else if (request.action === "apiProxy") {
+    console.log('[Hireall:BG] apiProxy message received', {
+      url: request.data?.url,
+      method: request.data?.method,
+      requestId: request.data?.requestId,
+    });
+
+    void (async () => {
+      try {
+        const data = request.data ?? {};
+        const url = typeof data.url === 'string' ? data.url : '';
+        const method = typeof data.method === 'string' ? data.method : 'GET';
+        const headers = (data.headers && typeof data.headers === 'object') ? data.headers : {};
+        const body = typeof data.body === 'string' ? data.body : undefined;
+        const timeoutMs = typeof data.timeoutMs === 'number' && Number.isFinite(data.timeoutMs)
+          ? Math.max(1000, Math.min(120000, data.timeoutMs))
+          : 30000;
+        const requestId = typeof data.requestId === 'string' ? data.requestId : undefined;
+
+        const storage = await chrome.storage.sync.get(['webAppUrl']);
+        const configuredBase = typeof storage?.webAppUrl === 'string' ? storage.webAppUrl : DEFAULT_WEB_APP_URL;
+
+        if (!url || !isAllowedProxyUrl(url, configuredBase)) {
+          logger.warn('Background', 'Blocked apiProxy request (invalid/forbidden URL)', {
+            requestId,
+            url,
+            configuredBase: sanitizeBaseUrl(configuredBase),
+            senderId,
+          });
+          sendResponse({ success: false, error: 'Forbidden URL' });
+          return;
+        }
+
+        logger.debug('Background', 'Proxying API request', {
+          requestId,
+          method,
+          url,
+          timeoutMs,
+          senderId,
+        });
+
+        console.log('[Hireall:BG] apiProxy starting fetch', { requestId, method, url, timeoutMs });
+
+        const res = await fetchWithTimeoutInBackground(url, {
+          method,
+          headers,
+          body,
+          // Keep behavior consistent with client: include cookies when present.
+          credentials: 'include',
+        }, timeoutMs);
+
+        console.log('[Hireall:BG] apiProxy fetch completed', { requestId, status: res.status });
+
+        const contentType = res.headers.get('content-type') || '';
+        const text = await res.text();
+
+        // Serialize headers for message passing.
+        const headerObj: Record<string, string> = {};
+        try {
+          res.headers.forEach((value, key) => {
+            headerObj[key] = value;
+          });
+        } catch {
+          // ignore
+        }
+
+        console.log('[Hireall:BG] apiProxy sending success response', { reqId: requestId, status: res.status, bodyLength: text.length });
+        sendResponse({
+          success: true,
+          status: res.status,
+          statusText: res.statusText,
+          headers: headerObj,
+          contentType,
+          bodyText: text,
+        });
+      } catch (error: any) {
+        console.error('[Hireall:BG] apiProxy error', { error: error instanceof Error ? error.message : String(error) });
+        logger.warn('Background', 'apiProxy failed', {
+          error: error instanceof Error ? error.message : String(error),
+        });
+        sendResponse({
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    })();
+    return true;
   } else if (request.action === "openJobUrl") {
     // Validate URL before opening
     if (request.url && validateUrl(request.url)) {
@@ -495,7 +623,7 @@ chrome.runtime.onMessage.addListener(async (request: any, sender: chrome.runtime
   } else if (request.action === "googleSignIn") {
     // Run OAuth from background so the popup closing doesn't interrupt the flow.
     const authIdentifier = sender.tab?.id?.toString() || sender.id || 'popup';
-    const rateLimitCheck = await checkAuthRateLimit(authIdentifier);
+    const rateLimitCheck = checkAuthRateLimit(authIdentifier);
 
     if (!rateLimitCheck.allowed) {
       sendResponse({
@@ -641,7 +769,7 @@ chrome.runtime.onMessage.addListener(async (request: any, sender: chrome.runtime
 
     // Apply authentication rate limiting
     const authIdentifier = sender.tab?.id?.toString() || sender.id || 'unknown';
-    const rateLimitCheck = await checkAuthRateLimit(authIdentifier);
+    const rateLimitCheck = checkAuthRateLimit(authIdentifier);
     
     if (!rateLimitCheck.allowed) {
       logger.warn("Background", "Authentication rate limit exceeded", {

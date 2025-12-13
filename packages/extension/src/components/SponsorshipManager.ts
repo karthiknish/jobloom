@@ -17,6 +17,34 @@ const MAX_RETRIES = 2;
 const INITIAL_DELAY_MS = 300;
 const MAX_DELAY_MS = 2000;
 
+const SPONSOR_LIMITER_OPERATION_TIMEOUT_MS = 20000;
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) return promise;
+  return new Promise<T>((resolve, reject) => {
+    let settled = false;
+    const timeoutId = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      reject(new Error(`${label} timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+
+    promise
+      .then((value) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeoutId);
+        resolve(value);
+      })
+      .catch((err) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeoutId);
+        reject(err);
+      });
+  });
+}
+
 interface RetryConfig {
   maxRetries?: number;
   initialDelay?: number;
@@ -273,7 +301,7 @@ export class SponsorshipManager {
   }
 
   private static async runWithSponsorLimit<T>(fn: () => Promise<T>): Promise<T> {
-    return sponsorBatchLimiter.add(fn);
+    return sponsorBatchLimiter.add(() => withTimeout(fn(), SPONSOR_LIMITER_OPERATION_TIMEOUT_MS, "Sponsor lookup"));
   }
 
   private static mapApiRecordToSponsorship(record: SponsorLookupResult): SponsorshipRecord {
