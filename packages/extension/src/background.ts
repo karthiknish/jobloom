@@ -20,10 +20,17 @@ import { logger, log } from "./utils/logger";
 chrome.runtime.onInstalled.addListener(() => {
   log.extension("Extension installed");
 
-  // Ensure web app URL exists for API calls
+  // Ensure web app URL exists for API calls - reset localhost to production
   chrome.storage.sync.get(["webAppUrl"], (result: { webAppUrl?: string }) => {
-    if (!result.webAppUrl) {
-      logger.info("Background", "Setting default web app URL", { url: DEFAULT_WEB_APP_URL });
+    const currentUrl = result.webAppUrl || '';
+    const isLocalhost = currentUrl.includes('localhost') || currentUrl.includes('127.0.0.1');
+    
+    if (!result.webAppUrl || isLocalhost) {
+      logger.info("Background", "Setting default web app URL", { 
+        url: DEFAULT_WEB_APP_URL,
+        previousUrl: result.webAppUrl,
+        wasLocalhost: isLocalhost
+      });
       chrome.storage.sync.set({
         webAppUrl: DEFAULT_WEB_APP_URL,
       });

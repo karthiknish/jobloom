@@ -612,12 +612,24 @@ export class JobTracker {
     try {
       const result = await this.checkSponsorship(jobData, card);
       this.showSponsorToast(jobData, result);
-      // Always highlight the card - green for sponsored, orange for not sponsored
-      this.highlightCard(card, result);
+      
+      // Only highlight if we got a valid result (not an error)
+      if (result.status !== "error") {
+        // Green for sponsored, orange for confirmed not sponsored
+        this.highlightCard(card, result);
+        // Hide the button after successful check
+        button.style.display = 'none';
+      } else {
+        // Error occurred - restore button so user can retry
+        window.setTimeout(() => {
+          button.innerHTML = originalLabel;
+          button.disabled = false;
+        }, 1500);
+      }
     } catch (error) {
       console.error("Hireall: sponsor check button failed", error);
       UIComponents.showToast("Sponsor check failed", { type: "error" });
-    } finally {
+      // Restore button on error so user can retry
       window.setTimeout(() => {
         button.innerHTML = originalLabel;
         button.disabled = false;
