@@ -110,12 +110,12 @@ export async function fetchSponsorRecord(
     try {
       console.log(`[Hireall:Sponsor] Starting lookup for "${company}" at ${new Date().toISOString()}`);
       
-      // Use the new dedicated check endpoint - no auth required (public sponsor data)
+      // Use the new dedicated check endpoint - requires authentication
       const checkResponse = await post<SponsorCheckResponse>("/api/app/sponsorship/check", {
         company: normalizedCompany,
         city: options?.city,
         location: options?.location,
-      }, false, {  // false = skip auth (sponsor data is public)
+      }, true, {  // true = require auth
         timeout: 10000, // 10 second timeout
         retryCount: 0,  // No retries for faster response
       });

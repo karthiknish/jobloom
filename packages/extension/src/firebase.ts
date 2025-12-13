@@ -95,12 +95,20 @@ export function getAuthInstance(): Auth {
   
   // firebase/auth/web-extension handles persistence automatically
   // No need to configure persistence manually like with firebase/auth
+  // Note: In sandboxed content scripts (like on LinkedIn), Firebase may fail
+  // to access localStorage - we need to catch and handle this gracefully
   try {
     cachedAuth = getAuth(firebaseApp);
     authInitialized = true;
     logger.debug('Firebase', 'Firebase Auth initialized (web-extension)');
     return cachedAuth;
   } catch (error: any) {
+    // Check if this is a localStorage SecurityError (happens in sandboxed contexts)
+    if (error?.name === 'SecurityError' && error?.message?.includes('localStorage')) {
+      logger.warn('Firebase', 'Firebase Auth cannot access localStorage in this context (sandboxed)');
+      // Auth won't work in this context, but we shouldn't throw
+      throw new Error('Firebase Auth unavailable in sandboxed content script context');
+    }
     logger.error('Firebase', 'Failed to initialize auth', { error });
     throw error;
   }

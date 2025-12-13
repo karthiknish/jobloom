@@ -108,23 +108,19 @@ function mapDocToSponsor(doc: QueryDocumentSnapshot<Record<string, any>>): Spons
 }
 
 // POST /api/app/sponsorship/check - Check if a specific company is a sponsor
-// Note: Auth is optional for sponsor checks since the sponsor registry is public data
 export async function POST(request: NextRequest) {
   const requestId = generateRequestId();
   const startTime = Date.now();
 
   return withErrorHandling(async () => {
-    // Try to authenticate but don't require it - sponsor data is public
-    let isAuthenticated = false;
-    try {
-      const auth = await authenticateRequest(request, { loadUser: false });
-      isAuthenticated = auth.ok;
-    } catch {
-      // Auth failed - continue without auth for this public endpoint
-      isAuthenticated = false;
+    // Authenticate the request
+    const auth = await authenticateRequest(request, { loadUser: false });
+
+    if (!auth.ok) {
+      return auth.response;
     }
 
-    console.log(`[POST /api/app/sponsorship/check] Request ${requestId} - authenticated: ${isAuthenticated}`);
+    console.log(`[POST /api/app/sponsorship/check] Request ${requestId} - authenticated: true`);
 
     const body: SponsorCheckRequest = await request.json();
     

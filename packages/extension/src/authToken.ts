@@ -519,15 +519,20 @@ export async function acquireIdToken(
       canMessageBg: canMessageBackground()
     });
 
-    // Try Firebase auth first (only works in extension pages)
-    const firebaseToken = await getTokenFromFirebase(forceRefresh);
-    if (firebaseToken) {
-      console.debug("Hireall: Acquired token from Firebase auth", {
-        userId: firebaseToken.userId,
-        source: "firebase"
-      });
-      await resetAuthFailureCounter();
-      return firebaseToken.token;
+    // Try Firebase auth - ONLY in extension pages (popup, background, options)
+    // Content scripts (on LinkedIn, etc.) cannot use Firebase directly due to localStorage sandbox
+    if (isExtensionPage()) {
+      const firebaseToken = await getTokenFromFirebase(forceRefresh);
+      if (firebaseToken) {
+        console.debug("Hireall: Acquired token from Firebase auth", {
+          userId: firebaseToken.userId,
+          source: "firebase"
+        });
+        await resetAuthFailureCounter();
+        return firebaseToken.token;
+      }
+    } else {
+      console.debug("Hireall: Skipping Firebase auth in content script (sandboxed context)");
     }
 
     // Try getting token from HireAll web app tab
