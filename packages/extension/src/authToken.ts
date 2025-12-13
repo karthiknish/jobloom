@@ -320,7 +320,14 @@ async function getTokenFromHireallTab(forceRefresh: boolean): Promise<CachedAuth
       ]
     });
 
-    const candidateTabs = queryTabs.length ? queryTabs : await chrome.tabs.query({ active: true, currentWindow: true });
+    // Only attempt token extraction from actual HireAll web app tabs.
+    // Falling back to the active tab can cause script injection attempts on unrelated sites
+    // (e.g., LinkedIn), which is noisy and can trigger sandbox/CSP edge cases.
+    const candidateTabs = queryTabs;
+
+    if (!candidateTabs.length) {
+      return null;
+    }
 
     for (const tab of candidateTabs) {
       if (!tab?.id) continue;
@@ -362,13 +369,15 @@ async function getTokenFromHireallTab(forceRefresh: boolean): Promise<CachedAuth
             func: () => {
               // Get token from localStorage (populated by ExtensionAuthBridge)
               // Note: getHireallAuthToken is async and can't return Promises from executeScript
-              // IMPORTANT: Wrap in try-catch to handle sandboxed contexts that block localStorage
+              // IMPORTANT: Wrap the entire localStorage access in try-catch
+              // In sandboxed contexts, even accessing window.localStorage throws SecurityError
               try {
-                if (typeof localStorage === 'undefined') {
+                const storage = window.localStorage;
+                if (!storage) {
                   return null;
                 }
-                const localToken = localStorage.getItem('hireall_auth_token');
-                const userData = localStorage.getItem('hireall_user_data');
+                const localToken = storage.getItem('hireall_auth_token');
+                const userData = storage.getItem('hireall_user_data');
                 
                 if (localToken && localToken.length > 100) {
                   let parsed: any = {};
@@ -386,7 +395,7 @@ async function getTokenFromHireallTab(forceRefresh: boolean): Promise<CachedAuth
                 }
               } catch (e) {
                 // localStorage may be blocked in sandboxed contexts - this is expected
-                // Don't log since this runs in page context
+                // SecurityError is thrown when accessing window.localStorage in sandboxed iframes
               }
               
               return null;

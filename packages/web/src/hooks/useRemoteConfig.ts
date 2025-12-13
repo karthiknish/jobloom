@@ -6,6 +6,7 @@ import {
   subscribeToRemoteConfig,
   refreshRemoteConfig,
 } from '@/firebase/remoteConfig';
+import { safeLocalStorageGet } from '@/utils/safeBrowserStorage';
 
 // Hook for accessing remote config values
 export function useRemoteConfig() {
@@ -163,7 +164,7 @@ export function useFeatureRollout(featureName: string, rolloutPercentage: number
     if (isEnabled && rolloutPercentage < 100) {
       // Simple rollout logic based on user ID hash
       // In a real implementation, you'd use a more sophisticated approach
-      const userId = localStorage.getItem('userId') || 'anonymous';
+      const userId = safeLocalStorageGet('userId') || 'anonymous';
       const hash = userId.split('').reduce((a, b) => {
         a = ((a << 5) - a) + b.charCodeAt(0);
         return a & a;

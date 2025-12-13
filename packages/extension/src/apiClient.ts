@@ -100,6 +100,31 @@ async function fetchWithTimeout(
   }
 }
 
+function createRequestId(): string {
+  try {
+    const c: any = (globalThis as any).crypto;
+    if (c?.randomUUID) return c.randomUUID();
+  } catch {
+    // ignore
+  }
+
+  return `req_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+}
+
+function safePreview(text: string, maxLen = 800): string {
+  if (!text) return '';
+  const trimmed = text.trim();
+  return trimmed.length > maxLen ? `${trimmed.slice(0, maxLen)}…` : trimmed;
+}
+
+function safeOrigin(url: string): string {
+  try {
+    return new URL(url).origin;
+  } catch {
+    return '';
+  }
+}
+
 export async function apiRequest<T = any>(opts: ApiOptions): Promise<T> {
   const { 
     path, 
@@ -115,6 +140,9 @@ export async function apiRequest<T = any>(opts: ApiOptions): Promise<T> {
   const base = await getBaseUrl();
   const requiresAuth = auth === true || (auth === undefined && path.startsWith('/api/app/'));
   const url = `${base}${path}${buildQuery(query)}`;
+  const requestId = createRequestId();
+  const method = (rest.method || 'GET').toString().toUpperCase();
+  const requestStart = Date.now();
 
   // Determine rate limit endpoint based on path
   let rateLimitEndpoint = 'general';
@@ -144,57 +172,111 @@ export async function apiRequest<T = any>(opts: ApiOptions): Promise<T> {
     ...(headers as any),
   };
 
+  // Attach a request id for correlating client logs with backend logs (if supported).
+  finalHeaders['X-HireAll-Request-Id'] = requestId;
+
   // Acquire auth token if needed
   if (requiresAuth) {
     const authStart = Date.now();
-    console.log(`[Hireall:Auth] Starting auth for ${path}`);
+    console.debug(`[Hireall:Auth] Starting auth for ${method} ${path}`, {
+      requestId,
+      origin: safeOrigin(url),
+    });
     let token: string | null = null;
     
     try {
       token = await acquireIdToken();
       if (!token) {
-        console.log(`[Hireall:Auth] First attempt returned null after ${Date.now() - authStart}ms, retrying with force`);
+        console.debug(`[Hireall:Auth] First attempt returned null, retrying with force`, {
+          requestId,
+          elapsedMs: Date.now() - authStart,
+        });
         // Wait a bit before retrying with force refresh
         await delay(500);
         token = await acquireIdToken(true);
       }
     } catch (tokenError) {
-      console.warn(`Hireall: Token acquisition threw error for ${path}:`, tokenError);
+      console.warn(`Hireall: Token acquisition threw error for ${method} ${path}`, {
+        requestId,
+        elapsedMs: Date.now() - authStart,
+        error: tokenError instanceof Error ? tokenError.message : String(tokenError),
+      });
       // One more try after error
       await delay(1000);
       try {
         token = await acquireIdToken(true);
       } catch (retryError) {
-        console.error(`Hireall: Token retry also failed:`, retryError);
+        console.error(`Hireall: Token retry also failed`, {
+          requestId,
+          elapsedMs: Date.now() - authStart,
+          error: retryError instanceof Error ? retryError.message : String(retryError),
+        });
       }
     }
 
     if (!token) {
-      console.warn(`Hireall: Authentication failed for ${path} - no token available`);
+      console.warn(`Hireall: Authentication failed for ${method} ${path} - no token available`, {
+        requestId,
+        elapsedMs: Date.now() - authStart,
+      });
       const error = new Error('Authentication required. Please sign in to the extension or web app.');
       (error as any).code = 'AUTH_REQUIRED';
       (error as any).statusCode = 401;
       throw error;
     }
-    
-    console.debug(`Hireall: Successfully acquired token for ${path} (length: ${token.length})`);
+
+    console.debug(`Hireall: Successfully acquired token for ${method} ${path}`, {
+      requestId,
+      elapsedMs: Date.now() - authStart,
+      tokenLength: token.length,
+    });
     finalHeaders['Authorization'] = `Bearer ${token}`;
   }
 
   // Perform request with retry logic
   let lastError: Error | null = null;
+
+  console.debug(`[Hireall:API] -> ${method} ${path}`, {
+    requestId,
+    origin: safeOrigin(url),
+    requiresAuth,
+    retryCount,
+    timeoutMs: timeout,
+  });
   
   for (let attempt = 0; attempt <= retryCount; attempt++) {
     try {
+      const attemptStart = Date.now();
       const res = await fetchWithTimeout(url, {
         ...rest,
         headers: finalHeaders,
         credentials: 'include',
       }, timeout);
 
+      const attemptElapsedMs = Date.now() - attemptStart;
+      const serverRequestId = res.headers.get('x-request-id') || res.headers.get('x-amzn-requestid') || undefined;
+
       // Handle response
       if (!res.ok) {
         const text = await res.text();
+        const preview = safePreview(text);
+        let parsedBody: any = undefined;
+        try {
+          parsedBody = text ? JSON.parse(text) : undefined;
+        } catch {
+          // ignore parse errors
+        }
+
+        console.warn(`[Hireall:API] !! ${method} ${path} ${res.status} (${attemptElapsedMs}ms)`, {
+          requestId,
+          attempt: attempt + 1,
+          origin: safeOrigin(url),
+          status: res.status,
+          statusText: res.statusText,
+          serverRequestId,
+          bodyPreview: preview,
+          body: parsedBody,
+        });
         
         // Check if we should retry
         if (shouldRetry(null, res.status) && attempt < retryCount) {
@@ -242,12 +324,19 @@ export async function apiRequest<T = any>(opts: ApiOptions): Promise<T> {
         const error = new Error(errorMessage);
         (error as any).statusCode = res.status;
         (error as any).code = errorCode;
+        (error as any).requestId = requestId;
+        (error as any).endpoint = path;
+        (error as any).method = method;
+        (error as any).serverRequestId = serverRequestId;
         
         // Try to parse error response for more details
         try {
           const parsed = JSON.parse(text);
           if (parsed.error) {
             (error as any).serverError = parsed.error;
+          }
+          if (parsed.message && typeof parsed.message === 'string') {
+            (error as any).serverMessage = parsed.message;
           }
           if (parsed.code) {
             (error as any).code = parsed.code;
@@ -258,6 +347,13 @@ export async function apiRequest<T = any>(opts: ApiOptions): Promise<T> {
         
         throw error;
       }
+
+      console.debug(`[Hireall:API] <- ${method} ${path} ${res.status} (${attemptElapsedMs}ms)`, {
+        requestId,
+        attempt: attempt + 1,
+        serverRequestId,
+        elapsedMsTotal: Date.now() - requestStart,
+      });
       
       // Success - parse response
       const ct = res.headers.get('content-type') || '';
@@ -268,6 +364,23 @@ export async function apiRequest<T = any>(opts: ApiOptions): Promise<T> {
       
     } catch (error: any) {
       lastError = error;
+
+      const elapsedMsTotal = Date.now() - requestStart;
+      const isAbort = error?.name === 'AbortError';
+      const isTypeErrorFetch = error?.name === 'TypeError' && String(error?.message || '').toLowerCase().includes('fetch');
+
+      // Always log failures once with context; retries will add additional debug output.
+      console.warn(`[Hireall:API] xx ${method} ${path} failed`, {
+        requestId,
+        attempt: attempt + 1,
+        origin: safeOrigin(url),
+        elapsedMsTotal,
+        errorName: error?.name,
+        errorCode: error?.code,
+        errorMessage: error instanceof Error ? error.message : String(error),
+        aborted: !!isAbort,
+        fetchTypeError: !!isTypeErrorFetch,
+      });
       
       // Check if we should retry on network errors
       if (shouldRetry(error) && attempt < retryCount) {

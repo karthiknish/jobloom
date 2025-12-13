@@ -26,7 +26,7 @@
       "matches": [
         "https://*.linkedin.com/*"
       ],
-      "js": ["content.js"],
+      "js": ["hireall-content.js"],
       "css": ["styles.css"]
     },
     {
@@ -35,7 +35,7 @@
         "https://*.netlify.app/*",
         "https://hireall.app/*"
       ],
-      "js": ["webapp-content.js"]
+      "js": ["hireall-webapp-content.js"]
     }
   ],
   "action": {

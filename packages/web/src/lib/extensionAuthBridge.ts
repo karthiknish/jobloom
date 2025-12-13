@@ -4,6 +4,11 @@
  */
 
 import { getAuthClient } from '@/firebase/client';
+import {
+  safeLocalStorageGet,
+  safeLocalStorageRemove,
+  safeLocalStorageSet,
+} from '@/utils/safeBrowserStorage';
 
 interface ExtensionAuthMessage {
   action: 'getAuthToken' | 'authSuccess' | 'syncAuthState';
@@ -71,8 +76,8 @@ class ExtensionAuthBridge {
       
       const token = await auth.currentUser.getIdToken();
       if (token) {
-        localStorage.setItem('hireall_auth_token', token);
-        localStorage.setItem('hireall_user_data', JSON.stringify({
+        safeLocalStorageSet('hireall_auth_token', token);
+        safeLocalStorageSet('hireall_user_data', JSON.stringify({
           userId: auth.currentUser.uid,
           userEmail: auth.currentUser.email,
           timestamp: Date.now()
@@ -181,8 +186,8 @@ class ExtensionAuthBridge {
             }, '*');
 
             // Store in localStorage for extension access
-            localStorage.setItem('hireall_auth_token', token);
-            localStorage.setItem('hireall_user_data', JSON.stringify({
+            safeLocalStorageSet('hireall_auth_token', token);
+            safeLocalStorageSet('hireall_user_data', JSON.stringify({
               userId: user.uid,
               userEmail: user.email,
               timestamp: Date.now()
@@ -199,8 +204,8 @@ class ExtensionAuthBridge {
             timestamp: Date.now()
           }, '*');
 
-          localStorage.removeItem('hireall_auth_token');
-          localStorage.removeItem('hireall_user_data');
+          safeLocalStorageRemove('hireall_auth_token');
+          safeLocalStorageRemove('hireall_user_data');
         }
       });
 

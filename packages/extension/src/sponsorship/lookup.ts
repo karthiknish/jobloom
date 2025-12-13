@@ -108,7 +108,7 @@ export async function fetchSponsorRecord(
   const lookupPromise = runWithSponsorLimit(async () => {
     const startTime = Date.now();
     try {
-      console.log(`[Hireall:Sponsor] Starting lookup for "${company}" at ${new Date().toISOString()}`);
+      console.debug(`[Hireall:Sponsor] Starting lookup for "${company}" at ${new Date().toISOString()}`);
       
       // Use the new dedicated check endpoint - requires authentication
       const checkResponse = await post<SponsorCheckResponse>("/api/app/sponsorship/check", {
@@ -121,7 +121,7 @@ export async function fetchSponsorRecord(
       });
       
       const elapsed = Date.now() - startTime;
-      console.log(`[Hireall:Sponsor] API responded in ${elapsed}ms for "${company}"`);
+      console.debug(`[Hireall:Sponsor] API responded in ${elapsed}ms for "${company}"`);
 
 
       if (checkResponse.found && checkResponse.sponsor) {

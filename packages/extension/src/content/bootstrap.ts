@@ -1,5 +1,6 @@
 import { initializeJobTracker } from "../job-tracker/runtime";
 import { logger } from "../utils/logger";
+import { isLocalStorageAvailable } from "../utils/safeLocalStorage";
 import {
   exposeDiagnostics,
   initializeContentRuntime,
@@ -9,6 +10,12 @@ import {
 import { registerControlDiagnostics } from "./controls";
 
 export function bootstrapContentScript(): void {
+  // Check for sandboxed context first using the safe check
+  if (!isLocalStorageAvailable()) {
+    logger.warn("ContentBootstrap", "Running in sandboxed context (localStorage blocked). Extension features disabled.");
+    return;
+  }
+
   initializeMessageBridge();
   const jobTracker = initializeJobTracker();
 

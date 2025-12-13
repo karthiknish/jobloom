@@ -4,6 +4,31 @@ import { ExtensionSecurityLogger } from "./security";
 import { put } from "./apiClient";
 import { ExtensionMessageHandler } from "./components/ExtensionMessageHandler";
 import { cacheAuthToken, clearCachedAuthToken } from "./authToken";
+import { safeLocalStorageGet, isLocalStorageAvailable } from "./utils/safeLocalStorage";
+
+// Detect sandboxed context early using the safe check
+const isInSandbox = !isLocalStorageAvailable();
+
+if (isInSandbox) {
+  console.warn('[HireAll] Running in sandboxed context. Some features may be limited.');
+}
+
+// Suppress localStorage SecurityErrors from sandboxed iframes/third-party scripts
+if (typeof window !== 'undefined') {
+  const originalError = console.error;
+  console.error = function(...args: any[]) {
+    // Filter out localStorage SecurityErrors from sandboxed contexts
+    if (args.length > 0 && 
+        typeof args[0] === 'string' && 
+        args[0].includes('SecurityError') && 
+        args[0].includes('localStorage') &&
+        args[0].includes('sandboxed')) {
+      // Silently ignore - this is expected in sandboxed iframes
+      return;
+    }
+    originalError.apply(console, args);
+  };
+}
 
 // Content script for the web app to handle authentication communication
 let authSuccessSent = false; // Prevent duplicate auth success messages
@@ -38,7 +63,7 @@ function extractUserInfo(): UserInfo {
 
   if (!userId) {
     try {
-      const stored = localStorage.getItem("__firebase_user");
+      const stored = safeLocalStorageGet("__firebase_user");
       if (stored) {
         const data = JSON.parse(stored);
         if (data?.id) {
@@ -114,19 +139,24 @@ function extractHireallSession(): HireallSessionInfo {
     // try to extract from other sources
     if (result.sessionToken && !result.userId) {
       // Check for user data in sessionStorage
-      const sessionUserData = sessionStorage.getItem('hireall_user');
-      if (sessionUserData) {
-        try {
-          const userData = JSON.parse(sessionUserData);
-          if (userData.id) result.userId = userData.id;
-          if (userData.email) result.userEmail = userData.email;
-        } catch (e) {
-          console.debug('Failed to parse Hireall user data from sessionStorage');
+      try {
+        const sessionUserData = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('hireall_user') : null;
+        if (sessionUserData) {
+          try {
+            const userData = JSON.parse(sessionUserData);
+            if (userData.id) result.userId = userData.id;
+            if (userData.email) result.userEmail = userData.email;
+          } catch (e) {
+            console.debug('Failed to parse Hireall user data from sessionStorage');
+          }
         }
+      } catch (e) {
+        // sessionStorage may be blocked in sandboxed contexts
+        console.debug('sessionStorage not accessible');
       }
 
       // Check for user data in localStorage
-      const localUserData = localStorage.getItem('hireall_user');
+      const localUserData = safeLocalStorageGet('hireall_user');
       if (localUserData) {
         try {
           const userData = JSON.parse(localUserData);
@@ -326,8 +356,8 @@ function fallbackGetAuthToken(request: any, sendResponse: (response: any) => voi
 // Last resort token retrieval from localStorage
 function tryLocalStorageToken(sendResponse: (response: any) => void) {
   try {
-    const localToken = localStorage.getItem('hireall_auth_token');
-    const userData = localStorage.getItem('hireall_user_data');
+    const localToken = safeLocalStorageGet('hireall_auth_token');
+    const userData = safeLocalStorageGet('hireall_user_data');
     
     if (localToken && localToken.length > 100) {
       let userId, userEmail;
@@ -526,7 +556,7 @@ window.addEventListener("message", (event) => {
         userId = String((window as any).__firebase_user.id);
       } else {
         try {
-          const s = localStorage.getItem("__firebase_user");
+          const s = safeLocalStorageGet("__firebase_user");
           if (s) userId = JSON.parse(s)?.id ?? null;
         } catch (parseError) {
           ExtensionSecurityLogger.log('Error parsing Firebase user data for auth success message', parseError);

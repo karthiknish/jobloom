@@ -2,6 +2,11 @@
 // Matches the extension's rate limiting configuration for consistency
 
 import { SecurityLogger } from "@/utils/security";
+import {
+  safeLocalStorageGet,
+  safeLocalStorageRemove,
+  safeLocalStorageSet,
+} from "@/utils/safeBrowserStorage";
 
 export interface RateLimitConfig {
   maxRequests: number;
@@ -277,7 +282,7 @@ export class ClientRateLimiter {
     }
 
     const now = Date.now();
-    const stored = localStorage.getItem(this.storageKey);
+    const stored = safeLocalStorageGet(this.storageKey);
     let state: RateLimitState;
 
     if (stored) {
@@ -302,7 +307,7 @@ export class ClientRateLimiter {
       };
     }
 
-    localStorage.setItem(this.storageKey, JSON.stringify(state));
+    safeLocalStorageSet(this.storageKey, JSON.stringify(state));
 
     const allowed = state.count <= this.config.maxRequests;
     const remaining = Math.max(0, this.config.maxRequests - state.count);
@@ -319,7 +324,7 @@ export class ClientRateLimiter {
   getRemainingRequests(): number {
     if (typeof window === 'undefined') return this.config.maxRequests;
 
-    const stored = localStorage.getItem(this.storageKey);
+    const stored = safeLocalStorageGet(this.storageKey);
     if (!stored) return this.config.maxRequests;
 
     const state: RateLimitState = JSON.parse(stored);
@@ -333,7 +338,7 @@ export class ClientRateLimiter {
   getTimeUntilReset(): number {
     if (typeof window === 'undefined') return 0;
 
-    const stored = localStorage.getItem(this.storageKey);
+    const stored = safeLocalStorageGet(this.storageKey);
     if (!stored) return 0;
 
     const state: RateLimitState = JSON.parse(stored);
@@ -345,7 +350,7 @@ export class ClientRateLimiter {
   reset(): void {
     if (typeof window === 'undefined') return;
 
-    localStorage.removeItem(this.storageKey);
+    safeLocalStorageRemove(this.storageKey);
   }
 }
 

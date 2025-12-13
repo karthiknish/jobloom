@@ -280,24 +280,44 @@ export class JobTracker {
     });
 
     try {
-      console.debug("Hireall: Starting sponsorship lookup with 15s timeout for", jobData.company);
-      const sponsorRecord = await Promise.race([
-        SponsorshipManager.fetchSponsorRecord(jobData.company, jobContext),
-        new Promise<null>((_, reject) => 
-          setTimeout(() => reject(new Error("Sponsorship lookup timeout")), 15000)
-        )
-      ]);
-      console.debug("Hireall: Sponsorship lookup completed for", jobData.company);
+      // Don't fail fast with an artificial timeout here.
+      // The API client already has a request timeout, and auth acquisition may add overhead.
+      // Instead, log when a lookup is slow so we can diagnose real latency without breaking UX.
+      console.debug("Hireall: Starting sponsorship lookup for", jobData.company);
+      const lookupStart = Date.now();
+      const slowLookupTimer = window.setTimeout(() => {
+        console.warn("Hireall: sponsor lookup is taking longer than expected", {
+          company: jobData.company,
+          elapsedMs: Date.now() - lookupStart,
+        });
+      }, 15000);
+
+      const sponsorRecord = await SponsorshipManager.fetchSponsorRecord(jobData.company, jobContext)
+        .finally(() => window.clearTimeout(slowLookupTimer));
+
+      console.debug("Hireall: Sponsorship lookup completed for", {
+        company: jobData.company,
+        elapsedMs: Date.now() - lookupStart,
+        hadRecord: !!sponsorRecord,
+      });
 
       let ukEligibility;
       try {
         console.debug("Hireall: Starting UK eligibility assessment for", jobData.company);
-        ukEligibility = await Promise.race([
-          sponsorRecord?.ukEligibility || SponsorshipManager.assessUkEligibility(jobContext),
-          new Promise<null>((_, reject) => 
-            setTimeout(() => reject(new Error("UK eligibility assessment timeout")), 8000)
-          )
-        ]);
+        const eligibilityStart = Date.now();
+        const slowEligibilityTimer = window.setTimeout(() => {
+          console.warn("Hireall: UK eligibility assessment is taking longer than expected", {
+            company: jobData.company,
+            elapsedMs: Date.now() - eligibilityStart,
+          });
+        }, 8000);
+
+        const eligibilityPromise: Promise<UkEligibilityAssessment | null | undefined> = sponsorRecord?.ukEligibility
+          ? Promise.resolve(sponsorRecord.ukEligibility)
+          : SponsorshipManager.assessUkEligibility(jobContext);
+
+        ukEligibility = await eligibilityPromise.finally(() => window.clearTimeout(slowEligibilityTimer));
+
         console.debug("Hireall: UK eligibility assessment completed for", jobData.company);
       } catch (ukError) {
         console.debug("UK eligibility assessment failed:", ukError);

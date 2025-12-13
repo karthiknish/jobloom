@@ -10,9 +10,9 @@ module.exports = (env, argv) => {
   return {
     entry: {
       background: "./src/background.ts",
-      content: "./src/content.ts",
+      "hireall-content": "./src/content.ts",
       popup: "./src/popup.ts",
-      "webapp-content": "./src/webapp-content.ts",
+      "hireall-webapp-content": "./src/webapp-content.ts",
     },
     module: {
       rules: [
