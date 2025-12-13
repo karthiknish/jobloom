@@ -202,9 +202,14 @@ export class SponsorshipManager {
     const lookupPromise = this.runWithSponsorLimit(async () => {
       console.debug("Hireall: Making API call for sponsor lookup:", company);
       try {
+        // Extract location from job description if available
+        const locationOptions = jobDescription?.company ? {
+          location: jobDescription?.location || undefined,
+        } : undefined;
+        
         // Use retry wrapper for robust API calls
         const sponsorRecord = await withRetry(
-          () => fetchSponsorLookup(company),
+          () => fetchSponsorLookup(company, locationOptions),
           `sponsorLookup(${company})`
         );
         if (sponsorRecord) {

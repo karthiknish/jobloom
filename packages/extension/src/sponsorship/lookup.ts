@@ -1,6 +1,6 @@
 import { sponsorBatchLimiter } from "../rateLimiter";
-import { get } from "../apiClient";
-import { buildCompanyQueryCandidates, isLikelyPlaceholderCompany, normalizeCompanyName } from "../utils/companyName";
+import { get, post } from "../apiClient";
+import { isLikelyPlaceholderCompany, normalizeCompanyName } from "../utils/companyName";
 
 export interface SponsorLookupResult {
   id?: string;
@@ -17,66 +17,57 @@ export interface SponsorLookupResult {
   lastUpdated?: string | number | null;
   source?: string;
   raw?: any;
+  // New fields from check endpoint
+  matchConfidence?: number;
+  nameMatch?: 'exact' | 'partial' | 'fuzzy' | 'none';
+  locationMatch?: 'exact' | 'partial' | 'none' | 'not_provided';
+}
+
+interface SponsorCheckResponse {
+  found: boolean;
+  isSponsored: boolean;
+  sponsor?: {
+    id: string;
+    name: string;
+    city?: string;
+    route?: string;
+    typeRating?: string;
+    isSkilledWorker: boolean;
+    isLicensedSponsor: boolean;
+  };
+  matchDetails: {
+    nameMatch: 'exact' | 'partial' | 'fuzzy' | 'none';
+    locationMatch: 'exact' | 'partial' | 'none' | 'not_provided';
+    confidence: number;
+  };
+  processingTime?: number;
 }
 
 const sponsorshipCache = new Map<string, SponsorLookupResult | null>();
 const sponsorshipInFlight = new Map<string, Promise<SponsorLookupResult | null>>();
 
-function normalizeSponsorRecord(raw: any | null): SponsorLookupResult | null {
-  if (!raw) {
+function mapCheckResponseToResult(response: SponsorCheckResponse): SponsorLookupResult | null {
+  if (!response.found || !response.sponsor) {
     return null;
   }
 
-  const nameValue = typeof raw.name === "string" && raw.name.trim()
-    ? raw.name.trim()
-    : typeof raw.company === "string" && raw.company.trim()
-      ? raw.company.trim()
-      : "";
-
-  if (!nameValue) {
-    return null;
-  }
-
-  const routeValue = typeof raw.route === "string" && raw.route.trim().length
-    ? raw.route.trim()
-    : typeof raw.sponsorshipType === "string" && raw.sponsorshipType.trim().length
-      ? raw.sponsorshipType.trim()
-      : undefined;
-
-  const ratingValue = typeof raw.typeRating === "string" && raw.typeRating.trim().length
-    ? raw.typeRating.trim()
-    : typeof raw.licenseRating === "string" && raw.licenseRating.trim().length
-      ? raw.licenseRating.trim()
-      : typeof raw.rating === "string" && raw.rating.trim().length
-        ? raw.rating.trim()
-        : undefined;
-
-  const normalizedRating = ratingValue?.toLowerCase() ?? "";
-  const isLicensedSponsor = normalizedRating.includes("a rating") || normalizedRating.includes("licensed");
-
-  const normalizedRoute = routeValue?.toLowerCase() ?? "";
-  const isSkilledWorker = normalizedRoute.includes("skilled worker");
-
-  const isActive = raw.isActive !== false;
-  const eligible = typeof raw.eligibleForSponsorship === "boolean"
-    ? raw.eligibleForSponsorship
-    : isActive && (isLicensedSponsor || isSkilledWorker);
-
+  const sponsor = response.sponsor;
   return {
-    id: raw.id ?? raw._id ?? raw.docId ?? undefined,
-    name: nameValue,
-    company: nameValue,
-    city: typeof raw.city === "string" ? raw.city : undefined,
-    route: routeValue,
-    typeRating: ratingValue,
-    sponsorshipType: routeValue,
-    isActive,
-    eligibleForSponsorship: Boolean(eligible),
-    isLicensedSponsor: Boolean(isLicensedSponsor),
-    isSkilledWorker,
-    lastUpdated: raw.lastUpdated ?? raw.updatedAt ?? raw.modifiedAt ?? null,
-    source: typeof raw.source === "string" ? raw.source : "official-register",
-    raw,
+    id: sponsor.id,
+    name: sponsor.name,
+    company: sponsor.name,
+    city: sponsor.city,
+    route: sponsor.route,
+    typeRating: sponsor.typeRating,
+    sponsorshipType: sponsor.route,
+    isActive: true,
+    eligibleForSponsorship: response.isSponsored,
+    isLicensedSponsor: sponsor.isLicensedSponsor,
+    isSkilledWorker: sponsor.isSkilledWorker,
+    source: "official-register",
+    matchConfidence: response.matchDetails.confidence,
+    nameMatch: response.matchDetails.nameMatch,
+    locationMatch: response.matchDetails.locationMatch,
   };
 }
 
@@ -84,7 +75,15 @@ async function runWithSponsorLimit<T>(fn: () => Promise<T>): Promise<T> {
   return sponsorBatchLimiter.add(fn);
 }
 
-export async function fetchSponsorRecord(company: string): Promise<SponsorLookupResult | null> {
+export interface SponsorLookupOptions {
+  city?: string;
+  location?: string;
+}
+
+export async function fetchSponsorRecord(
+  company: string,
+  options?: SponsorLookupOptions
+): Promise<SponsorLookupResult | null> {
   const normalizedCompany = normalizeCompanyName(company);
   const key = normalizedCompany.toLowerCase();
 
@@ -92,66 +91,63 @@ export async function fetchSponsorRecord(company: string): Promise<SponsorLookup
     return null;
   }
 
-  if (sponsorshipCache.has(key)) {
-    return sponsorshipCache.get(key) ?? null;
+  // Include location in cache key if provided
+  const cacheKey = options?.city || options?.location 
+    ? `${key}:${(options.city || options.location || '').toLowerCase()}`
+    : key;
+
+  if (sponsorshipCache.has(cacheKey)) {
+    console.debug("Hireall: Using cached sponsor result for", company);
+    return sponsorshipCache.get(cacheKey) ?? null;
   }
 
-  if (sponsorshipInFlight.has(key)) {
-    return sponsorshipInFlight.get(key) ?? null;
+  if (sponsorshipInFlight.has(cacheKey)) {
+    return sponsorshipInFlight.get(cacheKey) ?? null;
   }
 
   const lookupPromise = runWithSponsorLimit(async () => {
     try {
-      const candidates = buildCompanyQueryCandidates(normalizedCompany);
+      console.debug("Hireall: Checking sponsor via dedicated endpoint:", company, options?.city || options?.location || '(no location)');
       
-      // Pre-check cache for all candidates first
-      for (const candidate of candidates) {
-        const candidateKey = candidate.toLowerCase();
-        if (sponsorshipCache.has(candidateKey)) {
-          const cached = sponsorshipCache.get(candidateKey) ?? null;
-          sponsorshipCache.set(key, cached);
-          return cached;
+      // Use the new dedicated check endpoint
+      const checkResponse = await post<SponsorCheckResponse>("/api/app/sponsorship/check", {
+        company: normalizedCompany,
+        city: options?.city,
+        location: options?.location,
+      });
+
+      if (checkResponse.found && checkResponse.sponsor) {
+        const result = mapCheckResponseToResult(checkResponse);
+        
+        if (result) {
+          console.debug("Hireall: Sponsor found:", {
+            name: result.name,
+            confidence: result.matchConfidence,
+            nameMatch: result.nameMatch,
+            locationMatch: result.locationMatch,
+          });
+          
+          sponsorshipCache.set(cacheKey, result);
+          sponsorshipCache.set(key, result); // Also cache without location
+          return result;
         }
       }
 
-      // Make parallel API calls for top 2 candidates for better speed
-      const candidatesToQuery = candidates.slice(0, 2);
-      const responses = await Promise.allSettled(
-        candidatesToQuery.map(candidate => 
-          get<any>("/api/app/sponsorship/companies", { q: candidate, limit: 5 })
-        )
-      );
+      console.debug("Hireall: No sponsor match found for:", company);
+      sponsorshipCache.set(cacheKey, null);
+      return null;
 
-      // Find first successful result
-      for (let i = 0; i < responses.length; i++) {
-        const response = responses[i];
-        if (response.status === 'fulfilled' && response.value) {
-          const resultsArray = Array.isArray(response.value?.results)
-            ? response.value.results
-            : Array.isArray(response.value?.companies)
-              ? response.value.companies
-              : response.value?.result
-                ? [response.value.result]
-                : [];
-
-          const normalized = normalizeSponsorRecord(resultsArray[0] ?? null);
-          if (normalized) {
-            const candidateKey = candidatesToQuery[i].toLowerCase();
-            sponsorshipCache.set(candidateKey, normalized);
-            sponsorshipCache.set(key, normalized);
-            return normalized;
-          }
-        }
-      }
-
-      sponsorshipCache.set(key, null);
+    } catch (error) {
+      console.warn("Hireall: Sponsor check failed:", error);
+      // Cache null to avoid repeated failures
+      sponsorshipCache.set(cacheKey, null);
       return null;
     } finally {
-      sponsorshipInFlight.delete(key);
+      sponsorshipInFlight.delete(cacheKey);
     }
   });
 
-  sponsorshipInFlight.set(key, lookupPromise);
+  sponsorshipInFlight.set(cacheKey, lookupPromise);
   return lookupPromise;
 }
 
@@ -159,3 +155,4 @@ export function clearSponsorLookupCache(): void {
   sponsorshipCache.clear();
   sponsorshipInFlight.clear();
 }
+

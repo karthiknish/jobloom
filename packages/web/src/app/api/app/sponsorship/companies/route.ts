@@ -105,48 +105,89 @@ export async function GET(request: NextRequest) {
     // FAST PATH: Quick lookup for extension sponsor checks
     // When there's a search query with small limit, skip expensive count queries
     if (search && limitNum <= 10) {
-      console.log('[GET /api/app/sponsorship/companies] Using fast path for quick lookup');
+      console.log('[GET /api/app/sponsorship/companies] Using fast path for:', search);
       
-      // Use prefix-based search for better Firestore performance
-      const searchLower = search.toLowerCase();
+      const searchLower = search.toLowerCase().trim();
       const searchUpper = searchLower + '\uf8ff'; // Unicode high character for range query
       
-      // Try exact prefix match first (much faster)
-      let query = sponsorsRef
-        .where("nameLower", ">=", searchLower)
-        .where("nameLower", "<=", searchUpper)
-        .where("isActive", "==", true)
-        .limit(limitNum);
+      let snapshot;
+      let usedStrategy = '';
       
-      let snapshot = await query.get();
+      // Strategy 1: Try prefix match on nameLower field (fastest if index exists)
+      try {
+        const prefixQuery = sponsorsRef
+          .where("nameLower", ">=", searchLower)
+          .where("nameLower", "<=", searchUpper)
+          .where("isActive", "==", true)
+          .limit(limitNum);
+        
+        snapshot = await prefixQuery.get();
+        usedStrategy = 'nameLower prefix';
+      } catch (e) {
+        console.log('[GET /api/app/sponsorship/companies] nameLower query failed, trying fallback');
+        snapshot = { empty: true, docs: [] };
+      }
       
-      // If no results with nameLower field, fallback to fetching and filtering
+      // Strategy 2: Try prefix match on name field (case-sensitive but common)
       if (snapshot.empty) {
-        console.log('[GET /api/app/sponsorship/companies] Prefix search empty, trying fallback');
-        // Fallback: get a batch of active sponsors and filter in memory
+        try {
+          // Try with original case first letter capitalized (common format)
+          const searchCapitalized = search.charAt(0).toUpperCase() + search.slice(1).toLowerCase();
+          const searchCapUpper = searchCapitalized + '\uf8ff';
+          
+          const nameQuery = sponsorsRef
+            .where("name", ">=", searchCapitalized)
+            .where("name", "<=", searchCapUpper)
+            .where("isActive", "==", true)
+            .limit(limitNum);
+          
+          snapshot = await nameQuery.get();
+          usedStrategy = 'name prefix (capitalized)';
+        } catch (e) {
+          console.log('[GET /api/app/sponsorship/companies] name query failed');
+          snapshot = { empty: true, docs: [] };
+        }
+      }
+      
+      // Strategy 3: Fallback - fetch batch and filter in memory
+      if (snapshot.empty) {
+        console.log('[GET /api/app/sponsorship/companies] Using fallback search');
+        // Get more records to increase chance of finding the company
         const fallbackQuery = sponsorsRef
           .where("isActive", "==", true)
           .orderBy("name", "asc")
-          .limit(100);
+          .limit(500);
         
         snapshot = await fallbackQuery.get();
+        usedStrategy = 'fallback (500 records)';
       }
       
       let mappedDocs = snapshot.docs.map(mapToPublicSponsor);
       
-      // Filter by search term if using fallback
-      if (search) {
-        mappedDocs = mappedDocs.filter((company: SponsorRecord) => {
-          const name = company.name?.toLowerCase() || '';
-          return name.includes(searchLower);
-        });
-      }
+      // Always filter by search term for accurate matching
+      mappedDocs = mappedDocs.filter((company: SponsorRecord) => {
+        const name = company.name?.toLowerCase() || '';
+        const city = company.city?.toLowerCase() || '';
+        // Match if company name contains search term or starts with it
+        return name.includes(searchLower) || name.startsWith(searchLower) || city.includes(searchLower);
+      });
+      
+      // Sort by best match (prefer exact prefix matches)
+      mappedDocs.sort((a: SponsorRecord, b: SponsorRecord) => {
+        const aName = a.name?.toLowerCase() || '';
+        const bName = b.name?.toLowerCase() || '';
+        const aStartsWith = aName.startsWith(searchLower);
+        const bStartsWith = bName.startsWith(searchLower);
+        if (aStartsWith && !bStartsWith) return -1;
+        if (bStartsWith && !aStartsWith) return 1;
+        return aName.localeCompare(bName);
+      });
       
       // Take only the requested limit
       const results = mappedDocs.slice(0, limitNum);
       const publicRecords = results.map(({ raw, ...rest }: SponsorRecord) => rest);
       
-      console.log('[GET /api/app/sponsorship/companies] Fast path returning', publicRecords.length, 'records');
+      console.log('[GET /api/app/sponsorship/companies] Fast path returning', publicRecords.length, 'records via', usedStrategy);
       
       return NextResponse.json({
         query: quickQuery,
