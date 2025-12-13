@@ -72,7 +72,7 @@ function mapToPublicSponsor(doc: QueryDocumentSnapshot<Record<string, any>>): Sp
   };
 }
 
-// GET /api/app/sponsorship/companies - Get sponsored companies (admin only)
+// GET /api/app/sponsorship/companies - Get sponsored companies
 export async function GET(request: NextRequest) {
   const requestId = generateRequestId();
 
@@ -97,46 +97,103 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get("search")?.trim() || quickQuery;
     const status = searchParams.get("status")?.trim() as "active" | "inactive" | "all" | undefined;
 
-    console.log('[GET /api/app/sponsorship/companies] Starting request, requestId:', requestId);
-    console.log('[GET /api/app/sponsorship/companies] Params:', { page, limit: limitNum, search, status });
+    console.log('[GET /api/app/sponsorship/companies] Request:', { requestId, page, limit: limitNum, search: search || '(none)', status });
 
     const db = getAdminDb();
     const sponsorsRef = db.collection("sponsors");
     
-    // Get total count
-    const totalSnapshot = await sponsorsRef.count().get();
-    const totalInCollection = totalSnapshot.data().count;
-    console.log('[GET /api/app/sponsorship/companies] Total sponsors in collection:', totalInCollection);
-
+    // FAST PATH: Quick lookup for extension sponsor checks
+    // When there's a search query with small limit, skip expensive count queries
+    if (search && limitNum <= 10) {
+      console.log('[GET /api/app/sponsorship/companies] Using fast path for quick lookup');
+      
+      // Use prefix-based search for better Firestore performance
+      const searchLower = search.toLowerCase();
+      const searchUpper = searchLower + '\uf8ff'; // Unicode high character for range query
+      
+      // Try exact prefix match first (much faster)
+      let query = sponsorsRef
+        .where("nameLower", ">=", searchLower)
+        .where("nameLower", "<=", searchUpper)
+        .where("isActive", "==", true)
+        .limit(limitNum);
+      
+      let snapshot = await query.get();
+      
+      // If no results with nameLower field, fallback to fetching and filtering
+      if (snapshot.empty) {
+        console.log('[GET /api/app/sponsorship/companies] Prefix search empty, trying fallback');
+        // Fallback: get a batch of active sponsors and filter in memory
+        const fallbackQuery = sponsorsRef
+          .where("isActive", "==", true)
+          .orderBy("name", "asc")
+          .limit(100);
+        
+        snapshot = await fallbackQuery.get();
+      }
+      
+      let mappedDocs = snapshot.docs.map(mapToPublicSponsor);
+      
+      // Filter by search term if using fallback
+      if (search) {
+        mappedDocs = mappedDocs.filter((company: SponsorRecord) => {
+          const name = company.name?.toLowerCase() || '';
+          return name.includes(searchLower);
+        });
+      }
+      
+      // Take only the requested limit
+      const results = mappedDocs.slice(0, limitNum);
+      const publicRecords = results.map(({ raw, ...rest }: SponsorRecord) => rest);
+      
+      console.log('[GET /api/app/sponsorship/companies] Fast path returning', publicRecords.length, 'records');
+      
+      return NextResponse.json({
+        query: quickQuery,
+        results: publicRecords,
+        total: publicRecords.length,
+        page: 1,
+        limit: limitNum,
+        hasMore: false,
+        message: "Sponsored companies retrieved successfully",
+      });
+    }
+    
+    // STANDARD PATH: Full pagination for admin/browse views
+    console.log('[GET /api/app/sponsorship/companies] Using standard path');
+    
     // Build query with pagination
-    // Note: For large collections, we use simple limit/offset pagination
-    // More advanced cursor-based pagination would be better for very large offsets
     let query: Query = sponsorsRef.orderBy("name", "asc");
     
-    // Apply status filter if needed (this is a simple equality filter)
+    // Apply status filter if needed
     if (status === "active") {
       query = query.where("isActive", "==", true);
     } else if (status === "inactive") {
       query = query.where("isActive", "==", false);
     }
     
-    // Get count for the filtered query
-    const filteredCountSnapshot = await query.count().get();
-    const filteredTotal = filteredCountSnapshot.data().count;
-    console.log('[GET /api/app/sponsorship/companies] Filtered total:', filteredTotal);
+    // Get total count only for admin views (skip for regular users to save time)
+    let totalInCollection = 0;
+    let filteredTotal = 0;
+    
+    if (auth.isAdmin) {
+      const totalSnapshot = await sponsorsRef.count().get();
+      totalInCollection = totalSnapshot.data().count;
+      
+      const filteredCountSnapshot = await query.count().get();
+      filteredTotal = filteredCountSnapshot.data().count;
+    }
     
     // Apply pagination
     const offset = (page - 1) * limitNum;
     query = query.offset(offset).limit(limitNum);
     
     const snapshot = await query.get();
-    console.log('[GET /api/app/sponsorship/companies] Fetched docs count:', snapshot.docs.length);
+    console.log('[GET /api/app/sponsorship/companies] Fetched', snapshot.docs.length, 'docs');
     
     let mappedDocs = snapshot.docs.map(mapToPublicSponsor);
     
     // If there's a text search, filter the results in memory
-    // Note: For production, consider using Firestore full-text search extensions
-    // or a dedicated search service like Algolia/Elasticsearch
     if (search) {
       const searchLower = search.toLowerCase();
       mappedDocs = mappedDocs.filter((company: SponsorRecord) => {
@@ -150,7 +207,7 @@ export async function GET(request: NextRequest) {
       mappedDocs = mappedDocs.filter((company: SponsorRecord) => company.isActive);
     }
 
-    const hasMore = offset + mappedDocs.length < filteredTotal;
+    const hasMore = auth.isAdmin ? (offset + mappedDocs.length < filteredTotal) : (snapshot.docs.length === limitNum);
 
     const publicRecords = mappedDocs.map(({ raw, ...rest }: SponsorRecord) => rest);
     const adminRecords = mappedDocs.map(({ raw, ...rest }: SponsorRecord) => ({ ...(raw ?? {}), ...rest }));
@@ -162,7 +219,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         query: quickQuery,
         results: publicRecords,
-        total: filteredTotal,
+        total: filteredTotal || publicRecords.length,
         page,
         limit: limitNum,
         hasMore,
@@ -173,7 +230,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       companies: responseRecords,
       results: publicRecords,
-      total: filteredTotal,
+      total: filteredTotal || responseRecords.length,
       page,
       limit: limitNum,
       hasMore,

@@ -247,8 +247,11 @@ export class UKJobDescriptionParser {
     const cleanedDescription = description.toLowerCase();
     const processedDescription = this.cleanDescriptionText(description);
 
-    const socCode = await this.detectSOCCode(cleanedDescription, title);
-    const occupationTitle = await this.getOccupationTitle(socCode);
+    // SOC detection is intentionally disabled by default.
+    // The UK SOC code is rarely present in job descriptions, and attempting to infer it can cause
+    // noisy/incorrect eligibility gating. Keep an opt-in flag for future use.
+    const socCode: string | undefined = undefined;
+    const occupationTitle: string | undefined = undefined;
 
     return {
       fullDescription: processedDescription,
@@ -267,6 +270,39 @@ export class UKJobDescriptionParser {
       socCode,
       occupationTitle,
       visaSponsorship: this.analyzeVisaSponsorship(cleanedDescription)
+    };
+  }
+
+  static async parseJobDescriptionWithOptions(
+    description: string,
+    title?: string,
+    company?: string,
+    options?: { detectSocCode?: boolean }
+  ): Promise<JobDescriptionData> {
+    const cleanedDescription = description.toLowerCase();
+    const processedDescription = this.cleanDescriptionText(description);
+
+    const detectSocCode = options?.detectSocCode === true;
+    const socCode = detectSocCode ? await this.detectSOCCode(cleanedDescription, title) : undefined;
+    const occupationTitle = detectSocCode ? await this.getOccupationTitle(socCode) : undefined;
+
+    return {
+      fullDescription: processedDescription,
+      keyRequirements: this.extractRequirements(cleanedDescription),
+      essentialCriteria: this.extractEssentialCriteria(cleanedDescription),
+      desirableCriteria: this.extractDesirableCriteria(cleanedDescription),
+      salary: this.extractSalary(cleanedDescription),
+      jobType: this.extractJobType(cleanedDescription),
+      experienceLevel: this.extractExperienceLevel(cleanedDescription),
+      qualifications: this.extractQualifications(cleanedDescription),
+      skills: this.extractSkills(cleanedDescription),
+      benefits: this.extractBenefits(cleanedDescription),
+      remoteWork: this.detectRemoteWork(cleanedDescription),
+      location: this.extractLocation(cleanedDescription),
+      company: company || '',
+      socCode,
+      occupationTitle,
+      visaSponsorship: this.analyzeVisaSponsorship(cleanedDescription),
     };
   }
 

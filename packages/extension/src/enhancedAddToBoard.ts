@@ -252,7 +252,7 @@ export class EnhancedJobBoardManager {
         throw new Error("Failed to create job entry");
       }
 
-      // Create application entry
+      // Create application entry (fire-and-forget for speed, server handles errors)
       const applicationPayload = {
         jobId: createdJobId,
         userId: userId,
@@ -261,7 +261,9 @@ export class EnhancedJobBoardManager {
         notes: this.generateJobNotes(jobData)
       };
 
-      const applicationResponse = await post<{ id: string }>("/api/app/applications", applicationPayload);
+      // Don't await - let it complete in background
+      post<{ id: string }>("/api/app/applications", applicationPayload)
+        .catch(err => console.warn("Application creation failed (non-blocking):", err));
 
       // Create job board entry
       const jobBoardEntry: JobBoardEntry = {
@@ -388,26 +390,13 @@ export class EnhancedJobBoardManager {
     return notes.join(" | ");
   }
 
-  // Enhanced job existence check
+  // Enhanced job existence check (optimized: local-only, server handles duplicates)
   private async checkJobExists(url: string, userId: string): Promise<JobBoardEntry | null> {
     try {
-      // Check local storage first (faster and works offline)
+      // Check local storage only (faster) - server has its own duplicate check
       const { jobBoardData } = await safeChromeStorageGet("local", ["jobBoardData"], { jobBoardData: [] as JobBoardEntry[] }, "enhancedAddToBoard");
       const localMatch = jobBoardData.find(job => job.url === url);
-      if (localMatch) {
-        return localMatch;
-      }
-
-      // If online, check API to be sure
-      if (navigator.onLine) {
-        const userJobs = await get<any[]>(`/api/app/jobs/user/${encodeURIComponent(userId)}`);
-        const existingJob = userJobs.find(job => job.url === url);
-        if (existingJob) {
-          return this.mapToJobBoardEntry(existingJob);
-        }
-      }
-      
-      return null;
+      return localMatch || null;
     } catch (error) {
       console.warn("Failed to check job existence:", error);
       return null;

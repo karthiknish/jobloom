@@ -187,6 +187,7 @@ export function validateMessage(message: any): boolean {
     'getUserId',
     'checkSponsorStatus',
     'extractHireallSession',
+    'googleSignIn',
     'fetchSubscriptionStatus',
     'getAuthToken',
     'acquireAuthToken'
@@ -203,6 +204,8 @@ export function validateMessage(message: any): boolean {
   }
 
   switch (message.action) {
+    case 'googleSignIn':
+      return true;
     case 'addJob':
     case 'jobAddedToBoard':
       return isPlainObject(message.data);

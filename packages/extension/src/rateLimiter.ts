@@ -111,6 +111,14 @@ export const RATE_LIMITS: Record<string, RateLimitConfig> = {
 const rateLimitState = new Map<string, RateLimitState>();
 let cleanupIntervalId: ReturnType<typeof setInterval> | null = null;
 
+// Subscription status fetch de-dupe/cache to avoid spamming the backend
+let subscriptionStatusInFlight: Promise<SubscriptionStatus | null> | null = null;
+let subscriptionStatusCache: { value: SubscriptionStatus | null; fetchedAt: number } = {
+  value: null,
+  fetchedAt: 0,
+};
+const SUBSCRIPTION_STATUS_CACHE_MS = 30 * 1000;
+
 // Extension storage for user tier
 let currentUserTier: UserTier = 'free';
 let tierCheckTime = 0;
@@ -119,6 +127,17 @@ let tierFetchPromise: Promise<UserTier> | null = null;
 const TIER_CACHE_DURATION = 10 * 60 * 1000; // Cache tier for 10 minutes (increased from 5)
 
 export async function fetchSubscriptionStatus(): Promise<SubscriptionStatus | null> {
+  // Return cached value if it's fresh enough.
+  const now = Date.now();
+  if (now - subscriptionStatusCache.fetchedAt < SUBSCRIPTION_STATUS_CACHE_MS) {
+    return subscriptionStatusCache.value;
+  }
+
+  // De-dupe concurrent calls.
+  if (subscriptionStatusInFlight) {
+    return subscriptionStatusInFlight;
+  }
+
   const shouldProxyThroughBackground =
     typeof window !== "undefined" && window.location?.protocol !== "chrome-extension:";
 
@@ -128,7 +147,7 @@ export async function fetchSubscriptionStatus(): Promise<SubscriptionStatus | nu
         { action: "fetchSubscriptionStatus", target: "background" },
         (response) => {
           if (chrome.runtime.lastError) {
-            console.warn("Proxy subscription status fetch failed:", chrome.runtime.lastError);
+            console.warn("Proxy subscription status fetch failed:", chrome.runtime.lastError?.message || JSON.stringify(chrome.runtime.lastError));
             resolve(null);
             return;
           }
@@ -136,7 +155,8 @@ export async function fetchSubscriptionStatus(): Promise<SubscriptionStatus | nu
           if (response?.success) {
             resolve(response.status as SubscriptionStatus | null);
           } else {
-            console.warn("Subscription status proxy returned error:", response?.error);
+            console.warn("Subscription status proxy returned error:", 
+              typeof response?.error === 'object' ? JSON.stringify(response.error) : response?.error);
             resolve(null);
           }
         }
@@ -144,9 +164,13 @@ export async function fetchSubscriptionStatus(): Promise<SubscriptionStatus | nu
     });
   }
 
-  try {
-    return await get<SubscriptionStatus>("/api/subscription/status");
-  } catch (error: unknown) {
+  subscriptionStatusInFlight = (async () => {
+    try {
+      // Subscription status requires auth - pass true explicitly since path doesn't start with /api/app/
+      const value = await get<SubscriptionStatus>("/api/subscription/status", undefined, true);
+      subscriptionStatusCache = { value, fetchedAt: Date.now() };
+      return value;
+    } catch (error: unknown) {
     const statusCode =
       typeof error === "object" && error !== null && "status" in error
         ? (error as { status?: number }).status
@@ -157,7 +181,16 @@ export async function fetchSubscriptionStatus(): Promise<SubscriptionStatus | nu
       await clearCachedAuthToken();
     }
     console.warn("Failed to fetch subscription status:", error);
+    // Cache the null briefly to avoid tight retry loops in the UI.
+    subscriptionStatusCache = { value: null, fetchedAt: Date.now() };
     return null;
+    }
+  })();
+
+  try {
+    return await subscriptionStatusInFlight;
+  } finally {
+    subscriptionStatusInFlight = null;
   }
 }
 

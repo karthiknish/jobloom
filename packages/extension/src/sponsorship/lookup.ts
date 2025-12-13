@@ -103,6 +103,8 @@ export async function fetchSponsorRecord(company: string): Promise<SponsorLookup
   const lookupPromise = runWithSponsorLimit(async () => {
     try {
       const candidates = buildCompanyQueryCandidates(normalizedCompany);
+      
+      // Pre-check cache for all candidates first
       for (const candidate of candidates) {
         const candidateKey = candidate.toLowerCase();
         if (sponsorshipCache.has(candidateKey)) {
@@ -110,25 +112,36 @@ export async function fetchSponsorRecord(company: string): Promise<SponsorLookup
           sponsorshipCache.set(key, cached);
           return cached;
         }
+      }
 
-        const response = await get<any>("/api/app/sponsorship/companies", { q: candidate, limit: 10 });
+      // Make parallel API calls for top 2 candidates for better speed
+      const candidatesToQuery = candidates.slice(0, 2);
+      const responses = await Promise.allSettled(
+        candidatesToQuery.map(candidate => 
+          get<any>("/api/app/sponsorship/companies", { q: candidate, limit: 5 })
+        )
+      );
 
-        const resultsArray = Array.isArray(response?.results)
-          ? response.results
-          : Array.isArray(response?.companies)
-            ? response.companies
-            : response?.result
-              ? [response.result]
-              : [];
+      // Find first successful result
+      for (let i = 0; i < responses.length; i++) {
+        const response = responses[i];
+        if (response.status === 'fulfilled' && response.value) {
+          const resultsArray = Array.isArray(response.value?.results)
+            ? response.value.results
+            : Array.isArray(response.value?.companies)
+              ? response.value.companies
+              : response.value?.result
+                ? [response.value.result]
+                : [];
 
-        const normalized = normalizeSponsorRecord(resultsArray[0] ?? null);
-        if (normalized) {
-          sponsorshipCache.set(candidateKey, normalized);
-          sponsorshipCache.set(key, normalized);
-          return normalized;
+          const normalized = normalizeSponsorRecord(resultsArray[0] ?? null);
+          if (normalized) {
+            const candidateKey = candidatesToQuery[i].toLowerCase();
+            sponsorshipCache.set(candidateKey, normalized);
+            sponsorshipCache.set(key, normalized);
+            return normalized;
+          }
         }
-
-        sponsorshipCache.set(candidateKey, null);
       }
 
       sponsorshipCache.set(key, null);

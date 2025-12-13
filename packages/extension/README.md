@@ -16,16 +16,35 @@ OAUTH_CLIENT_SECRET_BASE64=your_base64_encoded_oauth_client_secret
 
 ### OAuth Setup
 
-The extension now supports Google OAuth authentication. To set it up:
+The extension supports Google sign-in via two different Chrome Identity paths:
+
+1) `chrome.identity.getAuthToken()` (uses the Chrome Extension OAuth client in `manifest.json`)
+2) `chrome.identity.launchWebAuthFlow()` (uses a **Web application** OAuth client + an explicit redirect URI)
+
+If you see `Error 400: redirect_uri_mismatch (flowName=GeneralOAuthFlow)`, it means you are using
+`launchWebAuthFlow()` with a client_id that does not allow the redirect URI returned by
+`chrome.identity.getRedirectURL()`.
+
+To set it up correctly:
 
 1. Go to the [Google Cloud Console](https://console.cloud.google.com/)
 2. Create or select a project
 3. Enable the Google+ API and Google OAuth2 API
-4. Create OAuth 2.0 credentials:
+4. Create **two** OAuth 2.0 credentials:
+
+   A) **Chrome Extension** client (used by `getAuthToken`)
    - Application type: Chrome Extension
    - Extension ID: Get this from `chrome://extensions` after loading the unpacked extension
-5. Download the client secret JSON file
-6. Base64 encode the entire client secret JSON content:
+   - Put this client ID into `oauth2.client_id` in `manifest.json`
+
+   B) **Web application** client (used by `launchWebAuthFlow`)
+   - Application type: Web application
+   - Add an **Authorized redirect URI** exactly equal to the value logged by the extension:
+     - `chrome.identity.getRedirectURL()` typically returns: `https://<EXTENSION_ID>.chromiumapp.org/`
+   - Put this client ID into `GOOGLE_WEB_APP_CLIENT_ID` (recommended)
+
+5. If you use any server-side OAuth flows (not required for the extension sign-in), you may also download the client secret JSON.
+6. Base64 encoding is only needed for server-side OAuth credentials (not required for the extension sign-in path shown above).
 
 ```bash
 # On macOS/Linux

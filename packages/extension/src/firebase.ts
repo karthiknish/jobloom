@@ -21,9 +21,16 @@ import type { Auth, User } from 'firebase/auth';
 import { getEnv } from "./env";
 import { logger } from "./utils/logger";
 
-// Web OAuth Client ID for launchWebAuthFlow (from Google Cloud Console)
-// This is different from the Chrome extension client ID in manifest.json
-const GOOGLE_WEB_CLIENT_ID = getEnv("GOOGLE_WEB_CLIENT_ID") || getEnv("NEXT_PUBLIC_GOOGLE_WEB_CLIENT_ID") || "";
+// Web OAuth Client ID for chrome.identity.launchWebAuthFlow (from Google Cloud Console)
+// IMPORTANT: This must be a **Web application** OAuth client that allows the redirect URI returned by
+// chrome.identity.getRedirectURL() (typically: https://<EXTENSION_ID>.chromiumapp.org/)
+// This is NOT the same as the Chrome extension OAuth client in manifest.json (used by getAuthToken).
+const GOOGLE_WEB_APP_CLIENT_ID =
+  getEnv("GOOGLE_WEB_APP_CLIENT_ID") ||
+  getEnv("GOOGLE_WEB_CLIENT_ID") ||
+  getEnv("NEXT_PUBLIC_GOOGLE_WEB_APP_CLIENT_ID") ||
+  getEnv("NEXT_PUBLIC_GOOGLE_WEB_CLIENT_ID") ||
+  "";
 
 const firebaseConfig = {
   apiKey: getEnv("NEXT_PUBLIC_FIREBASE_API_KEY", ""),
@@ -239,9 +246,9 @@ export const signInWithGoogle = async (): Promise<User> => {
     const redirectUrl = chrome.identity.getRedirectURL();
     logger.debug('Firebase', 'Redirect URL:', redirectUrl);
 
-    // Check if we have the web client ID configured
-    if (!GOOGLE_WEB_CLIENT_ID) {
-      logger.warn('Firebase', 'GOOGLE_WEB_CLIENT_ID not configured, falling back to getAuthToken');
+    // Check if we have the web app client ID configured for launchWebAuthFlow
+    if (!GOOGLE_WEB_APP_CLIENT_ID) {
+      logger.warn('Firebase', 'GOOGLE_WEB_APP_CLIENT_ID not configured, falling back to getAuthToken');
       return signInWithGoogleToken();
     }
 
@@ -249,7 +256,7 @@ export const signInWithGoogle = async (): Promise<User> => {
     const scopes = ['openid', 'email', 'profile'].join(' ');
     
     const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
-    authUrl.searchParams.set('client_id', GOOGLE_WEB_CLIENT_ID);
+    authUrl.searchParams.set('client_id', GOOGLE_WEB_APP_CLIENT_ID);
     authUrl.searchParams.set('redirect_uri', redirectUrl);
     authUrl.searchParams.set('response_type', 'token');
     authUrl.searchParams.set('scope', scopes);
@@ -283,6 +290,12 @@ export const signInWithGoogle = async (): Promise<User> => {
     // Extract the access token from the callback URL
     const url = new URL(responseUrl);
     const hashParams = new URLSearchParams(url.hash.substring(1));
+    const oauthError = hashParams.get('error');
+    const oauthErrorDescription = hashParams.get('error_description');
+    if (oauthError) {
+      // This can happen for user cancellations or misconfiguration.
+      throw new Error(oauthErrorDescription ? `${oauthError}: ${oauthErrorDescription}` : oauthError);
+    }
     const accessToken = hashParams.get('access_token');
 
     if (!accessToken) {
@@ -303,15 +316,30 @@ export const signInWithGoogle = async (): Promise<User> => {
     return result.user;
   } catch (error: any) {
     logger.error('Firebase', 'Google sign-in failed', { error });
-    
+
+    const message = String(error?.message || error);
+
+    // If the OAuth client/redirect URI is misconfigured, Google shows a 400 page and
+    // launchWebAuthFlow may never return a callback URL. In that case, fall back to getAuthToken.
+    if (
+      message.includes('redirect_uri_mismatch') ||
+      message.includes('No callback URL received') ||
+      message.includes('redirect_uri')
+    ) {
+      logger.warn('Firebase', 'Web auth flow failed (likely redirect URI mismatch). Falling back to getAuthToken.', {
+        message,
+      });
+      return signInWithGoogleToken();
+    }
+
     // Provide user-friendly error messages
-    if (error.message?.includes('user denied') || error.message?.includes('canceled')) {
+    if (message.includes('user denied') || message.includes('canceled') || message.includes('access_denied')) {
       throw new Error('Sign-in was cancelled');
     }
-    if (error.message?.includes('popup')) {
+    if (message.toLowerCase().includes('popup')) {
       throw new Error('Sign-in popup was blocked. Please allow popups for this extension.');
     }
-    
+
     throw error;
   }
 };

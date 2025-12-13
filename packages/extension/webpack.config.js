@@ -74,7 +74,9 @@ module.exports = (env, argv) => {
       const OPTIONAL_DEFAULTS = {
         WEB_APP_URL: "https://hireall.app",
         NEXT_PUBLIC_FIREBASE_CUSTOM_AUTH_DOMAIN: "",
+        GOOGLE_WEB_APP_CLIENT_ID: "",
         GOOGLE_WEB_CLIENT_ID: "",
+        NEXT_PUBLIC_GOOGLE_WEB_APP_CLIENT_ID: "",
         NEXT_PUBLIC_GOOGLE_WEB_CLIENT_ID: "",
       };
 

@@ -280,11 +280,11 @@ export class JobTracker {
     });
 
     try {
-      console.debug("Hireall: Starting sponsorship lookup with 30s timeout for", jobData.company);
+      console.debug("Hireall: Starting sponsorship lookup with 15s timeout for", jobData.company);
       const sponsorRecord = await Promise.race([
         SponsorshipManager.fetchSponsorRecord(jobData.company, jobContext),
         new Promise<null>((_, reject) => 
-          setTimeout(() => reject(new Error("Sponsorship lookup timeout")), 30000)
+          setTimeout(() => reject(new Error("Sponsorship lookup timeout")), 15000)
         )
       ]);
       console.debug("Hireall: Sponsorship lookup completed for", jobData.company);
@@ -295,7 +295,7 @@ export class JobTracker {
         ukEligibility = await Promise.race([
           sponsorRecord?.ukEligibility || SponsorshipManager.assessUkEligibility(jobContext),
           new Promise<null>((_, reject) => 
-            setTimeout(() => reject(new Error("UK eligibility assessment timeout")), 15000)
+            setTimeout(() => reject(new Error("UK eligibility assessment timeout")), 8000)
           )
         ]);
         console.debug("Hireall: UK eligibility assessment completed for", jobData.company);

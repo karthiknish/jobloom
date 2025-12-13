@@ -13,9 +13,9 @@ import {
 } from "../ukVisaConstants";
 
 // ============ RETRY UTILITIES ============
-const MAX_RETRIES = 3;
-const INITIAL_DELAY_MS = 500;
-const MAX_DELAY_MS = 5000;
+const MAX_RETRIES = 2;
+const INITIAL_DELAY_MS = 300;
+const MAX_DELAY_MS = 2000;
 
 interface RetryConfig {
   maxRetries?: number;
@@ -501,10 +501,7 @@ export class SponsorshipManager {
 
     const salaryThreshold = thresholdResult.threshold;
 
-    if (!socCode) {
-      eligible = false;
-      reasons.push("No SOC code detected in job description");
-    }
+    // SOC is optional: many listings do not include it.
 
     if (socDetails) {
       reasons.push(`SOC ${socDetails.code} (${socDetails.jobType}) classified as ${socDetails.eligibility}`);
@@ -540,9 +537,6 @@ export class SponsorshipManager {
       if (socDetails.goingRate) {
         reasons.push(`Occupation going rate: ${formatSalaryGBP(socDetails.goingRate)}`);
       }
-    } else if (socCode) {
-      eligible = false;
-      reasons.push("Unable to verify SOC code against UK Home Office list");
     }
 
     // Enhanced threshold information

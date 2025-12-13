@@ -492,27 +492,140 @@ chrome.runtime.onMessage.addListener(async (request: any, sender: chrome.runtime
       sendResponse({ success: false, error: "No tab ID available" });
     }
     return true;
+  } else if (request.action === "googleSignIn") {
+    // Run OAuth from background so the popup closing doesn't interrupt the flow.
+    const authIdentifier = sender.tab?.id?.toString() || sender.id || 'popup';
+    const rateLimitCheck = await checkAuthRateLimit(authIdentifier);
+
+    if (!rateLimitCheck.allowed) {
+      sendResponse({
+        success: false,
+        error: 'Too many authentication attempts. Please try again later.',
+        retryAfter: rateLimitCheck.retryAfter,
+      });
+      return true;
+    }
+
+    // Respond immediately to avoid MV3 message port timeouts during OAuth.
+    // The actual result will be persisted (storage) and broadcast via AUTH_STATE_CHANGED.
+    sendResponse({ success: true, started: true });
+
+    void (async () => {
+      try {
+        // Dynamic import keeps the background bundle smaller and avoids eager Firebase init.
+        const { signInWithGoogle, getAuthInstance } = await import('./firebase');
+
+        const user = await signInWithGoogle();
+
+        // Ensure token is minted and cached for API usage.
+        const token = await user.getIdToken();
+        await cacheAuthToken({
+          token,
+          userId: user.uid,
+          userEmail: user.email ?? undefined,
+          source: 'background',
+        });
+
+        // Store identifiers for other extension components.
+        if (chrome.storage?.sync) {
+          await chrome.storage.sync.set({
+            firebaseUid: user.uid,
+            userId: user.uid,
+            userEmail: user.email,
+          });
+        }
+
+        // Also write Firebase state into local storage, useful for debugging.
+        if (chrome.storage?.local) {
+          await chrome.storage.local.set({
+            hireallLastGoogleSignInError: null,
+            hireallLastGoogleSignInAt: Date.now(),
+          });
+        }
+
+        // Touch auth instance to encourage persistence initialization.
+        void getAuthInstance();
+
+        // Broadcast so any open extension pages can react.
+        try {
+          chrome.runtime.sendMessage({
+            type: 'AUTH_STATE_CHANGED',
+            payload: {
+              isAuthenticated: true,
+              userId: user.uid,
+              email: user.email,
+              token,
+              source: 'background_google_signin',
+            },
+          });
+        } catch {
+          // Ignore broadcast failures.
+        }
+      } catch (error: any) {
+        const message = error instanceof Error ? error.message : String(error);
+        logger.error('Background', 'Google sign-in failed (background)', { message });
+
+        if (chrome.storage?.local) {
+          await chrome.storage.local.set({
+            hireallLastGoogleSignInError: { message, at: Date.now() },
+          });
+        }
+
+      }
+    })();
+
+    return true;
   } else if (request.action === "acquireAuthToken") {
     const forceRefresh = request.forceRefresh === true;
 
+    // First try the standard acquireIdToken (uses cache, then Firebase auth.currentUser)
     acquireIdToken(forceRefresh, { skipMessageFallback: true })
-      .then((token) => {
-        if (!token) {
-          sendResponse({ success: false, error: "No token available" });
+      .then(async (token) => {
+        if (token) {
+          // Token found, return it with user info
+          chrome.storage.sync.get(["firebaseUid", "userId", "userEmail"], (storage) => {
+            if (chrome.runtime?.lastError) {
+              logger.warn("Background", "Failed to read user info for auth token response", {
+                error: chrome.runtime.lastError.message
+              });
+            }
+
+            const userId = storage?.firebaseUid || storage?.userId || null;
+            const userEmail = storage?.userEmail || null;
+            sendResponse({ success: true, token, userId, userEmail });
+          });
           return;
         }
 
-        chrome.storage.sync.get(["firebaseUid", "userId", "userEmail"], (storage) => {
-          if (chrome.runtime?.lastError) {
-            logger.warn("Background", "Failed to read user info for auth token response", {
-              error: chrome.runtime.lastError.message
+        // No token from cache or currentUser - try waiting for Firebase auth to restore
+        logger.debug("Background", "No immediate token, waiting for Firebase auth state...");
+        try {
+          const { waitForAuthState } = await import('./firebase');
+          const user = await waitForAuthState();
+          
+          if (user) {
+            logger.debug("Background", "Firebase auth state restored, getting token", { uid: user.uid });
+            const freshToken = await user.getIdToken(forceRefresh);
+            
+            // Cache the token for future use
+            await cacheAuthToken({
+              token: freshToken,
+              userId: user.uid,
+              userEmail: user.email ?? undefined,
+              source: 'background',
             });
-          }
 
-          const userId = storage?.firebaseUid || storage?.userId || null;
-          const userEmail = storage?.userEmail || null;
-          sendResponse({ success: true, token, userId, userEmail });
-        });
+            sendResponse({ success: true, token: freshToken, userId: user.uid, userEmail: user.email });
+          } else {
+            logger.debug("Background", "No Firebase user after waiting for auth state");
+            sendResponse({ success: false, error: "No token available" });
+          }
+        } catch (waitError) {
+          logger.warn("Background", "Failed to wait for Firebase auth state", {
+            error: waitError instanceof Error ? waitError.message : String(waitError)
+          });
+          sendResponse({ success: false, error: "No token available" });
+        }
       })
       .catch((error) => {
         logger.error("Background", "Failed to acquire auth token for requester", {

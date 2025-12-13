@@ -9,6 +9,10 @@ export class JobManager {
   private static instance: JobManager;
   private jobs: JobStatus[] = [];
   private activeFilter: string | undefined;
+  private loadJobsInFlight: Promise<void> | null = null;
+  private queuedFilter: string | undefined | null = null;
+  private lastLoadJobsAt = 0;
+  private lastLoadJobsKey = "all";
   
   private constructor() {}
   
@@ -20,9 +24,27 @@ export class JobManager {
   }
   
   public async loadJobs(filterType?: string): Promise<void> {
-    this.activeFilter = filterType;
-    
-    try {
+    const requestedKey = filterType ?? "all";
+
+    // De-dupe: if a load is already running, queue the latest requested filter.
+    if (this.loadJobsInFlight) {
+      this.queuedFilter = filterType ?? "all";
+      return this.loadJobsInFlight;
+    }
+
+    // Small cooldown to avoid hammering the API when multiple UI events fire.
+    const now = Date.now();
+    if (now - this.lastLoadJobsAt < 750 && requestedKey === this.lastLoadJobsKey) {
+      return;
+    }
+
+    this.lastLoadJobsAt = now;
+    this.lastLoadJobsKey = requestedKey;
+
+    const run = async () => {
+      // Only commit the active filter for the run that actually executes.
+      this.activeFilter = filterType;
+
       const { EnhancedJobBoardManager } = await import("../../enhancedAddToBoard");
       const allJobs = await EnhancedJobBoardManager.getInstance().getAllJobs();
       
@@ -84,11 +106,40 @@ export class JobManager {
       
       this.jobs = mappedJobs;
       await this.renderJobs();
-      
-    } catch (error) {
-      console.error('Error loading jobs:', error);
-      this.renderEmptyState(error instanceof Error ? error.message : 'Failed to load jobs');
-    }
+
+    };
+
+    this.loadJobsInFlight = run()
+      .catch((error) => {
+        console.error('Error loading jobs:', error);
+        // Provide more helpful error messages based on error type
+        let userMessage = 'Failed to load jobs';
+        if (error instanceof Error) {
+          if (error.message.includes('Server error') || error.message.includes('500')) {
+            userMessage = 'Server is temporarily unavailable. Please try again in a moment.';
+          } else if (error.message.includes('Authentication') || error.message.includes('401')) {
+            userMessage = 'Please sign in to view your saved jobs.';
+          } else if (error.message.includes('timeout') || error.message.includes('Timeout')) {
+            userMessage = 'Request timed out. Please check your connection and try again.';
+          } else if (error.message.includes('network') || error.message.includes('fetch')) {
+            userMessage = 'Network error. Please check your connection.';
+          }
+        }
+        this.renderEmptyState(userMessage);
+      })
+      .finally(() => {
+        this.loadJobsInFlight = null;
+        const queued = this.queuedFilter;
+        this.queuedFilter = null;
+
+        // If a different filter was requested mid-flight, run it once after completion.
+        const queuedKey = queued ?? null;
+        if (queuedKey && queuedKey !== this.lastLoadJobsKey) {
+          void this.loadJobs(queuedKey === 'all' ? undefined : queuedKey);
+        }
+      });
+
+    return this.loadJobsInFlight;
   }
   
   private async renderJobs(): Promise<void> {

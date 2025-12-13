@@ -233,51 +233,36 @@ export class AuthManager {
   public async signInWithGoogle(): Promise<void> {
     try {
       popupUI.showLoading('google-auth-btn');
-      
-      // Import and use the Chrome Identity API-based Google sign-in
-      const { signInWithGoogle: firebaseSignInWithGoogle } = await import("../../firebase");
-      
-      const user = await firebaseSignInWithGoogle();
-      
-      // Update current user
-      this.currentUser = user;
-      
-      // Cache the token
-      const token = await user.getIdToken();
-      await cacheAuthToken({
-        token,
-        userId: user.uid,
-        userEmail: user.email,
-        source: 'popup'
-      });
 
-      // Store in sync storage
-      if (typeof chrome !== 'undefined' && chrome.storage?.sync) {
-        await chrome.storage.sync.set({
-          firebaseUid: user.uid,
-          userId: user.uid,
-          userEmail: user.email
-        });
+      // Run OAuth in the background service worker.
+      // Chrome extension popups often auto-close when they lose focus (opening the Google window),
+      // which can interrupt sign-in if done in the popup context.
+      if (typeof chrome === 'undefined' || !chrome.runtime?.sendMessage) {
+        throw new Error('Chrome runtime messaging not available');
       }
 
-      this.updateAuthUI(true);
-      popupUI.showSuccess('Signed in with Google!');
-      popupUI.switchTab('jobs');
-
-      // Notify background script
-      if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
-        chrome.runtime.sendMessage({
-          type: 'AUTH_STATE_CHANGED',
-          payload: {
-            isAuthenticated: true,
-            userId: user.uid,
-            email: user.email,
-            token: token,
-            source: 'google_signin'
+      const response = await new Promise<any>((resolve) => {
+        chrome.runtime.sendMessage({ action: 'googleSignIn' }, (resp) => {
+          if (chrome.runtime?.lastError) {
+            resolve({ success: false, error: chrome.runtime.lastError.message });
+            return;
           }
-        }).catch((err) => {
-          console.debug('Failed to notify background:', err);
+          resolve(resp);
         });
+      });
+
+      if (!response?.success) {
+        throw new Error(response?.error || 'Google sign-in failed');
+      }
+
+      // If the popup stayed open, attempt to sync immediately.
+      // If it closed, the next popup open will pick up persisted auth state via onAuthStateChanged.
+      await this.attemptSyncFromWebApp();
+      if (this.isAuthenticated()) {
+        popupUI.showSuccess('Signed in with Google!');
+        popupUI.switchTab('jobs');
+      } else {
+        popupUI.showSuccess('Sign-in started. Reopen the extension to continue.');
       }
 
     } catch (error: any) {
@@ -287,10 +272,12 @@ export class AuthManager {
       let errorMessage = 'Google sign-in failed. Please try again.';
       if (error?.code === 'auth/invalid-credential') {
         errorMessage = 'Invalid credentials. Please try signing in again.';
-      } else if (error?.message?.includes('Identity API')) {
-        errorMessage = 'Google sign-in not available. Please check your Chrome account.';
+      } else if (error?.message?.includes('Identity API') || error?.message?.includes('runtime messaging')) {
+        errorMessage = 'Google sign-in not available in this context.';
       } else if (error?.message?.includes('user denied')) {
         errorMessage = 'Sign-in was cancelled.';
+      } else if (typeof error?.message === 'string' && error.message.length) {
+        errorMessage = error.message;
       }
       
       this.showAuthError(errorMessage);
@@ -400,8 +387,14 @@ export class AuthManager {
     try {
       console.debug('AuthManager: Attempting to sync auth from web app...');
 
-      // First try to get token from web app tabs
-      const token = await acquireIdToken(true, { skipMessageFallback: false });
+      // First try cached token (e.g., set by background Google sign-in).
+      // NOTE: forceRefresh=true intentionally bypasses the cache, which makes the popup look signed out
+      // right after a successful background sign-in.
+      let token = await acquireIdToken(false, { skipMessageFallback: false });
+      if (!token) {
+        // If no cached token exists, try a forced refresh (tab/background fallback paths).
+        token = await acquireIdToken(true, { skipMessageFallback: false });
+      }
       if (!token) {
         console.debug('AuthManager: No token acquired from web app');
         return false;
@@ -502,8 +495,16 @@ export class AuthManager {
         statusDot.style.backgroundColor = "#10b981"; // Emerald-500
       }
 
-      if (formContainer) formContainer.style.display = "none";
-      if (logoutSection) logoutSection.style.display = "block";
+      // Hide login form and show profile/logout section
+      // Must remove 'hidden' class since it uses !important
+      if (formContainer) {
+        formContainer.style.display = "none";
+        formContainer.classList.add("hidden");
+      }
+      if (logoutSection) {
+        logoutSection.classList.remove("hidden");
+        logoutSection.style.display = "block";
+      }
 
       if (this.currentUser) {
         popupUI.updateUserProfile({
@@ -531,8 +532,15 @@ export class AuthManager {
         statusDot.style.backgroundColor = "#ef4444"; // Red-500
       }
 
-      if (formContainer) formContainer.style.display = "block";
-      if (logoutSection) logoutSection.style.display = "none";
+      // Show login form and hide profile/logout section
+      if (formContainer) {
+        formContainer.classList.remove("hidden");
+        formContainer.style.display = "block";
+      }
+      if (logoutSection) {
+        logoutSection.style.display = "none";
+        logoutSection.classList.add("hidden");
+      }
 
       mainTabs.forEach(tab => {
         // Hide other tabs if not authenticated

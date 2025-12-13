@@ -141,8 +141,8 @@ function handleError(error: unknown): NextResponse {
 }
 
 // Retry utilities for database operations
-const MAX_RETRIES = 3;
-const INITIAL_DELAY_MS = 500;
+const MAX_RETRIES = 2;
+const INITIAL_DELAY_MS = 200;
 
 async function withRetry<T>(
   operation: () => Promise<T>,
@@ -180,16 +180,18 @@ async function withRetry<T>(
   throw lastError;
 }
 
-// Check for duplicate jobs by URL
+// Check for duplicate jobs by URL (optimized with limit 1)
 async function checkDuplicateJob(
   jobsCollection: ReturnType<typeof createFirestoreCollection>,
   url: string,
   userId: string
 ): Promise<boolean> {
   try {
+    // Use limit(1) to avoid fetching more than needed
     const queryBuilder = createQueryBuilder()
       .where('userId', '==', userId)
-      .where('url', '==', url.trim());
+      .where('url', '==', url.trim())
+      .limit(1);
     const existingJobs = await jobsCollection.query(queryBuilder.build());
     return existingJobs.length > 0;
   } catch (error) {
