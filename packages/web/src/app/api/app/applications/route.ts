@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createFirestoreCollection } from "@/firebase/firestore";
+import { getAdminDb } from "@/firebase/admin";
 import { authenticateRequest } from "@/lib/api/auth";
 import {
   withErrorHandling,
@@ -9,6 +9,7 @@ import {
   generateRequestId
 } from "@/lib/api/errors";
 import { applyCorsHeaders, preflightResponse } from "@/lib/api/cors";
+import { FieldValue } from "firebase-admin/firestore";
 
 // POST /api/app/applications - Create a new application
 export async function POST(request: NextRequest) {
@@ -33,8 +34,8 @@ export async function POST(request: NextRequest) {
       throw createAuthorizationError("User ID does not match authentication token", 'USER_ID_MISMATCH');
     }
 
-    // Initialize Firestore
-    const applicationsCollection = createFirestoreCollection<any>('applications');
+    // Initialize Firestore Admin
+    const db = getAdminDb();
 
     // Create application object with validation
     const applicationDataToCreate = {
@@ -45,15 +46,15 @@ export async function POST(request: NextRequest) {
       interviewDate: applicationData.interviewDate || null,
       notes: (applicationData.notes || '').trim(),
       followUps: Array.isArray(applicationData.followUps) ? applicationData.followUps : [],
-      createdAt: startTime,
-      updatedAt: startTime
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp()
     };
 
     // Create application in Firestore
-    const createdApplication = await applicationsCollection.create(applicationDataToCreate);
+    const docRef = await db.collection('applications').add(applicationDataToCreate);
 
     return NextResponse.json({
-      id: createdApplication._id,
+      id: docRef.id,
       message: 'Application created successfully',
       createdAt: startTime
     });
@@ -85,11 +86,12 @@ export async function GET(request: NextRequest) {
       throw createAuthorizationError("Admin access required", 'INSUFFICIENT_PERMISSIONS');
     }
 
-    // Initialize Firestore
-    const applicationsCollection = createFirestoreCollection<any>('applications');
+    // Initialize Firestore Admin
+    const db = getAdminDb();
 
     // Get all applications (admin only)
-    const applications = await applicationsCollection.getAll();
+    const snapshot = await db.collection('applications').get();
+    const applications = snapshot.docs.map(doc => ({ _id: doc.id, id: doc.id, ...doc.data() }));
 
     return NextResponse.json({
       applications,
@@ -112,3 +114,4 @@ export async function GET(request: NextRequest) {
 export async function OPTIONS(request: NextRequest) {
   return preflightResponse(request);
 }
+

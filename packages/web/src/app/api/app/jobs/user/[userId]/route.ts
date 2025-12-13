@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyIdToken } from "@/firebase/admin";
-import { createFirestoreCollection } from "@/firebase/firestore";
-import { where } from "firebase/firestore";
+import { verifyIdToken, getAdminDb } from "@/firebase/admin";
 import { applyCorsHeaders, preflightResponse } from "@/lib/api/cors";
 
 // GET /api/app/jobs/user/[userId] - Get jobs for a specific user
@@ -57,13 +55,18 @@ export async function GET(
       return applyCorsHeaders(NextResponse.json([]), request);
     }
 
-    // Initialize Firestore
-    const jobsCollection = createFirestoreCollection<any>('jobs');
+    // Use Admin SDK for server-side Firestore access
+    const db = getAdminDb();
+    const jobsRef = db.collection('jobs');
+    const snapshot = await jobsRef.where('userId', '==', userId).get();
 
-    // Get jobs for the specific user
-    const userJobs = await jobsCollection.query([where('userId', '==', userId)]);
+    const jobs = snapshot.docs.map(doc => ({
+      _id: doc.id,
+      id: doc.id,
+      ...doc.data()
+    }));
 
-    return applyCorsHeaders(NextResponse.json(userJobs), request);
+    return applyCorsHeaders(NextResponse.json(jobs), request);
   } catch (error) {
     console.error("Error fetching jobs:", error);
     return applyCorsHeaders(
@@ -78,3 +81,4 @@ export async function GET(
 export async function OPTIONS(request: NextRequest) {
   return preflightResponse(request);
 }
+

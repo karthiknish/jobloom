@@ -359,22 +359,21 @@ export class JobTracker {
       return result;
     } catch (error) {
       console.warn("Hireall: sponsor lookup failed", error);
-      const ukEligibility = await SponsorshipManager.assessUkEligibility(jobContext);
+      // Don't use UK eligibility as fallback on error - it creates false positives
+      // Just return error status, not "sponsored"
       const fallback: SponsorshipCheckResult = {
         company: jobData.company,
         source: jobData.source,
-        isSponsored: ukEligibility?.eligible ? true : false,
-        sponsorshipType: ukEligibility?.eligible ? "Potentially Eligible" : null,
+        isSponsored: false,
+        sponsorshipType: null,
         status: "error",
-        confidence: ukEligibility?.eligible ? 0.3 : 0,
-        ukEligibility,
+        confidence: 0,
         jobContext,
       };
-      this.sponsorCache.set(cacheKey, fallback);
-      console.debug("Hireall: Using fallback sponsorship result", {
+      // Don't cache errors - allow retry
+      console.debug("Hireall: Sponsor check failed, not caching error result", {
         company: jobData.company,
-        isSponsored: fallback.isSponsored,
-        hasUkEligibility: !!ukEligibility
+        error: error instanceof Error ? error.message : String(error)
       });
       return fallback;
     }

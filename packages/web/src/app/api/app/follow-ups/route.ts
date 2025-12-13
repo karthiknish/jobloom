@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/api/withAuth";
-import { createFirestoreCollection } from "@/firebase/firestore";
+import { getAdminDb } from "@/firebase/admin";
 import { applyCorsHeaders, preflightResponse } from "@/lib/api/cors";
+import { FieldValue } from "firebase-admin/firestore";
 
 // POST /api/app/follow-ups - Create a new follow-up
 export const POST = withAuth(
@@ -28,8 +29,8 @@ export const POST = withAuth(
         );
       }
 
-      // Initialize Firestore
-      const followUpsCollection = createFirestoreCollection<any>('followUps');
+      // Initialize Firestore Admin
+      const db = getAdminDb();
 
       // Create follow-up object
       const followUpDataToCreate = {
@@ -39,12 +40,14 @@ export const POST = withAuth(
         scheduledDate: followUpData.scheduledDate,
         completed: followUpData.completed || false,
         notes: followUpData.notes || '',
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
       };
 
       // Create follow-up in Firestore
-      const createdFollowUp = await followUpsCollection.create(followUpDataToCreate);
+      const docRef = await db.collection('followUps').add(followUpDataToCreate);
 
-      return applyCorsHeaders(NextResponse.json(createdFollowUp._id), request);
+      return applyCorsHeaders(NextResponse.json(docRef.id), request);
     } catch (error) {
       console.error("Error creating follow-up:", error);
       return applyCorsHeaders(
@@ -59,11 +62,12 @@ export const POST = withAuth(
 export const GET = withAuth(
   async (request, { user }) => {
     try {
-      // Initialize Firestore
-      const followUpsCollection = createFirestoreCollection<any>('followUps');
+      // Initialize Firestore Admin
+      const db = getAdminDb();
 
-      // Get follow-ups (filtered by user on client or make query here if needed)
-      const followUps = await followUpsCollection.getAll();
+      // Get follow-ups for the user
+      const snapshot = await db.collection('followUps').where('userId', '==', user.uid).get();
+      const followUps = snapshot.docs.map(doc => ({ _id: doc.id, id: doc.id, ...doc.data() }));
 
       return applyCorsHeaders(NextResponse.json(followUps), request);
     } catch (error) {
@@ -81,3 +85,4 @@ export const GET = withAuth(
 export async function OPTIONS(request: NextRequest) {
   return preflightResponse(request);
 }
+

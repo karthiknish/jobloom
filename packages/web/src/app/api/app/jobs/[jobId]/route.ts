@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth, type AuthContext } from "@/lib/api/withAuth";
-import { createFirestoreCollection } from "@/firebase/firestore";
-import { getAdminFirestore } from "@/firebase/admin";
+import { getAdminDb } from "@/firebase/admin";
+import { FieldValue } from "firebase-admin/firestore";
 
 // Enhanced error types
 class ValidationError extends Error {
@@ -169,15 +169,18 @@ export const GET = withAuth<{ jobId: string }>(
         });
       }
 
-      // Initialize Firestore
-      const jobsCollection = createFirestoreCollection<any>('jobs');
+      // Initialize Firestore Admin
+      const db = getAdminDb();
 
       // Get specific job
-      const job = await jobsCollection.get(jobId);
+      const docRef = db.collection('jobs').doc(jobId);
+      const docSnap = await docRef.get();
       
-      if (!job) {
+      if (!docSnap.exists) {
         throw new DatabaseError('Job not found', 'get');
       }
+
+      const job = { _id: docSnap.id, id: docSnap.id, ...docSnap.data() };
 
       return NextResponse.json({ 
         job,
@@ -225,22 +228,28 @@ export const PUT = withAuth<{ jobId: string }>(
         });
       }
 
-      // Initialize Firestore
-      const jobsCollection = createFirestoreCollection<any>('jobs');
+      // Initialize Firestore Admin
+      const db = getAdminDb();
+      const docRef = db.collection('jobs').doc(jobId);
 
       // First, check if job exists and user has permission
-      const existingJob = await jobsCollection.get(jobId);
-      if (!existingJob) {
+      const docSnap = await docRef.get();
+      if (!docSnap.exists) {
         throw new DatabaseError('Job not found', 'get');
       }
 
+      const existingJob = docSnap.data();
+
       // Verify user owns the job
-      if (existingJob.userId !== user.uid) {
+      if (existingJob?.userId !== user.uid) {
         throw new AuthorizationError("You do not have permission to update this job");
       }
 
       // Update job
-      await jobsCollection.update(jobId, updateData);
+      await docRef.update({
+        ...updateData,
+        updatedAt: FieldValue.serverTimestamp()
+      });
 
       return NextResponse.json({ 
         message: 'Job updated successfully'
@@ -276,22 +285,25 @@ export const DELETE = withAuth<{ jobId: string }>(
         });
       }
 
-      // Initialize Firestore
-      const jobsCollection = createFirestoreCollection<any>('jobs');
+      // Initialize Firestore Admin
+      const db = getAdminDb();
+      const docRef = db.collection('jobs').doc(jobId);
 
       // First, check if job exists and user has permission
-      const existingJob = await jobsCollection.get(jobId);
-      if (!existingJob) {
+      const docSnap = await docRef.get();
+      if (!docSnap.exists) {
         throw new DatabaseError('Job not found', 'get');
       }
 
+      const existingJob = docSnap.data();
+
       // Verify user owns the job
-      if (existingJob.userId !== user.uid) {
+      if (existingJob?.userId !== user.uid) {
         throw new AuthorizationError("You do not have permission to delete this job");
       }
 
       // Delete job
-      await jobsCollection.delete(jobId);
+      await docRef.delete();
 
       return NextResponse.json({ 
         message: 'Job deleted successfully'

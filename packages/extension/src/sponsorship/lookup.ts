@@ -109,11 +109,14 @@ export async function fetchSponsorRecord(
     try {
       console.debug("Hireall: Checking sponsor via dedicated endpoint:", company, options?.city || options?.location || '(no location)');
       
-      // Use the new dedicated check endpoint
+      // Use the new dedicated check endpoint with shorter timeout and no retries for speed
       const checkResponse = await post<SponsorCheckResponse>("/api/app/sponsorship/check", {
         company: normalizedCompany,
         city: options?.city,
         location: options?.location,
+      }, true, {
+        timeout: 10000, // 10 second timeout
+        retryCount: 0,  // No retries for faster response
       });
 
       if (checkResponse.found && checkResponse.sponsor) {

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createFirestoreCollection, createQueryBuilder } from "@/firebase/firestore";
+import { getAdminDb } from "@/firebase/admin";
 import { applyCorsHeaders, preflightResponse } from "@/lib/api/cors";
 import { authenticateRequest } from "@/lib/api/auth";
+import { FieldValue } from "firebase-admin/firestore";
 
 // Enhanced error types
 class ValidationError extends Error {
@@ -182,18 +183,18 @@ async function withRetry<T>(
 
 // Check for duplicate jobs by URL (optimized with limit 1)
 async function checkDuplicateJob(
-  jobsCollection: ReturnType<typeof createFirestoreCollection>,
+  db: ReturnType<typeof getAdminDb>,
   url: string,
   userId: string
 ): Promise<boolean> {
   try {
     // Use limit(1) to avoid fetching more than needed
-    const queryBuilder = createQueryBuilder()
+    const snapshot = await db.collection('jobs')
       .where('userId', '==', userId)
       .where('url', '==', url.trim())
-      .limit(1);
-    const existingJobs = await jobsCollection.query(queryBuilder.build());
-    return existingJobs.length > 0;
+      .limit(1)
+      .get();
+    return !snapshot.empty;
   } catch (error) {
     // If query fails, assume no duplicate to not block job creation
     console.warn('Duplicate check failed:', error);
@@ -245,12 +246,12 @@ export async function POST(request: NextRequest) {
       throw new AuthorizationError("User ID does not match authentication token");
     }
 
-    // Initialize Firestore
-    const jobsCollection = createFirestoreCollection<any>('jobs');
+    // Initialize Firestore Admin
+    const db = getAdminDb();
 
     // Check for duplicate job (by URL)
     if (jobData.url) {
-      const isDuplicate = await checkDuplicateJob(jobsCollection, jobData.url, jobData.userId);
+      const isDuplicate = await checkDuplicateJob(db, jobData.url, jobData.userId);
       if (isDuplicate) {
         return applyCorsHeaders(
           NextResponse.json({ 
@@ -287,11 +288,16 @@ export async function POST(request: NextRequest) {
       sponsorshipType: jobData.sponsorshipType?.trim() || '',
       source: jobData.source?.trim() || 'extension',
       userId: jobData.userId,
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     };
 
     // Create job in Firestore with retry
     const createdJob = await withRetry(
-      () => jobsCollection.create(jobDataToCreate),
+      async () => {
+        const docRef = await db.collection('jobs').add(jobDataToCreate);
+        return { _id: docRef.id };
+      },
       'createJob'
     );
 
@@ -345,11 +351,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Initialize Firestore
-    const jobsCollection = createFirestoreCollection<any>('jobs');
+    // Initialize Firestore Admin
+    const db = getAdminDb();
 
     // Get all jobs (admin only)
-    const jobs = await jobsCollection.getAll();
+    const snapshot = await db.collection('jobs').get();
+    const jobs = snapshot.docs.map(doc => ({ _id: doc.id, id: doc.id, ...doc.data() }));
 
     return applyCorsHeaders(
       NextResponse.json({ 

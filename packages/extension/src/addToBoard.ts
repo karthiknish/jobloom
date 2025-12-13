@@ -1,6 +1,7 @@
 import { DEFAULT_WEB_APP_URL, sanitizeBaseUrl } from "./constants";
 import { get, post, put } from "./apiClient";
 import { safeChromeStorageGet } from "./utils/safeStorage";
+import { safeLocalStorageSet } from "./utils/safeLocalStorage";
 // addToBoard.ts - Utility functions for adding jobs to the user's board
 
 interface JobData {
@@ -233,9 +234,9 @@ export class JobBoardManager {
           message: message
         });
       } else {
-        // Fallback to console and localStorage
+        // Fallback to console only (localStorage may be blocked by CSP)
         console.log(`[HireAll ${type.toUpperCase()}] ${message}`);
-        localStorage.setItem('__hireall_notification', JSON.stringify({
+        safeLocalStorageSet('__hireall_notification', JSON.stringify({
           message,
           type,
           timestamp: Date.now()
