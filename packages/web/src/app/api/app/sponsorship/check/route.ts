@@ -153,16 +153,20 @@ export async function POST(request: NextRequest) {
     let bestMatch: { doc: QueryDocumentSnapshot<Record<string, any>>; score: number; nameMatch: string; locationMatch: string } | null = null;
 
     try {
-      // Query with prefix matching
-      const searchLower = normalizedSearch;
+      // Query with prefix matching on nameLower field
+      const searchLower = normalizedSearch.toLowerCase();
       const searchUpper = searchLower + '\uf8ff';
       
+      // Use nameLower field for case-insensitive prefix search
       const prefixQuery = sponsorsRef
-        .where("isActive", "==", true)
-        .orderBy("name", "asc")
-        .limit(100);
+        .where("nameLower", ">=", searchLower)
+        .where("nameLower", "<=", searchUpper)
+        .limit(50);
       
       const snapshot = await prefixQuery.get();
+      
+      console.log(`[POST /api/app/sponsorship/check] Found ${snapshot.size} potential matches for "${searchLower}"`);
+
 
       for (const doc of snapshot.docs) {
         const data = doc.data();
