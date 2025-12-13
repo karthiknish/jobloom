@@ -73,26 +73,32 @@ function isExtensionRequest(request: NextRequest): boolean {
   const origin = request.headers.get("origin");
   const referer = request.headers.get("referer");
   
-  // Check for extension origins (Chrome, Firefox, Edge)
-  if (origin && (
-    origin.startsWith('chrome-extension://') || 
-    origin.startsWith('extension://') || 
-    origin.startsWith('moz-extension://') ||
-    origin.startsWith('ms-browser-extension://')
-  )) {
-    return true;
+  // Check for extension origins (Chrome, Firefox, Edge, Arc, Dia, Comet and other Chromium-based browsers)
+  const extensionPrefixes = [
+    'chrome-extension://',
+    'extension://',
+    'moz-extension://',
+    'ms-browser-extension://',
+    'comet://extensions',
+    'arc-extension://',
+    'dia-extension://',
+  ];
+  
+  if (origin) {
+    for (const prefix of extensionPrefixes) {
+      if (origin.startsWith(prefix)) {
+        return true;
+      }
+    }
   }
   
   if (referer) {
     try {
       const refererOrigin = new URL(referer).origin;
-      if (
-        refererOrigin.startsWith('chrome-extension://') ||
-        refererOrigin.startsWith('extension://') || 
-        refererOrigin.startsWith('moz-extension://') ||
-        refererOrigin.startsWith('ms-browser-extension://')
-      ) {
-        return true;
+      for (const prefix of extensionPrefixes) {
+        if (refererOrigin.startsWith(prefix)) {
+          return true;
+        }
       }
     } catch {
       // Invalid URL, continue with normal validation
