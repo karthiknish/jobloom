@@ -1,4 +1,6 @@
-import { getAuthInstance } from "./firebase";
+// Note: Firebase is NOT imported at module level to avoid loading in content scripts
+// Content scripts cannot use localStorage and Firebase SDK tries to access it on load
+// Use dynamic import in getTokenFromFirebase() instead
 
 const AUTH_TOKEN_STORAGE_KEY = "hireallAuthToken";
 const AUTH_FAILURE_COUNT_KEY = "hireallAuthFailureCount";
@@ -427,6 +429,9 @@ async function getTokenFromFirebase(forceRefresh: boolean): Promise<CachedAuthTo
   }
 
   try {
+    // Dynamic import to avoid loading Firebase in content scripts
+    // Content scripts run in sandboxed contexts that can't access localStorage
+    const { getAuthInstance } = await import("./firebase");
     const auth = getAuthInstance();
     const user = auth.currentUser;
 
