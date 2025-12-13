@@ -146,13 +146,14 @@ export async function apiRequest<T = any>(opts: ApiOptions): Promise<T> {
 
   // Acquire auth token if needed
   if (requiresAuth) {
-    console.debug(`Hireall: API ${path} requires authentication, attempting to acquire token`);
+    const authStart = Date.now();
+    console.log(`[Hireall:Auth] Starting auth for ${path}`);
     let token: string | null = null;
     
     try {
       token = await acquireIdToken();
       if (!token) {
-        console.debug(`Hireall: First token acquisition failed for ${path}, trying with force refresh`);
+        console.log(`[Hireall:Auth] First attempt returned null after ${Date.now() - authStart}ms, retrying with force`);
         // Wait a bit before retrying with force refresh
         await delay(500);
         token = await acquireIdToken(true);

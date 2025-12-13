@@ -360,12 +360,21 @@ async function getTokenFromHireallTab(forceRefresh: boolean): Promise<CachedAuth
             func: () => {
               // Get token from localStorage (populated by ExtensionAuthBridge)
               // Note: getHireallAuthToken is async and can't return Promises from executeScript
+              // IMPORTANT: Wrap in try-catch to handle sandboxed contexts that block localStorage
               try {
+                if (typeof localStorage === 'undefined') {
+                  return null;
+                }
                 const localToken = localStorage.getItem('hireall_auth_token');
                 const userData = localStorage.getItem('hireall_user_data');
                 
                 if (localToken && localToken.length > 100) {
-                  const parsed = userData ? JSON.parse(userData) : {};
+                  let parsed: any = {};
+                  try {
+                    parsed = userData ? JSON.parse(userData) : {};
+                  } catch {
+                    // JSON parse failed, use empty object
+                  }
                   return {
                     token: localToken,
                     userId: parsed.userId,
@@ -374,7 +383,8 @@ async function getTokenFromHireallTab(forceRefresh: boolean): Promise<CachedAuth
                   };
                 }
               } catch (e) {
-                console.debug('localStorage token retrieval failed:', e);
+                // localStorage may be blocked in sandboxed contexts - this is expected
+                // Don't log since this runs in page context
               }
               
               return null;

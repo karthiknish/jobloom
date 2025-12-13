@@ -106,18 +106,23 @@ export async function fetchSponsorRecord(
   }
 
   const lookupPromise = runWithSponsorLimit(async () => {
+    const startTime = Date.now();
     try {
-      console.debug("Hireall: Checking sponsor via dedicated endpoint:", company, options?.city || options?.location || '(no location)');
+      console.log(`[Hireall:Sponsor] Starting lookup for "${company}" at ${new Date().toISOString()}`);
       
-      // Use the new dedicated check endpoint with shorter timeout and no retries for speed
+      // Use the new dedicated check endpoint - no auth required (public sponsor data)
       const checkResponse = await post<SponsorCheckResponse>("/api/app/sponsorship/check", {
         company: normalizedCompany,
         city: options?.city,
         location: options?.location,
-      }, true, {
+      }, false, {  // false = skip auth (sponsor data is public)
         timeout: 10000, // 10 second timeout
         retryCount: 0,  // No retries for faster response
       });
+      
+      const elapsed = Date.now() - startTime;
+      console.log(`[Hireall:Sponsor] API responded in ${elapsed}ms for "${company}"`);
+
 
       if (checkResponse.found && checkResponse.sponsor) {
         const result = mapCheckResponseToResult(checkResponse);
