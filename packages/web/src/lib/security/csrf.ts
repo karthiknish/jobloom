@@ -73,15 +73,25 @@ function isExtensionRequest(request: NextRequest): boolean {
   const origin = request.headers.get("origin");
   const referer = request.headers.get("referer");
   
-  // Check for extension origins
-  if (origin && (origin.startsWith('extension://') || origin.startsWith('moz-extension://'))) {
+  // Check for extension origins (Chrome, Firefox, Edge)
+  if (origin && (
+    origin.startsWith('chrome-extension://') || 
+    origin.startsWith('extension://') || 
+    origin.startsWith('moz-extension://') ||
+    origin.startsWith('ms-browser-extension://')
+  )) {
     return true;
   }
   
   if (referer) {
     try {
       const refererOrigin = new URL(referer).origin;
-      if (refererOrigin.startsWith('extension://') || refererOrigin.startsWith('moz-extension://')) {
+      if (
+        refererOrigin.startsWith('chrome-extension://') ||
+        refererOrigin.startsWith('extension://') || 
+        refererOrigin.startsWith('moz-extension://') ||
+        refererOrigin.startsWith('ms-browser-extension://')
+      ) {
         return true;
       }
     } catch {
