@@ -153,14 +153,14 @@ export async function POST(request: NextRequest) {
     let bestMatch: { doc: QueryDocumentSnapshot<Record<string, any>>; score: number; nameMatch: string; locationMatch: string } | null = null;
 
     try {
-      // Query with prefix matching on nameLower field
+      // Query with prefix matching on searchName field (matching Firestore schema)
       const searchLower = normalizedSearch.toLowerCase();
       const searchUpper = searchLower + '\uf8ff';
       
-      // Use nameLower field for case-insensitive prefix search
+      // Use searchName field for case-insensitive prefix search
       const prefixQuery = sponsorsRef
-        .where("nameLower", ">=", searchLower)
-        .where("nameLower", "<=", searchUpper)
+        .where("searchName", ">=", searchLower)
+        .where("searchName", "<=", searchUpper)
         .limit(50);
       
       const snapshot = await prefixQuery.get();
