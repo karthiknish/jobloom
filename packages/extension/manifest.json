@@ -35,7 +35,9 @@
       "matches": [
         "https://*.vercel.app/*",
         "https://*.netlify.app/*",
-        "https://hireall.app/*"
+        "https://hireall.app/*",
+        "http://localhost:3000/*",
+        "http://127.0.0.1:3000/*"
       ],
       "js": ["hireall-webapp-content.js"]
     }
