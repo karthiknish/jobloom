@@ -81,14 +81,23 @@ export function ExtensionIntegration({ userId }: ExtensionIntegrationProps) {
     // Also listen for extension messages with better error handling
     const handleMessage = (event: MessageEvent) => {
       try {
-        // Verify message origin for security
-        if (event.origin !== window.location.origin) return;
-
+        // Skip if no data
+        if (!event.data || typeof event.data !== 'object') return;
+        
+        // For extension status messages, we accept any origin since content scripts
+        // may have different origin handling in Chrome extensions
         if (event.data.type === 'HIREALL_EXTENSION_STATUS') {
+          console.log('[ExtensionIntegration] Received extension status, marking as installed');
           setIsExtensionInstalled(true);
           setJobsDetected((event.data.jobsDetected as number) || 0);
           setLastSync(event.data.lastSync ? new Date(event.data.lastSync as string | number) : null);
-        } else if (event.data.type === 'HIREALL_EXTENSION_ERROR') {
+          return;
+        }
+        
+        // For other messages, verify origin for security
+        if (event.origin !== window.location.origin) return;
+        
+        if (event.data.type === 'HIREALL_EXTENSION_ERROR') {
           console.error('Extension error:', event.data.message);
         }
       } catch (error) {
