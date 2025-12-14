@@ -202,8 +202,9 @@ async function proxyFetchViaBackground(params: {
           }
 
           if (!response?.success) {
-            console.warn(`[Hireall] Proxy response not success`, { requestId: params.requestId, error: response?.error });
-            reject(new Error(response?.error || 'Background proxy failed'));
+            const errorMsg = response?.error || 'Background proxy failed';
+            console.warn(`[Hireall] Proxy response not success: ${errorMsg}`, { requestId: params.requestId });
+            reject(new Error(errorMsg));
             return;
           }
 
@@ -497,14 +498,14 @@ export async function apiRequest<T = any>(opts: ApiOptions): Promise<T> {
       const isTypeErrorFetch = error?.name === 'TypeError' && String(error?.message || '').toLowerCase().includes('fetch');
 
       // Always log failures once with context; retries will add additional debug output.
-      console.warn(`[Hireall:API] xx ${method} ${path} failed`, {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.warn(`[Hireall:API] xx ${method} ${path} failed: ${errorMsg}`, {
         requestId,
         attempt: attempt + 1,
         origin: safeOrigin(url),
         elapsedMsTotal,
         errorName: error?.name,
         errorCode: error?.code,
-        errorMessage: error instanceof Error ? error.message : String(error),
         aborted: !!isAbort,
         fetchTypeError: !!isTypeErrorFetch,
       });

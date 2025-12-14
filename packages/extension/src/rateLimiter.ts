@@ -217,7 +217,8 @@ export async function fetchSubscriptionStatus(): Promise<SubscriptionStatus | nu
         chrome.storage.local.remove(["userTier"]);
         await clearCachedAuthToken();
       }
-      console.warn("Failed to fetch subscription status:", error);
+      const errorMsg = error instanceof Error ? error.message : (error instanceof DOMException ? `DOMException: ${error.name}` : String(error));
+      console.warn("Failed to fetch subscription status:", errorMsg);
       // Cache the null briefly to avoid tight retry loops in the UI.
       subscriptionStatusCache = { value: null, fetchedAt: Date.now() };
       return null;
@@ -295,7 +296,8 @@ async function getCurrentUserTier(): Promise<UserTier> {
       await chrome.storage.local.set({ userTier: currentUserTier, tierCheckTime: now });
       return currentUserTier;
     } catch (error) {
-      console.warn('Failed to get user tier:', error);
+      const errorMsg = error instanceof Error ? error.message : (error instanceof DOMException ? `DOMException: ${error.name}` : String(error));
+      console.warn('Failed to get user tier:', errorMsg);
       return 'free';
     } finally {
       tierLookupDepth = Math.max(0, tierLookupDepth - 1);

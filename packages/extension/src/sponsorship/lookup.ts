@@ -147,7 +147,8 @@ export async function fetchSponsorRecord(
       return null;
 
     } catch (error) {
-      console.warn("Hireall: Sponsor check failed:", error);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.warn("Hireall: Sponsor check failed:", errorMsg);
       // Cache null to avoid repeated failures
       sponsorshipCache.set(cacheKey, null);
       return null;

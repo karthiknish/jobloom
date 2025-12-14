@@ -526,6 +526,12 @@ window.addEventListener("message", (event) => {
       const userId = String((event as any).data.userId);
       const userEmail = (event as any)?.data?.userEmail ? String((event as any).data.userEmail) : undefined;
 
+      // Check extension context before attempting to cache
+      if (!chrome.runtime?.id) {
+        console.debug("[WebApp Content] Extension context invalidated, skipping auth cache");
+        return;
+      }
+
       cacheAuthToken({
         token,
         userId,
@@ -562,7 +568,8 @@ window.addEventListener("message", (event) => {
           console.log("[WebApp Content] Auth state synced from web app");
         })
         .catch((error) => {
-          console.error("[WebApp Content] Failed to cache auth token:", error);
+          const errorMsg = error instanceof Error ? error.message : String(error);
+          console.error("[WebApp Content] Failed to cache auth token:", errorMsg);
         });
     }
   }

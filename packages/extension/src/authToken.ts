@@ -206,6 +206,12 @@ export async function cacheAuthToken(params: {
   expiresAt?: number;
   ttlMs?: number;
 }): Promise<void> {
+  // Check extension context is still valid
+  if (!isChromeStorageAvailable() || !chrome.runtime?.id) {
+    console.debug("Hireall: Extension context invalidated, skipping auth token cache");
+    return;
+  }
+  
   // Enhanced validation
   if (typeof params.token !== "string" || params.token.length === 0) {
     console.warn("Invalid token provided to cacheAuthToken");
