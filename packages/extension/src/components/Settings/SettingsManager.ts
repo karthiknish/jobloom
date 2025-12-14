@@ -2,9 +2,7 @@ import { sanitizeBaseUrl, DEFAULT_WEB_APP_URL } from "../../constants";
 import { popupUI } from "../UI/PopupUI";
 
 export interface ExtensionSettings {
-  autoDetectJobs: boolean;
   showJobBadges: boolean;
-  autoSaveProfile: boolean;
   ukFiltersEnabled: boolean;
   ukEligibilityCriteria?: {
     minSalary: number;
@@ -18,10 +16,8 @@ export interface ExtensionSettings {
 export class SettingsManager {
   private static instance: SettingsManager;
   private defaultSettings: ExtensionSettings = {
-    autoDetectJobs: true,
     showJobBadges: true,
-    autoSaveProfile: true,
-    ukFiltersEnabled: false,
+    ukFiltersEnabled: true, // Default to true so sponsor button shows by default
     webAppUrl: DEFAULT_WEB_APP_URL,
     syncFrequency: 5, // minutes
   };
@@ -77,17 +73,18 @@ export class SettingsManager {
   
   private updateSettingsUI(settings: ExtensionSettings): void {
     // Update toggle states
-    popupUI.setElementChecked('auto-detect-toggle', settings.autoDetectJobs);
     popupUI.setElementChecked('show-badges-toggle', settings.showJobBadges);
-    popupUI.setElementChecked('auto-save-profile-toggle', settings.autoSaveProfile);
     popupUI.setElementChecked('uk-filters-toggle', settings.ukFiltersEnabled);
     
     // Update input values
     popupUI.setElementValue('web-app-url-input', settings.webAppUrl);
     popupUI.setElementValue('sync-frequency-select', settings.syncFrequency.toString());
     
-    // Show/hide UK filters details
+    // Show/hide UK filters details based on toggle state
     popupUI.toggleElement('uk-filters-details', settings.ukFiltersEnabled);
+    
+    // Sync sponsor button visibility with UK filters state
+    this.syncSponsorButtonSetting(settings.ukFiltersEnabled);
     
     // Update UK eligibility criteria if available
     if (settings.ukEligibilityCriteria) {
@@ -105,10 +102,16 @@ export class SettingsManager {
     }
   }
   
+  private syncSponsorButtonSetting(enabled: boolean): void {
+    // Update the enableSponsorshipChecks setting in chrome.storage.sync
+    // This controls whether the "Check Sponsor" button appears on job cards
+    chrome.storage.sync.set({ enableSponsorshipChecks: enabled }, () => {
+      console.debug('Sponsor button visibility synced:', enabled);
+    });
+  }
+  
   private getSettingsFromUI(): ExtensionSettings {
-    const autoDetectJobs = popupUI.getElementValue('auto-detect-toggle') === 'true';
     const showJobBadges = popupUI.getElementValue('show-badges-toggle') === 'true';
-    const autoSaveProfile = popupUI.getElementValue('auto-save-profile-toggle') === 'true';
     const ukFiltersEnabled = popupUI.getElementValue('uk-filters-toggle') === 'true';
     
     let webAppUrl = popupUI.getElementValue('web-app-url-input').trim();
@@ -117,9 +120,7 @@ export class SettingsManager {
     const syncFrequency = parseInt(popupUI.getElementValue('sync-frequency-select')) || 5;
     
     const settings: ExtensionSettings = {
-      autoDetectJobs,
       showJobBadges,
-      autoSaveProfile,
       ukFiltersEnabled,
       webAppUrl,
       syncFrequency,
@@ -207,9 +208,7 @@ export class SettingsManager {
     }
     
     return {
-      autoDetectJobs: typeof settings.autoDetectJobs === 'boolean' ? settings.autoDetectJobs : this.defaultSettings.autoDetectJobs,
       showJobBadges: typeof settings.showJobBadges === 'boolean' ? settings.showJobBadges : this.defaultSettings.showJobBadges,
-      autoSaveProfile: typeof settings.autoSaveProfile === 'boolean' ? settings.autoSaveProfile : this.defaultSettings.autoSaveProfile,
       ukFiltersEnabled: typeof settings.ukFiltersEnabled === 'boolean' ? settings.ukFiltersEnabled : this.defaultSettings.ukFiltersEnabled,
       webAppUrl: typeof settings.webAppUrl === 'string' ? settings.webAppUrl : this.defaultSettings.webAppUrl,
       syncFrequency: typeof settings.syncFrequency === 'number' ? settings.syncFrequency : this.defaultSettings.syncFrequency,
@@ -221,7 +220,7 @@ export class SettingsManager {
 
   public setupEventListeners(): void {
     // Toggle switches
-    ['auto-detect-toggle', 'show-badges-toggle', 'auto-save-profile-toggle', 'uk-filters-toggle'].forEach(id => {
+    ['show-badges-toggle', 'uk-filters-toggle'].forEach(id => {
       const toggle = document.getElementById(id);
       if (toggle) {
         toggle.addEventListener('change', () => {
@@ -229,8 +228,10 @@ export class SettingsManager {
           if (id === 'uk-filters-toggle') {
             const isChecked = (toggle as HTMLInputElement).checked;
             popupUI.toggleElement('uk-filters-details', isChecked);
+            // Sync sponsor button visibility with UK filters
+            this.syncSponsorButtonSetting(isChecked);
           }
-          // Auto-save settings on toggle change
+          // Save settings on toggle change
           this.saveSettings();
         });
       }

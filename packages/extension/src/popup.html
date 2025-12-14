@@ -114,23 +114,6 @@
         <div class="section-title">Preferences</div>
         
         <div class="settings-grid">
-          <!-- Job Detection Card -->
-          <div class="setting-card">
-            <div class="setting-header">
-              <div class="setting-icon blue">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-              </div>
-              <div class="setting-info">
-                <h3>Auto-Detect</h3>
-                <p>Highlight jobs on page load</p>
-              </div>
-              <div class="toggle-wrapper">
-                <input type="checkbox" id="auto-detect-toggle" class="toggle-input">
-                <label for="auto-detect-toggle" class="toggle-label"></label>
-              </div>
-            </div>
-          </div>
-
           <!-- Badges Card -->
           <div class="setting-card">
             <div class="setting-header">
@@ -148,26 +131,6 @@
             </div>
           </div>
 
-          <!-- Auto-Save Card -->
-          <div class="setting-card">
-            <div class="setting-header">
-              <div class="setting-icon green">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-              </div>
-              <div class="setting-info">
-                <h3>Auto-Save</h3>
-                <p>Remember application data</p>
-              </div>
-              <div class="toggle-wrapper">
-                <input type="checkbox" id="auto-save-profile-toggle" class="toggle-input" checked>
-                <label for="auto-save-profile-toggle" class="toggle-label"></label>
-              </div>
-            </div>
-            <div class="setting-footer">
-              <button class="text-btn" id="configure-profile-btn">Configure Profile →</button>
-            </div>
-          </div>
-
           <!-- UK Filters Card -->
           <div class="setting-card">
             <div class="setting-header">
@@ -175,15 +138,15 @@
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M2 12h20"></path><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
               </div>
               <div class="setting-info">
-                <h3>UK Filters</h3>
-                <p>Visa eligibility check</p>
+                <h3>UK Visa Analysis</h3>
+                <p>Enable sponsor check button</p>
               </div>
               <div class="toggle-wrapper">
-                <input type="checkbox" id="uk-filters-toggle" class="toggle-input">
+                <input type="checkbox" id="uk-filters-toggle" class="toggle-input" checked>
                 <label for="uk-filters-toggle" class="toggle-label"></label>
               </div>
             </div>
-            <div id="uk-filters-details" class="setting-details hidden">
+            <div id="uk-filters-details" class="setting-details">
               <div class="info-box">
                 <strong>Skilled Worker Visa</strong>
                 <ul>
