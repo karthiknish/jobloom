@@ -51,7 +51,7 @@ module.exports = (env, argv) => {
               // Remove console.log, console.debug, console.info, console.warn in production
               // Keep console.error for debugging production issues
               drop_console: false,
-              pure_funcs: ['console.log', 'console.debug', 'console.info', 'console.warn', 'console.time', 'console.timeEnd'],
+              pure_funcs: ['console.log', 'console.debug', 'console.info', 'console.warn', 'console.time', 'console.timeEnd', 'console.group', 'console.groupEnd', 'console.groupCollapsed'],
             },
             format: {
               comments: false,

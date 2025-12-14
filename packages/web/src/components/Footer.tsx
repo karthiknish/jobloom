@@ -30,7 +30,7 @@ export default function Footer() {
           <div>
             <div className="flex items-center space-x-2 mb-4">
               <Image
-                src="/hireall-logo.svg"
+                src="/Hire-logo-white.svg"
                 alt="HireAll"
                 width={160}
                 height={32}

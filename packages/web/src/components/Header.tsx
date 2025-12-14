@@ -178,7 +178,7 @@ export default function Header() {
         <div className="flex justify-between items-center h-16 md:h-20">
           <Link href="/" className="flex items-center space-x-2 group">
             <Image
-              src="/hireall-logo.svg"
+              src="/Hire-logo.svg"
               alt="HireAll"
               width={120}
               height={28}
@@ -222,7 +222,7 @@ export default function Header() {
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
                       <Image
-                        src="/hireall-logo.svg"
+                        src="/Hire-logo.svg"
                         alt="HireAll"
                         width={140}
                         height={32}
