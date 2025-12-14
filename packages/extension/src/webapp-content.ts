@@ -36,39 +36,33 @@ let authCheckInterval: number | null = null;
 let lastUserId: string | null = null;
 
 // Set extension detection signal for the web app
-// Content scripts are ISOLATED - we must inject a script into the page context
-// to set window.__hireall_extension so the React app can detect us
-if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+// Content scripts are isolated from page JS but postMessage works!
+// CSP blocks inline script injection, so we use postMessage directly
+if (typeof window !== 'undefined') {
   const version = chrome.runtime?.getManifest?.()?.version || '1.0.0';
   
-  // Create a script to inject into the page context
-  const script = document.createElement('script');
-  script.textContent = `
-    // HireAll Extension Detection Signal
-    window.__hireall_extension = {
-      installed: true,
-      version: '${version}',
-      jobsDetected: 0,
-      lastSync: null
-    };
-    
-    // Post message to notify React app
+  // Function to announce extension presence
+  const announceExtension = () => {
     window.postMessage({
       type: 'HIREALL_EXTENSION_STATUS',
       installed: true,
-      version: '${version}',
+      version: version,
       jobsDetected: 0,
       lastSync: null
     }, '*');
-    
-    console.log('[HireAll Extension] Extension detection signal injected into page');
-  `;
+  };
   
-  // Inject the script at document start
-  (document.head || document.documentElement).appendChild(script);
-  script.remove(); // Clean up after execution
+  // Announce immediately
+  announceExtension();
+  console.log('[HireAll Extension] Posted extension detection signal');
   
-  console.log('[HireAll Extension] Injected extension detection signal via script');
+  // Re-announce periodically since React components may mount later
+  const announceInterval = setInterval(announceExtension, 1000);
+  
+  // Stop after 10 seconds
+  setTimeout(() => {
+    clearInterval(announceInterval);
+  }, 10000);
 }
 
 interface UserInfo {
