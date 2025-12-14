@@ -35,6 +35,28 @@ let authSuccessSent = false; // Prevent duplicate auth success messages
 let authCheckInterval: number | null = null;
 let lastUserId: string | null = null;
 
+// Set extension detection signal for the web app
+// This allows the Hireall web app to detect that the extension is installed
+if (typeof window !== 'undefined') {
+  (window as any).__hireall_extension = {
+    installed: true,
+    version: chrome.runtime?.getManifest?.()?.version || '1.0.0',
+    jobsDetected: 0,
+    lastSync: null as string | null
+  };
+  
+  // Also post a message to notify the web app
+  window.postMessage({
+    type: 'HIREALL_EXTENSION_STATUS',
+    installed: true,
+    version: chrome.runtime?.getManifest?.()?.version || '1.0.0',
+    jobsDetected: 0,
+    lastSync: null
+  }, '*');
+  
+  console.log('[HireAll Extension] Injected extension detection signal');
+}
+
 interface UserInfo {
   userId: string | null;
   userEmail: string | null;
@@ -514,6 +536,20 @@ window.addEventListener("message", (event) => {
               source: "webapp_content",
             },
           });
+
+          // Send confirmation back to web app that extension received auth
+          window.postMessage({
+            type: 'HIREALL_EXTENSION_STATUS',
+            installed: true,
+            authenticated: true,
+            userId,
+            lastSync: new Date().toISOString()
+          }, '*');
+          
+          // Update the global signal
+          if ((window as any).__hireall_extension) {
+            (window as any).__hireall_extension.lastSync = new Date().toISOString();
+          }
 
           console.log("[WebApp Content] Auth state synced from web app");
         })
