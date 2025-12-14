@@ -26,6 +26,15 @@ interface JobStatsDashboardProps {
 }
 
 export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
+  // Early return if stats is not available
+  if (!stats) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        Loading statistics...
+      </div>
+    );
+  }
+
   const statusVariants: Record<
     | "interested"
     | "applied"
@@ -218,7 +227,7 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                {Object.entries(stats.byStatus).map(([status, count]) => (
+                {Object.entries(stats.byStatus || {}).map(([status, count]) => (
                   <div key={status} className="group/status">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-3">

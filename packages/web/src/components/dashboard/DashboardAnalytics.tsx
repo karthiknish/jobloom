@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Application } from "@/types/dashboard";
 import { CvAnalysis } from "@/types/api";
@@ -12,6 +12,9 @@ import { FeatureGate } from "@/components/UpgradePrompt";
 import { useSubscription } from "@/providers/subscription-provider";
 import { TrendingUp, MapPin, CheckCircle, BarChart3 } from "lucide-react";
 import { CvAnalysisHistory } from "@/components/CvAnalysisHistory";
+import { GoalsSettingsModal } from "@/components/dashboard/GoalsSettingsModal";
+import { ProgressReportModal } from "@/components/dashboard/ProgressReportModal";
+import { WeeklySummaryModal } from "@/components/dashboard/WeeklySummaryModal";
 import {
   calculateSuccessRate,
   calculateInterviewRate,
@@ -36,6 +39,30 @@ export function DashboardAnalytics({
   jobStats,
 }: DashboardAnalyticsProps) {
   const { isAdmin } = useSubscription();
+
+  // Modal states
+  const [showGoalsModal, setShowGoalsModal] = useState(false);
+  const [showProgressModal, setShowProgressModal] = useState(false);
+  const [showWeeklySummaryModal, setShowWeeklySummaryModal] = useState(false);
+  
+  // Goals state
+  const [goals, setGoals] = useState({
+    weeklyApplications: 10,
+    monthlyInterviews: 4,
+    responseRate: 20,
+  });
+
+  // Load goals from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem("hireall-goals");
+    if (saved) {
+      try {
+        setGoals(JSON.parse(saved));
+      } catch (e) {
+        console.error("Failed to parse saved goals");
+      }
+    }
+  }, []);
 
   // Ensure applications is always an array
   const safeApplications = Array.isArray(applications) ? applications : [];
@@ -280,7 +307,7 @@ export function DashboardAnalytics({
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium">Weekly Applications</span>
                   <span className="text-sm text-muted-foreground">
-                    {weeklyApplications} / {ANALYTICS_GOALS.weeklyApplications}
+                    {weeklyApplications} / {goals.weeklyApplications}
                   </span>
                 </div>
                 <div className="w-full bg-muted rounded-full h-2">
@@ -289,13 +316,13 @@ export function DashboardAnalytics({
                     style={{
                       width: `${Math.min(
                         100,
-                        (weeklyApplications / ANALYTICS_GOALS.weeklyApplications) * 100
+                        (weeklyApplications / goals.weeklyApplications) * 100
                       )}%`,
                     }}
                   ></div>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Goal: {ANALYTICS_GOALS.weeklyApplications} applications per week
+                  Goal: {goals.weeklyApplications} applications per week
                 </p>
               </div>
 
@@ -305,7 +332,7 @@ export function DashboardAnalytics({
                   <span className="text-sm font-medium">Interviews This Month</span>
                   <span className="text-sm text-muted-foreground">
                     {safeApplications.filter((a) => a.status === "interviewing").length}{" "}
-                    / {ANALYTICS_GOALS.monthlyInterviews}
+                    / {goals.monthlyInterviews}
                   </span>
                 </div>
                 <div className="w-full bg-muted rounded-full h-2">
@@ -316,14 +343,14 @@ export function DashboardAnalytics({
                         100,
                         (safeApplications.filter((a) => a.status === "interviewing")
                           .length /
-                          ANALYTICS_GOALS.monthlyInterviews) *
+                          goals.monthlyInterviews) *
                           100
                       )}%`,
                     }}
                   ></div>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Goal: {ANALYTICS_GOALS.monthlyInterviews} interviews per month
+                  Goal: {goals.monthlyInterviews} interviews per month
                 </p>
               </div>
 
@@ -347,20 +374,32 @@ export function DashboardAnalytics({
                   ></div>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Goal: {ANALYTICS_GOALS.responseRate}% response rate
+                  Goal: {goals.responseRate}% response rate
                 </p>
               </div>
 
               {/* Quick Actions */}
               <div className="pt-4 border-t">
                 <div className="flex flex-wrap gap-2">
-                  <Button size="sm" variant="outline">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => setShowGoalsModal(true)}
+                  >
                     Set Custom Goals
                   </Button>
-                  <Button size="sm" variant="outline">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => setShowProgressModal(true)}
+                  >
                     View Progress Report
                   </Button>
-                  <Button size="sm" variant="outline">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => setShowWeeklySummaryModal(true)}
+                  >
                     Weekly Summary
                   </Button>
                 </div>
@@ -369,6 +408,25 @@ export function DashboardAnalytics({
           </CardContent>
         </Card>
       </motion.div>
+
+      {/* Modals */}
+      <GoalsSettingsModal
+        open={showGoalsModal}
+        onOpenChange={setShowGoalsModal}
+        currentGoals={goals}
+        onSaveGoals={setGoals}
+      />
+      <ProgressReportModal
+        open={showProgressModal}
+        onOpenChange={setShowProgressModal}
+        applications={safeApplications}
+        goals={goals}
+      />
+      <WeeklySummaryModal
+        open={showWeeklySummaryModal}
+        onOpenChange={setShowWeeklySummaryModal}
+        applications={safeApplications}
+      />
     </FeatureGate>
   );
 }

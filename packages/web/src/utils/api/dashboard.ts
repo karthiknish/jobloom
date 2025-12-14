@@ -72,315 +72,115 @@ export interface JobStats {
 }
 
 export const dashboardApi = {
-  // Returns a user document; creates one if it doesn't exist
+  // Returns a user record based on Firebase Auth - simplified to just use auth data directly
+  // No need to query Firestore user doc for dashboard purposes
   getUserByFirebaseUid: async (
     uid: string
-  ): Promise<
-    | {
-        _id: string;
-        email?: string;
-        name?: string;
-        createdAt: number;
-      }
-    | never
-  > => {
-    const db = getDb();
-    if (!db) throw new Error("Firestore not initialized");
-    const userRef = doc(db, "users", uid);
-
-    type FireUser = { email?: string; name?: string; createdAt?: number };
-
-    const mapSnapshot = (snap: { exists: () => boolean; id: string; data: () => FireUser }) => {
-      if (!snap.exists()) return null;
-      const data = snap.data() as FireUser;
-      return {
-        _id: snap.id,
-        email: data.email,
-        name: data.name,
-        createdAt:
-          typeof data.createdAt === "number" ? data.createdAt : Date.now(),
-      };
-    };
-
-    const shouldFallbackToAdminApi = (error: any) => {
-      const code = typeof error?.code === "string" ? error.code.toLowerCase() : "";
-      const message = typeof error?.message === "string" ? error.message.toLowerCase() : "";
-      const isPermissionError = (
-        code.includes("permission") ||
-        code.includes("unauth") ||
-        code.includes("permission-denied") ||
-        code.includes("unauthenticated") ||
-        code.includes("forbidden") ||
-        message.includes("permission") ||
-        message.includes("unauthorized") ||
-        message.includes("insufficient permissions") ||
-        message.includes("missing or insufficient permissions") ||
-        message.includes("permission denied") ||
-        message.includes("access denied")
-      );
-
-      if (isPermissionError) {
-        console.error("Permission error detected in dashboard API:", {
-          code,
-          message,
-          error
-        });
-      }
-
-      return isPermissionError;
-    };
-
-    const tryLoadUser = async () => {
-      const snap = await getDoc(userRef);
-      return mapSnapshot(snap as unknown as { exists: () => boolean; id: string; data: () => FireUser });
-    };
-
-    const ensureViaAdminApi = async () => {
-      const auth = getAuthClient();
-      const currentUser = auth?.currentUser;
-      if (!currentUser) {
-        throw new Error("Not authenticated");
-      }
-      const token = await currentUser.getIdToken();
-      const response = await fetch("/api/cv/user", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (!response.ok) {
-        const bodyText = await response.text().catch(() => "");
-        const errorMessage = bodyText
-          ? `Failed to ensure user record: ${response.status} ${bodyText}`
-          : `Failed to ensure user record: ${response.status}`;
-
-        console.error("Dashboard API fallback error:", {
-          status: response.status,
-          statusText: response.statusText,
-          bodyText,
-          userId: currentUser.uid
-        });
-
-        throw new Error(errorMessage);
-      }
-
-      try {
-        const ensured = await tryLoadUser();
-        if (ensured) {
-          return ensured;
-        }
-      } catch (fallbackReadError) {
-        const fallbackError = fallbackReadError as { code?: string; message?: string };
-        console.error("Dashboard user fallback read failed:", {
-          error: fallbackError,
-          userId: currentUser.uid,
-          errorCode: fallbackError?.code,
-          errorMessage: fallbackError?.message
-        });
-
-        // If fallback read also fails with permission error, re-throw it
-        if (shouldFallbackToAdminApi(fallbackError)) {
-          throw fallbackError;
-        }
-      }
-
-      return {
-        _id: currentUser.uid,
-        email: currentUser.email ?? undefined,
-        name: currentUser.displayName ?? undefined,
-        createdAt: Date.now(),
-      };
-    };
-
-    try {
-      const existing = await tryLoadUser();
-      if (existing) {
-        return existing;
-      }
-    } catch (error) {
-      if (!shouldFallbackToAdminApi(error)) {
-        throw error;
-      }
-      return ensureViaAdminApi();
-    }
-
+  ): Promise<{
+    _id: string;
+    email?: string;
+    name?: string;
+    createdAt: number;
+  }> => {
+    // Simply return the uid as the _id - no Firestore lookup needed
+    // The applications/jobs APIs already use the Firebase UID as the userId
     const auth = getAuthClient();
     const currentUser = auth?.currentUser;
-    const payload: Partial<FireUser> & {
-      isAdmin: boolean;
-      provider: string | null;
-      createdAt: number;
-    } = {
-      email: currentUser?.email ?? undefined,
-      name: currentUser?.displayName ?? undefined,
-      createdAt: Date.now(),
-      isAdmin: false,
-      provider: currentUser?.providerData?.[0]?.providerId ?? null,
+    
+    console.log('[Dashboard] getUserByFirebaseUid called with uid:', uid);
+    
+    if (!currentUser || currentUser.uid !== uid) {
+      throw new Error("Not authenticated or UID mismatch");
+    }
+    
+    // Return user info from Firebase Auth directly
+    const userRecord = {
+      _id: uid, // This is the Firebase UID - same as what's stored in jobs/applications
+      email: currentUser.email ?? undefined,
+      name: currentUser.displayName ?? undefined,
+      createdAt: Date.now(), // We don't need the actual createdAt for dashboard purposes
     };
-
-    try {
-      await updateDoc(userRef, payload);
-    } catch (error) {
-      if (!shouldFallbackToAdminApi(error)) {
-        // Ignore failures due to missing doc; we'll attempt setDoc next
-        const err = error as { code?: string; message?: string } | undefined;
-        if (err?.code !== "not-found" && err?.message) {
-          console.warn("Dashboard user updateDoc warning", err?.message, err);
-        }
-      } else {
-        return ensureViaAdminApi();
-      }
-    }
-
-    try {
-      const { setDoc } = await import("firebase/firestore");
-      await setDoc(userRef, payload, { merge: true });
-    } catch (error) {
-      if (shouldFallbackToAdminApi(error)) {
-        return ensureViaAdminApi();
-      }
-      throw error;
-    }
-
-    try {
-      const created = await tryLoadUser();
-      if (created) {
-        return created;
-      }
-    } catch (error) {
-      if (shouldFallbackToAdminApi(error)) {
-        return ensureViaAdminApi();
-      }
-      throw error;
-    }
-
-    return {
-      _id: uid,
-      email: payload.email ?? undefined,
-      name: payload.name ?? undefined,
-      createdAt: payload.createdAt,
-    };
+    
+    console.log('[Dashboard] Returning userRecord:', userRecord);
+    return userRecord;
   },
 
   // No Clerk-specific helpers; use getUserByFirebaseUid
 
   getApplicationsByUser: async (userId: string): Promise<Application[]> => {
-    const db = getDb();
-    if (!db) throw new Error("Firestore not initialized");
-    const q = query(
-      collection(db, "applications"),
-      where("userId", "==", userId)
-    );
-    const snap = await getDocs(q);
-    type FireApp = {
-      jobId: string;
-      userId: string;
-      status: string;
-      appliedDate?: number;
-      notes?: string;
-      interviewDates?: number[];
-      followUpDate?: number;
-      createdAt?: number;
-      updatedAt?: number;
-      order?: number;
-    };
-    const apps: Application[] = [];
-    for (const docSnap of snap.docs) {
-      const data = docSnap.data() as FireApp;
-      const app: Application = {
-        _id: docSnap.id,
-        jobId: data.jobId,
-        userId: data.userId,
-        status: data.status,
-        appliedDate: data.appliedDate ?? undefined,
-        notes: data.notes ?? undefined,
-        interviewDates: Array.isArray(data.interviewDates)
-          ? data.interviewDates
-          : undefined,
-        followUpDate: data.followUpDate ?? undefined,
-        createdAt: data.createdAt ?? Date.now(),
-        updatedAt: data.updatedAt ?? Date.now(),
-        order: typeof data.order === "number" ? data.order : undefined,
-      };
-      // Join with job if present
-      if (data.jobId) {
-        try {
-          const jobRef = doc(db, "jobs", data.jobId);
-          const jobSnap = await getDoc(jobRef);
-          if (jobSnap.exists()) {
-            type FireJob = {
-              title: string;
-              company: string;
-              location: string;
-              url?: string;
-              description?: string;
-              salary?: string;
-              salaryRange?: {
-                min?: number;
-                max?: number;
-                currency?: string;
-              } | null;
-              skills?: string[];
-              requirements?: string[];
-              benefits?: string[];
-              jobType?: string;
-              experienceLevel?: string;
-              remoteWork?: boolean;
-              companySize?: string;
-              industry?: string;
-              postedDate?: string;
-              applicationDeadline?: string;
-              isSponsored?: boolean;
-              isRecruitmentAgency?: boolean;
-              sponsorshipType?: string;
-              source?: string;
-              dateFound?: number;
-              createdAt?: number;
-              userId: string;
-            };
-            const j = jobSnap.data() as FireJob;
-            app.job = {
-              _id: jobSnap.id,
-              title: j.title,
-              company: j.company,
-              location: j.location,
-              url: j.url,
-              description: j.description,
-              salary: j.salary,
-              salaryRange: j.salaryRange,
-              skills: j.skills,
-              requirements: j.requirements,
-              benefits: j.benefits,
-              jobType: j.jobType,
-              experienceLevel: j.experienceLevel,
-              remoteWork: j.remoteWork,
-              companySize: j.companySize,
-              industry: j.industry,
-              postedDate: j.postedDate,
-              applicationDeadline: j.applicationDeadline,
-              isSponsored: !!j.isSponsored,
-              isRecruitmentAgency: j.isRecruitmentAgency ?? undefined,
-              sponsorshipType: j.sponsorshipType,
-              source: j.source ?? "manual",
-              dateFound: j.dateFound ?? j.createdAt ?? Date.now(),
-              userId: j.userId,
-            };
-          }
-        } catch {
-          // Silently ignore job fetch failures - the application still works without job data
-        }
-      }
-      apps.push(app);
+    // Use server API to fetch applications - this bypasses client-side security rules
+    // and uses Admin SDK on the server side
+    console.log('[Dashboard] getApplicationsByUser called with userId:', userId);
+    
+    const auth = getAuthClient();
+    const currentUser = auth?.currentUser;
+    if (!currentUser) {
+      console.error('[Dashboard] Not authenticated - no currentUser');
+      throw new Error("Not authenticated");
     }
-    // Sort by status then order then updatedAt desc as a general default
-    apps.sort((a, b) => {
-      if (a.status !== b.status) return a.status.localeCompare(b.status);
-      const ao = a.order ?? 0;
-      const bo = b.order ?? 0;
-      if (ao !== bo) return ao - bo;
-      return (b.updatedAt ?? 0) - (a.updatedAt ?? 0);
+    
+    console.log('[Dashboard] Current user uid:', currentUser.uid);
+    
+    const token = await currentUser.getIdToken();
+    console.log('[Dashboard] Fetching applications from API...');
+    
+    const response = await fetch(`/api/app/applications/user/${userId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     });
-    return apps;
+    
+    console.log('[Dashboard] API response status:', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => "");
+      console.error('[Dashboard] API error:', response.status, errorText);
+      throw new Error(`Failed to fetch applications: ${response.status} ${errorText}`);
+    }
+    
+    const applications = await response.json();
+    console.log('[Dashboard] Applications received:', applications?.length || 0, applications);
+    
+    // Map response to Application type
+    return Array.isArray(applications) ? applications.map((app: any) => ({
+      _id: app._id || app.id,
+      jobId: app.jobId,
+      userId: app.userId,
+      status: app.status,
+      appliedDate: app.appliedDate ?? undefined,
+      notes: app.notes ?? undefined,
+      interviewDates: Array.isArray(app.interviewDates) ? app.interviewDates : undefined,
+      followUpDate: app.followUpDate ?? undefined,
+      createdAt: app.createdAt ?? Date.now(),
+      updatedAt: app.updatedAt ?? Date.now(),
+      order: typeof app.order === "number" ? app.order : undefined,
+      job: app.job ? {
+        _id: app.job._id || app.job.id,
+        title: app.job.title,
+        company: app.job.company,
+        location: app.job.location,
+        url: app.job.url,
+        description: app.job.description,
+        salary: app.job.salary,
+        salaryRange: app.job.salaryRange,
+        skills: app.job.skills,
+        requirements: app.job.requirements,
+        benefits: app.job.benefits,
+        jobType: app.job.jobType,
+        experienceLevel: app.job.experienceLevel,
+        remoteWork: app.job.remoteWork,
+        companySize: app.job.companySize,
+        industry: app.job.industry,
+        postedDate: app.job.postedDate,
+        applicationDeadline: app.job.applicationDeadline,
+        isSponsored: !!app.job.isSponsored,
+        isRecruitmentAgency: app.job.isRecruitmentAgency ?? undefined,
+        sponsorshipType: app.job.sponsorshipType,
+        source: app.job.source ?? "manual",
+        dateFound: app.job.dateFound ?? Date.now(),
+        userId: app.job.userId,
+      } : undefined,
+    })) : [];
   },
 
   getJobStats: async (userId: string): Promise<JobStats> => {

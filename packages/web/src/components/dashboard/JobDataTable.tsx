@@ -86,36 +86,39 @@ export function JobDataTable({
 
   const columns: ColumnDef<Application>[] = [
     {
-      accessorKey: "job.title",
+      id: "jobTitle",
+      accessorFn: (row) => row.job?.title,
       header: "Job Title",
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <Briefcase className="h-4 w-4 text-muted-foreground" />
           <div className="max-w-[200px]">
-            <div className="font-medium truncate">{row.getValue("job.title")}</div>
+            <div className="font-medium truncate">{row.original.job?.title || "Untitled"}</div>
             <div className="text-sm text-muted-foreground">
-              {row.original.job?.company}
+              {row.original.job?.company || "Unknown company"}
             </div>
           </div>
         </div>
       ),
     },
     {
-      accessorKey: "job.location",
+      id: "jobLocation",
+      accessorFn: (row) => row.job?.location,
       header: "Location",
       cell: ({ row }) => (
         <div className="flex items-center gap-1">
           <MapPin className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm">{row.getValue("job.location")}</span>
+          <span className="text-sm">{row.original.job?.location || "Not specified"}</span>
         </div>
       ),
     },
     {
-      accessorKey: "job.salary",
+      id: "jobSalary",
+      accessorFn: (row) => row.job?.salary,
       header: "Salary",
       cell: ({ row }) => {
         const salary = row.original.job?.salary;
-        if (!salary) return null;
+        if (!salary) return <span className="text-muted-foreground text-sm">-</span>;
         return (
           <div className="flex items-center gap-1">
             <DollarSign className="h-4 w-4 text-muted-foreground" />
@@ -125,16 +128,24 @@ export function JobDataTable({
       },
     },
     {
-      accessorKey: "job.dateFound",
+      id: "dateFound",
+      accessorFn: (row) => row.job?.dateFound,
       header: "Date Applied",
       cell: ({ row }) => {
         const date = row.original.job?.dateFound;
-        if (!date) return null;
+        if (!date) return <span className="text-muted-foreground text-sm">-</span>;
+        
+        // Validate the date before formatting
+        const dateObj = new Date(date);
+        if (isNaN(dateObj.getTime())) {
+          return <span className="text-muted-foreground text-sm">-</span>;
+        }
+        
         return (
           <div className="flex items-center gap-1">
             <Calendar className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm">
-              {format(new Date(date), "MMM d, yyyy")}
+              {format(dateObj, "MMM d, yyyy")}
             </span>
           </div>
         );
@@ -144,7 +155,7 @@ export function JobDataTable({
       accessorKey: "status",
       header: "Status",
       cell: ({ row }) => {
-        const status = row.getValue("status") as string;
+        const status = row.original.status || "unknown";
         return (
           <div className="flex items-center gap-2">
             {getStatusIcon(status)}
@@ -160,7 +171,8 @@ export function JobDataTable({
       },
     },
     {
-      accessorKey: "job.isSponsored",
+      id: "sponsorship",
+      accessorFn: (row) => row.job?.isSponsored,
       header: "Sponsorship",
       cell: ({ row }) => {
         const isSponsored = row.original.job?.isSponsored;
@@ -217,7 +229,7 @@ export function JobDataTable({
       <DataTable
         columns={columns}
         data={filteredApplications}
-        searchKey="job.title"
+        searchKey="jobTitle"
         searchPlaceholder="Search jobs by title, company, or location..."
       />
       

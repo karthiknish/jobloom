@@ -195,8 +195,11 @@ export class EnhancedJobBoardManager {
     try {
       const userId = await this.getUserId();
       if (!userId) {
+        console.error('[HireAll] User not authenticated - no userId in storage. Please sign in via the extension popup.');
         throw new Error("User not authenticated");
       }
+      
+      console.log('[HireAll] User authenticated:', { userId });
 
       // Check if job already exists
       const existingJob = await this.checkJobExists(jobData.url, userId);
@@ -245,14 +248,22 @@ export class EnhancedJobBoardManager {
       };
 
       // Create job first
+      console.log('[HireAll] Creating job via API:', {
+        company: jobPayload.company,
+        title: jobPayload.title,
+        userId: userId
+      });
+      
       const jobResponse = await post<{ id: string }>("/api/app/jobs", jobPayload);
       const createdJobId = jobResponse.id;
+      
+      console.log('[HireAll] Job created successfully:', { id: createdJobId });
 
       if (!createdJobId) {
         throw new Error("Failed to create job entry");
       }
 
-      // Create application entry (fire-and-forget for speed, server handles errors)
+      // Create application entry - MUST await to ensure it's created
       const applicationPayload = {
         jobId: createdJobId,
         userId: userId,
@@ -261,9 +272,19 @@ export class EnhancedJobBoardManager {
         notes: this.generateJobNotes(jobData)
       };
 
-      // Don't await - let it complete in background
-      post<{ id: string }>("/api/app/applications", applicationPayload)
-        .catch(err => console.warn("Application creation failed (non-blocking):", err));
+      console.log('[HireAll] Creating application via API:', {
+        jobId: createdJobId,
+        userId: userId,
+        status: status
+      });
+      
+      try {
+        const appResponse = await post<{ id: string }>("/api/app/applications", applicationPayload);
+        console.log('[HireAll] Application created successfully:', { id: appResponse.id });
+      } catch (appError) {
+        console.error('[HireAll] Application creation failed:', appError);
+        // Still continue - job was created, user can retry application
+      }
 
       // Create job board entry
       const jobBoardEntry: JobBoardEntry = {

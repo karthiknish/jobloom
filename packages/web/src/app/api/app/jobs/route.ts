@@ -265,6 +265,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create job object with comprehensive LinkedIn data
+    const now = Date.now();
     const jobDataToCreate = {
       title: jobData.title.trim(),
       company: jobData.company.trim(),
@@ -288,6 +289,7 @@ export async function POST(request: NextRequest) {
       sponsorshipType: jobData.sponsorshipType?.trim() || '',
       source: jobData.source?.trim() || 'extension',
       userId: jobData.userId,
+      dateFound: typeof jobData.dateFound === 'number' ? jobData.dateFound : now,
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     };

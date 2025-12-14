@@ -31,9 +31,9 @@ export function filterApplications(
     const term = searchTerm.toLowerCase();
     filtered = filtered.filter(
       (app) =>
-        app.job?.title.toLowerCase().includes(term) ||
-        app.job?.company.toLowerCase().includes(term) ||
-        app.job?.location.toLowerCase().includes(term)
+        (app.job?.title?.toLowerCase()?.includes(term) ?? false) ||
+        (app.job?.company?.toLowerCase()?.includes(term) ?? false) ||
+        (app.job?.location?.toLowerCase()?.includes(term) ?? false)
     );
   }
 

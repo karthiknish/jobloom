@@ -151,9 +151,9 @@ export function JobList({
     const filtered = applications.filter((application) => {
       const matchesSearch =
         searchQuery === "" ||
-        application.job?.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        application.job?.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        application.job?.location.toLowerCase().includes(searchQuery.toLowerCase());
+        (application.job?.title?.toLowerCase()?.includes(searchQuery.toLowerCase()) ?? false) ||
+        (application.job?.company?.toLowerCase()?.includes(searchQuery.toLowerCase()) ?? false) ||
+        (application.job?.location?.toLowerCase()?.includes(searchQuery.toLowerCase()) ?? false);
 
       const matchesStatus =
         selectedStatus === "all" || application.status === selectedStatus;

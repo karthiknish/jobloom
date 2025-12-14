@@ -116,6 +116,9 @@ export function ExtensionIntegration({ userId }: ExtensionIntegrationProps) {
   // Send user ID to extension with better error handling
   useEffect(() => {
     if (typeof window !== 'undefined' && userId) {
+      let retryCount = 0;
+      const MAX_RETRIES = 3;
+      
       const sendAuthToExtension = async () => {
         try {
           // Get cached auth token (don't force refresh to avoid quota issues)
@@ -155,13 +158,11 @@ export function ExtensionIntegration({ userId }: ExtensionIntegrationProps) {
             console.warn('[ExtensionIntegration] No auth token available for extension');
           }
 
-          // Set a timeout to retry if extension doesn't respond
-          setTimeout(() => {
-            if (!isExtensionInstalled) {
-              console.log('Extension not detected, retrying auth sync...');
-              sendAuthToExtension();
-            }
-          }, 2000);
+          // Only retry a limited number of times (don't spam console)
+          if (!isExtensionInstalled && retryCount < MAX_RETRIES) {
+            retryCount++;
+            setTimeout(sendAuthToExtension, 2000);
+          }
         } catch (error) {
           console.error('Failed to send auth to extension:', error);
         }

@@ -191,6 +191,12 @@ export function useApiQuery<T>(
   // Generate a cache key from the provided key or deps
   const cacheKey = key || JSON.stringify(deps);
 
+  // Store queryFn in a ref so we always have the latest version
+  const queryFnRef = useRef(queryFn);
+  useEffect(() => {
+    queryFnRef.current = queryFn;
+  }, [queryFn]);
+
   const [data, setData] = useState<T | undefined>(() => {
     // Initialize from cache if available and fresh
     const cached = queryCache.get(cacheKey);
@@ -207,7 +213,6 @@ export function useApiQuery<T>(
   const [error, setError] = useState<EnhancedApiError | null>(null);
   const [currentRetryCount, setCurrentRetryCount] = useState(0);
   const isRateLimitedRef = useRef(false);
-  const lastFetchTimeRef = useRef(0);
   const isFetchingRef = useRef(false);
 
   const fetchData = useCallback(async (isRetry = false, forceRefresh = false) => {
@@ -230,19 +235,13 @@ export function useApiQuery<T>(
       return;
     }
 
-    // Debounce rapid requests (minimum 200ms between requests)
-    const now = Date.now();
-    if (now - lastFetchTimeRef.current < 200) {
-      return;
-    }
-    lastFetchTimeRef.current = now;
     isFetchingRef.current = true;
 
     try {
       setLoading(true);
       setError(null);
 
-      const result = await queryFn();
+      const result = await queryFnRef.current();
       setData(result);
       setCurrentRetryCount(0);
       
@@ -301,7 +300,7 @@ export function useApiQuery<T>(
       setLoading(false);
       isFetchingRef.current = false;
     }
-  }, [queryFn, enabled, shouldRetry, currentRetryCount, maxRetries, retryDelayMs, onSuccess, onError]);
+  }, [enabled, cacheKey, staleTime, shouldRetry, currentRetryCount, maxRetries, retryDelayMs, onSuccess, onError, key]);
 
   useEffect(() => {
     if (!enabled) {
@@ -316,8 +315,7 @@ export function useApiQuery<T>(
     return () => {
       isMounted = false;
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, cacheKey, ...deps]);
+  }, [enabled, cacheKey, fetchData]);
 
   const refetch = useCallback(() => {
     setCurrentRetryCount(0);

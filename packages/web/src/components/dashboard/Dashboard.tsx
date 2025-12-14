@@ -10,6 +10,7 @@ import { ApplicationForm } from "@/components/dashboard/ApplicationForm";
 import { JobForm } from "@/components/dashboard/JobForm";
 
 import { JobImportModal } from "@/components/dashboard/JobImportModal";
+import { JobDetailsModal } from "@/components/dashboard/JobDetailsModal";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -34,6 +35,7 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { DashboardAnalytics } from "@/components/dashboard/DashboardAnalytics";
 import { DashboardEmptyState } from "@/components/dashboard/DashboardEmptyState";
 import { DashboardJobsView } from "@/components/dashboard/DashboardJobsView";
+import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeletons";
 import { Application, DashboardView, BoardMode } from "@/types/dashboard";
 import { FileText, Target, TrendingUp, Calendar, Briefcase, Sparkles } from "lucide-react";
 
@@ -56,7 +58,7 @@ export function Dashboard() {
   const { dashboardLayout, handleLayoutChange } = useDashboardLayout();
 
   // Fetch user record
-  const { data: userRecord } = useApiQuery(
+  const { data: userRecord, loading: userRecordLoading, error: userRecordError } = useApiQuery(
     () =>
       user && user.uid
         ? dashboardApi.getUserByFirebaseUid(user.uid)
@@ -65,12 +67,28 @@ export function Dashboard() {
     { enabled: !!user?.uid }
   );
 
+  // Debug logging
+  console.log('[Dashboard] Auth state:', { user: user?.uid, loading, userRecord, userRecordLoading, userRecordError });
+
   // Fetch applications
-  const { data: applications, refetch: refetchApplications } = useApiQuery(
+  const { data: applications, refetch: refetchApplications, loading: applicationsLoading, error: applicationsError } = useApiQuery(
     () => dashboardApi.getApplicationsByUser(userRecord!._id),
     [userRecord?._id],
-    { enabled: !!userRecord }
+    { enabled: !!userRecord, staleTime: 0 }, // Disable cache for debugging
+    `applications-${userRecord?._id}` // Unique key
   );
+
+  // Debug logging
+  console.log('[Dashboard] Applications state:', { 
+    userRecordId: userRecord?._id,
+    enabled: !!userRecord,
+    applications,
+    applicationsType: Array.isArray(applications) ? 'array' : typeof applications,
+    applicationsLength: Array.isArray(applications) ? applications.length : 'N/A',
+    applicationsKeys: applications && typeof applications === 'object' ? Object.keys(applications) : 'N/A',
+    applicationsLoading, 
+    applicationsError 
+  });
 
   // Fetch job stats
   const { data: jobStats, refetch: refetchJobStats } = useApiQuery(
@@ -115,28 +133,11 @@ export function Dashboard() {
     onRefetchApplications: refetchApplications,
   });
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background mt-14">
-        <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-          <div className="space-y-8">
-            <div className="h-8 bg-muted animate-pulse rounded w-1/4"></div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[...Array(4)].map((_, i) => (
-                <div
-                  key={i}
-                  className="h-32 bg-muted animate-pulse rounded-lg shadow-sm"
-                ></div>
-              ))}
-            </div>
-            <div className="space-y-6">
-              <div className="h-64 bg-muted animate-pulse rounded-lg shadow-sm"></div>
-              <div className="h-64 bg-muted animate-pulse rounded-lg shadow-sm"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+  // Show skeleton during auth loading OR data loading
+  const isDataLoading = loading || userRecordLoading || (!!userRecord && applicationsLoading);
+  
+  if (isDataLoading) {
+    return <DashboardSkeleton />;
   }
 
   if (!user) {
@@ -234,9 +235,9 @@ export function Dashboard() {
                 </Button>
                 <Button 
                   onClick={() => window.location.href = '/career-tools'}
-                  variant="outline" 
+                  variant="ghost" 
                   size="sm"
-                  className="text-primary-foreground border-primary-foreground/30 hover:bg-primary-foreground/10"
+                  className="bg-white/20 text-white border border-white/30 hover:bg-white/30"
                 >
                   Optimize CV
                 </Button>
@@ -483,112 +484,15 @@ export function Dashboard() {
           />
         )}
 
-        <Dialog
+        <JobDetailsModal
+          application={selectedApplication}
           open={!!selectedApplication}
-          onOpenChange={() => setSelectedApplication(null)}
-        >
-          <DialogContent className="max-w-2xl md:max-w-2xl max-h-[90vh] w-[95vw] md:w-full overflow-y-auto">
-            {selectedApplication && (
-              <>
-                <DialogHeader>
-                  <DialogTitle>{selectedApplication.job?.title}</DialogTitle>
-                  <DialogDescription>
-                    View application details
-                  </DialogDescription>
-                </DialogHeader>
-
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Company</p>
-                      <p className="font-medium">
-                        {selectedApplication.job?.company}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Location</p>
-                      <p className="font-medium">
-                        {selectedApplication.job?.location}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Status</p>
-                      <p className="font-medium capitalize">
-                        {selectedApplication.status}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">
-                        Date Found
-                      </p>
-                      <p className="font-medium">
-                        {new Date(
-                          selectedApplication.job?.dateFound || 0
-                        ).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-
-                  {selectedApplication.appliedDate && (
-                    <div>
-                      <p className="text-sm text-muted-foreground">
-                        Applied Date
-                      </p>
-                      <p className="font-medium">
-                        {new Date(
-                          selectedApplication.appliedDate
-                        ).toLocaleDateString()}
-                      </p>
-                    </div>
-                  )}
-
-                  {selectedApplication.interviewDates &&
-                    selectedApplication.interviewDates.length > 0 && (
-                      <div>
-                        <p className="text-sm text-muted-foreground">
-                          Interview Dates
-                        </p>
-                        <ul className="list-disc list-inside">
-                          {selectedApplication.interviewDates.map(
-                            (date, index) => (
-                              <li key={index} className="font-medium">
-                                {new Date(date).toLocaleDateString()}
-                              </li>
-                            )
-                          )}
-                        </ul>
-                      </div>
-                    )}
-
-                  {selectedApplication.notes && (
-                    <div>
-                      <p className="text-sm text-muted-foreground">Notes</p>
-                      <p className="font-medium">{selectedApplication.notes}</p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="mt-6 flex justify-end space-x-3">
-                  <Button
-                    variant="default"
-                    onClick={() => {
-                      setSelectedApplication(null);
-                      handleEditApplication(selectedApplication);
-                    }}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => setSelectedApplication(null)}
-                  >
-                    Close
-                  </Button>
-                </div>
-              </>
-            )}
-          </DialogContent>
-        </Dialog>
+          onOpenChange={(open) => !open && setSelectedApplication(null)}
+          onEdit={(app) => {
+            setSelectedApplication(null);
+            handleEditApplication(app);
+          }}
+        />
       </div>
       </div>
     </div>

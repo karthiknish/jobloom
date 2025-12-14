@@ -79,8 +79,8 @@ export function JobImportModal({
   const [importMethod, setImportMethod] = useState<"extension" | "csv" | "api">("extension");
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [apiSource, setApiSource] = useState<
-    "linkedin" | "indeed" | "glassdoor" | "custom"
-  >("linkedin");
+    "indeed" | "glassdoor" | "custom"
+  >("indeed");
   const [searchQuery, setSearchQuery] = useState("");
   const [location, setLocation] = useState("");
   const [isImporting, setIsImporting] = useState(false);
@@ -319,7 +319,7 @@ export function JobImportModal({
     if (apiSource === "custom") {
       showWarning(
         "Select a job board",
-        "Choose LinkedIn, Indeed, or Glassdoor before importing."
+        "Choose Indeed or Glassdoor before importing."
       );
       return;
     }
@@ -386,7 +386,7 @@ export function JobImportModal({
             Import Jobs to Dashboard
           </DialogTitle>
           <DialogDescription className="text-muted-foreground mt-1">
-            Add jobs from your browser extension, CSV file, or job boards
+            Add jobs from your browser extension or CSV file
           </DialogDescription>
         </DialogHeader>
 
@@ -463,39 +463,6 @@ export function JobImportModal({
                     importMethod === "csv" ? "text-emerald-700" : "text-foreground"
                   }`}>CSV File</span>
                   <span className="text-xs text-muted-foreground text-center">Spreadsheet</span>
-                </div>
-              </motion.button>
-
-              {/* API Import */}
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setImportMethod("api")}
-                className={`relative p-4 rounded-xl border-2 motion-control text-left ${
-                  importMethod === "api"
-                    ? "border-blue-500 bg-blue-50 shadow-md"
-                    : "border-border hover:border-blue-200 hover:bg-blue-50/50"
-                }`}
-              >
-                {importMethod === "api" && (
-                  <div className="absolute -top-1 -right-1">
-                    <CheckCircle className="h-5 w-5 text-blue-600 fill-white" />
-                  </div>
-                )}
-                <div className="flex flex-col items-center gap-2">
-                  <div className={`p-2.5 rounded-lg ${
-                    importMethod === "api"
-                      ? "bg-blue-100"
-                      : "bg-muted"
-                  }`}>
-                    <Globe className={`h-5 w-5 ${
-                      importMethod === "api" ? "text-blue-600" : "text-muted-foreground"
-                    }`} />
-                  </div>
-                  <span className={`font-medium text-sm ${
-                    importMethod === "api" ? "text-blue-700" : "text-foreground"
-                  }`}>Job Boards</span>
-                  <span className="text-xs text-muted-foreground text-center">LinkedIn, etc.</span>
                 </div>
               </motion.button>
             </div>
@@ -778,95 +745,6 @@ export function JobImportModal({
                       <>
                         <Upload className="h-4 w-4" />
                         Import CSV
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </motion.div>
-            )}
-
-            {/* API Import */}
-            {importMethod === "api" && (
-              <motion.div
-                key="api"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="space-y-4"
-              >
-                <div>
-                  <Label className="block text-sm font-medium mb-2">Job Board</Label>
-                  <Select
-                    value={apiSource}
-                    onValueChange={(value) =>
-                      setApiSource(value as "custom" | "linkedin" | "indeed" | "glassdoor")
-                    }
-                  >
-                    <SelectTrigger className="border-border">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="linkedin">LinkedIn</SelectItem>
-                      <SelectItem value="indeed">Indeed</SelectItem>
-                      <SelectItem value="glassdoor">Glassdoor</SelectItem>
-                      <SelectItem value="custom">Other (Custom)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label className="block text-sm font-medium mb-2">Search Query</Label>
-                  <Input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="e.g., software engineer, marketing manager"
-                  />
-                </div>
-
-                <div>
-                  <Label className="block text-sm font-medium mb-2">Location</Label>
-                  <Input
-                    type="text"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    placeholder="e.g., San Francisco, Remote"
-                  />
-                </div>
-
-                <div className="rounded-xl bg-amber-50 border border-amber-200 p-4">
-                  <div className="flex gap-3">
-                    <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <h3 className="text-sm font-medium text-amber-800">
-                        API Integration Note
-                      </h3>
-                      <p className="mt-1 text-xs text-amber-700">
-                        Job board API integrations require proper authentication and have rate limits. 
-                        For best results, use the browser extension to save jobs directly.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex justify-end gap-3">
-                  <Button variant="outline" onClick={onClose} disabled={isImporting}>
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={handleApiImport}
-                    disabled={isImporting}
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white gap-2"
-                  >
-                    {isImporting ? (
-                      <>
-                        <RefreshCw className="h-4 w-4 animate-spin" />
-                        Importing...
-                      </>
-                    ) : (
-                      <>
-                        <Globe className="h-4 w-4" />
-                        Search & Import
                       </>
                     )}
                   </Button>
