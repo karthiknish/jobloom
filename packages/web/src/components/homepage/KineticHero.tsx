@@ -64,7 +64,10 @@ export function KineticHero() {
                 variant="outline"
                 className="h-14 px-8 text-lg rounded-full border-2 hover:bg-muted"
               >
-                <Link href="/#how-it-works">View Demo</Link>
+                <Link href="#features" scroll={false} onClick={(e) => {
+                  e.preventDefault();
+                  document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
+                }}>View Features</Link>
               </Button>
             </div>
 
@@ -159,11 +162,24 @@ export function KineticHero() {
       </div>
 
       {/* Marquee Strip */}
-      <div className="mt-20 border-y border-border bg-muted/30 py-8">
-        <Marquee pauseOnHover className="[--duration:30s]">
-          {["Google", "Microsoft", "Amazon", "Netflix", "Meta", "Spotify", "Airbnb", "Uber"].map((company) => (
-            <div key={company} className="mx-8 text-xl font-bold text-muted-foreground/50 uppercase tracking-widest">
-              {company}
+      <div className="mt-20 border-y border-border bg-muted/30 py-6">
+        <Marquee pauseOnHover className="[--duration:40s]">
+          {[
+            { name: "Google", logo: "/logos/google.svg" },
+            { name: "Microsoft", logo: "/logos/microsoft.svg" },
+            { name: "Amazon", logo: "/logos/amazon.svg" },
+            { name: "Netflix", logo: "/logos/netflix.svg" },
+            { name: "Meta", logo: "/logos/meta.svg" },
+            { name: "Spotify", logo: "/logos/spotify.svg" },
+            { name: "Airbnb", logo: "/logos/airbnb.svg" },
+            { name: "Uber", logo: "/logos/uber.svg" },
+          ].map((company) => (
+            <div key={company.name} className="mx-6 flex items-center justify-center">
+              <img 
+                src={company.logo} 
+                alt={company.name} 
+                className="h-10 max-w-[150px] object-contain opacity-40 grayscale hover:opacity-100 hover:grayscale-0 transition-all duration-300" 
+              />
             </div>
           ))}
         </Marquee>

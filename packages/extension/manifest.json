@@ -1,8 +1,10 @@
 {
   "manifest_version": 3,
   "name": "HireAll - Job Tracker",
+  "short_name": "HireAll",
   "version": "1.0.2",
-  "description": "LinkedIn job sponsored highlighting and application tracking",
+  "description": "Track job applications, detect sponsored LinkedIn listings, analyze UK visa sponsorship eligibility, and sync your job search across devices.",
+  "homepage_url": "https://hireall.app",
   "permissions": ["activeTab", "storage", "tabs", "identity"],
   "oauth2": {
     "client_id": "435727249201-m7shub7jknip68ajqh98c9vddq2m9qj5.apps.googleusercontent.com",

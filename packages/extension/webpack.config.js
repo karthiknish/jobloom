@@ -128,7 +128,37 @@ module.exports = (env, argv) => {
         }),
         new CopyPlugin({
           patterns: [
-            { from: "manifest.json", to: "manifest.json" },
+            { 
+              from: "manifest.json", 
+              to: "manifest.json",
+              transform: (content) => {
+                if (!isProduction) return content;
+                
+                // For production builds, remove localhost URLs
+                const manifest = JSON.parse(content.toString());
+                
+                // Filter out localhost from host_permissions
+                if (manifest.host_permissions) {
+                  manifest.host_permissions = manifest.host_permissions.filter(
+                    url => !url.includes('localhost') && !url.includes('127.0.0.1')
+                  );
+                }
+                
+                // Filter out localhost from content_scripts matches
+                if (manifest.content_scripts) {
+                  manifest.content_scripts = manifest.content_scripts
+                    .map(script => ({
+                      ...script,
+                      matches: script.matches.filter(
+                        url => !url.includes('localhost') && !url.includes('127.0.0.1')
+                      )
+                    }))
+                    .filter(script => script.matches.length > 0);
+                }
+                
+                return JSON.stringify(manifest, null, 2);
+              }
+            },
             { from: "src/popup.html", to: "popup.html" },
             { from: "src/popup.css", to: "popup.css" },
             { from: "src/styles", to: "styles", noErrorOnMissing: true },
