@@ -218,17 +218,21 @@ class SalaryExtractor {
 
 // Main enhanced job parser
 export class EnhancedJobParser {
-  // Enhanced job extraction - LinkedIn only
+  // Enhanced job extraction - LinkedIn and Indeed
   static async extractJobFromPage(document: Document, url: string): Promise<EnhancedJobData | null> {
     const domain = new URL(url).hostname.toLowerCase();
 
-    // Only support LinkedIn
-    if (!domain.includes('linkedin.com')) {
-      console.warn('HireAll: Job extraction only supports LinkedIn. Current domain:', domain);
+    let jobData: Partial<EnhancedJobData> | null = null;
+
+    if (domain.includes('linkedin.com')) {
+      jobData = this.extractFromLinkedIn(document, url);
+    } else if (domain.includes('indeed.com') || domain.includes('indeed.co.uk')) {
+      jobData = this.extractFromIndeed(document, url);
+    } else {
+      console.warn('HireAll: Job extraction only supports LinkedIn and Indeed. Current domain:', domain);
       return null;
     }
 
-    const jobData = this.extractFromLinkedIn(document, url);
     if (!jobData) return null;
 
     // Enhance the extracted data
@@ -240,7 +244,7 @@ export class EnhancedJobParser {
    */
   static isSupportedSite(url: string): boolean {
     const domain = new URL(url).hostname.toLowerCase();
-    return domain.includes('linkedin.com');
+    return domain.includes('linkedin.com') || domain.includes('indeed.com') || domain.includes('indeed.co.uk');
   }
 
   /**
@@ -248,9 +252,15 @@ export class EnhancedJobParser {
    */
   static getSupportMessage(url: string): string {
     if (this.isSupportedSite(url)) {
-      return 'LinkedIn is supported for job extraction.';
+      const domain = new URL(url).hostname.toLowerCase();
+      if (domain.includes('linkedin.com')) {
+        return 'LinkedIn is supported for job extraction.';
+      }
+      if (domain.includes('indeed')) {
+        return 'Indeed is supported for job extraction.';
+      }
     }
-    return 'HireAll job extraction only works on LinkedIn. Please navigate to LinkedIn Jobs to use this feature.';
+    return 'HireAll job extraction only works on LinkedIn and Indeed. Please navigate to a job listing on these sites to use this feature.';
   }
 
   private static extractFromLinkedIn(document: Document, url: string): Partial<EnhancedJobData> | null {
@@ -411,11 +421,103 @@ export class EnhancedJobParser {
   }
   private static extractFromIndeed(document: Document, url: string): Partial<EnhancedJobData> | null {
     try {
-      const title = document.querySelector('#jobTitleTextContainer, h1, .jobsearch-JobInfoHeader-title, [data-testid="job-title"]')?.textContent?.trim() || '';
-      const company = document.querySelector('[data-testid="inlineHeader-companyName"], .companyName, [data-company-name="true"]')?.textContent?.trim() || '';
-      const location = document.querySelector('[data-testid="job-location"], .jobLocation')?.textContent?.trim() || '';
-      const description = document.querySelector('#jobDescriptionText, .job-snippet, [id="jobDescriptionText"]')?.innerHTML || '';
-      const salary = SalaryExtractor.extract(document.querySelector('.salary-snippet-container, .job-salary, [id="salaryInfoAndJobType"]')?.textContent || '');
+      // Try LD+JSON structured data first (most reliable for Indeed too)
+      const ldJson = this.extractLdJsonJobData(document);
+      if (ldJson) {
+        return {
+          ...ldJson,
+          url,
+          source: 'indeed',
+          dateFound: new Date().toISOString(),
+        };
+      }
+
+      // Modern Indeed selectors (2024/2025) with comprehensive fallbacks
+      const titleElement = document.querySelector(
+        'h1[data-testid="jobsearch-JobInfoHeader-title"], ' +
+        'h1.jobsearch-JobInfoHeader-title, ' +
+        '[data-testid="simpleHeader-title"], ' +
+        '.jobsearch-JobInfoHeader-title-container h1, ' +
+        'h1.icl-u-xs-mb--xs, ' +
+        'h1'
+      );
+      const title = titleElement?.textContent?.trim() || '';
+
+      const companyElement = document.querySelector(
+        '[data-testid="inlineHeader-companyName"], ' +
+        '[data-testid="simpleHeader-companyName"], ' +
+        '.jobsearch-InlineCompanyRating-companyHeader a, ' +
+        '.jobsearch-CompanyInfoContainer a, ' +
+        '.companyName, ' +
+        '[data-company-name="true"], ' +
+        'div[data-testid="jobsearch-CompanyInfoContainer"] a'
+      );
+      const company = companyElement?.textContent?.trim() || '';
+
+      const locationElement = document.querySelector(
+        '[data-testid="job-location"], ' +
+        '[data-testid="inlineHeader-companyLocation"], ' +
+        '.jobsearch-JobInfoHeader-subtitle > div:nth-child(2), ' +
+        '.jobsearch-CompanyInfoContainer + div, ' +
+        '.companyLocation, ' +
+        '[data-testid="jobsearch-JobInfoHeader-companyLocation"]'
+      );
+      const location = locationElement?.textContent?.trim() || '';
+
+      const descriptionElement = document.querySelector(
+        '#jobDescriptionText, ' +
+        '[data-testid="jobDescriptionText"], ' +
+        '.jobsearch-JobComponent-description, ' +
+        '.jobsearch-jobDescriptionText, ' +
+        'div.job-desc'
+      );
+      const description = descriptionElement?.innerHTML || '';
+
+      // Extract salary information
+      const salaryElement = document.querySelector(
+        '#salaryInfoAndJobType, ' +
+        '[data-testid="attribute_snippet_testid"], ' +
+        '.jobsearch-JobMetadataHeader-item, ' +
+        '.salary-snippet-container, ' +
+        '.attribute_snippet'
+      );
+      const salaryText = salaryElement?.textContent || '';
+      const salary = SalaryExtractor.extract(salaryText) || SalaryExtractor.extract(description);
+
+      // Extract job type and employment details
+      const jobTypeElements = Array.from(document.querySelectorAll(
+        '.jobsearch-JobMetadataHeader-item, ' +
+        '[data-testid="attribute_snippet_testid"], ' +
+        '.jobsearch-JobDescriptionSection-sectionItem'
+      ));
+      let jobType = '';
+      let experienceLevel = '';
+      for (const element of jobTypeElements) {
+        const text = element.textContent?.toLowerCase() || '';
+        if (text.includes('full-time') || text.includes('part-time') || text.includes('contract') || text.includes('temporary')) {
+          jobType = element.textContent?.trim() || '';
+        }
+        if (text.includes('entry') || text.includes('mid') || text.includes('senior') || text.includes('associate')) {
+          experienceLevel = element.textContent?.trim() || '';
+        }
+      }
+
+      // Check for sponsored/promoted jobs
+      const isSponsored = document.querySelector('[data-testid="sponsored-job-badge"], .sponsoredJob, .result-sponsored') !== null;
+
+      // Extract posted date
+      const postedDateElement = document.querySelector(
+        '.jobsearch-HiringInsights-entry--bullet:first-child, ' +
+        '[data-testid="myJobsStateDate"], ' +
+        '.date'
+      );
+      const postedDate = postedDateElement?.textContent?.trim() || '';
+
+      // Detect remote work
+      const remoteWork = location.toLowerCase().includes('remote') || 
+                         location.toLowerCase().includes('work from home') ||
+                         description.toLowerCase().includes('remote') ||
+                         document.querySelector('[data-testid="remote-job-badge"]') !== null;
 
       return {
         title,
@@ -426,19 +528,20 @@ export class EnhancedJobParser {
         salary,
         source: 'indeed',
         dateFound: new Date().toISOString(),
-        isSponsored: false,
+        isSponsored,
         sponsorshipType: '',
         skills: [],
         requirements: [],
         benefits: [],
         qualifications: [],
-        remoteWork: location.toLowerCase().includes('remote'),
+        remoteWork,
         industry: '',
-        jobType: '',
-        experienceLevel: '',
+        jobType,
+        experienceLevel,
         companySize: '',
-        postedDate: '',
-        applicationDeadline: ''
+        postedDate,
+        applicationDeadline: '',
+        locationType: remoteWork ? 'Remote' : 'On-site'
       };
     } catch (error) {
       console.error('Indeed extraction failed:', error);

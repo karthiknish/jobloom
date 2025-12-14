@@ -1,4 +1,8 @@
 // Extension logging utility for structured logging and debugging
+
+// Webpack DefinePlugin injects this at build time
+declare const __EXTENSION_BUILD_ENV__: Record<string, string | undefined> | undefined;
+
 export enum LogLevel {
   DEBUG = 0,
   INFO = 1,
@@ -84,6 +88,14 @@ class ExtensionLogger {
   }
 
   private logToConsole(entry: LogEntry): void {
+    // In production, only output errors to console for debugging critical issues
+    const isProduction = process.env.NODE_ENV === 'production' || 
+                         (typeof __EXTENSION_BUILD_ENV__ !== 'undefined');
+    
+    if (isProduction && entry.level !== LogLevel.ERROR) {
+      return; // Skip non-error logs in production
+    }
+
     const levelName = LogLevel[entry.level];
     const prefix = `[${entry.timestamp}] [${levelName}] [${entry.component}]`;
 

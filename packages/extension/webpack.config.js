@@ -3,6 +3,7 @@ const CopyPlugin = require("copy-webpack-plugin");
 const fs = require("fs");
 const dotenv = require("dotenv");
 const webpack = require("webpack");
+const TerserPlugin = require("terser-webpack-plugin");
 
 module.exports = (env, argv) => {
   const isProduction = argv.mode === 'production';
@@ -43,6 +44,22 @@ module.exports = (env, argv) => {
     },
     optimization: {
       minimize: isProduction,
+      minimizer: isProduction ? [
+        new TerserPlugin({
+          terserOptions: {
+            compress: {
+              // Remove console.log, console.debug, console.info, console.warn in production
+              // Keep console.error for debugging production issues
+              drop_console: false,
+              pure_funcs: ['console.log', 'console.debug', 'console.info', 'console.warn', 'console.time', 'console.timeEnd'],
+            },
+            format: {
+              comments: false,
+            },
+          },
+          extractComments: false,
+        }),
+      ] : [],
       splitChunks: false,
     },
     performance: {
