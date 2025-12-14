@@ -36,25 +36,39 @@ let authCheckInterval: number | null = null;
 let lastUserId: string | null = null;
 
 // Set extension detection signal for the web app
-// This allows the Hireall web app to detect that the extension is installed
-if (typeof window !== 'undefined') {
-  (window as any).__hireall_extension = {
-    installed: true,
-    version: chrome.runtime?.getManifest?.()?.version || '1.0.0',
-    jobsDetected: 0,
-    lastSync: null as string | null
-  };
+// Content scripts are ISOLATED - we must inject a script into the page context
+// to set window.__hireall_extension so the React app can detect us
+if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+  const version = chrome.runtime?.getManifest?.()?.version || '1.0.0';
   
-  // Also post a message to notify the web app
-  window.postMessage({
-    type: 'HIREALL_EXTENSION_STATUS',
-    installed: true,
-    version: chrome.runtime?.getManifest?.()?.version || '1.0.0',
-    jobsDetected: 0,
-    lastSync: null
-  }, '*');
+  // Create a script to inject into the page context
+  const script = document.createElement('script');
+  script.textContent = `
+    // HireAll Extension Detection Signal
+    window.__hireall_extension = {
+      installed: true,
+      version: '${version}',
+      jobsDetected: 0,
+      lastSync: null
+    };
+    
+    // Post message to notify React app
+    window.postMessage({
+      type: 'HIREALL_EXTENSION_STATUS',
+      installed: true,
+      version: '${version}',
+      jobsDetected: 0,
+      lastSync: null
+    }, '*');
+    
+    console.log('[HireAll Extension] Extension detection signal injected into page');
+  `;
   
-  console.log('[HireAll Extension] Injected extension detection signal');
+  // Inject the script at document start
+  (document.head || document.documentElement).appendChild(script);
+  script.remove(); // Clean up after execution
+  
+  console.log('[HireAll Extension] Injected extension detection signal via script');
 }
 
 interface UserInfo {
