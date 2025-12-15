@@ -4,6 +4,7 @@ import { popupUI } from "../UI/PopupUI";
 export interface ExtensionSettings {
   showJobBadges: boolean;
   ukFiltersEnabled: boolean;
+  overlayEnabled: boolean;
   ukEligibilityCriteria?: {
     minSalary: number;
     requiredSkills: string[];
@@ -18,6 +19,7 @@ export class SettingsManager {
   private defaultSettings: ExtensionSettings = {
     showJobBadges: true,
     ukFiltersEnabled: true, // Default to true so sponsor button shows by default
+    overlayEnabled: true, // Default to true - show floating buttons on LinkedIn
     webAppUrl: DEFAULT_WEB_APP_URL,
     syncFrequency: 5, // minutes
   };
@@ -75,6 +77,7 @@ export class SettingsManager {
     // Update toggle states
     popupUI.setElementChecked('show-badges-toggle', settings.showJobBadges);
     popupUI.setElementChecked('uk-filters-toggle', settings.ukFiltersEnabled);
+    popupUI.setElementChecked('overlay-toggle', settings.overlayEnabled);
     
     // Update input values
     popupUI.setElementValue('web-app-url-input', settings.webAppUrl);
@@ -85,6 +88,9 @@ export class SettingsManager {
     
     // Sync sponsor button visibility with UK filters state
     this.syncSponsorButtonSetting(settings.ukFiltersEnabled);
+    
+    // Sync overlay visibility
+    this.syncOverlaySetting(settings.overlayEnabled);
     
     // Update UK eligibility criteria if available
     if (settings.ukEligibilityCriteria) {
@@ -110,9 +116,38 @@ export class SettingsManager {
     });
   }
   
+  private syncOverlaySetting(enabled: boolean): void {
+    // Update the overlayEnabled setting in chrome.storage.sync
+    // This controls whether floating buttons appear on LinkedIn
+    chrome.storage.sync.set({ overlayEnabled: enabled }, () => {
+      console.debug('Overlay visibility synced:', enabled);
+      // Send message to all LinkedIn tabs to update overlay visibility
+      this.notifyLinkedInTabs(enabled);
+    });
+  }
+  
+  private async notifyLinkedInTabs(overlayEnabled: boolean): Promise<void> {
+    try {
+      const tabs = await chrome.tabs.query({ url: '*://*.linkedin.com/*' });
+      tabs.forEach(tab => {
+        if (tab.id) {
+          chrome.tabs.sendMessage(tab.id, {
+            action: 'updateOverlayVisibility',
+            enabled: overlayEnabled
+          }).catch(() => {
+            // Tab might not have content script loaded, ignore
+          });
+        }
+      });
+    } catch (error) {
+      console.debug('Could not notify LinkedIn tabs:', error);
+    }
+  }
+  
   private getSettingsFromUI(): ExtensionSettings {
     const showJobBadges = popupUI.getElementValue('show-badges-toggle') === 'true';
     const ukFiltersEnabled = popupUI.getElementValue('uk-filters-toggle') === 'true';
+    const overlayEnabled = popupUI.getElementValue('overlay-toggle') === 'true';
     
     let webAppUrl = popupUI.getElementValue('web-app-url-input').trim();
     webAppUrl = sanitizeBaseUrl(webAppUrl || DEFAULT_WEB_APP_URL);
@@ -122,6 +157,7 @@ export class SettingsManager {
     const settings: ExtensionSettings = {
       showJobBadges,
       ukFiltersEnabled,
+      overlayEnabled,
       webAppUrl,
       syncFrequency,
     };
@@ -210,6 +246,7 @@ export class SettingsManager {
     return {
       showJobBadges: typeof settings.showJobBadges === 'boolean' ? settings.showJobBadges : this.defaultSettings.showJobBadges,
       ukFiltersEnabled: typeof settings.ukFiltersEnabled === 'boolean' ? settings.ukFiltersEnabled : this.defaultSettings.ukFiltersEnabled,
+      overlayEnabled: typeof settings.overlayEnabled === 'boolean' ? settings.overlayEnabled : this.defaultSettings.overlayEnabled,
       webAppUrl: typeof settings.webAppUrl === 'string' ? settings.webAppUrl : this.defaultSettings.webAppUrl,
       syncFrequency: typeof settings.syncFrequency === 'number' ? settings.syncFrequency : this.defaultSettings.syncFrequency,
       ukEligibilityCriteria: settings.ukEligibilityCriteria && typeof settings.ukEligibilityCriteria === 'object' 
@@ -236,6 +273,16 @@ export class SettingsManager {
         });
       }
     });
+    
+    // Overlay toggle in header
+    const overlayToggle = document.getElementById('overlay-toggle');
+    if (overlayToggle) {
+      overlayToggle.addEventListener('change', () => {
+        const isChecked = (overlayToggle as HTMLInputElement).checked;
+        this.syncOverlaySetting(isChecked);
+        this.saveSettings();
+      });
+    }
     
     // Web app URL validation
     const webAppUrlInput = document.getElementById('web-app-url-input') as HTMLInputElement;

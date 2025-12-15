@@ -38,6 +38,18 @@ export function registerLifecycleHooks(jobTracker: JobTracker): void {
 
         sendResponse({ success: true });
       }
+      
+      if (message.action === "updateOverlayVisibility") {
+        logger.info("ContentRuntime", "Received overlay visibility update from popup", {
+          enabled: message.enabled,
+        });
+
+        if (typeof jobTracker.setOverlayEnabled === "function") {
+          jobTracker.setOverlayEnabled(message.enabled);
+        }
+
+        sendResponse({ success: true });
+      }
       return true;
     });
   }
@@ -192,6 +204,15 @@ async function ensureAuthenticatedFeatures(jobTracker: JobTracker): Promise<void
 
     const sponsorButtonsEnabled = await UserProfileManager.isSponsorshipCheckEnabled();
     jobTracker.setSponsorButtonEnabled(sponsorButtonsEnabled);
+    
+    // Load initial overlay state
+    const overlayEnabled = await new Promise<boolean>((resolve) => {
+      chrome.storage.sync.get(['overlayEnabled'], (result) => {
+        resolve(result.overlayEnabled !== false); // Default to true
+      });
+    });
+    jobTracker.setOverlayEnabled(overlayEnabled);
+    
     jobTracker.initialize();
 
     if (typeof chrome !== "undefined" && chrome.storage?.onChanged) {
@@ -200,6 +221,14 @@ async function ensureAuthenticatedFeatures(jobTracker: JobTracker): Promise<void
           const newValue = changes.enableSponsorshipChecks.newValue;
           jobTracker.setSponsorButtonEnabled(newValue !== false);
           logger.info("ContentRuntime", "Sponsorship check setting changed", {
+            enabled: newValue !== false,
+          });
+        }
+        
+        if (areaName === "sync" && changes.overlayEnabled) {
+          const newValue = changes.overlayEnabled.newValue;
+          jobTracker.setOverlayEnabled(newValue !== false);
+          logger.info("ContentRuntime", "Overlay visibility setting changed", {
             enabled: newValue !== false,
           });
         }

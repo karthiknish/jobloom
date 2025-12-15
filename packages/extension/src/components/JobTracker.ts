@@ -246,6 +246,21 @@ export class JobTracker {
     this.sponsorButtonsEnabled = enabled;
     this.refreshCardControls();
   }
+  
+  setOverlayEnabled(enabled: boolean): void {
+    const controls = document.querySelectorAll<HTMLDivElement>(`.${this.controlsClass}`);
+    controls.forEach(control => {
+      control.style.display = enabled ? 'flex' : 'none';
+    });
+    
+    // Also hide badge elements if overlay is disabled
+    const badges = document.querySelectorAll<HTMLElement>(`.${this.badgeClass}`);
+    badges.forEach(badge => {
+      badge.style.display = enabled ? 'inline-flex' : 'none';
+    });
+    
+    console.debug('Hireall: Overlay visibility updated:', enabled);
+  }
 
   private async checkSponsorship(jobData: JobData, card?: Element): Promise<SponsorshipCheckResult> {
     const normalizedCompany = normalizeCompanyName(jobData.company);
