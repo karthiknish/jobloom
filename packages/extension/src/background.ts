@@ -847,6 +847,52 @@ chrome.runtime.onMessage.addListener((request: any, sender: chrome.runtime.Messa
       });
 
     return true;
+  } else if (request.action === "fetchUserPreferences") {
+    logger.debug("Background", "Fetching user preferences from web app");
+
+    void (async () => {
+      try {
+        const storage = await chrome.storage.sync.get(["webAppUrl", "firebaseUid", "userId"]);
+        const baseUrl = sanitizeBaseUrl(storage.webAppUrl || DEFAULT_WEB_APP_URL);
+        const uid = storage.firebaseUid || storage.userId;
+
+        if (!uid) {
+          logger.warn("Background", "Cannot fetch preferences: No user ID");
+          sendResponse({ success: false, error: "Not authenticated" });
+          return;
+        }
+
+        // Get auth token
+        const token = await acquireIdToken(false, { skipMessageFallback: true });
+        if (!token) {
+          logger.warn("Background", "Cannot fetch preferences: No auth token");
+          sendResponse({ success: false, error: "No auth token" });
+          return;
+        }
+
+        const response = await fetch(`${baseUrl}/api/settings/preferences`, {
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        logger.info("Background", "User preferences fetched successfully");
+        sendResponse({ success: true, preferences: data.preferences });
+      } catch (error) {
+        logger.error("Background", "Failed to fetch user preferences", {
+          error: error instanceof Error ? error.message : String(error)
+        });
+        sendResponse({ success: false, error: error instanceof Error ? error.message : "Unknown error" });
+      }
+    })();
+
+    return true;
   } else {
     logger.warn("Background", "Unhandled message action", {
       action: request?.action,

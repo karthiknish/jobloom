@@ -29,7 +29,11 @@ export const UK_SALARY_THRESHOLDS = {
     /** Immigration Salary List discount for RQF 6+ roles */
     ISL: 33400,
     /** New entrant rate (under 26, recent graduate, professional training) */
-    NEW_ENTRANT: 30960,
+    NEW_ENTRANT: 33400,
+    /** STEM PhD rate (80% of going rate) */
+    STEM_PHD: 33400,
+    /** Non-STEM PhD rate (90% of going rate) */
+    NON_STEM_PHD: 37500,
     /** Health and Care Worker visa minimum */
     HEALTH_CARE: 25000,
     /** Health and Care ISL options */
@@ -72,6 +76,8 @@ export type UkThresholdType =
     | 'general'
     | 'isl'
     | 'new_entrant'
+    | 'stem_phd'
+    | 'non_stem_phd'
     | 'health_care'
     | 'tsl'
     | 'transitional';
@@ -105,6 +111,20 @@ export const UK_THRESHOLD_INFO: Record<UkThresholdType, UkThresholdInfo> = {
         hourlyRate: UK_HOURLY_RATES.STANDARD,
         label: 'New Entrant',
         description: 'Reduced rate for applicants under 26, recent graduates, or in professional training',
+    },
+    stem_phd: {
+        type: 'stem_phd',
+        annualSalary: UK_SALARY_THRESHOLDS.STEM_PHD,
+        hourlyRate: UK_HOURLY_RATES.STANDARD,
+        label: 'STEM PhD',
+        description: 'Reduced rate for applicants with a relevant STEM PhD',
+    },
+    non_stem_phd: {
+        type: 'non_stem_phd',
+        annualSalary: UK_SALARY_THRESHOLDS.NON_STEM_PHD,
+        hourlyRate: UK_HOURLY_RATES.STANDARD,
+        label: 'Non-STEM PhD',
+        description: 'Reduced rate for applicants with a relevant non-STEM PhD',
     },
     health_care: {
         type: 'health_care',
@@ -141,10 +161,12 @@ export function getApplicableThreshold(options: {
     isOnTSL?: boolean;
     isHealthCare?: boolean;
     isNewEntrant?: boolean;
+    hasStemPhd?: boolean;
+    hasNonStemPhd?: boolean;
     isTransitional?: boolean;
     goingRate?: number;
 }): UkThresholdInfo {
-    const { isOnISL, isOnTSL, isHealthCare, isNewEntrant, isTransitional } = options;
+    const { isOnISL, isOnTSL, isHealthCare, isNewEntrant, hasStemPhd, hasNonStemPhd, isTransitional } = options;
 
     // Priority order for discount categories
     if (isHealthCare) {
@@ -158,6 +180,12 @@ export function getApplicableThreshold(options: {
     }
     if (isNewEntrant) {
         return UK_THRESHOLD_INFO.new_entrant;
+    }
+    if (hasStemPhd) {
+        return UK_THRESHOLD_INFO.stem_phd;
+    }
+    if (hasNonStemPhd) {
+        return UK_THRESHOLD_INFO.non_stem_phd;
     }
     if (isOnISL) {
         return UK_THRESHOLD_INFO.isl;

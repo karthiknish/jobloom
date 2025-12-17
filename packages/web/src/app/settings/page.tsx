@@ -248,10 +248,18 @@ export default function SettingsPage() {
         // UK Settings - matches extension UserProfileManager structure
         userVisaCriteria: {
           ukFiltersEnabled: formData.preferences.ukFiltersEnabled,
-          ageCategory: formData.preferences.ageCategory === 'youngAdult' ? 'under26' : 'adult',
-          educationStatus: formData.preferences.educationStatus === 'bachelor' ? 'graduateVisa' : formData.preferences.educationStatus,
-          phdStatus: formData.preferences.phdStatus === 'completed' ? 'stemPhd' : formData.preferences.phdStatus === 'in-progress' ? 'nonStemPhD' : 'none',
-          professionalStatus: formData.preferences.professionalStatus,
+          ageCategory: (formData.preferences.ageCategory === 'youngAdult' || formData.preferences.ageCategory === 'student') ? 'under26' : 'adult',
+          educationStatus: formData.preferences.educationStatus === 'bachelor' ? 'graduateVisa' : 
+                           formData.preferences.educationStatus === 'master' ? 'graduateVisa' :
+                           formData.preferences.educationStatus === 'phd' ? 'graduateVisa' :
+                           formData.preferences.educationStatus,
+          phdStatus: formData.preferences.phdStatus === 'completed' ? 'stemPhd' : 
+                     formData.preferences.phdStatus === 'in-progress' ? 'nonStemPhd' : 'none',
+          professionalStatus: formData.preferences.professionalStatus === 'entry-level' ? 'workingTowards' :
+                              formData.preferences.professionalStatus === 'junior' ? 'workingTowards' :
+                              formData.preferences.professionalStatus === 'mid-level' ? 'fullRegistration' :
+                              formData.preferences.professionalStatus === 'senior' ? 'charteredStatus' :
+                              formData.preferences.professionalStatus === 'expert' ? 'charteredStatus' : 'none',
           minimumSalary: preferencesToSave.minimumSalary,
           jobCategories: formData.preferences.jobCategories,
           locationPreference: formData.preferences.locationPreference,

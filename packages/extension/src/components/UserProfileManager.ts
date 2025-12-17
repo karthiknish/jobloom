@@ -32,6 +32,9 @@ export class UserProfileManager {
   };
 
   static async getUserVisaCriteria(): Promise<UserVisaCriteria> {
+    // Try to sync from Firebase if authenticated
+    await this.syncWithFirebase();
+
     const result = await safeChromeStorageGet<{ userVisaCriteria?: Partial<UserVisaCriteria> }>(
       "sync",
       ["userVisaCriteria"],
@@ -43,6 +46,62 @@ export class UserProfileManager {
       ...this.DEFAULT_VISA_CRITERIA,
       ...(result.userVisaCriteria || {}),
     };
+  }
+
+  private static async syncWithFirebase(): Promise<void> {
+    try {
+      const userId = await this.getUserId();
+      if (!userId) return;
+
+      // Check if we've synced recently (within last 5 minutes)
+      const lastSync = await safeChromeStorageGet<{ lastFirebaseSync?: number }>(
+        "local",
+        ["lastFirebaseSync"],
+        { lastFirebaseSync: 0 },
+        "UserProfileManager.syncWithFirebase"
+      );
+
+      if (Date.now() - lastSync.lastFirebaseSync < 5 * 60 * 1000) {
+        return;
+      }
+
+      const { ExtensionMessageHandler } = await import("./ExtensionMessageHandler");
+      const response = await ExtensionMessageHandler.sendMessage("fetchUserPreferences", {}, 3);
+
+      if (response?.preferences) {
+        const prefs = response.preferences;
+        
+        // Map Firebase preferences to extension structure
+        // This ensures consistency with the web app's mapping in SettingsPage.tsx
+        const visaCriteria: Partial<UserVisaCriteria> = {
+          ukFiltersEnabled: prefs.ukFiltersEnabled,
+          ageCategory: (prefs.ageCategory === 'youngAdult' || prefs.ageCategory === 'student') ? 'under26' : 'adult',
+          educationStatus: (prefs.educationStatus === 'bachelor' || prefs.educationStatus === 'master' || prefs.educationStatus === 'phd') 
+                           ? 'graduateVisa' : prefs.educationStatus,
+          phdStatus: prefs.phdStatus === 'completed' ? 'stemPhd' : 
+                     prefs.phdStatus === 'in-progress' ? 'nonStemPhd' : 'none',
+          professionalStatus: (prefs.professionalStatus === 'entry-level' || prefs.professionalStatus === 'junior') ? 'workingTowards' :
+                              (prefs.professionalStatus === 'mid-level') ? 'fullRegistration' :
+                              (prefs.professionalStatus === 'senior' || prefs.professionalStatus === 'expert') ? 'charteredStatus' : 'none',
+          minimumSalary: prefs.minimumSalary,
+          jobCategories: prefs.jobCategories,
+          locationPreference: prefs.locationPreference,
+        };
+
+        const preferences: Partial<UserPreferences> = {
+          enableSponsorshipChecks: prefs.showSponsorButton,
+          enableAutoDetection: prefs.autoDetectJobs,
+        };
+
+        await this.updateUserProfile({ visaCriteria, preferences });
+        
+        // Update last sync time
+        await chrome.storage.local.set({ lastFirebaseSync: Date.now() });
+        console.debug("Hireall: User profile synced with Firebase");
+      }
+    } catch (error) {
+      console.warn("Hireall: Failed to sync profile with Firebase", error);
+    }
   }
 
   static async setUserVisaCriteria(criteria: Partial<UserVisaCriteria>): Promise<void> {

@@ -2,6 +2,7 @@ import { sponsorBatchLimiter } from "../rateLimiter";
 import { get } from "../apiClient";
 import { fetchSponsorRecord as fetchSponsorLookup, SponsorLookupResult } from "../sponsorship/lookup";
 import { JobData as JobDescriptionData } from "../utils/jobParser";
+import { UserProfileManager, type UserVisaCriteria } from "../components/UserProfileManager";
 import {
   UK_SALARY_THRESHOLDS,
   UK_HOURLY_RATES,
@@ -359,20 +360,34 @@ export class SponsorshipManager {
           enhanced.occupationTitle = socDetails.jobType;
         }
       }
+      
+      const userCriteria = await this.getUserCriteria();
       enhanced.ukEligibility = this.evaluateUkEligibility({
         jobDescription,
         socDetails,
         isSkilledWorker: enhanced.isSkilledWorker,
+        userCriteria,
       });
     } else {
+      const userCriteria = await this.getUserCriteria();
       enhanced.ukEligibility = this.evaluateUkEligibility({
         jobDescription,
         socDetails: null,
         isSkilledWorker: enhanced.isSkilledWorker,
+        userCriteria,
       });
     }
 
     return enhanced;
+  }
+
+  private static async getUserCriteria(): Promise<UserVisaCriteria | undefined> {
+    try {
+      return await UserProfileManager.getUserVisaCriteria();
+    } catch (error) {
+      console.warn("Hireall: Failed to get user visa criteria", error);
+      return undefined;
+    }
   }
 
   static calculateSkillMatchScore(
@@ -460,11 +475,13 @@ export class SponsorshipManager {
     if (!jobDescription) return undefined;
 
     const socDetails = jobDescription.socCode ? await this.fetchSocDetails(jobDescription.socCode) : null;
+    const userCriteria = await this.getUserCriteria();
 
     return this.evaluateUkEligibility({
       jobDescription,
       socDetails,
       isSkilledWorker: undefined,
+      userCriteria,
     });
   }
 
@@ -514,25 +531,55 @@ export class SponsorshipManager {
     jobDescription: JobDescriptionData;
     socDetails: SocCodeDetails | null;
     isSkilledWorker: boolean | undefined;
+    userCriteria?: UserVisaCriteria;
   }): UkEligibilityAssessment {
-    const { jobDescription, socDetails, isSkilledWorker } = params;
+    const { jobDescription, socDetails, isSkilledWorker, userCriteria } = params;
     const reasons: string[] = [];
     let eligible = true;
 
     const socCode = jobDescription.socCode;
     const offeredSalary = jobDescription.salary?.min ?? jobDescription.salary?.max;
 
-    // Determine threshold using SOC details from Firebase
+    // Determine if user qualifies for any discounts
+    const isNewEntrant = userCriteria?.ageCategory === 'under26' || 
+                         userCriteria?.educationStatus === 'student' || 
+                         userCriteria?.educationStatus === 'recentGraduate' ||
+                         userCriteria?.educationStatus === 'graduateVisa' ||
+                         userCriteria?.educationStatus === 'professionalTraining';
+    
+    const hasStemPhd = userCriteria?.phdStatus === 'stemPhd';
+    const hasNonStemPhd = userCriteria?.phdStatus === 'nonStemPhd';
+
+    // Determine threshold using SOC details from Firebase and user profile
     const thresholdResult = socCode
       ? this.getMinimumSalaryForSOC(socCode, {
         goingRate: socDetails?.goingRate,
         isOnISL: socDetails?.isOnISL,
         isOnTSL: socDetails?.isOnTSL,
         isHealthCare: socDetails?.isHealthCare,
+        isNewEntrant,
       })
-      : { threshold: UK_SALARY_THRESHOLDS.GENERAL, thresholdType: 'general' as UkThresholdType, hourlyRate: UK_HOURLY_RATES.STANDARD };
+      : { 
+          threshold: getApplicableThreshold({ 
+            isNewEntrant, 
+            hasStemPhd, 
+            hasNonStemPhd 
+          }).annualSalary, 
+          thresholdType: getApplicableThreshold({ 
+            isNewEntrant, 
+            hasStemPhd, 
+            hasNonStemPhd 
+          }).type, 
+          hourlyRate: UK_HOURLY_RATES.STANDARD 
+        };
 
-    const salaryThreshold = thresholdResult.threshold;
+    let salaryThreshold = thresholdResult.threshold;
+
+    // Apply user-defined minimum salary if it's higher than the legal minimum
+    if (userCriteria?.minimumSalary && userCriteria.minimumSalary > salaryThreshold) {
+      salaryThreshold = userCriteria.minimumSalary;
+      reasons.push(`User-defined minimum salary of ${formatSalaryGBP(salaryThreshold)} applied`);
+    }
 
     // SOC is optional: many listings do not include it.
 
@@ -580,15 +627,36 @@ export class SponsorshipManager {
         if (offeredSalary < salaryThreshold) {
           eligible = false;
           reasons.push(
-            `Salary ${formatSalaryGBP(offeredSalary)} below ${thresholdLabel} minimum of ${formatSalaryGBP(salaryThreshold)}`
+            `Salary ${formatSalaryGBP(offeredSalary)} below ${thresholdLabel === 'General' && userCriteria?.minimumSalary ? 'user' : thresholdLabel} minimum of ${formatSalaryGBP(salaryThreshold)}`
           );
         } else {
           reasons.push(
-            `Salary ${formatSalaryGBP(offeredSalary)} meets ${thresholdLabel} minimum of ${formatSalaryGBP(salaryThreshold)}`
+            `Salary ${formatSalaryGBP(offeredSalary)} meets ${thresholdLabel === 'General' && userCriteria?.minimumSalary ? 'user' : thresholdLabel} minimum of ${formatSalaryGBP(salaryThreshold)}`
           );
         }
       } else {
-        reasons.push(`${thresholdLabel} minimum is ${formatSalaryGBP(salaryThreshold)} per year; salary not disclosed`);
+        reasons.push(`${thresholdLabel === 'General' && userCriteria?.minimumSalary ? 'User' : thresholdLabel} minimum is ${formatSalaryGBP(salaryThreshold)} per year; salary not disclosed`);
+      }
+    }
+
+    // Check user-defined required skills
+    if (userCriteria?.jobCategories?.length && jobDescription.skills?.length) {
+      const matchingCategories = userCriteria.jobCategories.filter(
+        cat => jobDescription.skills?.some(skill => skill.toLowerCase().includes(cat.toLowerCase()))
+      );
+      
+      if (matchingCategories.length > 0) {
+        reasons.push(`Matches user-preferred categories: ${matchingCategories.join(', ')}`);
+      }
+    }
+
+    // Check user-defined job types (using jobCategories as a proxy for preferred roles)
+    if (userCriteria?.jobCategories?.length) {
+      const title = (jobDescription.title || "").toLowerCase();
+      const matchesJobType = userCriteria.jobCategories.some(cat => title.includes(cat.toLowerCase()));
+      
+      if (matchesJobType) {
+        reasons.push(`Job title matches user-preferred roles`);
       }
     }
 

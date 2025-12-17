@@ -4,6 +4,8 @@ import { popupUI } from "../UI/PopupUI";
 import { fetchSponsorRecord } from "../../sponsorship/lookup";
 import { safeChromeStorageGet } from "../../utils/safeStorage";
 import { isLikelyPlaceholderCompany, normalizeCompanyName } from "../../utils/companyName";
+import { SponsorshipManager } from "../SponsorshipManager";
+import { UserProfileManager } from "../UserProfileManager";
 
 export class JobManager {
   private static instance: JobManager;
@@ -349,38 +351,36 @@ export class JobManager {
   
   private async checkUKEligibility(job: JobStatus): Promise<boolean | null> {
     try {
-      // Get UK eligibility criteria from storage
-      const criteria = await new Promise<any>((resolve) => {
-        chrome.storage.local.get(['ukEligibilityCriteria'], resolve);
-      });
-      
-      if (!criteria.ukEligibilityCriteria) {
-        return null;
-      }
-      
-      // Check if job meets criteria
-      const { minSalary, requiredSkills, jobTypes } = criteria.ukEligibilityCriteria;
-      
-      // Check salary
-      if (minSalary && job.salary) {
-        const salaryNum = parseInt(job.salary.replace(/[^0-9]/g, ''));
-        if (salaryNum < minSalary) {
-          return false;
+      // Parse salary string to number if possible
+      let salaryMin: number | undefined;
+      if (job.salary) {
+        // Extract first number found in salary string (usually the minimum)
+        const matches = job.salary.replace(/,/g, '').match(/\d+/g);
+        if (matches && matches.length > 0) {
+          salaryMin = parseInt(matches[0]);
+          // If it's a small number, it might be hourly or monthly
+          if (salaryMin < 1000) {
+            if (job.salary.toLowerCase().includes('hour')) salaryMin *= 37.5 * 52;
+            else if (job.salary.toLowerCase().includes('month')) salaryMin *= 12;
+          }
         }
       }
-      
-      // Check job type (simplified - would need more sophisticated parsing)
-      if (jobTypes && jobTypes.length > 0) {
-        const title = job.title.toLowerCase();
-        const hasMatchingType = jobTypes.some((type: string) => 
-          title.includes(type.toLowerCase())
-        );
-        if (!hasMatchingType) {
-          return false;
-        }
-      }
-      
-      return true;
+
+      // Use the unified SponsorshipManager for assessment
+      // This ensures we use the same logic and user settings as the content script
+      const jobData = {
+        title: job.title,
+        company: job.company,
+        location: job.location,
+        salary: { 
+          min: salaryMin,
+          original: job.salary 
+        },
+        source: job.url || 'unknown'
+      };
+
+      const assessment = await SponsorshipManager.assessUkEligibility(jobData as any);
+      return assessment ? assessment.eligible : null;
       
     } catch (error) {
       console.error('Error checking UK eligibility:', error);
@@ -388,12 +388,14 @@ export class JobManager {
     }
   }
   
-  private checkUKFiltersEnabled(): Promise<boolean> {
-    return new Promise<boolean>((resolve) => {
-      chrome.storage.local.get(['ukFiltersEnabled'], (result) => {
-        resolve(result.ukFiltersEnabled || false);
-      });
-    });
+  private async checkUKFiltersEnabled(): Promise<boolean> {
+    try {
+      const criteria = await UserProfileManager.getUserVisaCriteria();
+      return criteria.ukFiltersEnabled;
+    } catch (error) {
+      console.error('Error checking UK filters enabled:', error);
+      return false;
+    }
   }
   
   public getJobs(): JobStatus[] {
