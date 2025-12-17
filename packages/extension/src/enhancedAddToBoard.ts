@@ -1,7 +1,8 @@
 // Enhanced add to board functionality with improved job extraction and SOC matching
 import { get, post, put } from "./apiClient";
 import { safeChromeStorageGet } from "./utils/safeStorage";
-import EnhancedJobParser, { EnhancedJobData, SocCodeMatch } from "./enhancedJobParser";
+import { JobParser, type JobData as EnhancedJobData, type SocCodeMatch } from "./utils/jobParser";
+import { normalizeJobUrl, extractJobIdentifier } from "./utils/url";
 
 interface JobBoardEntry {
   id: string;
@@ -74,17 +75,14 @@ export class EnhancedJobBoardManager {
       }
 
       // Extract job data using enhanced parser
-      const jobData = await EnhancedJobParser.extractJobFromPage(document, url);
+      const jobData = await JobParser.extractJobFromPage(document, url);
       if (!jobData) {
         console.warn("Failed to extract job data from:", url);
         return null;
       }
 
-      // Fetch SOC codes for matching
-      const socCodes = await this.fetchSocCodes();
-      
-      // Perform fuzzy matching
-      const socMatch = await EnhancedJobParser.matchToSocCode(jobData, socCodes);
+      // Perform fuzzy matching via server-side endpoint
+      const socMatch = await this.matchSocCodeOnServer(jobData);
       
       if (socMatch) {
         jobData.likelySocCode = socMatch.code;
@@ -113,15 +111,24 @@ export class EnhancedJobBoardManager {
     }
   }
 
-  // Fetch SOC codes for fuzzy matching
-  private async fetchSocCodes(): Promise<any[]> {
+  // Match SOC code using server-side fuzzy matching
+  private async matchSocCodeOnServer(jobData: EnhancedJobData): Promise<SocCodeMatch | null> {
     try {
-      // Use authenticated endpoint with fuzzy matching support
-      const response = await get<any>("/api/soc-codes/authenticated", { fuzzy: "true", limit: 100 });
-      return response.results || [];
+      const response = await post<any>("/api/soc-codes/match", {
+        title: jobData.title,
+        description: jobData.description,
+        department: jobData.department,
+        seniority: jobData.seniority,
+        keywords: jobData.extractedKeywords
+      });
+
+      if (response && response.success && response.match) {
+        return response.match;
+      }
+      return null;
     } catch (error) {
-      console.error("SOC code fetch failed:", error);
-      return [];
+      console.error("Server-side SOC matching failed:", error);
+      return null;
     }
   }
 
@@ -202,7 +209,9 @@ export class EnhancedJobBoardManager {
       console.log('[HireAll] User authenticated:', { userId });
 
       // Check if job already exists
-      const existingJob = await this.checkJobExists(jobData.url, userId);
+      const normalizedUrl = normalizeJobUrl(jobData.url);
+      const jobIdentifier = extractJobIdentifier(jobData.url);
+      const existingJob = await this.checkJobExists(normalizedUrl, userId, jobIdentifier);
       if (existingJob) {
         console.log("Job already exists in board:", existingJob.id);
         return existingJob;
@@ -214,6 +223,8 @@ export class EnhancedJobBoardManager {
         company: jobData.company,
         location: jobData.location,
         url: jobData.url,
+        normalizedUrl,
+        jobIdentifier,
         description: jobData.description,
         salary: jobData.salary?.original || jobData.salary?.min?.toString(),
         salaryRange: jobData.salary ? {
@@ -412,12 +423,26 @@ export class EnhancedJobBoardManager {
   }
 
   // Enhanced job existence check (optimized: local-only, server handles duplicates)
-  private async checkJobExists(url: string, userId: string): Promise<JobBoardEntry | null> {
+  private async checkJobExists(url: string, userId: string, jobIdentifier?: string): Promise<JobBoardEntry | null> {
     try {
       // Check local storage only (faster) - server has its own duplicate check
       const { jobBoardData } = await safeChromeStorageGet("local", ["jobBoardData"], { jobBoardData: [] as JobBoardEntry[] }, "enhancedAddToBoard");
-      const localMatch = jobBoardData.find(job => job.url === url);
-      return localMatch || null;
+      
+      // Try matching by jobIdentifier first (most reliable)
+      if (jobIdentifier) {
+        const idMatch = jobBoardData.find(job => (job as any).jobIdentifier === jobIdentifier);
+        if (idMatch) return idMatch;
+      }
+
+      // Then try normalized URL
+      const normalizedUrl = normalizeJobUrl(url);
+      const urlMatch = jobBoardData.find(job => 
+        job.url === url || 
+        job.url === normalizedUrl || 
+        (job as any).normalizedUrl === normalizedUrl
+      );
+      
+      return urlMatch || null;
     } catch (error) {
       console.warn("Failed to check job existence:", error);
       return null;

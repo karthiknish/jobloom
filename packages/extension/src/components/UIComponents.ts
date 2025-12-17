@@ -50,11 +50,11 @@ export class UIComponents {
       align-items: center;
       gap: 8px;
       padding: 10px 14px;
-      border-radius: 8px;
+      border-radius: var(--radius);
       font-size: 13px;
       color: #fff;
-      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.18);
-      animation: hireall-toast-in ${DURATIONS.fast}ms ${EASING.easeOut};
+      box-shadow: var(--shadow-lg);
+      animation: hireall-toast-in var(--motion-duration-fast) var(--motion-ease-out);
       background: ${this.toastBackground(type)};
     `;
 
@@ -164,23 +164,23 @@ export class UIComponents {
   private static toastBackground(type: ToastType): string {
     switch (type) {
       case "success":
-        return "linear-gradient(135deg, #059669, #047857)";
+        return "var(--color-success)";
       case "warning":
-        return "linear-gradient(135deg, #d97706, #92400e)";
+        return "var(--color-warning)";
       case "error":
-        return "linear-gradient(135deg, #dc2626, #991b1b)";
+        return "var(--color-error)";
       default:
-        return "linear-gradient(135deg, #0284c7, #0369a1)";
+        return "var(--color-info)";
     }
   }
 
   private static floatingButtonStyle(variant: "primary" | "secondary" | "danger" = "primary"): string {
     const background =
       variant === "secondary"
-        ? "linear-gradient(135deg, #334155, #1f2937)"
+        ? "var(--color-muted-foreground)"
         : variant === "danger"
-        ? "linear-gradient(135deg, #dc2626, #991b1b)"
-        : "linear-gradient(135deg, #0f766e, #0d9488)";
+        ? "var(--color-error)"
+        : "var(--color-primary)";
 
     return `
       display: inline-flex;
@@ -193,9 +193,9 @@ export class UIComponents {
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
-      box-shadow: 0 12px 30px rgba(15, 118, 110, 0.25);
+      box-shadow: var(--shadow-lg);
       background: ${background};
-      transition: ${createTransition(["transform", "box-shadow"], "fast", "easeOut")};
+      transition: transform var(--motion-duration-fast) var(--motion-ease-out), box-shadow var(--motion-duration-fast) var(--motion-ease-out);
     `;
   }
 

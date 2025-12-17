@@ -1,4 +1,4 @@
-import { JobDataExtractor } from "../../components/JobDataExtractor";
+import { JobParser } from "../../utils/jobParser";
 import type { JobTracker } from "../../components/JobTracker";
 import { getJobTracker } from "../../job-tracker/runtime";
 import { logger, log } from "../../utils/logger";
@@ -16,46 +16,46 @@ function resolveTracker(): JobTracker | null {
   return tracker;
 }
 
-export function addJobToBoard(card: Element, button: HTMLButtonElement): void {
+export async function addJobToBoard(card: Element, button: HTMLButtonElement): Promise<void> {
   const tracker = resolveTracker();
   if (!tracker) return;
 
-  const jobData = JobDataExtractor.extractJobData(card);
-  if (jobData.company.trim().length < 2) {
+  const jobData = await JobParser.extractJobFromElement(card, window.location.href);
+  if (!jobData || jobData.company.trim().length < 2) {
     logger.warn("ContentControls", "Company name too short for add to board", {
-      company: jobData.company,
-      title: jobData.title,
+      company: jobData?.company,
+      title: jobData?.title,
     });
   }
 
   logger.info("ContentControls", "Adding job to board", {
-    company: jobData.company,
-    title: jobData.title,
-    url: jobData.url,
+    company: jobData?.company,
+    title: jobData?.title,
+    url: jobData?.url,
   });
 
   void tracker.addJobToBoardFromButton(card, button);
 }
 
-export function checkJobSponsorshipFromButton(
+export async function checkJobSponsorshipFromButton(
   card: Element,
   button: HTMLButtonElement
-): void {
+): Promise<void> {
   const tracker = resolveTracker();
   if (!tracker) return;
 
-  const jobData = JobDataExtractor.extractJobData(card);
-  if (jobData.company.trim().length < 2) {
+  const jobData = await JobParser.extractJobFromElement(card, window.location.href);
+  if (!jobData || jobData.company.trim().length < 2) {
     logger.warn("ContentControls", "Company name too short for sponsor check", {
-      company: jobData.company,
-      title: jobData.title,
+      company: jobData?.company,
+      title: jobData?.title,
     });
   }
 
   logger.info("ContentControls", "Checking job sponsorship", {
-    company: jobData.company,
-    title: jobData.title,
-    url: jobData.url,
+    company: jobData?.company,
+    title: jobData?.title,
+    url: jobData?.url,
   });
 
   void tracker.checkJobSponsorshipFromButton(card, button);

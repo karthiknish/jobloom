@@ -1,7 +1,7 @@
 import { sponsorBatchLimiter } from "../rateLimiter";
 import { get } from "../apiClient";
 import { fetchSponsorRecord as fetchSponsorLookup, SponsorLookupResult } from "../sponsorship/lookup";
-import { JobDescriptionData } from "../jobDescriptionParser";
+import { JobData as JobDescriptionData } from "../utils/jobParser";
 import {
   UK_SALARY_THRESHOLDS,
   UK_HOURLY_RATES,

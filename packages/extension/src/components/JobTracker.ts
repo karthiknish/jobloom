@@ -1,14 +1,13 @@
 import { EXT_COLORS } from "../theme";
 import { UIComponents } from "./UIComponents";
-import { JobDataExtractor, type JobData } from "./JobDataExtractor";
+import { JobDataExtractor } from "./JobDataExtractor";
 import {
   SponsorshipManager,
   type SponsorshipRecord,
   type UkEligibilityAssessment,
 } from "./SponsorshipManager";
 import { EnhancedJobBoardManager } from "../enhancedAddToBoard";
-import EnhancedJobParser, { type EnhancedJobData } from "../enhancedJobParser";
-import { UKJobDescriptionParser, type JobDescriptionData } from "../jobDescriptionParser";
+import { JobParser, type JobData as EnhancedJobData } from "../utils/jobParser";
 import { isLikelyPlaceholderCompany, normalizeCompanyName } from "../utils/companyName";
 
 export interface SponsorshipCheckResult {
@@ -21,7 +20,7 @@ export interface SponsorshipCheckResult {
   matchedName?: string | null;
   sponsorData?: SponsorshipRecord | null;
   ukEligibility?: UkEligibilityAssessment;
-  jobContext?: JobDescriptionData;
+  jobContext?: EnhancedJobData;
 }
 
 interface HighlightEntry {
@@ -56,7 +55,7 @@ export class JobTracker {
     return typeof chrome !== "undefined" && !!chrome.runtime?.id && !!chrome.storage;
   }
 
-  private buildSponsorshipCacheKey(company: string, jobContext?: JobDescriptionData): string {
+  private buildSponsorshipCacheKey(company: string, jobContext?: EnhancedJobData): string {
     const parts = [company.toLowerCase().trim()];
     if (jobContext?.socCode) {
       parts.push(jobContext.socCode);
@@ -70,55 +69,15 @@ export class JobTracker {
     return parts.join("|");
   }
 
-  private async buildJobDescriptionData(jobData: JobData, card?: Element): Promise<JobDescriptionData | undefined> {
-    const descriptionText =
-      jobData.description ||
-      (card instanceof HTMLElement
-        ? UKJobDescriptionParser.extractJobDescription(card)
-        : UKJobDescriptionParser.extractJobDescription());
+  private async buildJobDescriptionData(jobData: EnhancedJobData, card?: Element): Promise<EnhancedJobData | undefined> {
+    const extracted = await JobParser.extractJobFromPage(document, window.location.href);
+    if (!extracted) return undefined;
 
-    if (!descriptionText || descriptionText.length < 60) {
-      return undefined;
-    }
-
-    const parsed = await UKJobDescriptionParser.parseJobDescription(
-      descriptionText,
-      jobData.title,
-      jobData.company
-    );
-
-    if (!parsed.salary && jobData.salary) {
-      const parsedSalary = this.parseSalaryFromText(jobData.salary);
-      if (parsedSalary) {
-        parsed.salary = parsedSalary;
-      }
-    }
-
-    parsed.company = jobData.company;
-    return parsed;
-  }
-
-  private parseSalaryFromText(text: string): JobDescriptionData["salary"] | null {
-    const pattern = /£\s?(\d{1,3}(?:,\d{3})*)(?:\s*-\s*£?\s?(\d{1,3}(?:,\d{3})*))?(?:\s*(?:per|a)?\s*(year|annum|month|week|day|hour))?/i;
-    const match = text.match(pattern);
-    if (!match) {
-      return null;
-    }
-
-    const min = match[1] ? parseInt(match[1].replace(/,/g, ""), 10) : undefined;
-    const maxRaw = match[2] ? parseInt(match[2].replace(/,/g, ""), 10) : undefined;
-    const period = (match[3] || "year").toLowerCase().replace("annum", "year");
-
-    if (!min && !maxRaw) {
-      return null;
-    }
-
-    return {
-      min,
-      max: maxRaw ?? min,
-      currency: "£",
-      period,
-    };
+    // Merge with card-specific data if provided
+    if (jobData.company) extracted.company = jobData.company;
+    if (jobData.title) extracted.title = jobData.title;
+    
+    return extracted;
   }
 
   initialize(): void {
@@ -183,12 +142,12 @@ export class JobTracker {
 
       for (const card of cards) {
         this.ensureCardControls(card);
-        const jobData = JobDataExtractor.extractJobData(card);
+        const jobData = await JobParser.extractJobFromElement(card, window.location.href);
 
-        if (!jobData.company || isLikelyPlaceholderCompany(jobData.company)) {
+        if (!jobData || !jobData.company || isLikelyPlaceholderCompany(jobData.company)) {
           console.debug("Hireall: Skipping sponsorship check (missing company)", {
-            title: jobData.title,
-            company: jobData.company,
+            title: jobData?.title,
+            company: jobData?.company,
           });
           continue;
         }
@@ -262,7 +221,7 @@ export class JobTracker {
     console.debug('Hireall: Overlay visibility updated:', enabled);
   }
 
-  private async checkSponsorship(jobData: JobData, card?: Element): Promise<SponsorshipCheckResult> {
+  private async checkSponsorship(jobData: EnhancedJobData, card?: Element): Promise<SponsorshipCheckResult> {
     const normalizedCompany = normalizeCompanyName(jobData.company);
     if (!normalizedCompany || isLikelyPlaceholderCompany(normalizedCompany)) {
       return {
@@ -434,10 +393,11 @@ export class JobTracker {
 
     // Apply border with some padding to make it visible
     card.style.border = `${borderWidth} ${borderStyle} ${borderColor}`;
-    card.style.borderRadius = '8px';
+    card.style.borderRadius = 'var(--radius)';
     card.style.padding = card.style.padding || '12px';
     card.style.margin = card.style.margin || '4px';
-    card.style.boxShadow = `0 0 0 1px ${borderColor}20, 0 4px 12px rgba(0, 0, 0, 0.1)`;
+    card.style.boxShadow = `var(--shadow-md)`;
+    card.style.transition = 'transform var(--motion-duration-medium) var(--motion-ease-out), box-shadow var(--motion-duration-medium) var(--motion-ease-out)';
 
     let badge = card.querySelector<HTMLElement>(`.${this.badgeClass}`);
     if (!badge) {
@@ -458,7 +418,7 @@ export class JobTracker {
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        box-shadow: 0 8px 18px ${badgeShadowColor};
+        box-shadow: var(--shadow-md);
         z-index: 2;
       `;
       card.appendChild(badge);
@@ -608,18 +568,15 @@ export class JobTracker {
     }
 
     const originalLabel = button.innerHTML;
-    const jobData = JobDataExtractor.extractJobData(card);
+    const jobData = await JobParser.extractJobFromElement(card, window.location.href);
 
-    const normalizedCompany = normalizeCompanyName(jobData.company);
-    if (!normalizedCompany || normalizedCompany.length < 2 || isLikelyPlaceholderCompany(normalizedCompany)) {
+    if (!jobData || !jobData.company || jobData.company.length < 2 || isLikelyPlaceholderCompany(jobData.company)) {
       UIComponents.showToast(
         "Couldn't detect the company name for this job. Open the job details and try again.",
         { type: "warning" }
       );
       return;
     }
-
-    jobData.company = normalizedCompany;
 
     button.disabled = true;
     button.innerHTML = `${UIComponents.createIcon("clock", 12, "#fff")} <span>Checking...</span>`;
@@ -661,7 +618,12 @@ export class JobTracker {
     }
 
     const originalLabel = button.innerHTML;
-    const jobData = JobDataExtractor.extractJobData(card);
+    const jobData = await JobParser.extractJobFromElement(card, window.location.href);
+
+    if (!jobData) {
+      UIComponents.showToast("Failed to extract job data", { type: "error" });
+      return;
+    }
 
     const normalizedCompany = normalizeCompanyName(jobData.company);
     const normalizedTitle = (jobData.title || "").replace(/\s+/g, " ").trim();
@@ -682,39 +644,12 @@ export class JobTracker {
     jobData.company = normalizedCompany;
     jobData.title = normalizedTitle;
 
-    // (Validation performed above)
-
     button.disabled = true;
     button.innerHTML = `${UIComponents.createIcon("clock", 12, "#fff")} <span>Adding...</span>`;
 
     try {
-      // Prepare data for enhanced parser
-      const partialData: Partial<EnhancedJobData> = {
-        title: jobData.title,
-        company: jobData.company,
-        location: jobData.location,
-        url: jobData.url,
-        description: jobData.description,
-        source: jobData.source,
-        dateFound: jobData.dateFound,
-        isSponsored: jobData.isSponsored,
-        sponsorshipType: jobData.sponsorshipType || '',
-        salary: jobData.salary ? { 
-          original: jobData.salary, 
-          currency: 'GBP', 
-          period: 'year' // Default assumption, parser might improve this
-        } : null
-      };
-
-      // Enhance data
-      const enhancedData = await EnhancedJobParser.enhanceJobData(partialData, document);
-      
-      if (!enhancedData) {
-        throw new Error("Failed to process job data");
-      }
-
       // Add to board using enhanced manager
-      const result = await EnhancedJobBoardManager.getInstance().addToBoard(enhancedData);
+      const result = await EnhancedJobBoardManager.getInstance().addToBoard(jobData);
       
       if (result) {
         button.innerHTML = `${UIComponents.createIcon("checkCircle", 12, "#fff")} <span>Added</span>`;
@@ -740,7 +675,7 @@ export class JobTracker {
     }
   }
 
-  private showSponsorToast(jobData: JobData, result: SponsorshipCheckResult): void {
+  private showSponsorToast(jobData: EnhancedJobData, result: SponsorshipCheckResult): void {
     if (result.status === "error" && !result.ukEligibility) {
       UIComponents.showToast(`Unable to verify sponsorship for ${jobData.company}`, { type: "error" });
       return;
@@ -860,4 +795,4 @@ export class JobTracker {
   }
 }
 
-export type { JobData } from "./JobDataExtractor";
+export type { EnhancedJobData as JobData };

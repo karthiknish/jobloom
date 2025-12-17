@@ -3,6 +3,7 @@ import { getAdminDb } from "@/firebase/admin";
 import { applyCorsHeaders, preflightResponse } from "@/lib/api/cors";
 import { authenticateRequest } from "@/lib/api/auth";
 import { FieldValue } from "firebase-admin/firestore";
+import { normalizeJobUrl, extractJobIdentifier } from "@/lib/utils/urlNormalizer";
 
 // Enhanced error types
 class ValidationError extends Error {
@@ -182,19 +183,49 @@ async function withRetry<T>(
 }
 
 // Check for duplicate jobs by URL (optimized with limit 1)
+// Uses normalized URLs and job identifiers to detect duplicates even with different tracking params
 async function checkDuplicateJob(
   db: ReturnType<typeof getAdminDb>,
   url: string,
   userId: string
 ): Promise<boolean> {
   try {
-    // Use limit(1) to avoid fetching more than needed
-    const snapshot = await db.collection('jobs')
+    const normalizedUrl = normalizeJobUrl(url);
+    const jobIdentifier = extractJobIdentifier(url);
+    
+    // First, check by normalized URL
+    const urlSnapshot = await db.collection('jobs')
+      .where('userId', '==', userId)
+      .where('normalizedUrl', '==', normalizedUrl)
+      .limit(1)
+      .get();
+    
+    if (!urlSnapshot.empty) {
+      return true;
+    }
+    
+    // If job identifier is different from normalized URL (e.g., "linkedin:12345"),
+    // also check by job identifier for more reliable matching
+    if (jobIdentifier !== normalizedUrl) {
+      const idSnapshot = await db.collection('jobs')
+        .where('userId', '==', userId)
+        .where('jobIdentifier', '==', jobIdentifier)
+        .limit(1)
+        .get();
+      
+      if (!idSnapshot.empty) {
+        return true;
+      }
+    }
+    
+    // Fallback: check exact URL match (for backwards compatibility)
+    const exactSnapshot = await db.collection('jobs')
       .where('userId', '==', userId)
       .where('url', '==', url.trim())
       .limit(1)
       .get();
-    return !snapshot.empty;
+    
+    return !exactSnapshot.empty;
   } catch (error) {
     // If query fails, assume no duplicate to not block job creation
     console.warn('Duplicate check failed:', error);
@@ -266,11 +297,16 @@ export async function POST(request: NextRequest) {
 
     // Create job object with comprehensive LinkedIn data
     const now = Date.now();
+    const normalizedUrl = normalizeJobUrl(jobData.url);
+    const jobIdentifier = extractJobIdentifier(jobData.url);
+    
     const jobDataToCreate = {
       title: jobData.title.trim(),
       company: jobData.company.trim(),
       location: jobData.location.trim(),
       url: jobData.url.trim(),
+      normalizedUrl,           // For duplicate detection
+      jobIdentifier,           // For reliable job matching across URL variations
       description: jobData.description?.trim() || '',
       salary: jobData.salary?.trim() || '',
       salaryRange: jobData.salaryRange || null,
