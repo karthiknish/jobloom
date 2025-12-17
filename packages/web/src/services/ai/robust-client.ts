@@ -5,7 +5,8 @@
  */
 
 import { GoogleGenerativeAI, type GenerativeModel } from '@google/generative-ai';
-import { checkServerRateLimit, type UserTier } from '@/lib/rateLimiter';
+import { checkServerRateLimit } from '@/lib/rateLimiter';
+import type { UserTier } from '@/types/api';
 import { aiQueue, AIQueueError, type RequestPriority } from './ai-queue';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';

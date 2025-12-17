@@ -256,6 +256,7 @@ export interface BlogStats {
 
 // Define types for subscription system
 export type SubscriptionPlan = "free" | "premium";
+export type UserTier = "free" | "premium" | "admin";
 
 export interface SubscriptionLimits {
   cvAnalysesPerMonth: number;

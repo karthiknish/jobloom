@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminDb, categorizeFirebaseError } from '@/firebase/admin';
 import { authenticateRequest } from '@/lib/api/auth';
+import { checkServerRateLimitWithAuth } from '@/lib/rateLimiter';
 import { z } from 'zod';
 
 // Input validation schemas
@@ -101,22 +102,30 @@ export async function GET(request: NextRequest) {
   const startTime = Date.now();
   
   try {
-    // Rate limiting check
+    // Get auth token for rate limiting
+    const authHeader = request.headers.get('authorization');
+    const authToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : undefined;
+    
+    // Rate limiting check using unified system
     const rateLimitKey = getRateLimitKey(request);
-    const rateLimit = checkRateLimit(rateLimitKey);
+    const rateLimit = await checkServerRateLimitWithAuth(
+      rateLimitKey, 
+      'sponsor-lookup',
+      authToken
+    );
     
     if (!rateLimit.allowed) {
       return NextResponse.json({
         success: false,
         error: 'Rate limit exceeded',
-        retryAfter: Math.ceil((rateLimit.resetAt - Date.now()) / 1000),
+        retryAfter: rateLimit.retryAfter,
         requestId
       }, { 
         status: 429,
         headers: {
-          'X-RateLimit-Remaining': '0',
-          'X-RateLimit-Reset': rateLimit.resetAt.toString(),
-          'Retry-After': Math.ceil((rateLimit.resetAt - Date.now()) / 1000).toString()
+          'X-RateLimit-Remaining': (rateLimit.remaining || 0).toString(),
+          'X-RateLimit-Reset': (rateLimit.resetIn || 0).toString(),
+          'Retry-After': (rateLimit.retryAfter || 0).toString()
         }
       });
     }
@@ -157,7 +166,7 @@ export async function GET(request: NextRequest) {
         requestId
       }, {
         headers: {
-          'X-RateLimit-Remaining': rateLimit.remaining.toString(),
+          'X-RateLimit-Remaining': (rateLimit.remaining ?? 0).toString(),
           'X-Cache': 'HIT',
           'X-Response-Time': `${Date.now() - startTime}ms`
         }
@@ -178,7 +187,7 @@ export async function GET(request: NextRequest) {
           requestId
         }, {
           headers: {
-            'X-RateLimit-Remaining': rateLimit.remaining.toString()
+            'X-RateLimit-Remaining': (rateLimit.remaining ?? 0).toString()
           }
         });
       } catch (error: any) {
@@ -274,7 +283,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(response, {
       headers: {
-        'X-RateLimit-Remaining': rateLimit.remaining.toString(),
+        'X-RateLimit-Remaining': (rateLimit.remaining ?? 0).toString(),
         'X-Cache': 'MISS',
         'X-Response-Time': `${Date.now() - startTime}ms`
       }
@@ -303,6 +312,34 @@ export async function POST(request: NextRequest) {
   const requestId = `req_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   
   try {
+    // Get auth token for rate limiting
+    const authHeader = request.headers.get('authorization');
+    const authToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : undefined;
+    
+    // Rate limiting check using unified system
+    const rateLimitKey = getRateLimitKey(request);
+    const rateLimit = await checkServerRateLimitWithAuth(
+      rateLimitKey, 
+      'sponsor-batch',
+      authToken
+    );
+    
+    if (!rateLimit.allowed) {
+      return NextResponse.json({
+        success: false,
+        error: 'Rate limit exceeded',
+        retryAfter: rateLimit.retryAfter,
+        requestId
+      }, { 
+        status: 429,
+        headers: {
+          'X-RateLimit-Remaining': (rateLimit.remaining || 0).toString(),
+          'X-RateLimit-Reset': (rateLimit.resetIn || 0).toString(),
+          'Retry-After': (rateLimit.retryAfter || 0).toString()
+        }
+      });
+    }
+
     // Require authentication for batch lookups
     const auth = await authenticateRequest(request);
     if (!auth.ok) {

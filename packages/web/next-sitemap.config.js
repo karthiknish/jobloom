@@ -6,7 +6,9 @@ module.exports = {
   
   // Exclude private/auth pages
   exclude: [
+    '/api',
     '/api/*',
+    '/admin',
     '/admin/*',
     '/dashboard',
     '/dashboard/*',
@@ -75,7 +77,9 @@ module.exports = {
         userAgent: '*',
         allow: '/',
         disallow: [
+          '/api',
           '/api/',
+          '/admin',
           '/admin/',
           '/dashboard/',
           '/settings/',

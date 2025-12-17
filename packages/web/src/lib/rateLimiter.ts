@@ -7,6 +7,8 @@ import {
   safeLocalStorageRemove,
   safeLocalStorageSet,
 } from "@/utils/safeBrowserStorage";
+import { UserTier } from "@/types/api";
+import { getUserTier } from "./api/tier";
 
 export interface RateLimitConfig {
   maxRequests: number;
@@ -60,9 +62,9 @@ export const TIERED_RATE_LIMITS: Record<string, UserTierLimits> = {
 
   // Sponsor lookups (core feature)
   'sponsor-lookup': {
-    free: { maxRequests: 15, windowMs: 60000 },    // 15 lookups per minute for free users
-    premium: { maxRequests: 100, windowMs: 60000 },  // 100 lookups per minute for premium users
-    admin: { maxRequests: 500, windowMs: 60000 },    // 500 lookups per minute for admins
+    free: { maxRequests: 50, windowMs: 60000 },    // 50 lookups per minute for free users
+    premium: { maxRequests: 200, windowMs: 60000 },  // 200 lookups per minute for premium users
+    admin: { maxRequests: 1000, windowMs: 60000 },    // 1000 lookups per minute for admins
   },
   'sponsor-batch': {
     free: { maxRequests: 2, windowMs: 60000 },
@@ -182,8 +184,6 @@ export const RATE_LIMITS: Record<string, RateLimitConfig> = {
   'addSponsoredCompany': { maxRequests: 5, windowMs: 60000 },
   'blog-admin': { maxRequests: 150, windowMs: 60000 },
 };
-
-export type UserTier = 'free' | 'premium' | 'admin';
 
 // Enhanced rate limiting state with sliding window support
 interface EnhancedRateLimitState extends RateLimitState {
@@ -524,16 +524,20 @@ export function checkServerRateLimit(
 
 // Enhanced function to determine user tier from Firebase auth or request
 export async function getUserTierFromAuth(authToken?: string): Promise<UserTier> {
-  // For now, return 'premium' for all authenticated users to avoid middleware issues
-  // In a real implementation, you would verify the token and check user subscription
   if (!authToken) return 'free';
   
   try {
-    // Simple decode of JWT to get basic info (without verification for speed)
+    // Simple decode of JWT to get UID (without verification for speed)
     const parts = authToken.split('.');
     if (parts.length === 3) {
       const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
-      // Admin users get admin tier
+      const uid = payload.user_id || payload.uid;
+      
+      if (uid) {
+        return await getUserTier(uid);
+      }
+
+      // Fallback to email-based check if UID not found in payload
       if (payload.email && (
         payload.email.includes('admin') || 
         payload.email.endsWith('@hireall.app')
@@ -543,9 +547,10 @@ export async function getUserTierFromAuth(authToken?: string): Promise<UserTier>
     }
   } catch (error) {
     // If token parsing fails, continue with default tier
+    console.error("Error parsing auth token for tier detection:", error);
   }
   
-  return 'premium'; // Default to premium for authenticated users
+  return 'free'; // Default to free for unidentifiable tokens
 }
 
 // Rate limiting with automatic user tier detection
