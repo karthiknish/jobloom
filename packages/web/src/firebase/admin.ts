@@ -119,13 +119,13 @@ try {
   // Method 4: Load from JSON file (development fallback)
   if (!serviceAccount) {
     try {
-      const keyPath = join(process.cwd(), "jobloom-6a4cd-firebase-adminsdk-fbsvc-aed875c457.json");
+      const keyPath = join(process.cwd(), "firebase-service-account.json");
       if (existsSync(keyPath)) {
         serviceAccount = JSON.parse(readFileSync(keyPath, "utf8"));
-        console.log("Loaded service account from jobloom-6a4cd-firebase-adminsdk-fbsvc-aed875c457.json");
+        console.log("Loaded service account from firebase-service-account.json");
       }
     } catch (error) {
-      console.warn("Failed to load jobloom-6a4cd-firebase-adminsdk-fbsvc-aed875c457.json:", error);
+      console.warn("Failed to load firebase-service-account.json:", error);
     }
   }
 

@@ -97,8 +97,7 @@ Thumbs.db
 
 # Extension builds
 packages/extension/dist/
-packages/web/jobloom-6a4cd-firebase-adminsdk-fbsvc-aed875c457.json
-packages/web/hireall-4f106-firebase-adminsdk-fbsvc-2e91c28cd6.json
+firebase-service-account.json
 **/*-firebase-adminsdk-*.json
 **/*firebase-adminsdk*.json
 **/service-account*.json

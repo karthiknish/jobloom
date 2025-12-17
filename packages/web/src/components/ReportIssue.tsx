@@ -219,7 +219,7 @@ Browser: ${typeof navigator !== "undefined" ? navigator.userAgent : "Unknown"}
                     <motion.div
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="flex items-center gap-3 p-4 rounded-lg bg-green-50 text-green-700 border border-green-200"
+                      className="flex items-center gap-3 p-4 rounded-lg bg-success-soft text-success border border-success/20"
                     >
                       <CheckCircle className="h-5 w-5" />
                       <span>Thank you! Your report has been submitted.</span>

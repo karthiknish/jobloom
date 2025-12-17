@@ -83,7 +83,7 @@ export class JobTracker {
   initialize(): void {
     // Check if extension context is valid
     if (typeof chrome === "undefined" || !chrome.runtime?.id) {
-      console.debug("Hireall: Extension context invalid, skipping JobTracker initialization");
+      console.debug("HireAll: Extension context invalid, skipping JobTracker initialization");
       return;
     }
 
@@ -101,7 +101,7 @@ export class JobTracker {
       if (this.mutationTimeout) window.clearTimeout(this.mutationTimeout);
       this.mutationTimeout = window.setTimeout(() => {
         this.checkAndHighlightSponsoredJobs().catch((error) => {
-          console.error("Hireall: failed to refresh highlights", error);
+          console.error("HireAll: failed to refresh highlights", error);
         });
       }, 300);
     });

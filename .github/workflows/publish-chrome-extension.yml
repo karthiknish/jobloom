@@ -46,14 +46,14 @@ jobs:
           cd packages/extension
           npm run build:prod
         env:
-          WEB_APP_URL: https://jobloom.ai
+          WEB_APP_URL: https://hireall.app
           OAUTH_CLIENT_ID: ${{ secrets.OAUTH_CLIENT_ID }}
           OAUTH_CLIENT_SECRET_BASE64: ${{ secrets.OAUTH_CLIENT_SECRET_BASE64 }}
 
       - name: Package extension
         run: |
           cd packages/extension
-          zip -r ../jobloom-extension.zip dist/
+          zip -r ../hireall-extension.zip dist/
 
       - name: Publish to Chrome Web Store
         id: publish
@@ -63,7 +63,7 @@ jobs:
           client-id: ${{ secrets.CHROME_CLIENT_ID }}
           client-secret: ${{ secrets.CHROME_CLIENT_SECRET }}
           refresh-token: ${{ secrets.CHROME_REFRESH_TOKEN }}
-          zip-file: jobloom-extension.zip
+          zip-file: hireall-extension.zip
           publish-target: ${{ github.event.inputs.publish_target || 'store' }}
 
       - name: Create release
@@ -84,12 +84,12 @@ jobs:
             - Published to: ${{ github.event.inputs.publish_target || 'store' }}
 
             ### Files
-            - `jobloom-extension.zip` - Extension package
+            - `hireall-extension.zip` - Extension package
           draft: false
           prerelease: false
 
       - name: Upload extension artifact
         uses: actions/upload-artifact@v4
         with:
-          name: jobloom-extension
-          path: jobloom-extension.zip
+          name: hireall-extension
+          path: hireall-extension.zip

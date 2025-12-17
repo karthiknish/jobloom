@@ -1,7 +1,7 @@
 import { format } from "date-fns";
 import { COLORS } from "../styles/colors";
 
-export const WELCOME_EMAIL_SUBJECT = "Welcome to Hireall";
+export const WELCOME_EMAIL_SUBJECT = "Welcome to HireAll";
 
 interface WelcomeEmailTemplateProps {
   name?: string | null;

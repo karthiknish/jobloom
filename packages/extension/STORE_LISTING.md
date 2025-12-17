@@ -11,19 +11,19 @@ HireAll helps job seekers navigate the job market more effectively by providing 
 
 ### Key Features
 
-🔍 **Sponsored Job Detection**
+**Sponsored Job Detection**
 Automatically identifies and highlights sponsored job listings on LinkedIn, helping you understand which positions are promoted.
 
-📋 **Application Tracking**
+**Application Tracking**
 Keep track of all your job applications in one place. Monitor status, add notes, and never lose track of where you've applied.
 
-🇬🇧 **UK Visa Sponsorship Analysis**
+**UK Visa Sponsorship Analysis**
 For international job seekers, instantly check if a company is on the UK's licensed sponsor list and verify salary thresholds for Skilled Worker visas.
 
-☁️ **Cloud Sync**
+**Cloud Sync**
 Sign in to sync your job tracking data across all your devices. Your job search follows you everywhere.
 
-📊 **Weekly Statistics**
+**Weekly Statistics**
 See at a glance how many jobs you've tracked and applied to each week.
 
 ---

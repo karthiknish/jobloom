@@ -370,7 +370,7 @@ export default function UpgradePage() {
 
         <div className="text-center text-sm text-muted-foreground mt-16 pb-8">
           <p>Prices are in GBP. Taxes may apply.</p>
-          <p className="mt-2">Need help? <a href="mailto:support@jobloom.com" className="text-primary hover:underline">Contact Support</a></p>
+          <p className="mt-2">Need help? <a href="mailto:support@hireall.app" className="text-primary hover:underline">Contact Support</a></p>
         </div>
 
       </div>

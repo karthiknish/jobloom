@@ -2,227 +2,339 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { CheckCircle, Shield, ClipboardList, AlertTriangle, FileText, HelpCircle, Scale, Gavel, UserCheck, Ban } from "lucide-react";
+import { CheckCircle, Shield, ClipboardList, AlertTriangle, FileText, HelpCircle, Scale, Gavel, UserCheck, Ban, ChevronRight, Info, Zap } from "lucide-react";
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+
+const sections = [
+  { id: "eligibility", title: "1. Eligibility", icon: UserCheck },
+  { id: "account", title: "2. Account Responsibilities", icon: Shield },
+  { id: "use", title: "3. Acceptable Use", icon: Gavel },
+  { id: "extension", title: "4. Chrome Extension", icon: ClipboardList },
+  { id: "termination", title: "5. Termination", icon: Ban },
+  { id: "billing", title: "6. Subscriptions & Billing", icon: FileText },
+  { id: "ai", title: "7. AI Features", icon: Zap },
+  { id: "disclaimers", title: "8. Disclaimers", icon: AlertTriangle },
+  { id: "liability", title: "9. Limitation of Liability", icon: Gavel },
+  { id: "contact", title: "10. Contact", icon: HelpCircle },
+  { id: "changes", title: "11. Changes to Terms", icon: Scale },
+];
+
+const summaryPoints = [
+  { title: "Age Requirement", description: "You must be at least 18 years old to use HireAll.", icon: UserCheck },
+  { title: "Account Safety", description: "You are responsible for keeping your account credentials secure.", icon: Shield },
+  { title: "Fair Use", description: "Don't misuse our service or attempt to bypass our security.", icon: Gavel },
+  { title: "AI Accuracy", description: "AI outputs should be reviewed; we don't guarantee 100% accuracy.", icon: Zap },
+];
 
 export default function TermsOfService() {
+  const scrollToSection = (id: string) => {
+    const element = document.getElementById(id);
+    if (element) {
+      const offset = 100;
+      const bodyRect = document.body.getBoundingClientRect().top;
+      const elementRect = element.getBoundingClientRect().top;
+      const elementPosition = elementRect - bodyRect;
+      const offsetPosition = elementPosition - offset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: "smooth"
+      });
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
+    <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <div className="relative overflow-hidden bg-primary/5 pb-12 pt-16 sm:pb-16 sm:pt-24 lg:pb-24">
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-primary/10 rounded-full filter blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-0 left-0 w-80 h-80 bg-secondary/10 rounded-full filter blur-2xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-        </div>
+      <div className="relative overflow-hidden bg-slate-50 dark:bg-slate-950/50 border-b border-border pb-16 pt-24 sm:pb-20 sm:pt-32 lg:pb-28">
+        <div className="absolute inset-0 bg-grid-pattern opacity-[0.03] text-primary" />
         
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-2xl text-center">
+          <div className="mx-auto max-w-3xl text-center">
             <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", stiffness: 260, damping: 20 }}
-              className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 text-primary mb-8"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-8 shadow-sm border border-primary/20"
             >
-              <Scale className="h-10 w-10" />
+              <Scale className="h-8 w-8" />
             </motion.div>
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-4xl font-bold tracking-tight text-foreground sm:text-6xl text-gradient-premium"
+              className="text-4xl font-black tracking-tight text-foreground sm:text-6xl mb-6"
             >
-              Terms of Service
+              Terms of <span className="text-primary">Service</span>
             </motion.h1>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className="mt-6 text-lg leading-8 text-muted-foreground"
+              transition={{ delay: 0.1 }}
+              className="text-xl text-muted-foreground leading-relaxed mb-10"
             >
-              Please read these terms carefully before using our platform. They govern your relationship with Hireall.
+              Please read these terms carefully. They govern your use of the HireAll platform and our commitment to you.
             </motion.p>
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.6 }}
-              className="mt-8"
+              transition={{ delay: 0.2 }}
             >
-              <Badge variant="outline" className="px-4 py-1 text-sm border-primary/20 bg-primary/5 text-primary">
-                Last updated: December 12, 2025
+              <Badge variant="secondary" className="px-4 py-1.5 text-xs font-bold uppercase tracking-widest">
+                Last updated: December 18, 2025
               </Badge>
             </motion.div>
           </div>
         </div>
       </div>
 
-      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-12">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.8 }}
-        >
-          <Card className="card-premium-elevated border-0 bg-surface overflow-hidden">
-            <CardContent className="p-8 sm:p-12">
-              <div className="prose prose-lg max-w-none">
-                <p className="lead text-xl text-muted-foreground mb-12">
-                  Welcome to Hireall! These Terms of Service (&ldquo;Terms&rdquo;) govern your use of the Hireall platform, Chrome extension, and related services (collectively, the &ldquo;Service&rdquo;). By accessing or using the Service, you agree to be bound by these Terms.
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-20">
+        <div className="grid lg:grid-cols-[280px_1fr] gap-16">
+          {/* Sidebar Navigation */}
+          <aside className="hidden lg:block">
+            <div className="sticky top-32">
+              <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground mb-6 px-4">Contents</h3>
+              <nav className="space-y-1">
+                {sections.map((section) => (
+                  <button
+                    key={section.id}
+                    onClick={() => scrollToSection(section.id)}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-xl transition-all group"
+                  >
+                    <section.icon className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                    {section.title.split(". ")[1]}
+                  </button>
+                ))}
+              </nav>
+
+              <div className="mt-12 p-6 bg-primary/5 rounded-2xl border border-primary/10">
+                <h4 className="text-sm font-black text-primary uppercase tracking-widest mb-3 flex items-center gap-2">
+                  <Info className="w-4 h-4" /> Questions?
+                </h4>
+                <p className="text-xs text-muted-foreground leading-relaxed mb-4">
+                  Need clarification on our terms? Our support team is here to help.
                 </p>
+                <Link 
+                  href="mailto:support@hireall.app"
+                  className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
+                >
+                  Contact Support <ChevronRight className="w-3 h-3" />
+                </Link>
+              </div>
+            </div>
+          </aside>
 
-                <div className="grid gap-12">
-                  <section className="relative pl-8 border-l-2 border-primary/20">
-                    <div className="absolute -left-[9px] top-0 h-4 w-4 rounded-full bg-primary ring-4 ring-background" />
-                    <h2 className="flex items-center text-2xl font-bold text-foreground mt-0 mb-4">
-                      <UserCheck className="mr-3 h-6 w-6 text-primary" />
-                      1. Eligibility
-                    </h2>
-                    <p className="text-muted-foreground">
-                      You must be at least 18 years old to use the Service. By using the Service, you represent that you meet this eligibility requirement. The Service is not available to any users previously removed from the Service by Hireall.
+          {/* Main Content */}
+          <div className="space-y-16">
+            {/* Quick Summary */}
+            <section>
+              <div className="flex items-center gap-3 mb-8">
+                <div className="h-8 w-1.5 bg-primary rounded-full" />
+                <h2 className="text-2xl font-black tracking-tight">At a Glance</h2>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-6">
+                {summaryPoints.map((point, idx) => (
+                  <motion.div
+                    key={point.title}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 * idx }}
+                    className="p-6 bg-card rounded-2xl border border-border hover:border-primary/30 transition-colors shadow-sm"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-4">
+                      <point.icon className="w-5 h-5" />
+                    </div>
+                    <h3 className="font-bold text-foreground mb-2">{point.title}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{point.description}</p>
+                  </motion.div>
+                ))}
+              </div>
+            </section>
+
+            <div className="prose prose-slate dark:prose-invert max-w-none">
+              <p className="text-lg text-muted-foreground leading-relaxed mb-12">
+                Welcome to HireAll! These Terms of Service (&ldquo;Terms&rdquo;) govern your use of the HireAll platform, Chrome extension, and related services (collectively, the &ldquo;Service&rdquo;). By accessing or using the Service, you agree to be bound by these Terms.
+              </p>
+
+              <div className="space-y-20">
+                <section id="eligibility" className="scroll-mt-32">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center border border-border">
+                      <UserCheck className="w-6 h-6 text-primary" />
+                    </div>
+                    <h2 className="text-2xl font-black m-0">1. Eligibility</h2>
+                  </div>
+                  <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-8 border border-border">
+                    <p className="text-muted-foreground leading-relaxed m-0">
+                      You must be at least 18 years old to use the Service. By using the Service, you represent that you meet this eligibility requirement. The Service is not available to any users previously removed from the Service by HireAll.
                     </p>
-                  </section>
+                  </div>
+                </section>
 
-                  <section className="relative pl-8 border-l-2 border-primary/20">
-                    <div className="absolute -left-[9px] top-0 h-4 w-4 rounded-full bg-primary ring-4 ring-background" />
-                    <h2 className="flex items-center text-2xl font-bold text-foreground mt-0 mb-4">
-                      <Shield className="mr-3 h-6 w-6 text-primary" />
-                      2. Account Responsibilities
-                    </h2>
-                    <p className="text-muted-foreground mb-4">
+                <section id="account" className="scroll-mt-32">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center border border-border">
+                      <Shield className="w-6 h-6 text-primary" />
+                    </div>
+                    <h2 className="text-2xl font-black m-0">2. Account Responsibilities</h2>
+                  </div>
+                  <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-8 border border-border">
+                    <p className="text-muted-foreground mb-6">
                       You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account. You agree to:
                     </p>
-                    <ul className="space-y-2 text-muted-foreground">
-                      <li className="flex items-start">
-                        <CheckCircle className="mr-2 h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                        <span>Provide accurate and complete information when creating your account</span>
-                      </li>
-                      <li className="flex items-start">
-                        <CheckCircle className="mr-2 h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                        <span>Immediately notify us of any unauthorized use of your account</span>
-                      </li>
-                      <li className="flex items-start">
-                        <CheckCircle className="mr-2 h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                        <span>Ensure you exit from your account at the end of each session</span>
-                      </li>
+                    <ul className="space-y-4 m-0 p-0 list-none">
+                      {[
+                        "Provide accurate and complete information when creating your account",
+                        "Immediately notify us of any unauthorized use of your account",
+                        "Ensure you exit from your account at the end of each session"
+                      ].map((item, i) => (
+                        <li key={i} className="flex items-start gap-3 text-muted-foreground">
+                          <CheckCircle className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
                     </ul>
-                  </section>
+                  </div>
+                </section>
 
-                  <section className="relative pl-8 border-l-2 border-primary/20">
-                    <div className="absolute -left-[9px] top-0 h-4 w-4 rounded-full bg-primary ring-4 ring-background" />
-                    <h2 className="flex items-center text-2xl font-bold text-foreground mt-0 mb-4">
-                      <Gavel className="mr-3 h-6 w-6 text-primary" />
-                      3. Acceptable Use
-                    </h2>
-                    <p className="text-muted-foreground">
+                <section id="use" className="scroll-mt-32">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center border border-border">
+                      <Gavel className="w-6 h-6 text-primary" />
+                    </div>
+                    <h2 className="text-2xl font-black m-0">3. Acceptable Use</h2>
+                  </div>
+                  <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-8 border border-border">
+                    <p className="text-muted-foreground leading-relaxed m-0">
                       You agree not to misuse the Service, including attempting to gain unauthorized access, interfering with the operation of the Service, or using the Service for any illegal purpose. You must not transmit any worms or viruses or any code of a destructive nature.
                     </p>
-                  </section>
+                  </div>
+                </section>
 
-                  <section className="relative pl-8 border-l-2 border-primary/20">
-                    <div className="absolute -left-[9px] top-0 h-4 w-4 rounded-full bg-primary ring-4 ring-background" />
-                    <h2 className="flex items-center text-2xl font-bold text-foreground mt-0 mb-4">
-                      <ClipboardList className="mr-3 h-6 w-6 text-primary" />
-                      4. Chrome Extension Usage
-                    </h2>
-                    <p className="text-muted-foreground">
-                      The Hireall Chrome extension highlights sponsored job listings and helps track applications. By installing the extension, you grant it permission to read the job listings you visit to provide this functionality. We respect your privacy and only collect data necessary for the Service's operation.
+                <section id="extension" className="scroll-mt-32">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center border border-border">
+                      <ClipboardList className="w-6 h-6 text-primary" />
+                    </div>
+                    <h2 className="text-2xl font-black m-0">4. Chrome Extension Usage</h2>
+                  </div>
+                  <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-8 border border-border">
+                    <p className="text-muted-foreground leading-relaxed m-0">
+                      The HireAll Chrome extension highlights sponsored job listings and helps track applications. By installing the extension, you grant it permission to read the job listings you visit to provide this functionality. We respect your privacy and only collect data necessary for the Service's operation.
                     </p>
-                  </section>
+                  </div>
+                </section>
 
-                  <section className="relative pl-8 border-l-2 border-primary/20">
-                    <div className="absolute -left-[9px] top-0 h-4 w-4 rounded-full bg-primary ring-4 ring-background" />
-                    <h2 className="flex items-center text-2xl font-bold text-foreground mt-0 mb-4">
-                      <Ban className="mr-3 h-6 w-6 text-primary" />
-                      5. Termination
-                    </h2>
-                    <p className="text-muted-foreground">
+                <section id="termination" className="scroll-mt-32">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center border border-border">
+                      <Ban className="w-6 h-6 text-primary" />
+                    </div>
+                    <h2 className="text-2xl font-black m-0">5. Termination</h2>
+                  </div>
+                  <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-8 border border-border">
+                    <p className="text-muted-foreground leading-relaxed m-0">
                       We reserve the right to suspend or terminate your access to the Service at any time, without notice, if you violate these Terms or for any other reason at our sole discretion. Upon termination, your right to use the Service will immediately cease.
                     </p>
-                  </section>
+                  </div>
+                </section>
 
-                  <section className="relative pl-8 border-l-2 border-primary/20">
-                    <div className="absolute -left-[9px] top-0 h-4 w-4 rounded-full bg-primary ring-4 ring-background" />
-                    <h2 className="flex items-center text-2xl font-bold text-foreground mt-0 mb-4">
-                      <FileText className="mr-3 h-6 w-6 text-primary" />
-                      6. Subscriptions & Billing
-                    </h2>
-                    <p className="text-muted-foreground">
+                <section id="billing" className="scroll-mt-32">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center border border-border">
+                      <FileText className="w-6 h-6 text-primary" />
+                    </div>
+                    <h2 className="text-2xl font-black m-0">6. Subscriptions & Billing</h2>
+                  </div>
+                  <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-8 border border-border">
+                    <p className="text-muted-foreground leading-relaxed m-0">
                       Some parts of the Service may require a paid subscription. Prices, billing periods, renewal rules, and any applicable trial terms will be shown at checkout or in your account. Payments may be processed by third-party payment providers.
                     </p>
-                  </section>
+                  </div>
+                </section>
 
-                  <section className="relative pl-8 border-l-2 border-primary/20">
-                    <div className="absolute -left-[9px] top-0 h-4 w-4 rounded-full bg-primary ring-4 ring-background" />
-                    <h2 className="flex items-center text-2xl font-bold text-foreground mt-0 mb-4">
-                      <ClipboardList className="mr-3 h-6 w-6 text-primary" />
-                      7. AI Features
-                    </h2>
-                    <p className="text-muted-foreground">
+                <section id="ai" className="scroll-mt-32">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center border border-border">
+                      <Zap className="w-6 h-6 text-primary" />
+                    </div>
+                    <h2 className="text-2xl font-black m-0">7. AI Features</h2>
+                  </div>
+                  <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-8 border border-border">
+                    <p className="text-muted-foreground leading-relaxed m-0">
                       The Service may offer AI-assisted features (for example, generating or improving resumes and cover letters). AI outputs may be inaccurate or incomplete and should be reviewed before you rely on them. You are responsible for the content you submit and the decisions you make based on any output.
                     </p>
-                  </section>
+                  </div>
+                </section>
 
-                  <section className="relative pl-8 border-l-2 border-primary/20">
-                    <div className="absolute -left-[9px] top-0 h-4 w-4 rounded-full bg-primary ring-4 ring-background" />
-                    <h2 className="flex items-center text-2xl font-bold text-foreground mt-0 mb-4">
-                      <AlertTriangle className="mr-3 h-6 w-6 text-primary" />
-                      8. Disclaimers
-                    </h2>
-                    <p className="text-muted-foreground">
-                      The Service is provided on an “as is” and “as available” basis. To the maximum extent permitted by law, Hireall disclaims all warranties, whether express or implied, including implied warranties of merchantability, fitness for a particular purpose, and non-infringement.
+                <section id="disclaimers" className="scroll-mt-32">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center border border-border">
+                      <AlertTriangle className="w-6 h-6 text-primary" />
+                    </div>
+                    <h2 className="text-2xl font-black m-0">8. Disclaimers</h2>
+                  </div>
+                  <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-8 border border-border">
+                    <p className="text-muted-foreground leading-relaxed m-0 italic">
+                      The Service is provided on an “as is” and “as available” basis. To the maximum extent permitted by law, HireAll disclaims all warranties, whether express or implied, including implied warranties of merchantability, fitness for a particular purpose, and non-infringement.
                     </p>
-                  </section>
+                  </div>
+                </section>
 
-                  <section className="relative pl-8 border-l-2 border-primary/20">
-                    <div className="absolute -left-[9px] top-0 h-4 w-4 rounded-full bg-primary ring-4 ring-background" />
-                    <h2 className="flex items-center text-2xl font-bold text-foreground mt-0 mb-4">
-                      <Gavel className="mr-3 h-6 w-6 text-primary" />
-                      9. Limitation of Liability
-                    </h2>
-                    <p className="text-muted-foreground">
-                      To the maximum extent permitted by law, Hireall will not be liable for any indirect, incidental, special, consequential, or punitive damages, or any loss of profits or revenues, whether incurred directly or indirectly, arising from your use of the Service.
+                <section id="liability" className="scroll-mt-32">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center border border-border">
+                      <Gavel className="w-6 h-6 text-primary" />
+                    </div>
+                    <h2 className="text-2xl font-black m-0">9. Limitation of Liability</h2>
+                  </div>
+                  <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-8 border border-border">
+                    <p className="text-muted-foreground leading-relaxed m-0">
+                      To the maximum extent permitted by law, HireAll will not be liable for any indirect, incidental, special, consequential, or punitive damages, or any loss of profits or revenues, whether incurred directly or indirectly, arising from your use of the Service.
                     </p>
-                  </section>
+                  </div>
+                </section>
 
-                  <section className="relative pl-8 border-l-2 border-primary/20">
-                    <div className="absolute -left-[9px] top-0 h-4 w-4 rounded-full bg-primary ring-4 ring-background" />
-                    <h2 className="flex items-center text-2xl font-bold text-foreground mt-0 mb-4">
-                      <HelpCircle className="mr-3 h-6 w-6 text-primary" />
-                      10. Contact
-                    </h2>
-                    <p className="text-muted-foreground">
-                      If you have questions about these Terms, please contact us at
+                <section id="contact" className="scroll-mt-32">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center border border-border">
+                      <HelpCircle className="w-6 h-6 text-primary" />
+                    </div>
+                    <h2 className="text-2xl font-black m-0">10. Contact</h2>
+                  </div>
+                  <div className="bg-primary/5 rounded-2xl p-8 border border-primary/20">
+                    <p className="text-muted-foreground leading-relaxed m-0">
+                      If you have questions about these Terms, please contact our legal and support team at
                       <Link
                         href="mailto:support@hireall.app"
-                        className="text-primary hover:underline font-medium ml-1"
+                        className="text-primary hover:underline font-bold ml-1"
                       >
                         support@hireall.app
                       </Link>
                       .
                     </p>
-                  </section>
+                  </div>
+                </section>
 
-                  <section className="relative pl-8 border-l-2 border-primary/20">
-                    <div className="absolute -left-[9px] top-0 h-4 w-4 rounded-full bg-primary ring-4 ring-background" />
-                    <h2 className="flex items-center text-2xl font-bold text-foreground mt-0 mb-4">
-                      <Scale className="mr-3 h-6 w-6 text-primary" />
-                      11. Changes to These Terms
-                    </h2>
-                    <p className="text-muted-foreground">
+                <section id="changes" className="scroll-mt-32">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center border border-border">
+                      <Scale className="w-6 h-6 text-primary" />
+                    </div>
+                    <h2 className="text-2xl font-black m-0">11. Changes to These Terms</h2>
+                  </div>
+                  <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-8 border border-border">
+                    <p className="text-muted-foreground leading-relaxed m-0">
                       We may update these Terms from time to time. If we make material changes, we will take reasonable steps to notify you (for example, by posting an updated version on this page). Your continued use of the Service after changes become effective means you accept the updated Terms.
                     </p>
-                  </section>
-                </div>
+                  </div>
+                </section>
               </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

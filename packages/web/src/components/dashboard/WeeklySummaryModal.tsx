@@ -87,7 +87,7 @@ export function WeeklySummaryModal({
   // Activity highlights
   const highlights = [];
   if (thisWeekStats.offered > 0) {
-    highlights.push({ icon: <CheckCircle2 className="h-4 w-4 text-green-600" />, text: `${thisWeekStats.offered} offer${thisWeekStats.offered > 1 ? 's' : ''} received! 🎉`, type: "success" });
+    highlights.push({ icon: <CheckCircle2 className="h-4 w-4 text-green-600" />, text: `${thisWeekStats.offered} offer${thisWeekStats.offered > 1 ? 's' : ''} received!`, type: "success" });
   }
   if (thisWeekStats.interviewing > 0) {
     highlights.push({ icon: <Star className="h-4 w-4 text-purple-600" />, text: `${thisWeekStats.interviewing} interview${thisWeekStats.interviewing > 1 ? 's' : ''} scheduled`, type: "info" });
@@ -240,11 +240,11 @@ export function WeeklySummaryModal({
             {/* Motivation */}
             <div className="text-center py-4 text-sm text-muted-foreground">
               {thisWeekStats.added === 0 ? (
-                <p>No applications this week yet. Keep pushing! 💪</p>
+                <p>No applications this week yet. Keep pushing!</p>
               ) : thisWeekStats.added >= 10 ? (
-                <p>Amazing progress! Keep the momentum going! 🚀</p>
+                <p>Amazing progress! Keep the momentum going!</p>
               ) : (
-                <p>Good work! Stay consistent for best results. ✨</p>
+                <p>Good work! Stay consistent for best results.</p>
               )}
             </div>
           </div>

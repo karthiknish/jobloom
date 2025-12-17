@@ -24,38 +24,38 @@ export const themeColors = {
 
   // Success states
   success: {
-    bg: "bg-green-50",
-    text: "text-green-700",
-    border: "border-green-200",
-    icon: "text-green-600",
-    badge: "bg-green-100 text-green-700 border-green-300",
+    bg: "bg-success-soft",
+    text: "text-success",
+    border: "border-success/20",
+    icon: "text-success",
+    badge: "bg-success-soft text-success border-success/30",
   },
 
   // Warning states
   warning: {
-    bg: "bg-amber-50",
-    text: "text-amber-800",
-    border: "border-amber-200",
-    icon: "text-amber-600",
-    badge: "bg-amber-100 text-amber-800 border-amber-300",
+    bg: "bg-warning-soft",
+    text: "text-warning",
+    border: "border-warning/20",
+    icon: "text-warning",
+    badge: "bg-warning-soft text-warning border-warning/30",
   },
 
   // Error/Destructive states
   error: {
-    bg: "bg-destructive/10",
+    bg: "bg-destructive-soft",
     text: "text-destructive",
     border: "border-destructive/20",
     icon: "text-destructive",
-    badge: "bg-red-100 text-red-700 border-red-300",
+    badge: "bg-destructive-soft text-destructive border-destructive/30",
   },
 
   // Info states
   info: {
-    bg: "bg-accent",
-    text: "text-accent-foreground",
-    border: "border-accent",
-    icon: "text-primary",
-    badge: "bg-accent text-accent-foreground border-primary/20",
+    bg: "bg-info-soft",
+    text: "text-info",
+    border: "border-info/20",
+    icon: "text-info",
+    badge: "bg-info-soft text-info border-info/30",
   },
 
   // Processing/Loading states

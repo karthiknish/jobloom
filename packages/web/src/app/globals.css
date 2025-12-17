@@ -76,6 +76,24 @@ html {
   /* Ring: Emerald 400 for focus states */
   --color-ring: 158 64% 52%;
   /* #34d399 */
+
+  /* Status colors */
+  --color-success: 160 84% 39%;
+  /* Emerald 500 */
+  --color-info: 217 91% 60%;
+  /* Blue 500 */
+  --color-warning: 38 92% 50%;
+  /* Amber 500 */
+
+  /* Soft semantic colors */
+  --color-success-soft: 158 82% 90%;
+  /* Emerald 100 */
+  --color-info-soft: 214 95% 93%;
+  /* Blue 100 */
+  --color-warning-soft: 48 96% 89%;
+  /* Amber 100 */
+  --color-destructive-soft: 0 96% 95%;
+  /* Red 100 */
 }
 
 /*
@@ -127,6 +145,11 @@ html {
 }
 
 
+.bg-grid-pattern {
+  background-image: radial-gradient(circle, currentColor 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
 /* Map to shadcn token names so UI components pick these up */
 :root {
   --background: var(--color-background);
@@ -147,6 +170,13 @@ html {
   --accent-foreground: var(--color-accent-foreground);
   --destructive: var(--color-destructive);
   --destructive-foreground: var(--color-destructive-foreground);
+  --success: var(--color-success);
+  --info: var(--color-info);
+  --warning: var(--color-warning);
+  --success-soft: var(--color-success-soft);
+  --info-soft: var(--color-info-soft);
+  --warning-soft: var(--color-warning-soft);
+  --destructive-soft: var(--color-destructive-soft);
   --ring: var(--color-ring);
 }
 

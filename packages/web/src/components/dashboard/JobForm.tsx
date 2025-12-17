@@ -315,7 +315,7 @@ export function JobForm({ onSubmit, onCancel, initialData, isEditing = false }: 
               exit={{ opacity: 0, height: 0 }}
               className="mb-4"
             >
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-green-50 text-green-700 border border-green-200">
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-success-soft text-success border border-success/20">
                 <CheckCircle2 className="h-4 w-4" />
                 <span className="text-sm">Job added successfully!</span>
               </div>

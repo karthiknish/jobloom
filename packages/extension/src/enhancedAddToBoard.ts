@@ -385,8 +385,12 @@ export class EnhancedJobBoardManager {
 
     // Add SOC code information
     if (jobData.likelySocCode) {
-      notes.push(`SOC Code: ${jobData.likelySocCode} (Confidence: ${(jobData.socMatchConfidence * 100).toFixed(1)}%)`);
-      if (jobData.matchedSocTitles.length > 0) {
+      const confidence = jobData.socMatchConfidence !== undefined 
+        ? ` (Confidence: ${(jobData.socMatchConfidence * 100).toFixed(1)}%)` 
+        : "";
+      notes.push(`SOC Code: ${jobData.likelySocCode}${confidence}`);
+      
+      if (jobData.matchedSocTitles && jobData.matchedSocTitles.length > 0) {
         notes.push(`Related roles: ${jobData.matchedSocTitles.slice(0, 3).join(", ")}`);
       }
     }

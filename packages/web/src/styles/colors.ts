@@ -1,23 +1,23 @@
 // Centralized color constants for use in server-side code and email templates.
 export const COLORS = {
-  brand: "#18181b", // zinc-900 - primary dark for buttons/accents
-  brandLight: "#27272a", // zinc-800 - slightly lighter
-  brandDark: "#09090b", // zinc-950 - darkest
+  brand: "#10b981", // emerald-500 - primary brand color
+  brandLight: "#34d399", // emerald-400
+  brandDark: "#059669", // emerald-600
   accent: "#10b981", // emerald-500 - accent color for links
   accentDark: "#059669", // emerald-600 - darker accent
-  backgroundLight: "#fafafa", // neutral-50 - light background
-  backgroundDark: "#f5f5f5", // neutral-100 - card backgrounds
-  text: "#18181b", // zinc-900 - primary text
-  mutedText: "#71717a", // zinc-500 - muted text
+  backgroundLight: "#f8fafc", // slate-50 - light background
+  backgroundDark: "#f1f5f9", // slate-100 - card backgrounds
+  text: "#0f172a", // slate-900 - primary text
+  mutedText: "#64748b", // slate-500 - muted text
   cardBackground: "#ffffff",
-  border: "#e4e4e7", // zinc-200
+  border: "#e2e8f0", // slate-200
   success: "#10b981",
   info: "#3b82f6",
   warning: "#f59e0b",
   destructive: "#ef4444",
-  muted: "#71717a",
+  muted: "#64748b",
   white: "#ffffff",
-  // Primary button colors (solid, no gradient)
-  buttonBg: "#18181b", // zinc-900
+  // Primary button colors
+  buttonBg: "#10b981", // emerald-500
   buttonText: "#ffffff",
 };

@@ -212,7 +212,7 @@ export function ProgressReportModal({
                   </div>
                   <Progress value={weeklyGoalProgress} className="h-2" />
                   {weeklyGoalProgress >= 100 && (
-                    <Badge variant="green" className="mt-2">Goal Achieved! 🎉</Badge>
+                    <Badge variant="green" className="mt-2">Goal Achieved!</Badge>
                   )}
                 </div>
 
@@ -223,7 +223,7 @@ export function ProgressReportModal({
                   </div>
                   <Progress value={interviewGoalProgress} className="h-2" />
                   {interviewGoalProgress >= 100 && (
-                    <Badge variant="green" className="mt-2">Goal Achieved! 🎉</Badge>
+                    <Badge variant="green" className="mt-2">Goal Achieved!</Badge>
                   )}
                 </div>
 
@@ -234,7 +234,7 @@ export function ProgressReportModal({
                   </div>
                   <Progress value={responseGoalProgress} className="h-2" />
                   {responseGoalProgress >= 100 && (
-                    <Badge variant="green" className="mt-2">Goal Achieved! 🎉</Badge>
+                    <Badge variant="green" className="mt-2">Goal Achieved!</Badge>
                   )}
                 </div>
               </CardContent>

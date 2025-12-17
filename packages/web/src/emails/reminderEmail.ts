@@ -1,7 +1,7 @@
 import { format, formatDistanceToNow } from "date-fns";
 import { COLORS } from "../styles/colors";
 
-export const REMINDER_EMAIL_SUBJECT = "⏰ Job Application Reminder";
+export const REMINDER_EMAIL_SUBJECT = "Job Application Reminder";
 
 type ReminderType = "follow_up" | "interview" | "deadline" | "weekly_digest";
 
