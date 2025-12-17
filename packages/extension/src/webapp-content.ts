@@ -483,6 +483,7 @@ window.addEventListener("message", (event) => {
   const messageType = (event as any)?.data?.type;
   if (
     messageType === "HIREALL_USER_AUTH" ||
+    messageType === "HIREALL_AUTH_RESPONSE" ||
     messageType === "HIREDALL_AUTH_RESPONSE" ||
     messageType === "HIREDALL_AUTH_STATE_CHANGED" ||
     messageType === "HIREALL_AUTH_STATE_CHANGED"

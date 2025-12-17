@@ -283,7 +283,8 @@ export async function apiRequest<T = any>(opts: ApiOptions): Promise<T> {
   };
 
   // Attach a request id for correlating client logs with backend logs (if supported).
-  finalHeaders['X-HireAll-Request-Id'] = requestId;
+  // Backend emits/understands X-Request-ID; keep a single canonical header to avoid CORS allow-list mismatches.
+  finalHeaders['X-Request-ID'] = requestId;
 
   // Acquire auth token if needed
   if (requiresAuth) {

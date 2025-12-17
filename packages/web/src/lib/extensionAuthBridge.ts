@@ -110,11 +110,15 @@ class ExtensionAuthBridge {
       const authResponse = await this.getAuthToken(message.forceRefresh);
       
       // Send response back to extension
-      window.postMessage({
-        type: 'HIREDALL_AUTH_RESPONSE',
+      const payload = {
         ...authResponse,
-        timestamp: Date.now()
-      }, '*');
+        timestamp: Date.now(),
+      };
+
+      // Prefer the correctly-spelled message type going forward.
+      // Also emit the legacy misspelling for backward compatibility.
+      window.postMessage({ type: 'HIREALL_AUTH_RESPONSE', ...payload }, '*');
+      window.postMessage({ type: 'HIREDALL_AUTH_RESPONSE', ...payload }, '*');
       
       // Also try to send via chrome runtime if available
       const chromeRuntime = (window as any).chrome?.runtime;
@@ -136,12 +140,13 @@ class ExtensionAuthBridge {
     } catch (error) {
       console.error('[ExtensionAuthBridge] Error handling get auth token:', error);
       
-      window.postMessage({
-        type: 'HIREDALL_AUTH_RESPONSE',
+      const payload = {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
-        timestamp: Date.now()
-      }, '*');
+        timestamp: Date.now(),
+      };
+      window.postMessage({ type: 'HIREALL_AUTH_RESPONSE', ...payload }, '*');
+      window.postMessage({ type: 'HIREDALL_AUTH_RESPONSE', ...payload }, '*');
     }
   }
 
@@ -150,12 +155,13 @@ class ExtensionAuthBridge {
       const authResponse = await this.getAuthToken(true);
       
       // Notify extension of auth state change
-      window.postMessage({
-        type: 'HIREDALL_AUTH_STATE_CHANGED',
+      const payload = {
         isAuthenticated: !!authResponse.token,
         ...authResponse,
-        timestamp: Date.now()
-      }, '*');
+        timestamp: Date.now(),
+      };
+      window.postMessage({ type: 'HIREALL_AUTH_STATE_CHANGED', ...payload }, '*');
+      window.postMessage({ type: 'HIREDALL_AUTH_STATE_CHANGED', ...payload }, '*');
     } catch (error) {
       console.error('[ExtensionAuthBridge] Error syncing auth state:', error);
     }
@@ -178,12 +184,13 @@ class ExtensionAuthBridge {
             };
 
             // Notify extension of auth state change
-            window.postMessage({
-              type: 'HIREDALL_AUTH_STATE_CHANGED',
+            const payload = {
               isAuthenticated: true,
               ...authResponse,
-              timestamp: Date.now()
-            }, '*');
+              timestamp: Date.now(),
+            };
+            window.postMessage({ type: 'HIREALL_AUTH_STATE_CHANGED', ...payload }, '*');
+            window.postMessage({ type: 'HIREDALL_AUTH_STATE_CHANGED', ...payload }, '*');
 
             // Store in localStorage for extension access
             safeLocalStorageSet('hireall_auth_token', token);
@@ -198,11 +205,12 @@ class ExtensionAuthBridge {
           }
         } else {
           // User signed out
-          window.postMessage({
-            type: 'HIREDALL_AUTH_STATE_CHANGED',
+          const payload = {
             isAuthenticated: false,
-            timestamp: Date.now()
-          }, '*');
+            timestamp: Date.now(),
+          };
+          window.postMessage({ type: 'HIREALL_AUTH_STATE_CHANGED', ...payload }, '*');
+          window.postMessage({ type: 'HIREDALL_AUTH_STATE_CHANGED', ...payload }, '*');
 
           safeLocalStorageRemove('hireall_auth_token');
           safeLocalStorageRemove('hireall_user_data');
