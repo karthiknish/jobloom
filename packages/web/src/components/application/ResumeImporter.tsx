@@ -24,6 +24,7 @@ import type { CvAnalysis } from "@/types/api";
 import { cn } from "@/lib/utils";
 import { themeColors, themeUtils } from "@/styles/theme-colors";
 import type { ResumeData } from "@/types/resume";
+import { apiClient } from "@/lib/api/client";
 
 type AnalysisStatus = "pending" | "processing" | "completed" | "failed";
 
@@ -331,34 +332,11 @@ export function ResumeImporter({ onImport }: ResumeImporterProps) {
       setIsUploading(true);
 
       try {
-        const idToken = await user.getIdToken();
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("userId", userId);
-        formData.append("targetRole", "");
-        formData.append("industry", "");
-
-        const response = await fetch("/api/cv/upload", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${idToken}`,
-          },
-          body: formData,
+        const result = await apiClient.upload<any>("/cv/upload", file, {
+          userId,
+          targetRole: "",
+          industry: "",
         });
-
-        const result = await response.json();
-
-        if (!response.ok) {
-          if (result?.upgradeRequired) {
-            showError(
-              "Upgrade Required",
-              result.error || "You've reached the monthly analysis limit for your plan."
-            );
-          } else {
-            showError("Upload Failed", result?.error || "Unable to upload resume. Try again.");
-          }
-          return;
-        }
 
         showSuccess(
           "Resume Uploaded",
@@ -388,9 +366,16 @@ export function ResumeImporter({ onImport }: ResumeImporterProps) {
         }
 
         await fetchAnalyses();
-      } catch (error) {
+      } catch (error: any) {
         console.error("File upload error:", error);
-        showError("Upload Failed", "We could not import your resume. Please try again.");
+        if (error?.status === 402 || error?.data?.upgradeRequired) {
+          showError(
+            "Upgrade Required",
+            error?.data?.error || "You've reached the monthly analysis limit for your plan."
+          );
+        } else {
+          showError("Upload Failed", error?.message || "Unable to upload resume. Try again.");
+        }
       } finally {
         setIsUploading(false);
         if (fileInputRef.current) {
@@ -398,7 +383,7 @@ export function ResumeImporter({ onImport }: ResumeImporterProps) {
         }
       }
     },
-    [userId, user, fetchAnalyses]
+    [userId, fetchAnalyses]
   );
 
   const handleRefresh = useCallback(async () => {
@@ -417,7 +402,7 @@ export function ResumeImporter({ onImport }: ResumeImporterProps) {
   const handleDeleteAnalysis = useCallback(
     async (analysisId: string) => {
       try {
-        await cvEvaluatorApi.deleteCvAnalysis(analysisId);
+        await cvEvaluatorApi.deleteCvAnalysis(analysisId, userId || undefined);
         showSuccess("Analysis Removed", "The resume analysis has been deleted.");
         setAnalyses((previous) => previous.filter((analysis) => analysis.id !== analysisId));
         if (selectedAnalysisId === analysisId) {
@@ -430,7 +415,7 @@ export function ResumeImporter({ onImport }: ResumeImporterProps) {
         await fetchAnalyses();
       }
     },
-    [fetchAnalyses, selectedAnalysisId]
+    [fetchAnalyses, selectedAnalysisId, userId]
   );
 
   const saveToResumeBuilder = useCallback(() => {

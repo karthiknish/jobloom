@@ -3,6 +3,8 @@
  * Common validation functions and schemas for API endpoints
  */
 
+import { z, ZodSchema } from 'zod';
+import { NextRequest } from 'next/server';
 import { ERROR_CODES } from './errorCodes';
 import { createValidationError } from './errorResponse';
 
@@ -17,6 +19,81 @@ export interface ValidationError {
   message: string;
   value?: any;
 }
+
+// ============================================================================
+// Zod-based Query Parameter Validation
+// ============================================================================
+
+/**
+ * Validate and parse query parameters using a Zod schema.
+ * Returns typed, validated parameters or throws a validation error.
+ * 
+ * @example
+ * const schema = z.object({
+ *   page: z.coerce.number().int().min(1).default(1),
+ *   limit: z.coerce.number().int().min(1).max(100).default(20),
+ * });
+ * const { page, limit } = validateQueryParams(request, schema);
+ */
+export function validateQueryParams<T extends ZodSchema>(
+  request: NextRequest,
+  schema: T
+): z.infer<T> {
+  const url = new URL(request.url);
+  const rawParams: Record<string, string | undefined> = {};
+  
+  // Convert URLSearchParams to a plain object
+  url.searchParams.forEach((value, key) => {
+    rawParams[key] = value;
+  });
+
+  const result = schema.safeParse(rawParams);
+
+  if (!result.success) {
+    const firstError = result.error.issues[0];
+    throw createValidationError(
+      firstError?.message || 'Invalid query parameters',
+      firstError?.path.join('.') || 'query',
+      { validationErrors: result.error.issues.map((e: z.ZodIssue) => ({
+        field: e.path.join('.'),
+        code: ERROR_CODES.VALIDATION_FAILED,
+        message: e.message,
+      }))}
+    );
+  }
+
+  return result.data;
+}
+
+// ============================================================================
+// Common Query Parameter Schemas (Reusable)
+// ============================================================================
+
+/**
+ * Standard pagination schema with page/limit/offset
+ */
+export const paginationSchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  offset: z.coerce.number().int().min(0).default(0),
+});
+
+/**
+ * Common search query parameters
+ */
+export const searchQuerySchema = z.object({
+  q: z.string().max(200).optional(),
+  search: z.string().max(200).optional(),
+});
+
+/**
+ * Boolean query parameter (handles 'true'/'false' strings)
+ */
+export const booleanQueryParam = z.enum(['true', 'false']).transform(v => v === 'true').optional();
+
+// ============================================================================
+// Manual Validation Functions (Legacy - prefer Zod schemas above)
+// ============================================================================
 
 /**
  * Email validation

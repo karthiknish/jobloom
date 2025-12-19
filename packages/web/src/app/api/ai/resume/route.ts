@@ -1,12 +1,53 @@
-import { NextRequest, NextResponse } from "next/server";
-import { verifyIdToken, getAdminDb } from "@/firebase/admin";
+/**
+ * AI Resume Generation API - Refactored with unified API wrapper
+ * 
+ * This demonstrates the new standardized pattern for complex AI routes.
+ * Benefits:
+ * - Automatic CORS handling
+ * - Consistent error responses  
+ * - Built-in authentication and rate limiting
+ * - Zod validation for request body
+ * - Standardized success response format
+ */
+
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { withApi, OPTIONS } from "@/lib/api/withApi";
+import { getAdminDb } from "@/firebase/admin";
 import {
   generateResumeWithAI,
   type ResumeGenerationRequest,
   type ResumeGenerationResult,
 } from "@/services/ai/geminiService";
 
-const MOCK_SIGNATURE = "bW9jay1zaWduYXR1cmUtZm9yLXRlc3Rpbmc";
+// Export OPTIONS for CORS preflight
+export { OPTIONS };
+
+// ============================================================================
+// VALIDATION SCHEMA
+// ============================================================================
+
+const resumeRequestSchema = z.object({
+  jobTitle: z.string().min(1, "Job title is required").max(200),
+  experience: z.string().min(1, "Experience is required").max(10000),
+  skills: z.union([
+    z.array(z.string()),
+    z.string().transform(s => s.split(',').map(skill => skill.trim()).filter(Boolean))
+  ]).optional().default([]),
+  education: z.string().max(5000).optional().default(''),
+  industry: z.string().max(100).optional().default('technology'),
+  level: z.enum(['entry', 'mid', 'senior', 'executive']).optional().default('mid'),
+  style: z.enum(['modern', 'traditional', 'creative', 'technical']).optional().default('modern'),
+  includeObjective: z.boolean().optional().default(true),
+  atsOptimization: z.boolean().optional().default(true),
+  aiEnhancement: z.boolean().optional().default(true),
+});
+
+type ResumeRequestBody = z.infer<typeof resumeRequestSchema>;
+
+// ============================================================================
+// RESPONSE TYPES
+// ============================================================================
 
 interface ResumeApiResponse {
   content: string;
@@ -24,144 +65,89 @@ interface ResumeApiResponse {
   source?: "gemini" | "fallback" | "mock";
 }
 
-type ResumeRequestPayload = Partial<
-  Omit<ResumeGenerationRequest, "skills">
-> & {
-  skills?: string[] | string;
-};
+// ============================================================================
+// API HANDLER
+// ============================================================================
 
-export async function POST(request: NextRequest) {
-  try {
-    const authHeader = request.headers.get("authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+export const POST = withApi({
+  auth: 'required',
+  rateLimit: 'ai-resume',
+  bodySchema: resumeRequestSchema,
+}, async ({ user, body, requestId }) => {
+  // Check subscription tier
+  const db = getAdminDb();
+  const userDoc = await db.collection("users").doc(user!.uid).get();
+  const userData = userDoc.data();
 
-    const token = authHeader.substring(7);
-    const isMockToken =
-      process.env.NODE_ENV === "development" && authHeader.includes(MOCK_SIGNATURE);
+  const isAdmin = userData?.isAdmin === true;
+  const isPremium = userData?.subscription?.tier === 'premium' || 
+                    userData?.subscription?.status === 'active';
 
-    let payload: unknown;
-    try {
-      payload = await request.json();
-    } catch {
-      return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 });
-    }
-
-    if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
-      return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
-    }
-
-    const resumeRequest = normalizeResumeRequest(payload as ResumeRequestPayload);
-
-    if (!resumeRequest.jobTitle || !resumeRequest.experience) {
-      return NextResponse.json(
-        { error: "Missing required fields: jobTitle, experience" },
-        { status: 400 }
-      );
-    }
-
-    if (isMockToken) {
-      const mockResponse = buildResumeResponse(
-        generateFallbackResume(resumeRequest),
-        resumeRequest,
-        "mock"
-      );
-      return NextResponse.json(mockResponse);
-    }
-
-    const decodedToken = await verifyIdToken(token);
-
-    if (!decodedToken?.uid) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-    }
-
-    const db = getAdminDb();
-    const userDoc = await db.collection("users").doc(decodedToken.uid).get();
-    const userData = userDoc.data();
-
-    const isAdmin = userData?.isAdmin === true;
-
-    if (!userData || (userData.subscription?.tier === "free" && !isAdmin)) {
-      return NextResponse.json(
-        { error: "Premium subscription required for AI resume generation" },
-        { status: 403 }
-      );
-    }
-
-    let aiResult: ResumeGenerationResult;
-    let source: ResumeApiResponse["source"] = "gemini";
-
-    try {
-      aiResult = await generateResumeWithAI(resumeRequest);
-    } catch (error) {
-      console.error("Gemini resume generation failed, using fallback:", error);
-      aiResult = generateFallbackResume(resumeRequest);
-      source = "fallback";
-    }
-
-    const responsePayload = buildResumeResponse(aiResult, resumeRequest, source);
-
-    await db
-      .collection("users")
-      .doc(decodedToken.uid)
-      .collection("aiResumes")
-      .add({
-        ...responsePayload,
-        source,
-        jobTitle: resumeRequest.jobTitle,
-        industry: resumeRequest.industry,
-        style: resumeRequest.style,
-        skills: resumeRequest.skills,
-        atsOptimization: resumeRequest.atsOptimization,
-        aiEnhancement: resumeRequest.aiEnhancement,
-        includeObjective: resumeRequest.includeObjective,
-        createdAt: new Date().toISOString(),
-      });
-
-    return NextResponse.json(responsePayload);
-  } catch (error) {
-    console.error("Resume generation error:", error);
-    return NextResponse.json(
-      { error: "Failed to generate resume" },
-      { status: 500 }
-    );
+  if (!userData || (!isPremium && !isAdmin)) {
+    // Return NextResponse directly for custom status codes
+    return NextResponse.json({
+      success: false,
+      error: {
+        code: 'SUB_1303',
+        message: 'Premium subscription required for AI resume generation',
+      },
+      meta: { requestId, timestamp: Date.now() },
+    }, { status: 403 });
   }
-}
 
-function normalizeResumeRequest(payload: ResumeRequestPayload): ResumeGenerationRequest {
-  const toText = (value: unknown): string => {
-    if (typeof value === "string") {
-      return value.trim();
-    }
-    if (value === null || value === undefined) {
-      return "";
-    }
-    return String(value).trim();
+  // Normalize the request
+  const resumeRequest: ResumeGenerationRequest = {
+    jobTitle: body.jobTitle,
+    experience: body.experience,
+    skills: Array.isArray(body.skills) ? body.skills : [],
+    education: body.education || '',
+    industry: body.industry,
+    level: body.level,
+    style: body.style,
+    includeObjective: body.includeObjective,
+    atsOptimization: body.atsOptimization,
+    aiEnhancement: body.aiEnhancement,
   };
 
-  const normalizedSkills = Array.isArray(payload.skills)
-    ? payload.skills.map((skill) => toText(skill)).filter(Boolean)
-    : typeof payload.skills === "string"
-    ? payload.skills
-        .split(",")
-        .map((skill) => skill.trim())
-        .filter(Boolean)
-    : [];
+  // Generate resume
+  let aiResult: ResumeGenerationResult;
+  let source: ResumeApiResponse["source"] = "gemini";
 
-  return {
-    jobTitle: toText(payload.jobTitle),
-    experience: toText(payload.experience),
-    skills: normalizedSkills,
-    education: toText(payload.education),
-    industry: toText(payload.industry) || "technology",
-    level: (toText(payload.level) as ResumeGenerationRequest["level"]) || "mid",
-    style: (toText(payload.style) as ResumeGenerationRequest["style"]) || "modern",
-    includeObjective: payload.includeObjective !== false,
-    atsOptimization: payload.atsOptimization !== false,
-    aiEnhancement: payload.aiEnhancement !== false,
-  };
-}
+  try {
+    aiResult = await generateResumeWithAI(resumeRequest);
+  } catch (error) {
+    console.error("Gemini resume generation failed, using fallback:", error);
+    aiResult = generateFallbackResume(resumeRequest);
+    source = "fallback";
+  }
+
+  // Build response
+  const responsePayload = buildResumeResponse(aiResult, resumeRequest, source);
+
+  // Save to user's collection
+  await db
+    .collection("users")
+    .doc(user!.uid)
+    .collection("aiResumes")
+    .add({
+      ...responsePayload,
+      source,
+      jobTitle: resumeRequest.jobTitle,
+      industry: resumeRequest.industry,
+      style: resumeRequest.style,
+      skills: resumeRequest.skills,
+      atsOptimization: resumeRequest.atsOptimization,
+      aiEnhancement: resumeRequest.aiEnhancement,
+      includeObjective: resumeRequest.includeObjective,
+      createdAt: new Date().toISOString(),
+    });
+
+  return responsePayload;
+});
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
 
 function buildResumeResponse(
   result: ResumeGenerationResult,
@@ -213,12 +199,7 @@ function buildResumeResponse(
 
   const response: ResumeApiResponse = {
     content: normalizedContent,
-    sections: {
-      summary,
-      experience,
-      skills,
-      education,
-    },
+    sections: { summary, experience, skills, education },
     atsScore,
     keywords,
     suggestions,
@@ -233,34 +214,18 @@ function buildResumeResponse(
   return response;
 }
 
-function generateFallbackResume(
-  request: ResumeGenerationRequest
-): ResumeGenerationResult {
-  const summary = generateProfessionalSummary(
-    request.jobTitle,
-    request.experience,
-    request.level,
-    request.industry
-  );
+function generateFallbackResume(request: ResumeGenerationRequest): ResumeGenerationResult {
+  const summary = generateProfessionalSummary(request.jobTitle, request.experience, request.level, request.industry);
   const experience = generateExperienceSection(request.experience, request.level);
   const skills = generateSkillsSection(request.skills, request.industry, request.level);
   const education = generateEducationSection(request.education);
   const content = generateResumeContent({
-    summary,
-    experience,
-    skills,
-    education,
+    summary, experience, skills, education,
     includeObjective: request.includeObjective,
     style: request.style,
   });
 
-  return {
-    summary,
-    experience,
-    skills,
-    education,
-    content,
-  };
+  return { summary, experience, skills, education, content };
 }
 
 function generateProfessionalSummary(
@@ -269,67 +234,53 @@ function generateProfessionalSummary(
   level: string, 
   industry: string
 ): string {
-  const levelMap = {
+  const levelMap: Record<string, string[]> = {
     entry: ["motivated", "detail-oriented", "eager to learn"],
     mid: ["skilled", "results-driven", "collaborative"],
     senior: ["experienced", "strategic", "leadership"],
     executive: ["visionary", "accomplished", "transformational"]
   };
 
-  const industryMap = {
+  const industryMap: Record<string, string[]> = {
     technology: ["software development", "system architecture", "technical solutions"],
     healthcare: ["patient care", "medical protocols", "healthcare delivery"],
     finance: ["financial analysis", "risk management", "investment strategies"],
     marketing: ["brand development", "campaign management", "market research"],
-    engineering: ["project management", "technical design", "process optimization"],
-    consulting: ["strategic advisory", "business transformation", "client relations"]
   };
 
-  const levelWords = levelMap[level as keyof typeof levelMap] || levelMap.mid;
-  const industryWords = industryMap[industry as keyof typeof industryMap] || industryMap.technology;
+  const levelWords = levelMap[level] || levelMap.mid;
+  const industryWords = industryMap[industry] || industryMap.technology;
 
   return `PROFESSIONAL SUMMARY
 ${levelWords[Math.floor(Math.random() * levelWords.length)]} professional with expertise in ${industryWords[Math.floor(Math.random() * industryWords.length)]}. 
-Seeking ${jobTitle} position where I can leverage my skills and experience to drive organizational success and contribute to innovative solutions.`;
+Seeking ${jobTitle} position where I can leverage my skills and experience to drive organizational success.`;
 }
 
 function generateExperienceSection(experience: string, level: string): string {
   const actionVerbs = level === 'senior' || level === 'executive' 
-    ? ["Led", "Directed", "Managed", "Oversaw", "Transformed", "Optimized"]
-    : ["Developed", "Implemented", "Contributed", "Assisted", "Supported", "Executed"];
-
-  const metrics = [
-    "improving efficiency by 25%",
-    "reducing costs by 15%",
-    "increasing revenue by 30%",
-    "enhancing customer satisfaction by 20%",
-    "streamlining processes by 40%"
-  ];
+    ? ["Led", "Directed", "Managed", "Oversaw", "Transformed"]
+    : ["Developed", "Implemented", "Contributed", "Assisted", "Executed"];
 
   const randomAction = actionVerbs[Math.floor(Math.random() * actionVerbs.length)];
-  const randomMetric = metrics[Math.floor(Math.random() * metrics.length)];
 
   return `PROFESSIONAL EXPERIENCE
-${randomAction} key initiatives that resulted in ${randomMetric}.
+${randomAction} key initiatives that resulted in measurable improvements.
 
 - Collaborated with cross-functional teams to deliver projects on time and within budget
 - Developed and implemented innovative solutions to complex business challenges
-- Maintained detailed documentation and ensured compliance with industry standards
 
-${experience}
-
-[Additional achievements and responsibilities would be detailed here]`;
+${experience}`;
 }
 
 function generateSkillsSection(skills: string[], industry: string, level: string): string {
-  const industrySkills = {
+  const industrySkills: Record<string, string[]> = {
     technology: ["JavaScript", "Python", "React", "Node.js", "AWS", "Docker", "Git", "SQL"],
     healthcare: ["Patient Care", "Medical Terminology", "HIPAA Compliance", "Electronic Health Records"],
     finance: ["Financial Analysis", "Excel", "QuickBooks", "Risk Assessment", "Budget Management"],
     marketing: ["Digital Marketing", "SEO/SEM", "Content Strategy", "Analytics", "Social Media"],
   };
 
-  const defaultSkills = industrySkills[industry as keyof typeof industrySkills] || industrySkills.technology;
+  const defaultSkills = industrySkills[industry] || industrySkills.technology;
   const allSkills = Array.from(new Set([...skills, ...defaultSkills]));
 
   return `TECHNICAL SKILLS
@@ -338,16 +289,13 @@ ${allSkills.join(" | ")}
 SOFT SKILLS
 - Communication and Presentation
 - Problem Solving and Critical Thinking
-- Team Collaboration and Leadership
-- Project Management and Organization
-- Adaptability and Continuous Learning`;
+- Team Collaboration and Leadership`;
 }
 
 function generateEducationSection(education: string): string {
   return `EDUCATION
 ${education || "- Bachelor's Degree in relevant field"}
-- Additional certifications and professional development
-- Continuous learning and skill enhancement programs`;
+- Additional certifications and professional development`;
 }
 
 function generateResumeContent(sections: {
@@ -362,7 +310,7 @@ function generateResumeContent(sections: {
 
   if (sections.includeObjective) {
     content += `OBJECTIVE
-To obtain a challenging position in a progressive organization where I can utilize my skills and experience to contribute to company growth while developing professionally.\n\n`;
+To obtain a challenging position where I can utilize my skills and experience to contribute to company growth.\n\n`;
   }
 
   content += sections.summary + "\n\n";
@@ -379,55 +327,29 @@ function calculateResumeATSScore(
   jobTitle: string, 
   industry: string
 ): number {
-  let score = 50; // Base score
-
-  // Keyword matching
+  let score = 50;
   const contentLower = content.toLowerCase();
   const jobTitleWords = jobTitle.toLowerCase().split(' ');
-  const industryWords = industry.toLowerCase();
 
-  // Score for job title keywords
   jobTitleWords.forEach(word => {
-    if (contentLower.includes(word)) {
-      score += 5;
-    }
+    if (contentLower.includes(word)) score += 5;
   });
 
-  // Score for industry keywords
-  if (contentLower.includes(industryWords)) {
-    score += 10;
-  }
+  if (contentLower.includes(industry.toLowerCase())) score += 10;
 
-  // Score for skills
   skills.forEach(skill => {
-    if (contentLower.includes(skill.toLowerCase())) {
-      score += 3;
-    }
+    if (contentLower.includes(skill.toLowerCase())) score += 3;
   });
 
-  // Structure analysis
-  if (content.includes('PROFESSIONAL SUMMARY') || content.includes('OBJECTIVE')) {
-    score += 10;
-  }
-  if (content.includes('EXPERIENCE') || content.includes('PROFESSIONAL EXPERIENCE')) {
-    score += 10;
-  }
-  if (content.includes('SKILLS') || content.includes('TECHNICAL SKILLS')) {
-    score += 10;
-  }
-  if (content.includes('EDUCATION')) {
-    score += 5;
-  }
+  if (content.includes('PROFESSIONAL SUMMARY') || content.includes('OBJECTIVE')) score += 10;
+  if (content.includes('EXPERIENCE')) score += 10;
+  if (content.includes('SKILLS')) score += 10;
+  if (content.includes('EDUCATION')) score += 5;
 
-  // Length optimization
   const wordCount = content.split(/\s+/).length;
-  if (wordCount >= 300 && wordCount <= 600) {
-    score += 10;
-  } else if (wordCount >= 200 && wordCount <= 800) {
-    score += 5;
-  }
+  if (wordCount >= 300 && wordCount <= 600) score += 10;
+  else if (wordCount >= 200 && wordCount <= 800) score += 5;
 
-  // Cap at 100
   return Math.min(score, 100);
 }
 
@@ -439,23 +361,16 @@ function extractResumeKeywords(
 ): string[] {
   const commonKeywords = [
     "leadership", "communication", "teamwork", "problem-solving", "analytical",
-    "project management", "collaboration", "initiative", "adaptability", "creativity",
-    "strategic thinking", "customer service", "attention to detail", "time management",
-    "critical thinking", "interpersonal skills", "organization", "planning"
+    "project management", "collaboration", "initiative", "adaptability"
   ];
 
   const contentLower = content.toLowerCase();
-  const jobTitleWords = jobTitle.toLowerCase().split(' ');
-  const skillsLower = skills.map(skill => skill.toLowerCase());
-
-  // Find keywords in content
   const foundKeywords = [
     ...commonKeywords.filter(keyword => contentLower.includes(keyword)),
-    ...jobTitleWords.filter(word => contentLower.includes(word)),
-    ...skillsLower.filter(skill => contentLower.includes(skill))
+    ...jobTitle.toLowerCase().split(' ').filter(word => contentLower.includes(word)),
+    ...skills.map(s => s.toLowerCase()).filter(skill => contentLower.includes(skill))
   ];
 
-  // Remove duplicates and return top keywords
   return Array.from(new Set(foundKeywords)).slice(0, 12);
 }
 
@@ -470,16 +385,8 @@ function generateResumeSuggestions(
     suggestions.push("Add more relevant keywords from job descriptions to improve ATS compatibility");
   }
 
-  if (!content.includes('quantifiable') && !content.includes('numbers')) {
-    suggestions.push("Include specific metrics and quantifiable achievements");
-  }
-
   if (skills.length < 5) {
     suggestions.push("Expand your skills section with more relevant technical and soft skills");
-  }
-
-  if (!content.includes('professional summary') && !content.includes('objective')) {
-    suggestions.push("Add a professional summary or objective statement");
   }
 
   const wordCount = content.split(/\s+/).length;
@@ -489,5 +396,5 @@ function generateResumeSuggestions(
     suggestions.push("Consider making your resume more concise (aim for 300-600 words)");
   }
 
-  return suggestions.slice(0, 4); // Return top 4 suggestions
+  return suggestions.slice(0, 4);
 }

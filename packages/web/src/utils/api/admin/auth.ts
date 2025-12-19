@@ -1,4 +1,5 @@
 import { getAuthClient } from "@/firebase/client";
+import { apiClient } from "@/lib/api/client";
 
 // Cache for admin verification to prevent duplicate calls
 let adminVerificationCache: {
@@ -28,29 +29,25 @@ export const verifyAdminAccess = async () => {
   }
 
   const token = await auth.currentUser.getIdToken();
-  const response = await fetch("/api/admin/verify", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  try {
+    const data = await apiClient.post<any>("/admin/verify", {}, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-  if (!response.ok) {
+    // Cache the result
+    adminVerificationCache = {
+      user: data.user,
+      timestamp: Date.now(),
+      uid: currentUid,
+    };
+    
+    return data.user;
+  } catch (error) {
     adminVerificationCache = null;
     throw new Error("Admin access denied");
   }
-
-  const data = await response.json();
-  
-  // Cache the result
-  adminVerificationCache = {
-    user: data.user,
-    timestamp: Date.now(),
-    uid: currentUid,
-  };
-  
-  return data.user;
 };
 
 // Clear the admin verification cache (call on logout or when needed)

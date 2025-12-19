@@ -1,154 +1,63 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminDb, isUserAdmin } from "../../../../firebase/admin";
-import { verifySessionFromRequest } from "../../../../lib/auth/session";
-import type { ContactSubmission } from "../../../../types/api";
+import { z } from "zod";
+import { getAdminDb } from "@/firebase/admin";
+import { withApi, OPTIONS } from "@/lib/api/withApi";
+import type { ContactSubmission } from "@/types/api";
 
-// Get Firestore instance using the centralized admin initialization
-const db = getAdminDb();
+// Re-export OPTIONS for CORS preflight
+export { OPTIONS };
+
+const contactSubmissionSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Invalid email format"),
+  message: z.string().min(10, "Message must be at least 10 characters"),
+  subject: z.string().optional().default("General Inquiry"),
+});
 
 // POST /api/app/contacts - Create contact form submission
-export async function POST(request: NextRequest) {
-  try {
-    const data = await request.json();
+export const POST = withApi({
+  auth: "none",
+  bodySchema: contactSubmissionSchema,
+}, async ({ body }) => {
+  const db = getAdminDb();
 
-    // Validate required fields
-    if (!data.name || !data.email || !data.message) {
-      return NextResponse.json(
-        {
-          error: "Missing required fields",
-          details: "name, email, and message are required",
-        },
-        { status: 400 }
-      );
-    }
+  // Create contact submission object
+  const contactSubmission: Omit<ContactSubmission, "_id"> = {
+    name: body.name.trim(),
+    email: body.email.toLowerCase().trim(),
+    message: body.message.trim(),
+    subject: body.subject.trim(),
+    status: "new",
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  };
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(data.email)) {
-      return NextResponse.json(
-        {
-          error: "Invalid email format",
-        },
-        { status: 400 }
-      );
-    }
+  // Save to Firestore
+  const docRef = await db.collection("contacts").add(contactSubmission);
 
-    // Validate message length
-    if (data.message.length < 10) {
-      return NextResponse.json(
-        {
-          error: "Message too short",
-          details: "Please provide a message with at least 10 characters",
-        },
-        { status: 400 }
-      );
-    }
-
-    // Validate name length
-    if (data.name.length < 2) {
-      return NextResponse.json(
-        {
-          error: "Name too short",
-          details: "Please provide a name with at least 2 characters",
-        },
-        { status: 400 }
-      );
-    }
-
-    // Create contact submission object
-    const contactSubmission: Omit<ContactSubmission, "_id"> = {
-      name: data.name.trim(),
-      email: data.email.toLowerCase().trim(),
-      message: data.message.trim(),
-      subject: data.subject?.trim() || "General Inquiry",
-      status: "new",
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    };
-
-    // Save to Firestore
-    const docRef = await db.collection("contacts").add(contactSubmission);
-
-    console.log("Contact form submission saved to Firestore:", {
-      id: docRef.id,
-      name: contactSubmission.name,
-      email: contactSubmission.email,
-      subject: contactSubmission.subject,
-      messageLength: contactSubmission.message.length,
-    });
-
-    return NextResponse.json({
-      success: true,
-      message: "Contact form submitted successfully",
-      contactId: docRef.id,
-    });
-  } catch (error) {
-    console.error("Error creating contact:", error);
-
-    // Check for specific Firebase errors
-    if (error instanceof Error) {
-      if (error.message.includes("PERMISSION_DENIED")) {
-        return NextResponse.json(
-          {
-            error: "Permission denied",
-            details: "Unable to save contact submission",
-          },
-          { status: 403 }
-        );
-      }
-    }
-
-    return NextResponse.json(
-      {
-        error: "Internal server error",
-        details: "Failed to save contact submission",
-      },
-      { status: 500 }
-    );
-  }
-}
+  return {
+    message: "Contact form submitted successfully",
+    contactId: docRef.id,
+  };
+});
 
 // GET /api/app/contacts - Get all contact submissions (admin only)
-export async function GET(request: NextRequest) {
-  try {
-    // Verify authentication
-    const decodedToken = await verifySessionFromRequest(request);
-    if (!decodedToken?.uid) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+export const GET = withApi({
+  auth: "admin",
+}, async () => {
+  const db = getAdminDb();
 
-    // Check if user is admin
-    const isAdmin = await isUserAdmin(decodedToken.uid);
-    if (!isAdmin) {
-      return NextResponse.json({ error: "Admin access required" }, { status: 403 });
-    }
+  // Fetch from Firestore
+  const snapshot = await db
+    .collection("contacts")
+    .orderBy("createdAt", "desc")
+    .limit(100)
+    .get();
 
-    // Fetch from Firestore
-    const snapshot = await db
-      .collection("contacts")
-      .orderBy("createdAt", "desc")
-      .limit(100)
-      .get();
+  const contacts: ContactSubmission[] = snapshot.docs.map((doc) => ({
+    _id: doc.id,
+    ...doc.data(),
+  } as ContactSubmission));
 
-    const contacts: ContactSubmission[] = [];
-    snapshot.forEach((doc) => {
-      contacts.push({
-        _id: doc.id,
-        ...doc.data(),
-      } as ContactSubmission);
-    });
-
-    console.log(`Fetched ${contacts.length} contacts from Firestore`);
-
-    return NextResponse.json({ contacts });
-  } catch (error) {
-    console.error("Error fetching contacts:", error);
-    return NextResponse.json(
-      {
-        error: "Internal server error",
-        details: "Failed to fetch contact submissions",
-      },
-      { status: 500 }
-    );
-  }
-}
+  return { contacts };
+});

@@ -1,176 +1,120 @@
-import { NextRequest, NextResponse } from "next/server";
-import { authenticateRequest } from "@/lib/api/auth";
+import { withApi, z } from "@/lib/api/withApi";
 import { getAdminDb } from "@/firebase/admin";
-import { applyCorsHeaders, preflightResponse } from "@/lib/api/cors";
-import { withErrorHandling, createAuthorizationError, generateRequestId } from "@/lib/api/errors";
+import { ERROR_CODES } from "@/lib/api/errorCodes";
 
-// PUT /api/app/applications/[applicationId] - Update an application
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ applicationId: string }> }
-) {
-  const requestId = generateRequestId();
-  const { applicationId } = await params;
+export const runtime = "nodejs";
 
-  const response = await withErrorHandling(async () => {
-    const auth = await authenticateRequest(request);
+const applicationUpdateSchema = z.object({
+  status: z.string().optional(),
+  appliedDate: z.string().nullable().optional(),
+  notes: z.string().optional(),
+  interviewDates: z.array(z.string()).optional(),
+  followUpDate: z.string().nullable().optional(),
+  order: z.number().optional(),
+});
 
-    if (!auth.ok) {
-      return auth.response;
-    }
+const applicationParamsSchema = z.object({
+  applicationId: z.string(),
+});
 
-    // Parse request body
-    const updateData = await request.json();
+export const GET = withApi({
+  auth: 'required',
+  rateLimit: 'applications',
+  paramsSchema: applicationParamsSchema,
+}, async ({ user, params }) => {
+  const { applicationId } = params;
+  const db = getAdminDb();
+  const docSnap = await db.collection("applications").doc(applicationId).get();
 
-    // Initialize Firestore
-    const db = getAdminDb();
-    const applicationDocRef = db.collection("applications").doc(applicationId);
-
-    // Check if application exists and get its data
-    const applicationDoc = await applicationDocRef.get();
-    if (!applicationDoc.exists) {
-      return NextResponse.json(
-        { error: "Application not found" },
-        { status: 404 }
-      );
-    }
-
-    const applicationData = applicationDoc.data();
-
-    // Users can only update their own applications
-    if (!applicationData || applicationData.userId !== auth.token.uid) {
-      throw createAuthorizationError("Access denied. You can only update your own applications.", 'INSUFFICIENT_PERMISSIONS');
-    }
-
-    // Prepare update data with timestamp
-    const updatePayload = {
-      ...updateData,
-      updatedAt: new Date().toISOString()
+  if (!docSnap.exists) {
+    return {
+      error: "Application not found",
+      code: ERROR_CODES.APPLICATION_NOT_FOUND,
     };
+  }
 
-    // Update application in Firestore
-    await applicationDocRef.update(updatePayload);
+  const applicationData = docSnap.data();
+  if (!applicationData || (applicationData.userId !== user!.uid && !user!.isAdmin)) {
+    return {
+      error: "Access denied. You can only access your own applications.",
+      code: ERROR_CODES.FORBIDDEN,
+    };
+  }
 
-    // Return updated application data
-    const updatedDoc = await applicationDocRef.get();
-    const updatedData = updatedDoc.data();
+  return {
+    id: applicationId,
+    application: applicationData
+  };
+});
 
-    return NextResponse.json({
-      id: applicationId,
-      message: 'Application updated successfully',
-      application: updatedData
-    });
+export const PUT = withApi({
+  auth: 'required',
+  rateLimit: 'applications',
+  paramsSchema: applicationParamsSchema,
+  bodySchema: applicationUpdateSchema,
+}, async ({ user, body, params }) => {
+  const { applicationId } = params;
+  const db = getAdminDb();
+  const docRef = db.collection("applications").doc(applicationId);
+  const docSnap = await docRef.get();
 
-  }, {
-    endpoint: '/api/app/applications/[applicationId]',
-    method: 'PUT',
-    requestId,
-    userId: undefined // Will be set by error handling
-  });
+  if (!docSnap.exists) {
+    return {
+      error: "Application not found",
+      code: ERROR_CODES.APPLICATION_NOT_FOUND,
+    };
+  }
 
-  return applyCorsHeaders(response, request);
-}
+  const applicationData = docSnap.data();
+  if (!applicationData || applicationData.userId !== user!.uid) {
+    return {
+      error: "Access denied. You can only update your own applications.",
+      code: ERROR_CODES.FORBIDDEN,
+    };
+  }
 
-// GET /api/app/applications/[applicationId] - Get a specific application
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ applicationId: string }> }
-) {
-  const requestId = generateRequestId();
-  const { applicationId } = await params;
+  const updatePayload = {
+    ...body,
+    updatedAt: new Date().toISOString()
+  };
 
-  const response = await withErrorHandling(async () => {
-    const auth = await authenticateRequest(request);
+  await docRef.update(updatePayload);
+  const updatedDoc = await docRef.get();
 
-    if (!auth.ok) {
-      return auth.response;
-    }
+  return {
+    id: applicationId,
+    message: 'Application updated successfully',
+    application: updatedDoc.data()
+  };
+});
 
-    // Initialize Firestore
-    const db = getAdminDb();
-    const applicationDoc = await db.collection("applications").doc(applicationId).get();
+export const DELETE = withApi({
+  auth: 'required',
+  rateLimit: 'applications',
+  paramsSchema: applicationParamsSchema,
+}, async ({ user, params }) => {
+  const { applicationId } = params;
+  const db = getAdminDb();
+  const docRef = db.collection("applications").doc(applicationId);
+  const docSnap = await docRef.get();
 
-    if (!applicationDoc.exists) {
-      return NextResponse.json(
-        { error: "Application not found" },
-        { status: 404 }
-      );
-    }
+  if (!docSnap.exists) {
+    return {
+      error: "Application not found",
+      code: ERROR_CODES.APPLICATION_NOT_FOUND,
+    };
+  }
 
-    const applicationData = applicationDoc.data();
+  const applicationData = docSnap.data();
+  if (!applicationData || (applicationData.userId !== user!.uid && !user!.isAdmin)) {
+    return {
+      error: "Access denied. You can only delete your own applications.",
+      code: ERROR_CODES.FORBIDDEN,
+    };
+  }
 
-    // Users can only access their own applications
-    if (!applicationData || (applicationData.userId !== auth.token.uid && !auth.isAdmin)) {
-      throw createAuthorizationError("Access denied. You can only access your own applications.", 'INSUFFICIENT_PERMISSIONS');
-    }
+  await docRef.delete();
+  return { message: 'Application deleted successfully' };
+});
 
-    // Return application data
-    return NextResponse.json({
-      id: applicationId,
-      application: applicationData
-    });
-
-  }, {
-    endpoint: '/api/app/applications/[applicationId]',
-    method: 'GET',
-    requestId,
-    userId: undefined // Will be set by error handling
-  });
-
-  return applyCorsHeaders(response, request);
-}
-
-// DELETE /api/app/applications/[applicationId] - Delete an application
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ applicationId: string }> }
-) {
-  const requestId = generateRequestId();
-  const { applicationId } = await params;
-
-  const response = await withErrorHandling(async () => {
-    const auth = await authenticateRequest(request);
-
-    if (!auth.ok) {
-      return auth.response;
-    }
-
-    // Initialize Firestore
-    const db = getAdminDb();
-    const applicationDoc = await db.collection("applications").doc(applicationId).get();
-
-    if (!applicationDoc.exists) {
-      return NextResponse.json(
-        { error: "Application not found" },
-        { status: 404 }
-      );
-    }
-
-    const applicationData = applicationDoc.data();
-
-    // Users can only delete their own applications
-    if (!applicationData || (applicationData.userId !== auth.token.uid && !auth.isAdmin)) {
-      throw createAuthorizationError("Access denied. You can only delete your own applications.", 'INSUFFICIENT_PERMISSIONS');
-    }
-
-    // Delete application from Firestore
-    await db.collection("applications").doc(applicationId).delete();
-
-    return NextResponse.json({
-      message: 'Application deleted successfully'
-    });
-
-  }, {
-    endpoint: '/api/app/applications/[applicationId]',
-    method: 'DELETE',
-    requestId,
-    userId: undefined // Will be set by error handling
-  });
-
-  return applyCorsHeaders(response, request);
-}
-
-// OPTIONS handler for CORS preflight
-export async function OPTIONS(request: NextRequest) {
-  return preflightResponse(request);
-}
+export { OPTIONS } from "@/lib/api/withApi";

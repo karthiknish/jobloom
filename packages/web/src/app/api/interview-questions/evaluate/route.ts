@@ -1,128 +1,58 @@
-import { NextRequest, NextResponse } from "next/server";
-import { verifySessionFromRequest } from "@/lib/auth/session";
 import { evaluateInterviewAnswer } from "@/services/ai/geminiService";
 import { getAdminDb } from "@/firebase/admin";
+import { withApi, z, OPTIONS } from "@/lib/api/withApi";
+import { ERROR_CODES } from "@/lib/api/errorCodes";
 
-interface AnswerEvaluationRequest {
-  question: string;
-  answer: string;
-  category: string;
-  difficulty: string;
-}
+export { OPTIONS };
 
-export async function POST(request: NextRequest) {
-  try {
-    // Verify authentication
-    const decodedToken = await verifySessionFromRequest(request);
-    if (!decodedToken) {
-      return NextResponse.json(
-        { error: "Unauthorized", code: "AUTH_REQUIRED" },
-        { status: 401 }
-      );
-    }
+const evaluateSchema = z.object({
+  question: z.string().min(1, "Question is required"),
+  answer: z.string().min(10, "Answer is too short. Please provide a more detailed response.").max(10000, "Answer is too long. Please keep it under 10000 characters."),
+  category: z.string().optional().default("general"),
+  difficulty: z.string().optional().default("Medium"),
+});
 
-    // Check for premium subscription
-    const db = getAdminDb();
-    const userDoc = await db.collection("users").doc(decodedToken.uid).get();
-    const userData = userDoc.data();
+export const POST = withApi({
+  auth: 'required',
+  rateLimit: 'ai-interview',
+  bodySchema: evaluateSchema,
+}, async ({ user, body }) => {
+  const { question, answer, category, difficulty } = body;
 
-    const isPremium = userData?.subscription?.tier === "premium" ||
-                      userData?.subscription?.tier === "enterprise" ||
-                      userData?.subscriptionId;
+  // Check for premium subscription
+  const db = getAdminDb();
+  const userDoc = await db.collection("users").doc(user!.uid).get();
+  const userData = userDoc.data();
 
-    if (!isPremium) {
-      return NextResponse.json(
-        { 
-          error: "Premium subscription required for AI interview evaluation",
-          code: "PREMIUM_REQUIRED",
-          upgradeUrl: "/upgrade"
-        },
-        { status: 403 }
-      );
-    }
+  const isPremium = userData?.subscription?.tier === "premium" ||
+                    userData?.subscription?.tier === "enterprise" ||
+                    userData?.subscriptionId ||
+                    userData?.subscriptionStatus === 'active';
 
-    // Parse and validate request body
-    let body: AnswerEvaluationRequest;
-    try {
-      body = await request.json();
-    } catch {
-      return NextResponse.json(
-        { error: "Invalid JSON body", code: "INVALID_JSON" },
-        { status: 400 }
-      );
-    }
-
-    const { question, answer, category, difficulty } = body;
-
-    // Validate required fields
-    if (!question || typeof question !== "string") {
-      return NextResponse.json(
-        { error: "Question is required", code: "MISSING_QUESTION" },
-        { status: 400 }
-      );
-    }
-
-    if (!answer || typeof answer !== "string") {
-      return NextResponse.json(
-        { error: "Answer is required", code: "MISSING_ANSWER" },
-        { status: 400 }
-      );
-    }
-
-    // Validate answer length
-    const trimmedAnswer = answer.trim();
-    if (trimmedAnswer.length < 10) {
-      return NextResponse.json(
-        { error: "Answer is too short. Please provide a more detailed response.", code: "ANSWER_TOO_SHORT" },
-        { status: 400 }
-      );
-    }
-
-    if (trimmedAnswer.length > 10000) {
-      return NextResponse.json(
-        { error: "Answer is too long. Please keep it under 10000 characters.", code: "ANSWER_TOO_LONG" },
-        { status: 400 }
-      );
-    }
-
-    // Evaluate answer using AI
-    const evaluation = await evaluateInterviewAnswer({
-      question: question.trim(),
-      answer: trimmedAnswer,
-      category: category || "general",
-      difficulty: difficulty || "Medium",
-    });
-
-    return NextResponse.json({
-      success: true,
-      data: evaluation,
-      metadata: {
-        questionLength: question.length,
-        answerLength: trimmedAnswer.length,
-        wordCount: trimmedAnswer.split(/\s+/).length,
-        evaluatedAt: new Date().toISOString(),
-      },
-    });
-  } catch (error) {
-    console.error("Error evaluating answer:", error);
-
-    // Check for specific error types
-    if (error instanceof Error) {
-      if (error.message.includes("API key")) {
-        return NextResponse.json(
-          { error: "AI service not configured", code: "AI_NOT_CONFIGURED" },
-          { status: 503 }
-        );
-      }
-    }
-
-    return NextResponse.json(
-      {
-        error: "Failed to evaluate answer",
-        code: "EVALUATION_ERROR",
-        details: error instanceof Error ? error.message : "Unknown error",
-      },
-      { status: 500 }
-    );
+  if (!isPremium) {
+    return { 
+      error: "Premium subscription required for AI interview evaluation",
+      code: "PREMIUM_REQUIRED",
+      upgradeUrl: "/upgrade"
+    };
   }
-}
+
+  // Evaluate answer using AI
+  const evaluation = await evaluateInterviewAnswer({
+    question: question.trim(),
+    answer: answer.trim(),
+    category: category,
+    difficulty: difficulty,
+  });
+
+  return {
+    success: true,
+    data: evaluation,
+    metadata: {
+      questionLength: question.length,
+      answerLength: answer.length,
+      wordCount: answer.split(/\s+/).length,
+      evaluatedAt: new Date().toISOString(),
+    },
+  };
+});

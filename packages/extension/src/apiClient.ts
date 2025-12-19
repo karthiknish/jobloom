@@ -486,7 +486,21 @@ export async function apiRequest<T = any>(opts: ApiOptions): Promise<T> {
       // Success - parse response
       if (contentType.includes('application/json')) {
         const bodyText = useProxy ? resLike!.bodyText : await res!.text();
-        return (bodyText ? JSON.parse(bodyText) : undefined) as T;
+        const parsed = bodyText ? JSON.parse(bodyText) : undefined;
+        
+        // Unwrap standardized response format { success: true, data: T }
+        if (parsed && typeof parsed === 'object' && 'success' in parsed && 'data' in parsed) {
+          if (parsed.success === false) {
+            const error = new Error(parsed.error?.message || 'API request failed');
+            (error as any).code = parsed.error?.code || 'API_ERROR';
+            (error as any).statusCode = status;
+            (error as any).details = parsed.error?.details;
+            throw error;
+          }
+          return parsed.data as T;
+        }
+        
+        return parsed as T;
       }
 
       return (useProxy ? resLike!.bodyText : await res!.text()) as any;

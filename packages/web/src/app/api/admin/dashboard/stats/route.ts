@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-
 import { getAdminDb } from "@/firebase/admin";
-import { authenticateRequest } from "@/lib/api/auth";
-import { withErrorHandling, generateRequestId } from "@/lib/api/errors";
+import { withApi } from "@/lib/api/withApi";
 
 type DashboardStatsResponse = {
   users: {
@@ -110,106 +108,83 @@ async function countWithFallback(
   }
 }
 
-/**
- * GET /api/admin/dashboard/stats
- * Lightweight overview stats for the admin dashboard cards.
- */
-export async function GET(request: NextRequest) {
-  const requestId = generateRequestId();
+export const GET = withApi({
+  auth: "admin",
+}, async () => {
+  const db = getAdminDb();
+  const nowMs = Date.now();
+  const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+  const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
 
-  return withErrorHandling(async () => {
-    const auth = await authenticateRequest(request, {
-      requireAdmin: true,
-      requireAuthHeader: true,
-    });
+  const usersTotalSnap = await db.collection("users").count().get();
+  const usersTotal = usersTotalSnap.data().count;
 
-    if (!auth.ok) {
-      return auth.response;
-    }
+  const usersWindow = await countWithFallback(
+    "users",
+    "createdAt",
+    nowMs - thirtyDaysMs,
+    nowMs
+  );
 
-    const db = getAdminDb();
-    const nowMs = Date.now();
-    const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
-    const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+  const sponsorsActiveSnap = await db
+    .collection("sponsors")
+    .where("isActive", "==", true)
+    .count()
+    .get();
+  const sponsorsActive = sponsorsActiveSnap.data().count;
 
-    const usersTotalSnap = await db.collection("users").count().get();
-    const usersTotal = usersTotalSnap.data().count;
+  const sponsorsWindow = await countWithFallback(
+    "sponsors",
+    "createdAt",
+    nowMs - thirtyDaysMs,
+    nowMs
+  );
 
-    const usersWindow = await countWithFallback(
-      "users",
-      "createdAt",
-      nowMs - thirtyDaysMs,
-      nowMs
-    );
+  const blogTotalSnap = await db.collection("blogPosts").count().get();
+  const blogTotalPosts = blogTotalSnap.data().count;
 
-    const sponsorsActiveSnap = await db
-      .collection("sponsors")
-      .where("isActive", "==", true)
-      .count()
-      .get();
-    const sponsorsActive = sponsorsActiveSnap.data().count;
+  const blogNewThisWeekSnap = await db
+    .collection("blogPosts")
+    .where("createdAt", ">=", nowMs - sevenDaysMs)
+    .count()
+    .get();
+  const blogNewThisWeek = blogNewThisWeekSnap.data().count;
 
-    const sponsorsWindow = await countWithFallback(
-      "sponsors",
-      "createdAt",
-      nowMs - thirtyDaysMs,
-      nowMs
-    );
+  const pendingInquiriesSnap = await db
+    .collection("contacts")
+    .where("status", "==", "new")
+    .count()
+    .get();
+  const pendingInquiries = pendingInquiriesSnap.data().count;
 
-    const blogTotalSnap = await db.collection("blogPosts").count().get();
-    const blogTotalPosts = blogTotalSnap.data().count;
+  const response: DashboardStatsResponse = {
+    users: {
+      total: usersTotal,
+      newLast30Days: usersWindow.current,
+      newPrev30Days: usersWindow.previous,
+      growthPctFromLastMonth:
+        usersWindow.current == null || usersWindow.previous == null
+          ? null
+          : computeGrowthPct(usersWindow.current, usersWindow.previous),
+    },
+    sponsors: {
+      active: sponsorsActive,
+      newLast30Days: sponsorsWindow.current,
+      newPrev30Days: sponsorsWindow.previous,
+      growthPctFromLastMonth:
+        sponsorsWindow.current == null || sponsorsWindow.previous == null
+          ? null
+          : computeGrowthPct(sponsorsWindow.current, sponsorsWindow.previous),
+    },
+    blog: {
+      totalPosts: blogTotalPosts,
+      newThisWeek: blogNewThisWeek,
+    },
+    inquiries: {
+      pending: pendingInquiries,
+    },
+    timestamp: new Date().toISOString(),
+  };
 
-    const blogNewThisWeekSnap = await db
-      .collection("blogPosts")
-      .where("createdAt", ">=", nowMs - sevenDaysMs)
-      .count()
-      .get();
-    const blogNewThisWeek = blogNewThisWeekSnap.data().count;
-
-    const pendingInquiriesSnap = await db
-      .collection("contacts")
-      .where("status", "==", "new")
-      .count()
-      .get();
-    const pendingInquiries = pendingInquiriesSnap.data().count;
-
-    const response: DashboardStatsResponse = {
-      users: {
-        total: usersTotal,
-        newLast30Days: usersWindow.current,
-        newPrev30Days: usersWindow.previous,
-        growthPctFromLastMonth:
-          usersWindow.current == null || usersWindow.previous == null
-            ? null
-            : computeGrowthPct(usersWindow.current, usersWindow.previous),
-      },
-      sponsors: {
-        active: sponsorsActive,
-        newLast30Days: sponsorsWindow.current,
-        newPrev30Days: sponsorsWindow.previous,
-        growthPctFromLastMonth:
-          sponsorsWindow.current == null || sponsorsWindow.previous == null
-            ? null
-            : computeGrowthPct(sponsorsWindow.current, sponsorsWindow.previous),
-      },
-      blog: {
-        totalPosts: blogTotalPosts,
-        newThisWeek: blogNewThisWeek,
-      },
-      inquiries: {
-        pending: pendingInquiries,
-      },
-      timestamp: new Date().toISOString(),
-    };
-
-    return NextResponse.json(response, {
-      headers: {
-        "Cache-Control": "private, max-age=60",
-      },
-    });
-  }, {
-    endpoint: "/api/admin/dashboard/stats",
-    method: "GET",
-    requestId,
-  });
-}
+  return response;
+});

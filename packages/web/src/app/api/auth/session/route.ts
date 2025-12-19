@@ -7,39 +7,16 @@ import {
   setSessionCookie,
 } from "@/lib/auth/session";
 import {
-  CSRF_HEADER_NAME,
   ensureCsrfCookie,
   validateCsrf,
 } from "@/lib/security/csrf";
 import { 
-  createValidationError, 
   createAuthError, 
   createSuccessResponse,
-  withErrorHandler 
 } from "@/lib/api/errorResponse";
 import { ERROR_CODES } from "@/lib/api/errorCodes";
-import { checkServerRateLimit } from "@/lib/rateLimiter";
-
-// Enhanced rate limiting for auth endpoints
-async function applyAuthRateLimit(request: NextRequest): Promise<void> {
-  const identifier = getClientIp(request);
-  
-  // More lenient rate limiting for development and localhost
-  const isDevelopment = process.env.NODE_ENV === 'development';
-  const isLocalhost = identifier === 'unknown' || identifier.includes('127.0.0.1') || identifier.includes('::1') || identifier.includes('192.168.');
-  
-  const result = checkServerRateLimit(identifier, 'auth', {
-    maxRequests: isDevelopment || isLocalhost ? 50 : 10, // 50 for dev/localhost, 10 for production
-    windowMs: 15 * 60 * 1000, // 15 minutes
-  });
-  
-  if (!result.allowed) {
-    const error = new Error("Too many sign-in attempts. Please try again later.");
-    (error as any).statusCode = 429;
-    (error as any).retryAfter = result.retryAfter;
-    throw error;
-  }
-}
+import { withApi } from "@/lib/api/withApi";
+import { z } from "zod";
 
 function getClientIp(request: NextRequest): string {
   const forwarded = request.headers.get("x-forwarded-for");
@@ -52,22 +29,6 @@ function getClientIp(request: NextRequest): string {
     request.headers.get("x-real-ip") ||
     "unknown"
   );
-}
-
-function validateIdToken(idToken: string): void {
-  if (typeof idToken !== "string" || !idToken) {
-    throw createValidationError(
-      "ID token is required and must be a string",
-      "idToken"
-    );
-  }
-
-  if (idToken.length < 100) {
-    throw createValidationError(
-      "Invalid ID token format",
-      "idToken"
-    );
-  }
 }
 
 async function validateUserSession(decoded: any): Promise<void> {
@@ -89,24 +50,28 @@ async function validateUserSession(decoded: any): Promise<void> {
   }
 }
 
-export async function GET(request: NextRequest) {
+export const GET = withApi({
+  auth: "none",
+}, async ({ request }) => {
   const response = createSuccessResponse({ ok: true }, "Session endpoint available");
   await ensureCsrfCookie(request, response);
   response.headers.set("Cache-Control", "no-store");
   response.headers.set("Pragma", "no-cache");
   return response;
-}
+});
 
-export const POST = withErrorHandler(async (request: NextRequest) => {
-  // Apply rate limiting
-  await applyAuthRateLimit(request);
+const sessionBodySchema = z.object({
+  idToken: z.string().min(100, "Invalid ID token format"),
+});
 
+export const POST = withApi({
+  auth: "none",
+  rateLimit: "auth",
+  bodySchema: sessionBodySchema,
+}, async ({ request, body }) => {
   validateCsrf(request);
 
-  const body = await request.json();
   const { idToken } = body;
-  
-  validateIdToken(idToken);
 
   // Verify the ID token
   const decoded = await verifyIdToken(idToken);
@@ -147,7 +112,9 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
   return response;
 });
 
-export const DELETE = withErrorHandler(async (request: NextRequest) => {
+export const DELETE = withApi({
+  auth: "none",
+}, async ({ request }) => {
   validateCsrf(request);
 
   const response = createSuccessResponse({ ok: true }, "Session revoked successfully");

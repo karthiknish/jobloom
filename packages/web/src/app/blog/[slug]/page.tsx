@@ -22,6 +22,7 @@ import { Separator } from "@/components/ui/separator";
 import { showSuccess } from "@/components/ui/Toast";
 import { useApiQuery } from "../../../hooks/useApi";
 import type { BlogPost } from "../../../types/api";
+import { apiClient } from "@/lib/api/client";
 
 export default function BlogPostPage() {
   const params = useParams();
@@ -34,15 +35,15 @@ export default function BlogPostPage() {
     restDelta: 0.001
   });
 
-  // Fetch individual blog post
+  // Fetch individual blog post using apiClient
   const { data: post, loading: isLoading } = useApiQuery<BlogPost>(
-    () => fetch(`/api/blog/posts/${slug}`).then((res) => res.json()),
+    () => apiClient.get<BlogPost>(`/api/blog/posts/${slug}`),
     [slug]
   );
 
-  // Fetch related posts (latest posts excluding current)
+  // Fetch related posts using apiClient
   const { data: relatedPostsData } = useApiQuery<{ posts: BlogPost[] }>(
-    () => fetch(`/api/blog/posts?limit=3`).then((res) => res.json()),
+    () => apiClient.get<{ posts: BlogPost[] }>(`/api/blog/posts?limit=3`),
     []
   );
 
@@ -54,10 +55,7 @@ export default function BlogPostPage() {
     if (!post || hasLiked) return;
 
     try {
-      await fetch(`/api/blog/posts/${slug}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
+      await apiClient.post(`/api/blog/posts/${slug}`);
 
       setHasLiked(true);
       showSuccess("Thanks for liking this post!");

@@ -1,11 +1,20 @@
-import { NextRequest, NextResponse } from "next/server";
-import { applyCorsHeaders, preflightResponse } from "@/lib/api/cors";
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { withApi, OPTIONS } from "@/lib/api/withApi";
 import { checkFirebaseHealth, getInitializationStatus } from "@/firebase/admin";
 
-export async function GET(request: NextRequest) {
-  const url = new URL(request.url);
-  const detailed = url.searchParams.get('detailed') === 'true';
-  
+// Re-export OPTIONS for CORS preflight
+export { OPTIONS };
+
+// Zod schema for query parameters
+const healthQuerySchema = z.object({
+  detailed: z.enum(["true", "false"]).transform(v => v === "true").optional().default(false),
+});
+
+export const GET = withApi({
+  auth: 'none',
+  querySchema: healthQuerySchema,
+}, async ({ query }) => {
   const basicHealth = {
     status: "ok",
     timestamp: new Date().toISOString(),
@@ -14,47 +23,36 @@ export async function GET(request: NextRequest) {
   };
   
   // For simple health checks, return quickly
-  if (!detailed) {
-    return applyCorsHeaders(NextResponse.json(basicHealth), request);
+  if (!query.detailed) {
+    return basicHealth;
   }
   
   // For detailed health checks, include Firebase status
-  try {
-    const firebaseHealth = await checkFirebaseHealth();
-    const initStatus = getInitializationStatus();
-    
-    const detailedHealth = {
-      ...basicHealth,
-      status: firebaseHealth.healthy ? "ok" : "degraded",
-      firebase: {
-        healthy: firebaseHealth.healthy,
-        latencyMs: firebaseHealth.latencyMs,
-        initialized: initStatus.initialized,
-        projectId: initStatus.projectId,
-        error: firebaseHealth.error
-      },
-      environment: process.env.NODE_ENV,
-      uptime: process.uptime ? Math.floor(process.uptime()) : undefined
-    };
-    
-    const statusCode = firebaseHealth.healthy ? 200 : 503;
-    return applyCorsHeaders(
-      NextResponse.json(detailedHealth, { status: statusCode }),
-      request
-    );
-  } catch (error: any) {
-    return applyCorsHeaders(
-      NextResponse.json({
-        ...basicHealth,
-        status: "error",
-        error: error.message || "Health check failed"
-      }, { status: 500 }),
-      request
-    );
+  const firebaseHealth = await checkFirebaseHealth();
+  const initStatus = getInitializationStatus();
+  
+  const detailedHealth = {
+    ...basicHealth,
+    status: firebaseHealth.healthy ? "ok" : "degraded",
+    firebase: {
+      healthy: firebaseHealth.healthy,
+      latencyMs: firebaseHealth.latencyMs,
+      initialized: initStatus.initialized,
+      projectId: initStatus.projectId,
+      error: firebaseHealth.error
+    },
+    environment: process.env.NODE_ENV,
+    uptime: process.uptime ? Math.floor(process.uptime()) : undefined
+  };
+  
+  // For degraded status, return NextResponse with 503
+  if (!firebaseHealth.healthy) {
+    return NextResponse.json({
+      success: true,
+      data: detailedHealth,
+      meta: { timestamp: Date.now() }
+    }, { status: 503 });
   }
-}
-
-// Support CORS preflight for extension access
-export async function OPTIONS(request: NextRequest) {
-  return preflightResponse(request);
-}
+  
+  return detailedHealth;
+});

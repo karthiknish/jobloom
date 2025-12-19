@@ -1,5 +1,6 @@
 import { getAuthClient } from "@/firebase/client";
 import { verifyAdminAccess } from "./auth";
+import { apiClient } from "@/lib/api/client";
 
 // Blog Management Functions
 export const blogApi = {
@@ -13,22 +14,16 @@ export const blogApi = {
     }
 
     const token = await auth.currentUser.getIdToken();
-    const url = new URL("/api/blog/admin/posts", window.location.origin);
+    let endpoint = "/blog/admin/posts";
     if (status && status !== "all") {
-      url.searchParams.set("status", status);
+      endpoint += `?status=${status}`;
     }
 
-    const response = await fetch(url.toString(), {
+    return apiClient.get(endpoint, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    return response.json();
   },
 
   getBlogStats: async (): Promise<any> => {
@@ -41,17 +36,11 @@ export const blogApi = {
     }
 
     const token = await auth.currentUser.getIdToken();
-    const response = await fetch("/api/blog/admin/stats", {
+    return apiClient.get("/blog/admin/stats", {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    return response.json();
   },
 
   createBlogPost: async (postData: any): Promise<any> => {
@@ -64,21 +53,11 @@ export const blogApi = {
     }
 
     const token = await auth.currentUser.getIdToken();
-    const response = await fetch("/api/blog/admin/posts", {
-      method: "POST",
+    return apiClient.post("/blog/admin/posts", postData, {
       headers: {
-        "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(postData),
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || "Failed to create blog post");
-    }
-
-    return response.json();
   },
 
   updateBlogPost: async (postId: string, postData: any): Promise<any> => {
@@ -91,21 +70,11 @@ export const blogApi = {
     }
 
     const token = await auth.currentUser.getIdToken();
-    const response = await fetch(`/api/blog/admin/posts/${postId}`, {
-      method: "PUT",
+    return apiClient.put(`/blog/admin/posts/${postId}`, postData, {
       headers: {
-        "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(postData),
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || "Failed to update blog post");
-    }
-
-    return response.json();
   },
 
   deleteBlogPost: async (postId: string): Promise<any> => {
@@ -118,18 +87,10 @@ export const blogApi = {
     }
 
     const token = await auth.currentUser.getIdToken();
-    const response = await fetch(`/api/blog/admin/posts/${postId}`, {
-      method: "DELETE",
+    return apiClient.delete(`/blog/admin/posts/${postId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || "Failed to delete blog post");
-    }
-
-    return response.json();
   },
 };

@@ -33,6 +33,7 @@ import {
   createMicrosoftPopupProvider,
   type RunPopupSignIn,
 } from "./usePopupSignIn";
+import { apiClient } from "@/lib/api/client";
 
 interface AuthActionDependencies {
   setError: Dispatch<SetStateAction<AuthError | null>>;
@@ -104,15 +105,9 @@ export function useAuthActions({
         }
 
         try {
-          await fetch("/api/email/welcome", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              email: credential.user.email ?? email,
-              name: name ?? credential.user.displayName ?? undefined,
-            }),
+          await apiClient.post("/email/welcome", {
+            email: credential.user.email ?? email,
+            name: name ?? credential.user.displayName ?? undefined,
           });
         } catch (sendError) {
           console.warn("Failed to trigger welcome email", sendError);

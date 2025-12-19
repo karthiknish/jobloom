@@ -17,6 +17,7 @@ import {
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { AdminLayout } from "../../components/admin/AdminLayout";
 import { AdminAccessDenied } from "../../components/admin/AdminAccessDenied";
+import { apiClient } from "@/lib/api/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -54,16 +55,7 @@ export default function AdminPage() {
     const load = async () => {
       setStatsLoading(true);
       try {
-        const token = await user.getIdToken();
-        const res = await fetch("/api/admin/dashboard/stats", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (!res.ok) {
-          throw new Error(`Failed to load dashboard stats (${res.status})`);
-        }
-
-        const data = (await res.json()) as DashboardStats;
+        const data = await apiClient.get<DashboardStats>("/admin/dashboard/stats");
         if (!cancelled) {
           setStats(data);
         }

@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { showError, showSuccess, showWarning } from "@/components/ui/Toast";
+import { apiClient } from "@/lib/api/client";
 
 interface CvUploadFormProps {
   userId: string;
@@ -97,22 +98,9 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted, onResum
       if (!user) return;
       
       try {
-        const idToken = await user.getIdToken();
-        const response = await fetch('/api/user/upload-limits', {
-          headers: {
-            Authorization: `Bearer ${idToken}`,
-          },
-        });
-
-        if (response.ok) {
-          const result = await response.json();
-          if (result.success) {
-            setUploadLimits(result.uploadLimits);
-            console.log('Upload limits loaded:', result.uploadLimits);
-          }
-        } else {
-          console.warn('Failed to fetch upload limits, using defaults');
-        }
+        const result = await apiClient.get<any>('/user/upload-limits');
+        setUploadLimits(result.uploadLimits);
+        console.log('Upload limits loaded:', result.uploadLimits);
       } catch (error) {
         console.error('Error fetching upload limits:', error);
       } finally {
@@ -161,69 +149,41 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted, onResum
   onUploadStarted?.();
 
     try {
-      console.log("CV Upload Form - Starting upload:");
-      console.log("- userId prop:", userId);
-      console.log("- file:", file ? `${file.name} (${file.size} bytes)` : "null");
-      console.log("- targetRole:", targetRole);
-      console.log("- industry:", industry);
-
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("userId", userId);
-      formData.append("targetRole", targetRole);
-      formData.append("industry", industry);
-
-      if (!user) {
-        throw new Error("You must be signed in to upload a CV");
-      }
-
-      const idToken = await user.getIdToken();
-      console.log("- user authenticated:", !!user);
-      console.log("- idToken obtained:", !!idToken);
-
-      const response = await fetch("/api/cv/upload", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${idToken}`,
-        },
-        body: formData,
+      const result = await apiClient.upload<any>("/cv/upload", file, {
+        userId,
+        targetRole,
+        industry,
       });
 
-      const result = await response.json();
-
-      if (response.ok) {
-        showSuccess(
-          "CV uploaded successfully",
-          "Our AI is analyzing your CV. You'll receive detailed feedback shortly."
-        );
-        setFile(null);
-        setTargetRole("");
-        setIndustry("");
-        // Reset file input
-        const fileInput = document.getElementById(
-          "file-upload"
-        ) as HTMLInputElement;
-        if (fileInput) fileInput.value = "";
-        if (result.analysisId) {
-          // Notify parent so it can refetch & switch tabs
-            onUploadSuccess?.(result.analysisId);
-        }
-      } else if (result.upgradeRequired) {
+      showSuccess(
+        "CV uploaded successfully",
+        "Our AI is analyzing your CV. You'll receive detailed feedback shortly."
+      );
+      setFile(null);
+      setTargetRole("");
+      setIndustry("");
+      // Reset file input
+      const fileInput = document.getElementById(
+        "file-upload"
+      ) as HTMLInputElement;
+      if (fileInput) fileInput.value = "";
+      if (result.analysisId) {
+        // Notify parent so it can refetch & switch tabs
+          onUploadSuccess?.(result.analysisId);
+      }
+    } catch (error: any) {
+      console.error("Upload error:", error);
+      
+      if (error.details?.upgradeRequired) {
         // Show upgrade prompt for limit reached
         setUpgradePromptVisible(true);
-        setLimitInfo(result);
+        setLimitInfo(error.details);
       } else {
         showError(
           "Upload failed",
-          `${result.error ? `${result.error}. ` : ""}Check the file format and size, then try again.`
+          `${error.message ? `${error.message}. ` : ""}Check the file format and size, then try again.`
         );
       }
-    } catch (error) {
-      console.error("Upload error:", error);
-      showError(
-        "Upload interrupted",
-        "Check your connection and try again."
-      );
     } finally {
       setUploading(false);
     }

@@ -27,7 +27,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAnalytics } from "@/providers/analytics-provider";
-import { getAuthClient } from "@/firebase/client";
+import { apiClient } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 
 function AnalyticsDashboardSkeleton() {
@@ -157,24 +157,7 @@ export function AnalyticsDashboard() {
       setIsLoading(true);
       setError(null);
 
-      const auth = getAuthClient();
-      if (!auth?.currentUser) {
-        throw new Error("Authentication required");
-      }
-
-      const token = await auth.currentUser.getIdToken();
-      const response = await fetch("/api/admin/analytics", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-      }
-
-      const rawData = await response.json();
+      const rawData = await apiClient.get<any>("/admin/analytics");
       
       // Transform new API response to existing interface
       const data: AnalyticsData = {

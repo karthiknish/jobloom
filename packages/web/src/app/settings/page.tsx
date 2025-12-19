@@ -14,6 +14,7 @@ import { FeaturesSettings } from "@/components/settings/FeaturesSettings";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { useSubscription } from "@/providers/subscription-provider";
 import { useToast, TOAST_MESSAGES } from "@/hooks/use-toast";
+import { apiClient } from "@/lib/api/client";
 
 export default function SettingsPage() {
   const { user: firebaseUser, loading: userLoading } = useFirebaseAuth();
@@ -76,96 +77,51 @@ export default function SettingsPage() {
       if (!userLoading && firebaseUser) {
         try {
           // Load preferences from backend
-          const token = await firebaseUser.getIdToken();
-          const response = await fetch("/api/settings/preferences", {
-            headers: {
-              Authorization: `Bearer ${token}`,
+          const data = await apiClient.get<any>("/settings/preferences");
+          const backendPrefs = data.preferences || {};
+          const minimumSalary = sanitizeNonNegativeNumber(backendPrefs.minimumSalary, 38700);
+
+          const userData = {
+            profile: {
+              firstName: firebaseUser.displayName?.split(' ')[0] || "",
+              lastName: firebaseUser.displayName?.split(' ').slice(1).join(' ') || "",
+              email: firebaseUser.email || "",
+              phone: firebaseUser.phoneNumber || "",
+              avatar: firebaseUser.photoURL || "",
             },
+            preferences: {
+              emailNotifications: backendPrefs.emailNotifications ?? true,
+              pushNotifications: backendPrefs.pushNotifications ?? false,
+              newsletter: backendPrefs.newsletter ?? backendPrefs.marketingEmails ?? true,
+              marketingEmails: backendPrefs.marketingEmails ?? false,
+              theme: backendPrefs.theme ?? "light",
+              // Extension-specific preferences from backend
+              ukFiltersEnabled: backendPrefs.ukFiltersEnabled ?? false,
+              autoDetectJobs: backendPrefs.autoDetectJobs ?? true,
+              showSponsorButton: backendPrefs.showSponsorButton ?? true,
+              ageCategory: backendPrefs.ageCategory ?? "adult",
+              educationStatus: backendPrefs.educationStatus ?? "none",
+              phdStatus: backendPrefs.phdStatus ?? "none",
+              professionalStatus: backendPrefs.professionalStatus ?? "none",
+              minimumSalary,
+              jobCategories: backendPrefs.jobCategories ?? [] as string[],
+              locationPreference: backendPrefs.locationPreference ?? "uk",
+            },
+            security: {
+              currentPassword: "",
+              newPassword: "",
+              confirmPassword: "",
+            },
+          };
+
+          // Only update if the data has actually changed
+          setFormData(prev => {
+            if (JSON.stringify(prev) !== JSON.stringify(userData)) {
+              return userData;
+            }
+            return prev;
           });
-
-          if (response.ok) {
-            const data = await response.json();
-            const backendPrefs = data.preferences || {};
-            const minimumSalary = sanitizeNonNegativeNumber(backendPrefs.minimumSalary, 38700);
-
-            const userData = {
-              profile: {
-                firstName: firebaseUser.displayName?.split(' ')[0] || "",
-                lastName: firebaseUser.displayName?.split(' ').slice(1).join(' ') || "",
-                email: firebaseUser.email || "",
-                phone: firebaseUser.phoneNumber || "",
-                avatar: firebaseUser.photoURL || "",
-              },
-              preferences: {
-                emailNotifications: backendPrefs.emailNotifications ?? true,
-                pushNotifications: backendPrefs.pushNotifications ?? false,
-                newsletter: backendPrefs.newsletter ?? backendPrefs.marketingEmails ?? true,
-                marketingEmails: backendPrefs.marketingEmails ?? false,
-                theme: backendPrefs.theme ?? "light",
-                // Extension-specific preferences from backend
-                ukFiltersEnabled: backendPrefs.ukFiltersEnabled ?? false,
-                autoDetectJobs: backendPrefs.autoDetectJobs ?? true,
-                showSponsorButton: backendPrefs.showSponsorButton ?? true,
-                ageCategory: backendPrefs.ageCategory ?? "adult",
-                educationStatus: backendPrefs.educationStatus ?? "none",
-                phdStatus: backendPrefs.phdStatus ?? "none",
-                professionalStatus: backendPrefs.professionalStatus ?? "none",
-                minimumSalary,
-                jobCategories: backendPrefs.jobCategories ?? [] as string[],
-                locationPreference: backendPrefs.locationPreference ?? "uk",
-              },
-              security: {
-                currentPassword: "",
-                newPassword: "",
-                confirmPassword: "",
-              },
-            };
-
-            // Only update if the data has actually changed
-            setFormData(prev => {
-              if (JSON.stringify(prev) !== JSON.stringify(userData)) {
-                return userData;
-              }
-              return prev;
-            });
-            setOriginalData(userData);
-          } else {
-            console.error("Failed to load preferences from backend");
-            // Fallback to default values
-            const userData = {
-              profile: {
-                firstName: firebaseUser.displayName?.split(' ')[0] || "",
-                lastName: firebaseUser.displayName?.split(' ').slice(1).join(' ') || "",
-                email: firebaseUser.email || "",
-                phone: firebaseUser.phoneNumber || "",
-                avatar: firebaseUser.photoURL || "",
-              },
-              preferences: {
-                emailNotifications: true,
-                pushNotifications: false,
-                newsletter: true,
-                marketingEmails: false,
-                theme: "light",
-                ukFiltersEnabled: false,
-                autoDetectJobs: true,
-                showSponsorButton: true,
-                ageCategory: "adult",
-                educationStatus: "none",
-                phdStatus: "none",
-                professionalStatus: "none",
-                minimumSalary: 38700,
-                jobCategories: [] as string[],
-                locationPreference: "uk",
-              },
-              security: {
-                currentPassword: "",
-                newPassword: "",
-                confirmPassword: "",
-              },
-            };
-            setFormData(userData);
-            setOriginalData(userData);
-          }
+          setOriginalData(userData);
         } catch (error) {
           console.error("Error loading user preferences:", error);
           toast.error("Failed to load preferences");
@@ -217,21 +173,9 @@ export default function SettingsPage() {
       };
 
       // Save preferences to backend
-      const token = await firebaseUser.getIdToken();
-      const response = await fetch("/api/settings/preferences", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          preferences: preferencesToSave,
-        }),
+      await apiClient.put("/settings/preferences", {
+        preferences: preferencesToSave,
       });
-
-      if (!response.ok) {
-        throw new Error("Failed to save preferences to backend");
-      }
 
       // Update profile if changed
       if (
@@ -335,32 +279,7 @@ export default function SettingsPage() {
     try {
       setBillingPortalLoading(true);
 
-      const token = await firebaseUser.getIdToken();
-      const response = await fetch("/api/subscription/portal", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const data = await response.json().catch(() => null);
-
-      if (response.status === 404) {
-        toast.info(
-          "Billing portal unavailable",
-          "We couldn't find an active subscription for your account. Upgrade your plan to manage billing."
-        );
-        return;
-      }
-
-      if (!response.ok) {
-        const errorMessage =
-          (data && typeof data.error === "string" && data.error) ||
-          TOAST_MESSAGES.GENERIC.ERROR;
-        toast.error("Unable to open billing portal", errorMessage);
-        return;
-      }
+      const data = await apiClient.post<any>("/subscription/portal");
 
       if (data?.url) {
         window.location.href = data.url;
@@ -371,9 +290,15 @@ export default function SettingsPage() {
         "Unable to open billing portal",
         "No billing portal URL was returned. Please try again later."
       );
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : TOAST_MESSAGES.GENERIC.ERROR;
+    } catch (error: any) {
+      if (error.status === 404) {
+        toast.info(
+          "Billing portal unavailable",
+          "We couldn't find an active subscription for your account. Upgrade your plan to manage billing."
+        );
+        return;
+      }
+      const errorMessage = error.message || TOAST_MESSAGES.GENERIC.ERROR;
       toast.error("Unable to open billing portal", errorMessage);
     } finally {
       setBillingPortalLoading(false);

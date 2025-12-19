@@ -1,40 +1,49 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
-import { getAdminApp, getAdminAuth, getAdminDb, type UserRecord } from "@/firebase/admin";
+import { getAdminAuth, getAdminDb, type UserRecord } from "@/firebase/admin";
 import { PASSWORD_RESET_SUBJECT, renderPasswordResetEmailHtml, renderPasswordResetEmailText } from "@/emails/passwordResetEmail";
 import { sendEmail } from "@/lib/resend";
+import { withApi } from "@/lib/api/withApi";
 
 const resendFrom = process.env.RESEND_FROM_EMAIL ?? "Hireall <hello@hireall.app>";
 const appUrl = process.env.HIREALL_WEB_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "https://hireall.app";
 const supportEmail = process.env.HIREALL_SUPPORT_EMAIL ?? "support@hireall.app";
 
-const BodySchema = z.object({
-  email: z.string().trim().email(),
+// Zod schema for request body validation
+const requestBodySchema = z.object({
+  email: z.string().trim().email("Invalid email address"),
   redirectUrl: z.string().url().optional(),
 });
 
-export async function POST(request: Request) {
-  try {
-    const parsed = BodySchema.safeParse(await request.json().catch(() => ({})));
-    if (!parsed.success) {
-      return NextResponse.json(
-        { success: false, error: "Invalid request" },
-        { status: 400 }
-      );
-    }
+function addSecurityHeaders(response: NextResponse): NextResponse {
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("X-Frame-Options", "DENY");
+  response.headers.set("X-XSS-Protection", "1; mode=block");
+  response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate");
+  response.headers.set("Pragma", "no-cache");
+  return response;
+}
 
-    const { email, redirectUrl } = parsed.data;
+export const POST = withApi({
+  auth: "none",
+  rateLimit: "auth",
+  bodySchema: requestBodySchema,
+  handler: async ({ body }) => {
+    const { email, redirectUrl } = body;
 
-    const admin = getAdminApp();
     const adminAuth = getAdminAuth();
     let userRecord: UserRecord | null = null;
     try {
       userRecord = await adminAuth.getUserByEmail(email);
     } catch (error: any) {
       if (error?.code === "auth/user-not-found") {
+        // Delay to prevent timing attacks
         await new Promise((resolve) => setTimeout(resolve, 400));
-        return NextResponse.json({ success: true, message: "If the email exists, a reset link will be sent." });
+        return { 
+          success: true, 
+          message: "If the email exists, a reset link will be sent." 
+        };
       }
       throw error;
     }
@@ -51,7 +60,7 @@ export async function POST(request: Request) {
       return Buffer.from(array).toString("base64url");
     })();
 
-    const expiresAt = new Date(Date.now() + 1000 * 60 * 30);
+    const expiresAt = new Date(Date.now() + 1000 * 60 * 30); // 30 minutes
 
     const db = getAdminDb();
     await db
@@ -97,14 +106,13 @@ export async function POST(request: Request) {
     });
 
     if (!emailResult.success) {
-      // Keep response generic to avoid leaking info.
+      // Keep response generic to avoid leaking info
       console.error("Password reset email send failed:", emailResult.error);
     }
 
-    return NextResponse.json({ success: true, skipped: emailResult.skipped === true });
-  } catch (error) {
-    console.error("Failed to process password reset request", error);
-    return NextResponse.json({ success: false, error: "Unable to process request" }, { status: 500 });
-  }
-}
-
+    return { 
+      success: true, 
+      skipped: emailResult.skipped === true 
+    };
+  },
+});

@@ -54,7 +54,7 @@ export class UserProfileManager {
       if (!userId) return;
 
       // Check if we've synced recently (within last 5 minutes)
-      const lastSync = await safeChromeStorageGet<{ lastFirebaseSync?: number }>(
+      const lastSync = await safeChromeStorageGet<{ lastFirebaseSync: number }>(
         "local",
         ["lastFirebaseSync"],
         { lastFirebaseSync: 0 },

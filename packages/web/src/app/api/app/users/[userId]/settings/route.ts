@@ -1,31 +1,26 @@
-import { NextRequest, NextResponse } from "next/server";
-import { authenticateRequest } from "@/lib/api/auth";
+import { NextResponse } from "next/server";
 import { getAdminDb } from "@/firebase/admin";
-import { applyCorsHeaders, preflightResponse } from "@/lib/api/cors";
-import { withErrorHandling, createAuthorizationError, generateRequestId } from "@/lib/api/errors";
+import { withApi } from "@/lib/api/withApi";
+import { z } from "zod";
+
+const settingsParamsSchema = z.object({
+  userId: z.string(),
+});
 
 // PUT /api/app/users/[userId]/settings - Update user settings
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ userId: string }> }
-) {
-  const requestId = generateRequestId();
-  const { userId } = await params;
+export const PUT = withApi({
+  auth: "required",
+  paramsSchema: settingsParamsSchema,
+  bodySchema: z.record(z.string(), z.any()),
+  handler: async ({ params, body, user }) => {
+    const { userId } = params;
 
-  const response = await withErrorHandling(async () => {
-    // Validate authorization
-    const auth = await authenticateRequest(request);
-
-    if (!auth.ok) {
-      return auth.response;
+    if (user!.uid !== userId) {
+      return NextResponse.json(
+        { error: "Access denied. You can only update your own settings." },
+        { status: 403 }
+      );
     }
-
-    if (auth.token.uid !== userId) {
-      throw createAuthorizationError("Access denied. You can only update your own settings.", 'INSUFFICIENT_PERMISSIONS');
-    }
-
-    // Parse request body
-    const settingsData = await request.json();
 
     // Initialize Firestore
     const db = getAdminDb();
@@ -33,43 +28,29 @@ export async function PUT(
 
     // Update user settings in Firestore
     await userDocRef.update({
-      settings: settingsData,
+      settings: body,
       updatedAt: new Date().toISOString()
     });
 
-    return NextResponse.json({
+    return {
       message: 'Settings updated successfully',
-      settings: settingsData
-    });
-
-  }, {
-    endpoint: '/api/app/users/[userId]/settings',
-    method: 'PUT',
-    requestId,
-    userId
-  });
-
-  return applyCorsHeaders(response, request);
-}
+      settings: body
+    };
+  }
+});
 
 // GET /api/app/users/[userId]/settings - Get user settings
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ userId: string }> }
-) {
-  const requestId = generateRequestId();
-  const { userId } = await params;
+export const GET = withApi({
+  auth: "required",
+  paramsSchema: settingsParamsSchema,
+  handler: async ({ params, user }) => {
+    const { userId } = params;
 
-  const response = await withErrorHandling(async () => {
-    // Validate authorization
-    const auth = await authenticateRequest(request);
-
-    if (!auth.ok) {
-      return auth.response;
-    }
-
-    if (auth.token.uid !== userId) {
-      throw createAuthorizationError("Access denied. You can only access your own settings.", 'INSUFFICIENT_PERMISSIONS');
+    if (user!.uid !== userId) {
+      return NextResponse.json(
+        { error: "Access denied. You can only access your own settings." },
+        { status: 403 }
+      );
     }
 
     // Initialize Firestore
@@ -77,27 +58,10 @@ export async function GET(
     const userDoc = await db.collection("users").doc(userId).get();
 
     if (!userDoc.exists) {
-      return NextResponse.json({
-        settings: {}
-      });
+      return { settings: {} };
     }
 
     const userData = userDoc.data();
-    return NextResponse.json({
-      settings: userData?.settings || {}
-    });
-
-  }, {
-    endpoint: '/api/app/users/[userId]/settings',
-    method: 'GET',
-    requestId,
-    userId
-  });
-
-  return applyCorsHeaders(response, request);
-}
-
-// OPTIONS handler for CORS preflight
-export async function OPTIONS(request: NextRequest) {
-  return preflightResponse(request);
-}
+    return { settings: userData?.settings || {} };
+  }
+});

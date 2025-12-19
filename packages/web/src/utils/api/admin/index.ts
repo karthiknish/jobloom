@@ -5,6 +5,7 @@ import { userApi } from "./users";
 import { sponsorApi } from "./sponsors";
 import { verifyAdminAccess, clearAdminVerificationCache } from "./auth";
 import { clearUserAuthCache } from "@/lib/api/auth-cache";
+import { apiClient } from "@/lib/api/client";
 import type { ContactSubmission } from "@/types/api";
 
 // Helper to get auth token
@@ -163,18 +164,12 @@ export const adminApi = {
   getAllContactSubmissions: async (): Promise<ContactSubmission[]> => {
     // Use the API endpoint which has proper admin authentication
     const token = await getAuthToken();
-    const response = await fetch("/api/app/contacts/admin", {
+    const data = await apiClient.get<any>("/app/contacts/admin", {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
     return data.contacts || [];
   },
 
@@ -184,35 +179,21 @@ export const adminApi = {
   ): Promise<void> => {
     // Use the API endpoint which has proper admin authentication
     const token = await getAuthToken();
-    const response = await fetch(`/api/app/contacts/admin/${submissionId}`, {
-      method: "PUT",
+    await apiClient.put(`/app/contacts/admin/${submissionId}`, updates, {
       headers: {
         Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
       },
-      body: JSON.stringify(updates),
     });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-    }
   },
 
   deleteContactSubmission: async (submissionId: string): Promise<void> => {
     // Use the API endpoint which has proper admin authentication
     const token = await getAuthToken();
-    const response = await fetch(`/api/app/contacts/admin/${submissionId}`, {
-      method: "DELETE",
+    await apiClient.delete(`/app/contacts/admin/${submissionId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-    }
   },
 
   // Sponsorship functions

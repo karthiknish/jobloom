@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { withApi } from '@/lib/api/withApi';
+import { z } from 'zod';
 import { getAdminDb } from '@/firebase/admin';
-import { verifySessionFromRequest } from '@/lib/auth/session';
 
 /**
  * Fuzzy Matching utilities - Server-side implementation
@@ -270,94 +270,52 @@ async function matchToSocCode(
   return bestMatch;
 }
 
+// Zod schema for request body validation
+const matchBodySchema = z.object({
+  title: z.string().min(1, 'title is required and must be a non-empty string').max(500),
+  description: z.string().max(5000).optional(),
+  keywords: z.array(z.string().max(100)).max(50).optional(),
+  department: z.string().max(200).optional(),
+  seniority: z.string().max(100).optional(),
+});
+
 /**
  * POST /api/soc-codes/match
- * 
- * Match a job to SOC codes using fuzzy matching algorithm.
- * 
- * Request body:
- * {
- *   title: string (required)
- *   description?: string
- *   keywords?: string[]
- *   department?: string
- *   seniority?: string
- * }
- * 
- * Response:
- * {
- *   success: boolean
- *   match: SocCodeMatch | null
- * }
  */
-export async function POST(request: NextRequest) {
-  try {
-    // Verify session (allow both authenticated users and development mock tokens)
-    const isMockToken = process.env.NODE_ENV === 'development' &&
-      request.headers.get('authorization')?.includes('bW9jay1zaWduYXR1cmUtZm9yLXRlc3Rpbmc');
+export const POST = withApi({
+  auth: 'required',
+  rateLimit: 'general',
+  bodySchema: matchBodySchema,
+}, async ({ body }) => {
+  // Initialize Firestore
+  const db = getAdminDb();
 
-    if (!isMockToken) {
-      const decodedToken = await verifySessionFromRequest(request);
-      if (!decodedToken) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-    }
+  // Perform fuzzy matching
+  const match = await matchToSocCode(db, {
+    title: body.title.trim(),
+    description: body.description?.trim(),
+    keywords: body.keywords,
+    department: body.department?.trim(),
+    seniority: body.seniority?.trim(),
+  });
 
-    // Parse request body
-    let body: MatchRequest;
-    try {
-      body = await request.json();
-    } catch {
-      return NextResponse.json(
-        { error: 'Invalid JSON in request body' },
-        { status: 400 }
-      );
-    }
-
-    // Validate required fields
-    if (!body.title || typeof body.title !== 'string' || body.title.trim().length === 0) {
-      return NextResponse.json(
-        { error: 'title is required and must be a non-empty string' },
-        { status: 400 }
-      );
-    }
-
-    // Initialize Firestore
-    const db = getAdminDb();
-
-    // Perform fuzzy matching
-    const match = await matchToSocCode(db, {
-      title: body.title.trim(),
-      description: body.description?.trim(),
-      keywords: body.keywords,
-      department: body.department?.trim(),
-      seniority: body.seniority?.trim(),
-    });
-
-    return NextResponse.json({
-      success: true,
-      match,
-      query: {
-        title: body.title,
-        hasDescription: !!body.description,
-        keywordCount: body.keywords?.length || 0,
-      },
-    });
-  } catch (error) {
-    console.error('Error matching SOC codes:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-}
+  return {
+    match,
+    query: {
+      title: body.title,
+      hasDescription: !!body.description,
+      keywordCount: body.keywords?.length || 0,
+    },
+  };
+});
 
 /**
  * GET /api/soc-codes/match
- * Returns information about the matching endpoint.
  */
-export async function GET() {
-  return NextResponse.json({
+export const GET = withApi({
+  auth: 'none',
+}, async () => {
+  return {
     endpoint: '/api/soc-codes/match',
     method: 'POST',
     description: 'Match a job title to UK SOC codes using fuzzy matching',
@@ -379,5 +337,6 @@ export async function GET() {
         eligibility: 'string - Visa eligibility status',
       },
     },
-  });
-}
+  };
+});
+

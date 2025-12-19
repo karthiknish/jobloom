@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifySessionFromRequest } from "@/lib/auth/session";
+import { z } from "zod";
+import { withApi, OPTIONS } from "@/lib/api/withApi";
 import { generateMockInterviewQuestions, type MockInterviewQuestion as AIMockQuestion } from "@/services/ai/geminiService";
 
-interface MockInterviewRequest {
-  role: string;
-  experience: string;
-  duration: number;
-  focus: string[];
-}
+// Re-export OPTIONS for CORS preflight
+export { OPTIONS };
+
+const mockInterviewRequestSchema = z.object({
+  role: z.string().min(1, "Role is required"),
+  experience: z.string().min(1, "Experience is required"),
+  duration: z.number().min(1, "Duration is required"),
+  focus: z.array(z.string()).optional().default([]),
+});
 
 interface MockInterviewSession {
   id: string;
@@ -29,62 +33,26 @@ interface MockInterviewQuestion {
   followUpQuestions?: string[];
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const decodedToken = await verifySessionFromRequest(request);
-    if (!decodedToken) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+export const POST = withApi({
+  auth: "required",
+  bodySchema: mockInterviewRequestSchema,
+}, async ({ body }) => {
+  const { role, experience, duration, focus } = body;
 
-    const body: MockInterviewRequest = await request.json();
-    const { role, experience, duration, focus } = body;
+  // Generate mock interview session
+  const session = await generateMockInterviewSession(role, experience, duration, focus);
 
-    if (!role || !experience || !duration) {
-      return NextResponse.json({ 
-        error: "Role, experience, and duration are required" 
-      }, { status: 400 });
-    }
+  return session;
+});
 
-    // Generate mock interview session
-    const session = await generateMockInterviewSession(role, experience, duration, focus);
+export const GET = withApi({
+  auth: "required",
+}, async () => {
+  // Return available mock interview templates
+  const templates = getMockInterviewTemplates();
 
-    return NextResponse.json({
-      success: true,
-      data: session,
-      message: "Mock interview session created successfully"
-    });
-  } catch (error) {
-    console.error("Error creating mock interview:", error);
-    return NextResponse.json(
-      { error: "Failed to create mock interview session" },
-      { status: 500 }
-    );
-  }
-}
-
-export async function GET(request: NextRequest) {
-  try {
-    const decodedToken = await verifySessionFromRequest(request);
-    if (!decodedToken) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Return available mock interview templates
-    const templates = getMockInterviewTemplates();
-
-    return NextResponse.json({
-      success: true,
-      data: templates,
-      message: "Mock interview templates retrieved successfully"
-    });
-  } catch (error) {
-    console.error("Error fetching mock interview templates:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch mock interview templates" },
-      { status: 500 }
-    );
-  }
-}
+  return templates;
+});
 
 async function generateMockInterviewSession(
   role: string,

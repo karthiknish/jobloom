@@ -23,6 +23,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { getAuth, EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "firebase/auth";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
+import { apiClient } from "@/lib/api/client";
 
 interface SecuritySettingsProps {
   formData: {
@@ -161,19 +162,7 @@ export function SecuritySettings({ formData, onInputChange, user }: SecuritySett
 
     setIsLoading(true);
     try {
-      const token = await user.getIdToken();
-      const response = await fetch("/api/settings/export", {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(await getResponseErrorMessage(response));
-      }
-
-      const responseData = await response.json();
+      const responseData = await apiClient.get<any>("/settings/export");
       
       if (responseData.downloadUrl) {
         // Download the file from the signed URL
@@ -208,25 +197,10 @@ export function SecuritySettings({ formData, onInputChange, user }: SecuritySett
   const handleAccountDeletion = async (confirmation: string, reason?: string) => {
     setIsLoading(true);
     try {
-      const token = await user.getIdToken();
-      
-      const response = await fetch("/api/settings/delete-account", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          confirmation,
-          reason: reason || undefined,
-        }),
+      const result = await apiClient.post<any>("/settings/delete-account", {
+        confirmation,
+        reason: reason || undefined,
       });
-
-      if (!response.ok) {
-        throw new Error(await getResponseErrorMessage(response));
-      }
-
-      const result = await response.json();
       
       toast.success(
         "Account Deleted",

@@ -1,146 +1,118 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminDb, Query, CollectionReference, FieldValue } from "@/firebase/admin";
-import { authenticateRequest } from "@/lib/api/auth";
-import { withErrorHandling, generateRequestId } from "@/lib/api/errors";
+import { getAdminDb, Query, CollectionReference } from "@/firebase/admin";
+import { withApi } from "@/lib/api/withApi";
+import { z } from "zod";
 
 // Get Firestore instance using the centralized admin initialization
 const db = getAdminDb();
 
+const blogAdminQuerySchema = z.object({
+  status: z.enum(["draft", "published", "archived"]).optional(),
+});
+
+const blogPostCreateSchema = z.object({
+  title: z.string().min(1),
+  content: z.string().min(1),
+  excerpt: z.string().min(1),
+  category: z.string().min(1),
+  tags: z.array(z.string()).optional(),
+  status: z.enum(["draft", "published", "archived"]).optional(),
+  featuredImage: z.string().url().nullable().optional(),
+});
+
 // GET /api/blog/admin/posts - Get all blog posts for admin (including drafts)
-export async function GET(request: NextRequest) {
-  const requestId = generateRequestId();
+export const GET = withApi({
+  auth: "admin",
+  querySchema: blogAdminQuerySchema,
+}, async ({ query }) => {
+  const { status } = query;
 
-  return withErrorHandling(async () => {
-    const auth = await authenticateRequest(request, {
-      requireAdmin: true,
-      requireAuthHeader: true,
-      loadUser: true,
-    });
+  let firestoreQuery: Query | CollectionReference = db.collection("blogPosts");
 
-    if (!auth.ok) {
-      return auth.response;
-    }
+  if (status) {
+    firestoreQuery = firestoreQuery.where("status", "==", status);
+  }
 
-    const url = new URL(request.url);
-    const status = url.searchParams.get("status"); // draft, published, archived
+  const snapshot = await firestoreQuery.orderBy("createdAt", "desc").get();
 
-    let query: Query | CollectionReference = db.collection("blogPosts");
+  const posts = snapshot.docs.map((doc) => {
+    const data = doc.data();
+    const createdAt = data.createdAt?.toMillis?.() ?? data.createdAt ?? null;
+    const updatedAt = data.updatedAt?.toMillis?.() ?? data.updatedAt ?? null;
+    const publishedAt = data.publishedAt?.toMillis?.() ?? data.publishedAt ?? null;
 
-    if (status) {
-      query = query.where("status", "==", status);
-    }
-
-    const snapshot = await query.orderBy("createdAt", "desc").get();
-
-    const posts = snapshot.docs.map((doc) => {
-      const data = doc.data();
-      const createdAt = data.createdAt?.toMillis?.() ?? data.createdAt ?? null;
-      const updatedAt = data.updatedAt?.toMillis?.() ?? data.updatedAt ?? null;
-      const publishedAt = data.publishedAt?.toMillis?.() ?? data.publishedAt ?? null;
-
-      return {
-        _id: doc.id,
-        ...data,
-        createdAt,
-        updatedAt,
-        publishedAt,
-      };
-    });
-
-    return NextResponse.json({
-      posts,
-      count: posts.length,
-      message: 'Blog posts retrieved successfully'
-    });
-  }, {
-    endpoint: '/api/blog/admin/posts',
-    method: 'GET',
-    requestId
+    return {
+      _id: doc.id,
+      ...data,
+      createdAt,
+      updatedAt,
+      publishedAt,
+    };
   });
-}
+
+  return {
+    posts,
+    count: posts.length,
+    message: 'Blog posts retrieved successfully'
+  };
+});
 
 // POST /api/blog/admin/posts - Create a new blog post
-export async function POST(request: NextRequest) {
-  const requestId = generateRequestId();
+export const POST = withApi({
+  auth: "admin",
+  bodySchema: blogPostCreateSchema,
+}, async ({ body, user }) => {
+  const {
+    title,
+    content,
+    excerpt,
+    category,
+    tags,
+    status,
+    featuredImage,
+  } = body;
 
-  return withErrorHandling(async () => {
-    const auth = await authenticateRequest(request, {
-      requireAdmin: true,
-      requireAuthHeader: true,
-      loadUser: true,
-    });
+  // Generate slug from title
+  const slug = title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 
-    if (!auth.ok) {
-      return auth.response;
-    }
+  // Check if slug already exists
+  const existingPost = await db
+    .collection("blogPosts")
+    .where("slug", "==", slug)
+    .limit(1)
+    .get();
 
-    const body = await request.json();
-    const {
-      title,
-      content,
-      excerpt,
-      category,
-      tags,
-      status,
-      featuredImage,
-    } = body;
+  if (!existingPost.empty) {
+    throw new Error("A post with this title already exists");
+  }
 
-    if (!title || !content || !excerpt || !category) {
-      return NextResponse.json(
-        { error: "Missing required fields: title, content, excerpt, category" },
-        { status: 400 }
-      );
-    }
-
-    // Generate slug from title
-    const slug = title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "");
-
-    // Check if slug already exists
-    const existingPost = await db
-      .collection("blogPosts")
-      .where("slug", "==", slug)
-      .limit(1)
-      .get();
-
-    if (!existingPost.empty) {
-      return NextResponse.json(
-        { error: "A post with this title already exists" },
-        { status: 409 }
-      );
-    }
-
-    // Create the post
-    const postRef = await db.collection("blogPosts").add({
-      title,
-      slug,
-      content,
-      excerpt,
-      category,
-      tags: tags || [],
-      status: status || "draft",
-      featuredImage: featuredImage || null,
-      author: {
-        id: auth.token.uid,
-        name: auth.token.name || "Admin",
-        email: auth.token.email || "",
-      },
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-      publishedAt: status === "published" ? Date.now() : null,
-      viewCount: 0,
-      likeCount: 0,
-    });
-
-    return NextResponse.json({
-      _id: postRef.id,
-      message: "Blog post created successfully"
-    });
-  }, {
-    endpoint: '/api/blog/admin/posts',
-    method: 'POST',
-    requestId
+  // Create the post
+  const postRef = await db.collection("blogPosts").add({
+    title,
+    slug,
+    content,
+    excerpt,
+    category,
+    tags: tags || [],
+    status: status || "draft",
+    featuredImage: featuredImage || null,
+    author: {
+      id: user!.uid,
+      name: user!.name || "Admin",
+      email: user!.email || "",
+    },
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    publishedAt: status === "published" ? Date.now() : null,
+    viewCount: 0,
+    likeCount: 0,
   });
-}
+
+  return {
+    _id: postRef.id,
+    message: "Blog post created successfully"
+  };
+});

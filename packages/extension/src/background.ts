@@ -1,5 +1,5 @@
 import { DEFAULT_WEB_APP_URL, sanitizeBaseUrl } from "./constants";
-import { post } from "./apiClient";
+import { post, get } from "./apiClient";
 import { checkRateLimit, initRateLimitCleanup, fetchSubscriptionStatus } from "./rateLimiter";
 import type { SubscriptionStatus } from "./rateLimiter";
 import { startRateLimitMonitoring } from "./rateLimitStatus";
@@ -852,8 +852,7 @@ chrome.runtime.onMessage.addListener((request: any, sender: chrome.runtime.Messa
 
     void (async () => {
       try {
-        const storage = await chrome.storage.sync.get(["webAppUrl", "firebaseUid", "userId"]);
-        const baseUrl = sanitizeBaseUrl(storage.webAppUrl || DEFAULT_WEB_APP_URL);
+        const storage = await chrome.storage.sync.get(["firebaseUid", "userId"]);
         const uid = storage.firebaseUid || storage.userId;
 
         if (!uid) {
@@ -862,26 +861,8 @@ chrome.runtime.onMessage.addListener((request: any, sender: chrome.runtime.Messa
           return;
         }
 
-        // Get auth token
-        const token = await acquireIdToken(false, { skipMessageFallback: true });
-        if (!token) {
-          logger.warn("Background", "Cannot fetch preferences: No auth token");
-          sendResponse({ success: false, error: "No auth token" });
-          return;
-        }
-
-        const response = await fetch(`${baseUrl}/api/settings/preferences`, {
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json"
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error(`API error: ${response.status}`);
-        }
-
-        const data = await response.json();
+        const data = await get<{ preferences: any }>("/api/settings/preferences");
+        
         logger.info("Background", "User preferences fetched successfully");
         sendResponse({ success: true, preferences: data.preferences });
       } catch (error) {

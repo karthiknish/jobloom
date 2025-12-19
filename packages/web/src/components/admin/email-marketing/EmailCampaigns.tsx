@@ -36,6 +36,7 @@ import { Progress } from "@/components/ui/progress";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { showSuccess, showError } from "@/components/ui/Toast";
 import { EmailCampaign } from "@/config/emailTemplates";
+import { apiClient } from "@/lib/api/client";
 
 interface EmailCampaignsProps {
   campaigns: EmailCampaign[];
@@ -142,20 +143,9 @@ export function EmailCampaigns({
         sentAt: editingCampaign?.sentAt,
       };
 
-      const response = await fetch('/api/admin/email-campaigns', {
-        method: editingCampaign ? 'PUT' : 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${await user?.getIdToken()}`,
-        },
-        body: JSON.stringify(campaignData),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to save campaign');
-      }
-
-      const savedCampaign = await response.json();
+      const savedCampaign = editingCampaign 
+        ? await apiClient.put<EmailCampaign>('/api/admin/email-campaigns', campaignData)
+        : await apiClient.post<EmailCampaign>('/api/admin/email-campaigns', campaignData);
       
       if (editingCampaign) {
         onCampaignsChange(campaigns.map(c => c.id === editingCampaign.id ? savedCampaign : c));
@@ -176,18 +166,7 @@ export function EmailCampaigns({
     try {
       setSendingCampaign(campaignId);
       
-      const response = await fetch(`/api/admin/email-campaigns/${campaignId}/send`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${await user?.getIdToken()}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to send campaign');
-      }
-
-      const updatedCampaign = await response.json();
+      const updatedCampaign = await apiClient.post<EmailCampaign>(`/api/admin/email-campaigns/${campaignId}/send`);
       onCampaignsChange(campaigns.map(c => c.id === campaignId ? updatedCampaign : c));
       showSuccess("Campaign sent successfully");
     } catch (error) {
@@ -204,16 +183,7 @@ export function EmailCampaigns({
     }
 
     try {
-      const response = await fetch(`/api/admin/email-campaigns/${campaignId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${await user?.getIdToken()}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete campaign');
-      }
+      await apiClient.delete(`/api/admin/email-campaigns/${campaignId}`);
 
       onCampaignsChange(campaigns.filter(c => c.id !== campaignId));
       showSuccess("Campaign deleted successfully");

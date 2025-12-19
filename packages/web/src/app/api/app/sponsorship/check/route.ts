@@ -1,51 +1,37 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
+import { z } from "zod";
 import type { QueryDocumentSnapshot } from "firebase-admin/firestore";
-
+import { withApi, OPTIONS } from "@/lib/api/withApi";
 import { getAdminDb } from "@/firebase/admin";
-import { authenticateRequest } from "@/lib/api/auth";
-import { withErrorHandling, generateRequestId } from "@/lib/api/errors";
 
-interface SponsorCheckRequest {
-  company: string;
-  city?: string;
-  location?: string;
-}
+// Re-export OPTIONS for CORS preflight
+export { OPTIONS };
 
-interface SponsorCheckResult {
-  found: boolean;
-  isSponsored: boolean;
-  sponsor?: {
-    id: string;
-    name: string;
-    city?: string;
-    route?: string;
-    typeRating?: string;
-    isSkilledWorker: boolean;
-    isLicensedSponsor: boolean;
-  };
-  matchDetails: {
-    nameMatch: 'exact' | 'partial' | 'fuzzy' | 'none';
-    locationMatch: 'exact' | 'partial' | 'none' | 'not_provided';
-    confidence: number;
-  };
-}
+// ============================================================================
+// VALIDATION SCHEMA
+// ============================================================================
 
-// Normalize company name for matching
+const sponsorCheckSchema = z.object({
+  company: z.string().min(1, "Company name is required").max(500),
+  city: z.string().max(200).optional(),
+  location: z.string().max(200).optional(),
+});
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
 function normalizeCompanyName(name: string): string {
   return name
     .toLowerCase()
     .trim()
-    // Remove common suffixes
     .replace(/\s+(ltd|limited|plc|llc|inc|corp|corporation|group|uk|international)\.?$/gi, '')
     .replace(/\s+(private|pvt)\.?\s*(ltd|limited)?\.?$/gi, '')
-    // Remove special characters
     .replace(/[^\w\s]/g, '')
-    // Normalize whitespace
     .replace(/\s+/g, ' ')
     .trim();
 }
 
-// Calculate similarity between two strings (0-1)
 function calculateSimilarity(str1: string, str2: string): number {
   const s1 = str1.toLowerCase();
   const s2 = str2.toLowerCase();
@@ -53,7 +39,6 @@ function calculateSimilarity(str1: string, str2: string): number {
   if (s1 === s2) return 1;
   if (s1.includes(s2) || s2.includes(s1)) return 0.9;
   
-  // Levenshtein-based similarity
   const maxLen = Math.max(s1.length, s2.length);
   if (maxLen === 0) return 1;
   
@@ -82,8 +67,7 @@ function levenshteinDistance(s1: string, s2: string): number {
   return dp[m][n];
 }
 
-// Map Firestore doc to sponsor result
-function mapDocToSponsor(doc: QueryDocumentSnapshot<Record<string, any>>): SponsorCheckResult['sponsor'] {
+function mapDocToSponsor(doc: QueryDocumentSnapshot<Record<string, any>>) {
   const data = doc.data();
   const route = typeof data.route === "string" ? data.route : data.sponsorshipType ?? "";
   const typeRating = typeof data.typeRating === "string"
@@ -107,189 +91,143 @@ function mapDocToSponsor(doc: QueryDocumentSnapshot<Record<string, any>>): Spons
   };
 }
 
-// POST /api/app/sponsorship/check - Check if a specific company is a sponsor
-export async function POST(request: NextRequest) {
-  const requestId = generateRequestId();
+// ============================================================================
+// API HANDLER
+// ============================================================================
+
+export const POST = withApi({
+  auth: 'required',
+  rateLimit: 'sponsor-lookup',
+  bodySchema: sponsorCheckSchema,
+}, async ({ body, requestId }) => {
   const startTime = Date.now();
+  
+  const companyName = body.company.trim();
+  const normalizedSearch = normalizeCompanyName(companyName);
+  const searchLocation = (body.city || body.location || '').toLowerCase().trim();
 
-  return withErrorHandling(async () => {
-    // Authenticate the request
-    const auth = await authenticateRequest(request, { loadUser: false });
+  console.log('[POST /api/app/sponsorship/check] Checking:', {
+    requestId,
+    company: companyName,
+    normalized: normalizedSearch,
+    location: searchLocation || '(none)'
+  });
 
-    if (!auth.ok) {
-      return auth.response;
-    }
+  const db = getAdminDb();
+  const sponsorsRef = db.collection("sponsors");
 
-    console.log(`[POST /api/app/sponsorship/check] Request ${requestId} - authenticated: true`);
+  let bestMatch: { 
+    doc: QueryDocumentSnapshot<Record<string, any>>; 
+    score: number; 
+    nameMatch: string; 
+    locationMatch: string;
+  } | null = null;
 
-    const body: SponsorCheckRequest = await request.json();
+  try {
+    const searchLower = normalizedSearch.toLowerCase();
+    const searchUpper = searchLower + '\uf8ff';
     
-    if (!body.company || typeof body.company !== 'string') {
-      return NextResponse.json({
-        error: "Company name is required",
-        code: "MISSING_COMPANY"
-      }, { status: 400 });
+    const prefixQuery = sponsorsRef
+      .where("searchName", ">=", searchLower)
+      .where("searchName", "<=", searchUpper)
+      .limit(50);
+    
+    const snapshot = await prefixQuery.get();
+    
+    console.log(`[POST /api/app/sponsorship/check] Found ${snapshot.size} potential matches`);
+
+    for (const doc of snapshot.docs) {
+      const data = doc.data();
+      const sponsorName = (data.name || data.company || '').trim();
+      const normalizedSponsor = normalizeCompanyName(sponsorName);
+      const sponsorCity = (data.city || '').toLowerCase().trim();
+
+      const nameSimilarity = calculateSimilarity(normalizedSearch, normalizedSponsor);
+      
+      let nameMatch = 'none';
+      if (normalizedSearch === normalizedSponsor) {
+        nameMatch = 'exact';
+      } else if (nameSimilarity >= 0.85) {
+        nameMatch = 'partial';
+      } else if (nameSimilarity >= 0.7) {
+        nameMatch = 'fuzzy';
+      }
+
+      if (nameMatch === 'none') continue;
+
+      let locationMatch = 'not_provided';
+      let locationScore = 0;
+      if (searchLocation) {
+        if (sponsorCity === searchLocation) {
+          locationMatch = 'exact';
+          locationScore = 1;
+        } else if (sponsorCity.includes(searchLocation) || searchLocation.includes(sponsorCity)) {
+          locationMatch = 'partial';
+          locationScore = 0.7;
+        } else {
+          locationMatch = 'none';
+          locationScore = 0;
+        }
+      } else {
+        locationScore = 0.5;
+      }
+
+      const overallScore = (nameSimilarity * 0.7) + (locationScore * 0.3);
+
+      if (!bestMatch || overallScore > bestMatch.score) {
+        bestMatch = { doc, score: overallScore, nameMatch, locationMatch };
+      }
+
+      if (nameMatch === 'exact' && locationMatch === 'exact') {
+        break;
+      }
     }
+  } catch (error) {
+    console.error('[POST /api/app/sponsorship/check] Query error:', error);
+  }
 
-    const companyName = body.company.trim();
-    const normalizedSearch = normalizeCompanyName(companyName);
-    const searchLocation = (body.city || body.location || '').toLowerCase().trim();
+  const processingTime = Date.now() - startTime;
 
-    console.log('[POST /api/app/sponsorship/check] Checking:', {
+  if (bestMatch && bestMatch.score >= 0.7) {
+    const sponsor = mapDocToSponsor(bestMatch.doc);
+    const isSponsored = sponsor.isLicensedSponsor || sponsor.isSkilledWorker;
+
+    console.log('[POST /api/app/sponsorship/check] Found match:', {
       requestId,
-      company: companyName,
-      normalized: normalizedSearch,
-      location: searchLocation || '(none)'
+      sponsor: sponsor.name,
+      nameMatch: bestMatch.nameMatch,
+      locationMatch: bestMatch.locationMatch,
+      confidence: Math.round(bestMatch.score * 100),
+      processingTime
     });
 
-    const db = getAdminDb();
-    const sponsorsRef = db.collection("sponsors");
-
-    // Strategy 1: Try exact name match (case-insensitive via nameLower)
-    let bestMatch: { doc: QueryDocumentSnapshot<Record<string, any>>; score: number; nameMatch: string; locationMatch: string } | null = null;
-
-    try {
-      // Query with prefix matching on searchName field (matching Firestore schema)
-      const searchLower = normalizedSearch.toLowerCase();
-      const searchUpper = searchLower + '\uf8ff';
-      
-      // Use searchName field for case-insensitive prefix search
-      const prefixQuery = sponsorsRef
-        .where("searchName", ">=", searchLower)
-        .where("searchName", "<=", searchUpper)
-        .limit(50);
-      
-      const snapshot = await prefixQuery.get();
-      
-      console.log(`[POST /api/app/sponsorship/check] Found ${snapshot.size} potential matches for "${searchLower}"`);
-
-
-      for (const doc of snapshot.docs) {
-        const data = doc.data();
-        const sponsorName = (data.name || data.company || '').trim();
-        const normalizedSponsor = normalizeCompanyName(sponsorName);
-        const sponsorCity = (data.city || '').toLowerCase().trim();
-
-        // Calculate name similarity
-        const nameSimilarity = calculateSimilarity(normalizedSearch, normalizedSponsor);
-        
-        // Determine name match type
-        let nameMatch = 'none';
-        if (normalizedSearch === normalizedSponsor) {
-          nameMatch = 'exact';
-        } else if (nameSimilarity >= 0.85) {
-          nameMatch = 'partial';
-        } else if (nameSimilarity >= 0.7) {
-          nameMatch = 'fuzzy';
-        }
-
-        if (nameMatch === 'none') continue;
-
-        // Calculate location match
-        let locationMatch = 'not_provided';
-        let locationScore = 0;
-        if (searchLocation) {
-          if (sponsorCity === searchLocation) {
-            locationMatch = 'exact';
-            locationScore = 1;
-          } else if (sponsorCity.includes(searchLocation) || searchLocation.includes(sponsorCity)) {
-            locationMatch = 'partial';
-            locationScore = 0.7;
-          } else {
-            locationMatch = 'none';
-            locationScore = 0;
-          }
-        } else {
-          locationScore = 0.5; // Neutral if not provided
-        }
-
-        // Calculate overall score
-        const overallScore = (nameSimilarity * 0.7) + (locationScore * 0.3);
-
-        if (!bestMatch || overallScore > bestMatch.score) {
-          bestMatch = { doc, score: overallScore, nameMatch, locationMatch };
-        }
-
-        // If we found an exact match with location, stop searching
-        if (nameMatch === 'exact' && locationMatch === 'exact') {
-          break;
-        }
-      }
-    } catch (error) {
-      console.error('[POST /api/app/sponsorship/check] Query error:', error);
-    }
-
-    const processingTime = Date.now() - startTime;
-
-    if (bestMatch && bestMatch.score >= 0.7) {
-      const sponsor = mapDocToSponsor(bestMatch.doc);
-      
-      if (!sponsor) {
-        // Should not happen but handle gracefully
-        return NextResponse.json({
-          found: false,
-          isSponsored: false,
-          matchDetails: { nameMatch: 'none', locationMatch: 'not_provided', confidence: 0 },
-          processingTime
-        });
-      }
-      
-      const isSponsored = sponsor.isLicensedSponsor || sponsor.isSkilledWorker;
-
-      console.log('[POST /api/app/sponsorship/check] Found match:', {
-        requestId,
-        sponsor: sponsor.name,
+    return {
+      found: true,
+      isSponsored,
+      sponsor,
+      matchDetails: {
         nameMatch: bestMatch.nameMatch,
         locationMatch: bestMatch.locationMatch,
-        confidence: Math.round(bestMatch.score * 100),
-        processingTime
-      });
-
-      return NextResponse.json({
-        found: true,
-        isSponsored,
-        sponsor,
-        matchDetails: {
-          nameMatch: bestMatch.nameMatch as any,
-          locationMatch: bestMatch.locationMatch as any,
-          confidence: bestMatch.score,
-        },
-        processingTime
-      });
-    }
-
-    console.log('[POST /api/app/sponsorship/check] No match found:', {
-      requestId,
-      company: companyName,
-      processingTime
-    });
-
-    return NextResponse.json({
-      found: false,
-      isSponsored: false,
-      matchDetails: {
-        nameMatch: 'none',
-        locationMatch: 'not_provided',
-        confidence: 0,
+        confidence: bestMatch.score,
       },
-      processingTime
-    });
+      processingTime,
+    };
+  }
 
-  }, {
-    endpoint: '/api/app/sponsorship/check',
-    method: 'POST',
+  console.log('[POST /api/app/sponsorship/check] No match found:', {
     requestId,
+    company: companyName,
+    processingTime
   });
-}
 
-// OPTIONS handler for CORS preflight
-export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 204,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  return {
+    found: false,
+    isSponsored: false,
+    matchDetails: {
+      nameMatch: 'none',
+      locationMatch: 'not_provided',
+      confidence: 0,
     },
-  });
-}
+    processingTime,
+  };
+});

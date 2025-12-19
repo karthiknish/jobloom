@@ -1,5 +1,6 @@
 import { getAuthClient } from "@/firebase/client";
 import { verifyAdminAccess } from "./auth";
+import { apiClient } from "@/lib/api/client";
 
 // Sponsors Management Functions
 export const sponsorApi = {
@@ -31,23 +32,14 @@ export const sponsorApi = {
       if (filters.limit) url.searchParams.set("limit", filters.limit.toString());
     }
 
-    console.log('[sponsorApi.getSponsors] Fetching from:', url.toString());
+    const endpoint = url.pathname.replace("/api", "") + url.search;
+    console.log('[sponsorApi.getSponsors] Fetching from:', endpoint);
 
-    const response = await fetch(url.toString(), {
+    return apiClient.get(endpoint, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('[sponsorApi.getSponsors] Error response:', response.status, errorText);
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    console.log('[sponsorApi.getSponsors] Response data:', data);
-    return data;
   },
 
   createSponsor: async (sponsorData: any): Promise<any> => {
@@ -60,21 +52,11 @@ export const sponsorApi = {
     }
 
     const token = await auth.currentUser.getIdToken();
-    const response = await fetch("/api/app/sponsorship/companies", {
-      method: "POST",
+    return apiClient.post("/app/sponsorship/companies", sponsorData, {
       headers: {
-        "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(sponsorData),
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || "Failed to create sponsor");
-    }
-
-    return response.json();
   },
 
   updateSponsor: async (sponsorId: string, sponsorData: any): Promise<any> => {
@@ -87,21 +69,11 @@ export const sponsorApi = {
     }
 
     const token = await auth.currentUser.getIdToken();
-    const response = await fetch(`/api/app/sponsorship/companies/${sponsorId}`, {
-      method: "PUT",
+    return apiClient.put(`/app/sponsorship/companies/${sponsorId}`, sponsorData, {
       headers: {
-        "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(sponsorData),
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || "Failed to update sponsor");
-    }
-
-    return response.json();
   },
 
   deleteSponsor: async (sponsorId: string): Promise<any> => {
@@ -114,19 +86,11 @@ export const sponsorApi = {
     }
 
     const token = await auth.currentUser.getIdToken();
-    const response = await fetch(`/api/app/sponsorship/companies/${sponsorId}`, {
-      method: "DELETE",
+    return apiClient.delete(`/app/sponsorship/companies/${sponsorId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || "Failed to delete sponsor");
-    }
-
-    return response.json();
   },
 
   getSponsorshipStats: async (): Promise<any> => {
@@ -139,17 +103,11 @@ export const sponsorApi = {
     }
 
     const token = await auth.currentUser.getIdToken();
-    const response = await fetch("/api/app/sponsorship/stats", {
+    return apiClient.get("/app/sponsorship/stats", {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    return response.json();
   },
 
   // Sponsorship rules functions
@@ -163,17 +121,11 @@ export const sponsorApi = {
     }
 
     const token = await auth.currentUser.getIdToken();
-    const response = await fetch("/api/app/sponsorship/rules", {
+    return apiClient.get("/app/sponsorship/rules", {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    return response.json();
   },
 
   addSponsorshipRule: async (ruleData: any): Promise<any> => {
@@ -186,20 +138,11 @@ export const sponsorApi = {
     }
 
     const token = await auth.currentUser.getIdToken();
-    const response = await fetch("/api/app/sponsorship/rules", {
-      method: "POST",
+    return apiClient.post("/app/sponsorship/rules", ruleData, {
       headers: {
-        "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(ruleData),
     });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    return response.json();
   },
 
   updateSponsorshipRuleStatus: async (ruleId: string, isActive: boolean): Promise<any> => {
@@ -212,19 +155,10 @@ export const sponsorApi = {
     }
 
     const token = await auth.currentUser.getIdToken();
-    const response = await fetch(`/api/app/sponsorship/rules/${ruleId}`, {
-      method: "PUT",
+    return apiClient.put(`/app/sponsorship/rules/${ruleId}`, { isActive }, {
       headers: {
-        "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ isActive }),
     });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    return response.json();
   },
 };

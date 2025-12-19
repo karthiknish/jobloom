@@ -1,316 +1,112 @@
-import { NextRequest, NextResponse } from "next/server";
-import { withAuth, type AuthContext } from "@/lib/api/withAuth";
-import { getAdminDb } from "@/firebase/admin";
-import { FieldValue } from "firebase-admin/firestore";
+import { withApi, z } from "@/lib/api/withApi";
+import { getAdminDb, FieldValue } from "@/firebase/admin";
+import { ERROR_CODES } from "@/lib/api/errorCodes";
 
-// Enhanced error types
-class ValidationError extends Error {
-  constructor(message: string, public field?: string) {
-    super(message);
-    this.name = 'ValidationError';
-  }
-}
+export const runtime = "nodejs";
 
-class AuthorizationError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'AuthorizationError';
-  }
-}
+const jobUpdateSchema = z.object({
+  title: z.string().optional(),
+  company: z.string().optional(),
+  location: z.string().optional(),
+  url: z.string().url().optional(),
+  description: z.string().optional(),
+  salaryRange: z.object({
+    min: z.number().optional(),
+    max: z.number().optional(),
+    currency: z.string().optional(),
+  }).optional(),
+  remoteWork: z.boolean().optional(),
+  isSponsored: z.boolean().optional(),
+  isRecruitmentAgency: z.boolean().optional(),
+  skills: z.array(z.string()).optional(),
+  requirements: z.array(z.string()).optional(),
+  benefits: z.array(z.string()).optional(),
+  status: z.string().optional(),
+});
 
-class DatabaseError extends Error {
-  constructor(message: string, public operation: string) {
-    super(message);
-    this.name = 'DatabaseError';
-  }
-}
+const jobParamsSchema = z.object({
+  jobId: z.string(),
+});
 
-// Validation utilities
-function validateJobId(jobId: string): void {
-  if (!jobId || typeof jobId !== 'string' || jobId.trim().length === 0) {
-    throw new ValidationError('Invalid job ID', 'jobId');
-  }
-}
-
-function validateUpdateData(updateData: any): void {
-  // Prevent updating critical fields
-  const protectedFields = ['_id', 'createdAt', 'userId'];
-  for (const field of protectedFields) {
-    if (field in updateData) {
-      throw new ValidationError(`Cannot update protected field: ${field}`, field);
-    }
-  }
-
-  // Validate array fields
-  const arrayFields = ['skills', 'requirements', 'benefits'];
-  for (const field of arrayFields) {
-    if (updateData[field] !== undefined && !Array.isArray(updateData[field])) {
-      throw new ValidationError(`${field} must be an array`, field);
-    }
+export const GET = withApi({
+  auth: 'required',
+  rateLimit: 'jobs',
+  paramsSchema: jobParamsSchema,
+}, async ({ user, params }) => {
+  const { jobId } = params;
+  const db = getAdminDb();
+  const docSnap = await db.collection('jobs').doc(jobId).get();
+  
+  if (!docSnap.exists) {
+    return {
+      error: 'Job not found',
+      code: ERROR_CODES.JOB_NOT_FOUND,
+    };
   }
 
-  // Validate boolean fields
-  const booleanFields = ['remoteWork', 'isSponsored', 'isRecruitmentAgency'];
-  for (const field of booleanFields) {
-    if (updateData[field] !== undefined && typeof updateData[field] !== 'boolean') {
-      throw new ValidationError(`${field} must be a boolean`, field);
-    }
+  const job = { _id: docSnap.id, id: docSnap.id, ...docSnap.data() };
+  return { job, message: 'Job retrieved successfully' };
+});
+
+export const PUT = withApi({
+  auth: 'required',
+  rateLimit: 'jobs',
+  paramsSchema: jobParamsSchema,
+  bodySchema: jobUpdateSchema,
+}, async ({ user, body, params }) => {
+  const { jobId } = params;
+  const db = getAdminDb();
+  const docRef = db.collection('jobs').doc(jobId);
+  const docSnap = await docRef.get();
+
+  if (!docSnap.exists) {
+    return {
+      error: 'Job not found',
+      code: ERROR_CODES.JOB_NOT_FOUND,
+    };
   }
 
-  // Validate salary range if provided
-  if (updateData.salaryRange) {
-    if (typeof updateData.salaryRange !== 'object' || 
-        (updateData.salaryRange.min && typeof updateData.salaryRange.min !== 'number') ||
-        (updateData.salaryRange.max && typeof updateData.salaryRange.max !== 'number')) {
-      throw new ValidationError('salaryRange must be an object with optional min/max numbers', 'salaryRange');
-    }
-  }
-}
-
-function handleError(error: unknown): NextResponse {
-  // Enhanced error logging
-  if (error instanceof Error) {
-    console.error('API Error:', {
-      name: error.name,
-      message: error.message,
-      stack: error.stack,
-      ...(error as any).code && { code: (error as any).code }
-    });
-  } else {
-    console.error('API Error:', error);
+  if (docSnap.data()?.userId !== user!.uid) {
+    return {
+      error: 'You do not have permission to update this job',
+      code: ERROR_CODES.FORBIDDEN,
+    };
   }
 
-  if (error instanceof ValidationError) {
-    return NextResponse.json({ 
-      error: error.message,
-      field: error.field,
-      code: 'VALIDATION_ERROR'
-    }, { status: 400 });
+  await docRef.update({
+    ...body,
+    updatedAt: FieldValue.serverTimestamp()
+  });
+
+  return { message: 'Job updated successfully' };
+});
+
+export const DELETE = withApi({
+  auth: 'required',
+  rateLimit: 'jobs',
+  paramsSchema: jobParamsSchema,
+}, async ({ user, params }) => {
+  const { jobId } = params;
+  const db = getAdminDb();
+  const docRef = db.collection('jobs').doc(jobId);
+  const docSnap = await docRef.get();
+
+  if (!docSnap.exists) {
+    return {
+      error: 'Job not found',
+      code: ERROR_CODES.JOB_NOT_FOUND,
+    };
   }
 
-  if (error instanceof AuthorizationError) {
-    return NextResponse.json({ 
-      error: error.message,
-      code: 'AUTHORIZATION_ERROR'
-    }, { status: 401 });
+  if (docSnap.data()?.userId !== user!.uid) {
+    return {
+      error: 'You do not have permission to delete this job',
+      code: ERROR_CODES.FORBIDDEN,
+    };
   }
 
-  if (error instanceof DatabaseError) {
-    return NextResponse.json({ 
-      error: error.message,
-      operation: error.operation,
-      code: 'DATABASE_ERROR'
-    }, { status: 500 });
-  }
+  await docRef.delete();
+  return { message: 'Job deleted successfully' };
+});
 
-  // Handle Firebase specific errors
-  if (error && typeof error === 'object' && 'code' in error) {
-    const firebaseError = error as { code: string; message: string };
-    switch (firebaseError.code) {
-      case 'permission-denied':
-        return NextResponse.json({ 
-          error: 'Permission denied. You do not have access to this resource.',
-          code: 'PERMISSION_DENIED'
-        }, { status: 403 });
-      case 'not-found':
-        return NextResponse.json({ 
-          error: 'Job not found.',
-          code: 'NOT_FOUND'
-        }, { status: 404 });
-      case 'unavailable':
-        return NextResponse.json({ 
-          error: 'Service temporarily unavailable. Please try again later.',
-          code: 'SERVICE_UNAVAILABLE'
-        }, { status: 503 });
-      case 'deadline-exceeded':
-        return NextResponse.json({ 
-          error: 'Request timeout. Please try again.',
-          code: 'TIMEOUT_ERROR'
-        }, { status: 504 });
-    }
-  }
-
-  // Generic error
-  return NextResponse.json({ 
-    error: 'An unexpected error occurred. Please try again.',
-    code: 'INTERNAL_ERROR'
-  }, { status: 500 });
-}
-
-// GET /api/app/jobs/[jobId] - Get a specific job
-export const GET = withAuth<{ jobId: string }>(
-  async (request, { user, token }, params) => {
-    try {
-      const jobId = params?.jobId;
-      
-      if (!jobId) {
-        throw new ValidationError('Job ID is required', 'jobId');
-      }
-      
-      // Validate job ID
-      validateJobId(jobId);
-
-      // Check if mock token for development
-      const isMockToken = process.env.NODE_ENV === "development" && 
-        token.includes("bW9jay1zaWduYXR1cmUtZm9yLXRlc3Rpbmc");
-
-      if (isMockToken) {
-        // Return mock job data for testing
-        return NextResponse.json({ 
-          job: {
-            _id: jobId,
-            title: "Mock Job Title",
-            company: "Mock Company",
-            location: "Mock Location",
-            url: "https://example.com/mock-job",
-            userId: user.uid
-          },
-          message: 'Job retrieved successfully (mock)'
-        });
-      }
-
-      // Initialize Firestore Admin
-      const db = getAdminDb();
-
-      // Get specific job
-      const docRef = db.collection('jobs').doc(jobId);
-      const docSnap = await docRef.get();
-      
-      if (!docSnap.exists) {
-        throw new DatabaseError('Job not found', 'get');
-      }
-
-      const job = { _id: docSnap.id, id: docSnap.id, ...docSnap.data() };
-
-      return NextResponse.json({ 
-        job,
-        message: 'Job retrieved successfully'
-      });
-
-    } catch (error) {
-      return handleError(error);
-    }
-  }
-);
-
-// PUT /api/app/jobs/[jobId] - Update a job
-export const PUT = withAuth<{ jobId: string }>(
-  async (request, { user, token }, params) => {
-    try {
-      const jobId = params?.jobId;
-      
-      if (!jobId) {
-        throw new ValidationError('Job ID is required', 'jobId');
-      }
-      
-      // Validate job ID
-      validateJobId(jobId);
-
-      // Check if mock token for development
-      const isMockToken = process.env.NODE_ENV === "development" && 
-        token.includes("bW9jay1zaWduYXR1cmUtZm9yLXRlc3Rpbmc");
-
-      // Parse and validate request body
-      let updateData;
-      try {
-        updateData = await request.json();
-      } catch (parseError) {
-        throw new ValidationError("Invalid JSON in request body");
-      }
-
-      // Validate update data
-      validateUpdateData(updateData);
-
-      if (isMockToken) {
-        // Return mock success response for testing
-        return NextResponse.json({ 
-          message: 'Job updated successfully (mock)'
-        });
-      }
-
-      // Initialize Firestore Admin
-      const db = getAdminDb();
-      const docRef = db.collection('jobs').doc(jobId);
-
-      // First, check if job exists and user has permission
-      const docSnap = await docRef.get();
-      if (!docSnap.exists) {
-        throw new DatabaseError('Job not found', 'get');
-      }
-
-      const existingJob = docSnap.data();
-
-      // Verify user owns the job
-      if (existingJob?.userId !== user.uid) {
-        throw new AuthorizationError("You do not have permission to update this job");
-      }
-
-      // Update job
-      await docRef.update({
-        ...updateData,
-        updatedAt: FieldValue.serverTimestamp()
-      });
-
-      return NextResponse.json({ 
-        message: 'Job updated successfully'
-      });
-
-    } catch (error) {
-      return handleError(error);
-    }
-  }
-);
-
-// DELETE /api/app/jobs/[jobId] - Delete a job
-export const DELETE = withAuth<{ jobId: string }>(
-  async (request, { user, token }, params) => {
-    try {
-      const jobId = params?.jobId;
-      
-      if (!jobId) {
-        throw new ValidationError('Job ID is required', 'jobId');
-      }
-      
-      // Validate job ID
-      validateJobId(jobId);
-
-      // Check if mock token for development
-      const isMockToken = process.env.NODE_ENV === "development" && 
-        token.includes("bW9jay1zaWduYXR1cmUtZm9yLXRlc3Rpbmc");
-
-      if (isMockToken) {
-        // Return mock success response for testing
-        return NextResponse.json({ 
-          message: 'Job deleted successfully (mock)'
-        });
-      }
-
-      // Initialize Firestore Admin
-      const db = getAdminDb();
-      const docRef = db.collection('jobs').doc(jobId);
-
-      // First, check if job exists and user has permission
-      const docSnap = await docRef.get();
-      if (!docSnap.exists) {
-        throw new DatabaseError('Job not found', 'get');
-      }
-
-      const existingJob = docSnap.data();
-
-      // Verify user owns the job
-      if (existingJob?.userId !== user.uid) {
-        throw new AuthorizationError("You do not have permission to delete this job");
-      }
-
-      // Delete job
-      await docRef.delete();
-
-      return NextResponse.json({ 
-        message: 'Job deleted successfully'
-      });
-
-    } catch (error) {
-      return handleError(error);
-    }
-  }
-);
+export { OPTIONS } from "@/lib/api/withApi";

@@ -1,116 +1,102 @@
-import { NextRequest, NextResponse } from "next/server";
+import { withApi, z } from "@/lib/api/withApi";
 import { getAdminDb } from "@/firebase/admin";
-import { authenticateRequest } from "@/lib/api/auth";
 
-const db = getAdminDb();
+export const runtime = "nodejs";
 
-export async function GET(request: NextRequest) {
-  try {
-    const auth = await authenticateRequest(request);
-    if (!auth.ok) {
-      return auth.response;
-    }
+const preferencesSchema = z.object({
+  theme: z.string().optional(),
+  language: z.string().optional(),
+  timezone: z.string().optional(),
+  emailNotifications: z.boolean().optional(),
+  pushNotifications: z.boolean().optional(),
+  jobAlertsEnabled: z.boolean().optional(),
+  jobKeywords: z.array(z.string()).optional(),
+  preferredCompanies: z.array(z.string()).optional(),
+  preferredLocations: z.array(z.string()).optional(),
+  salaryRange: z.record(z.string(), z.any()).optional(),
+  jobTypes: z.array(z.string()).optional(),
+  experienceLevels: z.array(z.string()).optional(),
+  industries: z.array(z.string()).optional(),
+  analyticsTracking: z.boolean().optional(),
+  dataSharing: z.boolean().optional(),
+  marketingEmails: z.boolean().optional(),
+  ukFiltersEnabled: z.boolean().optional(),
+  autoDetectJobs: z.boolean().optional(),
+  showSponsorButton: z.boolean().optional(),
+  ageCategory: z.string().optional(),
+  educationStatus: z.string().optional(),
+  phdStatus: z.string().optional(),
+  professionalStatus: z.string().optional(),
+  minimumSalary: z.number().optional(),
+  jobCategories: z.array(z.string()).optional(),
+  locationPreference: z.string().optional(),
+});
 
-    const userId = auth.token.uid;
+const defaultPreferences = {
+  theme: 'system',
+  language: 'en',
+  timezone: 'UTC',
+  emailNotifications: true,
+  pushNotifications: true,
+  jobAlertsEnabled: false,
+  jobKeywords: [],
+  preferredCompanies: [],
+  preferredLocations: [],
+  salaryRange: {},
+  jobTypes: [],
+  experienceLevels: [],
+  industries: [],
+  analyticsTracking: true,
+  dataSharing: false,
+  marketingEmails: true,
+  ukFiltersEnabled: false,
+  autoDetectJobs: true,
+  showSponsorButton: true,
+  ageCategory: 'adult',
+  educationStatus: 'none',
+  phdStatus: 'none',
+  professionalStatus: 'none',
+  minimumSalary: 38700,
+  jobCategories: [],
+  locationPreference: 'uk',
+};
 
-    // Get user preferences from Firestore
-    const userDoc = await db.collection('users').doc(userId).get();
-    const userData = userDoc.data();
+export const GET = withApi({
+  auth: 'required',
+  rateLimit: 'user-settings',
+}, async ({ user }) => {
+  const db = getAdminDb();
+  const userDoc = await db.collection('users').doc(user!.uid).get();
+  const userData = userDoc.data();
 
-    // Default preferences
-    const defaultPreferences = {
-      theme: 'system',
-      language: 'en',
-      timezone: 'UTC',
-      emailNotifications: true,
-      pushNotifications: true,
-      jobAlertsEnabled: false,
-      jobKeywords: [],
-      preferredCompanies: [],
-      preferredLocations: [],
-      salaryRange: {},
-      jobTypes: [],
-      experienceLevels: [],
-      industries: [],
-      analyticsTracking: true,
-      dataSharing: false,
-      marketingEmails: true,
-      // Extension-specific preferences
-      ukFiltersEnabled: false,
-      autoDetectJobs: true,
-      showSponsorButton: true,
-      ageCategory: 'adult',
-      educationStatus: 'none',
-      phdStatus: 'none',
-      professionalStatus: 'none',
-      minimumSalary: 38700,
-      jobCategories: [],
-      locationPreference: 'uk',
-      createdAt: new Date(),
+  const preferences = {
+    ...defaultPreferences,
+    ...userData?.preferences
+  };
+
+  return { preferences };
+});
+
+export const PUT = withApi({
+  auth: 'required',
+  rateLimit: 'user-settings',
+  bodySchema: z.object({
+    preferences: preferencesSchema,
+  }),
+}, async ({ user, body }) => {
+  const db = getAdminDb();
+  
+  await db.collection('users').doc(user!.uid).set({
+    preferences: {
+      ...body.preferences,
       updatedAt: new Date()
-    };
-
-    const preferences = {
-      ...defaultPreferences,
-      ...userData?.preferences
-    };
-
-    return NextResponse.json({ preferences });
-  } catch (error) {
-    console.error('Error fetching user preferences:', error);
-    return NextResponse.json({ error: 'Failed to fetch preferences' }, { status: 500 });
-  }
-}
-
-export async function PUT(request: NextRequest) {
-  try {
-    const auth = await authenticateRequest(request);
-    if (!auth.ok) {
-      return auth.response;
     }
+  }, { merge: true });
 
-    const userId = auth.token.uid;
+  return {
+    success: true,
+    message: 'Preferences updated successfully'
+  };
+});
 
-    const body = await request.json();
-    const { preferences } = body;
-
-    if (!preferences || typeof preferences !== 'object') {
-      return NextResponse.json({ error: 'Invalid preferences data' }, { status: 400 });
-    }
-
-    // Validate preferences structure
-    const validKeys = [
-      'theme', 'language', 'timezone', 'emailNotifications', 'pushNotifications',
-      'jobAlertsEnabled', 'jobKeywords', 'preferredCompanies', 'preferredLocations',
-      'salaryRange', 'jobTypes', 'experienceLevels', 'industries',
-      'analyticsTracking', 'dataSharing', 'marketingEmails',
-      // Extension-specific preferences
-      'ukFiltersEnabled', 'autoDetectJobs', 'showSponsorButton',
-      'ageCategory', 'educationStatus', 'phdStatus', 'professionalStatus',
-      'minimumSalary', 'jobCategories', 'locationPreference'
-    ];
-
-    const sanitizedPreferences: any = {};
-    for (const key of validKeys) {
-      if (preferences[key] !== undefined) {
-        sanitizedPreferences[key] = preferences[key];
-      }
-    }
-
-    // Update user preferences in Firestore (use set with merge to create if doesn't exist)
-    await db.collection('users').doc(userId).set({
-      preferences: {
-        ...sanitizedPreferences,
-        updatedAt: new Date()
-      }
-    }, { merge: true });
-
-    return NextResponse.json({
-      success: true,
-      message: 'Preferences updated successfully'
-    });
-  } catch (error) {
-    console.error('Error updating user preferences:', error);
-    return NextResponse.json({ error: 'Failed to update preferences' }, { status: 500 });
-  }
-}
+export { OPTIONS } from "@/lib/api/withApi";

@@ -1,49 +1,33 @@
-import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb } from "@/firebase/admin";
-import { authenticateRequest } from "@/lib/api/auth";
-import { withErrorHandling, generateRequestId } from "@/lib/api/errors";
+import { withApi } from "@/lib/api/withApi";
+import { z } from "zod";
+
+const adminParamsSchema = z.object({
+  userId: z.string(),
+});
+
+const adminBodySchema = z.object({
+  makeAdmin: z.boolean(),
+});
 
 // POST /api/app/users/[userId]/admin - Toggle admin status
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ userId: string }> }
-) {
-  const requestId = generateRequestId();
-
-  return withErrorHandling(async () => {
-    const { userId } = await params;
-    
-    const auth = await authenticateRequest(request, {
-      requireAdmin: true,
-      loadUser: true,
-    });
-
-    if (!auth.ok) {
-      return auth.response;
-    }
-
-    const { makeAdmin } = await request.json();
-    
-    if (typeof makeAdmin !== 'boolean') {
-      return NextResponse.json(
-        { error: "makeAdmin must be a boolean" },
-        { status: 400 }
-      );
-    }
+export const POST = withApi({
+  auth: "admin",
+  paramsSchema: adminParamsSchema,
+  bodySchema: adminBodySchema,
+  handler: async ({ params, body, user }) => {
+    const { userId } = params;
+    const { makeAdmin } = body;
 
     const db = getAdminDb();
     await db.collection("users").doc(userId).update({
       isAdmin: makeAdmin,
       updatedAt: Date.now(),
-      updatedBy: auth.token.uid
+      updatedBy: user!.uid
     });
 
-    return NextResponse.json({
+    return {
       message: `User ${makeAdmin ? 'granted' : 'removed'} admin privileges successfully`
-    });
-  }, {
-    endpoint: '/api/app/users/[userId]/admin',
-    method: 'POST',
-    requestId
-  });
-}
+    };
+  }
+});

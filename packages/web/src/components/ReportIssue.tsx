@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
+import { apiClient } from "@/lib/api/client";
 
 interface ReportIssueProps {
   /** Position of the floating button */
@@ -105,22 +106,12 @@ Submitted via Report Issue Feature
 Browser: ${typeof navigator !== "undefined" ? navigator.userAgent : "Unknown"}
 `.trim();
 
-      const response = await fetch("/api/contact", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: formData.name || "Anonymous User",
-          email: formData.email || "noreply@hireall.app",
-          subject: `[${issueLabel}] ${formData.page || "General"}`,
-          message,
-        }),
+      await apiClient.post("/contact", {
+        name: formData.name || "Anonymous User",
+        email: formData.email || "noreply@hireall.app",
+        subject: `[${issueLabel}] ${formData.page || "General"}`,
+        message,
       });
-
-      if (!response.ok) {
-        throw new Error("Failed to submit report");
-      }
 
       setSubmitStatus("success");
       

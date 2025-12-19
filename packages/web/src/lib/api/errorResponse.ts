@@ -1,10 +1,154 @@
 /**
  * Enhanced API Error Response Utilities
  * Standardized error responses with proper codes, messages, and metadata
+ * 
+ * This is the PRIMARY source for API error handling utilities.
+ * For backward compatibility, errors.ts re-exports from this file.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { ERROR_CODES, ERROR_STATUS_MAP, ERROR_MESSAGES } from './errorCodes';
+
+// ============================================================================
+// ERROR CLASSES
+// ============================================================================
+
+/**
+ * Validation error for invalid input data
+ */
+export class ValidationError extends Error {
+  constructor(
+    message: string,
+    public field?: string,
+    public code: string = 'VALIDATION_ERROR'
+  ) {
+    super(message);
+    this.name = 'ValidationError';
+  }
+}
+
+/**
+ * Authorization error for authentication/permission issues
+ */
+export class AuthorizationError extends Error {
+  constructor(
+    message: string,
+    public code: string = 'UNAUTHORIZED'
+  ) {
+    super(message);
+    this.name = 'AuthorizationError';
+  }
+}
+
+/**
+ * Database error for Firestore/database operations
+ */
+export class DatabaseError extends Error {
+  constructor(
+    message: string,
+    public operation: string,
+    public code: string = 'DATABASE_ERROR'
+  ) {
+    super(message);
+    this.name = 'DatabaseError';
+  }
+}
+
+/**
+ * Rate limit error when quota exceeded
+ */
+export class RateLimitError extends Error {
+  constructor(
+    message: string,
+    public retryAfter?: number
+  ) {
+    super(message);
+    this.name = 'RateLimitError';
+  }
+}
+
+/**
+ * Network error for external service failures
+ */
+export class NetworkError extends Error {
+  constructor(
+    message: string,
+    public statusCode?: number
+  ) {
+    super(message);
+    this.name = 'NetworkError';
+  }
+}
+
+// ============================================================================
+// ERROR LOGGER
+// ============================================================================
+
+export interface LogContext {
+  endpoint?: string;
+  method?: string;
+  userId?: string;
+  requestId?: string;
+  body?: any;
+  errorType?: string;
+}
+
+/**
+ * Centralized error logging utility
+ */
+export class ErrorLogger {
+  static log(error: unknown, context?: LogContext) {
+    const timestamp = new Date().toISOString();
+    const requestId = context?.requestId || generateRequestId();
+    
+    const logEntry = {
+      timestamp,
+      requestId,
+      error: error instanceof Error ? {
+        name: error.name,
+        message: error.message,
+        code: (error as any).code,
+        field: (error as any).field,
+        operation: (error as any).operation
+      } : String(error),
+      context: {
+        ...context,
+        requestId
+      }
+    };
+
+    // Log errors to console
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[API Error]', JSON.stringify(logEntry, null, 2));
+    } else {
+      console.error('[API Error]', logEntry.error, { requestId, endpoint: context?.endpoint });
+    }
+  }
+
+  static logValidationError(error: ValidationError, context?: LogContext) {
+    this.log(error, { ...context, errorType: 'validation' });
+  }
+
+  static logAuthError(error: AuthorizationError, context?: LogContext) {
+    this.log(error, { ...context, errorType: 'authorization' });
+  }
+
+  static logDatabaseError(error: DatabaseError, context?: LogContext) {
+    this.log(error, { ...context, errorType: 'database' });
+  }
+
+  static logRateLimitError(error: RateLimitError, context?: LogContext) {
+    this.log(error, { ...context, errorType: 'rate_limit' });
+  }
+
+  static logNetworkError(error: NetworkError, context?: LogContext) {
+    this.log(error, { ...context, errorType: 'network' });
+  }
+}
+
+// ============================================================================
+// INTERFACES
+// ============================================================================
 
 export interface ApiErrorOptions {
   code?: string;

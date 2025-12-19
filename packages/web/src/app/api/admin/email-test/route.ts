@@ -1,76 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminDb } from "@/firebase/admin";
-import { getAdminAuth } from "@/firebase/admin";
 import { sendEmail } from "@/lib/resend";
+import { withApi, z } from "@/lib/api/withApi";
 
-export async function POST(request: NextRequest) {
-  try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+const emailTestSchema = z.object({
+  to: z.string().email(),
+  subject: z.string(),
+  html: z.string(),
+  text: z.string().optional(),
+});
 
-    const token = authHeader.substring(7);
-    
-    let decodedToken;
-    try {
-      decodedToken = await getAdminAuth().verifyIdToken(token);
-    } catch (error) {
-      console.error('Token verification failed:', error);
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
-    }
-    
-    // Check if user is admin
-    const db = getAdminDb();
-    const userDoc = await db.collection('users').doc(decodedToken.uid).get();
-    const userData = userDoc.data();
-    
-    if (!userData?.isAdmin) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
-    }
+export const POST = withApi({
+  auth: "admin",
+  bodySchema: emailTestSchema,
+}, async ({ body }) => {
+  const { to, subject, html, text } = body;
 
-    const { to, subject, html, text } = await request.json();
+  console.log('Testing Resend email sending...');
+  console.log('To:', to);
+  console.log('Subject:', subject);
 
-    if (!to || !subject || !html) {
-      return NextResponse.json({ 
-        error: 'Missing required fields: to, subject, html' 
-      }, { status: 400 });
-    }
+  const result = await sendEmail({
+    to,
+    subject,
+    html,
+    text
+  });
 
-    console.log('Testing Resend email sending...');
-    console.log('To:', to);
-    console.log('Subject:', subject);
-
-    const result = await sendEmail({
-      to,
-      subject,
-      html,
-      text
-    });
-
-    if (result.success) {
-      console.log('Email sent successfully:', result.messageId);
-      return NextResponse.json({
-        success: true,
-        message: 'Test email sent successfully',
-        messageId: result.messageId
-      });
-    } else {
-      console.error('Email sending failed:', result.error);
-      return NextResponse.json({
-        success: false,
-        error: result.error
-      }, { status: 500 });
-    }
-
-  } catch (error) {
-    console.error('Test API error:', error);
-    return NextResponse.json(
-      { 
-        error: 'Test API failed', 
-        message: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    );
+  if (result.success) {
+    console.log('Email sent successfully:', result.messageId);
+    return {
+      message: 'Test email sent successfully',
+      messageId: result.messageId
+    };
+  } else {
+    console.error('Email sending failed:', result.error);
+    throw new Error(result.error || 'Failed to send email');
   }
-}
+});

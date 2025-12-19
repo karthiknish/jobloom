@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { Subscription, SubscriptionPlan, SUBSCRIPTION_LIMITS, SubscriptionLimits } from "@/types/api";
+import { apiClient } from "@/lib/api/client";
 
 export interface SubscriptionActions {
   checkoutUrl?: string;
@@ -92,40 +93,20 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
           setState(prev => ({ ...prev, isLoading: true, error: null }));
         }
 
-        const token = await user.getIdToken();
-        const response = await fetch("/api/subscription/status", {
-          headers: {
-            "Authorization": `Bearer ${token}`,
-          },
+        const data = await apiClient.get<any>("/subscription/status");
+        const actions: SubscriptionActions = data.actions ?? {};
+        setState({
+          subscription: data.subscription,
+          plan: data.plan,
+          limits: data.limits,
+          currentUsage: data.currentUsage,
+          actions,
+          isAdmin: data.isAdmin === true,
+          isLoading: false,
+          error: null,
         });
-
-        if (response.ok) {
-          const data = await response.json();
-          const actions: SubscriptionActions = data.actions ?? {};
-          setState({
-            subscription: data.subscription,
-            plan: data.plan,
-            limits: data.limits,
-            currentUsage: data.currentUsage,
-            actions,
-            isAdmin: data.isAdmin === true,
-            isLoading: false,
-            error: null,
-          });
-          lastFetchRef.current = Date.now();
-          userIdRef.current = user.uid;
-        } else {
-          // Fallback to free plan if API fails
-          setState({
-            subscription: null,
-            plan: "free",
-            limits: SUBSCRIPTION_LIMITS.free,
-            actions: {},
-            isAdmin: false,
-            isLoading: false,
-            error: null,
-          });
-        }
+        lastFetchRef.current = Date.now();
+        userIdRef.current = user.uid;
       } catch (error) {
         console.error("Error fetching subscription:", error);
         setState({

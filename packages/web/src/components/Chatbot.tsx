@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { showError } from "@/components/ui/Toast";
 import { collection, addDoc, serverTimestamp, query, orderBy, limit, onSnapshot, getFirestore } from "firebase/firestore";
+import { apiClient } from "@/lib/api/client";
 
 interface Message {
   id: string;
@@ -144,22 +145,10 @@ export default function Chatbot() {
     await saveMessageToFirebase(userMessage);
 
     try {
-      const response = await fetch('/api/chatbot', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: message.trim(),
-          context: user ? `User is signed in with email: ${user.email}` : `User email: ${userEmail}`
-        }),
+      const data = await apiClient.post<any>('/api/chatbot', {
+        message: message.trim(),
+        context: user ? `User is signed in with email: ${user.email}` : `User email: ${userEmail}`
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to get response');
-      }
 
       const sanitizedResponse = sanitizeAssistantContent(data.response);
 

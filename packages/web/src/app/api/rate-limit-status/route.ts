@@ -1,30 +1,30 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getServerRateLimitStatus, getEndpointFromPath } from '@/lib/rateLimiter';
+import { z } from 'zod';
+import { withApi, OPTIONS } from '@/lib/api/withApi';
+import { getServerRateLimitStatus } from '@/lib/rateLimiter';
 
-export async function GET(request: NextRequest) {
-  try {
-    // Get client IP from various headers
-    const clientIP = request.headers.get('x-forwarded-for')?.split(',')[0] || 
-                    request.headers.get('x-real-ip') || 
-                    request.headers.get('cf-connecting-ip') || 
-                    'unknown';
+// Re-export OPTIONS for CORS preflight
+export { OPTIONS };
 
-    // Get endpoint from query parameter or use general
-    const { searchParams } = new URL(request.url);
-    const endpoint = searchParams.get('endpoint') || 'general';
+// Zod schema for query parameters
+const rateLimitStatusSchema = z.object({
+  endpoint: z.string().max(100).default('general'),
+});
 
-    const rateLimitStatus = getServerRateLimitStatus(clientIP, endpoint);
+export const GET = withApi({
+  auth: 'none',
+  querySchema: rateLimitStatusSchema,
+}, async ({ request, query }) => {
+  // Get client IP from various headers
+  const clientIP = request.headers.get('x-forwarded-for')?.split(',')[0] || 
+                  request.headers.get('x-real-ip') || 
+                  request.headers.get('cf-connecting-ip') || 
+                  'unknown';
 
-    return NextResponse.json({
-      endpoint,
-      ...rateLimitStatus,
-      timestamp: Date.now(),
-    });
-  } catch (error) {
-    console.error('Rate limit status error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-}
+  const rateLimitStatus = getServerRateLimitStatus(clientIP, query.endpoint);
+
+  return {
+    endpoint: query.endpoint,
+    ...rateLimitStatus,
+    timestamp: Date.now(),
+  };
+});

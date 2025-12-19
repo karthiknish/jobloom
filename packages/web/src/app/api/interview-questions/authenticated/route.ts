@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifySessionFromRequest } from "@/lib/auth/session";
+import { z } from "zod";
 import { getAdminDb } from "@/firebase/admin";
+import { withApi } from "@/lib/api/withApi";
 
 // Comprehensive interview questions data for seeding/fallback
 const defaultInterviewQuestions = {
@@ -365,22 +366,16 @@ const INDUSTRIES = [
   "data-science",
 ] as const;
 
-type Industry = (typeof INDUSTRIES)[number];
+// Zod schema for query parameters
+const interviewQuestionsAuthenticatedSchema = z.object({
+  industry: z.enum(INDUSTRIES).optional(),
+});
 
-export async function GET(request: NextRequest) {
-  try {
-    // Verify session
-    const decodedToken = await verifySessionFromRequest(request);
-    if (!decodedToken) {
-      return NextResponse.json(
-        { error: "Unauthorized", code: "AUTH_REQUIRED" },
-        { status: 401 }
-      );
-    }
-
-    // Get query parameters
-    const { searchParams } = new URL(request.url);
-    const industryFilter = searchParams.get("industry") as Industry | null;
+export const GET = withApi({
+  auth: "required",
+  querySchema: interviewQuestionsAuthenticatedSchema,
+  handler: async ({ query }) => {
+    const { industry: industryFilter } = query;
 
     // Try to fetch from Firestore first
     try {
@@ -430,15 +425,14 @@ export async function GET(request: NextRequest) {
         );
 
         if (totalQuestions > 0) {
-          return NextResponse.json({
-            success: true,
+          return {
             data: interviewQuestions,
             source: "firestore",
             industries: INDUSTRIES,
             selectedIndustry: industryFilter || "all",
             categoryCounts,
             totalQuestions,
-          });
+          };
         }
       }
     } catch (firestoreError) {
@@ -446,12 +440,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Fallback to default questions (apply industry filter if needed)
-    let filteredQuestions = { ...defaultInterviewQuestions };
+    const filteredQuestions = { ...defaultInterviewQuestions };
     
-    if (industryFilter) {
-      // Fallback data doesn't have industry field, so return all as "general"
-      // In production, the Firestore data would have proper industry filtering
-    }
+    // Fallback data doesn't have industry field, so return all as "general"
+    // In production, the Firestore data would have proper industry filtering
 
     // Calculate counts per category for fallback
     const categoryCounts: Record<string, number> = {};
@@ -464,8 +456,7 @@ export async function GET(request: NextRequest) {
       0
     );
 
-    return NextResponse.json({
-      success: true,
+    return {
       data: filteredQuestions,
       source: "fallback",
       industries: INDUSTRIES,
@@ -473,17 +464,7 @@ export async function GET(request: NextRequest) {
       categoryCounts,
       totalQuestions,
       message: "Using default questions. Run /api/interview-questions/setup to populate Firestore with industry-specific questions."
-    });
-  } catch (error) {
-    console.error("Error fetching interview questions:", error);
-    return NextResponse.json(
-      {
-        error: "Failed to fetch interview questions",
-        code: "FETCH_ERROR",
-        details: error instanceof Error ? error.message : "Unknown error"
-      },
-      { status: 500 }
-    );
-  }
-}
+    };
+  },
+});
 

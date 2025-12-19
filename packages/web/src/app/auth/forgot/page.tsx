@@ -10,17 +10,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { showError, showSuccess } from "@/components/ui/Toast";
+import { apiClient } from "@/lib/api/client";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 async function requestPasswordReset(email: string, redirectUrl?: string) {
-  const res = await fetch("/api/auth/password/request", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, redirectUrl }),
-  });
-
-  return res.json();
+  return apiClient.post<any>("/auth/password/request", { email, redirectUrl });
 }
 
 export default function ForgotPasswordPage() {
@@ -57,19 +52,13 @@ export default function ForgotPasswordPage() {
     setLoading(true);
     try {
       const redirectUrl = typeof window !== "undefined" ? `${window.location.origin}/auth/reset` : undefined;
-      const response = await requestPasswordReset(trimmed, redirectUrl);
-      if (!response?.success) {
-        if (response?.error) {
-          showError(response.error);
-        }
-        return;
-      }
+      await requestPasswordReset(trimmed, redirectUrl);
 
       setSent(true);
       showSuccess("Password reset email sent!", "Check your inbox for instructions to reset your password.");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to request password reset", error);
-      showError("Failed to send reset email", "Please check your email address and try again.");
+      showError("Failed to send reset email", error?.message || "Please check your email address and try again.");
     } finally {
       setLoading(false);
     }

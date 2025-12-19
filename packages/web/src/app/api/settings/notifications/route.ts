@@ -1,132 +1,71 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyIdToken, getAdminDb } from "@/firebase/admin";
+import { z } from "zod";
+import { getAdminDb } from "@/firebase/admin";
+import { withApi, OPTIONS } from "@/lib/api/withApi";
 
-const db = getAdminDb();
+// Re-export OPTIONS for CORS preflight
+export { OPTIONS };
 
-export async function GET(request: NextRequest) {
-  try {
-    const authHeader = request.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+const notificationSettingsSchema = z.object({
+  emailNotifications: z.boolean().optional(),
+  pushNotifications: z.boolean().optional(),
+  jobAlertsEnabled: z.boolean().optional(),
+  marketingEmails: z.boolean().optional(),
+  systemNotifications: z.boolean().optional(),
+  weeklyDigest: z.boolean().optional(),
+  jobAlertFrequency: z.enum(['immediate', 'daily', 'weekly']).optional(),
+});
 
-    const token = authHeader.substring(7);
+// GET /api/settings/notifications - Get user notification settings
+export const GET = withApi({
+  auth: "required",
+}, async ({ user }) => {
+  const db = getAdminDb();
+  const userId = user!.uid;
 
-    // In development with mock tokens, return mock notification settings for testing
-    const isMockToken = process.env.NODE_ENV === "development" && 
-      request.headers.get("authorization")?.includes("bW9jay1zaWduYXR1cmUtZm9yLXRlc3Rpbmc");
+  // Get user notification settings
+  const userDoc = await db.collection('users').doc(userId).get();
+  const userData = userDoc.data();
 
-    if (isMockToken) {
-      return NextResponse.json({
-        emailNotifications: true,
-        pushNotifications: true,
-        jobAlertsEnabled: false,
-        marketingEmails: true,
-        systemNotifications: true,
-        weeklyDigest: false,
-        message: 'Notification settings retrieved successfully (mock)'
-      });
-    }
+  const notificationSettings = {
+    emailNotifications: userData?.preferences?.emailNotifications ?? true,
+    pushNotifications: userData?.preferences?.pushNotifications ?? true,
+    jobAlertsEnabled: userData?.preferences?.jobAlertsEnabled ?? false,
+    marketingEmails: userData?.preferences?.marketingEmails ?? true,
+    systemNotifications: userData?.preferences?.systemNotifications ?? true,
+    weeklyDigest: userData?.preferences?.weeklyDigest ?? false,
+    jobAlertFrequency: userData?.preferences?.jobAlertFrequency ?? 'daily'
+  };
 
-    const decodedToken = await verifyIdToken(token);
-    if (!decodedToken) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
-    }
-    const userId = decodedToken.uid;
+  return { notificationSettings };
+});
 
-    // Get user notification settings
-    const userDoc = await db.collection('users').doc(userId).get();
-    const userData = userDoc.data();
+// PUT /api/settings/notifications - Update user notification settings
+export const PUT = withApi({
+  auth: "required",
+  bodySchema: z.object({
+    notificationSettings: notificationSettingsSchema,
+  }),
+}, async ({ user, body }) => {
+  const db = getAdminDb();
+  const userId = user!.uid;
+  const { notificationSettings } = body;
 
-    const notificationSettings = {
-      emailNotifications: userData?.preferences?.emailNotifications ?? true,
-      pushNotifications: userData?.preferences?.pushNotifications ?? true,
-      jobAlertsEnabled: userData?.preferences?.jobAlertsEnabled ?? false,
-      marketingEmails: userData?.preferences?.marketingEmails ?? true,
-      systemNotifications: userData?.preferences?.systemNotifications ?? true,
-      weeklyDigest: userData?.preferences?.weeklyDigest ?? false,
-      jobAlertFrequency: userData?.preferences?.jobAlertFrequency ?? 'daily'
-    };
+  // Update notification settings in Firestore
+  const updateData: any = {};
+  if (notificationSettings.emailNotifications !== undefined) updateData['preferences.emailNotifications'] = notificationSettings.emailNotifications;
+  if (notificationSettings.pushNotifications !== undefined) updateData['preferences.pushNotifications'] = notificationSettings.pushNotifications;
+  if (notificationSettings.jobAlertsEnabled !== undefined) updateData['preferences.jobAlertsEnabled'] = notificationSettings.jobAlertsEnabled;
+  if (notificationSettings.marketingEmails !== undefined) updateData['preferences.marketingEmails'] = notificationSettings.marketingEmails;
+  if (notificationSettings.systemNotifications !== undefined) updateData['preferences.systemNotifications'] = notificationSettings.systemNotifications;
+  if (notificationSettings.weeklyDigest !== undefined) updateData['preferences.weeklyDigest'] = notificationSettings.weeklyDigest;
+  if (notificationSettings.jobAlertFrequency !== undefined) updateData['preferences.jobAlertFrequency'] = notificationSettings.jobAlertFrequency;
+  
+  updateData['preferences.updatedAt'] = new Date();
 
-    return NextResponse.json({ notificationSettings });
-  } catch (error) {
-    console.error('Error fetching notification settings:', error);
-    return NextResponse.json({ error: 'Failed to fetch notification settings' }, { status: 500 });
-  }
-}
+  await db.collection('users').doc(userId).update(updateData);
 
-export async function PUT(request: NextRequest) {
-  try {
-    const authHeader = request.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const token = authHeader.substring(7);
-
-    // In development with mock tokens, return mock success response for testing
-    const isMockToken = process.env.NODE_ENV === "development" && 
-      request.headers.get("authorization")?.includes("bW9jay1zaWduYXR1cmUtZm9yLXRlc3Rpbmc");
-
-    if (isMockToken) {
-      return NextResponse.json({
-        success: true,
-        message: 'Notification settings updated successfully (mock)'
-      });
-    }
-
-    const decodedToken = await verifyIdToken(token);
-    if (!decodedToken) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
-    }
-    const userId = decodedToken.uid;
-
-    const body = await request.json();
-    const { notificationSettings } = body;
-
-    if (!notificationSettings || typeof notificationSettings !== 'object') {
-      return NextResponse.json({ error: 'Invalid notification settings' }, { status: 400 });
-    }
-
-    // Validate settings
-    const validSettings = [
-      'emailNotifications', 'pushNotifications', 'jobAlertsEnabled',
-      'marketingEmails', 'systemNotifications', 'weeklyDigest', 'jobAlertFrequency'
-    ];
-
-    const sanitizedSettings: any = {};
-    for (const key of validSettings) {
-      if (notificationSettings[key] !== undefined) {
-        // Type validation
-        if (typeof notificationSettings[key] === 'boolean') {
-          sanitizedSettings[key] = notificationSettings[key];
-        } else if (key === 'jobAlertFrequency' && typeof notificationSettings[key] === 'string') {
-          const validFrequencies = ['immediate', 'daily', 'weekly'];
-          if (validFrequencies.includes(notificationSettings[key])) {
-            sanitizedSettings[key] = notificationSettings[key];
-          }
-        }
-      }
-    }
-
-    // Update notification settings in Firestore
-    await db.collection('users').doc(userId).update({
-      'preferences.emailNotifications': sanitizedSettings.emailNotifications,
-      'preferences.pushNotifications': sanitizedSettings.pushNotifications,
-      'preferences.jobAlertsEnabled': sanitizedSettings.jobAlertsEnabled,
-      'preferences.marketingEmails': sanitizedSettings.marketingEmails,
-      'preferences.systemNotifications': sanitizedSettings.systemNotifications,
-      'preferences.weeklyDigest': sanitizedSettings.weeklyDigest,
-      'preferences.jobAlertFrequency': sanitizedSettings.jobAlertFrequency,
-      'preferences.updatedAt': new Date()
-    });
-
-    return NextResponse.json({
-      success: true,
-      message: 'Notification settings updated successfully'
-    });
-  } catch (error) {
-    console.error('Error updating notification settings:', error);
-    return NextResponse.json({ error: 'Failed to update notification settings' }, { status: 500 });
-  }
-}
+  return {
+    message: 'Notification settings updated successfully'
+  };
+});

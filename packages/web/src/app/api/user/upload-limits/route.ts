@@ -1,27 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyIdToken } from "@/firebase/admin";
-import { getUploadLimitsForUser } from "@/config/uploadLimits";
+import { withApi } from "@/lib/api/withApi";
+import { getUploadLimitsForUser, DEFAULT_UPLOAD_LIMITS } from "@/config/uploadLimits";
 
 // GET /api/user/upload-limits - Get upload limits for the current user
-export async function GET(request: NextRequest) {
+export const GET = withApi({
+  auth: "required",
+}, async ({ user }) => {
   try {
-    const authHeader = request.headers.get("authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return NextResponse.json({ error: "Authorization required" }, { status: 401 });
-    }
+    const uploadLimits = await getUploadLimitsForUser(user!.uid);
 
-    const token = authHeader.substring(7);
-    const decodedToken = await verifyIdToken(token);
-
-    if (!decodedToken) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-    }
-
-    const userId = decodedToken.uid;
-    const uploadLimits = await getUploadLimitsForUser(userId);
-
-    return NextResponse.json({
-      success: true,
+    return {
       uploadLimits: {
         maxSize: uploadLimits.maxSize,
         maxSizeMB: uploadLimits.maxSizeMB,
@@ -29,17 +17,13 @@ export async function GET(request: NextRequest) {
         allowedExtensions: uploadLimits.allowedExtensions,
         description: uploadLimits.description
       }
-    });
-
-  } catch (error: any) {
+    };
+  } catch (error) {
     console.error("Error fetching upload limits:", error);
     
-    // Return default limits on error
-    const { DEFAULT_UPLOAD_LIMITS } = await import("@/config/uploadLimits");
-    
-    return NextResponse.json({
-      success: false,
-      error: "Failed to fetch upload limits",
+    // Return default limits on error but still wrapped in success: true for robustness
+    // or we could let withApi handle the error if we want it to fail
+    return {
       uploadLimits: {
         maxSize: DEFAULT_UPLOAD_LIMITS.maxSize,
         maxSizeMB: DEFAULT_UPLOAD_LIMITS.maxSizeMB,
@@ -47,11 +31,6 @@ export async function GET(request: NextRequest) {
         allowedExtensions: DEFAULT_UPLOAD_LIMITS.allowedExtensions,
         description: DEFAULT_UPLOAD_LIMITS.description
       }
-    }, { status: 500 });
+    };
   }
-}
-
-// OPTIONS handler for CORS
-export async function OPTIONS(request: NextRequest) {
-  return new NextResponse(null, { status: 200 });
-}
+});

@@ -1,172 +1,111 @@
-import { NextRequest, NextResponse } from "next/server";
+import { withApi, z } from "@/lib/api/withApi";
 import { getAdminDb } from "@/firebase/admin";
-import { verifySessionFromRequest } from "@/lib/auth/session";
 import { checkForSpam, recordSubmission } from "@/lib/spam-detection";
 
-interface Contact {
-  id: string;
-  name: string;
-  email: string;
-  message: string;
-  subject: string;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-  spamScore?: number;
-  isSpam?: boolean;
-  ip?: string;
+export const runtime = "nodejs";
+
+const contactBodySchema = z.object({
+  name: z.string().min(1, "Name is required").max(200),
+  email: z.string().email("Invalid email format").max(254),
+  message: z.string().min(1, "Message is required").max(5000),
+  subject: z.string().max(500).optional(),
+  honeypot: z.string().optional(),
+  loadedAt: z.number().optional(),
+  submittedAt: z.number().optional(),
+});
+
+const contactQuerySchema = z.object({
+  status: z.enum(["pending", "resolved", "spam"]).optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+  offset: z.coerce.number().int().min(0).default(0),
+});
+
+function getClientIp(request: any): string {
+  const forwarded = request.headers.get("x-forwarded-for");
+  if (forwarded) return forwarded.split(",")[0]?.trim() || "unknown";
+  return request.headers.get("cf-connecting-ip") || request.headers.get("x-real-ip") || "unknown";
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const { name, email, message, subject, honeypot, loadedAt, submittedAt } = body;
+export const POST = withApi({
+  auth: 'none',
+  rateLimit: 'general',
+  rateLimitConfig: {
+    maxRequests: 10,
+    windowMs: 60 * 60 * 1000, // 1 hour
+  },
+  bodySchema: contactBodySchema,
+}, async ({ body, request }) => {
+  const ip = getClientIp(request);
+  const { name, email, message, subject, honeypot, loadedAt, submittedAt } = body;
 
-    // Get client IP for rate limiting
-    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() 
-      || request.headers.get("x-real-ip") 
-      || "unknown";
+  const spamCheck = checkForSpam({
+    name: name.trim(),
+    email: email.toLowerCase().trim(),
+    message: message.trim(),
+    subject: subject?.trim(),
+    honeypot,
+    loadedAt: loadedAt ? Number(loadedAt) : undefined,
+    submittedAt: submittedAt ? Number(submittedAt) : Date.now(),
+  }, ip);
 
-    // Validate required fields
-    if (!name || !email || !message) {
-      return NextResponse.json(
-        { error: "Missing required fields: name, email, message" },
-        { status: 400 }
-      );
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { error: "Invalid email format" },
-        { status: 400 }
-      );
-    }
-
-    // Check for spam
-    const spamCheck = checkForSpam(
-      {
-        name: name.trim(),
-        email: email.toLowerCase().trim(),
-        message: message.trim(),
-        subject: subject?.trim(),
-        honeypot,
-        loadedAt: loadedAt ? Number(loadedAt) : undefined,
-        submittedAt: submittedAt ? Number(submittedAt) : Date.now(),
-      },
-      ip
-    );
-
-    // Block high-confidence spam immediately
-    if (spamCheck.shouldBlock) {
-      console.warn(`[Contact] Spam blocked from ${ip}:`, spamCheck.reasons);
-      // Return success to avoid giving spammers feedback
-      return NextResponse.json({
-        success: true,
-        message: "Thank you for your message. We'll be in touch soon.",
-        contactId: "blocked",
-      });
-    }
-
-    // Record submission for rate limiting
-    recordSubmission(ip);
-
-    const db = getAdminDb();
-    
-    // Create contact submission (flagged if suspected spam)
-    const contactRef = db.collection('contacts').doc();
-    const contactData: Partial<Contact> & { spamReasons?: string[] } = {
-      id: contactRef.id,
-      name: name.trim(),
-      email: email.toLowerCase().trim(),
-      message: message.trim(),
-      subject: subject?.trim() || "General Inquiry",
-      status: spamCheck.isSpam ? "spam" : "pending",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      spamScore: spamCheck.score,
-      isSpam: spamCheck.isSpam,
-      ip: ip !== "unknown" ? ip : undefined,
+  if (spamCheck.shouldBlock) {
+    console.warn(`[Contact] Spam blocked from ${ip}:`, spamCheck.reasons);
+    return {
+      success: true,
+      message: "Thank you for your message. We'll be in touch soon.",
+      contactId: "blocked",
     };
-
-    // Add spam reasons for admin review
-    if (spamCheck.isSpam && spamCheck.reasons.length > 0) {
-      contactData.spamReasons = spamCheck.reasons;
-    }
-
-    await contactRef.set(contactData);
-
-    // Log spam detection for monitoring
-    if (spamCheck.score > 0) {
-      console.log(`[Contact] Submission from ${ip} - Score: ${spamCheck.score}, Spam: ${spamCheck.isSpam}, Reasons: ${spamCheck.reasons.join(', ')}`);
-    }
-
-    return NextResponse.json({
-      success: true,
-      message: "Contact submission created successfully",
-      contactId: contactRef.id
-    });
-
-  } catch (error) {
-    console.error("Contact submission error:", error);
-    return NextResponse.json(
-      { error: "Failed to submit contact form" },
-      { status: 500 }
-    );
   }
-}
 
-export async function GET(request: NextRequest) {
-  try {
-    const decodedToken = await verifySessionFromRequest(request);
+  recordSubmission(ip);
+  const db = getAdminDb();
+  const contactRef = db.collection('contacts').doc();
+  
+  const contactData = {
+    id: contactRef.id,
+    name: name.trim(),
+    email: email.toLowerCase().trim(),
+    message: message.trim(),
+    subject: subject?.trim() || "General Inquiry",
+    status: spamCheck.isSpam ? "spam" : "pending",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    spamScore: spamCheck.score,
+    isSpam: spamCheck.isSpam,
+    ip: ip !== "unknown" ? ip : undefined,
+    ...(spamCheck.isSpam && spamCheck.reasons.length > 0 ? { spamReasons: spamCheck.reasons } : {}),
+  };
 
-    if (!decodedToken?.uid) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+  await contactRef.set(contactData);
 
-    // Check if user is admin
-    const db = getAdminDb();
-    const userDoc = await db.collection('users').doc(decodedToken.uid).get();
-    const userData = userDoc.data();
+  return {
+    success: true,
+    message: "Contact submission created successfully",
+    contactId: contactRef.id
+  };
+});
 
-    if (!userData?.isAdmin) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
-    }
-
-    const { searchParams } = new URL(request.url);
-    const status = searchParams.get('status');
-    const limit = parseInt(searchParams.get('limit') || '50');
-    const offset = parseInt(searchParams.get('offset') || '0');
-
-    let query = db.collection('contacts').orderBy('createdAt', 'desc');
-    
-    if (status) {
-      query = query.where('status', '==', status);
-    }
-
-    const snapshot = await query.limit(limit).offset(offset).get();
-    const contacts: Contact[] = [];
-
-    snapshot.forEach((doc) => {
-      const data = doc.data();
-      contacts.push({
-        id: doc.id,
-        ...data
-      } as Contact);
-    });
-
-    return NextResponse.json({
-      success: true,
-      contacts,
-      total: contacts.length
-    });
-
-  } catch (error) {
-    console.error("Error fetching contacts:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch contacts" },
-      { status: 500 }
-    );
+export const GET = withApi({
+  auth: 'admin',
+  rateLimit: 'admin',
+  querySchema: contactQuerySchema,
+}, async ({ query }) => {
+  const { status, limit, offset } = query;
+  const db = getAdminDb();
+  let firestoreQuery = db.collection('contacts').orderBy('createdAt', 'desc');
+  
+  if (status) {
+    firestoreQuery = firestoreQuery.where('status', '==', status);
   }
-}
+
+  const snapshot = await firestoreQuery.limit(limit).offset(offset).get();
+  const contacts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+  return {
+    success: true,
+    contacts,
+    total: contacts.length
+  };
+});
+
+export { OPTIONS } from "@/lib/api/withApi";

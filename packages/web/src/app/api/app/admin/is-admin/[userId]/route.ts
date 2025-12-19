@@ -1,31 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isUserAdmin } from "@/firebase/admin";
-import { verifySessionFromRequest } from "@/lib/auth/session";
+import { withApi, OPTIONS, z } from "@/lib/api/withApi";
+
+// Re-export OPTIONS for CORS preflight
+export { OPTIONS };
+
+const userParamsSchema = z.object({
+  userId: z.string(),
+});
 
 // GET /api/app/admin/is-admin/[userId] - Check if user is admin
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ userId: string }> }
-) {
-  const { userId } = await params;
-  try {
-    const decodedToken = await verifySessionFromRequest(request);
+export const GET = withApi({
+  auth: "required",
+  paramsSchema: userParamsSchema,
+}, async ({ params, user }) => {
+  const { userId } = params;
 
-    if (!decodedToken) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Users can only check their own admin status
-    if (decodedToken.uid !== userId) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
-    // Check if user is admin from Firestore
-    const isAdmin = await isUserAdmin(userId);
-
-    return NextResponse.json(isAdmin);
-  } catch (error) {
-    console.error("Error checking admin status:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  // Users can only check their own admin status
+  if (user!.uid !== userId) {
+    throw new Error("Forbidden: You can only check your own admin status");
   }
-}
+
+  // Check if user is admin from Firestore
+  const isAdmin = await isUserAdmin(userId);
+
+  return isAdmin;
+});

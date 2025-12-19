@@ -31,6 +31,7 @@ import { Switch } from "@/components/ui/switch";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { useSubscription } from "@/providers/subscription-provider";
 import { showSuccess, showError, showInfo } from "@/components/ui/Toast";
+import { apiClient } from "@/lib/api/client";
 import PDFGenerator from "@/lib/pdfGenerator";
 import { cn } from "@/lib/utils";
 
@@ -135,40 +136,15 @@ export function AICoverLetterGenerator() {
     setIsGenerating(true);
     
     try {
-      const token = await user?.getIdToken();
-      if (!token) {
-        throw new Error("Not authenticated");
-      }
-      const response = await fetch("/api/ai/cover-letter", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          ...formData,
-          atsOptimization,
-          keywordFocus,
-          deepResearch,
-        }),
+      const payload = await apiClient.post<GeneratedCoverLetter>("/ai/cover-letter", {
+        ...formData,
+        atsOptimization,
+        keywordFocus,
+        deepResearch,
       });
 
-      const payload = await response.json().catch(() => null);
-
-      if (!response.ok) {
-        const message =
-          (payload && typeof payload === "object" && "error" in payload && typeof (payload as any).error === "string"
-            ? (payload as any).error
-            : "Failed to generate cover letter");
-        throw new Error(message);
-      }
-
-      if (!payload) {
-        throw new Error("Invalid response from server");
-      }
-
-      setGeneratedLetter(payload as GeneratedCoverLetter);
-      setEditedContent((payload as GeneratedCoverLetter).content ?? "");
+      setGeneratedLetter(payload);
+      setEditedContent(payload.content ?? "");
       showSuccess("Success", "Your cover letter has been generated!");
     } catch (error: any) {
       console.error("Cover letter generation error:", error);

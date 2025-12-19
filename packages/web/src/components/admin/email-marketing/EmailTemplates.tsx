@@ -37,6 +37,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { showSuccess, showError } from "@/components/ui/Toast";
 import { EmailTemplate } from "@/config/emailTemplates";
+import { apiClient } from "@/lib/api/client";
 
 interface EmailTemplatesProps {
   templates: EmailTemplate[];
@@ -145,21 +146,10 @@ export function EmailTemplates({
         updatedAt: new Date(),
       };
 
-      // Save to API
-      const response = await fetch('/api/admin/email-templates', {
-        method: editingTemplate ? 'PUT' : 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${await user?.getIdToken()}`,
-        },
-        body: JSON.stringify(templateData),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to save template');
-      }
-
-      const savedTemplate = await response.json();
+      // Save to API using apiClient
+      const savedTemplate = editingTemplate
+        ? await apiClient.put<EmailTemplate>('/api/admin/email-templates', templateData)
+        : await apiClient.post<EmailTemplate>('/api/admin/email-templates', templateData);
       
       if (editingTemplate) {
         onTemplatesChange(templates.map(t => t.id === editingTemplate.id ? savedTemplate : t));
@@ -182,16 +172,7 @@ export function EmailTemplates({
     }
 
     try {
-      const response = await fetch(`/api/admin/email-templates/${templateId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${await user?.getIdToken()}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete template');
-      }
+      await apiClient.delete(`/api/admin/email-templates/${templateId}`);
 
       onTemplatesChange(templates.filter(t => t.id !== templateId));
       showSuccess("Template deleted successfully");
@@ -215,18 +196,7 @@ export function EmailTemplates({
 
   const handleSendTest = async (templateId: string) => {
     try {
-      const response = await fetch('/api/admin/email-templates/test', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${await user?.getIdToken()}`,
-        },
-        body: JSON.stringify({ templateId }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to send test email');
-      }
+      await apiClient.post('/api/admin/email-templates/test', { templateId });
 
       showSuccess("Test email sent successfully");
     } catch (error) {

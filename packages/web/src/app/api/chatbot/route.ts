@@ -1,5 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from "@google/generative-ai";
+import { withApi, z, OPTIONS } from "@/lib/api/withApi";
+import { ERROR_CODES } from "@/lib/api/errorCodes";
+
+export { OPTIONS };
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 
@@ -82,32 +85,34 @@ function sanitizeResponse(text: string): string {
   return withoutAsterisks.replace(/\n{3,}/g, "\n\n").trim();
 }
 
-export async function POST(request: NextRequest) {
+const chatbotSchema = z.object({
+  message: z.string().min(1, "Message is required"),
+  context: z.string().optional(),
+});
+
+export const POST = withApi({
+  auth: 'optional',
+  rateLimit: 'chatbot',
+  bodySchema: chatbotSchema,
+}, async ({ body }) => {
+  const { message, context } = body;
+
+  // Check guardrails - only allow job/career related questions
+  if (!isJobRelated(message)) {
+    return {
+      response: getGuardrailResponse(),
+      isJobRelated: false
+    };
+  }
+
+  if (!GEMINI_API_KEY || !genAI) {
+    return {
+      error: "AI service not configured. Missing GEMINI_API_KEY.",
+      code: ERROR_CODES.SERVICE_UNAVAILABLE,
+    };
+  }
+
   try {
-    const { message, context } = await request.json();
-
-    if (!message || typeof message !== 'string') {
-      return NextResponse.json(
-        { error: "Message is required and must be a string" },
-        { status: 400 }
-      );
-    }
-
-    // Check guardrails - only allow job/career related questions
-    if (!isJobRelated(message)) {
-      return NextResponse.json({
-        response: getGuardrailResponse(),
-        isJobRelated: false
-      });
-    }
-
-    if (!GEMINI_API_KEY || !genAI) {
-      return NextResponse.json(
-        { error: "AI service not configured. Missing GEMINI_API_KEY." },
-        { status: 503 }
-      );
-    }
-
     // Use the correct model name for Gemini API
     const model = genAI.getGenerativeModel({
       model: "gemini-2.0-flash-lite",
@@ -174,38 +179,32 @@ Respond as Hireall AI with clean, readable formatting:`;
     const response = await result.response;
     const generatedText = sanitizeResponse(response.text().trim());
 
-    return NextResponse.json({
+    return {
       response: generatedText,
       isJobRelated: true
-    });
-
-  } catch (error: unknown) {
+    };
+  } catch (error: any) {
     console.error("Chatbot API error:", error);
+    const errorMessage = error.message || String(error);
 
-    const message = error instanceof Error ? error.message : String(error);
-
-    if (message.includes("403") || message.includes("unregistered") || message.includes("Forbidden")) {
-      return NextResponse.json(
-        { error: "Access to AI model forbidden. Verify billing & API key permissions for Gemini." },
-        { status: 502 }
-      );
+    if (errorMessage.includes("403") || errorMessage.includes("unregistered") || errorMessage.includes("Forbidden")) {
+      return {
+        error: "Access to AI model forbidden. Verify billing & API key permissions for Gemini.",
+        code: ERROR_CODES.SERVICE_UNAVAILABLE,
+      };
     }
-    if (message.includes("API_KEY") || message.includes("Missing API key")) {
-      return NextResponse.json(
-        { error: "AI service not configured. Please add GEMINI_API_KEY on the server." },
-        { status: 503 }
-      );
+    if (errorMessage.includes("API_KEY") || errorMessage.includes("Missing API key")) {
+      return {
+        error: "AI service not configured. Please add GEMINI_API_KEY on the server.",
+        code: ERROR_CODES.SERVICE_UNAVAILABLE,
+      };
     }
-    if (message.toLowerCase().includes("safety")) {
-      return NextResponse.json(
-        { error: "I can't provide a response for that request due to content guidelines." },
-        { status: 400 }
-      );
+    if (errorMessage.toLowerCase().includes("safety")) {
+      return {
+        error: "I can't provide a response for that request due to content guidelines.",
+        code: ERROR_CODES.VALIDATION_FAILED,
+      };
     }
-
-    return NextResponse.json(
-      { error: "Unexpected AI error. Please retry in a moment." },
-      { status: 500 }
-    );
+    throw error;
   }
-}
+});

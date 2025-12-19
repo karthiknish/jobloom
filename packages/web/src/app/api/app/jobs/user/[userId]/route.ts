@@ -1,84 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyIdToken, getAdminDb } from "@/firebase/admin";
-import { applyCorsHeaders, preflightResponse } from "@/lib/api/cors";
+import { getAdminDb } from "@/firebase/admin";
+import { withApi, OPTIONS, z } from "@/lib/api/withApi";
+
+// Re-export OPTIONS for CORS preflight
+export { OPTIONS };
+
+const userParamsSchema = z.object({
+  userId: z.string(),
+});
 
 // GET /api/app/jobs/user/[userId] - Get jobs for a specific user
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ userId: string }> }
-) {
-  const { userId } = await params;
-  try {
-    const authHeader = request.headers.get("authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return applyCorsHeaders(
-        NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
-        request,
-      );
-    }
+export const GET = withApi({
+  auth: "required",
+  paramsSchema: userParamsSchema,
+}, async ({ params, user }) => {
+  const { userId } = params;
 
-    const token = authHeader.substring(7);
-
-    // In development, allow mock tokens for testing
-    let decodedToken;
-    if (process.env.NODE_ENV === "development" && token.includes("bW9jay1zaWduYXR1cmUtZm9yLXRlc3Rpbmc")) {
-      decodedToken = {
-        uid: "test-user-123",
-        email: "test@example.com",
-        email_verified: true
-      };
-    } else {
-      decodedToken = await verifyIdToken(token);
-    }
-
-    if (!decodedToken) {
-      return applyCorsHeaders(
-        NextResponse.json({ error: "Invalid token" }, { status: 401 }),
-        request,
-      );
-    }
-
-    // Verify userId matches token
-    if (userId !== decodedToken.uid) {
-      return applyCorsHeaders(
-        NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
-        request,
-      );
-    }
-
-    // In development with mock tokens, skip Firebase operations for testing
-    const isMockToken = process.env.NODE_ENV === "development" && 
-      request.headers.get("authorization")?.includes("bW9jay1zaWduYXR1cmUtZm9yLXRlc3Rpbmc");
-
-    if (isMockToken) {
-      // Return mock success response for testing
-      return applyCorsHeaders(NextResponse.json([]), request);
-    }
-
-    // Use Admin SDK for server-side Firestore access
-    const db = getAdminDb();
-    const jobsRef = db.collection('jobs');
-    const snapshot = await jobsRef.where('userId', '==', userId).get();
-
-    const jobs = snapshot.docs.map(doc => ({
-      _id: doc.id,
-      id: doc.id,
-      ...doc.data()
-    }));
-
-    return applyCorsHeaders(NextResponse.json(jobs), request);
-  } catch (error) {
-    console.error("Error fetching jobs:", error);
-    return applyCorsHeaders(
-      NextResponse.json({ error: "Internal server error" }, { status: 500 }),
-      request,
-    );
+  // Verify userId matches token
+  if (userId !== user!.uid) {
+    throw new Error("Unauthorized: User ID mismatch");
   }
-}
 
+  // Use Admin SDK for server-side Firestore access
+  const db = getAdminDb();
+  const jobsRef = db.collection('jobs');
+  const snapshot = await jobsRef.where('userId', '==', userId).get();
 
-// OPTIONS handler for CORS preflight
-export async function OPTIONS(request: NextRequest) {
-  return preflightResponse(request);
-}
+  const jobs = snapshot.docs.map(doc => ({
+    _id: doc.id,
+    id: doc.id,
+    ...doc.data()
+  }));
+
+  return jobs;
+});
 

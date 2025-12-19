@@ -15,6 +15,7 @@ import {
 import { getDb } from "@/firebase/client";
 import { ImportJob, ImportResult } from "../jobImport";
 import { getAuthClient } from "@/firebase/client";
+import { apiClient } from "@/lib/api/client";
 
 export interface Job {
   _id: string;
@@ -124,21 +125,12 @@ export const dashboardApi = {
     const token = await currentUser.getIdToken();
     console.log('[Dashboard] Fetching applications from API...');
     
-    const response = await fetch(`/api/app/applications/user/${userId}`, {
+    const applications = await apiClient.get<any[]>(`/app/applications/user/${userId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
     
-    console.log('[Dashboard] API response status:', response.status);
-    
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => "");
-      console.error('[Dashboard] API error:', response.status, errorText);
-      throw new Error(`Failed to fetch applications: ${response.status} ${errorText}`);
-    }
-    
-    const applications = await response.json();
     console.log('[Dashboard] Applications received:', applications?.length || 0, applications);
     
     // Map response to Application type
@@ -462,13 +454,7 @@ export const dashboardApi = {
     jobs: ImportJob[];
   }): Promise<ImportResult> => {
     // For now, delegate to existing API route used by utils/jobImport to avoid duplication
-    const res = await fetch("/api/app/jobs/import", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: data.userId, jobs: data.jobs }),
-    });
-    if (!res.ok) throw new Error("Failed to import jobs");
-    return res.json();
+    return apiClient.post<ImportResult>("/app/jobs/import", data);
   },
 
   importJobsFromAPI: async (data: {
@@ -477,13 +463,7 @@ export const dashboardApi = {
     searchQuery?: string;
     location?: string;
   }): Promise<ImportResult> => {
-    const res = await fetch("/api/app/jobs/import-api", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-    if (!res.ok) throw new Error("Failed to import jobs from API");
-    return res.json();
+    return apiClient.post<ImportResult>("/app/jobs/import-api", data);
   },
 
   getJobsByUser: async (userId: string): Promise<Job[]> => {

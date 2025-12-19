@@ -66,7 +66,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { showSuccess, showError } from "@/components/ui/Toast";
-import { getAuthClient } from "@/firebase/client";
+import { apiClient } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 
 const lowlight = createLowlight(common);
@@ -127,34 +127,14 @@ const MenuBar = ({ editor }: { editor: any }) => {
 
     setIsGenerating(true);
     try {
-      const auth = getAuthClient();
-      const token = await auth?.currentUser?.getIdToken();
-
-      if (!token) {
-        throw new Error("Authentication required");
-      }
-
-      const response = await fetch("/api/ai/editor", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          prompt,
-          tone: "professional",
-          format: options?.format || "html",
-          length: options?.length || "medium",
-        }),
+      const response = await apiClient.post<{ content: string }>("/ai/editor", {
+        prompt,
+        tone: "professional",
+        format: options?.format || "html",
+        length: options?.length || "medium",
       });
 
-      if (!response.ok) {
-        const errorBody = await response.json().catch(() => ({}));
-        throw new Error(errorBody?.error || "AI content request failed");
-      }
-
-      const { content } = await response.json();
-      const generatedText = typeof content === "string" ? content : "";
+      const generatedText = typeof response.content === "string" ? response.content : "";
 
       // Insert the generated content at cursor position
       editor.chain().focus().insertContent(generatedText).run();

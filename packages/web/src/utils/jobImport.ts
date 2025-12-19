@@ -1,5 +1,6 @@
 // utils/jobImport.ts
 import { parse } from "csv-parse/browser/esm/sync";
+import { apiClient } from "@/lib/api/client";
 
 export interface ImportJob {
   title: string;
@@ -133,24 +134,12 @@ export async function importJobsFromCSV(userId: string, csvData: string): Promis
     }
     
     // Send to API
-  const response = await fetch("/api/app/jobs/import", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
+    const result = await apiClient.post<ImportResult>("/app/jobs/import", {
       userId,
       jobs,
       source: "csv",
-    }),
-  });
+    });
     
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || "Failed to import jobs");
-    }
-    
-    const result: ImportResult = await response.json();
     return result;
   } catch (error) {
     console.error("Error importing jobs from CSV:", error);
@@ -174,25 +163,13 @@ export async function importJobsFromAPI(
 ): Promise<ImportResult> {
   try {
     // Send to API
-  const response = await fetch("/api/app/jobs/import-api", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
+    const result = await apiClient.post<ImportResult>("/app/jobs/import-api", {
       userId,
       source,
       searchQuery,
       location,
-    }),
-  });
+    });
     
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || "Failed to import jobs from API");
-    }
-    
-    const result: ImportResult = await response.json();
     return result;
   } catch (error) {
     console.error("Error importing jobs from API:", error);

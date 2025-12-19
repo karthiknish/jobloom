@@ -6,12 +6,8 @@ import { upsertSubscriptionFromStripe, ValidationError, DatabaseError } from "@/
 import { 
   createValidationError,
   createInternalError,
-  handleExternalServiceError,
-  handleDatabaseError,
-  createSuccessResponse,
-  withErrorHandler 
 } from "@/lib/api/errorResponse";
-import { ERROR_CODES } from "@/lib/api/errorCodes";
+import { withApi } from "@/lib/api/withApi";
 
 export const runtime = "nodejs";
 
@@ -206,7 +202,9 @@ async function handleCustomerUpdated(customer: Stripe.Customer) {
   }, "customer.updated");
 }
 
-export const POST = withErrorHandler(async (request: NextRequest) => {
+export const POST = withApi({
+  auth: "none",
+}, async ({ request }) => {
   const signature = request.headers.get("stripe-signature");
   if (!signature) {
     throw createValidationError("Missing Stripe signature", "signature");
@@ -283,7 +281,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
       }
     }
 
-    return NextResponse.json({ received: true });
+    return { received: true };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown webhook handling error";
     console.error("Error handling Stripe webhook: ", errorMessage, {
@@ -303,6 +301,6 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
       return NextResponse.json({ error: "Database error", details: errorMessage }, { status: 500 });
     }
 
-    return NextResponse.json({ error: "Webhook processing failed" }, { status: 500 });
+    throw error; // Let withApi handle other errors
   }
 });

@@ -1,9 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import type { QueryDocumentSnapshot, Query } from "firebase-admin/firestore";
 
 import { getAdminDb } from "@/firebase/admin";
-import { authenticateRequest } from "@/lib/api/auth";
-import { withErrorHandling, generateRequestId } from "@/lib/api/errors";
+import { withApi } from "@/lib/api/withApi";
+
+// Zod schema for GET query parameters
+const sponsorshipCompaniesQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+  q: z.string().max(200).optional(),
+  search: z.string().max(200).optional(),
+  status: z.enum(["active", "inactive", "all"]).optional(),
+});
 
 interface SponsorRecord {
   id: string;
@@ -73,31 +82,14 @@ function mapToPublicSponsor(doc: QueryDocumentSnapshot<Record<string, any>>): Sp
 }
 
 // GET /api/app/sponsorship/companies - Get sponsored companies
-export async function GET(request: NextRequest) {
-  const requestId = generateRequestId();
-
-  return withErrorHandling(async () => {
-    const auth = await authenticateRequest(request, {
-      loadUser: true,
-    });
-
-    if (!auth.ok) {
-      return auth.response;
-    }
-
-    const { searchParams } = new URL(request.url);
-
-    const rawPage = parseInt(searchParams.get("page") || "1", 10);
-    const page = Number.isFinite(rawPage) && rawPage > 0 ? rawPage : 1;
-
-    const rawLimit = parseInt(searchParams.get("limit") || "50", 10);
-    const limitNum = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, 100) : 50;
-
-    const quickQuery = searchParams.get("q")?.trim() || "";
-    const search = searchParams.get("search")?.trim() || quickQuery;
-    const status = searchParams.get("status")?.trim() as "active" | "inactive" | "all" | undefined;
-
-    console.log('[GET /api/app/sponsorship/companies] Request:', { requestId, page, limit: limitNum, search: search || '(none)', status });
+export const GET = withApi({
+  auth: "optional",
+  querySchema: sponsorshipCompaniesQuerySchema,
+}, async ({ query, user }) => {
+  const { page, limit: limitNum, q: quickQuery, search: rawSearch, status } = query;
+  const isAdmin = user?.isAdmin ?? false;
+  
+  const search = rawSearch?.trim() || quickQuery?.trim() || "";
 
     const db = getAdminDb();
     const sponsorsRef = db.collection("sponsors");
@@ -105,13 +97,10 @@ export async function GET(request: NextRequest) {
     // FAST PATH: Quick lookup for extension sponsor checks
     // When there's a search query with small limit, skip expensive count queries
     if (search && limitNum <= 10) {
-      console.log('[GET /api/app/sponsorship/companies] Using fast path for:', search);
-      
       const searchLower = search.toLowerCase().trim();
       const searchUpper = searchLower + '\uf8ff'; // Unicode high character for range query
       
       let snapshot;
-      let usedStrategy = '';
       
       // Strategy 1: Try prefix match on nameLower field (fastest if index exists)
       try {
@@ -122,9 +111,7 @@ export async function GET(request: NextRequest) {
           .limit(limitNum);
         
         snapshot = await prefixQuery.get();
-        usedStrategy = 'nameLower prefix';
       } catch (e) {
-        console.log('[GET /api/app/sponsorship/companies] nameLower query failed, trying fallback');
         snapshot = { empty: true, docs: [] };
       }
       
@@ -142,24 +129,19 @@ export async function GET(request: NextRequest) {
             .limit(limitNum);
           
           snapshot = await nameQuery.get();
-          usedStrategy = 'name prefix (capitalized)';
         } catch (e) {
-          console.log('[GET /api/app/sponsorship/companies] name query failed');
           snapshot = { empty: true, docs: [] };
         }
       }
       
       // Strategy 3: Fallback - fetch batch and filter in memory
       if (snapshot.empty) {
-        console.log('[GET /api/app/sponsorship/companies] Using fallback search');
-        // Get more records to increase chance of finding the company
         const fallbackQuery = sponsorsRef
           .where("isActive", "==", true)
           .orderBy("name", "asc")
           .limit(500);
         
         snapshot = await fallbackQuery.get();
-        usedStrategy = 'fallback (500 records)';
       }
       
       let mappedDocs = snapshot.docs.map(mapToPublicSponsor);
@@ -187,9 +169,7 @@ export async function GET(request: NextRequest) {
       const results = mappedDocs.slice(0, limitNum);
       const publicRecords = results.map(({ raw, ...rest }: SponsorRecord) => rest);
       
-      console.log('[GET /api/app/sponsorship/companies] Fast path returning', publicRecords.length, 'records via', usedStrategy);
-      
-      return NextResponse.json({
+      return {
         query: quickQuery,
         results: publicRecords,
         total: publicRecords.length,
@@ -197,40 +177,38 @@ export async function GET(request: NextRequest) {
         limit: limitNum,
         hasMore: false,
         message: "Sponsored companies retrieved successfully",
-      });
+      };
     }
     
     // STANDARD PATH: Full pagination for admin/browse views
-    console.log('[GET /api/app/sponsorship/companies] Using standard path');
     
     // Build query with pagination
-    let query: Query = sponsorsRef.orderBy("name", "asc");
+    let dbQuery: Query = sponsorsRef.orderBy("name", "asc");
     
     // Apply status filter if needed
     if (status === "active") {
-      query = query.where("isActive", "==", true);
+      dbQuery = dbQuery.where("isActive", "==", true);
     } else if (status === "inactive") {
-      query = query.where("isActive", "==", false);
+      dbQuery = dbQuery.where("isActive", "==", false);
     }
     
     // Get total count only for admin views (skip for regular users to save time)
     let totalInCollection = 0;
     let filteredTotal = 0;
     
-    if (auth.isAdmin) {
+    if (isAdmin) {
       const totalSnapshot = await sponsorsRef.count().get();
       totalInCollection = totalSnapshot.data().count;
       
-      const filteredCountSnapshot = await query.count().get();
+      const filteredCountSnapshot = await dbQuery.count().get();
       filteredTotal = filteredCountSnapshot.data().count;
     }
     
     // Apply pagination
     const offset = (page - 1) * limitNum;
-    query = query.offset(offset).limit(limitNum);
+    dbQuery = dbQuery.offset(offset).limit(limitNum);
     
-    const snapshot = await query.get();
-    console.log('[GET /api/app/sponsorship/companies] Fetched', snapshot.docs.length, 'docs');
+    const snapshot = await dbQuery.get();
     
     let mappedDocs = snapshot.docs.map(mapToPublicSponsor);
     
@@ -244,20 +222,18 @@ export async function GET(request: NextRequest) {
     }
 
     // Filter out inactive for non-admins (if not already filtered by status)
-    if (!auth.isAdmin && status !== "active" && status !== "inactive") {
+    if (!isAdmin && status !== "active" && status !== "inactive") {
       mappedDocs = mappedDocs.filter((company: SponsorRecord) => company.isActive);
     }
 
-    const hasMore = auth.isAdmin ? (offset + mappedDocs.length < filteredTotal) : (snapshot.docs.length === limitNum);
+    const hasMore = isAdmin ? (offset + mappedDocs.length < filteredTotal) : (snapshot.docs.length === limitNum);
 
     const publicRecords = mappedDocs.map(({ raw, ...rest }: SponsorRecord) => rest);
     const adminRecords = mappedDocs.map(({ raw, ...rest }: SponsorRecord) => ({ ...(raw ?? {}), ...rest }));
-    const responseRecords = auth.isAdmin ? adminRecords : publicRecords;
-
-    console.log('[GET /api/app/sponsorship/companies] Returning', responseRecords.length, 'records');
+    const responseRecords = isAdmin ? adminRecords : publicRecords;
 
     if (quickQuery) {
-      return NextResponse.json({
+      return {
         query: quickQuery,
         results: publicRecords,
         total: filteredTotal || publicRecords.length,
@@ -265,10 +241,10 @@ export async function GET(request: NextRequest) {
         limit: limitNum,
         hasMore,
         message: "Sponsored companies retrieved successfully",
-      });
+      };
     }
 
-    return NextResponse.json({
+    return {
       companies: responseRecords,
       results: publicRecords,
       total: filteredTotal || responseRecords.length,
@@ -277,45 +253,25 @@ export async function GET(request: NextRequest) {
       hasMore,
       totalInCollection,
       message: "Sponsored companies retrieved successfully",
-    });
-  }, {
-    endpoint: '/api/app/sponsorship/companies',
-    method: 'GET',
-    requestId,
-  });
-}
+  };
+});
 
 // POST /api/app/sponsorship/companies - Create new sponsored company
-export async function POST(request: NextRequest) {
-  const requestId = generateRequestId();
-
-  return withErrorHandling(async () => {
-    const auth = await authenticateRequest(request, {
-      requireAdmin: true,
-      loadUser: true,
-    });
-
-    if (!auth.ok) {
-      return auth.response;
-    }
-
-    const companyData = await request.json();
-    
-    const db = getAdminDb();
-    const docRef = await db.collection("sponsors").add({
-      ...companyData,
-      isActive: companyData.isActive ?? true,
-      createdAt: Date.now(),
-      createdBy: auth.token.uid
-    });
-    
-    return NextResponse.json({
-      _id: docRef.id,
-      message: 'Sponsored company created successfully'
-    });
-  }, {
-    endpoint: '/api/app/sponsorship/companies',
-    method: 'POST',
-    requestId
+export const POST = withApi({
+  auth: "admin",
+}, async ({ request, user }) => {
+  const companyData = await request.json();
+  
+  const db = getAdminDb();
+  const docRef = await db.collection("sponsors").add({
+    ...companyData,
+    isActive: companyData.isActive ?? true,
+    createdAt: Date.now(),
+    createdBy: user!.uid
   });
-}
+  
+  return {
+    _id: docRef.id,
+    message: 'Sponsored company created successfully'
+  };
+});

@@ -1,38 +1,38 @@
-import { NextResponse } from "next/server";
-import { getAdminApp, getAdminAuth, getAdminDb } from "@/firebase/admin";
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { getAdminAuth, getAdminDb } from "@/firebase/admin";
+import { withApi } from "@/lib/api/withApi";
 
-interface ResetPayload {
-  token?: string;
-  password?: string;
+// Zod schema for request body validation
+const resetBodySchema = z.object({
+  token: z.string().min(1, "Invalid or missing token"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+});
+
+function addSecurityHeaders(response: NextResponse): NextResponse {
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("X-Frame-Options", "DENY");
+  response.headers.set("X-XSS-Protection", "1; mode=block");
+  response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate");
+  response.headers.set("Pragma", "no-cache");
+  return response;
 }
 
-export async function POST(request: Request) {
-  try {
-    const { token, password }: ResetPayload = await request.json().catch(() => ({}));
+export const POST = withApi({
+  auth: "none",
+  rateLimit: "auth",
+  bodySchema: resetBodySchema,
+  handler: async ({ body }) => {
+    const { token, password } = body;
 
-    if (!token || typeof token !== "string") {
-      return NextResponse.json(
-        { success: false, error: "Invalid or missing token" },
-        { status: 400 }
-      );
-    }
-
-    if (!password || typeof password !== "string" || password.length < 8) {
-      return NextResponse.json(
-        { success: false, error: "Password must be at least 8 characters" },
-        { status: 400 }
-      );
-    }
-
-    const admin = getAdminApp();
     const db = getAdminDb();
     const tokenDoc = await db.collection("passwordResets").doc(token).get();
 
     if (!tokenDoc.exists) {
-      return NextResponse.json(
-        { success: false, error: "Reset link is invalid or expired" },
-        { status: 400 }
-      );
+      return {
+        error: "Reset link is invalid or expired",
+        code: "INVALID_TOKEN"
+      };
     }
 
     const tokenData = tokenDoc.data() as {
@@ -43,32 +43,25 @@ export async function POST(request: Request) {
     };
 
     if (!tokenData || !tokenData.userId || tokenData.used) {
-      return NextResponse.json(
-        { success: false, error: "Reset link has already been used" },
-        { status: 400 }
-      );
+      return {
+        error: "Reset link has already been used",
+        code: "TOKEN_ALREADY_USED"
+      };
     }
 
     const expiresAt = tokenData.expiresAt instanceof Date ? tokenData.expiresAt : tokenData.expiresAt.toDate();
     if (expiresAt.getTime() < Date.now()) {
       await tokenDoc.ref.update({ used: true, expiredAt: new Date() });
-      return NextResponse.json(
-        { success: false, error: "Reset link has expired" },
-        { status: 400 }
-      );
+      return {
+        error: "Reset link has expired",
+        code: "TOKEN_EXPIRED"
+      };
     }
 
     const auth = getAdminAuth();
     await auth.updateUser(tokenData.userId, { password });
     await tokenDoc.ref.update({ used: true, consumedAt: new Date() });
 
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Failed to reset password", error);
-    return NextResponse.json(
-      { success: false, error: "Unable to reset password" },
-      { status: 500 }
-    );
-  }
-}
-
+    return { success: true };
+  },
+});

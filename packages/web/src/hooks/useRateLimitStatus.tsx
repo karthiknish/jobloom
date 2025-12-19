@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
+import { apiClient } from '@/lib/api/client';
+
 export interface RateLimitStatus {
   remaining: number;
   maxRequests: number;
@@ -24,23 +26,15 @@ export function useRateLimitStatus(endpoint: string = 'general') {
 
   const updateStatus = useCallback(async () => {
     try {
-      // Get rate limit status from server using fetch
-      const response = await fetch('/api/rate-limit-status', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      // Get rate limit status from server using apiClient
+      const data = await apiClient.get<any>('/api/rate-limit-status');
       
-      if (response.ok) {
-        const data = await response.json();
-        setStatus(prev => ({
-          ...prev,
-          ...data,
-          isLimited: data.remaining === 0,
-        }));
-        setError(null);
-      }
+      setStatus(prev => ({
+        ...prev,
+        ...data,
+        isLimited: data.remaining === 0,
+      }));
+      setError(null);
     } catch (err) {
       console.warn('Failed to fetch rate limit status:', err);
       setError('Unable to fetch rate limit status');
@@ -60,31 +54,24 @@ export function useRateLimitStatus(endpoint: string = 'general') {
   const checkLimit = useCallback(async (): Promise<boolean> => {
     try {
       // Make a test request to check current rate limit
-      const response = await fetch('/api/rate-limit-check', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ endpoint }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        setStatus(prev => ({
-          ...prev,
-          isLimited: true,
-          resetIn: data.resetIn || 0,
-          retryAfter: data.retryAfter,
-        }));
-        return false;
-      }
+      await apiClient.post('/api/rate-limit-check', { endpoint });
 
       // Update status on successful request
       await updateStatus();
       return true;
-    } catch (err) {
+    } catch (err: any) {
       console.warn('Rate limit check failed:', err);
-      setError('Failed to check rate limit');
+      
+      if (err.statusCode === 429) {
+        setStatus(prev => ({
+          ...prev,
+          isLimited: true,
+          resetIn: err.details?.resetIn || 0,
+          retryAfter: err.details?.retryAfter,
+        }));
+      } else {
+        setError('Failed to check rate limit');
+      }
       return false;
     }
   }, [updateStatus]);

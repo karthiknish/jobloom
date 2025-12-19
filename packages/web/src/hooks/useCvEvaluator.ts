@@ -7,7 +7,7 @@ import { useState, useCallback } from 'react';
 import { useEnhancedApi } from './useEnhancedApi';
 import { CvAnalysis, CvStats } from '@/types/api';
 import { cvEvaluatorApi } from '@/utils/api/cvEvaluator';
-import { FrontendApiError } from '@/lib/api/client';
+import { FrontendApiError, apiClient } from '@/lib/api/client';
 import { toast } from 'react-hot-toast';
 
 interface UseCvEvaluatorOptions {
@@ -87,33 +87,11 @@ export function useCvEvaluator(options: UseCvEvaluatorOptions = {}) {
         throw new Error('User ID is required');
       }
 
-      // This would integrate with the CV upload API
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('userId', userId);
-      
-      if (options?.targetRole) {
-        formData.append('targetRole', options.targetRole);
-      }
-      
-      if (options?.industry) {
-        formData.append('industry', options.industry);
-      }
-
-      const response = await fetch('/api/cv/upload', {
-        method: 'POST',
-        headers: {
-          'Authorization': await getAuthToken(),
-        },
-        body: formData
+      return apiClient.upload('/api/cv/upload', file, {
+        userId,
+        targetRole: options?.targetRole,
+        industry: options?.industry
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || 'Upload failed');
-      }
-
-      return response.json();
     }, [userId]),
     {
       immediate: false,
@@ -218,17 +196,6 @@ export function useCvEvaluator(options: UseCvEvaluatorOptions = {}) {
     refetchStats,
     getAnalysesByStatus
   };
-}
-
-// Helper function to get auth token
-async function getAuthToken(): Promise<string> {
-  if (typeof window !== 'undefined') {
-    const user = (window as any).firebase?.auth()?.currentUser;
-    if (user) {
-      return await user.getIdToken();
-    }
-  }
-  return '';
 }
 
 export default useCvEvaluator;

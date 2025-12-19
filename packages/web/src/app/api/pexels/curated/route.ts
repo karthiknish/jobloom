@@ -1,20 +1,21 @@
-import { NextRequest, NextResponse } from "next/server";
-import { authenticateRequest } from "@/lib/api/auth";
+import { withApi } from "@/lib/api/withApi";
+import { z } from "zod";
 import { getPexelsCuratedPhotos } from "@/lib/integrations/pexels/server";
 import { PexelsApiError } from "@/types/pexels";
 
 const MAX_PER_PAGE = 50;
 
-export async function GET(request: NextRequest) {
-  const auth = await authenticateRequest(request, { requireAdmin: true });
-  if (!auth.ok) {
-    return auth.response;
-  }
+// Zod schema for query parameters
+const pexelsCuratedSchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  per_page: z.coerce.number().int().min(1).max(MAX_PER_PAGE).default(20),
+});
 
-  const url = new URL(request.url);
-  const page = Math.max(1, Number.parseInt(url.searchParams.get("page") || "1", 10));
-  const perPageRaw = Number.parseInt(url.searchParams.get("per_page") || "20", 10);
-  const perPage = Math.min(Math.max(perPageRaw, 1), MAX_PER_PAGE);
+export const GET = withApi({
+  auth: 'admin',
+  querySchema: pexelsCuratedSchema,
+}, async ({ query }) => {
+  const { page, per_page: perPage } = query;
 
   const params: Record<string, string> = {
     page: page.toString(),
@@ -23,18 +24,19 @@ export async function GET(request: NextRequest) {
 
   try {
     const data = await getPexelsCuratedPhotos(params);
-    return NextResponse.json(data, {
-      status: 200,
-      headers: {
-        "Cache-Control": "private, max-age=300",
-      },
-    });
+    return data;
   } catch (error) {
     if (error instanceof PexelsApiError) {
-      return NextResponse.json({ error: error.message }, { status: error.status ?? 500 });
+      return {
+        status: error.status ?? 500,
+        error: error.message
+      };
     }
 
     console.error("Unexpected Pexels curated error", error);
-    return NextResponse.json({ error: "Failed to load curated images" }, { status: 502 });
+    return {
+      status: 502,
+      error: "Failed to load curated images"
+    };
   }
-}
+});

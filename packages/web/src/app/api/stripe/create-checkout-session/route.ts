@@ -1,169 +1,133 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getStripeClient, getPriceIdForPlan, getStripeSuccessUrl, getStripeCancelUrl } from "@/lib/stripe";
-import { verifyIdToken, getAdminDb, FieldValue, Timestamp, type Firestore } from "@/firebase/admin";
-import { verifySessionFromRequest } from "@/lib/auth/session";
+import { getAdminDb, FieldValue, Timestamp, type Firestore } from "@/firebase/admin";
+import { withApi } from "@/lib/api/withApi";
+import { z } from "zod";
 
 const db: Firestore = getAdminDb();
 
-interface CheckoutRequestBody {
-  plan: "premium";
-  billingCycle?: "monthly" | "annual";
-}
+const checkoutBodySchema = z.object({
+  plan: z.literal("premium"),
+  billingCycle: z.enum(["monthly", "annual"]).optional(),
+});
 
-export async function POST(request: NextRequest) {
-  try {
-    const decodedToken = await verifySessionFromRequest(request);
+export const POST = withApi({
+  auth: "required",
+  bodySchema: checkoutBodySchema,
+}, async ({ request, body, user }) => {
+  // In development with mock tokens, return mock checkout session for testing
+  const isMockToken = process.env.NODE_ENV === "development" &&
+    request.headers.get("authorization")?.includes("bW9jay1zaWduYXR1cmUtZm9yLXRlc3Rpbmc");
 
-    if (!decodedToken) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  if (isMockToken) {
+    return {
+      sessionId: 'cs_test_mock_session_123',
+      url: 'https://checkout.stripe.com/test-session',
+      message: 'Checkout session created successfully (mock)'
+    };
+  }
 
-    // In development with mock tokens, return mock checkout session for testing
-    const isMockToken = process.env.NODE_ENV === "development" &&
-      request.headers.get("authorization")?.includes("bW9jay1zaWduYXR1cmUtZm9yLXRlc3Rpbmc");
+  const userId = user!.uid;
+  const { plan } = body;
 
-    if (isMockToken) {
-      return NextResponse.json({
-        sessionId: 'cs_test_mock_session_123',
-        url: 'https://checkout.stripe.com/test-session',
-        message: 'Checkout session created successfully (mock)'
-      });
-    }
+  const origin =
+    request.headers.get("origin") ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.APP_URL ||
+    "http://localhost:3000";
 
-    const userId = decodedToken.uid;
-    const body = (await request.json()) as CheckoutRequestBody;
-    const plan = body.plan;
+  const stripe = getStripeClient();
+  const priceId = getPriceIdForPlan(plan);
 
-    if (plan !== "premium") {
-      return NextResponse.json(
-        { error: "Invalid plan. Only 'premium' is currently supported." },
-        { status: 400 }
-      );
-    }
+  const userRef = db.collection("users").doc(userId);
+  const userDoc = await userRef.get();
+  const userData = userDoc.data() as
+    | { email?: string; stripeCustomerId?: string; subscriptionId?: string }
+    | undefined;
 
-    const origin =
-      request.headers.get("origin") ||
-      process.env.NEXT_PUBLIC_APP_URL ||
-      process.env.APP_URL ||
-      "http://localhost:3000";
+  if (!userData) {
+    throw new Error("User not found");
+  }
 
-    const stripe = getStripeClient();
-    const priceId = getPriceIdForPlan(plan);
+  // If the user already has an active subscription, don't create another checkout session.
+  const existingSubscriptionId = userData?.subscriptionId;
+  if (existingSubscriptionId) {
+    try {
+      const subDoc = await db.collection("subscriptions").doc(existingSubscriptionId).get();
+      const subData = subDoc.data() as any;
 
-    const userRef = db.collection("users").doc(userId);
-    const userDoc = await userRef.get();
-    const userData = userDoc.data() as
-      | { email?: string; stripeCustomerId?: string; subscriptionId?: string }
-      | undefined;
-
-    if (!userData) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
-
-    // If the user already has an active subscription, don't create another checkout session.
-    // This prevents accidental double-billing if UI state is stale.
-    const existingSubscriptionId = userData?.subscriptionId;
-    if (existingSubscriptionId) {
-      try {
-        const subDoc = await db.collection("subscriptions").doc(existingSubscriptionId).get();
-        const subData = subDoc.data() as any;
-
-        if (subData?.status === "active") {
-          return NextResponse.json(
-            {
-              error: subData?.cancelAtPeriodEnd
-                ? "You already have an active subscription that is set to cancel. You can resume it from settings."
-                : "You already have an active subscription.",
-              code: "SUBSCRIPTION_ALREADY_ACTIVE",
-              actions: {
-                resumeUrl: subData?.cancelAtPeriodEnd ? "/api/subscription/resume" : null,
-                portalUrl: "/api/subscription/portal",
-              },
-            },
-            { status: 409 }
-          );
-        }
-
-        if (subData?.status === "past_due" || subData?.status === "inactive") {
-          return NextResponse.json(
-            {
-              error: "Your subscription needs attention (payment or status issue). Please use the billing portal.",
-              code: "SUBSCRIPTION_REQUIRES_ACTION",
-              actions: {
-                portalUrl: "/api/subscription/portal",
-              },
-            },
-            { status: 409 }
-          );
-        }
-      } catch {
-        // If we can't read subscription state, proceed to create session (best-effort).
+      if (subData?.status === "active") {
+        throw new Error(subData?.cancelAtPeriodEnd
+          ? "You already have an active subscription that is set to cancel. You can resume it from settings."
+          : "You already have an active subscription.");
       }
+
+      if (subData?.status === "past_due" || subData?.status === "inactive") {
+        throw new Error("Your subscription needs attention (payment or status issue). Please use the billing portal.");
+      }
+    } catch (e: any) {
+      // If we can't read subscription state, proceed to create session (best-effort).
+      if (e.message.includes("subscription")) throw e;
     }
+  }
 
-    let stripeCustomerId = userData.stripeCustomerId;
+  let stripeCustomerId = userData.stripeCustomerId;
 
-    if (!stripeCustomerId) {
-      const customer = await stripe.customers.create({
-        email: userData.email || decodedToken.email || undefined,
-        metadata: {
-          firebaseUserId: userId,
-        },
-      });
-
-      stripeCustomerId = customer.id;
-
-      await userRef.set(
-        {
-          stripeCustomerId,
-          updatedAt: FieldValue.serverTimestamp(),
-        },
-        { merge: true }
-      );
-    }
-
-    const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
-      success_url: getStripeSuccessUrl(origin),
-      cancel_url: getStripeCancelUrl(origin),
-      customer: stripeCustomerId,
-      billing_address_collection: "required",
-      allow_promotion_codes: true,
-      client_reference_id: userId,
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
-        },
-      ],
-      subscription_data: {
-        metadata: {
-          userId,
-          plan,
-        },
+  if (!stripeCustomerId) {
+    const customer = await stripe.customers.create({
+      email: userData.email || user!.email || undefined,
+      metadata: {
+        firebaseUserId: userId,
       },
+    });
+
+    stripeCustomerId = customer.id;
+
+    await userRef.set(
+      {
+        stripeCustomerId,
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+  }
+
+  const session = await stripe.checkout.sessions.create({
+    mode: "subscription",
+    success_url: getStripeSuccessUrl(origin),
+    cancel_url: getStripeCancelUrl(origin),
+    customer: stripeCustomerId,
+    billing_address_collection: "required",
+    allow_promotion_codes: true,
+    client_reference_id: userId,
+    line_items: [
+      {
+        price: priceId,
+        quantity: 1,
+      },
+    ],
+    subscription_data: {
       metadata: {
         userId,
         plan,
       },
-    });
-
-    await db.collection("subscriptionCheckouts").doc(session.id).set({
+    },
+    metadata: {
       userId,
       plan,
-      stripeCustomerId,
-      createdAt: Timestamp.now(),
-      status: "created",
-    });
+    },
+  });
 
-    return NextResponse.json({
-      url: session.url,
-      sessionId: session.id,
-    });
-  } catch (error) {
-    console.error("Error creating Stripe checkout session:", error);
-    const message =
-      error instanceof Error ? error.message : "Failed to create checkout session";
-    return NextResponse.json({ error: message }, { status: 500 });
-  }
-}
+  await db.collection("subscriptionCheckouts").doc(session.id).set({
+    userId,
+    plan,
+    stripeCustomerId,
+    createdAt: Timestamp.now(),
+    status: "created",
+  });
+
+  return {
+    url: session.url,
+    sessionId: session.id,
+  };
+});

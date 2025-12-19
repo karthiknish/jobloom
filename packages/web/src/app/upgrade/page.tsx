@@ -24,6 +24,7 @@ import { useSubscription } from "@/providers/subscription-provider";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { useRouter } from "next/navigation";
 import { showSuccess, showError } from "@/components/ui/Toast";
+import { apiClient } from "@/lib/api/client";
 
 export default function UpgradePage() {
   const [isUpgrading, setIsUpgrading] = useState(false);
@@ -45,33 +46,20 @@ export default function UpgradePage() {
 
     setIsUpgrading(true);
     try {
-      const response = await fetch("/api/stripe/create-checkout-session", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${await user.getIdToken()}`,
-        },
-        body: JSON.stringify({
-          plan: targetPlan,
-          billingCycle: "monthly",
-        }),
+      const data = await apiClient.post<any>("/stripe/create-checkout-session", {
+        plan: targetPlan,
+        billingCycle: "monthly",
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.url) {
-          showSuccess(`Redirecting to secure checkout for ${targetPlan} plan`);
-          window.location.href = data.url;
-        } else {
-          showError("Unable to start checkout session. Please contact support.");
-        }
+      if (data.url) {
+        showSuccess(`Redirecting to secure checkout for ${targetPlan} plan`);
+        window.location.href = data.url;
       } else {
-        const error = await response.json();
-        showError(error.error || "Failed to upgrade subscription");
+        showError("Unable to start checkout session. Please contact support.");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Upgrade error:", error);
-      showError("Failed to upgrade subscription. Please try again.");
+      showError(error.message || "Failed to upgrade subscription. Please try again.");
     } finally {
       setIsUpgrading(false);
     }

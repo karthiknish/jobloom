@@ -1,8 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-import { verifyIdToken, getAdminDb, getAdminStorage, Timestamp, FieldValue } from "@/firebase/admin";
+import { NextResponse } from "next/server";
+import { getAdminDb, getAdminStorage, Timestamp, FieldValue } from "@/firebase/admin";
 import { SUBSCRIPTION_LIMITS } from "@/types/api";
 import {
-  validateFileUpload,
   sanitizeFileName,
   SecurityLogger,
   validateAndSanitizeFormData
@@ -14,21 +13,12 @@ import {
 import {
   getUploadLimitsForUser,
   validateFileUploadWithLimits,
-  DEFAULT_UPLOAD_LIMITS
 } from "@/config/uploadLimits";
-import { 
-  createAuthError, 
-  createValidationError, 
-  createRateLimitError,
-  handleFileUploadError,
-  handleDatabaseError,
-  createSuccessResponse,
-  withErrorHandler 
-} from "@/lib/api/errorResponse";
-import { ERROR_CODES } from "@/lib/api/errorCodes";
+import { withApi } from "@/lib/api/withApi";
 import { analyzeResume, type ResumeAnalysisResponse } from "@/services/ai/geminiService";
 
 // ============ ROBUSTNESS UTILITIES ============
+// ... (rest of the utilities)
 
 // Retry configuration for database operations
 const DB_MAX_RETRIES = 3;
@@ -224,236 +214,171 @@ async function checkSubscriptionLimits(
   }
 }
 
+import { 
+  createValidationError, 
+  createAuthError, 
+  createRateLimitError,
+  createInternalError 
+} from "@/lib/api/errorResponse";
+
+// ... (rest of imports)
+
 // POST /api/cv/upload - Upload and analyze CV
-export async function POST(request: NextRequest) {
-  try {
-    const debug: Record<string, any> = { step: 'start' };
-    const authHeader = request.headers.get("authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+export const POST = withApi({
+  auth: 'required',
+  rateLimit: 'cv-upload',
+}, async ({ request, user }) => {
+  const userId = user!.uid;
 
-    const token = authHeader.substring(7);
-    const decodedToken = await verifyIdToken(token);
-
-    if (!decodedToken) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-    }
-
-    const userId = decodedToken.uid;
-
-  debug.step = 'reading-form-data';
   const formData = await request.formData();
-    const file = formData.get("file") as File;
-    const userIdProvided = formData.get("userId") as string | null;
-    const targetRole = formData.get("targetRole") as string;
-    const industry = formData.get("industry") as string;
+  const file = formData.get("file") as File;
+  const userIdProvided = formData.get("userId") as string | null;
+  const targetRole = formData.get("targetRole") as string;
+  const industry = formData.get("industry") as string;
 
-    console.log("CV Upload request received:");
-    console.log("- file:", file ? `${file.name} (${file.size} bytes)` : "null");
-    console.log("- userId:", userId || "null");
-    console.log("- userIdProvided:", userIdProvided || "null");
-    console.log("- targetRole:", targetRole || "null");
-    console.log("- industry:", industry || "null");
+  if (userIdProvided && userIdProvided !== userId) {
+    SecurityLogger.logSecurityEvent({
+      type: 'invalid_input',
+      userId,
+      details: { reason: 'user_id_mismatch', userIdProvided },
+      severity: 'high'
+    });
+    throw createAuthError("Forbidden: User ID mismatch");
+  }
 
-    if (userIdProvided && userIdProvided !== userId) {
-      SecurityLogger.logSecurityEvent({
-        type: 'invalid_input',
-        userId,
-        details: { reason: 'user_id_mismatch', userIdProvided },
-        severity: 'high'
-      });
-      return NextResponse.json(
-        { error: "Forbidden" },
-        { status: 403 }
-      );
-    }
+  if (!file) {
+    SecurityLogger.logSecurityEvent({
+      type: 'invalid_input',
+      userId,
+      details: { missingFields: { file: !file } },
+      severity: 'medium'
+    });
+    throw createValidationError("Missing file", "file");
+  }
 
-    if (!file) {
-      console.error("Missing required fields:", { file: !!file });
-      SecurityLogger.logSecurityEvent({
-        type: 'invalid_input',
-        userId,
-        details: { missingFields: { file: !file } },
-        severity: 'medium'
-      });
-      return NextResponse.json(
-        { error: "Missing file", received: { file: !!file } },
-        { status: 400 }
-      );
-    }
+  // Validate and sanitize input data
+  const inputData = { targetRole, industry };
+  const { sanitized, errors } = validateAndSanitizeFormData(inputData);
 
-    // Validate and sanitize input data
-    const inputData = { targetRole, industry };
-    const { sanitized, errors } = validateAndSanitizeFormData(inputData);
-
-    if (Object.keys(errors).length > 0) {
-      SecurityLogger.logSecurityEvent({
-        type: 'invalid_input',
-        userId,
-        details: { validationErrors: errors, inputData },
-        severity: 'medium'
-      });
-      return NextResponse.json(
-        { error: "Invalid input data", details: errors },
-        { status: 400 }
-      );
-    }
+  if (Object.keys(errors).length > 0) {
+    SecurityLogger.logSecurityEvent({
+      type: 'invalid_input',
+      userId,
+      details: { validationErrors: errors, inputData },
+      severity: 'medium'
+    });
+    throw createValidationError("Invalid input data", undefined, { validationErrors: errors });
+  }
 
   const sanitizedTargetRole = typeof sanitized.targetRole === "string" ? sanitized.targetRole : "";
   const sanitizedIndustry = typeof sanitized.industry === "string" ? sanitized.industry : "";
 
-    // Check subscription limits
-  debug.step = 'check-subscription';
+  // Check subscription limits
   const limitCheck = await checkSubscriptionLimits(userId);
-    if (!limitCheck.allowed) {
-      return NextResponse.json(
-        {
-          error: `CV analysis limit reached. You've used ${limitCheck.currentUsage} of ${limitCheck.limit} analyses this month.`,
-          plan: limitCheck.plan,
-          currentUsage: limitCheck.currentUsage,
-          limit: limitCheck.limit,
-          upgradeRequired: true,
-        },
-        { status: 429 } // Too Many Requests
-      );
-    }
-
-    // Get upload limits based on user's subscription plan
-    const uploadLimits = await getUploadLimitsForUser(userId);
-    console.log(`Upload limits for user ${userId}:`, uploadLimits);
-
-    // Validate file upload with dynamic limits
-    const fileValidation = validateFileUploadWithLimits(file, uploadLimits);
-
-    if (!fileValidation.valid) {
-      SecurityLogger.logSecurityEvent({
-        type: 'invalid_input',
-        ip: decodedToken.uid, // Using user ID as identifier
-        userId: userId,
-        details: {
-          error: fileValidation.error,
-          errorType: fileValidation.errorType,
-          fileName: file.name,
-          fileSize: file.size,
-          fileType: file.type,
-          uploadLimits: {
-            maxSize: uploadLimits.maxSize,
-            maxSizeMB: uploadLimits.maxSizeMB,
-            allowedTypes: uploadLimits.allowedTypes,
-            allowedExtensions: uploadLimits.allowedExtensions
-          }
-        },
-        severity: 'medium'
-      });
-
-      return NextResponse.json(
-        { 
-          error: fileValidation.error,
-          errorType: fileValidation.errorType,
-          details: fileValidation.details,
-          uploadLimits: {
-            maxSizeMB: uploadLimits.maxSizeMB,
-            allowedTypes: uploadLimits.allowedTypes,
-            allowedExtensions: uploadLimits.allowedExtensions
-          }
-        },
-        { status: 400 }
-      );
-    }
-
-    console.log(`File validation passed for ${file.name} (${file.size} bytes)`);
-
-    // Generate unique filename with sanitization
-    const fileExtension = file.type === "application/pdf" ? "pdf" : "txt";
-    const sanitizedBaseName = sanitizeFileName(file.name.replace(/\.[^/.]+$/, ""));
-    const fileName = `${Date.now()}-${Math.random()
-      .toString(36)
-      .substring(2)}-${sanitizedBaseName}.${fileExtension}`;
-
-    // Resolve bucket name explicitly (prefer server-side env var)
-    const bucketName = process.env.FIREBASE_STORAGE_BUCKET || process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
-    if (!bucketName) {
-      console.error("CV Upload: Missing FIREBASE_STORAGE_BUCKET env variable");
-      return NextResponse.json({ error: "Storage not configured" }, { status: 500 });
-    }
-
-  debug.step = 'get-bucket';
-  const bucket = getAdminStorage().bucket(bucketName);
-    const fileRef = bucket.file(`cv-uploads/${userId}/${fileName}`);
-  debug.step = 'read-file-buffer';
-    const buffer = Buffer.from(await file.arrayBuffer());
-
-    debug.step = 'save-file';
-    await fileRef.save(buffer, {
-      metadata: {
-        contentType: file.type,
-        metadata: {
-          userId,
-          originalName: file.name,
-          uploadedAt: new Date().toISOString(),
-        },
-      },
-    });
-
-    // Create CV analysis record in Firestore
-    const cvAnalysisRef = db.collection("cvAnalyses").doc();
-    const cvAnalysisData = {
-      userId,
-      fileName: sanitizeFileName(file.name),
-      fileSize: file.size,
-      storagePath: `cv-uploads/${userId}/${fileName}`,
-      targetRole: sanitizedTargetRole || null,
-      industry: sanitizedIndustry || null,
-      createdAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp(),
-      analysisStatus: "processing",
-      processingStartedAt: FieldValue.serverTimestamp(),
-      overallScore: null,
-      strengths: [],
-      weaknesses: [],
-      recommendations: [],
-      missingSkills: [],
-      atsCompatibility: null,
-      keywordAnalysis: null,
-      sectionAnalysis: null,
-      industryAlignment: null,
-      errorMessage: null,
-    };
-
-  debug.step = 'write-firestore-pending';
-  await cvAnalysisRef.set(cvAnalysisData);
-
-    // Trigger CV analysis using the Gemini-powered pipeline asynchronously
-    performCvAnalysis(
-      cvAnalysisRef.id,
-      buffer,
-      file.type,
-      sanitizedTargetRole || null,
-      sanitizedIndustry || null
-    ).catch((processingError) => {
-      console.error("Resume analysis pipeline error:", processingError);
-    });
-
-    return NextResponse.json({
-      success: true,
-      analysisId: cvAnalysisRef.id,
-      message: "CV uploaded successfully. Analysis in progress...",
-    });
-  } catch (error: any) {
-    console.error("Error uploading CV:", error);
-    const isProd = process.env.NODE_ENV === 'production';
-    return NextResponse.json(
-      {
-        error: "Internal server error",
-        ...(isProd
-          ? {}
-          : { debug: { message: error?.message, stack: error?.stack, cause: error?.cause } }),
-      },
-      { status: 500 }
+  if (!limitCheck.allowed) {
+    return createRateLimitError(
+      3600, // 1 hour retry after
+      `CV analysis limit reached. You've used ${limitCheck.currentUsage} of ${limitCheck.limit} analyses this month.`
     );
   }
-}
+
+  // Get upload limits based on user's subscription plan
+  const uploadLimits = await getUploadLimitsForUser(userId);
+
+  // Validate file upload with dynamic limits
+  const fileValidation = validateFileUploadWithLimits(file, uploadLimits);
+
+  if (!fileValidation.valid) {
+    SecurityLogger.logSecurityEvent({
+      type: 'invalid_input',
+      userId: userId,
+      details: {
+        error: fileValidation.error,
+        errorType: fileValidation.errorType,
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type,
+      },
+      severity: 'medium'
+    });
+
+    throw createValidationError(fileValidation.error || "Invalid file", fileValidation.errorType, fileValidation.details);
+  }
+
+  // Generate unique filename with sanitization
+  const fileExtension = file.type === "application/pdf" ? "pdf" : "txt";
+  const sanitizedBaseName = sanitizeFileName(file.name.replace(/\.[^/.]+$/, ""));
+  const fileName = `${Date.now()}-${Math.random()
+    .toString(36)
+    .substring(2)}-${sanitizedBaseName}.${fileExtension}`;
+
+  // Resolve bucket name explicitly
+  const bucketName = process.env.FIREBASE_STORAGE_BUCKET || process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
+  if (!bucketName) {
+    throw createInternalError("Storage not configured");
+  }
+
+  const bucket = getAdminStorage().bucket(bucketName);
+  const fileRef = bucket.file(`cv-uploads/${userId}/${fileName}`);
+  const buffer = Buffer.from(await file.arrayBuffer());
+
+  await fileRef.save(buffer, {
+    metadata: {
+      contentType: file.type,
+      metadata: {
+        userId,
+        originalName: file.name,
+        uploadedAt: new Date().toISOString(),
+      },
+    },
+  });
+
+  // Create CV analysis record in Firestore
+  const db = getAdminDb();
+  const cvAnalysisRef = db.collection("cvAnalyses").doc();
+  const cvAnalysisData = {
+    userId,
+    fileName: sanitizeFileName(file.name),
+    fileSize: file.size,
+    storagePath: `cv-uploads/${userId}/${fileName}`,
+    targetRole: sanitizedTargetRole || null,
+    industry: sanitizedIndustry || null,
+    createdAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
+    analysisStatus: "processing",
+    processingStartedAt: FieldValue.serverTimestamp(),
+    overallScore: null,
+    strengths: [],
+    weaknesses: [],
+    recommendations: [],
+    missingSkills: [],
+    atsCompatibility: null,
+    keywordAnalysis: null,
+    sectionAnalysis: null,
+    industryAlignment: null,
+    errorMessage: null,
+  };
+
+  await cvAnalysisRef.set(cvAnalysisData);
+
+  // Trigger CV analysis asynchronously
+  performCvAnalysis(
+    cvAnalysisRef.id,
+    buffer,
+    file.type,
+    sanitizedTargetRole || null,
+    sanitizedIndustry || null
+  ).catch((processingError) => {
+    console.error("Resume analysis pipeline error:", processingError);
+  });
+
+  return {
+    success: true,
+    analysisId: cvAnalysisRef.id,
+    message: "CV uploaded successfully. Analysis in progress...",
+  };
+});
+
 
 // Gemini-backed CV analysis pipeline
 async function performCvAnalysis(

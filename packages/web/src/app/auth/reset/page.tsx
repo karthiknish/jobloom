@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SkeletonCard, SkeletonInput, SkeletonButton } from "@/components/ui/loading-skeleton";
 import { showError, showSuccess } from "@/components/ui/Toast";
+import { apiClient } from "@/lib/api/client";
 
 type ViewState = "form" | "success" | "invalid" | "expired";
 
@@ -27,21 +28,11 @@ function validatePassword(password: string) {
 }
 
 async function requestPasswordReset(email: string, redirectUrl?: string) {
-  const res = await fetch("/api/auth/password/request", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, redirectUrl }),
-  });
-  return res.json();
+  return apiClient.post<any>("/auth/password/request", { email, redirectUrl });
 }
 
 async function resetPasswordRequest(token: string, password: string) {
-  const res = await fetch("/api/auth/password/reset", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ token, password }),
-  });
-  return res.json();
+  return apiClient.post<any>("/auth/password/reset", { token, password });
 }
 
 export default function ResetPasswordPage() {
@@ -112,18 +103,12 @@ export default function ResetPasswordPage() {
 
     setLoading(true);
     try {
-      const response = await requestPasswordReset(email.trim(), typeof window !== "undefined" ? window.location.href : undefined);
-      if (!response?.success) {
-        if (response?.error) {
-          showError(response.error);
-        }
-      } else {
-        setRequestSuccess(true);
-        showSuccess("Reset link sent!", "Check your inbox for password reset instructions.");
-      }
-    } catch (error) {
+      await requestPasswordReset(email.trim(), typeof window !== "undefined" ? window.location.href : undefined);
+      setRequestSuccess(true);
+      showSuccess("Reset link sent!", "Check your inbox for password reset instructions.");
+    } catch (error: any) {
       console.error("Password reset request failed", error);
-      showError("Failed to send reset email", "Please check your email and try again.");
+      showError("Failed to send reset email", error?.message || "Please check your email and try again.");
     } finally {
       setLoading(false);
     }
@@ -141,27 +126,22 @@ export default function ResetPasswordPage() {
 
     setLoading(true);
     try {
-      const response = await resetPasswordRequest(token, password);
-      if (!response?.success) {
-        if (response?.error) {
-          showError(response.error);
-        }
-        if (response?.error?.toLowerCase().includes("expired")) {
-          setView("expired");
-        } else if (response?.error?.toLowerCase().includes("invalid")) {
-          setView("invalid");
-        }
-        return;
-      }
+      await resetPasswordRequest(token, password);
 
       setView("success");
       showSuccess("Password changed!", "Your password has been updated successfully.");
       setTimeout(() => {
         router.push(redirect || "/sign-in");
       }, 2500);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to reset password", error);
-      showError("Password reset failed", "An error occurred. Please try again.");
+      showError("Password reset failed", error?.message || "An error occurred. Please try again.");
+      
+      if (error?.message?.toLowerCase().includes("expired")) {
+        setView("expired");
+      } else if (error?.message?.toLowerCase().includes("invalid")) {
+        setView("invalid");
+      }
     } finally {
       setLoading(false);
     }

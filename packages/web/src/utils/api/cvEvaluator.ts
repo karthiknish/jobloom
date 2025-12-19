@@ -60,14 +60,7 @@ export const cvEvaluatorApi = {
         const current = auth?.currentUser;
         if (!current) throw err;
         const token = await current.getIdToken();
-        const resp = await fetch('/api/cv/user', {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (!resp.ok) {
-          throw err; // propagate original error if fallback fails
-        }
-        const data = await resp.json();
+        const data = await apiClient.post<any>('/cv/user', {});
         return { _id: data._id || uid };
       }
       throw err;
@@ -143,78 +136,92 @@ export const cvEvaluatorApi = {
   },
 
   getCvAnalysisStats: async (userId: string): Promise<CvStats> => {
-    const db = getDb();
-    if (!db) throw new Error("Firestore not initialized");
-    const q = query(
-      collection(db, "cvAnalyses"),
-      where("userId", "==", userId)
-    );
-    const snap = await getDocs(q);
-    type FireCv = {
-      userId: string;
-      fileName?: string;
-      fileSize?: number;
-      createdAt?: number;
-      analysisStatus?: string;
-      overallScore?: number;
-      strengths?: string[];
-      keywords?: string[];
-      atsCompatibility?: unknown;
-      errorMessage?: string;
-    };
-    let total = 0;
-    let completed = 0;
-    let sumScore = 0;
-    let keywordSum = 0;
-    let recent: CvAnalysis | undefined;
-    snap.forEach((d) => {
-      const x = d.data() as FireCv & { createdAt?: any };
-      total += 1;
-      const status = x.analysisStatus ?? "pending";
-      if (status === "completed") completed += 1;
-      if (typeof x.overallScore === "number") sumScore += x.overallScore;
-      if (Array.isArray(x.keywords)) keywordSum += x.keywords.length;
-      // Normalize timestamp
-      let createdAtNum: number;
-      const raw = x.createdAt as any;
-      if (raw && typeof raw === 'object' && typeof raw.toDate === 'function') {
-        createdAtNum = raw.toDate().getTime();
-      } else if (typeof raw === 'number') {
-        createdAtNum = raw;
-      } else {
-        createdAtNum = Date.now();
-      }
-      const candidate: CvAnalysis = {
-        _id: d.id,
-        userId: x.userId,
-        fileName: x.fileName ?? "",
-        fileSize: x.fileSize ?? 0,
-        createdAt: createdAtNum,
-        analysisStatus: status,
-        overallScore: x.overallScore ?? undefined,
-        strengths: Array.isArray(x.strengths) ? x.strengths : [],
-        atsCompatibility: x.atsCompatibility ?? undefined,
-        errorMessage: x.errorMessage ?? undefined,
-      } as CvAnalysis;
-      if (!recent || candidate.createdAt > recent.createdAt) recent = candidate;
-    });
-    const averageScore = total ? Math.round((sumScore / total) * 100) / 100 : 0;
-    const averageKeywords = total
-      ? Math.round((keywordSum / total) * 100) / 100
-      : 0;
-    const successRate = total ? Math.round((completed / total) * 100) : 0;
-    return {
-      total,
-      averageScore,
-      averageKeywords,
-      successRate,
-      totalAnalyses: total,
-      completedAnalyses: completed,
-      recentAnalysis: recent,
-    };
+    try {
+      const stats = await apiClient.get<CvStats>(`/app/cv-analysis/stats/${userId}`);
+      return stats;
+    } catch (error) {
+      console.warn('CV Analysis Stats API call failed, falling back to Firestore:', error);
+      const db = getDb();
+      if (!db) throw new Error("Firestore not initialized");
+      const q = query(
+        collection(db, "cvAnalyses"),
+        where("userId", "==", userId)
+      );
+      const snap = await getDocs(q);
+      type FireCv = {
+        userId: string;
+        fileName?: string;
+        fileSize?: number;
+        createdAt?: number;
+        analysisStatus?: string;
+        overallScore?: number;
+        strengths?: string[];
+        keywords?: string[];
+        atsCompatibility?: unknown;
+        errorMessage?: string;
+      };
+      let total = 0;
+      let completed = 0;
+      let sumScore = 0;
+      let keywordSum = 0;
+      let recent: CvAnalysis | undefined;
+      snap.forEach((d) => {
+        const x = d.data() as FireCv & { createdAt?: any };
+        total += 1;
+        const status = x.analysisStatus ?? "pending";
+        if (status === "completed") completed += 1;
+        if (typeof x.overallScore === "number") sumScore += x.overallScore;
+        if (Array.isArray(x.keywords)) keywordSum += x.keywords.length;
+        // Normalize timestamp
+        let createdAtNum: number;
+        const raw = x.createdAt as any;
+        if (raw && typeof raw === 'object' && typeof raw.toDate === 'function') {
+          createdAtNum = raw.toDate().getTime();
+        } else if (typeof raw === 'number') {
+          createdAtNum = raw;
+        } else {
+          createdAtNum = Date.now();
+        }
+        const candidate: CvAnalysis = {
+          _id: d.id,
+          userId: x.userId,
+          fileName: x.fileName ?? "",
+          fileSize: x.fileSize ?? 0,
+          createdAt: createdAtNum,
+          analysisStatus: status,
+          overallScore: x.overallScore ?? undefined,
+          strengths: Array.isArray(x.strengths) ? x.strengths : [],
+          atsCompatibility: x.atsCompatibility ?? undefined,
+          errorMessage: x.errorMessage ?? undefined,
+        } as CvAnalysis;
+        if (!recent || candidate.createdAt > recent.createdAt) recent = candidate;
+      });
+      const averageScore = total ? Math.round((sumScore / total) * 100) / 100 : 0;
+      const averageKeywords = total
+        ? Math.round((keywordSum / total) * 100) / 100
+        : 0;
+      const successRate = total ? Math.round((completed / total) * 100) : 0;
+      return {
+        total,
+        averageScore,
+        averageKeywords,
+        successRate,
+        totalAnalyses: total,
+        completedAnalyses: completed,
+        recentAnalysis: recent,
+      };
+    }
   },
 
-  deleteCvAnalysis: async (analysisId: string): Promise<void> => {
+  deleteCvAnalysis: async (analysisId: string, userId?: string): Promise<void> => {
+    if (userId) {
+      try {
+        await apiClient.delete(`/app/cv-analysis/user/${userId}?analysisId=${analysisId}`);
+        return;
+      } catch (error) {
+        console.warn('CV Analysis Delete API call failed, falling back to Firestore:', error);
+      }
+    }
     const db = getDb();
     if (!db) throw new Error("Firestore not initialized");
     await deleteDoc(doc(db, "cvAnalyses", analysisId));

@@ -19,6 +19,7 @@ import { AdminAccessDenied } from "@/components/admin/AdminAccessDenied";
 import { EmailTemplate, EmailCampaign } from "@/config/emailTemplates";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Skeleton } from "@/components/ui/skeleton";
+import { apiClient } from "@/lib/api/client";
 
 // Import components
 import { EmailMarketingHeader } from "@/components/admin/email-marketing/EmailMarketingHeader";
@@ -44,35 +45,18 @@ export default function EmailMarketingPage() {
 
   const fetchInitialData = async () => {
     try {
-      const token = await user?.getIdToken();
-      
       // Fetch templates
-      const templatesRes = await fetch("/api/admin/email-templates", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (templatesRes.ok) {
-        const templatesData = await templatesRes.json();
-        setTemplates(templatesData);
-      }
+      const templatesData = await apiClient.get<EmailTemplate[]>("/admin/email-templates");
+      setTemplates(templatesData);
 
       // Fetch campaigns
-      const campaignsRes = await fetch("/api/admin/email-campaigns", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (campaignsRes.ok) {
-        const campaignsData = await campaignsRes.json();
-        setCampaigns(campaignsData);
-      }
+      const campaignsData = await apiClient.get<EmailCampaign[]>("/admin/email-campaigns");
+      setCampaigns(campaignsData);
 
       // Fetch email list
-      const emailListRes = await fetch("/api/admin/email-list", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (emailListRes.ok) {
-        const emailListData = await emailListRes.json();
-        setEmailList(emailListData.emailList || []);
-        setEmailListStats(emailListData.segments || {});
-      }
+      const emailListData = await apiClient.get<any>("/admin/email-list");
+      setEmailList(emailListData.emailList || []);
+      setEmailListStats(emailListData.segments || {});
     } catch (error) {
       console.error("Failed to fetch initial data:", error);
     } finally {
@@ -85,65 +69,51 @@ export default function EmailMarketingPage() {
     if (!testEmail) return;
 
     try {
-      const token = await user?.getIdToken();
-      const res = await fetch("/api/admin/email-test", {
-        method: "POST",
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          to: testEmail,
-          subject: "HireAll Email Marketing Test",
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2 style="color: #333;">Email Marketing Test Successful!</h2>
-              <p>This is a test email from the HireAll Email Marketing System.</p>
-              <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <h3 style="color: #666; margin-top: 0;">System Features:</h3>
-                <ul style="color: #666;">
-                  <li>Resend Integration</li>
-                  <li>Template Personalization</li>
-                  <li>Bulk Email Sending</li>
-                  <li>Campaign Analytics</li>
-                  <li>User Segmentation</li>
-                </ul>
-              </div>
-              <p style="color: #666; font-size: 14px;">
-                If you received this email, the email marketing system is working correctly!
-              </p>
-              <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-              <p style="color: #999; font-size: 12px;">
-                This is an automated test email from HireAll.
-              </p>
+      await apiClient.post("/admin/email-test", {
+        to: testEmail,
+        subject: "HireAll Email Marketing Test",
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #333;">Email Marketing Test Successful!</h2>
+            <p>This is a test email from the HireAll Email Marketing System.</p>
+            <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="color: #666; margin-top: 0;">System Features:</h3>
+              <ul style="color: #666;">
+                <li>Resend Integration</li>
+                <li>Template Personalization</li>
+                <li>Bulk Email Sending</li>
+                <li>Campaign Analytics</li>
+                <li>User Segmentation</li>
+              </ul>
             </div>
-          `,
-          text: `
-            Email Marketing Test Successful!
-            
-            This is a test email from the HireAll Email Marketing System.
-            
-            System Features:
-            - Resend Integration
-            - Template Personalization
-            - Bulk Email Sending
-            - Campaign Analytics
-            - User Segmentation
-            
-            If you received this email, the email marketing system is working correctly!
-            
-            This is an automated test email from HireAll.
-          `
-        })
+            <p style="color: #666; font-size: 14px;">
+              If you received this email, the email marketing system is working correctly!
+            </p>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+            <p style="color: #999; font-size: 12px;">
+              This is an automated test email from HireAll.
+            </p>
+          </div>
+        `,
+        text: `
+          Email Marketing Test Successful!
+          
+          This is a test email from the HireAll Email Marketing System.
+          
+          System Features:
+          - Resend Integration
+          - Template Personalization
+          - Bulk Email Sending
+          - Campaign Analytics
+          - User Segmentation
+          
+          If you received this email, the email marketing system is working correctly!
+          
+          This is an automated test email from HireAll.
+        `
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        showSuccess("Test email sent", `Test email sent to ${testEmail}`);
-      } else {
-        const error = await res.json();
-        throw new Error(error.error || "Failed to send test email");
-      }
+      showSuccess("Test email sent", `Test email sent to ${testEmail}`);
     } catch (error: any) {
       showError("Test failed", error.message || "Unable to send test email.");
     }
