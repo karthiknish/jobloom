@@ -169,15 +169,24 @@ export function FirebaseAuthProvider({
   useEffect(() => {
     const auth = getAuthClient();
     if (!auth) {
+      console.warn("[Auth] Firebase Auth not available, skipping listener");
       setState((prev) => ({ ...prev, loading: false, isInitialized: true }));
       return;
     }
 
+    // Fallback timeout to prevent infinite loading
     const timeoutId = setTimeout(() => {
-      setState((prev) => ({ ...prev, loading: false, isInitialized: true }));
-    }, 5000);
+      setState((prev) => {
+        if (prev.loading) {
+          console.warn("[Auth] Auth initialization timed out after 3s, forcing loading to false");
+          return { ...prev, loading: false, isInitialized: true };
+        }
+        return prev;
+      });
+    }, 3000);
 
     const unsubscribe = onAuthStateChanged(auth, (user) => {
+      console.log("[Auth] Auth state changed:", user ? "User signed in" : "User signed out");
       clearTimeout(timeoutId);
       applyAuthSnapshot(user ?? null);
     });

@@ -317,6 +317,9 @@ export function getConnectionState(): FirebaseConnectionState {
 
 // Service getters with error handling
 export function getAuthClient(): Auth | undefined {
+  if (typeof window !== "undefined" && !services) {
+    ensureFirebaseApp();
+  }
   try {
     return services?.auth;
   } catch (error) {

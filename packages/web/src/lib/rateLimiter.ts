@@ -8,7 +8,7 @@ import {
   safeLocalStorageSet,
 } from "@/utils/safeBrowserStorage";
 import { UserTier } from "@/types/api";
-import { getUserTier } from "./api/tier";
+// import { getUserTier } from "./api/tier";
 
 export interface RateLimitConfig {
   maxRequests: number;
@@ -534,7 +534,17 @@ export async function getUserTierFromAuth(authToken?: string): Promise<UserTier>
       const uid = payload.user_id || payload.uid;
       
       if (uid) {
-        return await getUserTier(uid);
+        // In Edge Runtime, we can't use getUserTier because it depends on firebase-admin
+        // which uses Node.js modules like 'fs' and 'path'.
+        // For now, we'll check for admin claims in the token payload.
+        if (payload.admin === true || payload.role === 'admin') {
+          return 'admin';
+        }
+        
+        // Check for premium plan in payload if available
+        if (payload.plan === 'premium') {
+          return 'premium';
+        }
       }
 
       // Fallback to email-based check if UID not found in payload

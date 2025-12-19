@@ -88,8 +88,6 @@ export const dashboardApi = {
     const auth = getAuthClient();
     const currentUser = auth?.currentUser;
     
-    console.log('[Dashboard] getUserByFirebaseUid called with uid:', uid);
-    
     if (!currentUser || currentUser.uid !== uid) {
       throw new Error("Not authenticated or UID mismatch");
     }
@@ -102,7 +100,6 @@ export const dashboardApi = {
       createdAt: Date.now(), // We don't need the actual createdAt for dashboard purposes
     };
     
-    console.log('[Dashboard] Returning userRecord:', userRecord);
     return userRecord;
   },
 
@@ -111,27 +108,18 @@ export const dashboardApi = {
   getApplicationsByUser: async (userId: string): Promise<Application[]> => {
     // Use server API to fetch applications - this bypasses client-side security rules
     // and uses Admin SDK on the server side
-    console.log('[Dashboard] getApplicationsByUser called with userId:', userId);
-    
     const auth = getAuthClient();
     const currentUser = auth?.currentUser;
     if (!currentUser) {
-      console.error('[Dashboard] Not authenticated - no currentUser');
       throw new Error("Not authenticated");
     }
     
-    console.log('[Dashboard] Current user uid:', currentUser.uid);
-    
     const token = await currentUser.getIdToken();
-    console.log('[Dashboard] Fetching applications from API...');
-    
     const applications = await apiClient.get<any[]>(`/app/applications/user/${userId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
-    
-    console.log('[Dashboard] Applications received:', applications?.length || 0, applications);
     
     // Map response to Application type
     return Array.isArray(applications) ? applications.map((app: any) => ({
@@ -176,51 +164,21 @@ export const dashboardApi = {
   },
 
   getJobStats: async (userId: string): Promise<JobStats> => {
-    const db = getDb();
-    if (!db) throw new Error("Firestore not initialized");
-    // Jobs
-    const jobsQ = query(collection(db, "jobs"), where("userId", "==", userId));
-    const jobsSnap = await getDocs(jobsQ);
-    const totalJobs = jobsSnap.size;
-    let sponsoredJobs = 0;
-    let recruitmentAgencyJobs = 0;
-    let jobsToday = 0;
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
-    const startTs = startOfToday.getTime();
-    type FireJob = {
-      isSponsored?: boolean;
-      isRecruitmentAgency?: boolean;
-      dateFound?: number;
-      createdAt?: number;
-    };
-    jobsSnap.forEach((d) => {
-      const j = d.data() as FireJob;
-      if (j.isSponsored) sponsoredJobs++;
-      if (j.isRecruitmentAgency) recruitmentAgencyJobs++;
-      const ts = j.dateFound ?? j.createdAt ?? 0;
-      if (typeof ts === "number" && ts >= startTs) jobsToday++;
+    const auth = getAuthClient();
+    const currentUser = auth?.currentUser;
+    if (!currentUser) {
+      throw new Error("Not authenticated");
+    }
+
+    const token = await currentUser.getIdToken();
+    const stats = await apiClient.get<JobStats>(`/app/jobs/stats/${userId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     });
-    // Applications
-    const appsQ = query(
-      collection(db, "applications"),
-      where("userId", "==", userId)
-    );
-    const appsSnap = await getDocs(appsQ);
-    const byStatus: Record<string, number> = {};
-    type FireAppStatus = { status?: string };
-    appsSnap.forEach((d) => {
-      const s = (d.data() as FireAppStatus).status ?? "interested";
-      byStatus[s] = (byStatus[s] ?? 0) + 1;
-    });
-    return {
-      totalJobs,
-      sponsoredJobs,
-      recruitmentAgencyJobs,
-      jobsToday,
-      totalApplications: appsSnap.size,
-      byStatus,
-    };
+
+    console.log('[dashboardApi.getJobStats] Response:', stats);
+    return stats;
   },
 
   updateApplicationStatus: async (

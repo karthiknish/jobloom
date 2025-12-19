@@ -447,7 +447,7 @@ function createSignInRedirect(request: NextRequest): NextResponse {
 }
 
 function createAdminRedirect(request: NextRequest): NextResponse {
-  const target = new URL("/welcome", request.url);
+  const target = new URL("/dashboard", request.url);
   target.searchParams.set("admin", "required");
   return NextResponse.redirect(target);
 }
@@ -498,8 +498,10 @@ async function resolveAdminStatus(
       return null;
     }
 
-    const data = (await response.json()) as { isAdmin?: unknown };
-    const isAdmin = data.isAdmin === true;
+    const responseData = await response.json();
+    // The internal API uses withApi which wraps the result in a 'data' property
+    const isAdmin = responseData?.data?.isAdmin === true;
+    
     adminStatusCache.set(uid, {
       value: isAdmin,
       expiresAt: now + ADMIN_STATUS_CACHE_TTL,
@@ -604,7 +606,7 @@ async function finalizeResponse(
   return response;
 }
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const requestId = generateRequestId();
 
   // Skip CSRF validation for Stripe webhooks (they come from external service)

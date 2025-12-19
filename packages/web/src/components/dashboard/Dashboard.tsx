@@ -67,9 +67,6 @@ export function Dashboard() {
     { enabled: !!user?.uid }
   );
 
-  // Debug logging
-  console.log('[Dashboard] Auth state:', { user: user?.uid, loading, userRecord, userRecordLoading, userRecordError });
-
   // Fetch applications
   const { data: applications, refetch: refetchApplications, loading: applicationsLoading, error: applicationsError } = useApiQuery(
     () => dashboardApi.getApplicationsByUser(userRecord!._id),
@@ -78,20 +75,8 @@ export function Dashboard() {
     `applications-${userRecord?._id}` // Unique key
   );
 
-  // Debug logging
-  console.log('[Dashboard] Applications state:', { 
-    userRecordId: userRecord?._id,
-    enabled: !!userRecord,
-    applications,
-    applicationsType: Array.isArray(applications) ? 'array' : typeof applications,
-    applicationsLength: Array.isArray(applications) ? applications.length : 'N/A',
-    applicationsKeys: applications && typeof applications === 'object' ? Object.keys(applications) : 'N/A',
-    applicationsLoading, 
-    applicationsError 
-  });
-
   // Fetch job stats
-  const { data: jobStats, refetch: refetchJobStats } = useApiQuery(
+  const { data: jobStats, refetch: refetchJobStats, loading: jobStatsLoading, error: jobStatsError } = useApiQuery(
     () => dashboardApi.getJobStats(userRecord!._id),
     [userRecord?._id],
     { enabled: !!userRecord }
@@ -116,6 +101,8 @@ export function Dashboard() {
   const hasApplications =
     Array.isArray(applications) && applications.length > 0;
 
+  const hasData = hasApplications || (jobStats && jobStats.totalJobs > 0);
+
   // Computed values for filtering
 
 
@@ -134,7 +121,7 @@ export function Dashboard() {
   });
 
   // Show skeleton during auth loading OR data loading
-  const isDataLoading = loading || userRecordLoading || (!!userRecord && applicationsLoading);
+  const isDataLoading = loading || userRecordLoading || (!!userRecord && (applicationsLoading || jobStatsLoading));
   
   if (isDataLoading) {
     return <DashboardSkeleton />;
@@ -247,14 +234,14 @@ export function Dashboard() {
         )}
 
         {/* Enhanced Quick Stats */}
-        {hasApplications && (
+        {hasData && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1, duration: 0.5 }}
             className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
           >
-            {/* Total Applications */}
+            {/* Total Jobs */}
             <motion.div
               whileHover={{ scale: 1.02, y: -2 }}
               className="bg-card border border-border rounded-xl p-4 shadow-sm hover:shadow-md motion-surface"
@@ -262,8 +249,12 @@ export function Dashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-muted-foreground text-xs font-medium mb-0.5">Total Jobs</p>
-                  <p className="text-2xl font-bold text-foreground">{applications?.length || 0}</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">Tracking</p>
+                  <p className="text-2xl font-bold text-foreground">
+                    {jobStats ? jobStats.totalJobs : (applications?.length || 0)}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                    {jobStats ? 'Imported & Tracked' : 'Tracking'}
+                  </p>
                 </div>
                 <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center">
                   <Briefcase className="w-5 h-5 text-foreground" />
@@ -280,10 +271,13 @@ export function Dashboard() {
                 <div>
                   <p className="text-muted-foreground text-xs font-medium mb-0.5">Sponsored</p>
                   <p className="text-2xl font-bold text-foreground">
-                    {applications?.filter(app => app.job?.isSponsored).length || 0}
+                    {jobStats ? jobStats.sponsoredJobs : (applications?.filter(app => app.job?.isSponsored).length || 0)}
                   </p>
                   <p className="text-[10px] text-muted-foreground mt-0.5">
-                    {((applications?.filter(app => app.job?.isSponsored).length || 0) / (applications?.length || 1) * 100).toFixed(0)}% of total
+                    {jobStats 
+                      ? `${((jobStats.sponsoredJobs / (jobStats.totalJobs || 1)) * 100).toFixed(0)}% of total`
+                      : `${((applications?.filter(app => app.job?.isSponsored).length || 0) / (applications?.length || 1) * 100).toFixed(0)}% of total`
+                    }
                   </p>
                 </div>
                 <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center">
@@ -315,24 +309,24 @@ export function Dashboard() {
               </div>
             </motion.div>
 
-            {/* This Week Activity */}
+            {/* Today's Activity */}
             <motion.div
               whileHover={{ scale: 1.02, y: -2 }}
               className="bg-card border border-border rounded-xl p-4 shadow-sm hover:shadow-md motion-surface"
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-muted-foreground text-xs font-medium mb-0.5">This Week</p>
+                  <p className="text-muted-foreground text-xs font-medium mb-0.5">Today</p>
                   <p className="text-2xl font-bold text-foreground">
-                    {(() => {
-                      const weekAgo = new Date();
-                      weekAgo.setDate(weekAgo.getDate() - 7);
+                    {jobStats ? jobStats.jobsToday : (() => {
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
                       return applications?.filter(app =>
-                        new Date(app.createdAt || app.job?.dateFound || 0) >= weekAgo
+                        new Date(app.createdAt || app.job?.dateFound || 0) >= today
                       ).length || 0;
                     })()}
                   </p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">New jobs added</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">New jobs found</p>
                 </div>
                 <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center">
                   <Calendar className="w-5 h-5 text-foreground" />
@@ -402,7 +396,7 @@ export function Dashboard() {
 
         {/* Main Content */}
         {view === "dashboard" &&
-          (hasApplications ? (
+          (hasData ? (
             <DraggableDashboard
               widgets={dashboardWidgets}
               onLayoutChange={handleLayoutChange}

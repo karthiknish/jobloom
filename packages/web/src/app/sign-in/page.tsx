@@ -108,7 +108,8 @@ function SignInInner() {
         await signInWithGoogle();
         await refreshToken();
         router.replace(redirectUrlComplete);
-      } catch {
+      } catch (err) {
+        console.error("Auto-sign-in error:", err);
         setLoading(false);
       }
     })();

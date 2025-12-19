@@ -6,11 +6,14 @@ import {
   Home,
   LayoutDashboard,
   FileText,
-  User
+  User,
+  ShieldCheck
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
+import { useState, useEffect } from "react";
+import { apiClient } from "@/lib/api/client";
 
 const navigationItems = [
   {
@@ -37,16 +40,36 @@ const navigationItems = [
     icon: User,
     requiresAuth: true,
   },
+  {
+    name: "Admin",
+    href: "/admin",
+    icon: ShieldCheck,
+    requiresAuth: true,
+    requiresAdmin: true,
+  },
 ];
 
 export default function MobileNavigation() {
   const { user } = useFirebaseAuth();
   const pathname = usePathname();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    if (user?.uid) {
+      apiClient.get<boolean>(`/app/admin/is-admin/${user.uid}`)
+        .then((res) => setIsAdmin(res))
+        .catch(() => setIsAdmin(false));
+    } else {
+      setIsAdmin(false);
+    }
+  }, [user]);
 
   // Only show authenticated navigation items if user is logged in
-  const visibleItems = navigationItems.filter(item =>
-    !item.requiresAuth || user
-  );
+  const visibleItems = navigationItems.filter(item => {
+    if (item.requiresAuth && !user) return false;
+    if (item.requiresAdmin && !isAdmin) return false;
+    return true;
+  });
 
   // Don't show mobile nav on auth pages
   const authPages = ["/sign-in", "/sign-up", "/verify-email"];

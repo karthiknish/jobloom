@@ -200,7 +200,11 @@ class ApiClient {
         throw this.createFrontendError(responseData, response.status);
       }
 
-      return responseData.data || responseData;
+      // Return data if it exists, otherwise return the whole response
+      // Use hasOwnProperty to correctly handle falsy values like false, 0, or ""
+      return Object.prototype.hasOwnProperty.call(responseData, 'data') 
+        ? responseData.data 
+        : responseData;
     } catch (error) {
       clearTimeout(timeoutId);
 

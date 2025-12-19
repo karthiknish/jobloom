@@ -45,7 +45,15 @@ export const GET = withApi({
     const data = doc.data();
     if (data.isSponsored) sponsoredJobs++;
     if (data.isRecruitmentAgency) recruitmentAgencyJobs++;
-    const ts = data.dateFound || data.createdAt || 0;
+    
+    // Handle both number and Firestore Timestamp
+    let ts = data.dateFound || data.createdAt || 0;
+    if (ts && typeof ts === 'object' && 'toMillis' in ts) {
+      ts = (ts as any).toMillis();
+    } else if (ts && typeof ts === 'object' && '_seconds' in ts) {
+      ts = (ts as any)._seconds * 1000;
+    }
+    
     if (typeof ts === "number" && ts >= startTs) jobsToday++;
   });
 
