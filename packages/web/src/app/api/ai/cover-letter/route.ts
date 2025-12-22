@@ -6,6 +6,7 @@ import {
   type CoverLetterRequest,
 } from "@/services/ai/geminiService";
 import { ERROR_CODES } from "@/lib/api/errorCodes";
+import { AuthorizationError } from "@/lib/api/errorResponse";
 
 export const runtime = "nodejs";
 
@@ -77,11 +78,10 @@ export const POST = withApi({
 }, async ({ user, body, requestId }) => {
   // 1. Premium Check
   if (user!.tier === 'free') {
-    return {
-      error: 'Premium subscription required for AI cover letter generation',
-      code: ERROR_CODES.PAYMENT_REQUIRED,
-      upgradeUrl: '/upgrade',
-    };
+    throw new AuthorizationError(
+      "Premium subscription required for AI cover letter generation",
+      ERROR_CODES.PAYMENT_REQUIRED
+    );
   }
 
   // 2. Normalize Request

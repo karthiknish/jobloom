@@ -1,5 +1,6 @@
 import { withApi, z } from "@/lib/api/withApi";
 import { getAdminDb, getAdminStorage, getAdminAuth } from "@/firebase/admin";
+import { ValidationError } from "@/lib/api/errorResponse";
 
 export const runtime = "nodejs";
 
@@ -31,10 +32,10 @@ export const POST = withApi({
   const { confirmation, reason } = body;
 
   if (confirmation !== 'DELETE_MY_ACCOUNT_PERMANENTLY') {
-    return {
-      error: 'Please confirm account deletion by typing "DELETE_MY_ACCOUNT_PERMANENTLY"',
-      code: 'VALIDATION_FAILED',
-    };
+    throw new ValidationError(
+      'Please confirm account deletion by typing "DELETE_MY_ACCOUNT_PERMANENTLY"',
+      "confirmation"
+    );
   }
 
   console.log(`Starting account deletion for user ${userId}, reason: ${reason || 'not provided'}`);

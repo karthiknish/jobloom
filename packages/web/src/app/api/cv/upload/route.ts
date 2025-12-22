@@ -217,8 +217,8 @@ async function checkSubscriptionLimits(
 import { 
   createValidationError, 
   createAuthError, 
-  createRateLimitError,
-  createInternalError 
+  createInternalError,
+  RateLimitError
 } from "@/lib/api/errorResponse";
 
 // ... (rest of imports)
@@ -276,9 +276,9 @@ export const POST = withApi({
   // Check subscription limits
   const limitCheck = await checkSubscriptionLimits(userId);
   if (!limitCheck.allowed) {
-    return createRateLimitError(
-      3600, // 1 hour retry after
-      `CV analysis limit reached. You've used ${limitCheck.currentUsage} of ${limitCheck.limit} analyses this month.`
+    throw new RateLimitError(
+      `CV analysis limit reached. You've used ${limitCheck.currentUsage} of ${limitCheck.limit} analyses this month.`,
+      3600 // 1 hour retry after
     );
   }
 
