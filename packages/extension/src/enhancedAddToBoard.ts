@@ -1,7 +1,7 @@
 // Enhanced add to board functionality with improved job extraction and SOC matching
 import { get, post, put } from "./apiClient";
 import { safeChromeStorageGet } from "./utils/safeStorage";
-import { JobParser, type JobData as EnhancedJobData, type SocCodeMatch } from "./utils/jobParser";
+import { UnifiedJobParser, type JobData as EnhancedJobData, type SocCodeMatch } from "./parsers";
 import { normalizeJobUrl, extractJobIdentifier } from "./utils/url";
 
 interface JobBoardEntry {
@@ -75,7 +75,7 @@ export class EnhancedJobBoardManager {
       }
 
       // Extract job data using enhanced parser
-      const jobData = await JobParser.extractJobFromPage(document, url);
+      const jobData = await UnifiedJobParser.extractJobFromPage(document, url);
       if (!jobData) {
         console.warn("Failed to extract job data from:", url);
         return null;
@@ -85,9 +85,8 @@ export class EnhancedJobBoardManager {
       const socMatch = await this.matchSocCodeOnServer(jobData);
       
       if (socMatch) {
-        jobData.likelySocCode = socMatch.code;
-        jobData.socMatchConfidence = socMatch.confidence;
-        jobData.matchedSocTitles = socMatch.relatedTitles;
+        jobData.socCode = socMatch.code;
+        jobData.socMatch = socMatch;
         
         // Cache SOC match
         this.socCodeCache.set(jobData.normalizedTitle, socMatch);
@@ -98,8 +97,8 @@ export class EnhancedJobBoardManager {
       
       console.log("Enhanced job extraction completed:", {
         title: jobData.title,
-        socCode: jobData.likelySocCode,
-        confidence: jobData.socMatchConfidence,
+        socCode: jobData.socCode,
+        confidence: jobData.socMatch?.confidence,
         skills: jobData.skills.length,
         department: jobData.department
       });
@@ -250,8 +249,8 @@ export class EnhancedJobBoardManager {
         // Enhanced fields
         normalizedTitle: jobData.normalizedTitle,
         extractedKeywords: jobData.extractedKeywords,
-        likelySocCode: jobData.likelySocCode,
-        socMatchConfidence: jobData.socMatchConfidence,
+        likelySocCode: jobData.socCode,
+        socMatchConfidence: jobData.socMatch?.confidence,
         department: jobData.department,
         seniority: jobData.seniority,
         employmentType: jobData.employmentType,
@@ -319,8 +318,8 @@ export class EnhancedJobBoardManager {
         applicationDeadline: jobData.applicationDeadline,
         isSponsored: jobData.isSponsored,
         sponsorshipType: jobData.sponsorshipType,
-        socCode: jobData.likelySocCode,
-        socMatchConfidence: jobData.socMatchConfidence,
+        socCode: jobData.socCode,
+        socMatchConfidence: jobData.socMatch?.confidence,
         department: jobData.department,
         seniority: jobData.seniority,
         employmentType: jobData.employmentType,
@@ -334,7 +333,7 @@ export class EnhancedJobBoardManager {
         id: createdJobId,
         title: jobData.title,
         company: jobData.company,
-        socCode: jobData.likelySocCode,
+        socCode: jobData.socCode,
         status: status
       });
 
@@ -370,8 +369,8 @@ export class EnhancedJobBoardManager {
           skills: jobData.skills,
           isSponsored: jobData.isSponsored,
           sponsorshipType: jobData.sponsorshipType,
-          socCode: jobData.likelySocCode,
-          socMatchConfidence: jobData.socMatchConfidence
+          socCode: jobData.socCode,
+          socMatchConfidence: jobData.socMatch?.confidence
         } as JobBoardEntry;
       }
       
@@ -384,14 +383,14 @@ export class EnhancedJobBoardManager {
     const notes: string[] = [];
 
     // Add SOC code information
-    if (jobData.likelySocCode) {
-      const confidence = jobData.socMatchConfidence !== undefined 
-        ? ` (Confidence: ${(jobData.socMatchConfidence * 100).toFixed(1)}%)` 
+    if (jobData.socCode) {
+      const confidence = jobData.socMatch?.confidence !== undefined 
+        ? ` (Confidence: ${(jobData.socMatch.confidence * 100).toFixed(1)}%)` 
         : "";
-      notes.push(`SOC Code: ${jobData.likelySocCode}${confidence}`);
+      notes.push(`SOC Code: ${jobData.socCode}${confidence}`);
       
-      if (jobData.matchedSocTitles && jobData.matchedSocTitles.length > 0) {
-        notes.push(`Related roles: ${jobData.matchedSocTitles.slice(0, 3).join(", ")}`);
+      if (jobData.socMatch?.relatedTitles && jobData.socMatch.relatedTitles.length > 0) {
+        notes.push(`Related roles: ${jobData.socMatch.relatedTitles.slice(0, 3).join(", ")}`);
       }
     }
 

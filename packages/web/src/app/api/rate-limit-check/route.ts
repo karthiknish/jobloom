@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
 import { withApi, z } from "@/lib/api/withApi";
 import { checkServerRateLimitWithAuth } from "@/lib/rateLimiter";
+import { RateLimitError } from "@/lib/api/errorResponse";
 
 const rateLimitCheckSchema = z.object({
   endpoint: z.string().optional().default('general'),
@@ -26,19 +26,16 @@ export const POST = withApi({
   );
 
   if (!rateLimitResult.allowed) {
-    return NextResponse.json({
-      error: 'Rate limit exceeded',
-      resetIn: rateLimitResult.resetIn,
-      retryAfter: rateLimitResult.retryAfter,
-      maxRequests: rateLimitResult.maxRequests,
-      remaining: rateLimitResult.remaining,
-      identifier: rateLimitResult.identifier,
-    }, { 
-      status: 429,
-      headers: {
-        'Retry-After': rateLimitResult.retryAfter?.toString() || '60',
+    throw new RateLimitError(
+      'Rate limit exceeded',
+      rateLimitResult.retryAfter || 60,
+      {
+        resetIn: rateLimitResult.resetIn,
+        maxRequests: rateLimitResult.maxRequests,
+        remaining: rateLimitResult.remaining,
+        identifier: rateLimitResult.identifier,
       }
-    });
+    );
   }
 
   return {
@@ -49,4 +46,3 @@ export const POST = withApi({
     identifier: rateLimitResult.identifier,
   };
 });
-

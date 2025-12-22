@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server";
 import { getAdminDb } from "@/firebase/admin";
 import { withApi } from "@/lib/api/withApi";
 import { z } from "zod";
+import { AuthorizationError, NotFoundError } from "@/lib/api/errorResponse";
+import { ERROR_CODES } from "@/lib/api/errorCodes";
 
 const cvParamsSchema = z.object({
   userId: z.string(),
@@ -19,9 +20,9 @@ export const GET = withApi({
   const { userId } = params;
   
   if (user!.uid !== userId && !user!.isAdmin) {
-    return NextResponse.json(
-      { error: "Forbidden" },
-      { status: 403 }
+    throw new AuthorizationError(
+      "Access denied. You can only access your own CV analyses.",
+      "FORBIDDEN"
     );
   }
 
@@ -70,9 +71,9 @@ export const DELETE = withApi({
   const { analysisId } = query;
   
   if (user!.uid !== userId && !user!.isAdmin) {
-    return NextResponse.json(
-      { error: "Forbidden" },
-      { status: 403 }
+    throw new AuthorizationError(
+      "Access denied. You can only delete your own CV analyses.",
+      "FORBIDDEN"
     );
   }
 
@@ -83,17 +84,18 @@ export const DELETE = withApi({
   const analysisDoc = await analysisRef.get();
 
   if (!analysisDoc.exists) {
-    return NextResponse.json(
-      { error: "Analysis not found" },
-      { status: 404 }
+    throw new NotFoundError(
+      "Analysis not found",
+      "cv-analysis",
+      ERROR_CODES.CV_NOT_FOUND
     );
   }
 
   const analysisData = analysisDoc.data();
   if (analysisData?.userId !== userId) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 403 }
+    throw new AuthorizationError(
+      "You do not have permission to delete this analysis",
+      "FORBIDDEN"
     );
   }
 
@@ -102,3 +104,5 @@ export const DELETE = withApi({
 
   return { success: true, message: "Analysis deleted successfully" };
 });
+
+export { OPTIONS } from "@/lib/api/withApi";

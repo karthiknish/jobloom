@@ -1,5 +1,6 @@
 import { withApi, z } from "@/lib/api/withApi";
 import { getAdminDb, FieldValue } from "@/firebase/admin";
+import { AuthorizationError, NotFoundError } from "@/lib/api/errorResponse";
 import { ERROR_CODES } from "@/lib/api/errorCodes";
 
 export const runtime = "nodejs";
@@ -38,10 +39,7 @@ export const GET = withApi({
   const docSnap = await db.collection('jobs').doc(jobId).get();
   
   if (!docSnap.exists) {
-    return {
-      error: 'Job not found',
-      code: ERROR_CODES.JOB_NOT_FOUND,
-    };
+    throw new NotFoundError('Job not found', 'job', ERROR_CODES.JOB_NOT_FOUND);
   }
 
   const job = { _id: docSnap.id, id: docSnap.id, ...docSnap.data() };
@@ -60,17 +58,14 @@ export const PUT = withApi({
   const docSnap = await docRef.get();
 
   if (!docSnap.exists) {
-    return {
-      error: 'Job not found',
-      code: ERROR_CODES.JOB_NOT_FOUND,
-    };
+    throw new NotFoundError('Job not found', 'job', ERROR_CODES.JOB_NOT_FOUND);
   }
 
   if (docSnap.data()?.userId !== user!.uid) {
-    return {
-      error: 'You do not have permission to update this job',
-      code: ERROR_CODES.FORBIDDEN,
-    };
+    throw new AuthorizationError(
+      'You do not have permission to update this job',
+      'FORBIDDEN'
+    );
   }
 
   await docRef.update({
@@ -92,17 +87,14 @@ export const DELETE = withApi({
   const docSnap = await docRef.get();
 
   if (!docSnap.exists) {
-    return {
-      error: 'Job not found',
-      code: ERROR_CODES.JOB_NOT_FOUND,
-    };
+    throw new NotFoundError('Job not found', 'job', ERROR_CODES.JOB_NOT_FOUND);
   }
 
   if (docSnap.data()?.userId !== user!.uid) {
-    return {
-      error: 'You do not have permission to delete this job',
-      code: ERROR_CODES.FORBIDDEN,
-    };
+    throw new AuthorizationError(
+      'You do not have permission to delete this job',
+      'FORBIDDEN'
+    );
   }
 
   await docRef.delete();

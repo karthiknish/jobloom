@@ -417,6 +417,32 @@ export class UnifiedJobParser {
   }
 
   /**
+   * Extract job data from a specific element (e.g. a job card)
+   */
+  static async extractJobFromElement(element: Element, url: string): Promise<JobData | null> {
+    const site = this.detectJobSite(url);
+    if (!this.isSupportedSite(url)) {
+      console.warn('HireAll: Job extraction only supports LinkedIn and Indeed. Current site:', site);
+      return null;
+    }
+
+    // Extract using site-specific selectors scoped to the element
+    const siteConfig = SITE_PATTERNS[site];
+    const rawData = {
+      title: this.querySelectorFromElement(element, siteConfig.selectors.title) || '',
+      company: this.querySelectorFromElement(element, siteConfig.selectors.company) || '',
+      location: this.querySelectorFromElement(element, siteConfig.selectors.location) || '',
+      description: this.querySelectorHtmlFromElement(element, siteConfig.selectors.description) || '',
+      salaryText: this.querySelectorFromElement(element, siteConfig.selectors.salary) || '',
+    };
+
+    if (!rawData.title) return null;
+
+    // Use a minimal document context for enhancement
+    return this.enhanceJobData(rawData, url, site, document);
+  }
+
+  /**
    * Extract job data from LD+JSON structured data
    */
   private static extractLdJsonData(document: Document): Partial<JobData> | null {
@@ -579,6 +605,26 @@ export class UnifiedJobParser {
     for (const selector of selectors) {
       try {
         const el = document.querySelector(selector);
+        if (el?.innerHTML) return el.innerHTML;
+      } catch {}
+    }
+    return '';
+  }
+
+  private static querySelectorFromElement(element: Element, selectors: string[]): string {
+    for (const selector of selectors) {
+      try {
+        const el = element.querySelector(selector);
+        if (el?.textContent?.trim()) return el.textContent.trim();
+      } catch {}
+    }
+    return '';
+  }
+
+  private static querySelectorHtmlFromElement(element: Element, selectors: string[]): string {
+    for (const selector of selectors) {
+      try {
+        const el = element.querySelector(selector);
         if (el?.innerHTML) return el.innerHTML;
       } catch {}
     }

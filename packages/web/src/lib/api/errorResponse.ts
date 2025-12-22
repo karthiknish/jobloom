@@ -80,6 +80,20 @@ export class NetworkError extends Error {
   }
 }
 
+/**
+ * Not found error for missing resources
+ */
+export class NotFoundError extends Error {
+  constructor(
+    message: string,
+    public resource?: string,
+    public code: string = 'NOT_FOUND'
+  ) {
+    super(message);
+    this.name = 'NotFoundError';
+  }
+}
+
 // ============================================================================
 // ERROR LOGGER
 // ============================================================================

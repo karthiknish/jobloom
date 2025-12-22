@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
 import { isUserAdmin } from "@/firebase/admin";
 import { withApi } from "@/lib/api/withApi";
 import { z } from "zod";
+import { AuthorizationError } from "@/lib/api/errorResponse";
+import { ERROR_CODES } from "@/lib/api/errorCodes";
 
 const INTERNAL_API_SECRET =
   process.env.INTERNAL_API_SECRET ??
@@ -21,7 +22,10 @@ export const GET = withApi({
 
   const providedSecret = request.headers.get("x-internal-secret");
   if (providedSecret !== INTERNAL_API_SECRET) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    throw new AuthorizationError(
+      "Invalid or missing internal API secret",
+      ERROR_CODES.UNAUTHORIZED
+    );
   }
 
   const { userId } = params;

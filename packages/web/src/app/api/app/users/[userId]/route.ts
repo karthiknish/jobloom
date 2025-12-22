@@ -1,7 +1,8 @@
-import { NextRequest } from "next/server";
 import { getAdminDb } from "@/firebase/admin";
 import { withApi } from "@/lib/api/withApi";
 import { z } from "zod";
+import { NotFoundError } from "@/lib/api/errorResponse";
+import { ERROR_CODES } from "@/lib/api/errorCodes";
 
 const userParamsSchema = z.object({
   userId: z.string(),
@@ -19,18 +20,20 @@ export const GET = withApi({
   const userDoc = await db.collection("users").doc(userId).get();
 
   if (!userDoc.exists) {
-    return {
-      error: "User not found",
-      code: "USER_NOT_FOUND"
-    };
+    throw new NotFoundError(
+      "User not found",
+      "user",
+      ERROR_CODES.USER_NOT_FOUND
+    );
   }
 
   const userData = userDoc.data();
   if (!userData) {
-    return {
-      error: "User data not found",
-      code: "USER_DATA_NOT_FOUND"
-    };
+    throw new NotFoundError(
+      "User data not found",
+      "user",
+      ERROR_CODES.USER_NOT_FOUND
+    );
   }
 
   const toMillis = (value: unknown): number | undefined => {
@@ -98,3 +101,5 @@ export const DELETE = withApi({
 
   return { message: 'User deleted successfully' };
 });
+
+export { OPTIONS } from "@/lib/api/withApi";

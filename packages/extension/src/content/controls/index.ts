@@ -1,4 +1,4 @@
-import { JobParser } from "../../utils/jobParser";
+import { UnifiedJobParser } from "../../parsers";
 import type { JobTracker } from "../../components/JobTracker";
 import { getJobTracker } from "../../job-tracker/runtime";
 import { logger, log } from "../../utils/logger";
@@ -20,7 +20,7 @@ export async function addJobToBoard(card: Element, button: HTMLButtonElement): P
   const tracker = resolveTracker();
   if (!tracker) return;
 
-  const jobData = await JobParser.extractJobFromElement(card, window.location.href);
+  const jobData = await UnifiedJobParser.extractJobFromElement(card, window.location.href);
   if (!jobData || jobData.company.trim().length < 2) {
     logger.warn("ContentControls", "Company name too short for add to board", {
       company: jobData?.company,
@@ -44,7 +44,7 @@ export async function checkJobSponsorshipFromButton(
   const tracker = resolveTracker();
   if (!tracker) return;
 
-  const jobData = await JobParser.extractJobFromElement(card, window.location.href);
+  const jobData = await UnifiedJobParser.extractJobFromElement(card, window.location.href);
   if (!jobData || jobData.company.trim().length < 2) {
     logger.warn("ContentControls", "Company name too short for sponsor check", {
       company: jobData?.company,

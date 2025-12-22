@@ -3,6 +3,8 @@ import { getStripeClient, getPriceIdForPlan, getStripeSuccessUrl, getStripeCance
 import { getAdminDb, FieldValue, Timestamp, type Firestore } from "@/firebase/admin";
 import { withApi } from "@/lib/api/withApi";
 import { z } from "zod";
+import { NotFoundError, ValidationError } from "@/lib/api/errorResponse";
+import { ERROR_CODES } from "@/lib/api/errorCodes";
 
 const db: Firestore = getAdminDb();
 
@@ -46,7 +48,11 @@ export const POST = withApi({
     | undefined;
 
   if (!userData) {
-    throw new Error("User not found");
+    throw new NotFoundError(
+      "User not found",
+      "user",
+      ERROR_CODES.USER_NOT_FOUND
+    );
   }
 
   // If the user already has an active subscription, don't create another checkout session.
@@ -57,17 +63,23 @@ export const POST = withApi({
       const subData = subDoc.data() as any;
 
       if (subData?.status === "active") {
-        throw new Error(subData?.cancelAtPeriodEnd
-          ? "You already have an active subscription that is set to cancel. You can resume it from settings."
-          : "You already have an active subscription.");
+        throw new ValidationError(
+          subData?.cancelAtPeriodEnd
+            ? "You already have an active subscription that is set to cancel. You can resume it from settings."
+            : "You already have an active subscription.",
+          "subscription"
+        );
       }
 
       if (subData?.status === "past_due" || subData?.status === "inactive") {
-        throw new Error("Your subscription needs attention (payment or status issue). Please use the billing portal.");
+        throw new ValidationError(
+          "Your subscription needs attention (payment or status issue). Please use the billing portal.",
+          "subscription"
+        );
       }
     } catch (e: any) {
       // If we can't read subscription state, proceed to create session (best-effort).
-      if (e.message.includes("subscription")) throw e;
+      if (e instanceof ValidationError || e instanceof NotFoundError) throw e;
     }
   }
 

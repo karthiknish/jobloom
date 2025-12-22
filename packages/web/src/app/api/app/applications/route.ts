@@ -2,7 +2,7 @@ import { z } from "zod";
 import { FieldValue } from "firebase-admin/firestore";
 import { withApi, OPTIONS } from "@/lib/api/withApi";
 import { getAdminDb } from "@/firebase/admin";
-import { ERROR_CODES } from "@/lib/api/errorCodes";
+import { AuthorizationError } from "@/lib/api/errorResponse";
 
 // Re-export OPTIONS for CORS preflight
 export { OPTIONS };
@@ -37,10 +37,10 @@ export const POST = withApi({
 }, async ({ user, body }) => {
   // Verify userId matches authenticated user
   if (body.userId !== user!.uid) {
-    return {
-      error: 'User ID does not match authentication token',
-      code: ERROR_CODES.FORBIDDEN,
-    };
+    throw new AuthorizationError(
+      'User ID does not match authentication token',
+      'FORBIDDEN'
+    );
   }
 
   const db = getAdminDb();

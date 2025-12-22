@@ -1,6 +1,6 @@
 import { getAdminDb } from "@/firebase/admin";
 import { withApi, z, OPTIONS } from "@/lib/api/withApi";
-import { ERROR_CODES } from "@/lib/api/errorCodes";
+import { AuthorizationError } from "@/lib/api/errorResponse";
 
 export { OPTIONS };
 
@@ -17,10 +17,10 @@ export const GET = withApi({
 
   // Users can only access their own stats unless they're admin
   if (user!.uid !== userId && !user!.isAdmin) {
-    return {
-      error: "Access denied. You can only access your own statistics.",
-      code: ERROR_CODES.FORBIDDEN,
-    };
+    throw new AuthorizationError(
+      "Access denied. You can only access your own statistics.",
+      "FORBIDDEN"
+    );
   }
 
   // Fetch job statistics from Firestore

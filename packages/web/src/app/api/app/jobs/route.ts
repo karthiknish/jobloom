@@ -3,6 +3,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import { withApi, OPTIONS } from "@/lib/api/withApi";
 import { getAdminDb } from "@/firebase/admin";
 import { normalizeJobUrl, extractJobIdentifier } from "@/lib/utils/urlNormalizer";
+import { AuthorizationError, ValidationError } from "@/lib/api/errorResponse";
 import { ERROR_CODES } from "@/lib/api/errorCodes";
 
 // Re-export OPTIONS for CORS preflight
@@ -103,10 +104,10 @@ export const POST = withApi({
 }, async ({ user, body }) => {
   // Verify userId matches authenticated user
   if (body.userId !== user!.uid) {
-    return {
-      error: 'User ID does not match authentication token',
-      code: ERROR_CODES.FORBIDDEN,
-    };
+    throw new AuthorizationError(
+      'User ID does not match authentication token',
+      'FORBIDDEN'
+    );
   }
 
   const db = getAdminDb();
@@ -114,11 +115,11 @@ export const POST = withApi({
   // Check for duplicate job
   const isDuplicate = await checkDuplicateJob(db, body.url, body.userId);
   if (isDuplicate) {
-    return {
-      error: 'A job with this URL already exists in your board',
-      code: ERROR_CODES.DUPLICATE_RECORD,
-      field: 'url',
-    };
+    throw new ValidationError(
+      'A job with this URL already exists in your board',
+      'url',
+      ERROR_CODES.DUPLICATE_RECORD
+    );
   }
 
   // Prepare job data

@@ -50,6 +50,15 @@ import {
   type RateLimitResult 
 } from "@/lib/rateLimiter";
 import { ERROR_CODES, ERROR_MESSAGES, ERROR_STATUS_MAP } from "./errorCodes";
+import {
+  ValidationError,
+  AuthorizationError,
+  DatabaseError,
+  RateLimitError,
+  NetworkError,
+  NotFoundError,
+  ErrorLogger,
+} from "./errorResponse";
 
 // ============================================================================
 // TYPES
@@ -424,10 +433,12 @@ export function withApi<
       return applyCorsHeaders(response, request, corsOptions);
     };
 
+    // Declare user and token outside try block for access in catch block
+    let user: AuthenticatedUser | null = null;
+    let token: string | null = null;
+
     try {
       // 1. Authentication
-      let user: AuthenticatedUser | null = null;
-      let token: string | null = null;
 
       if (auth !== 'none') {
         const authResult = await authenticateRequest(request);
@@ -629,11 +640,105 @@ export function withApi<
       );
 
     } catch (error) {
-      // Catch-all error handler
-      console.error(`[API Error] ${requestId}:`, error);
+      // Log error with context
+      const logContext = {
+        endpoint: new URL(request.url).pathname,
+        method: request.method,
+        userId: user?.uid,
+        requestId,
+      };
 
-      // Handle known error types
+      // Handle ValidationError
+      if (error instanceof ValidationError) {
+        ErrorLogger.logValidationError(error, logContext);
+        return respond(
+          createApiErrorResponse(
+            error.code || ERROR_CODES.VALIDATION_FAILED,
+            error.message,
+            requestId,
+            { field: error.field }
+          ),
+          ERROR_STATUS_MAP[ERROR_CODES.VALIDATION_FAILED] || 400
+        );
+      }
+
+      // Handle AuthorizationError
+      if (error instanceof AuthorizationError) {
+        ErrorLogger.logAuthError(error, logContext);
+        return respond(
+          createApiErrorResponse(
+            error.code || ERROR_CODES.UNAUTHORIZED,
+            error.message,
+            requestId
+          ),
+          ERROR_STATUS_MAP[error.code] || 401
+        );
+      }
+
+      // Handle DatabaseError
+      if (error instanceof DatabaseError) {
+        ErrorLogger.logDatabaseError(error, logContext);
+        return respond(
+          createApiErrorResponse(
+            error.code || ERROR_CODES.DATABASE_QUERY_FAILED,
+            error.message,
+            requestId,
+            { details: { operation: error.operation } }
+          ),
+          ERROR_STATUS_MAP[error.code] || 500
+        );
+      }
+
+      // Handle RateLimitError
+      if (error instanceof RateLimitError) {
+        ErrorLogger.logRateLimitError(error, logContext);
+        const headers: Record<string, string> = {};
+        if (error.retryAfter) {
+          headers["Retry-After"] = error.retryAfter.toString();
+        }
+        return respond(
+          createApiErrorResponse(
+            ERROR_CODES.RATE_LIMIT_EXCEEDED,
+            error.message,
+            requestId,
+            { retryAfter: error.retryAfter }
+          ),
+          429,
+          headers
+        );
+      }
+
+      // Handle NetworkError
+      if (error instanceof NetworkError) {
+        ErrorLogger.logNetworkError(error, logContext);
+        return respond(
+          createApiErrorResponse(
+            ERROR_CODES.THIRD_PARTY_API_ERROR,
+            error.message,
+            requestId,
+            { details: { statusCode: error.statusCode } }
+          ),
+          error.statusCode || 502
+        );
+      }
+
+      // Handle NotFoundError
+      if (error instanceof NotFoundError) {
+        ErrorLogger.log(error, { ...logContext, errorType: 'not_found' });
+        return respond(
+          createApiErrorResponse(
+            error.code || ERROR_CODES.CONTENT_NOT_FOUND,
+            error.message,
+            requestId,
+            { details: { resource: error.resource } }
+          ),
+          404
+        );
+      }
+
+      // Handle Zod validation errors
       if (error instanceof ZodError) {
+        ErrorLogger.log(error, { ...logContext, errorType: 'validation' });
         return respond(
           createApiErrorResponse(
             ERROR_CODES.VALIDATION_FAILED,
@@ -647,7 +752,9 @@ export function withApi<
 
       // Check for Firebase auth errors
       if (error instanceof Error) {
-        if (error.message.includes("auth/") || error.message.includes("token")) {
+        if (error.message.includes("auth/") || error.message.includes("token") || 
+            (error as any).code?.startsWith("auth/")) {
+          ErrorLogger.log(error, { ...logContext, errorType: 'authorization' });
           return respond(
             createApiErrorResponse(
               ERROR_CODES.INVALID_TOKEN,
@@ -657,7 +764,23 @@ export function withApi<
             401
           );
         }
+
+        // Check for Firebase database errors
+        if ((error as any).code?.startsWith("firestore/")) {
+          ErrorLogger.log(error, { ...logContext, errorType: 'database' });
+          return respond(
+            createApiErrorResponse(
+              ERROR_CODES.DATABASE_QUERY_FAILED,
+              "Database operation failed",
+              requestId
+            ),
+            500
+          );
+        }
       }
+
+      // Log unhandled errors
+      ErrorLogger.log(error, logContext);
 
       // Generic internal error
       const message = process.env.NODE_ENV === "development" && error instanceof Error

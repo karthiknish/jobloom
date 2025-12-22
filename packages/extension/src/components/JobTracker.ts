@@ -7,7 +7,7 @@ import {
   type UkEligibilityAssessment,
 } from "./SponsorshipManager";
 import { EnhancedJobBoardManager } from "../enhancedAddToBoard";
-import { JobParser, type JobData as EnhancedJobData } from "../utils/jobParser";
+import { UnifiedJobParser, type JobData as EnhancedJobData } from "../parsers";
 import { isLikelyPlaceholderCompany, normalizeCompanyName } from "../utils/companyName";
 
 export interface SponsorshipCheckResult {
@@ -70,7 +70,7 @@ export class JobTracker {
   }
 
   private async buildJobDescriptionData(jobData: EnhancedJobData, card?: Element): Promise<EnhancedJobData | undefined> {
-    const extracted = await JobParser.extractJobFromPage(document, window.location.href);
+    const extracted = await UnifiedJobParser.extractJobFromPage(document, window.location.href);
     if (!extracted) return undefined;
 
     // Merge with card-specific data if provided
@@ -142,7 +142,7 @@ export class JobTracker {
 
       for (const card of cards) {
         this.ensureCardControls(card);
-        const jobData = await JobParser.extractJobFromElement(card, window.location.href);
+        const jobData = await UnifiedJobParser.extractJobFromElement(card, window.location.href);
 
         if (!jobData || !jobData.company || isLikelyPlaceholderCompany(jobData.company)) {
           console.debug("Hireall: Skipping sponsorship check (missing company)", {
@@ -568,7 +568,7 @@ export class JobTracker {
     }
 
     const originalLabel = button.innerHTML;
-    const jobData = await JobParser.extractJobFromElement(card, window.location.href);
+    const jobData = await UnifiedJobParser.extractJobFromElement(card, window.location.href);
 
     if (!jobData || !jobData.company || jobData.company.length < 2 || isLikelyPlaceholderCompany(jobData.company)) {
       UIComponents.showToast(
@@ -618,7 +618,7 @@ export class JobTracker {
     }
 
     const originalLabel = button.innerHTML;
-    const jobData = await JobParser.extractJobFromElement(card, window.location.href);
+    const jobData = await UnifiedJobParser.extractJobFromElement(card, window.location.href);
 
     if (!jobData) {
       UIComponents.showToast("Failed to extract job data", { type: "error" });

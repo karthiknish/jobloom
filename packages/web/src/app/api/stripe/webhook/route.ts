@@ -292,13 +292,16 @@ export const POST = withApi({
     // Log the error
     await logWebhookEvent(event, "error", errorMessage);
 
-    // Return appropriate error response
+    // Re-throw validation and database errors - withApi will handle them properly
     if (error instanceof ValidationError) {
-      return NextResponse.json({ error: "Validation error", details: errorMessage }, { status: 400 });
+      throw createValidationError(errorMessage, "webhook", {
+        eventType: event.type,
+        eventId: event.id
+      });
     }
     
     if (error instanceof DatabaseError) {
-      return NextResponse.json({ error: "Database error", details: errorMessage }, { status: 500 });
+      throw createInternalError(`Database error processing webhook: ${errorMessage}`);
     }
 
     throw error; // Let withApi handle other errors

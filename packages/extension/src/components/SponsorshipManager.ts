@@ -1,7 +1,7 @@
 import { sponsorBatchLimiter } from "../rateLimiter";
 import { get } from "../apiClient";
 import { fetchSponsorRecord as fetchSponsorLookup, SponsorLookupResult } from "../sponsorship/lookup";
-import { JobData as JobDescriptionData } from "../utils/jobParser";
+import { type JobData as JobDescriptionData } from "../parsers";
 import { UserProfileManager, type UserVisaCriteria } from "../components/UserProfileManager";
 import {
   UK_SALARY_THRESHOLDS,
@@ -331,7 +331,7 @@ export class SponsorshipManager {
 
     if (jobDescription.socCode) {
       enhanced.socCode = jobDescription.socCode;
-      enhanced.occupationTitle = jobDescription.occupationTitle;
+      enhanced.occupationTitle = jobDescription.socMatch?.title;
     }
 
     if (record.route && jobDescription.skills) {
@@ -676,7 +676,7 @@ export class SponsorshipManager {
       eligible,
       reasons: Array.from(new Set(reasons)),
       socCode,
-      socTitle: socDetails?.jobType ?? jobDescription.occupationTitle,
+      socTitle: socDetails?.jobType ?? jobDescription.socMatch?.title,
       socEligibility: socDetails?.eligibility,
       salaryThreshold,
       salaryOffered: typeof offeredSalary === "number" ? offeredSalary : undefined,

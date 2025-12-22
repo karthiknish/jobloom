@@ -1,5 +1,6 @@
 import { withApi, z } from "@/lib/api/withApi";
 import { getAdminDb } from "@/firebase/admin";
+import { AuthorizationError, NotFoundError } from "@/lib/api/errorResponse";
 import { ERROR_CODES } from "@/lib/api/errorCodes";
 
 export const runtime = "nodejs";
@@ -27,18 +28,19 @@ export const GET = withApi({
   const docSnap = await db.collection("applications").doc(applicationId).get();
 
   if (!docSnap.exists) {
-    return {
-      error: "Application not found",
-      code: ERROR_CODES.APPLICATION_NOT_FOUND,
-    };
+    throw new NotFoundError(
+      "Application not found",
+      "application",
+      ERROR_CODES.APPLICATION_NOT_FOUND
+    );
   }
 
   const applicationData = docSnap.data();
   if (!applicationData || (applicationData.userId !== user!.uid && !user!.isAdmin)) {
-    return {
-      error: "Access denied. You can only access your own applications.",
-      code: ERROR_CODES.FORBIDDEN,
-    };
+    throw new AuthorizationError(
+      "Access denied. You can only access your own applications.",
+      "FORBIDDEN"
+    );
   }
 
   return {
@@ -59,18 +61,19 @@ export const PUT = withApi({
   const docSnap = await docRef.get();
 
   if (!docSnap.exists) {
-    return {
-      error: "Application not found",
-      code: ERROR_CODES.APPLICATION_NOT_FOUND,
-    };
+    throw new NotFoundError(
+      "Application not found",
+      "application",
+      ERROR_CODES.APPLICATION_NOT_FOUND
+    );
   }
 
   const applicationData = docSnap.data();
   if (!applicationData || applicationData.userId !== user!.uid) {
-    return {
-      error: "Access denied. You can only update your own applications.",
-      code: ERROR_CODES.FORBIDDEN,
-    };
+    throw new AuthorizationError(
+      "Access denied. You can only update your own applications.",
+      "FORBIDDEN"
+    );
   }
 
   const updatePayload = {
@@ -99,18 +102,19 @@ export const DELETE = withApi({
   const docSnap = await docRef.get();
 
   if (!docSnap.exists) {
-    return {
-      error: "Application not found",
-      code: ERROR_CODES.APPLICATION_NOT_FOUND,
-    };
+    throw new NotFoundError(
+      "Application not found",
+      "application",
+      ERROR_CODES.APPLICATION_NOT_FOUND
+    );
   }
 
   const applicationData = docSnap.data();
   if (!applicationData || (applicationData.userId !== user!.uid && !user!.isAdmin)) {
-    return {
-      error: "Access denied. You can only delete your own applications.",
-      code: ERROR_CODES.FORBIDDEN,
-    };
+    throw new AuthorizationError(
+      "Access denied. You can only delete your own applications.",
+      "FORBIDDEN"
+    );
   }
 
   await docRef.delete();

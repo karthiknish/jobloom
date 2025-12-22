@@ -1,6 +1,6 @@
 import { withApi, z } from "@/lib/api/withApi";
 import { getAdminDb } from "@/firebase/admin";
-import { ERROR_CODES } from "@/lib/api/errorCodes";
+import { AuthorizationError } from "@/lib/api/errorResponse";
 
 export const runtime = "nodejs";
 
@@ -16,10 +16,10 @@ export const GET = withApi({
   const { userId } = params;
 
   if (user!.uid !== userId && !user!.isAdmin) {
-    return {
-      error: "Access denied. You can only access your own applications.",
-      code: ERROR_CODES.FORBIDDEN,
-    };
+    throw new AuthorizationError(
+      "Access denied. You can only access your own applications.",
+      "FORBIDDEN"
+    );
   }
 
   const db = getAdminDb();

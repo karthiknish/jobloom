@@ -10,10 +10,11 @@
  * - Standardized success response format
  */
 
-import { NextResponse } from "next/server";
 import { z } from "zod";
 import { withApi, OPTIONS } from "@/lib/api/withApi";
 import { getAdminDb } from "@/firebase/admin";
+import { AuthorizationError } from "@/lib/api/errorResponse";
+import { ERROR_CODES } from "@/lib/api/errorCodes";
 import {
   generateResumeWithAI,
   type ResumeGenerationRequest,
@@ -84,15 +85,10 @@ export const POST = withApi({
                     userData?.subscription?.status === 'active';
 
   if (!userData || (!isPremium && !isAdmin)) {
-    // Return NextResponse directly for custom status codes
-    return NextResponse.json({
-      success: false,
-      error: {
-        code: 'SUB_1303',
-        message: 'Premium subscription required for AI resume generation',
-      },
-      meta: { requestId, timestamp: Date.now() },
-    }, { status: 403 });
+    throw new AuthorizationError(
+      "Premium subscription required for AI resume generation",
+      ERROR_CODES.PAYMENT_REQUIRED
+    );
   }
 
   // Normalize the request
