@@ -1,6 +1,7 @@
 import { withApi, z } from "@/lib/api/withApi";
 import { getAdminDb, categorizeFirebaseError } from "@/firebase/admin";
 import { ERROR_CODES } from "@/lib/api/errorCodes";
+import { AuthorizationError } from "@/lib/api/errorResponse";
 
 export const runtime = "nodejs";
 
@@ -89,10 +90,10 @@ export const GET = withApi({
 
   // For search queries, require authentication
   if (!user) {
-    return {
-      error: 'Authentication required for search',
-      code: ERROR_CODES.UNAUTHORIZED,
-    };
+    throw new AuthorizationError(
+      "Authentication required for search",
+      ERROR_CODES.UNAUTHORIZED
+    );
   }
 
   let firestoreQuery = db.collection('sponsors').where('isActive', '==', true);

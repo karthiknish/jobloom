@@ -1,6 +1,7 @@
 import { getAdminDb } from "@/firebase/admin";
 import { withApi, z, OPTIONS } from "@/lib/api/withApi";
 import type { ContactSubmission } from "@/types/api";
+import { NotFoundError } from "@/lib/api/errorResponse";
 import { ERROR_CODES } from "@/lib/api/errorCodes";
 
 export { OPTIONS };
@@ -27,10 +28,11 @@ export const GET = withApi({
   const docSnap = await docRef.get();
 
   if (!docSnap.exists) {
-    return {
-      error: "Contact submission not found",
-      code: ERROR_CODES.CONTENT_NOT_FOUND,
-    };
+    throw new NotFoundError(
+      "Contact submission not found",
+      "contact",
+      ERROR_CODES.CONTENT_NOT_FOUND
+    );
   }
 
   const contact: ContactSubmission = {

@@ -2,6 +2,7 @@ import { withApi } from "@/lib/api/withApi";
 import { z } from "zod";
 import { searchPexelsPhotos } from "@/lib/integrations/pexels/server";
 import { PexelsApiError } from "@/types/pexels";
+import { ServiceUnavailableError } from "@/lib/api/errorResponse";
 
 const MAX_PER_PAGE = 50;
 
@@ -30,16 +31,20 @@ export const GET = withApi({
     return data;
   } catch (error) {
     if (error instanceof PexelsApiError) {
-      return {
-        status: error.status ?? 500,
-        error: error.message
-      };
+      throw new ServiceUnavailableError(
+        error.message,
+        "pexels",
+        60
+      );
     }
 
     console.error("Unexpected Pexels search error", error);
-    return {
-      status: 502,
-      error: "Failed to fetch images from Pexels"
-    };
+    throw new ServiceUnavailableError(
+      "Failed to fetch images from Pexels",
+      "pexels",
+      60
+    );
   }
 });
+
+export { OPTIONS } from "@/lib/api/withApi";

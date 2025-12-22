@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withApi } from "@/lib/api/withApi";
+import { ValidationError } from "@/lib/api/errorResponse";
 
 // Zod schema for query parameters
 const sponsorsQuerySchema = z.object({
@@ -18,7 +18,10 @@ export const GET = withApi({
   const { q: query, route, city, limit } = queryParams;
 
   if (!query && !route && !city) {
-    throw new Error('At least one search parameter (q, route, or city) is required');
+    throw new ValidationError(
+      'At least one search parameter (q, route, or city) is required',
+      "queryParams"
+    );
   }
 
   // Mock sponsors data for authenticated access
@@ -134,3 +137,5 @@ export const GET = withApi({
     }))
   };
 });
+
+export { OPTIONS } from "@/lib/api/withApi";

@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from "@google/generative-ai";
 import { withApi, z, OPTIONS } from "@/lib/api/withApi";
-import { ERROR_CODES } from "@/lib/api/errorCodes";
+import { ServiceUnavailableError, ValidationError } from "@/lib/api/errorResponse";
 
 export { OPTIONS };
 
@@ -106,10 +106,10 @@ export const POST = withApi({
   }
 
   if (!GEMINI_API_KEY || !genAI) {
-    return {
-      error: "AI service not configured. Missing GEMINI_API_KEY.",
-      code: ERROR_CODES.SERVICE_UNAVAILABLE,
-    };
+    throw new ServiceUnavailableError(
+      "AI service not configured. Missing GEMINI_API_KEY.",
+      "gemini"
+    );
   }
 
   try {
@@ -188,22 +188,22 @@ Respond as Hireall AI with clean, readable formatting:`;
     const errorMessage = error.message || String(error);
 
     if (errorMessage.includes("403") || errorMessage.includes("unregistered") || errorMessage.includes("Forbidden")) {
-      return {
-        error: "Access to AI model forbidden. Verify billing & API key permissions for Gemini.",
-        code: ERROR_CODES.SERVICE_UNAVAILABLE,
-      };
+      throw new ServiceUnavailableError(
+        "Access to AI model forbidden. Verify billing & API key permissions for Gemini.",
+        "gemini"
+      );
     }
     if (errorMessage.includes("API_KEY") || errorMessage.includes("Missing API key")) {
-      return {
-        error: "AI service not configured. Please add GEMINI_API_KEY on the server.",
-        code: ERROR_CODES.SERVICE_UNAVAILABLE,
-      };
+      throw new ServiceUnavailableError(
+        "AI service not configured. Please add GEMINI_API_KEY on the server.",
+        "gemini"
+      );
     }
     if (errorMessage.toLowerCase().includes("safety")) {
-      return {
-        error: "I can't provide a response for that request due to content guidelines.",
-        code: ERROR_CODES.VALIDATION_FAILED,
-      };
+      throw new ValidationError(
+        "I can't provide a response for that request due to content guidelines.",
+        "content"
+      );
     }
     throw error;
   }

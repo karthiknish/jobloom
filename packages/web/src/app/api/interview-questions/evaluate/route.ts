@@ -2,6 +2,7 @@ import { evaluateInterviewAnswer } from "@/services/ai/geminiService";
 import { getAdminDb } from "@/firebase/admin";
 import { withApi, z, OPTIONS } from "@/lib/api/withApi";
 import { ERROR_CODES } from "@/lib/api/errorCodes";
+import { AuthorizationError } from "@/lib/api/errorResponse";
 
 export { OPTIONS };
 
@@ -30,11 +31,10 @@ export const POST = withApi({
                     userData?.subscriptionStatus === 'active';
 
   if (!isPremium) {
-    return { 
-      error: "Premium subscription required for AI interview evaluation",
-      code: "PREMIUM_REQUIRED",
-      upgradeUrl: "/upgrade"
-    };
+    throw new AuthorizationError(
+      "Premium subscription required for AI interview evaluation",
+      ERROR_CODES.PAYMENT_REQUIRED
+    );
   }
 
   // Evaluate answer using AI

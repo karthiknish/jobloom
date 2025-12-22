@@ -1,6 +1,7 @@
 import { withApi, z } from "@/lib/api/withApi";
 import { getAdminDb } from "@/firebase/admin";
 import { getStripeClient, getStripeSuccessUrl } from "@/lib/stripe";
+import { NotFoundError } from "@/lib/api/errorResponse";
 import { ERROR_CODES } from "@/lib/api/errorCodes";
 
 export const runtime = "nodejs";
@@ -19,10 +20,11 @@ export const POST = withApi({
   const stripeCustomerId = userData?.stripeCustomerId;
 
   if (!stripeCustomerId) {
-    return {
-      error: "No Stripe customer associated with this user",
-      code: ERROR_CODES.USER_NOT_FOUND,
-    };
+    throw new NotFoundError(
+      "No Stripe customer associated with this user",
+      "stripe-customer",
+      ERROR_CODES.USER_NOT_FOUND
+    );
   }
 
   const origin = request.headers.get("origin") ||
