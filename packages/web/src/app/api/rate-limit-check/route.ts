@@ -27,14 +27,8 @@ export const POST = withApi({
 
   if (!rateLimitResult.allowed) {
     throw new RateLimitError(
-      'Rate limit exceeded',
-      rateLimitResult.retryAfter || 60,
-      {
-        resetIn: rateLimitResult.resetIn,
-        maxRequests: rateLimitResult.maxRequests,
-        remaining: rateLimitResult.remaining,
-        identifier: rateLimitResult.identifier,
-      }
+      `Rate limit exceeded. Reset in ${rateLimitResult.resetIn}s. Max: ${rateLimitResult.maxRequests}, Remaining: ${rateLimitResult.remaining}`,
+      rateLimitResult.retryAfter || 60
     );
   }
 
