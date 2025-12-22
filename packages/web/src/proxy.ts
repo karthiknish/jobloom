@@ -606,7 +606,7 @@ async function finalizeResponse(
   return response;
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const requestId = generateRequestId();
 
   // Skip CSRF validation for Stripe webhooks (they come from external service)
