@@ -94,6 +94,34 @@ export class NotFoundError extends Error {
   }
 }
 
+/**
+ * Conflict error for idempotency failures or resource conflicts
+ */
+export class ConflictError extends Error {
+  constructor(
+    message: string,
+    public resource?: string,
+    public code: string = 'CONFLICT'
+  ) {
+    super(message);
+    this.name = 'ConflictError';
+  }
+}
+
+/**
+ * Service unavailable error for external service failures
+ */
+export class ServiceUnavailableError extends Error {
+  constructor(
+    message: string,
+    public service?: string,
+    public retryAfter?: number
+  ) {
+    super(message);
+    this.name = 'ServiceUnavailableError';
+  }
+}
+
 // ============================================================================
 // ERROR LOGGER
 // ============================================================================

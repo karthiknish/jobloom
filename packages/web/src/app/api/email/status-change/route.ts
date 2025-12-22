@@ -1,9 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { sendEmail } from "@/lib/resend";
 import { renderStatusChangeEmailHtml, renderStatusChangeEmailText, STATUS_CHANGE_SUBJECT } from "@/emails/statusChangeEmail";
 import { getAdminDb } from "@/firebase/admin";
 import { withApi, OPTIONS } from "@/lib/api/withApi";
+import { AuthorizationError, NotFoundError, ConflictError } from "@/lib/api/errorResponse";
+import { ERROR_CODES } from "@/lib/api/errorCodes";
 
 // Re-export OPTIONS for CORS preflight
 export { OPTIONS };
@@ -47,10 +48,10 @@ export const POST = withApi({
     if (snap.exists) {
       const data = snap.data() as any;
       if (data?.status === "sent") {
-        return { ok: false as const, status: 200 as const, payload: { sent: false, duplicate: true, messageId: data?.messageId } };
+        return { ok: false as const, duplicate: true, messageId: data?.messageId };
       }
       if (data?.status === "sending") {
-        return { ok: false as const, status: 409 as const, payload: { sent: false, reason: "Email send already in progress" } };
+        return { ok: false as const, inProgress: true };
       }
       // status failed/unknown: allow retry
     }
@@ -59,14 +60,26 @@ export const POST = withApi({
   });
 
   if (!shouldSend.ok) {
-    return NextResponse.json(shouldSend.payload, { status: shouldSend.status });
+    if ('duplicate' in shouldSend && shouldSend.duplicate) {
+      return { sent: false, duplicate: true, messageId: shouldSend.messageId };
+    }
+    if ('inProgress' in shouldSend && shouldSend.inProgress) {
+      throw new ConflictError(
+        "Email send already in progress",
+        "email-idempotency"
+      );
+    }
   }
   
   // Fetch application details
   const appDoc = await db.collection("applications").doc(applicationId).get();
   if (!appDoc.exists) {
     await idemRef.set({ status: "failed", error: "application_not_found", updatedAt: new Date().toISOString() }, { merge: true });
-    throw new Error("Application not found");
+    throw new NotFoundError(
+      "Application not found",
+      "application",
+      ERROR_CODES.CONTENT_NOT_FOUND
+    );
   }
   
   const application = appDoc.data();
@@ -74,7 +87,10 @@ export const POST = withApi({
 
   if (!userId || userId !== user!.uid) {
     await idemRef.set({ status: "failed", error: "forbidden", updatedAt: new Date().toISOString() }, { merge: true });
-    throw new Error("Forbidden: You do not have access to this application");
+    throw new AuthorizationError(
+      "You do not have access to this application",
+      ERROR_CODES.FORBIDDEN
+    );
   }
 
   // Fetch user to get email and preferences
@@ -85,7 +101,11 @@ export const POST = withApi({
     const userDoc = await db.collection("users").doc(userId).get();
     if (!userDoc.exists) {
       await idemRef.set({ status: "failed", error: "user_not_found", updatedAt: new Date().toISOString() }, { merge: true });
-      throw new Error("User not found");
+      throw new NotFoundError(
+        "User not found",
+        "user",
+        ERROR_CODES.USER_NOT_FOUND
+      );
     }
     userData = userDoc.data();
   } else {

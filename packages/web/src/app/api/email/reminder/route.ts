@@ -1,9 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { sendEmail } from "@/lib/resend";
 import { renderReminderEmailHtml, renderReminderEmailText, REMINDER_EMAIL_SUBJECT } from "@/emails/reminderEmail";
 import { getAdminDb } from "@/firebase/admin";
 import { withApi, OPTIONS } from "@/lib/api/withApi";
+import { AuthorizationError, NotFoundError, ConflictError } from "@/lib/api/errorResponse";
+import { ERROR_CODES } from "@/lib/api/errorCodes";
 
 // Re-export OPTIONS for CORS preflight
 export { OPTIONS };
@@ -30,7 +31,10 @@ export const POST = withApi({
 
   // Only allow a user to send reminders to themselves.
   if (user!.uid !== userId) {
-    throw new Error("Forbidden: You can only send reminders to yourself");
+    throw new AuthorizationError(
+      "You can only send reminders to yourself",
+      ERROR_CODES.FORBIDDEN
+    );
   }
 
   const db = getAdminDb();
@@ -47,10 +51,10 @@ export const POST = withApi({
     if (snap.exists) {
       const data = snap.data() as any;
       if (data?.status === "sent") {
-        return { ok: false as const, status: 200 as const, payload: { sent: false, duplicate: true, messageId: data?.messageId } };
+        return { ok: false as const, duplicate: true, messageId: data?.messageId };
       }
       if (data?.status === "sending") {
-        return { ok: false as const, status: 409 as const, payload: { sent: false, reason: "Email send already in progress" } };
+        return { ok: false as const, inProgress: true };
       }
       // status failed/unknown: allow retry
     }
@@ -59,14 +63,26 @@ export const POST = withApi({
   });
 
   if (!shouldSend.ok) {
-    return NextResponse.json(shouldSend.payload, { status: shouldSend.status });
+    if ('duplicate' in shouldSend && shouldSend.duplicate) {
+      return { sent: false, duplicate: true, messageId: shouldSend.messageId };
+    }
+    if ('inProgress' in shouldSend && shouldSend.inProgress) {
+      throw new ConflictError(
+        "Email send already in progress",
+        "email-idempotency"
+      );
+    }
   }
 
   // Fetch user
   const userDoc = await db.collection("users").doc(userId).get();
   if (!userDoc.exists) {
     await idemRef.set({ status: "failed", error: "user_not_found", updatedAt: new Date().toISOString() }, { merge: true });
-    throw new Error("User not found");
+    throw new NotFoundError(
+      "User not found",
+      "user",
+      ERROR_CODES.USER_NOT_FOUND
+    );
   }
   
   const userData = userDoc.data();

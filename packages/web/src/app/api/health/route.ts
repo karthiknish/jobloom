@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
 import { z } from "zod";
 import { withApi, OPTIONS } from "@/lib/api/withApi";
 import { checkFirebaseHealth, getInitializationStatus } from "@/firebase/admin";
+import { ServiceUnavailableError } from "@/lib/api/errorResponse";
 
 // Re-export OPTIONS for CORS preflight
 export { OPTIONS };
@@ -45,13 +45,13 @@ export const GET = withApi({
     uptime: process.uptime ? Math.floor(process.uptime()) : undefined
   };
   
-  // For degraded status, return NextResponse with 503
+  // For degraded status, throw ServiceUnavailableError
   if (!firebaseHealth.healthy) {
-    return NextResponse.json({
-      success: true,
-      data: detailedHealth,
-      meta: { timestamp: Date.now() }
-    }, { status: 503 });
+    throw new ServiceUnavailableError(
+      "Firebase is unreachable or unhealthy",
+      "firebase",
+      60 // Retry after 60 seconds
+    );
   }
   
   return detailedHealth;
