@@ -118,7 +118,7 @@ export function generateOrganizationSchema(): OrganizationSchema {
     contactPoint: {
       "@type": "ContactPoint",
       contactType: "customer support",
-      email: "hello@hireall.app",
+      email: "noreply@hireall.app",
     },
   };
 }

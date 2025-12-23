@@ -1,10 +1,10 @@
-// Resend email service integration
-import { Resend } from 'resend';
+// Brevo email service integration
+import * as brevo from '@getbrevo/brevo';
 
-let resendClient: Resend | null = null;
+let brevoClient: brevo.TransactionalEmailsApi | null = null;
 
 function isEmailConfigured() {
-  return !!process.env.RESEND_API_KEY;
+  return !!process.env.BREVO_API_KEY;
 }
 
 function shouldSkipEmailWhenUnconfigured() {
@@ -13,8 +13,6 @@ function shouldSkipEmailWhenUnconfigured() {
 }
 
 function isValidEmailAddress(email: string) {
-  // Pragmatic validation: enough to reject obvious bad input.
-  // (Full RFC 5322 validation is overkill here.)
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
@@ -40,18 +38,19 @@ function stringifyVariable(value: unknown): string {
   }
 }
 
-function getResendClient(): Resend {
-  if (resendClient) {
-    return resendClient;
+function getBrevoClient(): brevo.TransactionalEmailsApi {
+  if (brevoClient) {
+    return brevoClient;
   }
   
-  const apiKey = process.env.RESEND_API_KEY;
+  const apiKey = process.env.BREVO_API_KEY;
   if (!apiKey) {
-    throw new Error('RESEND_API_KEY is not configured');
+    throw new Error('BREVO_API_KEY is not configured');
   }
   
-  resendClient = new Resend(apiKey);
-  return resendClient;
+  brevoClient = new brevo.TransactionalEmailsApi();
+  brevoClient.setApiKey(brevo.TransactionalEmailsApiApiKeys.apiKey, apiKey);
+  return brevoClient;
 }
 
 export interface EmailData {
@@ -98,43 +97,56 @@ export async function sendEmail(data: EmailData): Promise<EmailResult> {
 
     if (!isEmailConfigured()) {
       if (shouldSkipEmailWhenUnconfigured()) {
-        console.warn('Email skipped: RESEND_API_KEY is not configured');
+        console.warn('Email skipped: BREVO_API_KEY is not configured');
         return { success: true, skipped: true };
       }
-      return { success: false, error: 'RESEND_API_KEY is not configured' };
+      return { success: false, error: 'BREVO_API_KEY is not configured' };
     }
 
-    const fromEmail = data.from || process.env.RESEND_FROM_EMAIL || 'noreply@hireall.app';
+    const fromEmail = data.from || process.env.BREVO_FROM_EMAIL || process.env.RESEND_FROM_EMAIL || 'Hireall <noreply@hireall.app>';
     
-    const { data: result, error } = await getResendClient().emails.send({
-      from: fromEmail,
-      to: toList,
-      subject,
-      html,
-      text: data.text,
-      reply_to: data.replyTo,
-      tags: data.tags,
-    });
-
-    if (error) {
-      console.error('Resend API error:', error);
-      return {
-        success: false,
-        error: error.message
-      };
+    // Parse fromEmail if it's in "Name <email@domain.com>" format
+    let senderName = 'Hireall';
+    let senderEmail = 'noreply@hireall.app';
+    
+    const fromMatch = fromEmail.match(/^(.*?)\s*<(.*?)>$/);
+    if (fromMatch) {
+      senderName = fromMatch[1].trim();
+      senderEmail = fromMatch[2].trim();
+    } else if (isValidEmailAddress(fromEmail)) {
+      senderEmail = fromEmail;
     }
 
-    console.log('Email sent successfully:', result);
+    const sendSmtpEmail = new brevo.SendSmtpEmail();
+    sendSmtpEmail.subject = subject;
+    sendSmtpEmail.htmlContent = html;
+    if (data.text) {
+      sendSmtpEmail.textContent = data.text;
+    }
+    sendSmtpEmail.sender = { name: senderName, email: senderEmail };
+    sendSmtpEmail.to = toList.map(email => ({ email }));
+    
+    if (data.replyTo) {
+      sendSmtpEmail.replyTo = { email: data.replyTo };
+    }
+
+    if (data.tags && data.tags.length > 0) {
+      sendSmtpEmail.tags = data.tags.map(tag => tag.name);
+    }
+
+    const result = await getBrevoClient().sendTransacEmail(sendSmtpEmail);
+
+    console.log('Email sent successfully:', result.body);
     return {
       success: true,
-      messageId: result?.id
+      messageId: result.body.messageId
     };
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Email sending error:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error?.response?.body?.message || error?.message || 'Unknown error'
     };
   }
 }
@@ -162,7 +174,7 @@ export async function sendBulkEmails(
       } else {
         results.push({
           success: false,
-          error: result.reason?.message || 'Batch sending failed'
+          error: (result.reason as any)?.message || 'Batch sending failed'
         });
       }
     });
@@ -204,6 +216,6 @@ export function personalizeSubject(
   return personalizeTemplate(subject, variables, { escapeHtml: false });
 }
 
-export function isResendConfigured() {
+export function isEmailServiceConfigured() {
   return isEmailConfigured();
 }

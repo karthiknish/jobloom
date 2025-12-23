@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   typescript: {
-    ignoreBuildErrors: true, // Temporarily disable TypeScript checking for production testing
+    ignoreBuildErrors: false,
   },
   
   // Production optimizations

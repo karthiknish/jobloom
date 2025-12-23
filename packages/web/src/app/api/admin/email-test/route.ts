@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { sendEmail } from "@/lib/resend";
+import { sendEmail } from "@/lib/email";
 import { withApi, z } from "@/lib/api/withApi";
 
 const emailTestSchema = z.object({
@@ -15,7 +15,7 @@ export const POST = withApi({
 }, async ({ body }) => {
   const { to, subject, html, text } = body;
 
-  console.log('Testing Resend email sending...');
+  console.log('Testing Brevo email sending...');
   console.log('To:', to);
   console.log('Subject:', subject);
 

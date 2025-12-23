@@ -1,5 +1,5 @@
   import { NextRequest, NextResponse } from "next/server";
-import { sendEmail } from "@/lib/resend";
+import { sendEmail } from "@/lib/email";
 import { renderReminderEmailHtml, renderReminderEmailText } from "@/emails/reminderEmail";
 import { getAdminDb } from "@/firebase/admin";
 import { withApi, OPTIONS } from "@/lib/api/withApi";

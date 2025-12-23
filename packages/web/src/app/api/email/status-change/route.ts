@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { sendEmail } from "@/lib/resend";
+import { sendEmail } from "@/lib/email";
 import { renderStatusChangeEmailHtml, renderStatusChangeEmailText, STATUS_CHANGE_SUBJECT } from "@/emails/statusChangeEmail";
 import { getAdminDb } from "@/firebase/admin";
 import { withApi, OPTIONS } from "@/lib/api/withApi";

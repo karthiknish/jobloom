@@ -1,12 +1,12 @@
 import { withApi, z } from "@/lib/api/withApi";
-import { sendEmail } from "@/lib/resend";
+import { sendEmail } from "@/lib/email";
 import {
   WELCOME_EMAIL_SUBJECT,
   renderWelcomeEmailHtml,
   renderWelcomeEmailText,
 } from "@/emails/welcomeEmail";
 
-const resendFrom = process.env.RESEND_FROM_EMAIL ?? "Hireall <hello@hireall.app>";
+const emailFrom = process.env.BREVO_FROM_EMAIL ?? process.env.RESEND_FROM_EMAIL ?? "Hireall <noreply@hireall.app>";
 const dashboardUrl = process.env.HIREALL_DASHBOARD_URL ?? "https://hireall.app/dashboard";
 const settingsUrl = process.env.HIREALL_SETTINGS_URL ?? "https://hireall.app/settings";
 
@@ -22,7 +22,7 @@ export const POST = withApi({
   const { email, name } = body;
 
   const result = await sendEmail({
-    from: resendFrom,
+    from: emailFrom,
     to: email,
     subject: WELCOME_EMAIL_SUBJECT,
     html: renderWelcomeEmailHtml({ name, dashboardUrl, settingsUrl }),

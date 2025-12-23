@@ -2,33 +2,36 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb } from "@/firebase/admin";
 
 /**
- * POST /api/webhooks/resend
- * Webhook handler for Resend email events (opened, clicked, etc.)
+ * POST /api/webhooks/brevo
+ * Webhook handler for Brevo email events (opened, clicked, etc.)
  */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { type, data, created_at } = body;
+    // Note: Brevo webhook payload structure is different from Resend
+    // This is a placeholder for Brevo webhook integration
+    console.log("Brevo webhook received:", body);
+    
+    const { event, messageId, timestamp } = body;
 
-    if (!type || !data || !data.email_id) {
+    if (!event || !messageId) {
       return NextResponse.json({ error: "Invalid webhook payload" }, { status: 400 });
     }
 
     const db = getAdminDb();
-    const emailId = data.email_id;
 
     // Log the event
     await db.collection("emailEvents").add({
-      emailId,
-      type, // e.g., 'email.opened', 'email.clicked'
-      data,
-      createdAt: created_at || new Date().toISOString(),
+      emailId: messageId,
+      type: event, // e.g., 'opened', 'clicked', 'delivered'
+      data: body,
+      createdAt: timestamp || new Date().toISOString(),
       receivedAt: new Date().toISOString(),
     });
 
     // Update the original email send record if it exists
     const emailSendsSnapshot = await db.collection("emailSends")
-      .where("messageId", "==", emailId)
+      .where("messageId", "==", messageId)
       .limit(1)
       .get();
 
@@ -40,18 +43,18 @@ export async function POST(request: NextRequest) {
         lastEventAt: new Date().toISOString(),
       };
 
-      if (type === "email.opened") {
+      if (event === "opened") {
         updates.opened = true;
         updates.openCount = (currentData.openCount || 0) + 1;
-      } else if (type === "email.clicked") {
+      } else if (event === "request" || event === "click") {
         updates.clicked = true;
         updates.clickCount = (currentData.clickCount || 0) + 1;
-      } else if (type === "email.delivered") {
+      } else if (event === "delivered") {
         updates.delivered = true;
-        updates.deliveredAt = created_at || new Date().toISOString();
-      } else if (type === "email.bounced") {
+        updates.deliveredAt = timestamp || new Date().toISOString();
+      } else if (event === "deferred" || event === "soft_bounce" || event === "hard_bounce") {
         updates.bounced = true;
-      } else if (type === "email.complained") {
+      } else if (event === "spam" || event === "complaint") {
         updates.complained = true;
       }
 
@@ -60,7 +63,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ received: true });
   } catch (error) {
-    console.error("Resend webhook error:", error);
+    console.error("Brevo webhook error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

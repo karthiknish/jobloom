@@ -79,7 +79,7 @@ export default function EmailMarketingPage() {
             <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
               <h3 style="color: #666; margin-top: 0;">System Features:</h3>
               <ul style="color: #666;">
-                <li>Resend Integration</li>
+                <li>Brevo Integration</li>
                 <li>Template Personalization</li>
                 <li>Bulk Email Sending</li>
                 <li>Campaign Analytics</li>
@@ -101,7 +101,7 @@ export default function EmailMarketingPage() {
           This is a test email from the HireAll Email Marketing System.
           
           System Features:
-          - Resend Integration
+          - Brevo Integration
           - Template Personalization
           - Bulk Email Sending
           - Campaign Analytics

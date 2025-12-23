@@ -3,10 +3,10 @@ import { z } from "zod";
 
 import { getAdminAuth, getAdminDb, type UserRecord } from "@/firebase/admin";
 import { PASSWORD_RESET_SUBJECT, renderPasswordResetEmailHtml, renderPasswordResetEmailText } from "@/emails/passwordResetEmail";
-import { sendEmail } from "@/lib/resend";
+import { sendEmail } from "@/lib/email";
 import { withApi } from "@/lib/api/withApi";
 
-const resendFrom = process.env.RESEND_FROM_EMAIL ?? "Hireall <hello@hireall.app>";
+const emailFrom = process.env.BREVO_FROM_EMAIL ?? process.env.RESEND_FROM_EMAIL ?? "Hireall <noreply@hireall.app>";
 const appUrl = process.env.HIREALL_WEB_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "https://hireall.app";
 const supportEmail = process.env.HIREALL_SUPPORT_EMAIL ?? "support@hireall.app";
 
@@ -98,7 +98,7 @@ export const POST = withApi({
     });
 
     const emailResult = await sendEmail({
-      from: resendFrom,
+      from: emailFrom,
       to: email,
       subject: PASSWORD_RESET_SUBJECT,
       html,

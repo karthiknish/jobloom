@@ -1,6 +1,6 @@
 import { withApi, z } from "@/lib/api/withApi";
 import { getAdminDb } from "@/firebase/admin";
-import { sendBulkEmails, personalizeTemplate, personalizeSubject } from "@/lib/resend";
+import { sendBulkEmails, personalizeTemplate, personalizeSubject } from "@/lib/email";
 
 const paramsSchema = z.object({
   id: z.string(),
@@ -145,8 +145,8 @@ export const POST = withApi({
     }
   }
 
-  // Send emails using Resend
-  console.log(`Sending ${emails.length} emails via Resend...`);
+  // Send emails using Brevo
+  console.log(`Sending ${emails.length} emails via Brevo...`);
   const { results, summary } = await sendBulkEmails(emails, {
     batchSize: 100,
     delayBetweenBatches: 1000
