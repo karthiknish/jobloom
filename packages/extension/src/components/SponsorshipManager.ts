@@ -3,6 +3,7 @@ import { get } from "../apiClient";
 import { fetchSponsorRecord as fetchSponsorLookup, SponsorLookupResult } from "../sponsorship/lookup";
 import { type JobData as JobDescriptionData } from "../parsers";
 import { UserProfileManager, type UserVisaCriteria } from "../components/UserProfileManager";
+import { ExtensionMessageHandler } from "../components/ExtensionMessageHandler";
 import {
   UK_SALARY_THRESHOLDS,
   UK_HOURLY_RATES,
@@ -264,7 +265,6 @@ export class SponsorshipManager {
         } else if (e?.statusCode === 401) {
           console.warn(`Authentication failed for sponsor lookup: ${e.message}`);
           try {
-            const { ExtensionMessageHandler } = await import("../components/ExtensionMessageHandler");
             const syncResult = await ExtensionMessageHandler.sendMessage("syncAuthState", {}, 3);
             if (syncResult?.userId) {
               console.log("Hireall: Auth state refreshed, retrying sponsor lookup");

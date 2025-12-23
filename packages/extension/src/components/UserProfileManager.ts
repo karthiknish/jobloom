@@ -1,5 +1,6 @@
 import { DEFAULT_WEB_APP_URL, sanitizeBaseUrl } from "../constants";
 import { safeChromeStorageGet } from "../utils/safeStorage";
+import { ExtensionMessageHandler } from "./ExtensionMessageHandler";
 export interface UserVisaCriteria {
   ukFiltersEnabled: boolean;
   ageCategory: "under26" | "adult";
@@ -65,7 +66,6 @@ export class UserProfileManager {
         return;
       }
 
-      const { ExtensionMessageHandler } = await import("./ExtensionMessageHandler");
       const response = await ExtensionMessageHandler.sendMessage("fetchUserPreferences", {}, 3);
 
       if (response?.preferences) {

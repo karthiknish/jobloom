@@ -570,12 +570,6 @@ export class JobTracker {
     const originalLabel = button.innerHTML;
     const jobData = await UnifiedJobParser.extractJobFromElement(card, window.location.href);
 
-    // Debug: Log what we extracted
-    console.error('[DEBUG] Extracted job data: title=' + (jobData?.title || 'null') + 
-      ', company=' + (jobData?.company || 'null') + 
-      ', location=' + (jobData?.location || 'null'));
-    console.error('[DEBUG] Card HTML:', card.outerHTML?.substring(0, 800));
-
     if (!jobData || !jobData.company || jobData.company.length < 2 || isLikelyPlaceholderCompany(jobData.company)) {
       UIComponents.showToast(
         "Couldn't detect the company name for this job. Open the job details and try again.",

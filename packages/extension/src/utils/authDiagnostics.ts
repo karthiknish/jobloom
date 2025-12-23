@@ -1,5 +1,6 @@
 import { acquireIdToken, clearCachedAuthToken } from '../authToken';
 import { UserProfileManager } from '../components/UserProfileManager';
+import { ExtensionMessageHandler } from '../components/ExtensionMessageHandler';
 import { logger } from './logger';
 
 export interface AuthDiagnostics {
@@ -112,7 +113,6 @@ export class AuthDiagnostics {
       logger.debug('AuthDiagnostics', 'Cleared cached tokens');
 
       // Try to sync auth state from site
-      const { ExtensionMessageHandler } = await import('../components/ExtensionMessageHandler');
       const syncResult = await ExtensionMessageHandler.sendMessage("syncAuthState", {}, 3);
       
       if (syncResult?.userId) {
