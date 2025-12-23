@@ -97,7 +97,7 @@ const posts = [
     title: "How to Track Global Talent Visa Opportunities in 2025",
     excerpt:
       "Step-by-step ways to monitor new Global Talent Visa endorsements, sponsored companies, and live openings this year.",
-    content: `# How to Track Global Talent Visa Opportunities in 2025\n\nThe UK Global Talent Visa remains one of the fastest routes for highly skilled professionals to work and live in the UK. Competition is fierce, so having a repeatable research system matters. This playbook helps you track endorsement opportunities, stay ahead of the news cycle, and identify companies that are actively hiring globally.\n\n## 1. Follow Official Tech Nation Successor Updates\n- Subscribe to newsletters from the endorsing bodies that replaced Tech Nation for your specialty.\n- Set Google Alerts for key phrases like \"Global Talent Visa endorsement\" and \"Designated Competent Body updates\".\n- Monitor Github issues and community forums where engineers share application timelines.\n\n## 2. Map Sponsored Companies Each Month\nCreate a spreadsheet that includes: industry, headcount, HQ location, and the visa types each company supports. Use public records, company blogs, and FOI responses to keep it current. HireAll’s sponsor tracker can jump-start the list with verified employers.\n\n## 3. Track Hiring Signals\nLook for signs that a company is scaling globally: new fundraises, engineering leadership hires, and job ads with relocation benefits. When you see a company post the same role in multiple geographies, add it to your outreach list.\n\n## 4. Personalize Your Outreach\nRemote-first companies receive generic cold emails daily. Mention the specific products you admire, include 1-2 bullet points about how you can help with their next roadmap milestone, and link to proof of work.\n\n> Tip: Keep a running doc of endorsements and testimonials that speak to your niche expertise. These quotes make your cover letters stand out.\n\n## 5. Stay Interview Ready\n- Practice a 3-minute narrative that connects your achievements with the employer’s vision.\n- Prepare STAR examples that highlight high-impact projects, not just responsibilities.\n- Collect evidence for policy and advocacy contributions if you are applying through the \"exceptional promise\" route.\n\nBeing consistent with this workflow means you always have warm conversations lined up when a new visa window opens.`,
+    content: `# How to Track Global Talent Visa Opportunities in 2025\n\nThe UK Global Talent Visa remains one of the fastest routes for highly skilled professionals to work and live in the UK. Competition is fierce, so having a repeatable research system matters. This playbook helps you track endorsement opportunities, stay ahead of the news cycle, and identify companies that are actively hiring globally.\n\n## 1. Follow Official Tech Nation Successor Updates\n- Subscribe to newsletters from the endorsing bodies that replaced Tech Nation for your specialty.\n- Set Google Alerts for key phrases like \"Global Talent Visa endorsement\" and \"Designated Competent Body updates\".\n- Monitor Github issues and community forums where engineers share application timelines.\n\n## 2. Map Sponsored Companies Each Month\nCreate a spreadsheet that includes: industry, headcount, HQ location, and the visa types each company supports. Use public records, company blogs, and FOI responses to keep it current. HireAll’s sponsor tracker can jump-start the list with verified employers.\n\n## 3. Track Hiring Signals\nLook for signs that a company is scaling globally: new fundraises, engineering leadership hires, and job ads with relocation benefits. When you see a company post the same role in multiple geographies, add it to your outreach list.\n\n## 4. Personalize Your Outreach\nRemote-first companies receive generic cold emails daily. Mention the specific products you admire, include 1-2 bullet points about how you can help with their next roadmap milestone, and link to proof of work.\n\n> Tip: Keep a running doc of endorsements and testimonials that speak to your niche expertise. These quotes make your cover letters stand out.\n\nBeing consistent with this workflow means you always have warm conversations lined up when a new visa window opens.`,
     category: "Visa & Sponsorship",
     tags: ["global talent visa", "sponsorship", "career strategy"],
     featuredImage:
@@ -129,9 +129,9 @@ const posts = [
     title: "AI Screening Tools Recruiters Use (and How to Stand Out)",
     excerpt:
       "Understand the AI tools scanning your resume and learn actionable tactics to make sure your application survives the first review.",
-    content: `# AI Screening Tools Recruiters Use (and How to Stand Out)\n\nFrom resume parsers to interview summarizers, AI is embedded in every stage of the hiring funnel. Knowing how these tools score candidates helps you tailor your application to win higher rankings without gaming the system.\n\n## 1. Resume Parsers\nApplicant tracking systems like Greenhouse, Workable, and Lever use AI modules that prioritize structured data. Keep formatting simple, use standard section headings, and turn achievements into metric-driven bullet points so the parser assigns a high relevance score.\n\n## 2. Skill Matching Engines\nVendors such as Eightfold and SeekOut analyze your experience against internal talent graphs. Map your skills to business impact (e.g., \"Increased pipeline conversion by 18% after implementing ML-based lead scoring\"). This phrasing mirrors the output these tools are trained to recognize.\n\n## 3. Video Interview Analytics\nPlatforms like HireVue transcribe your responses and benchmark them against top performers. Practice concise, confident answers and vary your tone to avoid sounding scripted. Share frameworks (PAST, STAR, SHIP) so the model tags your response as structured.\n\n## 4. Reference & Background Bots\nExpect automated outreach to references and background checks that verify employment dates. Keep your LinkedIn and CV aligned to avoid false red flags.\n\n## 5. Human Checkpoints Still Matter\nAI shortcuts save recruiters time, but people still make final decisions. Build relationships with hiring managers on LinkedIn and share relevant work samples so your application gets the manual review it deserves.`,
-    category: "Interview Prep",
-    tags: ["ai hiring", "ats", "interview prep"],
+    content: `# AI Screening Tools Recruiters Use (and How to Stand Out)\n\nFrom resume parsers to skill matching engines, AI is embedded in every stage of the hiring funnel. Knowing how these tools score candidates helps you tailor your application to win higher rankings without gaming the system.\n\n## 1. Resume Parsers\nApplicant tracking systems like Greenhouse, Workable, and Lever use AI modules that prioritize structured data. Keep formatting simple, use standard section headings, and turn achievements into metric-driven bullet points so the parser assigns a high relevance score.\n\n## 2. Skill Matching Engines\nVendors such as Eightfold and SeekOut analyze your experience against internal talent graphs. Map your skills to business impact (e.g., \"Increased pipeline conversion by 18% after implementing ML-based lead scoring\"). This phrasing mirrors the output these tools are trained to recognize.\n\n## 3. Reference & Background Bots\nExpect automated outreach to references and background checks that verify employment dates. Keep your LinkedIn and CV aligned to avoid false red flags.\n\n## 4. Human Checkpoints Still Matter\nAI shortcuts save recruiters time, but people still make final decisions. Build relationships with hiring managers on LinkedIn and share relevant work samples so your application gets the manual review it deserves.`,
+    category: "Career Strategy",
+    tags: ["ai hiring", "ats", "career strategy"],
     featuredImage:
       "https://images.pexels.com/photos/3861964/pexels-photo-3861964.jpeg?auto=compress&cs=tinysrgb&w=1200",
     status: "published",
@@ -248,7 +248,7 @@ Layoffs are disruptive, but they hit international professionals harder because 
 ## 2. Update Storytelling Quickly
 - Reframe the layoff as an industry-wide trend instead of personal failure.
 - Highlight accomplishments achieved during your tenure before the restructuring.
-- Prepare a concise narrative for interviews and networking calls.
+- Prepare a concise narrative for networking calls.
 
 ## 3. Rebuild Routine and Support Systems
 - Set daily job search targets (applications, outreach, prep sessions).
@@ -302,7 +302,7 @@ LinkedIn’s Creator Mode is more than a vanity toggle—it’s a distribution e
 - Use Creator Analytics to see which posts triggered profile views and follow up with warm messages.
 
 ## 5. Track Conversion Metrics
-- Use a simple spreadsheet to log inbound messages, interviews, and offer stages generated from LinkedIn content.
+- Use a simple spreadsheet to log inbound messages and offer stages generated from LinkedIn content.
 - Iterate topics based on what drives the most outreach.
 
 Done consistently, Creator Mode turns your profile into a personal landing page that runs while you sleep.`,
@@ -399,50 +399,6 @@ Tailor the template for each application by swapping the proof points and missio
       "Download a plug-and-play cover letter structure that answers employer sponsorship concerns quickly.",
     metaKeywords: ["cover letter template", "visa sponsorship", "job application"],
     publishedAt: "2025-01-25T16:40:00Z",
-  },
-  {
-    title: "Preparing for International Panel Interviews",
-    excerpt:
-      "Handle multi-time-zone interviews with senior stakeholders by orchestrating logistics, cultural context, and follow-up discipline.",
-    content: `# Preparing for International Panel Interviews
-
-Panel interviews can feel intense, especially when attendees span continents and functions. Here’s how to show up confidently.
-
-## 1. Map the Panel
-- Request names, titles, and locations ahead of time.
-- Research how each panelist contributes to the role—product, engineering, people ops, etc.
-- Note potential cultural nuances (direct vs. indirect feedback styles).
-
-## 2. Confirm Logistics Early
-- Double-check time zones and meeting links.
-- Test your audio/video setup and have a backup hotspot ready.
-- Prepare concise intros since panel time is limited.
-
-## 3. Structure Answers for Multiple Stakeholders
-- Use the SHIP framework (Situation, Hindrance, Intervention, Progress).
-- Tie each response back to the panelist’s focus area.
-- Invite questions: “Does this align with how your team approaches launches?”
-
-## 4. Ask Smart Questions
-- Cover strategic topics (“How are you balancing global expansion with compliance?”).
-- Ask culture-focused questions (“How does the team celebrate wins across regions?”).
-
-## 5. Follow Up Thoughtfully
-- Send a single recap email within 24 hours summarizing key takeaways and next steps.
-- Attach any requested materials (case studies, portfolios).
-- Express appreciation for the logistical coordination involved.
-
-Preparation signals respect for everyone’s time and reduces cognitive load during the conversation.`,
-    category: "Interview Prep",
-    tags: ["panel interview", "international", "job search"],
-    featuredImage:
-      "https://images.pexels.com/photos/3182773/pexels-photo-3182773.jpeg?auto=compress&cs=tinysrgb&w=1200",
-    status: "published",
-    seoTitle: "International Panel Interview Tips",
-    seoDescription:
-      "Master panel interviews with distributed teams using the SHIP framework, tailored questions, and meticulous logistics.",
-    metaKeywords: ["panel interview", "international job search", "remote hiring"],
-    publishedAt: "2025-01-27T09:50:00Z",
   },
   {
     title: "Building Professional References Across Borders",
@@ -548,11 +504,11 @@ AI can amplify your job search if you guide it with smart prompts and human judg
 
 ## 4. Review for Authenticity
 - Remove over-the-top claims or buzzwords.
-- Ensure you can speak to every bullet point in an interview.
+- Ensure you can speak to every bullet point in your application.
 
 ## 5. Track Results
 - Tag each application by level of personalization and monitor callback rates.
-- Adjust AI prompts based on what generates interviews.
+- Adjust AI prompts based on what generates responses.
 
 AI should handle the heavy lifting of formatting and structure while you supply the insight that proves you’re the right hire.`,
     category: "Career Tools",

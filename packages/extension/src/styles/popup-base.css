@@ -7,6 +7,8 @@
 
 :root {
     /* Modern Color Palette (Slate & Emerald) */
+    /* These are now injected from theme.ts via popup.ts */
+    /* Fallbacks provided here for design-time visibility */
     --bg-app: #f8fafc;
     --bg-card: #ffffff;
     --bg-hover: #f1f5f9;
@@ -48,7 +50,8 @@
 
 body {
     width: 380px;
-    height: 600px;
+    min-height: 400px;
+    max-height: 600px;
     margin: 0;
     padding: 0;
     background: var(--bg-app);

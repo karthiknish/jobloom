@@ -210,11 +210,12 @@ export const cssAnimations = {
   utilities: {
     // Duration classes
     duration: {
-      fast: "duration-150",
-      normal: "duration-250",
-      slow: "duration-350",
-      slower: "duration-500",
-      slowest: "duration-750",
+      ultraFast: "duration-ultra-fast",
+      fast: "duration-fast",
+      normal: "duration-medium",
+      slow: "duration-slow",
+      slower: "duration-very-slow",
+      slowest: "duration-ultra-slow",
     },
 
     // Easing classes

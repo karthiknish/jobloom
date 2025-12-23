@@ -37,7 +37,6 @@ export const GET = withApi({
       status: data.status,
       appliedDate: data.appliedDate,
       notes: data.notes,
-      interviewDates: data.interviewDates,
       followUpDate: data.followUpDate,
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,

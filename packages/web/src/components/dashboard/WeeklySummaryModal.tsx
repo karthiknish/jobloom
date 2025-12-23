@@ -29,6 +29,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { Application } from "@/types/dashboard";
+import { useRestoreFocus } from "@/hooks/useRestoreFocus";
 
 interface WeeklySummaryModalProps {
   open: boolean;
@@ -41,6 +42,7 @@ export function WeeklySummaryModal({
   onOpenChange,
   applications = [],
 }: WeeklySummaryModalProps) {
+  useRestoreFocus(open);
   const safeApps = Array.isArray(applications) ? applications : [];
   const now = new Date();
 
@@ -65,7 +67,6 @@ export function WeeklySummaryModal({
   const thisWeekStats = {
     added: thisWeekApps.length,
     applied: thisWeekApps.filter((a) => a.status === "applied").length,
-    interviewing: thisWeekApps.filter((a) => a.status === "interviewing").length,
     offered: thisWeekApps.filter((a) => a.status === "offered").length,
     rejected: thisWeekApps.filter((a) => a.status === "rejected").length,
   };
@@ -73,7 +74,6 @@ export function WeeklySummaryModal({
   const lastWeekStats = {
     added: lastWeekApps.length,
     applied: lastWeekApps.filter((a) => a.status === "applied").length,
-    interviewing: lastWeekApps.filter((a) => a.status === "interviewing").length,
     offered: lastWeekApps.filter((a) => a.status === "offered").length,
     rejected: lastWeekApps.filter((a) => a.status === "rejected").length,
   };
@@ -88,9 +88,6 @@ export function WeeklySummaryModal({
   const highlights = [];
   if (thisWeekStats.offered > 0) {
     highlights.push({ icon: <CheckCircle2 className="h-4 w-4 text-green-600" />, text: `${thisWeekStats.offered} offer${thisWeekStats.offered > 1 ? 's' : ''} received!`, type: "success" });
-  }
-  if (thisWeekStats.interviewing > 0) {
-    highlights.push({ icon: <Star className="h-4 w-4 text-purple-600" />, text: `${thisWeekStats.interviewing} interview${thisWeekStats.interviewing > 1 ? 's' : ''} scheduled`, type: "info" });
   }
   if (thisWeekStats.added >= 10) {
     highlights.push({ icon: <Sparkles className="h-4 w-4 text-amber-600" />, text: `Great week! ${thisWeekStats.added} applications added`, type: "highlight" });
@@ -192,7 +189,6 @@ export function WeeklySummaryModal({
                 {[
                   { label: "Added", curr: thisWeekStats.added, prev: lastWeekStats.added, icon: <Briefcase className="h-4 w-4" />, color: "text-primary" },
                   { label: "Applied", curr: thisWeekStats.applied, prev: lastWeekStats.applied, icon: <Clock className="h-4 w-4" />, color: "text-amber-600 dark:text-amber-400" },
-                  { label: "Interviewing", curr: thisWeekStats.interviewing, prev: lastWeekStats.interviewing, icon: <Star className="h-4 w-4" />, color: "text-purple-600 dark:text-purple-400" },
                   { label: "Offered", curr: thisWeekStats.offered, prev: lastWeekStats.offered, icon: <CheckCircle2 className="h-4 w-4" />, color: "text-green-600 dark:text-green-400" },
                   { label: "Rejected", curr: thisWeekStats.rejected, prev: lastWeekStats.rejected, icon: <XCircle className="h-4 w-4" />, color: "text-red-500 dark:text-red-400" },
                 ].map((item) => (

@@ -19,6 +19,7 @@
     "setup:chrome-store": "node scripts/setup-chrome-store.js"
   },
   "dependencies": {
+    "@hireall/shared": "*",
     "@google/generative-ai": "^0.24.1",
     "@tiptap/extension-character-count": "^3.4.4",
     "@tiptap/extension-code-block": "^3.4.4",

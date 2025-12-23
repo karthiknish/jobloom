@@ -33,11 +33,11 @@ const sampleBlogPosts = [
     status: "published"
   },
   {
-    title: "How to Ace Your Technical Interview",
-    excerpt: "Master the art of technical interviews with proven strategies.",
-    content: "# How to Ace Your Technical Interview\n\nTechnical interviews can be intimidating, but preparation is key.\n\n## Preparation Strategies\n\nPractice coding problems regularly and understand algorithms.\n\n## During the Interview\n\nCommunicate your thought process clearly.\n\n## Key Tips\n\nStay calm and ask clarifying questions when needed.",
-    category: "Interview Preparation",
-    tags: ["interview", "technical"],
+    title: "Optimizing Your Job Search Strategy",
+    excerpt: "Learn how to streamline your job search and find the right opportunities faster.",
+    content: "# Optimizing Your Job Search Strategy\n\nSearching for a job can be a full-time job itself. Here is how to optimize your workflow...\n\n## 1. Set Daily Goals\n\nConsistency is key to a successful job search.\n\n## 2. Use the Right Tools\n\nLeverage platforms like HireAll to track your applications.\n\n## 3. Network Effectively\n\nBuild genuine professional relationships.",
+    category: "Career Advice",
+    tags: ["job search", "career", "productivity"],
     featuredImage: "https://images.pexels.com/photos/3184465/pexels-photo-3184465.jpeg?auto=compress&cs=tinysrgb&w=1200",
     status: "published"
   },
@@ -49,107 +49,17 @@ const sampleBlogPosts = [
     tags: ["personal branding", "career"],
     featuredImage: "https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=1200",
     status: "published"
+  },
+  {
+    title: "Mastering Salary Negotiation",
+    excerpt: "Learn how to negotiate your salary and benefits package effectively.",
+    content: "# Mastering Salary Negotiation\n\nNegotiating your salary is a critical part of the job search process.\n\n## Research Market Rates\n\nUnderstand the market value for your role and experience level.\n\n## Know Your Value\n\nHighlight your achievements and the value you bring to the company.\n\n## Key Tips\n\nBe professional, prepared, and ready to discuss the entire compensation package.",
+    category: "Career Development",
+    tags: ["salary", "negotiation"],
+    featuredImage: "https://images.pexels.com/photos/3184465/pexels-photo-3184465.jpeg?auto=compress&cs=tinysrgb&w=1200",
+    status: "published"
   }
 ];
-
-/**
-
-### 2. Technical Phone Interview
-45-60 minutes diving deeper into technical concepts, algorithms, and system design.
-
-### 3. On-site Interviews
-Multiple rounds (4-6) including coding interviews, system design, and behavioral questions.
-
-## Preparation Strategies
-
-### Algorithm and Data Structures
-- **Practice regularly**: Solve at least 2-3 problems daily on platforms like LeetCode, HackerRank, or CodeSignal
-- **Master fundamentals**: Focus on arrays, strings, linked lists, trees, graphs, sorting, and searching
-- **Time complexity**: Understand Big O notation and when to use different data structures
-
-### System Design
-- **Learn common patterns**: Study how to design scalable systems for real-world applications
-- **Practice trade-offs**: Understand the balance between consistency, availability, and partition tolerance
-- **Database design**: Learn about normalization, indexing, and query optimization
-
-### Coding Best Practices
-- **Write clean code**: Focus on readability, proper naming, and documentation
-- **Test your code**: Always consider edge cases and write tests
-- **Time management**: Learn to solve problems efficiently within time constraints
-
-## Common Interview Formats
-
-### Whiteboard Coding
-- **Think aloud**: Explain your thought process as you work through problems
-- **Start simple**: Begin with a brute force solution, then optimize
-- **Ask clarifying questions**: Don't assume requirements
-
-### Take-Home Assignments
-- **Plan your approach**: Spend time understanding requirements before coding
-- **Code quality matters**: Treat it like production code
-- **Include tests**: Show that you understand testing principles
-
-### Pair Programming
-- **Communication is key**: Explain your thinking and ask questions
-- **Collaborate effectively**: Be open to feedback and suggestions
-- **Show your process**: Demonstrate how you approach problem-solving
-
-## Behavioral Questions in Technical Interviews
-
-Don't underestimate the importance of behavioral questions. Interviewers use them to assess:
-- **Team collaboration**: How you work with others
-- **Problem-solving approach**: Your methodology for tackling challenges
-- **Learning ability**: How you handle new technologies and concepts
-- **Communication skills**: Your ability to explain complex concepts
-
-## Common Pitfalls to Avoid
-
-### 1. Lack of Preparation
-Many candidates underestimate the depth of preparation required. Technical interviews are rigorous and require consistent practice.
-
-### 2. Poor Communication
-Failing to explain your thought process or asking clarifying questions can hurt your chances, even if you have the right solution.
-
-### 3. Getting Stuck
-If you're stuck on a problem, don't panic. Ask for hints, think about simpler cases, or try a different approach.
-
-### 4. Ignoring Edge Cases
-Always consider edge cases, error conditions, and boundary scenarios in your solutions.
-
-## Final Tips for Success
-
-### Practice Makes Perfect
-- **Mock interviews**: Practice with friends, mentors, or use platforms like Pramp
-- **Timed practice**: Get comfortable solving problems under time pressure
-- **Review solutions**: Analyze multiple approaches to the same problem
-
-### Mindset Matters
-- **Stay calm**: Technical interviews are stressful, but remember that interviewers want you to succeed
-- **Learn from failures**: Each interview is a learning opportunity
-- **Be authentic**: Don't try to be someone you're not
-
-### Follow-Up
-- **Send thank-you notes**: Express appreciation for the interviewer's time
-- **Reflect on the experience**: Identify areas for improvement
-- **Keep practicing**: Continuous improvement is key to long-term success
-
-Remember, technical interviews are as much about assessing your problem-solving approach as they are about getting the right answer. Stay focused, keep practicing, and you'll see improvement over time.
-    `,
-    category: "Interview Preparation",
-    tags: ["technical interview", "coding", "algorithms", "system design"],
-    featuredImage: "https://images.pexels.com/photos/3184465/pexels-photo-3184465.jpeg?auto=compress&cs=tinysrgb&w=1200",
-    status: "published",
-    authorId: "admin",
-    authorName: "HireAll Team",
-    publishedAt: new Date("2024-12-10T14:30:00Z"),
-    updatedAt: new Date("2024-12-10T14:30:00Z"),
-    readingTime: 8,
-    views: 0,
-    likes: 0,
-    seoTitle: "How to Ace Your Technical Interview: Complete Guide 2025",
-    seoDescription: "Master technical interviews with proven strategies, preparation tips, and common pitfalls to avoid.",
-    metaKeywords: ["technical interview", "coding interview", "software engineering", "interview tips"]
-  },
   {
     title: "Building a Personal Brand: Why It Matters for Your Career",
     slug: "building-personal-brand-career",

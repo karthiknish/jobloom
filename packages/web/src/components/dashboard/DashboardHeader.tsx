@@ -123,20 +123,15 @@ export function DashboardHeader({
               {/* Import from Extension - Primary CTA */}
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <motion.div
-                    whileHover={{ scale: 1.02, y: -1 }}
-                    whileTap={{ scale: 0.98 }}
+                  <Button
+                    onClick={onImportJobs}
+                    size="sm"
+                    className="motion-button motion-button-on-dark shadow-md hover:shadow-lg bg-primary hover:bg-primary/90 text-primary-foreground border-0 gap-2"
                   >
-                    <Button
-                      onClick={onImportJobs}
-                      size="sm"
-                      className="shadow-md hover:shadow-lg bg-primary hover:bg-primary/90 text-primary-foreground border-0 gap-2"
-                    >
-                      <Chrome className="h-4 w-4" />
-                      <span className="hidden sm:inline">Import from Extension</span>
-                      <span className="sm:hidden">Import</span>
-                    </Button>
-                  </motion.div>
+                    <Chrome className="h-4 w-4" />
+                    <span className="hidden sm:inline">Import from Extension</span>
+                    <span className="sm:hidden">Import</span>
+                  </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="max-w-xs">
                   <p className="text-sm">Import jobs saved from the browser extension or upload a CSV file</p>
@@ -146,20 +141,15 @@ export function DashboardHeader({
               {/* Add Job */}
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <motion.div
-                    whileHover={{ scale: 1.02, y: -1 }}
-                    whileTap={{ scale: 0.98 }}
+                  <Button
+                    onClick={onAddJob}
+                    variant="default"
+                    size="sm"
+                    className="motion-button motion-button-on-dark shadow-md hover:shadow-lg bg-secondary hover:bg-secondary/90 text-secondary-foreground border-0 gap-2"
                   >
-                    <Button
-                      onClick={onAddJob}
-                      variant="default"
-                      size="sm"
-                      className="shadow-md hover:shadow-lg bg-secondary hover:bg-secondary/90 text-secondary-foreground border-0 gap-2"
-                    >
-                      <FilePlus className="h-4 w-4" />
-                      <span className="hidden sm:inline">Add Job</span>
-                    </Button>
-                  </motion.div>
+                    <FilePlus className="h-4 w-4" />
+                    <span className="hidden sm:inline">Add Job</span>
+                  </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">
                   <p className="text-sm">Manually add a job posting</p>
@@ -169,20 +159,15 @@ export function DashboardHeader({
               {/* Add Application */}
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <motion.div
-                    whileHover={{ scale: 1.02, y: -1 }}
-                    whileTap={{ scale: 0.98 }}
+                  <Button
+                    onClick={onAddApplication}
+                    variant="outline"
+                    size="sm"
+                    className="motion-button motion-button-on-dark shadow-sm hover:shadow-md border-border/60 hover:border-emerald-300 hover:bg-emerald-50/50 gap-2"
                   >
-                    <Button
-                      onClick={onAddApplication}
-                      variant="outline"
-                      size="sm"
-                      className="shadow-sm hover:shadow-md border-border/60 hover:border-emerald-300 hover:bg-emerald-50/50 gap-2"
-                    >
-                      <ClipboardList className="h-4 w-4" />
-                      <span className="hidden sm:inline">Track Application</span>
-                    </Button>
-                  </motion.div>
+                    <ClipboardList className="h-4 w-4" />
+                    <span className="hidden sm:inline">Track Application</span>
+                  </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">
                   <p className="text-sm">Track a job you&apos;ve already applied to</p>

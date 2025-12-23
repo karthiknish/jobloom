@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { useApiQuery } from "@/hooks/useApi";
-import { dashboardApi } from "@/utils/api/dashboard";
+import { dashboardApi, Job } from "@/utils/api/dashboard";
 import {
   importJobsFromCSV,
   importJobsFromAPI,
@@ -49,6 +49,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { extensionAuthBridge } from "@/lib/extensionAuthBridge";
 import Link from "next/link";
 import { CHROME_EXTENSION_URL, isExternalUrl } from "@/config/links";
+import { useRestoreFocus } from "@/hooks/useRestoreFocus";
 
 interface JobImportModalProps {
   isOpen: boolean;
@@ -76,7 +77,7 @@ export function JobImportModal({
   onImportComplete,
 }: JobImportModalProps) {
   const { user } = useFirebaseAuth();
-  const [importMethod, setImportMethod] = useState<"extension" | "csv" | "api">("extension");
+  const [importMethod, setImportMethod] = useState<"extension" | "csv" | "api" | "url">("extension");
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [apiSource, setApiSource] = useState<
     "indeed" | "glassdoor" | "custom"
@@ -84,6 +85,11 @@ export function JobImportModal({
   const [searchQuery, setSearchQuery] = useState("");
   const [location, setLocation] = useState("");
   const [isImporting, setIsImporting] = useState(false);
+  
+  // URL Import state
+  const [jobUrl, setJobUrl] = useState("");
+  const [isParsingUrl, setIsParsingUrl] = useState(false);
+  const [parsedJob, setParsedJob] = useState<Partial<Job> | null>(null);
   
   // Extension-specific state
   const [isExtensionInstalled, setIsExtensionInstalled] = useState(false);
@@ -127,6 +133,8 @@ export function JobImportModal({
     const interval = setInterval(checkExtension, 3000);
     return () => clearInterval(interval);
   }, []);
+
+  useRestoreFocus(isOpen);
 
   // Fetch jobs from extension storage
   const fetchExtensionJobs = useCallback(async () => {
@@ -375,6 +383,47 @@ export function JobImportModal({
     }
   };
 
+  const handleUrlParse = async () => {
+    if (!jobUrl) return;
+    
+    setIsParsingUrl(true);
+    try {
+      const job = await dashboardApi.parseJobFromUrl(jobUrl);
+      setParsedJob(job);
+      showSuccess("Job parsed", "We've extracted the details from the page.");
+    } catch (error: any) {
+      console.error("Error parsing URL:", error);
+      showError("Parsing failed", error.message || "Unable to extract job details from this URL.");
+    } finally {
+      setIsParsingUrl(false);
+    }
+  };
+
+  const handleSaveParsedJob = async () => {
+    if (!parsedJob || !userRecord) return;
+
+    setIsImporting(true);
+    try {
+      await dashboardApi.createJob({
+        ...parsedJob,
+        userId: userRecord._id,
+        source: parsedJob.source || 'url_import',
+        dateFound: Date.now(),
+      });
+      
+      showSuccess("Job saved", "The job has been added to your board.");
+      onImportComplete();
+      onClose();
+      setParsedJob(null);
+      setJobUrl("");
+    } catch (error: any) {
+      console.error("Error saving job:", error);
+      showError("Save failed", error.message || "Unable to save the job.");
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0">
@@ -396,11 +445,10 @@ export function JobImportModal({
             <Label className="text-sm font-semibold text-foreground">Choose Import Method</Label>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {/* Extension Import */}
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+              <button
+                type="button"
                 onClick={() => setImportMethod("extension")}
-                className={`relative p-4 rounded-xl border-2 motion-control text-left ${
+                className={`motion-card relative p-4 rounded-xl border-2 motion-control text-left ${
                   importMethod === "extension"
                     ? "border-emerald-500 bg-emerald-50 shadow-md"
                     : "border-border hover:border-emerald-200 hover:bg-emerald-50/50"
@@ -431,14 +479,13 @@ export function JobImportModal({
                     Active
                   </Badge>
                 )}
-              </motion.button>
+              </button>
 
               {/* CSV Import */}
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+              <button
+                type="button"
                 onClick={() => setImportMethod("csv")}
-                className={`relative p-4 rounded-xl border-2 motion-control text-left ${
+                className={`motion-card relative p-4 rounded-xl border-2 motion-control text-left ${
                   importMethod === "csv"
                     ? "border-emerald-500 bg-emerald-50 shadow-md"
                     : "border-border hover:border-emerald-200 hover:bg-emerald-50/50"
@@ -464,7 +511,39 @@ export function JobImportModal({
                   }`}>CSV File</span>
                   <span className="text-xs text-muted-foreground text-center">Spreadsheet</span>
                 </div>
-              </motion.button>
+              </button>
+
+              {/* URL Import */}
+              <button
+                type="button"
+                onClick={() => setImportMethod("url")}
+                className={`motion-card relative p-4 rounded-xl border-2 motion-control text-left ${
+                  importMethod === "url"
+                    ? "border-emerald-500 bg-emerald-50 shadow-md"
+                    : "border-border hover:border-emerald-200 hover:bg-emerald-50/50"
+                }`}
+              >
+                {importMethod === "url" && (
+                  <div className="absolute -top-1 -right-1">
+                    <CheckCircle className="h-5 w-5 text-emerald-600 fill-white" />
+                  </div>
+                )}
+                <div className="flex flex-col items-center gap-2">
+                  <div className={`p-2.5 rounded-lg ${
+                    importMethod === "url"
+                      ? "bg-emerald-100"
+                      : "bg-muted"
+                  }`}>
+                    <Globe className={`h-5 w-5 ${
+                      importMethod === "url" ? "text-emerald-600" : "text-muted-foreground"
+                    }`} />
+                  </div>
+                  <span className={`font-medium text-sm ${
+                    importMethod === "url" ? "text-emerald-700" : "text-foreground"
+                  }`}>Job URL</span>
+                  <span className="text-xs text-muted-foreground text-center">Paste link</span>
+                </div>
+              </button>
             </div>
           </div>
 
@@ -749,6 +828,91 @@ export function JobImportModal({
                     )}
                   </Button>
                 </div>
+              </motion.div>
+            )}
+
+            {/* URL Import */}
+            {importMethod === "url" && (
+              <motion.div
+                key="url"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="space-y-4"
+              >
+                {!parsedJob ? (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="job-url">Paste Job Posting URL</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="job-url"
+                          placeholder="https://linkedin.com/jobs/view/..."
+                          value={jobUrl}
+                          onChange={(e) => setJobUrl(e.target.value)}
+                          className="flex-1"
+                        />
+                        <Button 
+                          onClick={handleUrlParse} 
+                          disabled={isParsingUrl || !jobUrl}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                        >
+                          {isParsingUrl ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+                          {isParsingUrl ? "Parsing..." : "Parse"}
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        We&apos;ll use AI to extract job details directly from the page.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200">
+                      <div className="flex items-start justify-between mb-4">
+                        <div>
+                          <h3 className="font-bold text-emerald-900">{parsedJob.title}</h3>
+                          <p className="text-sm text-emerald-700">{parsedJob.company} • {parsedJob.location}</p>
+                        </div>
+                        <Button variant="ghost" size="sm" onClick={() => setParsedJob(null)}>
+                          Change URL
+                        </Button>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4 text-sm mb-4">
+                        <div>
+                          <span className="text-muted-foreground block">Salary</span>
+                          <span className="font-medium">{parsedJob.salary || "Not specified"}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground block">Job Type</span>
+                          <span className="font-medium">{parsedJob.jobType || "Not specified"}</span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <span className="text-muted-foreground text-sm block">Description Preview</span>
+                        <p className="text-xs text-emerald-800 line-clamp-3">
+                          {parsedJob.description}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end gap-3">
+                      <Button variant="outline" onClick={() => setParsedJob(null)}>
+                        Back
+                      </Button>
+                      <Button
+                        onClick={handleSaveParsedJob}
+                        disabled={isImporting}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                      >
+                        {isImporting ? <RefreshCw className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle className="h-4 w-4 mr-2" />}
+                        Save to Board
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </motion.div>
             )}
           </AnimatePresence>

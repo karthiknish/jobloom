@@ -58,8 +58,6 @@ export function JobDataTable({
     switch (status) {
       case "applied":
         return <Clock className="h-4 w-4 text-blue-500" />;
-      case "interview":
-        return <AlertCircle className="h-4 w-4 text-amber-500" />;
       case "offered":
         return <CheckCircle className="h-4 w-4 text-green-500" />;
       case "rejected":
@@ -73,8 +71,6 @@ export function JobDataTable({
     switch (status) {
       case "applied":
         return "default";
-      case "interview":
-        return "secondary";
       case "offered":
         return "default";
       case "rejected":

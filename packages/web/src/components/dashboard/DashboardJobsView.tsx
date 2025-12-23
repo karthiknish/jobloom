@@ -57,8 +57,8 @@ export function DashboardJobsView({
   
   // Filtered applications
   const filteredApplications = useMemo(() => 
-    filterApplications(safeApplications, statusFilter, searchTerm, companyFilter),
-    [safeApplications, statusFilter, searchTerm, companyFilter]
+    filterApplications(safeApplications, searchTerm, statusFilter, companyFilter),
+    [safeApplications, searchTerm, statusFilter, companyFilter]
   );
   
   // Unique companies for filter
@@ -69,7 +69,7 @@ export function DashboardJobsView({
   
   // Get all application IDs for bulk selection
   const allIds = useMemo(() => 
-    filteredApplications.map(app => app._id),
+    filteredApplications.map((app: Application) => app._id),
     [filteredApplications]
   );
   
@@ -141,13 +141,13 @@ export function DashboardJobsView({
 
   // Bulk export handler
   const handleBulkExport = (format: "csv" | "json") => {
-    const selectedApps = filteredApplications.filter(app => 
+    const selectedApps = filteredApplications.filter((app: Application) => 
       bulkSelection.selectedIds.has(app._id)
     );
     
     if (format === "csv") {
       const headers = ["Title", "Company", "Location", "Status", "Date Found", "Salary"];
-      const rows = selectedApps.map(app => [
+      const rows = selectedApps.map((app: Application) => [
         app.job?.title || "",
         app.job?.company || "",
         app.job?.location || "",
@@ -155,10 +155,10 @@ export function DashboardJobsView({
         app.job?.dateFound || "",
         app.job?.salary || "",
       ]);
-      const csv = [headers.join(","), ...rows.map(row => row.map(cell => `"${cell}"`).join(","))].join("\n");
+      const csv = [headers.join(","), ...rows.map((row: any[]) => row.map((cell: any) => `"${cell}"`).join(","))].join("\n");
       downloadFile(csv, "selected-jobs.csv", "text/csv");
     } else {
-      const json = JSON.stringify(selectedApps.map(app => ({
+      const json = JSON.stringify(selectedApps.map((app: Application) => ({
         title: app.job?.title,
         company: app.job?.company,
         location: app.job?.location,

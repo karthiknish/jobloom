@@ -15,6 +15,7 @@ import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { useSubscription } from "@/providers/subscription-provider";
 import { useToast, TOAST_MESSAGES } from "@/hooks/use-toast";
 import { apiClient } from "@/lib/api/client";
+import { LoadingPage } from "@/components/ui/loading";
 
 export default function SettingsPage() {
   const { user: firebaseUser, loading: userLoading } = useFirebaseAuth();
@@ -327,14 +328,7 @@ export default function SettingsPage() {
   };
 
   if (userLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <RefreshCw className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading settings...</p>
-        </div>
-      </div>
-    );
+    return <LoadingPage label="Loading settings..." />;
   }
 
   const renderActiveTabContent = () => {

@@ -254,7 +254,7 @@ export function EnhancedAtsScore({
               >
                 {score.overall}
               </motion.span>
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Score</span>
+              <span className="text-xxs text-muted-foreground uppercase tracking-wider">Score</span>
             </div>
           </div>
 

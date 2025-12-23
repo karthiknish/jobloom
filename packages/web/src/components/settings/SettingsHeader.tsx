@@ -1,9 +1,10 @@
 "use client";
 
 import React from "react";
-import { ArrowLeft, RefreshCw, Save } from "lucide-react";
+import { ArrowLeft, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import { LoadingSpinner } from "@/components/ui/loading";
 
 interface SettingsHeaderProps {
   hasChanges: boolean;
@@ -48,10 +49,7 @@ export function SettingsHeader({ hasChanges, isLoading, onSave, onReset }: Setti
                   className="bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   {isLoading ? (
-                    <>
-                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                      Saving...
-                    </>
+                    <LoadingSpinner size="sm" label="Saving..." className="flex-row gap-2" />
                   ) : (
                     <>
                       <Save className="h-4 w-4 mr-2" />

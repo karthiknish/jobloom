@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Bug,
@@ -19,7 +19,7 @@ import {
   FileText,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
-import toast from "react-hot-toast";
+import { useToast } from "@/hooks/use-toast";
 
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { useApiQuery, useApiMutation } from "@/hooks/useApi";
@@ -28,6 +28,7 @@ import { exportToCsv } from "@/utils/exportToCsv";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminAccessDenied } from "@/components/admin/AdminAccessDenied";
 import { Button } from "@/components/ui/button";
+import { LoadingSpinner, LoadingPage } from "@/components/ui/loading";
 import {
   Card,
   CardContent,
@@ -114,6 +115,7 @@ function isIssueReport(contact: ContactSubmission): boolean {
 }
 
 export default function AdminReportsPage() {
+  const { toast } = useToast();
   const { isAdmin, isLoading: adminLoading, userRecord } = useAdminAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<IssueType>("all");
@@ -136,6 +138,15 @@ export default function AdminReportsPage() {
   } = useApiQuery(loadContacts, [userRecord?._id, isAdmin], {
     enabled: canFetchAdminData,
   });
+
+  useEffect(() => {
+    if (!contactsError) return;
+    toast({
+      title: "Error",
+      description: contactsError.message || "Failed to load reports",
+      variant: "destructive",
+    });
+  }, [contactsError, toast]);
 
   const { mutate: updateContact, loading: updateLoading } = useApiMutation(
     ({
@@ -193,7 +204,10 @@ export default function AdminReportsPage() {
 
   const handleRefresh = async () => {
     await Promise.resolve(refetchContacts());
-    toast.success("Reports refreshed");
+    toast({
+      title: "Success",
+      description: "Reports refreshed",
+    });
   };
 
   const handleUpdateStatus = async (
@@ -209,11 +223,18 @@ export default function AdminReportsPage() {
           respondedAt: status === "responded" ? Date.now() : report.respondedAt,
         },
       });
-      toast.success(`Marked as ${STATUS_LABELS[status]}`);
+      toast({
+        title: "Status Updated",
+        description: `Marked as ${STATUS_LABELS[status]}`,
+      });
       refetchContacts();
     } catch (error) {
       console.error("Failed to update status", error);
-      toast.error("Unable to update status");
+      toast({
+        title: "Error",
+        description: "Unable to update status",
+        variant: "destructive",
+      });
     }
   };
 
@@ -224,17 +245,28 @@ export default function AdminReportsPage() {
 
     try {
       await deleteContact({ contactId: report._id });
-      toast.success("Report deleted");
+      toast({
+        title: "Deleted",
+        description: "Report deleted",
+      });
       refetchContacts();
     } catch (error) {
       console.error("Failed to delete report", error);
-      toast.error("Unable to delete report");
+      toast({
+        title: "Error",
+        description: "Unable to delete report",
+        variant: "destructive",
+      });
     }
   };
 
   const handleExport = () => {
     if (!filteredReports.length) {
-      toast.error("No reports to export");
+      toast({
+        title: "No reports",
+        description: "No reports to export",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -250,78 +282,14 @@ export default function AdminReportsPage() {
     }));
 
     exportToCsv(`hireall-issue-reports-${new Date().toISOString().slice(0, 10)}`, rows);
-    toast.success(`Exported ${filteredReports.length} reports`);
+    toast({
+      title: "Export Successful",
+      description: `Exported ${filteredReports.length} reports`,
+    });
   };
 
   if (adminLoading) {
-    return (
-      <AdminLayout title="Issue Reports">
-        <div className="space-y-6">
-          {/* Header Skeleton */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Skeleton className="h-12 w-12 rounded-xl" />
-              <div className="space-y-2">
-                <Skeleton className="h-8 w-40" />
-                <Skeleton className="h-4 w-64" />
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Skeleton className="h-10 w-24" />
-              <Skeleton className="h-10 w-24" />
-            </div>
-          </div>
-          
-          {/* Stats Skeleton */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <Card key={i}>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <Skeleton className="h-4 w-20" />
-                  <Skeleton className="h-4 w-4" />
-                </CardHeader>
-                <CardContent>
-                  <Skeleton className="h-8 w-12" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-          
-          {/* Table Skeleton */}
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-6 w-36 mb-2" />
-              <Skeleton className="h-4 w-48" />
-            </CardHeader>
-            <CardContent>
-              <div className="flex gap-4 mb-6">
-                <Skeleton className="h-10 flex-1" />
-                <Skeleton className="h-10 w-40" />
-                <Skeleton className="h-10 w-32" />
-              </div>
-              <div className="space-y-3">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <div key={i} className="flex items-center justify-between py-3 border-b">
-                    <div className="flex items-center gap-4">
-                      <Skeleton className="h-6 w-24 rounded-full" />
-                      <div className="space-y-1">
-                        <Skeleton className="h-4 w-32" />
-                        <Skeleton className="h-3 w-40" />
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <Skeleton className="h-6 w-16 rounded-full" />
-                      <Skeleton className="h-4 w-24" />
-                      <Skeleton className="h-8 w-8" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </AdminLayout>
-    );
+    return <LoadingPage label="Loading admin reports..." />;
   }
 
   if (!isAdmin) {
@@ -360,17 +328,6 @@ export default function AdminReportsPage() {
             </Button>
           </div>
         </motion.div>
-
-        {contactsError && (
-          <Card className="border-destructive/40 bg-destructive/5">
-            <CardHeader>
-              <CardTitle className="text-destructive">Failed to load reports</CardTitle>
-              <CardDescription className="text-destructive">
-                {contactsError.message || "An unexpected error occurred."}
-              </CardDescription>
-            </CardHeader>
-          </Card>
-        )}
 
         {/* Stats */}
         <motion.div
@@ -595,8 +552,8 @@ export default function AdminReportsPage() {
                 )}
 
                 {contactsLoading && (
-                  <div className="py-6 flex items-center justify-center gap-2 text-gray-500">
-                    <Loader2 className="h-4 w-4 animate-spin" /> Loading reports...
+                  <div className="py-6 flex items-center justify-center">
+                    <LoadingSpinner label="Loading reports..." />
                   </div>
                 )}
               </div>

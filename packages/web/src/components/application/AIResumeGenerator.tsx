@@ -109,6 +109,17 @@ export function AIResumeGenerator() {
   const [atsOptimization, setAtsOptimization] = useState(true);
   const [aiEnhancement, setAiEnhancement] = useState(true);
   const [downloadingPDF, setDownloadingPDF] = useState(false);
+  const [resumeOptions, setResumeOptions] = useState<{
+    template: 'modern' | 'classic' | 'creative' | 'executive' | 'technical';
+    colorScheme: 'hireall' | 'blue' | 'gray' | 'green' | 'purple' | 'orange';
+    fontSize: number;
+    font: 'helvetica' | 'times' | 'courier';
+  }>({
+    template: 'modern',
+    colorScheme: 'hireall',
+    fontSize: 11,
+    font: 'helvetica'
+  });
 
   const industries = [
     { value: "technology", label: "Technology" },
@@ -362,13 +373,13 @@ ${data.experience}
         resumeData,
         undefined,
         {
-          template: formData.style,
-          fontSize: 11,
+          template: resumeOptions.template,
+          fontSize: resumeOptions.fontSize,
           lineHeight: 1.4,
           margin: 15,
-          font: 'helvetica',
+          font: resumeOptions.font,
           includePhoto: false,
-          colorScheme: 'blue'
+          colorScheme: resumeOptions.colorScheme
         }
       );
 
@@ -433,13 +444,13 @@ ${data.experience}
 
       // Generate and preview PDF
       await ResumePDFGenerator.previewResumePDF(resumeData, {
-        template: formData.style,
-        fontSize: 11,
+        template: resumeOptions.template,
+        fontSize: resumeOptions.fontSize,
         lineHeight: 1.4,
         margin: 15,
-        font: 'helvetica',
+        font: resumeOptions.font,
         includePhoto: false,
-        colorScheme: 'blue'
+        colorScheme: resumeOptions.colorScheme
       });
 
       showSuccess("Success", "Resume PDF preview opened in new tab!");
@@ -725,6 +736,52 @@ ${data.experience}
             <div className="space-y-4 pt-4 border-t">
               <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wider flex items-center gap-2">
                 <span className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center text-xs font-bold text-primary">3</span>
+                Export Settings
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="resume-template">Template</Label>
+                  <Select 
+                    value={resumeOptions.template} 
+                    onValueChange={(value: any) => setResumeOptions(prev => ({ ...prev, template: value }))}
+                  >
+                    <SelectTrigger id="resume-template" className="bg-background">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="modern">Modern</SelectItem>
+                      <SelectItem value="classic">Classic</SelectItem>
+                      <SelectItem value="creative">Creative</SelectItem>
+                      <SelectItem value="executive">Executive</SelectItem>
+                      <SelectItem value="technical">Technical</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="resume-color">Color Scheme</Label>
+                  <Select 
+                    value={resumeOptions.colorScheme} 
+                    onValueChange={(value: any) => setResumeOptions(prev => ({ ...prev, colorScheme: value }))}
+                  >
+                    <SelectTrigger id="resume-color" className="bg-background">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="hireall">Hireall (Teal)</SelectItem>
+                      <SelectItem value="blue">Professional Blue</SelectItem>
+                      <SelectItem value="gray">Elegant Gray</SelectItem>
+                      <SelectItem value="green">Nature Green</SelectItem>
+                      <SelectItem value="purple">Creative Purple</SelectItem>
+                      <SelectItem value="orange">Energetic Orange</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4 pt-4 border-t">
+              <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                <span className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center text-xs font-bold text-primary">4</span>
                 AI Options
               </h4>
               <div className="grid grid-cols-1 gap-3">

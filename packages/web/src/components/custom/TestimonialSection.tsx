@@ -9,7 +9,7 @@ const testimonials = [
     role: "Software Engineer",
     company: "Google",
     avatar: "/testimonials/aarav.svg",
-    content: "Hireall saved me weeks of searching. I landed interviews within days using their Chrome extension. The sponsored job detection is incredibly accurate!",
+    content: "Hireall saved me weeks of searching. I landed offers within days using their Chrome extension. The sponsored job detection is incredibly accurate!",
     rating: 5,
   },
   {
@@ -27,7 +27,7 @@ const testimonials = [
     role: "UI/UX Designer",
     company: "Microsoft",
     avatar: "/testimonials/rohan.svg",
-    content: "The premium analytics gave me a huge advantage in my job hunt. The interview prep feature was a game-changer for me. Highly recommend!",
+    content: "The premium analytics gave me a huge advantage in my job hunt. The job tracking feature was a game-changer for me. Highly recommend!",
     rating: 5,
   },
   {

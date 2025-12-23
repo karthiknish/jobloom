@@ -2,7 +2,7 @@ import { analyticsService, ANALYTICS_EVENTS } from "@/firebase/analytics";
 
 // Conversion tracking configuration
 export interface ConversionConfig {
-  conversionType: 'sign_up' | 'login' | 'cv_upload' | 'job_application' | 'premium_upgrade' | 'portfolio_creation' | 'interview_completion';
+  conversionType: 'sign_up' | 'login' | 'cv_upload' | 'job_application' | 'premium_upgrade' | 'portfolio_creation';
   value?: number;
   currency?: string;
   category?: string;
@@ -78,12 +78,6 @@ export class ConversionTrackingService {
           additionalData?.newPlan || 'premium',
           config.value || 0,
           config.currency
-        );
-        break;
-      case 'interview_completion':
-        await analyticsService.logMockInterviewCompleted(
-          additionalData?.interviewType || 'general',
-          additionalData?.score || 0
         );
         break;
     }

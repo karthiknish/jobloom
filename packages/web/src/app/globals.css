@@ -19,11 +19,28 @@ html {
   --font-serif: "Playfair Display", "Georgia", serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 
+  /* Layout dimensions */
+  --header-height-mobile: 4rem;  /* 64px / h-16 */
+  --header-height-desktop: 5rem; /* 80px / h-20 */
+  --mobile-nav-height: 4.5rem;   /* ~72px including safe area */
+  --dashboard-header-height: 7.5rem; /* 120px */
+  --dashboard-tabs-height: 3.75rem;  /* 60px */
+
+  /* Icon size tokens - use these for consistent icon sizing */
+  --icon-xs: 0.75rem;  /* 12px - inline text icons */
+  --icon-sm: 1rem;     /* 16px - small UI elements */
+  --icon-md: 1.25rem;  /* 20px - default size for most icons */
+  --icon-lg: 1.5rem;   /* 24px - navigation, mobile icons */
+  --icon-xl: 2rem;     /* 32px - feature icons */
+  --icon-2xl: 2.5rem;  /* 40px - hero/avatar icons */
+
   /* Motion tokens */
   --motion-duration-ultra-fast: 120ms;
   --motion-duration-fast: 180ms;
   --motion-duration-medium: 260ms;
   --motion-duration-slow: 360ms;
+  --motion-duration-very-slow: 500ms;
+  --motion-duration-ultra-slow: 750ms;
   --motion-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --motion-ease-in: cubic-bezier(0.32, 0, 0.67, 0);
   --motion-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
@@ -178,6 +195,13 @@ html {
   --warning-soft: var(--color-warning-soft);
   --destructive-soft: var(--color-destructive-soft);
   --ring: var(--color-ring);
+  /* Surface color - elevated background for cards and panels */
+  --surface: 0 0% 100%;
+}
+
+/* Utility class for bg-surface */
+.bg-surface {
+  background-color: hsl(var(--surface));
 }
 
 body {
@@ -198,6 +222,22 @@ body {
 .font-sans-custom {
   font-family: var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
+
+/* Icon size utility classes - uses design tokens for consistency (#32) */
+.icon-xs { width: var(--icon-xs); height: var(--icon-xs); }
+.icon-sm { width: var(--icon-sm); height: var(--icon-sm); }
+.icon-md { width: var(--icon-md); height: var(--icon-md); }
+.icon-lg { width: var(--icon-lg); height: var(--icon-lg); }
+.icon-xl { width: var(--icon-xl); height: var(--icon-xl); }
+.icon-2xl { width: var(--icon-2xl); height: var(--icon-2xl); }
+
+/* Icon color utilities - inherit from parent or use semantic colors (#33) */
+.icon-muted { color: hsl(var(--muted-foreground)); }
+.icon-primary { color: hsl(var(--primary)); }
+.icon-success { color: hsl(var(--success)); }
+.icon-warning { color: hsl(var(--warning)); }
+.icon-destructive { color: hsl(var(--destructive)); }
+.icon-inherit { color: currentColor; }
 
 /* Prevent horizontal scrolling globally */
 * {
@@ -250,6 +290,17 @@ body {
 
   .safe-area-inset-right {
     padding-right: env(safe-area-inset-right);
+  }
+
+  /* Ensures main layout accounts for mobile nav height + device safe area */
+  .layout-with-mobile-nav-padding {
+    padding-bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px));
+  }
+
+  @media (min-width: 768px) {
+    .layout-with-mobile-nav-padding {
+      padding-bottom: 0;
+    }
   }
 }
 
@@ -494,6 +545,25 @@ body {
   box-shadow: 0 12px 24px -16px rgba(15, 23, 42, 0.45);
 }
 
+.motion-button:active {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px -14px rgba(15, 23, 42, 0.45);
+}
+
+/* Optional variant for dark surfaces to keep hover/active contrast visible */
+.motion-button-on-dark {
+  box-shadow: 0 8px 18px -14px rgba(0, 0, 0, 0.55), 0 6px 14px -12px rgba(255, 255, 255, 0.16);
+}
+
+.motion-button-on-dark:hover,
+.motion-button-on-dark:focus-visible {
+  box-shadow: 0 14px 28px -16px rgba(0, 0, 0, 0.65), 0 10px 22px -14px rgba(255, 255, 255, 0.2);
+}
+
+.motion-button-on-dark:active {
+  box-shadow: 0 10px 22px -16px rgba(0, 0, 0, 0.6), 0 8px 18px -14px rgba(255, 255, 255, 0.18);
+}
+
 .motion-stagger>* {
   opacity: 0;
   transform: translateY(var(--motion-distance-sm));
@@ -624,95 +694,111 @@ body {
   animation-delay: 0.5s;
 }
 
-/* Enhanced Shadow and Depth System */
-.shadow-xs {
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05), 0 1px 1px 0 rgba(0, 0, 0, 0.03);
+/* Shadow system (simplified) */
+:root {
+  --shadow-0: none;
+  --shadow-1: 0 1px 3px rgba(15, 23, 42, 0.12), 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-2: 0 4px 12px rgba(15, 23, 42, 0.12), 0 2px 6px rgba(15, 23, 42, 0.08);
+  --shadow-3: 0 12px 30px rgba(15, 23, 42, 0.16), 0 6px 14px rgba(15, 23, 42, 0.1);
+  --shadow-4: 0 20px 50px rgba(15, 23, 42, 0.2), 0 10px 24px rgba(15, 23, 42, 0.14);
 }
 
-.shadow-sm {
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06), 0 0 1px 0 rgba(0, 0, 0, 0.04);
+.shadow-flat {
+  box-shadow: var(--shadow-0);
 }
 
-.shadow-md {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06), 0 1px 3px 0 rgba(0, 0, 0, 0.04);
+.shadow-quiet {
+  box-shadow: var(--shadow-1);
 }
 
-.shadow-lg {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05), 0 2px 4px 0 rgba(0, 0, 0, 0.04);
+.shadow-soft {
+  box-shadow: var(--shadow-2);
 }
 
-.shadow-xl {
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04), 0 4px 6px 0 rgba(0, 0, 0, 0.03);
+.shadow-strong {
+  box-shadow: var(--shadow-3);
 }
 
-.shadow-2xl {
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 12px 24px -4px rgba(0, 0, 0, 0.15), 0 4px 8px 0 rgba(0, 0, 0, 0.1);
-}
-
-.shadow-3xl {
-  box-shadow: 0 35px 60px -12px rgba(0, 0, 0, 0.3), 0 20px 40px -8px rgba(0, 0, 0, 0.2), 0 8px 16px 0 rgba(0, 0, 0, 0.15);
-}
-
-.shadow-4xl {
-  box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.35), 0 30px 60px -12px rgba(0, 0, 0, 0.25), 0 12px 24px 0 rgba(0, 0, 0, 0.2);
+.shadow-overlay {
+  box-shadow: var(--shadow-4);
 }
 
 .shadow-inner {
-  box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06), inset 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+  box-shadow: inset 0 2px 4px rgba(15, 23, 42, 0.08);
 }
 
-.shadow-glow {
-  box-shadow: 0 0 20px rgba(16, 185, 129, 0.3), 0 0 40px rgba(16, 185, 129, 0.1);
+.shadow-hover-soft {
+  transition: box-shadow 0.2s ease;
 }
 
-.shadow-glow-lg {
-  box-shadow: 0 0 30px rgba(16, 185, 129, 0.4), 0 0 60px rgba(16, 185, 129, 0.2), 0 0 90px rgba(16, 185, 129, 0.1);
+.shadow-hover-soft:hover {
+  box-shadow: var(--shadow-2);
 }
 
-/* Colored shadows for depth */
-.shadow-primary {
-  box-shadow: 0 4px 14px 0 rgba(122, 39%, 49%, 0.15), 0 2px 6px 0 rgba(122, 39%, 49%, 0.1);
+.shadow-hover-strong {
+  transition: box-shadow 0.2s ease;
 }
 
-.shadow-secondary {
-  box-shadow: 0 4px 14px 0 rgba(173, 58%, 39%, 0.15), 0 2px 6px 0 rgba(173, 58%, 39%, 0.1);
+.shadow-hover-strong:hover {
+  box-shadow: var(--shadow-3);
 }
 
-.shadow-accent {
-  box-shadow: 0 4px 14px 0 rgba(122, 22%, 85%, 0.15), 0 2px 6px 0 rgba(122, 22%, 85%, 0.1);
+/* Legacy aliases (prefer the new names above) */
+.shadow-xs,
+.shadow-sm,
+.depth-subtle,
+.elevate-1,
+.card-depth-1 {
+  box-shadow: var(--shadow-1);
 }
 
-/* Directional shadows for more realistic depth */
-.shadow-top {
-  box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1), 0 -2px 4px -1px rgba(0, 0, 0, 0.06);
+.shadow-md,
+.shadow-lg,
+.depth-soft,
+.elevate-2,
+.card-depth-2 {
+  box-shadow: var(--shadow-2);
 }
 
-.shadow-right {
-  box-shadow: 4px 0 6px -1px rgba(0, 0, 0, 0.1), 2px 0 4px -1px rgba(0, 0, 0, 0.06);
+.shadow-xl,
+.shadow-2xl,
+.depth-medium,
+.elevate-3,
+.card-depth-3 {
+  box-shadow: var(--shadow-3);
 }
 
-.shadow-bottom {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+.shadow-3xl,
+.shadow-4xl,
+.depth-strong,
+.depth-dramatic,
+.elevate-4,
+.elevate-5,
+.card-depth-4,
+.card-depth-5,
+.modal-depth,
+.popover-depth,
+.tooltip-depth {
+  box-shadow: var(--shadow-4);
 }
 
-.shadow-left {
-  box-shadow: -4px 0 6px -1px rgba(0, 0, 0, 0.1), -2px 0 4px -1px rgba(0, 0, 0, 0.06);
-}
+/* 
+ * Z-Index Stack Strategy
+ * ----------------------
+ * This defines the application's z-index architecture to prevent conflicts.
+ * Use these layer classes instead of arbitrary z-index values.
+ * 
+ * Layer 0-9:     Default content layer
+ * Layer 10 (.layer-1):  Slightly elevated content (cards, etc.)
+ * Layer 20 (.layer-2):  Dropdowns, tooltips  
+ * Layer 30 (.layer-3):  Sticky headers (used by notifications)
+ * Layer 40 (.layer-4):  Mobile navigation (.z-40)
+ * Layer 50 (.layer-5):  Fixed header (.z-50)
+ * Layer 60 (.layer-modal): Modal backdrops
+ * Layer 70:     Modal content
+ * Layer 1000 (.layer-overlay): Toast notifications, overlays
+ */
 
-/* Inset shadows for depth */
-.shadow-inset-top {
-  box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
-}
-
-.shadow-inset-bottom {
-  box-shadow: inset 0 -2px 4px 0 rgba(0, 0, 0, 0.06);
-}
-
-.shadow-inset-all {
-  box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06), inset 0 -2px 4px 0 rgba(0, 0, 0, 0.06), inset 2px 0 4px 0 rgba(0, 0, 0, 0.06), inset -2px 0 4px 0 rgba(0, 0, 0, 0.06);
-}
-
-/* Layered Depth Effects */
 .layer-1 {
   z-index: 10;
 }
@@ -733,461 +819,14 @@ body {
   z-index: 50;
 }
 
+/* Modal backdrop - above fixed header but below modal content */
+.layer-modal {
+  z-index: 60;
+}
+
+/* Toast/notification overlay - highest priority */
 .layer-overlay {
   z-index: 1000;
-}
-
-/* Floating Elements */
-.floating {
-  transform: translateZ(0);
-  backface-visibility: hidden;
-}
-
-.floating-subtle {
-  transform: translateY(-1px);
-}
-
-.floating-medium {
-  transform: translateY(-3px);
-}
-
-.floating-strong {
-  transform: translateY(-6px);
-}
-
-/* Depth Transitions */
-.depth-transition {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.depth-transition-fast {
-  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.depth-transition-slow {
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Hover effects with enhanced depth */
-.hover-lift {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.hover-lift:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-}
-
-.hover-lift-subtle:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-}
-
-.hover-depth:hover {
-  transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
-}
-
-.hover-glow:hover {
-  box-shadow: 0 0 30px rgba(16, 185, 129, 0.4);
-}
-
-/* Enhanced Card depth variations */
-.card-depth-1 {
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24), 0 0 1px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.card-depth-2 {
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23), 0 1px 2px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-}
-
-.card-depth-3 {
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23), 0 2px 4px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.card-depth-4 {
-  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22), 0 4px 6px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-}
-
-.card-depth-5 {
-  box-shadow: 0 19px 38px rgba(0, 0, 0, 0.3), 0 15px 12px rgba(0, 0, 0, 0.22), 0 6px 8px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-}
-
-/* Interactive card states */
-.card-interactive {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  cursor: pointer;
-}
-
-.card-interactive:hover {
-  transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25), 0 12px 24px rgba(0, 0, 0, 0.15), 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.card-interactive:active {
-  transform: translateY(-2px) scale(1.01);
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2), 0 8px 16px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-/* Glass card effects */
-.card-glass {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1), 0 4px 16px rgba(0, 0, 0, 0.05);
-}
-
-.card-glass-dark {
-  background: rgba(0, 0, 0, 0.05);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), 0 4px 16px rgba(0, 0, 0, 0.1);
-}
-
-/* Neumorphic cards */
-.card-neuro {
-  background: linear-gradient(145deg, #f8f9fa, #e9ecef);
-  box-shadow: 20px 20px 60px #d1d5db, -20px -20px 60px #ffffff;
-  border: none;
-}
-
-.card-neuro-inset {
-  background: linear-gradient(145deg, #e9ecef, #f8f9fa);
-  box-shadow: inset 20px 20px 60px #d1d5db, inset -20px -20px 60px #ffffff;
-  border: none;
-}
-
-/* Enhanced Button depth effects */
-.btn-depth {
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.1);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  overflow: hidden;
-}
-
-.btn-depth:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3), 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.btn-depth:active {
-  transform: translateY(0);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2), 0 0 1px rgba(0, 0, 0, 0.1);
-}
-
-/* Button variants with depth */
-.btn-depth-primary {
-  box-shadow: 0 4px 14px rgba(122, 39%, 49%, 0.3), 0 2px 6px rgba(122, 39%, 49%, 0.2);
-}
-
-.btn-depth-primary:hover {
-  box-shadow: 0 8px 24px rgba(122, 39%, 49%, 0.4), 0 4px 12px rgba(122, 39%, 49%, 0.3);
-}
-
-.btn-depth-secondary {
-  box-shadow: 0 4px 14px rgba(173, 58%, 39%, 0.3), 0 2px 6px rgba(173, 58%, 39%, 0.2);
-}
-
-.btn-depth-secondary:hover {
-  box-shadow: 0 8px 24px rgba(173, 58%, 39%, 0.4), 0 4px 12px rgba(173, 58%, 39%, 0.3);
-}
-
-/* Floating buttons */
-.btn-floating {
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3), 0 3px 10px rgba(0, 0, 0, 0.2);
-  border-radius: 50px;
-}
-
-.btn-floating:hover {
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 6px 20px rgba(0, 0, 0, 0.3);
-  transform: translateY(-3px);
-}
-
-/* Ghost buttons with depth */
-.btn-ghost {
-  background: transparent;
-  border: 2px solid currentColor;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.btn-ghost:hover {
-  background: currentColor;
-  color: white;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-  transform: translateY(-1px);
-}
-
-/* Outline buttons with depth */
-.btn-outline {
-  background: transparent;
-  border: 2px solid;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
-}
-
-.btn-outline:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2), inset 0 0 0 1px rgba(255, 255, 255, 0.2);
-  transform: translateY(-1px);
-}
-
-/* Modal and overlay depth */
-.modal-depth {
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
-}
-
-.overlay-depth {
-  box-shadow: inset 0 0 200px rgba(0, 0, 0, 0.3);
-}
-
-/* Enhanced Navigation depth */
-.nav-depth {
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1), 0 1px 4px rgba(0, 0, 0, 0.05);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.nav-depth-sticky {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.nav-depth-blur {
-  backdrop-filter: blur(20px);
-  background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.05);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
-}
-
-/* Header depth */
-.header-depth {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-.header-depth-elevated {
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.08);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-}
-
-/* Footer depth */
-.footer-depth {
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08), 0 -2px 8px rgba(0, 0, 0, 0.04);
-  border-top: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-/* Content sections with depth */
-.section-depth {
-  box-shadow: 0 0 40px rgba(0, 0, 0, 0.05);
-}
-
-.section-depth-strong {
-  box-shadow: 0 0 60px rgba(0, 0, 0, 0.1);
-}
-
-/* Enhanced Form depth */
-.form-depth {
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.05);
-  border: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-.input-depth {
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(0, 0, 0, 0.15);
-  transition: all 0.2s ease;
-}
-
-.input-depth:focus {
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06), 0 0 0 3px rgba(16, 185, 129, 0.2), 0 4px 12px rgba(0, 0, 0, 0.15);
-  border-color: rgba(16, 185, 129, 0.5);
-  transform: translateY(-1px);
-}
-
-.input-depth:hover {
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.12);
-  border-color: rgba(0, 0, 0, 0.2);
-}
-
-/* Floating labels */
-.input-floating {
-  position: relative;
-}
-
-.input-floating input:focus+label,
-.input-floating input:not(:placeholder-shown)+label {
-  transform: translateY(-25px) scale(0.85);
-  color: rgba(16, 185, 129, 0.8);
-}
-
-/* Select dropdowns with depth */
-.select-depth {
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(0, 0, 0, 0.15);
-  background: white;
-  position: relative;
-}
-
-.select-depth:focus {
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06), 0 0 0 3px rgba(16, 185, 129, 0.2), 0 4px 12px rgba(0, 0, 0, 0.15);
-  border-color: rgba(16, 185, 129, 0.5);
-}
-
-/* Textarea with depth */
-.textarea-depth {
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(0, 0, 0, 0.15);
-  resize: vertical;
-}
-
-.textarea-depth:focus {
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06), 0 0 0 3px rgba(16, 185, 129, 0.2), 0 4px 12px rgba(0, 0, 0, 0.15);
-  border-color: rgba(16, 185, 129, 0.5);
-}
-
-/* Tooltip and popover depth */
-.tooltip-depth {
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.05);
-}
-
-.popover-depth {
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.1);
-}
-
-/* Interactive elements depth */
-.interactive-depth {
-  position: relative;
-  transition: all 0.2s ease;
-}
-
-.interactive-depth::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.05));
-  border-radius: inherit;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.interactive-depth:hover::before {
-  opacity: 1;
-}
-
-.interactive-depth:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-}
-
-/* Glass morphism effects for modern depth */
-.glass-depth {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-}
-
-.glass-depth-strong {
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 16px 64px rgba(0, 0, 0, 0.2);
-}
-
-/* Enhanced Elevation utilities */
-.elevate-1 {
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24), 0 0 1px rgba(0, 0, 0, 0.1);
-}
-
-.elevate-2 {
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23), 0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
-.elevate-3 {
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23), 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.elevate-4 {
-  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22), 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.elevate-5 {
-  box-shadow: 0 19px 38px rgba(0, 0, 0, 0.30), 0 15px 12px rgba(0, 0, 0, 0.22), 0 6px 8px rgba(0, 0, 0, 0.1);
-}
-
-/* Advanced depth utilities */
-.depth-subtle {
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05), 0 0 1px rgba(0, 0, 0, 0.02);
-}
-
-.depth-soft {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
-}
-
-.depth-medium {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.08);
-}
-
-.depth-strong {
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.16), 0 4px 12px rgba(0, 0, 0, 0.12);
-}
-
-.depth-dramatic {
-  box-shadow: 0 16px 64px rgba(0, 0, 0, 0.20), 0 8px 24px rgba(0, 0, 0, 0.16);
-}
-
-/* Layered depth effects */
-.depth-layered {
-  position: relative;
-}
-
-.depth-layered::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: inherit;
-  border-radius: inherit;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  opacity: 0.5;
-  z-index: -1;
-  transform: translate(2px, 2px);
-}
-
-.depth-layered::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: inherit;
-  border-radius: inherit;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-  opacity: 0.3;
-  z-index: -2;
-  transform: translate(4px, 4px);
-}
-
-/* Interactive depth states */
-.depth-interactive {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.depth-interactive:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15), 0 6px 20px rgba(0, 0, 0, 0.1);
-}
-
-.depth-interactive:active {
-  transform: translateY(0);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 /* Global heading font styles - Use Playfair Display for all headings */

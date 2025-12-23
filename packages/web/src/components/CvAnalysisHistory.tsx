@@ -6,8 +6,9 @@ import { CvAnalysisResults } from "./CvAnalysisResults";
 import { CvComparison } from "./CvComparison";
 import { CvAnalysisFilters } from "./CvAnalysisFilters";
 import { motion } from "framer-motion";
-import { Eye, Trash2, Loader2, ArrowLeft, BarChart3, Search, FileText, Sparkles } from "lucide-react";
-import { showSuccess, showError } from "@/components/ui/Toast";
+import { Eye, Trash2, ArrowLeft, BarChart3, Search, FileText, Sparkles } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { LoadingSpinner } from "@/components/ui/loading";
 import type { CvAnalysis, Id } from "../types/api";
 import { useApiMutation } from "../hooks/useApi";
 import { cvEvaluatorApi } from "../utils/api/cvEvaluator";
@@ -21,6 +22,7 @@ interface CvAnalysisHistoryProps {
 }
 
 export function CvAnalysisHistory({ analyses, optimistic }: CvAnalysisHistoryProps) {
+  const { toast } = useToast();
   const [selectedAnalysis, setSelectedAnalysis] = useState<CvAnalysis | null>(
     null
   );
@@ -65,10 +67,17 @@ export function CvAnalysisHistory({ analyses, optimistic }: CvAnalysisHistoryPro
 
     try {
       await deleteAnalysis({ analysisId: analysisId as Id<"cvAnalyses"> });
-      showSuccess("Analysis deleted successfully");
+      toast({
+        title: "Success",
+        description: "Analysis deleted successfully",
+      });
     } catch (error) {
       console.error("Error deleting analysis:", error);
-      showError("Failed to delete analysis");
+      toast({
+        title: "Error",
+        description: "Failed to delete analysis",
+        variant: "destructive",
+      });
     }
   };
 
@@ -350,10 +359,7 @@ export function CvAnalysisHistory({ analyses, optimistic }: CvAnalysisHistoryPro
                 {analysis.analysisStatus === "processing" && (
                   <div className="mt-4">
                     <div className="flex items-center">
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin text-primary" />
-                      <span className="text-sm text-muted-foreground">
-                        Analyzing your CV...
-                      </span>
+                      <LoadingSpinner inline size="sm" label="Analyzing your CV..." />
                     </div>
                     <div className="mt-2 bg-muted rounded-full h-2">
                       <div

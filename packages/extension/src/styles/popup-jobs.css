@@ -157,27 +157,27 @@
 }
 
 .tag-green {
-    background: rgba(16, 185, 129, 0.1);
+    background: var(--primary-alpha10);
     color: var(--primary-dark);
 }
 
 .tag-blue {
-    background: rgba(59, 130, 246, 0.1);
+    background: var(--accent-blue-alpha10);
     color: var(--accent-blue);
 }
 
 .tag-purple {
-    background: rgba(139, 92, 246, 0.1);
+    background: var(--accent-purple-alpha10);
     color: var(--accent-purple);
 }
 
 .tag-orange {
-    background: rgba(249, 115, 22, 0.1);
+    background: var(--accent-orange-alpha10);
     color: var(--accent-orange);
 }
 
 .tag-red {
-    background: rgba(239, 68, 68, 0.1);
+    background: var(--accent-red-alpha10);
     color: var(--accent-red);
 }
 

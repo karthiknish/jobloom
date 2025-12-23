@@ -16,7 +16,6 @@ const createApplicationSchema = z.object({
   userId: z.string().min(1, "User ID is required"),
   status: z.string().min(1, "Status is required"),
   appliedDate: z.string().nullable().optional(),
-  interviewDate: z.string().nullable().optional(),
   notes: z.string().max(10000).optional().default(''),
   followUps: z.array(z.object({
     date: z.string(),
@@ -51,7 +50,6 @@ export const POST = withApi({
     userId: body.userId.trim(),
     status: body.status.trim(),
     appliedDate: body.appliedDate || null,
-    interviewDate: body.interviewDate || null,
     notes: (body.notes || '').trim(),
     followUps: body.followUps || [],
     createdAt: FieldValue.serverTimestamp(),

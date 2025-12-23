@@ -163,6 +163,11 @@ export const TIERED_RATE_LIMITS: Record<string, UserTierLimits> = {
     premium: { maxRequests: 20, windowMs: 60000 },
     admin: { maxRequests: 40, windowMs: 60000 },
   },
+  'ai-job-summary': {
+    free: { maxRequests: 3, windowMs: 60000 },
+    premium: { maxRequests: 15, windowMs: 60000 },
+    admin: { maxRequests: 30, windowMs: 60000 },
+  },
 };
 
 // Default rate limits for backward compatibility

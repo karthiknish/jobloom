@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+  import { NextRequest, NextResponse } from "next/server";
 import { sendEmail } from "@/lib/resend";
 import { renderReminderEmailHtml, renderReminderEmailText } from "@/emails/reminderEmail";
 import { getAdminDb } from "@/firebase/admin";
@@ -81,20 +81,6 @@ export const POST = withApi({
         return createdAt >= oneWeekAgo;
       }).length;
 
-      // Get upcoming interviews (status = interviewing with future interview dates)
-      const upcomingInterviews = applications
-        .filter((app: any) => {
-          if (app.status !== "interviewing") return false;
-          const dates = app.interviewDates || [];
-          return dates.some((d: any) => new Date(d) > new Date());
-        })
-        .map((app: any) => ({
-          jobTitle: app.job?.title || "Job",
-          company: app.job?.company || "Company",
-          date: app.interviewDates?.find((d: any) => new Date(d) > new Date()) || new Date(),
-        }))
-        .slice(0, 3);
-
       // Get pending follow-ups (applied > 1 week ago, no response)
       const pendingFollowUps = applications
         .filter((app: any) => {
@@ -112,7 +98,7 @@ export const POST = withApi({
         .slice(0, 5);
 
       // Skip if nothing to report
-      if (applicationsThisWeek === 0 && upcomingInterviews.length === 0 && pendingFollowUps.length === 0) {
+      if (applicationsThisWeek === 0 && pendingFollowUps.length === 0) {
         results.skipped++;
         continue;
       }
@@ -124,7 +110,6 @@ export const POST = withApi({
         reminderType: "weekly_digest" as const,
         totalApplications,
         applicationsThisWeek,
-        upcomingInterviews,
         pendingFollowUps,
         dashboardUrl,
       };
@@ -150,7 +135,6 @@ export const POST = withApi({
           stats: {
             totalApplications,
             applicationsThisWeek,
-            upcomingInterviews: upcomingInterviews.length,
             pendingFollowUps: pendingFollowUps.length,
           },
           sentAt: new Date().toISOString(),

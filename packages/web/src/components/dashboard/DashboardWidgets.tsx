@@ -194,7 +194,6 @@ export function useDashboardWidgets({
                         sponsored: a.job?.isSponsored,
                         agency: a.job?.isRecruitmentAgency,
                         notes: a.notes,
-                        interviewDates: a.interviewDates,
                         followUpDate: a.followUpDate,
                       }));
                       const blob = new Blob([JSON.stringify(data, null, 2)], {

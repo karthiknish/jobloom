@@ -51,7 +51,6 @@ export const ANALYTICS_EVENTS = {
   APPLICATION_UPDATED: 'application_updated',
   APPLICATION_DELETED: 'application_deleted',
   APPLICATION_STATUS_CHANGED: 'application_status_changed',
-  APPLICATION_INTERVIEW_SCHEDULED: 'application_interview_scheduled',
   APPLICATION_OFFER_RECEIVED: 'application_offer_received',
 
   // Dashboard events
@@ -68,11 +67,6 @@ export const ANALYTICS_EVENTS = {
   ARTICLE_VIEWED: 'article_viewed',
   ARTICLE_SHARED: 'article_shared',
   VIDEO_WATCHED: 'video_watched',
-
-  // Interview preparation events
-  INTERVIEW_PREP_STARTED: 'interview_prep_started',
-  INTERVIEW_QUESTION_ANSWERED: 'interview_question_answered',
-  MOCK_INTERVIEW_COMPLETED: 'mock_interview_completed',
 
   // Extension events
   EXTENSION_POPUP_OPENED: 'extension_popup_opened',

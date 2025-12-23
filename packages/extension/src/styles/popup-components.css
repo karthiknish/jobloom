@@ -88,7 +88,7 @@
 }
 
 .btn-danger:hover {
-    background: #dc2626;
+    background: var(--accent-red-dark);
     box-shadow: var(--shadow-sm);
 }
 
@@ -180,7 +180,7 @@
 /* Empty Action Button */
 .btn-empty-action {
     padding: 8px 16px;
-    background: rgba(16, 185, 129, 0.1);
+    background: var(--primary-alpha10);
     color: var(--primary);
     border-radius: var(--radius-md);
     font-size: 13px;
@@ -191,7 +191,7 @@
 }
 
 .btn-empty-action:hover {
-    background: rgba(16, 185, 129, 0.2);
+    background: var(--primary-alpha20);
 }
 
 /* Full Width Utility */

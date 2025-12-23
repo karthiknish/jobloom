@@ -31,6 +31,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { Application } from "@/types/dashboard";
+import { useRestoreFocus } from "@/hooks/useRestoreFocus";
 
 interface JobIntegrationActionsProps {
   application: Application;
@@ -72,6 +73,8 @@ export function JobIntegrationActions({
   const [isCheckingSponsor, setIsCheckingSponsor] = useState(false);
   const [isGettingScore, setIsGettingScore] = useState(false);
   const [showMatchDialog, setShowMatchDialog] = useState(false);
+
+  useRestoreFocus(showMatchDialog);
 
   const handleCheckSponsor = async () => {
     if (!onCheckSponsor || !application.job?.company) return;
@@ -175,6 +178,7 @@ export function JobIntegrationActions({
                   onClick={handleGenerateCoverLetter}
                 >
                   <FileText className="h-4 w-4" />
+                  <span className="sr-only">Generate cover letter</span>
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Generate cover letter</TooltipContent>

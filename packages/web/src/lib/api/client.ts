@@ -104,6 +104,8 @@ class ApiClient {
   private defaultTimeout: number = 30000;
   private maxRetries: number = 3;
   private baseRetryDelay: number = 1000;
+  // Request deduplication cache - prevents duplicate concurrent GET requests
+  private pendingRequests = new Map<string, Promise<any>>();
 
   constructor(baseUrl: string = '/api') {
     this.baseUrl = baseUrl;
@@ -126,7 +128,14 @@ class ApiClient {
     } = config;
 
     const url = `${this.baseUrl}${endpoint}`;
+    const method = (config.method || 'GET').toUpperCase();
     let lastError: FrontendApiError | null = null;
+
+    // Request deduplication for GET requests
+    const requestKey = `${method}:${url}`;
+    if (method === 'GET' && this.pendingRequests.has(requestKey)) {
+      return this.pendingRequests.get(requestKey) as Promise<T>;
+    }
 
     // Add authentication header if not skipped
     if (!skipAuth) {
@@ -142,31 +151,56 @@ class ApiClient {
       ...config.headers
     };
 
-    // Retry logic for transient errors
-    for (let attempt = 0; attempt <= retries; attempt++) {
-      try {
-        const response = await this.makeRequest<T>(url, config, timeout);
-        return response;
-      } catch (error) {
-        lastError = error as FrontendApiError;
-        
-        // Don't retry on non-transient errors
-        if (!this.shouldRetryError(lastError) || attempt === retries) {
-          break;
+    // Define the request executor
+    const executeRequest = async (): Promise<T> => {
+      // Retry logic for transient errors
+      for (let attempt = 0; attempt <= retries; attempt++) {
+        try {
+          const response = await this.makeRequest<T>(url, config, timeout);
+          return response;
+        } catch (error) {
+          lastError = error as FrontendApiError;
+          
+          // Don't retry on non-transient errors
+          if (!this.shouldRetryError(lastError) || attempt === retries) {
+            break;
+          }
+
+          // Wait before retry with exponential backoff
+          const delay = retryDelay * Math.pow(2, attempt);
+          await this.sleep(delay);
         }
-
-        // Wait before retry with exponential backoff
-        const delay = retryDelay * Math.pow(2, attempt);
-        await this.sleep(delay);
       }
+
+      // Handle final error
+      if (!skipErrorHandler && lastError) {
+        this.handleError(lastError, options);
+      }
+
+      throw lastError;
+    };
+
+    // Use deduplication wrapper for GET requests
+    return this.executeWithDedup<T>(requestKey, method, executeRequest);
+  }
+
+  /**
+   * Execute request with deduplication wrapper
+   */
+  private async executeWithDedup<T>(
+    requestKey: string,
+    method: string,
+    executor: () => Promise<T>
+  ): Promise<T> {
+    const requestPromise = executor().finally(() => {
+      this.pendingRequests.delete(requestKey);
+    });
+
+    if (method === 'GET') {
+      this.pendingRequests.set(requestKey, requestPromise);
     }
 
-    // Handle final error
-    if (!skipErrorHandler && lastError) {
-      this.handleError(lastError, options);
-    }
-
-    throw lastError;
+    return requestPromise;
   }
 
   /**

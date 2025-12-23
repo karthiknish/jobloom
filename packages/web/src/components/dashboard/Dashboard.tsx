@@ -37,7 +37,10 @@ import { DashboardEmptyState } from "@/components/dashboard/DashboardEmptyState"
 import { DashboardJobsView } from "@/components/dashboard/DashboardJobsView";
 import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeletons";
 import { Application, DashboardView, BoardMode } from "@/types/dashboard";
-import { FileText, Target, TrendingUp, Calendar, Briefcase, Sparkles } from "lucide-react";
+import { FileText, Target, TrendingUp, Calendar, Briefcase, Sparkles, AlertCircle, Bell, X } from "lucide-react";
+import { useRestoreFocus } from "@/hooks/useRestoreFocus";
+import { calculatePercentage } from "@/utils/dashboard";
+import { isPast, isToday } from "date-fns";
 
 
 
@@ -52,6 +55,7 @@ export function Dashboard() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [companyFilter, setCompanyFilter] = useState<string>("all");
+  const [showReminderAlert, setShowReminderAlert] = useState(true);
 
 
   // Use the new hooks
@@ -95,8 +99,13 @@ export function Dashboard() {
   const applicationManagement = useApplicationManagement(refetchApplications);
   const jobManagement = useJobManagement(refetchJobStats);
 
-  // Create wrapper functions to match expected interfaces
-
+  const overdueReminders = (applications || []).filter(
+    (app) => app.followUpDate && isPast(new Date(app.followUpDate)) && !isToday(new Date(app.followUpDate))
+  );
+  
+  const todayReminders = (applications || []).filter(
+    (app) => app.followUpDate && isToday(new Date(app.followUpDate))
+  );
 
   const hasApplications =
     Array.isArray(applications) && applications.length > 0;
@@ -161,6 +170,11 @@ export function Dashboard() {
     setShowImportModal,
     handleJobSubmit,
   } = jobManagement;
+
+  useRestoreFocus(showApplicationForm);
+  useRestoreFocus(showJobForm);
+  useRestoreFocus(showImportModal);
+  useRestoreFocus(!!selectedApplication);
 
   const handleDeleteApplicationWrapper = async (application: Application) => {
     if (!application?._id) {
@@ -233,6 +247,51 @@ export function Dashboard() {
           </motion.div>
         )}
 
+        {/* Reminder Alert */}
+        {showReminderAlert && (overdueReminders.length > 0 || todayReminders.length > 0) && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            className="mb-6 overflow-hidden"
+          >
+            <div className={`p-4 rounded-xl border flex items-center justify-between gap-4 ${
+              overdueReminders.length > 0 
+                ? "bg-red-50 border-red-100 dark:bg-red-900/20 dark:border-red-900/30" 
+                : "bg-amber-50 border-amber-100 dark:bg-amber-900/20 dark:border-amber-900/30"
+            }`}>
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-lg ${
+                  overdueReminders.length > 0 ? "bg-red-100 dark:bg-red-900/40" : "bg-amber-100 dark:bg-amber-900/40"
+                }`}>
+                  {overdueReminders.length > 0 ? (
+                    <AlertCircle className={`h-5 w-5 ${overdueReminders.length > 0 ? "text-red-600" : "text-amber-600"}`} />
+                  ) : (
+                    <Bell className="h-5 w-5 text-amber-600" />
+                  )}
+                </div>
+                <div>
+                  <p className={`font-semibold text-sm ${overdueReminders.length > 0 ? "text-red-800 dark:text-red-300" : "text-amber-800 dark:text-amber-300"}`}>
+                    {overdueReminders.length > 0 
+                      ? `You have ${overdueReminders.length} overdue follow-up${overdueReminders.length === 1 ? '' : 's'}!` 
+                      : `You have ${todayReminders.length} follow-up${todayReminders.length === 1 ? '' : 's'} scheduled for today.`}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Don't let these opportunities slip away. Check your reminders below.
+                  </p>
+                </div>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setShowReminderAlert(false)}
+                className="h-8 w-8 p-0 rounded-full"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </motion.div>
+        )}
+
         {/* Enhanced Quick Stats */}
         {hasData && (
           <motion.div
@@ -243,8 +302,7 @@ export function Dashboard() {
           >
             {/* Total Jobs */}
             <motion.div
-              whileHover={{ scale: 1.02, y: -2 }}
-              className="bg-card border border-border rounded-xl p-4 shadow-sm hover:shadow-md motion-surface"
+              className="motion-card bg-card border border-border rounded-xl p-4 shadow-sm hover:shadow-md motion-surface"
             >
               <div className="flex items-center justify-between">
                 <div>
@@ -252,7 +310,7 @@ export function Dashboard() {
                   <p className="text-2xl font-bold text-foreground">
                     {jobStats ? jobStats.totalJobs : (applications?.length || 0)}
                   </p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                  <p className="text-xxs text-muted-foreground mt-0.5">
                     {jobStats ? 'Imported & Tracked' : 'Tracking'}
                   </p>
                 </div>
@@ -264,8 +322,7 @@ export function Dashboard() {
 
             {/* Sponsored Jobs */}
             <motion.div
-              whileHover={{ scale: 1.02, y: -2 }}
-              className="bg-card border border-border rounded-xl p-4 shadow-sm hover:shadow-md motion-surface"
+              className="motion-card bg-card border border-border rounded-xl p-4 shadow-sm hover:shadow-md motion-surface"
             >
               <div className="flex items-center justify-between">
                 <div>
@@ -273,10 +330,10 @@ export function Dashboard() {
                   <p className="text-2xl font-bold text-foreground">
                     {jobStats ? jobStats.sponsoredJobs : (applications?.filter(app => app.job?.isSponsored).length || 0)}
                   </p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                  <p className="text-xxs text-muted-foreground mt-0.5">
                     {jobStats 
-                      ? `${((jobStats.sponsoredJobs / (jobStats.totalJobs || 1)) * 100).toFixed(0)}% of total`
-                      : `${((applications?.filter(app => app.job?.isSponsored).length || 0) / (applications?.length || 1) * 100).toFixed(0)}% of total`
+                      ? `${calculatePercentage(jobStats.sponsoredJobs, jobStats.totalJobs)}% of total`
+                      : `${calculatePercentage(applications?.filter(app => app.job?.isSponsored).length || 0, applications?.length || 0)}% of total`
                     }
                   </p>
                 </div>
@@ -286,33 +343,9 @@ export function Dashboard() {
               </div>
             </motion.div>
 
-            {/* Interview Rate */}
-            <motion.div
-              whileHover={{ scale: 1.02, y: -2 }}
-              className="bg-card border border-border rounded-xl p-4 shadow-sm hover:shadow-md motion-surface"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-muted-foreground text-xs font-medium mb-0.5">Interview Rate</p>
-                  <p className="text-2xl font-bold text-foreground">
-                    {(() => {
-                      const applied = applications?.filter(app => app.status === 'applied').length || 0;
-                      const interviewing = applications?.filter(app => app.status === 'interviewing').length || 0;
-                      return applied > 0 ? Math.round((interviewing / applied) * 100) : 0;
-                    })()}%
-                  </p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">Success rate</p>
-                </div>
-                <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-foreground" />
-                </div>
-              </div>
-            </motion.div>
-
             {/* Today's Activity */}
             <motion.div
-              whileHover={{ scale: 1.02, y: -2 }}
-              className="bg-card border border-border rounded-xl p-4 shadow-sm hover:shadow-md motion-surface"
+              className="motion-card bg-card border border-border rounded-xl p-4 shadow-sm hover:shadow-md motion-surface"
             >
               <div className="flex items-center justify-between">
                 <div>
@@ -326,7 +359,7 @@ export function Dashboard() {
                       ).length || 0;
                     })()}
                   </p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">New jobs found</p>
+                  <p className="text-xxs text-muted-foreground mt-0.5">New jobs found</p>
                 </div>
                 <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center">
                   <Calendar className="w-5 h-5 text-foreground" />
@@ -357,39 +390,24 @@ export function Dashboard() {
             className="mb-6"
           >
             <TabsList className="bg-background/80 backdrop-blur-sm p-1 rounded-xl border border-border/50 shadow-sm inline-flex h-auto gap-1">
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+              <TabsTrigger
+                value="dashboard"
+                className="motion-button px-5 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md motion-control rounded-lg font-medium text-sm"
               >
-                <TabsTrigger
-                  value="dashboard"
-                  className="px-5 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md motion-control rounded-lg font-medium text-sm"
-                >
-                  Overview
-                </TabsTrigger>
-              </motion.div>
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                Overview
+              </TabsTrigger>
+              <TabsTrigger
+                value="jobs"
+                className="motion-button px-5 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md motion-control rounded-lg font-medium text-sm"
               >
-                <TabsTrigger
-                  value="jobs"
-                  className="px-5 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md motion-control rounded-lg font-medium text-sm"
-                >
-                  Jobs <Badge variant="secondary" className="ml-1.5 text-[10px] px-1.5 py-0 bg-muted/80">{applications?.length || 0}</Badge>
-                </TabsTrigger>
-              </motion.div>
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                Jobs <Badge variant="secondary" className="ml-1.5 text-xxs px-1.5 py-0 bg-muted/80">{applications?.length || 0}</Badge>
+              </TabsTrigger>
+              <TabsTrigger
+                value="analytics"
+                className="motion-button px-5 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md motion-control rounded-lg font-medium text-sm"
               >
-                <TabsTrigger
-                  value="analytics"
-                  className="px-5 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md motion-control rounded-lg font-medium text-sm"
-                >
-                  Analytics
-                </TabsTrigger>
-              </motion.div>
+                Analytics
+              </TabsTrigger>
             </TabsList>
           </Tabs>
         </motion.div>
@@ -446,7 +464,7 @@ export function Dashboard() {
           open={showApplicationForm}
           onOpenChange={setShowApplicationForm}
         >
-          <DialogContent className="max-w-4xl md:max-w-4xl max-h-[90vh] w-[95vw] md:w-full overflow-y-auto">
+          <DialogContent className="max-w-4xl max-h-[90vh] w-[95vw] md:w-full overflow-y-auto">
             <ApplicationForm
               application={editingApplication || undefined}
               onSubmit={handleApplicationSubmit}
@@ -459,7 +477,7 @@ export function Dashboard() {
         </Dialog>
 
         <Dialog open={showJobForm} onOpenChange={setShowJobForm}>
-          <DialogContent className="max-w-4xl md:max-w-4xl max-h-[90vh] w-[95vw] md:w-full overflow-y-auto">
+          <DialogContent className="max-w-4xl max-h-[90vh] w-[95vw] md:w-full overflow-y-auto">
             <JobForm
               onSubmit={handleJobSubmit}
               onCancel={() => setShowJobForm(false)}

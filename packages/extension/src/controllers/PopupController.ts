@@ -65,15 +65,36 @@ export class PopupController {
 
   private setupEventListeners(): void {
     // Tab navigation
-    document.querySelectorAll('.nav-item').forEach(tab => {
+    const tabs = document.querySelectorAll('.nav-item');
+    tabs.forEach((tab, index) => {
       tab.addEventListener('click', () => {
         const targetTab = (tab as HTMLElement).dataset.tab;
         if (targetTab) {
-          popupUI.switchTab(targetTab);
+          this.handleTabSwitch(targetTab);
+        }
+      });
 
-          // Load data when switching to jobs tab
-          if (targetTab === 'jobs' && authManager.isAuthenticated()) {
-            jobManager.loadJobs();
+      // Keyboard navigation for tabs
+      tab.addEventListener('keydown', (e: Event) => {
+        const keyEvent = e as KeyboardEvent;
+        let targetIndex = -1;
+
+        if (keyEvent.key === 'ArrowRight') {
+          targetIndex = (index + 1) % tabs.length;
+        } else if (keyEvent.key === 'ArrowLeft') {
+          targetIndex = (index - 1 + tabs.length) % tabs.length;
+        } else if (keyEvent.key === 'Home') {
+          targetIndex = 0;
+        } else if (keyEvent.key === 'End') {
+          targetIndex = tabs.length - 1;
+        }
+
+        if (targetIndex !== -1) {
+          const targetTab = tabs[targetIndex] as HTMLElement;
+          targetTab.focus();
+          const tabName = targetTab.dataset.tab;
+          if (tabName) {
+            this.handleTabSwitch(tabName);
           }
         }
       });
@@ -108,6 +129,21 @@ export class PopupController {
       e.preventDefault();
       this.handleForgotPassword();
     });
+  }
+
+  private handleTabSwitch(targetTab: string): void {
+    popupUI.switchTab(targetTab);
+
+    // Update ARIA attributes
+    document.querySelectorAll('.nav-item').forEach(t => {
+      const isSelected = (t as HTMLElement).dataset.tab === targetTab;
+      t.setAttribute('aria-selected', isSelected.toString());
+    });
+
+    // Load data when switching to jobs tab
+    if (targetTab === 'jobs' && authManager.isAuthenticated()) {
+      jobManager.loadJobs();
+    }
   }
 
   private setupAuthEventListeners(): void {

@@ -9,6 +9,8 @@ export const EXT_COLORS = {
   primaryDarker: "#047857",     // Emerald 700
   primaryLight: "#d1fae5",      // Emerald 100
   primaryText: "#ffffff",
+  primaryAlpha10: "rgba(16, 185, 129, 0.1)",
+  primaryAlpha20: "rgba(16, 185, 129, 0.2)",
 
   // Secondary palette (Teal alternative)
   secondary: "#14b8a6",         // Teal 500
@@ -17,9 +19,17 @@ export const EXT_COLORS = {
 
   // Accent colors (matches popup.css)
   accentBlue: "#3b82f6",        // Blue 500
+  accentBlueAlpha10: "rgba(59, 130, 246, 0.1)",
+  accentBlueLight: "#eff6ff",   // Blue 50
   accentPurple: "#8b5cf6",      // Violet 500
+  accentPurpleAlpha10: "rgba(139, 92, 246, 0.1)",
+  accentPurpleLight: "#f5f3ff", // Violet 50
   accentOrange: "#f97316",      // Orange 500
+  accentOrangeAlpha10: "rgba(249, 115, 22, 0.1)",
+  accentOrangeLight: "#fff7ed", // Orange 50
   accentRed: "#ef4444",         // Red 500
+  accentRedAlpha10: "rgba(239, 68, 68, 0.1)",
+  accentRedLight: "#fef2f2",    // Red 50
 
   // Semantic status colors
   success: "#10b981",           // Emerald 500 (same as primary)
@@ -28,6 +38,21 @@ export const EXT_COLORS = {
   warningDark: "#d97706",       // Amber 600
   destructive: "#ef4444",       // Red 500
   destructiveDark: "#dc2626",   // Red 600
+
+  // Premium colors
+  premiumAmber: "#f59e0b",      // Amber 500
+  premiumOrange: "#f97316",     // Orange 500
+  premiumAlpha10: "rgba(245, 158, 11, 0.1)",
+  premiumAlpha15: "rgba(245, 158, 11, 0.15)",
+  premiumAlpha30: "rgba(245, 158, 11, 0.3)",
+
+  // Feedback colors
+  errorBg: "#fee2e2",
+  errorText: "#b91c1c",
+  errorBorder: "#fecaca",
+  successBg: "#dcfce7",
+  successText: "#15803d",
+  successBorder: "#bbf7d0",
 
   // Text colors (Slate palette - matches popup.css)
   textPrimary: "#0f172a",       // Slate 900
@@ -54,7 +79,6 @@ export const EXT_COLORS = {
   // Status-specific job colors (used in jobStatus.ts)
   statusInterested: { r: 59, g: 130, b: 246 },   // Blue
   statusApplied: { r: 16, g: 185, b: 129 },      // Emerald (updated from #22c55e)
-  statusInterviewing: { r: 139, g: 92, b: 246 }, // Violet
   statusRejected: { r: 239, g: 68, b: 68 },      // Red
   statusSaved: { r: 100, g: 116, b: 139 },       // Slate 500
 };
@@ -67,7 +91,6 @@ export function getStatusColorFromTheme(status: string): StatusColorRGB {
   const statusMap: Record<string, StatusColorRGB> = {
     interested: EXT_COLORS.statusInterested,
     applied: EXT_COLORS.statusApplied,
-    interviewing: EXT_COLORS.statusInterviewing,
     rejected: EXT_COLORS.statusRejected,
     saved: EXT_COLORS.statusSaved,
   };

@@ -3,7 +3,7 @@ import { COLORS } from "../styles/colors";
 
 export const REMINDER_EMAIL_SUBJECT = "Job Application Reminder";
 
-type ReminderType = "follow_up" | "interview" | "deadline" | "weekly_digest";
+type ReminderType = "follow_up" | "deadline" | "weekly_digest";
 
 interface ReminderEmailProps {
   userName?: string | null;
@@ -16,14 +16,12 @@ interface ReminderEmailProps {
   // For weekly digest
   totalApplications?: number;
   applicationsThisWeek?: number;
-  upcomingInterviews?: { jobTitle: string; company: string; date: Date | string }[];
   pendingFollowUps?: { jobTitle: string; company: string; appliedDate: Date | string }[];
   dashboardUrl?: string;
 }
 
 const REMINDER_HEADERS: Record<ReminderType, string> = {
   follow_up: "Time to follow up!",
-  interview: "Interview coming up!",
   deadline: "Application deadline approaching",
   weekly_digest: "Your weekly job search summary",
 };
@@ -49,7 +47,6 @@ export function renderReminderEmailHtml({
   notes,
   totalApplications,
   applicationsThisWeek,
-  upcomingInterviews,
   pendingFollowUps,
   dashboardUrl = defaultDashboardUrl,
 }: ReminderEmailProps): string {
@@ -78,19 +75,6 @@ export function renderReminderEmailHtml({
           <p style="margin:0; font-size:13px; color:${mutedTextColor};">This Week</p>
         </div>
       </div>
-
-      ${upcomingInterviews && upcomingInterviews.length > 0 ? `
-      <!-- Upcoming Interviews -->
-      <div style="margin-bottom:24px;">
-        <p style="margin:0 0 12px; font-size:16px; font-weight:600; color:${textColor};">Upcoming Interviews</p>
-        ${upcomingInterviews.map(interview => `
-        <div style="background:${backgroundColor}; border:1px solid ${borderColor}; border-radius:8px; padding:16px; margin-bottom:8px;">
-          <p style="margin:0 0 4px; font-size:14px; font-weight:600; color:${textColor};">${interview.jobTitle}</p>
-          <p style="margin:0; font-size:13px; color:${mutedTextColor};">${interview.company} • ${format(new Date(interview.date), "MMM d, h:mm a")}</p>
-        </div>
-        `).join('')}
-      </div>
-      ` : ''}
 
       ${pendingFollowUps && pendingFollowUps.length > 0 ? `
       <!-- Pending Follow-ups -->
@@ -130,18 +114,6 @@ export function renderReminderEmailHtml({
         <li>Keep it brief and professional</li>
         <li>Reference your application date</li>
         <li>Express continued interest in the role</li>
-      </ul>
-      ` : ''}
-
-      ${reminderType === "interview" ? `
-      <p style="margin:0 0 16px; font-size:14px; color:${mutedTextColor};">
-        <strong>Interview prep checklist:</strong>
-      </p>
-      <ul style="margin:0 0 24px; padding-left:20px; color:${mutedTextColor}; font-size:14px; line-height:1.7;">
-        <li>Research the company and recent news</li>
-        <li>Review the job description</li>
-        <li>Prepare questions for the interviewer</li>
-        <li>Test your video/audio setup if virtual</li>
       </ul>
       ` : ''}
     `;
@@ -213,7 +185,6 @@ export function renderReminderEmailText({
   notes,
   totalApplications,
   applicationsThisWeek,
-  upcomingInterviews,
   pendingFollowUps,
   dashboardUrl = defaultDashboardUrl,
 }: ReminderEmailProps): string {
@@ -226,14 +197,6 @@ export function renderReminderEmailText({
     content += `Your Stats\n`;
     content += `• Total Applications: ${totalApplications || 0}\n`;
     content += `• Added This Week: ${applicationsThisWeek || 0}\n\n`;
-
-    if (upcomingInterviews && upcomingInterviews.length > 0) {
-      content += `Upcoming Interviews:\n`;
-      upcomingInterviews.forEach(i => {
-        content += `• ${i.jobTitle} at ${i.company} - ${format(new Date(i.date), "MMM d, h:mm a")}\n`;
-      });
-      content += `\n`;
-    }
 
     if (pendingFollowUps && pendingFollowUps.length > 0) {
       content += `Consider Following Up:\n`;

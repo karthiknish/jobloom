@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { useOnboardingState } from "@/hooks/useOnboardingState";
+import { useRestoreFocus } from "@/hooks/useRestoreFocus";
 import { 
   Sparkles, 
   Briefcase, 
@@ -32,6 +33,8 @@ export function WelcomeDialog({ onStartTour, onSkip }: WelcomeDialogProps) {
   const onboarding = useOnboardingState();
   const [isOpen, setIsOpen] = useState(false);
   const [hasChecked, setHasChecked] = useState(false);
+
+  useRestoreFocus(isOpen);
 
   useEffect(() => {
     if (!hasChecked && user && onboarding.isLoaded && typeof window !== "undefined") {

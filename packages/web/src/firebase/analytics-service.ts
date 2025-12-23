@@ -570,35 +570,6 @@ export class FirebaseAnalyticsService {
     });
   }
 
-  async logInterviewPrepStarted(lessonType: string): Promise<void> {
-    await this.logEvent({
-      name: ANALYTICS_EVENTS.INTERVIEW_PREP_STARTED,
-      parameters: {
-        lesson_type: lessonType,
-      },
-    });
-  }
-
-  async logInterviewQuestionAnswered(questionCategory: string, correct: boolean): Promise<void> {
-    await this.logEvent({
-      name: ANALYTICS_EVENTS.INTERVIEW_QUESTION_ANSWERED,
-      parameters: {
-        question_category: questionCategory,
-        correct,
-      },
-    });
-  }
-
-  async logMockInterviewCompleted(interviewType: string, score: number): Promise<void> {
-    await this.logEvent({
-      name: ANALYTICS_EVENTS.MOCK_INTERVIEW_COMPLETED,
-      parameters: {
-        interview_type: interviewType,
-        score,
-      },
-    });
-  }
-
   async logExtensionPopupOpened(): Promise<void> {
     await this.logEvent({
       name: ANALYTICS_EVENTS.EXTENSION_POPUP_OPENED,

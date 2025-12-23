@@ -29,6 +29,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAnalytics } from "@/providers/analytics-provider";
 import { apiClient } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
+import { EmptyState } from "@/components/ui/empty-state";
 
 function AnalyticsDashboardSkeleton() {
   return (
@@ -151,6 +153,7 @@ export function AnalyticsDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { trackPageView } = useAnalytics();
+  const { toast } = useToast();
 
   const fetchAnalyticsData = useCallback(async () => {
     try {
@@ -207,6 +210,15 @@ export function AnalyticsDashboard() {
   }, []);
 
   useEffect(() => {
+    if (!error) return;
+    toast({
+      variant: "destructive",
+      title: "Analytics error",
+      description: error,
+    });
+  }, [error, toast]);
+
+  useEffect(() => {
     // Track dashboard view
     trackPageView('/admin/analytics', 'Analytics Dashboard');
     
@@ -220,15 +232,16 @@ export function AnalyticsDashboard() {
 
   if (error || !analyticsData) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center space-y-4">
-          <p className="text-destructive">{error || 'Failed to load analytics data'}</p>
-          <Button onClick={fetchAnalyticsData} variant="outline">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Retry
-          </Button>
-        </div>
-      </div>
+      <EmptyState
+        title="Analytics unavailable"
+        description="We couldn't load analytics data. Please try again."
+        actions={[{
+          label: "Retry",
+          onClick: fetchAnalyticsData,
+          variant: "outline",
+          icon: RefreshCw,
+        }]}
+      />
     );
   }
 

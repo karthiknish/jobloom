@@ -344,18 +344,6 @@ export function useDashboardAnalytics() {
 }
 
 
-export function useInterviewAnalytics() {
-  const { trackEvent } = useAnalytics();
-  
-  const trackInterviewPrepStarted = useCallback((lessonType: string) => {
-    trackEvent(ANALYTICS_EVENTS.INTERVIEW_PREP_STARTED, { lesson_type: lessonType });
-  }, [trackEvent]);
-
-  return {
-    trackInterviewPrepStarted,
-  };
-}
-
 export function useExtensionAnalytics() {
   const { trackEvent } = useAnalytics();
   

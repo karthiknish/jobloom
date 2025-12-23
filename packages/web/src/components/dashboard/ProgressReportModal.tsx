@@ -28,6 +28,7 @@ import {
   Download,
 } from "lucide-react";
 import { Application } from "@/types/dashboard";
+import { useRestoreFocus } from "@/hooks/useRestoreFocus";
 
 interface ProgressReportModalProps {
   open: boolean;
@@ -35,7 +36,6 @@ interface ProgressReportModalProps {
   applications: Application[];
   goals?: {
     weeklyApplications: number;
-    monthlyInterviews: number;
     responseRate: number;
   };
 }
@@ -44,8 +44,9 @@ export function ProgressReportModal({
   open,
   onOpenChange,
   applications = [],
-  goals = { weeklyApplications: 10, monthlyInterviews: 4, responseRate: 20 },
+  goals = { weeklyApplications: 10, responseRate: 20 },
 }: ProgressReportModalProps) {
+  useRestoreFocus(open);
   const safeApps = Array.isArray(applications) ? applications : [];
 
   // Calculate metrics
@@ -63,21 +64,17 @@ export function ProgressReportModal({
   const statusBreakdown = {
     interested: safeApps.filter((a) => a.status === "interested").length,
     applied: safeApps.filter((a) => a.status === "applied").length,
-    interviewing: safeApps.filter((a) => a.status === "interviewing").length,
     offered: safeApps.filter((a) => a.status === "offered").length,
     rejected: safeApps.filter((a) => a.status === "rejected").length,
     withdrawn: safeApps.filter((a) => a.status === "withdrawn").length,
   };
 
   const totalApplications = safeApps.length;
-  const interviewRate = totalApplications > 0 
-    ? Math.round((statusBreakdown.interviewing / totalApplications) * 100) 
-    : 0;
   const successRate = totalApplications > 0 
     ? Math.round(((statusBreakdown.offered) / totalApplications) * 100) 
     : 0;
   const responseRate = totalApplications > 0 
-    ? Math.round(((statusBreakdown.interviewing + statusBreakdown.offered + statusBreakdown.rejected) / totalApplications) * 100) 
+    ? Math.round(((statusBreakdown.offered + statusBreakdown.rejected) / totalApplications) * 100) 
     : 0;
 
   // Week-over-week change
@@ -88,7 +85,6 @@ export function ProgressReportModal({
 
   // Goal progress
   const weeklyGoalProgress = Math.min(100, (thisWeekApps.length / goals.weeklyApplications) * 100);
-  const interviewGoalProgress = Math.min(100, (statusBreakdown.interviewing / goals.monthlyInterviews) * 100);
   const responseGoalProgress = Math.min(100, (responseRate / goals.responseRate) * 100);
 
   const getTrendIcon = (change: number) => {
@@ -128,17 +124,6 @@ export function ProgressReportModal({
                 <Briefcase className="h-5 w-5 text-primary mb-2" />
                 <p className="text-2xl font-bold text-foreground">{totalApplications}</p>
                 <p className="text-xs text-muted-foreground">Total Applications</p>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="bg-purple-500/10 dark:bg-purple-500/20 rounded-xl p-4 border border-purple-500/20"
-              >
-                <Star className="h-5 w-5 text-purple-600 dark:text-purple-400 mb-2" />
-                <p className="text-2xl font-bold text-foreground">{statusBreakdown.interviewing}</p>
-                <p className="text-xs text-muted-foreground">Interviews</p>
               </motion.div>
 
               <motion.div
@@ -218,17 +203,6 @@ export function ProgressReportModal({
 
                 <div>
                   <div className="flex justify-between text-sm mb-2">
-                    <span>Monthly Interviews</span>
-                    <span className="font-medium">{statusBreakdown.interviewing} / {goals.monthlyInterviews}</span>
-                  </div>
-                  <Progress value={interviewGoalProgress} className="h-2" />
-                  {interviewGoalProgress >= 100 && (
-                    <Badge variant="green" className="mt-2">Goal Achieved!</Badge>
-                  )}
-                </div>
-
-                <div>
-                  <div className="flex justify-between text-sm mb-2">
                     <span>Response Rate</span>
                     <span className="font-medium">{responseRate}% / {goals.responseRate}%</span>
                   </div>
@@ -251,7 +225,6 @@ export function ProgressReportModal({
                     const styles: Record<string, { border: string; icon: string }> = {
                       interested: { border: "border-l-4 border-l-blue-500", icon: "text-blue-500" },
                       applied: { border: "border-l-4 border-l-amber-500", icon: "text-amber-500" },
-                      interviewing: { border: "border-l-4 border-l-purple-500", icon: "text-purple-500" },
                       offered: { border: "border-l-4 border-l-green-500", icon: "text-green-500" },
                       rejected: { border: "border-l-4 border-l-red-500", icon: "text-red-500" },
                       withdrawn: { border: "border-l-4 border-l-gray-500", icon: "text-gray-500" },

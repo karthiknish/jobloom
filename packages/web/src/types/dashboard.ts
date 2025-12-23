@@ -36,7 +36,6 @@ export interface Application {
   status: string;
   appliedDate?: number;
   notes?: string;
-  interviewDates?: number[];
   followUpDate?: number;
   createdAt: number;
   updatedAt: number;
@@ -62,7 +61,6 @@ export interface SavedView {
 export type KanbanStatus = 
   | "interested"
   | "applied"
-  | "interviewing"
   | "offered"
   | "rejected"
   | "withdrawn";

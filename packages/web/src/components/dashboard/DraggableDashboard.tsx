@@ -72,8 +72,8 @@ function SortableWidget({ widget, onToggleVisibility }: SortableWidgetProps) {
     >
       <Card className={`${
         isDragging
-          ? 'shadow-2xl scale-105 border-primary/50'
-          : 'hover:shadow-lg card-depth-2'
+          ? 'shadow-overlay scale-105 border-primary/50'
+          : 'shadow-soft shadow-hover-strong'
       }`}>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">

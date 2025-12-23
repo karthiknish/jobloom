@@ -13,7 +13,7 @@ import {
   createImprovementsPrompt,
   createKeywordExtractionPrompt,
   createCompanyInsightsPrompt,
-  createInterviewEvaluationPrompt,
+  createJobSummaryPrompt,
 } from './prompts';
 import {
   getFallbackCoverLetter,
@@ -23,8 +23,6 @@ import {
   getFallbackResumeGeneration,
   manualKeywordExtraction,
   calculateFallbackATSScore,
-  generateFallbackEvaluation,
-  type InterviewAnswerEvaluation,
 } from './parsers';
 import type {
   CoverLetterRequest,
@@ -33,9 +31,8 @@ import type {
   ResumeAnalysisResponse,
   ResumeGenerationRequest,
   ResumeGenerationResult,
-  MockInterviewQuestion,
-  MockInterviewGenerationRequest,
   EditorContentRequest,
+  JobSummaryResponse,
 } from './types';
 
 // ============ COVER LETTER ============
@@ -140,48 +137,6 @@ export async function generateResumeWithAI(request: ResumeGenerationRequest): Pr
   }
 }
 
-// ============ MOCK INTERVIEW ============
-
-export async function generateMockInterviewQuestions(
-  request: MockInterviewGenerationRequest
-): Promise<MockInterviewQuestion[]> {
-  try {
-    const { role, experience, duration, focus } = request;
-    const questionCount = Math.floor(duration / 8);
-
-    const prompt = `
-Generate a set of ${questionCount} mock interview questions for a ${experience} ${role} position.
-Focus areas: ${focus.join(', ')}.
-
-Return a JSON array of objects with this structure:
-{
-  "id": "question-1",
-  "question": "The interview question",
-  "type": "behavioral" | "technical" | "situational" | "leadership",
-  "category": "Specific category (e.g., System Design, Conflict Resolution)",
-  "difficulty": "Easy" | "Medium" | "Hard",
-  "timeLimit": number (in minutes, usually 5-10),
-  "followUpQuestions": ["Follow up 1", "Follow up 2"]
-}
-
-Ensure the questions are diverse and appropriate for the experience level.
-Return ONLY the JSON array.
-`;
-
-    const model = getModel();
-    const result = await model.generateContent(prompt);
-    const response = result.response.text().trim();
-
-    const cleaned = response.replace(/```json/gi, '').replace(/```/g, '').trim();
-    const questions = JSON.parse(cleaned);
-
-    return Array.isArray(questions) ? questions : [];
-  } catch (error) {
-    console.error('AI Mock Interview Generation Error:', error);
-    throw new Error('Failed to generate mock interview questions with AI');
-  }
-}
-
 // ============ EDITOR CONTENT ============
 
 export async function generateEditorContent(request: EditorContentRequest): Promise<string> {
@@ -271,54 +226,6 @@ function sanitizeEditorContent(text: string, format: string): string {
   }
 
   return collapsed;
-}
-
-// ============ INTERVIEW EVALUATION ============
-
-export interface InterviewAnswerEvaluationRequest {
-  question: string;
-  answer: string;
-  category: string;
-  difficulty: string;
-}
-
-export { type InterviewAnswerEvaluation };
-
-export async function evaluateInterviewAnswer(
-  request: InterviewAnswerEvaluationRequest
-): Promise<InterviewAnswerEvaluation> {
-  const { question, answer, category, difficulty } = request;
-  const prompt = createInterviewEvaluationPrompt(question, answer, category, difficulty);
-
-  try {
-    const model = getModel();
-    const result = await model.generateContent(prompt);
-    const response = result.response.text().trim();
-
-    const cleaned = response.replace(/```json/gi, '').replace(/```/g, '').trim();
-    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-
-    if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0]);
-      return {
-        overall_score: Math.max(0, Math.min(100, parsed.overall_score || 50)),
-        content_score: Math.max(0, Math.min(100, parsed.content_score || 50)),
-        clarity_score: Math.max(0, Math.min(100, parsed.clarity_score || 50)),
-        relevance_score: Math.max(0, Math.min(100, parsed.relevance_score || 50)),
-        structure_score: Math.max(0, Math.min(100, parsed.structure_score || 50)),
-        strengths: Array.isArray(parsed.strengths) ? parsed.strengths : [],
-        improvements: Array.isArray(parsed.improvements) ? parsed.improvements : [],
-        detailed_feedback: parsed.detailed_feedback || "Unable to generate detailed feedback.",
-        suggestions: Array.isArray(parsed.suggestions) ? parsed.suggestions : [],
-        estimated_response_quality: parsed.estimated_response_quality || "Fair",
-      };
-    }
-
-    throw new Error("Invalid AI response format");
-  } catch (error) {
-    console.error("AI Interview Evaluation Error:", error);
-    return generateFallbackEvaluation(question, answer, category, difficulty);
-  }
 }
 
 // ============ HELPER FUNCTIONS ============
@@ -413,5 +320,35 @@ async function generateImprovements(
       'Include more company-specific keywords',
       'Strengthen the opening statement'
     ];
+  }
+}
+
+// ============ JOB SUMMARY ============
+
+/**
+ * Summarize a job description using AI
+ */
+export async function summarizeJobDescription(jobDescription: string): Promise<JobSummaryResponse> {
+  const prompt = createJobSummaryPrompt(jobDescription);
+
+  try {
+    const raw = await generateContentRobust(prompt, {
+      useCache: true,
+      operation: 'Job description summarization'
+    });
+
+    const parsed = safeParseJSON<JobSummaryResponse>(raw);
+    if (parsed) return parsed;
+
+    throw new Error("Failed to parse job summary response");
+  } catch (error) {
+    console.error("Job summary generation error:", error);
+    return {
+      summary: "Unable to generate summary at this time.",
+      keyRequirements: [],
+      cultureInsights: [],
+      atsKeywords: [],
+      salaryEstimate: "Not specified"
+    };
   }
 }

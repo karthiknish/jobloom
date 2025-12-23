@@ -38,22 +38,22 @@
 }
 
 .setting-icon.blue {
-    background: #eff6ff;
+    background: var(--accent-blue-light);
     color: var(--accent-blue);
 }
 
 .setting-icon.purple {
-    background: #f5f3ff;
+    background: var(--accent-purple-light);
     color: var(--accent-purple);
 }
 
 .setting-icon.green {
-    background: #ecfdf5;
+    background: var(--primary-light);
     color: var(--primary);
 }
 
 .setting-icon.orange {
-    background: #fff7ed;
+    background: var(--accent-orange-light);
     color: var(--accent-orange);
 }
 

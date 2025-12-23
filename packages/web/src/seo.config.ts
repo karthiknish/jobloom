@@ -15,7 +15,7 @@ const DEFAULT_META: SeoMeta = {
   description:
     "Discover sponsored job opportunities, manage your applications, and accelerate your job search with HireAll's AI-powered toolkit.",
   keywords:
-    "hireall, sponsored jobs, job tracker, job search, resume builder, career tools, interview prep, ATS optimization",
+    "hireall, sponsored jobs, job tracker, job search, resume builder, career tools, ATS optimization",
   ogImage: DEFAULT_OG_IMAGE,
   ogType: "website",
 };
@@ -32,7 +32,7 @@ const SEO_RULES: SeoRule[] = [
     meta: {
       title: "HireAll | Never Miss a Sponsored Opportunity Again",
       description:
-        "Reveal hidden sponsored job listings, organize your applications, and land interviews faster with HireAll's AI-powered career tools.",
+        "Reveal hidden sponsored job listings, organize your applications, and land offers faster with HireAll's AI-powered career tools.",
       keywords: "hireall, sponsored jobs, job search platform, job tracker, career tools",
     },
   },
@@ -42,7 +42,7 @@ const SEO_RULES: SeoRule[] = [
       title: "Career Blog | HireAll",
       description:
         "Expert career advice, job search tips, resume writing guides, and industry insights to help you land your dream job.",
-      keywords: "career blog, job search tips, resume advice, interview tips, career development",
+      keywords: "career blog, job search tips, resume advice, career development",
       ogType: "website",
     },
   },
@@ -200,7 +200,7 @@ const SEO_RULES: SeoRule[] = [
     meta: {
       title: "Resume Builder | HireAll",
       description:
-        "Craft ATS-friendly resumes using AI insights, professional templates, and real-time scoring to land more interviews.",
+        "Craft ATS-friendly resumes using AI insights, professional templates, and real-time scoring to land more offers.",
       keywords: "resume builder, ATS resume, resume templates, resume scoring, professional resume",
     },
   },

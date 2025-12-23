@@ -96,47 +96,32 @@ export function DashboardEmptyState({
 
             {/* Action Buttons */}
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
-              <motion.div
-                whileHover={{ scale: 1.03, y: -2 }}
-                whileTap={{ scale: 0.97 }}
+              <Button
+                onClick={onImportJobs}
+                size="lg"
+                className="motion-button w-full sm:w-auto shadow-lg hover:shadow-xl bg-primary hover:from-emerald-700 hover:to-teal-700 text-white border-0 gap-2"
               >
-                <Button
-                  onClick={onImportJobs}
-                  size="lg"
-                  className="w-full sm:w-auto shadow-lg hover:shadow-xl bg-primary hover:from-emerald-700 hover:to-teal-700 text-white border-0 gap-2"
-                >
-                  <Chrome className="h-5 w-5" />
-                  Import from Extension
-                </Button>
-              </motion.div>
-              <motion.div
-                whileHover={{ scale: 1.03, y: -2 }}
-                whileTap={{ scale: 0.97 }}
+                <Chrome className="h-5 w-5" />
+                Import from Extension
+              </Button>
+              <Button
+                onClick={onAddJob}
+                variant="secondary"
+                size="lg"
+                className="motion-button w-full sm:w-auto shadow-md hover:shadow-lg gap-2"
               >
-                <Button
-                  onClick={onAddJob}
-                  variant="secondary"
-                  size="lg"
-                  className="w-full sm:w-auto shadow-md hover:shadow-lg gap-2"
-                >
-                  <FilePlus className="h-5 w-5" />
-                  Add Job Manually
-                </Button>
-              </motion.div>
-              <motion.div
-                whileHover={{ scale: 1.03, y: -2 }}
-                whileTap={{ scale: 0.97 }}
+                <FilePlus className="h-5 w-5" />
+                Add Job Manually
+              </Button>
+              <Button
+                onClick={onAddApplication}
+                variant="outline"
+                size="lg"
+                className="motion-button w-full sm:w-auto shadow-md hover:shadow-lg border-border hover:border-emerald-300 hover:bg-primary/10/50 gap-2"
               >
-                <Button
-                  onClick={onAddApplication}
-                  variant="outline"
-                  size="lg"
-                  className="w-full sm:w-auto shadow-md hover:shadow-lg border-border hover:border-emerald-300 hover:bg-primary/10/50 gap-2"
-                >
-                  Track Application
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </motion.div>
+                Track Application
+                <ArrowRight className="h-4 w-4" />
+              </Button>
             </div>
           </div>
         </div>
@@ -172,7 +157,7 @@ export function DashboardEmptyState({
             <h4 className="font-semibold text-foreground">Smart Tracking</h4>
           </div>
           <p className="text-sm text-muted-foreground">
-            Track application status, interviews, and follow-ups in one place.
+            Track application status, offers, and follow-ups in one place.
           </p>
         </div>
 

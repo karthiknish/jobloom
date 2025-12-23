@@ -37,6 +37,8 @@ import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { showSuccess, showError } from "@/components/ui/Toast";
 import { EmailCampaign } from "@/config/emailTemplates";
 import { apiClient } from "@/lib/api/client";
+import { useRestoreFocus } from "@/hooks/useRestoreFocus";
+import { EmptyState } from "@/components/ui/empty-state";
 
 interface EmailCampaignsProps {
   campaigns: EmailCampaign[];
@@ -56,6 +58,8 @@ export function EmailCampaigns({
   const [sendingCampaign, setSendingCampaign] = useState<string | null>(null);
   const [editingCampaign, setEditingCampaign] = useState<EmailCampaign | null>(null);
   const [previewCampaign, setPreviewCampaign] = useState<EmailCampaign | null>(null);
+  useRestoreFocus(showCampaignDialog);
+  useRestoreFocus(!!previewCampaign);
 
   const [campaignForm, setCampaignForm] = useState({
     name: "",
@@ -437,17 +441,16 @@ export function EmailCampaigns({
 
       {/* Empty State */}
       {campaigns.length === 0 && (
-        <div className="text-center py-12">
-          <Send className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No campaigns yet</h3>
-          <p className="text-gray-500 mb-4">
-            Create your first email campaign to start engaging with your users
-          </p>
-          <Button onClick={handleCreateCampaign}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Campaign
-          </Button>
-        </div>
+        <EmptyState
+          icon={Send}
+          title="No campaigns yet"
+          description="Create your first email campaign to start engaging with your users."
+          actions={[{
+            label: "Create Campaign",
+            onClick: handleCreateCampaign,
+            icon: Plus,
+          }]}
+        />
       )}
 
       {/* Create/Edit Campaign Dialog */}

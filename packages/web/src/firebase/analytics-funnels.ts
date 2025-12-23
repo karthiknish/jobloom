@@ -31,7 +31,6 @@ export const CONVERSION_FUNNELS = {
       { id: 'job_saved', event: ANALYTICS_EVENTS.JOB_SAVED },
       { id: 'application_created', event: ANALYTICS_EVENTS.APPLICATION_CREATED },
       { id: 'status_applied', event: ANALYTICS_EVENTS.APPLICATION_STATUS_CHANGED, filter: { new_status: 'applied' } },
-      { id: 'status_interviewing', event: ANALYTICS_EVENTS.APPLICATION_STATUS_CHANGED, filter: { new_status: 'interviewing' } },
       { id: 'status_offered', event: ANALYTICS_EVENTS.APPLICATION_STATUS_CHANGED, filter: { new_status: 'offered' } },
     ],
   },

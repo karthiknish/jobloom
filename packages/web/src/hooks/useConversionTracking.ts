@@ -51,13 +51,12 @@ export function useConversionTracking() {
   }, [trackFunnelStep]);
 
   // Track job application funnel
-  const trackApplicationFunnel = useCallback((step: 'viewed' | 'saved' | 'created' | 'applied' | 'interviewing' | 'offered', jobId?: string) => {
+  const trackApplicationFunnel = useCallback((step: 'viewed' | 'saved' | 'created' | 'applied' | 'offered', jobId?: string) => {
     const stepMap: Record<string, string> = {
       viewed: 'job_viewed',
       saved: 'job_saved',
       created: 'application_created',
       applied: 'status_applied',
-      interviewing: 'status_interviewing',
       offered: 'status_offered',
     };
     trackFunnelStep(CONVERSION_FUNNELS.JOB_APPLICATION.name, stepMap[step], { job_id: jobId });

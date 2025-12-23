@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRestoreFocus } from "@/hooks/useRestoreFocus";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -31,12 +32,11 @@ interface ExportOptionsDropdownProps {
   className?: string;
 }
 
-type ExportFormat = "csv" | "json" | "pdf";
+type ExportFormat = "csv" | "json" | "pdf" | "excel";
 
 interface ExportOptions {
   format: ExportFormat;
   includeNotes: boolean;
-  includeInterviewHistory: boolean;
   includeDescription: boolean;
   exportScope: "all" | "filtered" | "selected";
 }
@@ -44,7 +44,6 @@ interface ExportOptions {
 const DEFAULT_OPTIONS: ExportOptions = {
   format: "csv",
   includeNotes: true,
-  includeInterviewHistory: true,
   includeDescription: false,
   exportScope: "all",
 };
@@ -58,6 +57,7 @@ export function ExportOptionsDropdown({
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [options, setOptions] = useState<ExportOptions>(DEFAULT_OPTIONS);
   const [isExporting, setIsExporting] = useState(false);
+  useRestoreFocus(showAdvanced);
 
   const getExportableApplications = (): Application[] => {
     switch (options.exportScope) {
@@ -83,7 +83,6 @@ export function ExportOptionsDropdown({
       "Salary",
       "URL",
       ...(options.includeNotes ? ["Notes"] : []),
-      ...(options.includeInterviewHistory ? ["Interview Dates"] : []),
       ...(options.includeDescription ? ["Description"] : []),
     ];
 
@@ -97,9 +96,6 @@ export function ExportOptionsDropdown({
       app.job?.salary || "",
       app.job?.url || "",
       ...(options.includeNotes ? [app.notes?.replace(/,/g, ";") || ""] : []),
-      ...(options.includeInterviewHistory
-        ? [app.interviewDates?.map((d) => new Date(d).toLocaleDateString()).join("; ") || ""]
-        : []),
       ...(options.includeDescription ? [app.job?.description?.substring(0, 500)?.replace(/,/g, ";") || ""] : []),
     ]);
 
@@ -120,12 +116,65 @@ export function ExportOptionsDropdown({
       url: app.job?.url,
       isSponsored: app.job?.isSponsored,
       ...(options.includeNotes && { notes: app.notes }),
-      ...(options.includeInterviewHistory && { interviewDates: app.interviewDates }),
       ...(options.includeDescription && { description: app.job?.description }),
     }));
 
     const jsonContent = JSON.stringify(data, null, 2);
     downloadFile(jsonContent, "job-applications.json", "application/json");
+  };
+
+  const exportAsExcel = (apps: Application[]) => {
+    const headers = [
+      "Title",
+      "Company",
+      "Location",
+      "Status",
+      "Date Found",
+      "Applied Date",
+      "Salary",
+      "URL",
+      ...(options.includeNotes ? ["Notes"] : []),
+      ...(options.includeDescription ? ["Description"] : []),
+    ];
+
+    const rows = apps.map((app) => [
+      app.job?.title || "",
+      app.job?.company || "",
+      app.job?.location || "",
+      app.status || "",
+      app.job?.dateFound ? new Date(app.job.dateFound).toLocaleDateString() : "",
+      app.appliedDate ? new Date(app.appliedDate).toLocaleDateString() : "",
+      app.job?.salary || "",
+      app.job?.url || "",
+      ...(options.includeNotes ? [app.notes || ""] : []),
+      ...(options.includeDescription ? [app.job?.description?.substring(0, 500) || ""] : []),
+    ]);
+
+    const html = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta charset="UTF-8">
+        <!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Job Applications</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+        <style>
+          table { border-collapse: collapse; }
+          th { background-color: #f2f2f2; font-weight: bold; border: 1px solid #ccc; }
+          td { border: 1px solid #ccc; }
+        </style>
+      </head>
+      <body>
+        <table>
+          <thead>
+            <tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>
+          </thead>
+          <tbody>
+            ${rows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`).join('')}
+          </tbody>
+        </table>
+      </body>
+      </html>
+    `;
+
+    downloadFile(html, "job-applications.xls", "application/vnd.ms-excel");
   };
 
   const downloadFile = (content: string, filename: string, mimeType: string) => {
@@ -156,6 +205,9 @@ export function ExportOptionsDropdown({
         case "json":
           exportAsJSON(apps);
           break;
+        case "excel":
+          exportAsExcel(apps);
+          break;
         case "pdf":
           // PDF export would require additional library
           alert("PDF export coming soon!");
@@ -174,6 +226,8 @@ export function ExportOptionsDropdown({
       exportAsCSV(apps);
     } else if (format === "json") {
       exportAsJSON(apps);
+    } else if (format === "excel") {
+      exportAsExcel(apps);
     }
   };
 
@@ -199,6 +253,11 @@ export function ExportOptionsDropdown({
           <DropdownMenuItem onClick={() => quickExport("json")} className="gap-2">
             <FileJson className="h-4 w-4" />
             Export as JSON
+          </DropdownMenuItem>
+
+          <DropdownMenuItem onClick={() => quickExport("excel")} className="gap-2">
+            <FileSpreadsheet className="h-4 w-4" />
+            Export as Excel (.xls)
           </DropdownMenuItem>
 
           {selectedIds.length > 0 && (
@@ -243,7 +302,7 @@ export function ExportOptionsDropdown({
             <div className="space-y-3">
               <Label className="text-sm font-medium">Format</Label>
               <div className="flex gap-2">
-                {(["csv", "json"] as ExportFormat[]).map((format) => (
+                {(["csv", "json", "excel"] as ExportFormat[]).map((format) => (
                   <Button
                     key={format}
                     variant={options.format === format ? "default" : "outline"}
@@ -253,6 +312,7 @@ export function ExportOptionsDropdown({
                   >
                     {format === "csv" && <FileSpreadsheet className="h-4 w-4 mr-2" />}
                     {format === "json" && <FileJson className="h-4 w-4 mr-2" />}
+                    {format === "excel" && <FileSpreadsheet className="h-4 w-4 mr-2" />}
                     {format.toUpperCase()}
                   </Button>
                 ))}
@@ -300,15 +360,6 @@ export function ExportOptionsDropdown({
                     }
                   />
                   Notes
-                </label>
-                <label className="flex items-center gap-2 text-sm">
-                  <Checkbox
-                    checked={options.includeInterviewHistory}
-                    onCheckedChange={(checked) =>
-                      setOptions({ ...options, includeInterviewHistory: checked === true })
-                    }
-                  />
-                  Interview History
                 </label>
                 <label className="flex items-center gap-2 text-sm">
                   <Checkbox

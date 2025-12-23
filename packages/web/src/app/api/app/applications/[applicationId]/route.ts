@@ -9,7 +9,6 @@ const applicationUpdateSchema = z.object({
   status: z.string().optional(),
   appliedDate: z.string().nullable().optional(),
   notes: z.string().optional(),
-  interviewDates: z.array(z.string()).optional(),
   followUpDate: z.string().nullable().optional(),
   order: z.number().optional(),
 });

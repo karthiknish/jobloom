@@ -34,11 +34,11 @@ import {
   CheckCircle,
   Archive,
 } from "lucide-react";
+import { useRestoreFocus } from "@/hooks/useRestoreFocus";
 
 export type ApplicationStatus = 
   | "saved"
   | "applied"
-  | "interviewing"
   | "offered"
   | "rejected"
   | "withdrawn";
@@ -58,7 +58,6 @@ interface BulkActionsBarProps {
 const STATUS_OPTIONS: { value: ApplicationStatus; label: string; icon: React.ReactNode }[] = [
   { value: "saved", label: "Saved", icon: <Clock className="h-4 w-4" /> },
   { value: "applied", label: "Applied", icon: <Send className="h-4 w-4" /> },
-  { value: "interviewing", label: "Interviewing", icon: <UserCheck className="h-4 w-4" /> },
   { value: "offered", label: "Offered", icon: <CheckCircle className="h-4 w-4" /> },
   { value: "rejected", label: "Rejected", icon: <XCircle className="h-4 w-4" /> },
   { value: "withdrawn", label: "Withdrawn", icon: <Archive className="h-4 w-4" /> },
@@ -77,6 +76,7 @@ export function BulkActionsBar({
 }: BulkActionsBarProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  useRestoreFocus(showDeleteConfirm);
 
   const handleStatusChange = async (status: ApplicationStatus) => {
     setIsLoading(true);

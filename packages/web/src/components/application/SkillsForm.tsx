@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { EmptyState } from "@/components/ui/empty-state";
 import { ResumeData } from "./types";
 import { skillCategories } from "./constants";
 import { cn } from "@/lib/utils";
@@ -127,19 +128,13 @@ export function SkillsForm({ data, onChange }: SkillsFormProps) {
 
       {/* Empty State */}
       {data.length === 0 && (
-        <div className="p-8 border-2 border-dashed border-muted-foreground/25 rounded-xl text-center space-y-4">
-          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
-            <Zap className="h-8 w-8 text-primary" />
-          </div>
-          <h3 className="text-lg font-semibold">Showcase Your Skills</h3>
-          <p className="text-muted-foreground text-sm max-w-md mx-auto">
-            Group your skills by category to help recruiters quickly find what they&apos;re looking for. Include both technical and soft skills.
-          </p>
-          <Button onClick={addSkillCategory} className="mt-2">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Your First Skill Category
-          </Button>
-        </div>
+        <EmptyState
+          icon={Zap}
+          title="Showcase Your Skills"
+          description="Group your skills by category so recruiters can quickly find both your technical and soft skills."
+          variant="dashed"
+          actions={[{ label: "Add Your First Skill Category", onClick: addSkillCategory, icon: Plus }]}
+        />
       )}
 
       {/* Skill Categories */}

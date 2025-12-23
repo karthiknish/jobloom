@@ -10,19 +10,24 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FeatureGate } from "@/components/UpgradePrompt";
 import { useSubscription } from "@/providers/subscription-provider";
-import { TrendingUp, MapPin, CheckCircle, BarChart3 } from "lucide-react";
+import { TrendingUp, MapPin, CheckCircle, BarChart3, DollarSign } from "lucide-react";
 import { CvAnalysisHistory } from "@/components/CvAnalysisHistory";
 import { GoalsSettingsModal } from "@/components/dashboard/GoalsSettingsModal";
 import { ProgressReportModal } from "@/components/dashboard/ProgressReportModal";
 import { WeeklySummaryModal } from "@/components/dashboard/WeeklySummaryModal";
 import {
   calculateSuccessRate,
-  calculateInterviewRate,
   calculateResponseRate,
   getWeeklyApplications,
   getSponsoredJobsPercentage,
   getAgencyJobsPercentage,
   formatApplicationDate,
+  calculateFunnelData,
+  calculateTimeToOffer,
+  getResponseRateByCompany,
+  getSuccessRateByJobType,
+  calculateSalaryGrowth,
+  calculateSalaryMetrics,
 } from "@/utils/dashboard";
 import { ANALYTICS_GOALS } from "@/constants/dashboard";
 import { slideInUp } from "@/styles/animations";
@@ -48,7 +53,6 @@ export function DashboardAnalytics({
   // Goals state
   const [goals, setGoals] = useState({
     weeklyApplications: 10,
-    monthlyInterviews: 4,
     responseRate: 20,
   });
 
@@ -70,10 +74,16 @@ export function DashboardAnalytics({
   
   const weeklyApplications = getWeeklyApplications(safeApplications);
   const successRate = calculateSuccessRate(safeApplications);
-  const interviewRate = calculateInterviewRate(safeApplications);
   const responseRate = calculateResponseRate(safeApplications);
   const sponsoredPercentage = getSponsoredJobsPercentage(safeApplications);
   const agencyPercentage = getAgencyJobsPercentage(safeApplications);
+
+  const funnelData = calculateFunnelData(safeApplications);
+  const timeToOffer = calculateTimeToOffer(safeApplications);
+  const companyResponseRates = getResponseRateByCompany(safeApplications);
+  const jobTypeSuccess = getSuccessRateByJobType(safeApplications);
+  const salaryGrowth = calculateSalaryGrowth(safeApplications);
+  const salaryMetrics = calculateSalaryMetrics(safeApplications);
 
   return (
     <FeatureGate feature="advancedAnalytics">
@@ -136,7 +146,6 @@ export function DashboardAnalytics({
                       {
                         interested: "bg-muted text-muted-foreground",
                         applied: "bg-sky-100 text-sky-800",
-                        interviewing: "bg-teal-100 text-teal-800",
                         offered: "bg-primary/20 text-primary",
                         rejected: "bg-red-100 text-red-800",
                         withdrawn: "bg-muted text-muted-foreground",
@@ -267,13 +276,6 @@ export function DashboardAnalytics({
 
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground">
-                        Interview Rate
-                      </span>
-                      <span className="font-medium">{interviewRate}%</span>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">
                         Sponsored Jobs Applied
                       </span>
                       <span className="font-medium">{sponsoredPercentage}%</span>
@@ -291,6 +293,209 @@ export function DashboardAnalytics({
             </CardContent>
           </Card>
         </div>
+
+        {/* Advanced Analytics Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Application Funnel */}
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle>Application Funnel</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="relative space-y-4">
+                {funnelData.map((stage, index) => (
+                  <div key={stage.stage} className="relative">
+                    <div 
+                      className="h-12 rounded-lg bg-primary/10 flex items-center justify-between px-4 relative z-10"
+                      style={{ 
+                        width: `${Math.max(40, 100 - (index * 15))}%`,
+                        margin: '0 auto'
+                      }}
+                    >
+                      <span className="font-medium text-sm">{stage.stage}</span>
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-bold">{stage.count}</span>
+                        {index > 0 && (
+                          <Badge variant="secondary" className="text-[10px] h-5">
+                            {stage.percentage}% conv.
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    {index < funnelData.length - 1 && (
+                      <div className="flex justify-center my-1">
+                        <div className="w-px h-4 bg-border border-dashed border-l" />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Success Metrics */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Success Metrics</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Avg. Time to Offer</p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-bold">
+                    {timeToOffer !== null ? `${timeToOffer} days` : "N/A"}
+                  </span>
+                  {timeToOffer !== null && (
+                    <span className="text-xs text-emerald-600 font-medium">
+                      -12% vs avg
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Salary Growth</p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-bold">
+                    {salaryGrowth ? `+${salaryGrowth.growth}%` : "N/A"}
+                  </span>
+                  {salaryGrowth && (
+                    <span className="text-xs text-muted-foreground">
+                      from {new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(salaryGrowth.first)}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="pt-4 border-t">
+                <h4 className="text-sm font-medium mb-3">Top Responding Companies</h4>
+                <div className="space-y-3">
+                  {companyResponseRates.map((company) => (
+                    <div key={company.name} className="flex items-center justify-between">
+                      <span className="text-xs truncate max-w-[120px]">{company.name}</span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-16 bg-muted rounded-full h-1.5">
+                          <div 
+                            className="bg-primary h-1.5 rounded-full" 
+                            style={{ width: `${company.rate}%` }}
+                          />
+                        </div>
+                        <span className="text-[10px] font-medium w-6">{company.rate}%</span>
+                      </div>
+                    </div>
+                  ))}
+                  {companyResponseRates.length === 0 && (
+                    <p className="text-xs text-muted-foreground italic">No data yet</p>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Job Type Insights */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Job Type Performance</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {jobTypeSuccess.map((type) => (
+                <div key={type.type} className="p-4 rounded-xl border bg-card shadow-sm">
+                  <div className="flex items-center justify-between mb-2">
+                    <Badge variant="outline" className="capitalize">{type.type}</Badge>
+                    <span className="text-xs text-muted-foreground">{type.total} apps</span>
+                  </div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-xl font-bold">{type.rate}%</span>
+                    <span className="text-[10px] text-muted-foreground">success rate</span>
+                  </div>
+                  <div className="mt-3 w-full bg-muted rounded-full h-1.5">
+                    <div 
+                      className="bg-emerald-500 h-1.5 rounded-full" 
+                      style={{ width: `${type.rate}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+              {jobTypeSuccess.length === 0 && (
+                <div className="col-span-full text-center py-8 text-muted-foreground italic">
+                  Apply to more jobs to see performance by type
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Salary Analytics */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5" />
+              Salary Insights
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {salaryMetrics ? (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="space-y-4">
+                  <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-100">
+                    <p className="text-sm text-emerald-700 mb-1">Average Salary</p>
+                    <p className="text-2xl font-bold text-emerald-900">
+                      {new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(salaryMetrics.avg)}
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-3 rounded-lg bg-muted/50 border">
+                      <p className="text-xs text-muted-foreground mb-1">Minimum</p>
+                      <p className="text-sm font-bold">{new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(salaryMetrics.min)}</p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-muted/50 border">
+                      <p className="text-xs text-muted-foreground mb-1">Maximum</p>
+                      <p className="text-sm font-bold">{new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(salaryMetrics.max)}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="md:col-span-2">
+                  <h4 className="text-sm font-medium mb-4">Salary Distribution</h4>
+                  <div className="h-32 flex items-end gap-1">
+                    {/* Simple distribution chart */}
+                    {Array.from({ length: 10 }).map((_, i) => {
+                      const rangeMin = salaryMetrics.min + (i * (salaryMetrics.max - salaryMetrics.min) / 10);
+                      const rangeMax = salaryMetrics.min + ((i + 1) * (salaryMetrics.max - salaryMetrics.min) / 10);
+                      const count = salaryMetrics.all.filter(s => s >= rangeMin && s < rangeMax).length;
+                      const height = salaryMetrics.all.length > 0 ? (count / salaryMetrics.all.length) * 100 : 0;
+                      
+                      return (
+                        <div key={i} className="flex-1 flex flex-col items-center gap-2 group">
+                          <div 
+                            className="w-full bg-primary/20 group-hover:bg-primary/40 transition-all rounded-t-sm relative"
+                            style={{ height: `${Math.max(5, height)}%` }}
+                          >
+                            {count > 0 && (
+                              <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-popover text-popover-foreground text-[10px] px-1.5 py-0.5 rounded border shadow-sm opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-20">
+                                {count} jobs
+                              </div>
+                            )}
+                          </div>
+                          <span className="text-[8px] text-muted-foreground rotate-45 origin-left mt-1">
+                            {Math.round(rangeMin / 1000)}k
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-12 bg-muted/20 rounded-xl border border-dashed">
+                <DollarSign className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
+                <p className="text-sm text-muted-foreground">Add salary information to your jobs to see analytics</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Goal Setting and Progress Tracking */}
         <Card>
@@ -323,34 +528,6 @@ export function DashboardAnalytics({
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   Goal: {goals.weeklyApplications} applications per week
-                </p>
-              </div>
-
-              {/* Interview Goal */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">Interviews This Month</span>
-                  <span className="text-sm text-muted-foreground">
-                    {safeApplications.filter((a) => a.status === "interviewing").length}{" "}
-                    / {goals.monthlyInterviews}
-                  </span>
-                </div>
-                <div className="w-full bg-muted rounded-full h-2">
-                  <div
-                    className="bg-primary h-2 rounded-full motion-progress"
-                    style={{
-                      width: `${Math.min(
-                        100,
-                        (safeApplications.filter((a) => a.status === "interviewing")
-                          .length /
-                          goals.monthlyInterviews) *
-                          100
-                      )}%`,
-                    }}
-                  ></div>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Goal: {goals.monthlyInterviews} interviews per month
                 </p>
               </div>
 

@@ -65,7 +65,8 @@ export function parseResumeAnalysis(analysis: string): ResumeAnalysisResponse {
         missingKeywords: Array.isArray(parsed.missingKeywords) ? parsed.missingKeywords : [],
         suggestions: Array.isArray(parsed.suggestions) ? parsed.suggestions : [],
         strengths: Array.isArray(parsed.strengths) ? parsed.strengths : [],
-        weaknesses: Array.isArray(parsed.weaknesses) ? parsed.weaknesses : []
+        weaknesses: Array.isArray(parsed.weaknesses) ? parsed.weaknesses : [],
+        parsedData: parsed.parsedData || undefined
       };
     }
   } catch (error) {
@@ -204,83 +205,4 @@ export function calculateFallbackATSScore(content: string, keywords: string[]): 
   }
 
   return Math.min(100, Math.round(score));
-}
-
-// ============ INTERVIEW EVALUATION ============
-
-export interface InterviewAnswerEvaluation {
-  overall_score: number;
-  content_score: number;
-  clarity_score: number;
-  relevance_score: number;
-  structure_score: number;
-  strengths: string[];
-  improvements: string[];
-  detailed_feedback: string;
-  suggestions: string[];
-  estimated_response_quality: "Poor" | "Fair" | "Good" | "Excellent";
-}
-
-/**
- * Fallback evaluation using heuristics when AI fails
- */
-export function generateFallbackEvaluation(
-  question: string,
-  answer: string,
-  category: string,
-  difficulty: string
-): InterviewAnswerEvaluation {
-  const wordCount = answer.split(/\s+/).length;
-  const hasSTAR =
-    answer.toLowerCase().includes("situation") ||
-    answer.toLowerCase().includes("task") ||
-    answer.toLowerCase().includes("action") ||
-    answer.toLowerCase().includes("result");
-
-  let content_score = Math.min(100, Math.max(20, (wordCount / 150) * 70 + 30));
-  let clarity_score = Math.min(100, Math.max(30, 100 - (answer.split(/[.!?]/).length > wordCount / 15 ? 20 : 0)));
-  let relevance_score = Math.min(100, Math.max(40, 70 + Math.random() * 20));
-  let structure_score = hasSTAR ? Math.min(100, 60 + Math.random() * 30) : Math.max(30, 40 + Math.random() * 20);
-
-  const overall_score = Math.round((content_score + clarity_score + relevance_score + structure_score) / 4);
-
-  const strengths: string[] = [];
-  const improvements: string[] = [];
-  const suggestions: string[] = [];
-
-  if (wordCount > 50) strengths.push("Good level of detail in your response");
-  if (hasSTAR) strengths.push("Good use of structured approach");
-  if (wordCount < 30) improvements.push("Answer could be more detailed with specific examples");
-  if (!hasSTAR && category === "behavioral") {
-    improvements.push("Consider using the STAR method for behavioral questions");
-    suggestions.push("Structure your answer: Situation, Task, Action, Result");
-  }
-
-  if (category === "technical") {
-    suggestions.push("For technical questions, walk through your problem-solving process step by step");
-  }
-  if (category === "leadership") {
-    suggestions.push("Highlight specific examples of your leadership impact and team influence");
-  }
-
-  const estimated_response_quality: "Poor" | "Fair" | "Good" | "Excellent" =
-    overall_score >= 85 ? "Excellent" :
-      overall_score >= 70 ? "Good" :
-        overall_score >= 50 ? "Fair" : "Poor";
-
-  return {
-    overall_score,
-    content_score: Math.round(content_score),
-    clarity_score: Math.round(clarity_score),
-    relevance_score: Math.round(relevance_score),
-    structure_score: Math.round(structure_score),
-    strengths: strengths.length > 0 ? strengths : ["You provided a response to the question"],
-    improvements: improvements.length > 0 ? improvements : ["Continue practicing to refine your answers"],
-    detailed_feedback: `Your answer received a score of ${overall_score}/100. ${overall_score >= 70
-        ? "This is a good response that demonstrates interview readiness."
-        : "This response has room for improvement."
-      } Focus on providing specific examples and structuring your answers clearly.`,
-    suggestions: suggestions.length > 0 ? suggestions : ["Practice with more questions to build confidence"],
-    estimated_response_quality,
-  };
 }

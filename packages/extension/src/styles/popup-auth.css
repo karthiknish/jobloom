@@ -98,15 +98,15 @@
 }
 
 .auth-feedback.error {
-    background: #fee2e2;
-    color: #b91c1c;
-    border: 1px solid #fecaca;
+    background: var(--error-bg);
+    color: var(--error-text);
+    border: 1px solid var(--error-border);
 }
 
 .auth-feedback.success {
-    background: #dcfce7;
-    color: #15803d;
-    border: 1px solid #bbf7d0;
+    background: var(--success-bg);
+    color: var(--success-text);
+    border: 1px solid var(--success-border);
 }
 
 /* Auth Toggle */
@@ -151,18 +151,18 @@
 }
 
 .plan-badge.premium {
-    background: linear-gradient(135deg, #f59e0b, #f97316);
+    background: linear-gradient(135deg, var(--premium-amber), var(--premium-orange));
     color: white;
     border: none;
-    box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+    box-shadow: 0 2px 4px var(--premium-alpha30);
 }
 
 /* Premium Upgrade Card */
 .premium-upgrade-card {
     margin: 16px 0;
     padding: 16px;
-    background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(249, 115, 22, 0.1));
-    border: 1px solid rgba(251, 191, 36, 0.3);
+    background: linear-gradient(135deg, var(--premium-alpha10), var(--premium-alpha10));
+    border: 1px solid var(--premium-alpha30);
     border-radius: var(--radius-md);
 }
 
@@ -176,13 +176,13 @@
 .premium-card-icon {
     width: 44px;
     height: 44px;
-    background: linear-gradient(135deg, #f59e0b, #f97316);
+    background: linear-gradient(135deg, var(--premium-amber), var(--premium-orange));
     border-radius: var(--radius-md);
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
-    box-shadow: 0 4px 8px rgba(245, 158, 11, 0.3);
+    box-shadow: 0 4px 8px var(--premium-alpha30);
 }
 
 .premium-card-title {
@@ -225,7 +225,7 @@
     gap: 8px;
     width: 100%;
     padding: 12px 20px;
-    background: linear-gradient(135deg, #f59e0b, #f97316);
+    background: linear-gradient(135deg, var(--premium-amber), var(--premium-orange));
     color: white;
     border: none;
     border-radius: var(--radius-sm);
@@ -233,12 +233,12 @@
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
-    box-shadow: 0 4px 8px rgba(245, 158, 11, 0.3);
+    box-shadow: 0 4px 8px var(--premium-alpha30);
 }
 
 .btn-upgrade:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(245, 158, 11, 0.4);
+    box-shadow: 0 6px 12px var(--premium-alpha30);
 }
 
 .btn-upgrade:active {
@@ -256,15 +256,15 @@
     align-items: center;
     gap: 10px;
     padding: 10px 12px;
-    background: linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(249, 115, 22, 0.15));
+    background: linear-gradient(135deg, var(--premium-alpha15), var(--premium-alpha15));
     border-radius: var(--radius-md);
-    border: 1px solid rgba(251, 191, 36, 0.3);
+    border: 1px solid var(--premium-alpha30);
 }
 
 .premium-banner-icon {
     width: 32px;
     height: 32px;
-    background: linear-gradient(135deg, #f59e0b, #f97316);
+    background: linear-gradient(135deg, var(--premium-amber), var(--premium-orange));
     border-radius: var(--radius-sm);
     display: flex;
     align-items: center;
@@ -296,7 +296,7 @@
 
 .premium-banner-btn {
     padding: 6px 14px;
-    background: linear-gradient(135deg, #f59e0b, #f97316);
+    background: linear-gradient(135deg, var(--premium-amber), var(--premium-orange));
     color: white;
     border: none;
     border-radius: var(--radius-sm);
@@ -309,7 +309,7 @@
 
 .premium-banner-btn:hover {
     transform: scale(1.05);
-    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
+    box-shadow: 0 2px 8px var(--premium-alpha30);
 }
 
 .premium-banner-close {

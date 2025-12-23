@@ -25,6 +25,9 @@ export default {
         serif: ["var(--font-serif)"],
         mono: ["var(--font-mono)"],
       },
+      fontSize: {
+        xxs: ["0.625rem", { lineHeight: "0.75rem" }],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -80,6 +83,19 @@ export default {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      transitionDuration: {
+        "ultra-fast": "var(--motion-duration-ultra-fast)",
+        fast: "var(--motion-duration-fast)",
+        medium: "var(--motion-duration-medium)",
+        slow: "var(--motion-duration-slow)",
+        "very-slow": "var(--motion-duration-very-slow)",
+        "ultra-slow": "var(--motion-duration-ultra-slow)",
+      },
+      transitionTimingFunction: {
+        "ease-out-custom": "var(--motion-ease-out)",
+        "ease-in-custom": "var(--motion-ease-in)",
+        "ease-in-out-custom": "var(--motion-ease-in-out)",
       },
       keyframes: {
         "accordion-down": {

@@ -21,7 +21,6 @@ export function getStatusIcon(status: string): string {
   const statusIcons: Record<string, string> = {
     interested: createSVGString("target", 14),
     applied: createSVGString("checkCircle", 14),
-    interviewing: createSVGString("users", 14),
     rejected: createSVGString("xCircle", 14),
     saved: createSVGString("bookmark", 14),
   };
@@ -34,7 +33,6 @@ export function getStatusColor(status: string): { r: number; g: number; b: numbe
   const statusColors: Record<string, { r: number; g: number; b: number }> = {
     interested: { r: 59, g: 130, b: 246 },    // Blue 500 (#3b82f6)
     applied: { r: 16, g: 185, b: 129 },       // Emerald 500 (#10b981) - primary color
-    interviewing: { r: 139, g: 92, b: 246 },  // Violet 500 (#8b5cf6)
     rejected: { r: 239, g: 68, b: 68 },       // Red 500 (#ef4444)
     saved: { r: 100, g: 116, b: 139 },        // Slate 500 (#64748b)
   };
@@ -46,7 +44,6 @@ export function getStatusLabel(status: string): string {
   const statusLabels: Record<string, string> = {
     interested: "Interested",
     applied: "Applied",
-    interviewing: "Interviewing",
     rejected: "Rejected",
     saved: "Saved",
   };
@@ -156,11 +153,6 @@ export function createJobItemHTML(job: JobStatus, showEligibility?: boolean): st
         ? `<button class="btn-sm primary" id="status-btn-${job.id}" onclick="changeJobStatus('${job.id}', 'applied')">Mark Applied</button>`
         : ''
       }
-        
-        ${job.status === 'applied'
-        ? `<button class="btn-sm secondary" id="status-btn-${job.id}" onclick="changeJobStatus('${job.id}', 'interviewing')">Interviewing</button>`
-        : ''
-      }
         ` : '<span class="text-xs text-muted">Syncing...</span>'}
         
         ${job.url
@@ -204,9 +196,6 @@ export function updateJobStatusDisplay(jobId: string, newStatus: string): void {
         break;
       case 'interested':
         actionButton = `<button class="btn-sm primary" id="status-btn-${jobId}" onclick="changeJobStatus('${jobId}', 'applied')">Mark Applied</button>`;
-        break;
-      case 'applied':
-        actionButton = `<button class="btn-sm secondary" id="status-btn-${jobId}" onclick="changeJobStatus('${jobId}', 'interviewing')">Interviewing</button>`;
         break;
     }
 

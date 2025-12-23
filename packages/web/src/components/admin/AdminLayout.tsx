@@ -176,7 +176,7 @@ export function AdminLayout({ children, title }: AdminLayoutProps) {
             </Button>
           </div>
 
-          <div className="flex flex-col justify-between h-[calc(100vh-4rem)]">
+          <div className="flex flex-col justify-between h-[calc(100vh-var(--header-height-mobile))]">
             {/* Navigation */}
             <nav className={cn("flex-1 py-4", isCollapsed ? "px-2" : "px-3")}>
               <div className="space-y-1">
@@ -379,6 +379,7 @@ export function AdminLayout({ children, title }: AdminLayoutProps) {
                 onClick={toggleMobileSidebar}
               >
                 <Menu className="h-5 w-5" />
+                <span className="sr-only">Open menu</span>
               </Button>
               <div className="flex items-center gap-2 text-sm">
                 <Link href="/admin" className="text-gray-500 hover:text-gray-700 transition-colors">
@@ -399,7 +400,7 @@ export function AdminLayout({ children, title }: AdminLayoutProps) {
           </header>
 
           {/* Page Content */}
-          <main className="p-6 bg-white min-h-[calc(100vh-4rem)]">
+          <main className="p-6 bg-white min-h-[calc(100vh-var(--header-height-mobile))]">
             <div className="mx-auto max-w-7xl">
               {children}
             </div>

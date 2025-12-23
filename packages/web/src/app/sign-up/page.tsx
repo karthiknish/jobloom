@@ -1,16 +1,17 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import { Skeleton, SkeletonInput, SkeletonButton } from "@/components/ui/loading-skeleton";
+import { AuthSkeleton } from "@/components/auth/AuthSkeletons";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { motion } from "framer-motion";
-import { Eye, EyeOff, Loader2, Mail, Lock, Chrome, User, Check, X } from "lucide-react";
+import { Eye, EyeOff, Loader2, Mail, Lock, Chrome, User, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
+import { useToast } from "@/hooks/use-toast";
 
 function SignUpInner() {
   const router = useRouter();
@@ -28,12 +29,12 @@ function SignUpInner() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [nameError, setNameError] = useState<string | null>(null);
   const [passwordStrength, setPasswordStrength] = useState<number>(0);
+  const { toast } = useToast();
 
   const redirectUrlComplete = search.get("redirect_url") || "/welcome";
 
@@ -148,40 +149,11 @@ function SignUpInner() {
   }, [isInitialized, user, router, redirectUrlComplete]);
 
   if (authLoading) {
-    return (
-      <main className="flex min-h-screen items-center justify-center p-4 sm:p-6 lg:p-8 pt-16 sm:pt-20 lg:pt-24 bg-gradient-to-br from-primary/5 via-background to-secondary/5">
-        <div className="w-full max-w-md sm:max-w-lg space-y-6">
-          <div className="text-center space-y-4">
-            <Skeleton className="h-16 w-16 mx-auto rounded-full" />
-            <Skeleton className="h-8 w-48 mx-auto" />
-            <Skeleton className="h-4 w-64 mx-auto" />
-          </div>
-          <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-sm">
-            <CardHeader className="space-y-1 text-center pb-6">
-              <Skeleton className="h-8 w-48 mx-auto" />
-              <Skeleton className="h-4 w-72 mx-auto" />
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <SkeletonInput className="h-11" />
-              <SkeletonInput className="h-11" />
-              <SkeletonInput className="h-11" />
-              <SkeletonButton className="h-11 w-full" />
-              <div className="relative my-6">
-                <Skeleton className="h-px w-full" />
-                <Skeleton className="h-4 w-32 mx-auto -mt-2" />
-              </div>
-              <SkeletonButton className="h-11 w-full" />
-              <Skeleton className="h-16 w-full" />
-            </CardContent>
-          </Card>
-        </div>
-      </main>
-    );
+    return <AuthSkeleton />;
   }
 
   async function handleStartSignUp(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setError(null);
 
     // Validate all fields
     const nameErr = validateName(name);
@@ -210,37 +182,37 @@ function SignUpInner() {
       router.replace(`/verify-email?redirect_url=${encodeURIComponent('/dashboard')}`);
     } catch (err: unknown) {
       const error = err as { code?: string; message?: string };
-      
-      // Handle specific Firebase auth errors
-      switch (error.code) {
-        case 'auth/email-already-in-use':
-          setError("An account with this email already exists. Try signing in instead");
-          break;
-        case 'auth/invalid-email':
-          setError("Invalid email address format");
-          break;
-        case 'auth/operation-not-allowed':
-          setError("Email/password accounts are not enabled. Please contact support");
-          break;
-        case 'auth/weak-password':
-          setError("Password is too weak. Please choose a stronger password");
-          break;
-        case 'auth/network-request-failed':
-          setError("Network error. Please check your connection and try again");
-          break;
-        case 'auth/too-many-requests':
-          setError("Too many sign-up attempts. Please try again later");
-          break;
-        default:
-          setError(error?.message || "Sign up failed. Please try again");
-      }
+
+      const message = (() => {
+        switch (error.code) {
+          case 'auth/email-already-in-use':
+            return "An account with this email already exists. Try signing in instead";
+          case 'auth/invalid-email':
+            return "Invalid email address format";
+          case 'auth/operation-not-allowed':
+            return "Email/password accounts are not enabled. Please contact support";
+          case 'auth/weak-password':
+            return "Password is too weak. Please choose a stronger password";
+          case 'auth/network-request-failed':
+            return "Network error. Please check your connection and try again";
+          case 'auth/too-many-requests':
+            return "Too many sign-up attempts. Please try again later";
+          default:
+            return error?.message || "Sign up failed. Please try again";
+        }
+      })();
+
+      toast({
+        variant: "destructive",
+        title: "Sign up error",
+        description: message,
+      });
     } finally {
       setLoading(false);
     }
   }
 
   async function handleGoogle() {
-    setError(null);
     setLoading(true);
     try {
       await signInWithGoogle();
@@ -253,24 +225,27 @@ function SignUpInner() {
       router.replace(`/verify-email?redirect_url=${encodeURIComponent('/dashboard')}`);
     } catch (err: unknown) {
       const error = err as { code?: string; message?: string };
-      
-      // Handle specific Google auth errors
-      switch (error.code) {
-        case 'auth/popup-closed-by-user':
-          setError("Sign-up popup was closed before completion");
-          break;
-        case 'auth/popup-blocked':
-          setError("Sign-up popup was blocked by your browser. Please allow popups");
-          break;
-        case 'auth/cancelled-popup-request':
-          setError("Sign-up was cancelled");
-          break;
-        case 'auth/network-request-failed':
-          setError("Network error. Please check your connection and try again");
-          break;
-        default:
-          setError(error?.message || "Google sign-up failed. Please try again");
-      }
+
+      const message = (() => {
+        switch (error.code) {
+          case 'auth/popup-closed-by-user':
+            return "Sign-up popup was closed before completion";
+          case 'auth/popup-blocked':
+            return "Sign-up popup was blocked by your browser. Please allow popups";
+          case 'auth/cancelled-popup-request':
+            return "Sign-up was cancelled";
+          case 'auth/network-request-failed':
+            return "Network error. Please check your connection and try again";
+          default:
+            return error?.message || "Google sign-up failed. Please try again";
+        }
+      })();
+
+      toast({
+        variant: "destructive",
+        title: "Sign up error",
+        description: message,
+      });
       setLoading(false);
     }
   }
@@ -310,23 +285,6 @@ function SignUpInner() {
             </motion.div>
           </CardHeader>
           <CardContent className="space-y-6">
-            {error && (
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3 }}
-                className="rounded-lg border border-destructive/20 bg-destructive/5 p-4 flex items-start gap-3"
-              >
-                <div className="flex-shrink-0 w-5 h-5 bg-destructive/10 rounded-full flex items-center justify-center mt-0.5">
-                  <X className="h-3 w-3 text-destructive" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-destructive">Sign Up Error</p>
-                  <p className="text-sm text-destructive/80 mt-1">{error}</p>
-                </div>
-              </motion.div>
-            )}
-
             <motion.form
               onSubmit={handleStartSignUp}
               className="space-y-6"

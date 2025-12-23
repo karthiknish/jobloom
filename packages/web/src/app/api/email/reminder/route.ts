@@ -9,11 +9,11 @@ import { ERROR_CODES } from "@/lib/api/errorCodes";
 // Re-export OPTIONS for CORS preflight
 export { OPTIONS };
 
-type ReminderType = "follow_up" | "interview" | "deadline" | "weekly_digest";
+type ReminderType = "follow_up" | "deadline" | "weekly_digest";
 
 const BodySchema = z.object({
   userId: z.string().min(1),
-  reminderType: z.enum(["follow_up", "interview", "deadline", "weekly_digest"]),
+  reminderType: z.enum(["follow_up", "deadline", "weekly_digest"]),
   applicationId: z.string().optional(),
   reminderDate: z.any().optional(),
   notes: z.string().optional(),
@@ -21,7 +21,7 @@ const BodySchema = z.object({
 
 /**
  * POST /api/email/reminder
- * Send reminder emails (follow-up, interview, deadline)
+ * Send reminder emails (follow-up, deadline)
  */
 export const POST = withApi({
   auth: "required",

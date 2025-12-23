@@ -60,7 +60,7 @@ export default function RootLayout({
       </head>
       <body
         suppressHydrationWarning
-        className={`${inter.variable} ${playfair.variable} antialiased safe-area-inset-top safe-area-inset-bottom safe-area-inset-left safe-area-inset-right font-sans pb-24 md:pb-0`}
+        className={`${inter.variable} ${playfair.variable} antialiased safe-area-inset-top safe-area-inset-left safe-area-inset-right font-sans layout-with-mobile-nav-padding`}
       >
         <a
           href="#main"

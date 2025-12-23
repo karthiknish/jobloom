@@ -28,6 +28,17 @@ export function createCoverLetterPrompt(data: CoverLetterRequest & {
     formal: 'very formal, traditional business correspondence style'
   };
 
+  // Role-specific instructions
+  let roleSpecificInstructions = "";
+  const jobTitleLower = jobTitle.toLowerCase();
+  if (jobTitleLower.includes('engineer') || jobTitleLower.includes('developer') || jobTitleLower.includes('tech')) {
+    roleSpecificInstructions = "Highlight technical problem-solving, specific projects, and how your tech stack aligns with the company's needs.";
+  } else if (jobTitleLower.includes('manager') || jobTitleLower.includes('lead') || jobTitleLower.includes('director')) {
+    roleSpecificInstructions = "Emphasize leadership philosophy, team building, and strategic vision for the department.";
+  } else if (jobTitleLower.includes('sales') || jobTitleLower.includes('marketing') || jobTitleLower.includes('growth')) {
+    roleSpecificInstructions = "Focus on your track record of driving results, revenue impact, and understanding of the target market.";
+  }
+
   return `
 Write a compelling cover letter for a ${jobTitle} position at ${companyName}.
 
@@ -45,6 +56,7 @@ REQUIREMENTS:
 - Length: ${lengthGuide[length]}
 - Optimize for ATS with these keywords: ${keywords.join(', ')}
 ${deepResearch ? `- Company Insights: ${researchInsights.join('; ')}` : ''}
+- ${roleSpecificInstructions}
 
 INSTRUCTIONS:
 1. Start with a strong hook that shows enthusiasm for the role and company
@@ -64,7 +76,10 @@ Format as a professional cover letter with proper salutation and closing.
  */
 export function createResumeAnalysisPrompt(resumeText: string, jobDescription?: string): string {
   return `
-Analyze this resume for ATS compatibility and job fit. Provide a comprehensive analysis in the following JSON format:
+Analyze this resume for ATS compatibility and job fit. Also, extract all information into a structured format.
+If this is a LinkedIn PDF export, pay special attention to the specific formatting LinkedIn uses.
+
+Provide a comprehensive analysis in the following JSON format:
 
 {
   "atsScore": <number 0-100>,
@@ -72,7 +87,70 @@ Analyze this resume for ATS compatibility and job fit. Provide a comprehensive a
   "missingKeywords": ["missing1", "missing2", ...],
   "suggestions": ["suggestion1", "suggestion2", ...],
   "strengths": ["strength1", "strength2", ...],
-  "weaknesses": ["weakness1", "weakness2", ...]
+  "weaknesses": ["weakness1", "weakness2", ...],
+  "parsedData": {
+    "personalInfo": {
+      "fullName": "...",
+      "email": "...",
+      "phone": "...",
+      "location": "...",
+      "linkedin": "...",
+      "github": "...",
+      "website": "...",
+      "summary": "..."
+    },
+    "experience": [
+      {
+        "company": "...",
+        "position": "...",
+        "location": "...",
+        "startDate": "YYYY-MM",
+        "endDate": "YYYY-MM or empty if current",
+        "current": boolean,
+        "description": "...",
+        "achievements": ["bullet 1", "bullet 2"]
+      }
+    ],
+    "education": [
+      {
+        "institution": "...",
+        "degree": "...",
+        "field": "...",
+        "graduationDate": "YYYY-MM",
+        "gpa": "...",
+        "honors": "..."
+      }
+    ],
+    "skills": [
+      {
+        "category": "Technical Skills",
+        "skills": ["skill 1", "skill 2"]
+      }
+    ],
+    "projects": [
+      {
+        "name": "...",
+        "description": "...",
+        "technologies": ["tech 1", "tech 2"],
+        "link": "...",
+        "github": "..."
+      }
+    ],
+    "certifications": [
+      {
+        "name": "...",
+        "issuer": "...",
+        "date": "YYYY-MM-DD",
+        "credentialId": "..."
+      }
+    ],
+    "languages": [
+      {
+        "language": "...",
+        "proficiency": "Beginner" | "Intermediate" | "Advanced" | "Native"
+      }
+    ]
+  }
 }
 
 Resume Text:
@@ -89,6 +167,7 @@ Focus on:
 - Formatting and structure
 - Quantifiable achievements
 - Industry-specific terminology
+- ACCURATE extraction of all dates, companies, and roles.
 `;
 }
 
@@ -127,6 +206,19 @@ export function createResumeGenerationPrompt(request: ResumeGenerationRequest): 
   const styleDescription = styleGuide[style] ?? `Style preference: ${style}`;
   const levelDescription = levelGuide[level] ?? `Professional level: ${level}`;
 
+  // Role-specific instructions
+  let roleSpecificInstructions = "";
+  const jobTitleLower = jobTitle.toLowerCase();
+  if (jobTitleLower.includes('engineer') || jobTitleLower.includes('developer') || jobTitleLower.includes('tech')) {
+    roleSpecificInstructions = "Focus on technical stack, architecture, problem-solving, and specific technologies used. Use industry-standard tech terminology.";
+  } else if (jobTitleLower.includes('manager') || jobTitleLower.includes('lead') || jobTitleLower.includes('director')) {
+    roleSpecificInstructions = "Focus on leadership, team management, strategic impact, budget oversight, and cross-functional collaboration.";
+  } else if (jobTitleLower.includes('sales') || jobTitleLower.includes('marketing') || jobTitleLower.includes('growth')) {
+    roleSpecificInstructions = "Focus on quantifiable metrics, revenue growth, conversion rates, campaign performance, and market expansion.";
+  } else if (jobTitleLower.includes('design') || jobTitleLower.includes('creative') || jobTitleLower.includes('ux')) {
+    roleSpecificInstructions = "Focus on design process, user-centricity, visual impact, and specific design tools/methodologies.";
+  }
+
   return `You are an expert resume writer helping a candidate craft an optimized resume for ATS systems.
 
 Return ONLY a valid JSON object (no markdown fences, no commentary) using this exact structure:
@@ -144,6 +236,7 @@ Formatting rules:
 - Keep tone ${aiEnhancement ? 'polished and confident' : 'close to the original wording provided by the user'}.
 - ${atsOptimization ? 'Prioritize keyword coverage and simple structure (SUMMARY, EXPERIENCE, SKILLS, EDUCATION).' : 'Maintain natural narrative flow. ATS optimization is optional.'}
 - If ${includeObjective ? 'include' : 'do not include'} an objective statement. If included, merge it into the summary section.
+- ${roleSpecificInstructions}
 
 Candidate context:
 - Target role: ${jobTitle}
@@ -155,6 +248,30 @@ Candidate context:
 - Experience highlights: ${experience || 'Not provided'}
 
 Ensure each section is complete. Provide the full resume body in the "content" field with appropriate headings (e.g., SUMMARY, EXPERIENCE, SKILLS, EDUCATION).`;
+}
+
+/**
+ * Create job summary prompt
+ */
+export function createJobSummaryPrompt(jobDescription: string): string {
+  return `
+Analyze the following job description and provide a concise summary, key requirements, culture insights, and ATS keywords.
+
+Job Description:
+${jobDescription}
+
+Return a JSON object with this exact structure:
+{
+  "summary": "A 2-3 sentence high-level summary of the role",
+  "keyRequirements": ["requirement 1", "requirement 2", ...],
+  "cultureInsights": ["insight 1", "insight 2", ...],
+  "atsKeywords": ["keyword 1", "keyword 2", ...],
+  "salaryEstimate": "Any salary info mentioned or 'Not specified'"
+}
+
+Ensure the summary is professional and highlights the core value proposition of the role.
+Return ONLY the JSON object.
+`;
 }
 
 /**
@@ -255,48 +372,3 @@ Example: ["Emphasizes collaborative team environment with cross-functional proje
 `;
 }
 
-/**
- * Create interview evaluation prompt
- */
-export function createInterviewEvaluationPrompt(
-  question: string,
-  answer: string,
-  category: string,
-  difficulty: string
-): string {
-  return `You are an expert interview coach. Evaluate this interview answer and provide comprehensive feedback.
-
-INTERVIEW QUESTION (${category} - ${difficulty}):
-"${question}"
-
-CANDIDATE'S ANSWER:
-"${answer}"
-
-Analyze the answer and return a JSON object with this exact structure:
-{
-  "overall_score": <number 0-100>,
-  "content_score": <number 0-100 - depth and substance of the answer>,
-  "clarity_score": <number 0-100 - how clear and articulate>,
-  "relevance_score": <number 0-100 - how well it addresses the question>,
-  "structure_score": <number 0-100 - use of STAR method or logical structure>,
-  "strengths": ["strength1", "strength2", ...],
-  "improvements": ["area to improve 1", "area to improve 2", ...],
-  "detailed_feedback": "A paragraph of constructive feedback",
-  "suggestions": ["specific suggestion 1", "specific suggestion 2", ...],
-  "estimated_response_quality": "Poor" | "Fair" | "Good" | "Excellent"
-}
-
-Evaluation criteria:
-- Content (25%): Depth, examples, specificity
-- Clarity (25%): Clear articulation, no rambling
-- Relevance (25%): Directly addresses all parts of the question
-- Structure (25%): STAR method for behavioral, logical flow for technical
-
-Quality thresholds:
-- Excellent: 85-100
-- Good: 70-84
-- Fair: 50-69
-- Poor: 0-49
-
-Be constructive and helpful. Return ONLY the JSON object.`;
-}

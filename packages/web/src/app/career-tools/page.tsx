@@ -15,10 +15,19 @@ import { RefreshCw, Save, Download, Eye, CheckCircle2, AlertCircle } from "lucid
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { showSuccess, showError } from "@/components/ui/Toast";
 import { ErrorBoundaryWrapper } from "@/components/ui/error-boundary";
 import { NetworkError } from "@/components/ui/error-display";
-import { Skeleton, SkeletonButton, SkeletonText } from "@/components/ui/loading-skeleton";
+import { LoadingSpinner, LoadingPage } from "@/components/ui/loading";
+import { Skeleton, SkeletonButton, SkeletonText, SkeletonCard } from "@/components/ui/loading-skeleton";
 
 // CV Evaluator Components
 import { CvUploadSection } from "@/components/cv-evaluator/CvUploadSection";
@@ -35,7 +44,7 @@ import { SkillsForm } from "@/components/application/SkillsForm";
 import { ResumeScore } from "@/components/application/ResumeScore";
 import { calculateResumeScore } from "@/components/application/utils";
 import { generateResumeId } from "@/components/application/utils";
-import ResumePDFGenerator from "@/lib/resumePDFGenerator";
+import ResumePDFGenerator, { ResumePDFOptions } from "@/lib/resumePDFGenerator";
 import { EducationSection } from "@/components/resume/EducationSection";
 import { ProjectsSection } from "@/components/resume/ProjectsSection";
 
@@ -131,6 +140,12 @@ export default function CareerToolsPage() {
   const [advancedResumeScore, setAdvancedResumeScore] = useState(calculateResumeScore(defaultAdvancedResumeData));
   const [activeBuilderTab, setActiveBuilderTab] = useState("personal");
   const [resumeActiveTab, setResumeActiveTab] = useState("ai-generator");
+  const [resumeOptions, setResumeOptions] = useState<ResumePDFOptions>({
+    template: 'modern',
+    colorScheme: 'hireall',
+    fontSize: 11,
+    font: 'helvetica'
+  });
 
   const showManualResumeActions = activeMainTab === "resume-builder" && resumeActiveTab === "manual-builder";
 
@@ -267,13 +282,13 @@ export default function CareerToolsPage() {
         showError("Missing Information", validation.errors.join(", "));
         return;
       }
-      await ResumePDFGenerator.generateAndDownloadResume(advancedResumeData);
+      await ResumePDFGenerator.generateAndDownloadResume(advancedResumeData, undefined, resumeOptions);
       showSuccess("Resume exported successfully!");
     } catch (error) {
       console.error('Export error:', error);
       showError("Failed to export resume");
     }
-  }, [advancedResumeData]);
+  }, [advancedResumeData, resumeOptions]);
 
   const previewResume = useCallback(async () => {
     try {
@@ -282,13 +297,13 @@ export default function CareerToolsPage() {
         showError("Missing Information", validation.errors.join(", "));
         return;
       }
-      await ResumePDFGenerator.previewResumePDF(advancedResumeData as any);
+      await ResumePDFGenerator.previewResumePDF(advancedResumeData as any, resumeOptions);
       showSuccess("Preview opened in a new tab");
     } catch (error) {
       console.error("Preview error:", error);
       showError("Failed to preview resume");
     }
-  }, [advancedResumeData]);
+  }, [advancedResumeData, resumeOptions]);
 
   const updateAdvancedPersonalInfo = useCallback((personalInfo: AdvancedResumeData['personalInfo']) => {
     setAdvancedResumeData(prev => ({ ...prev, personalInfo }));
@@ -408,16 +423,7 @@ export default function CareerToolsPage() {
 
   // Show loading while authentication is being checked
   if (authLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background pt-16">
-        <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-          <div className="text-center py-12">
-            <RefreshCw className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
-            <p className="text-muted-foreground">Loading...</p>
-          </div>
-        </div>
-      </div>
-    );
+    return <LoadingPage label="Loading career tools..." />;
   }
 
   // Show login prompt if user is not authenticated
@@ -579,14 +585,7 @@ export default function CareerToolsPage() {
                         {loadingData ? (
                           <div className="space-y-4">
                             {[1, 2, 3].map((index) => (
-                              <div key={index} className="p-4 border border-border rounded-lg animate-pulse">
-                                <div className="h-4 w-32 bg-muted rounded mb-2"></div>
-                                <div className="h-3 w-48 bg-muted rounded mb-4"></div>
-                                <div className="flex justify-between items-center">
-                                  <div className="h-8 w-20 bg-muted rounded"></div>
-                                  <div className="h-2 w-24 bg-muted rounded"></div>
-                                </div>
-                              </div>
+                              <SkeletonCard key={index} />
                             ))}
                           </div>
                         ) : (
@@ -597,8 +596,7 @@ export default function CareerToolsPage() {
                       <TabsContent value="progress">
                         {loadingData ? (
                           <div className="text-center py-12">
-                            <RefreshCw className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
-                            <p className="text-muted-foreground">Loading progress data...</p>
+                            <LoadingSpinner label="Loading progress data..." />
                           </div>
                         ) : (
                           <CvImprovementTracker analyses={cvAnalyses ?? []} />
@@ -1013,6 +1011,51 @@ export default function CareerToolsPage() {
                           </CardHeader>
                           <CardContent>
                             <ResumeScore score={advancedResumeScore} compact />
+                          </CardContent>
+                        </Card>
+
+                        <Card>
+                          <CardHeader className="pb-3">
+                            <CardTitle className="text-base">Export Settings</CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                              <Label className="text-xs">Template</Label>
+                              <Select 
+                                value={resumeOptions.template} 
+                                onValueChange={(value: any) => setResumeOptions(prev => ({ ...prev, template: value }))}
+                              >
+                                <SelectTrigger className="h-8 text-xs">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="modern">Modern</SelectItem>
+                                  <SelectItem value="classic">Classic</SelectItem>
+                                  <SelectItem value="creative">Creative</SelectItem>
+                                  <SelectItem value="executive">Executive</SelectItem>
+                                  <SelectItem value="technical">Technical</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-xs">Color Scheme</Label>
+                              <Select 
+                                value={resumeOptions.colorScheme} 
+                                onValueChange={(value: any) => setResumeOptions(prev => ({ ...prev, colorScheme: value }))}
+                              >
+                                <SelectTrigger className="h-8 text-xs">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="hireall">Hireall (Teal)</SelectItem>
+                                  <SelectItem value="blue">Professional Blue</SelectItem>
+                                  <SelectItem value="gray">Elegant Gray</SelectItem>
+                                  <SelectItem value="green">Nature Green</SelectItem>
+                                  <SelectItem value="purple">Creative Purple</SelectItem>
+                                  <SelectItem value="orange">Warm Orange</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
                           </CardContent>
                         </Card>
 

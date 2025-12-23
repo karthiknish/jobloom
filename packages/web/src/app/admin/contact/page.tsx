@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Mail,
@@ -20,7 +20,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
-import toast from "react-hot-toast";
+import { useToast } from "@/hooks/use-toast";
 
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { useApiQuery, useApiMutation } from "@/hooks/useApi";
@@ -29,6 +29,7 @@ import { exportToCsv } from "@/utils/exportToCsv";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminAccessDenied } from "@/components/admin/AdminAccessDenied";
 import { Button } from "@/components/ui/button";
+import { LoadingSpinner, LoadingPage } from "@/components/ui/loading";
 import {
   Card,
   CardContent,
@@ -89,6 +90,7 @@ const STATUS_COLORS: Record<ContactSubmission["status"], string> = {
 };
 
 export default function AdminContactDashboard() {
+  const { toast } = useToast();
   const { isAdmin, isLoading: adminLoading, userRecord } = useAdminAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -113,6 +115,15 @@ export default function AdminContactDashboard() {
     [userRecord?._id, isAdmin],
     { enabled: canFetchAdminData }
   );
+
+  useEffect(() => {
+    if (!contactsError) return;
+    toast({
+      title: "Error",
+      description: contactsError.message || "Failed to load contacts",
+      variant: "destructive",
+    });
+  }, [contactsError, toast]);
 
   const { mutate: updateContact, loading: updateLoading } = useApiMutation(
     ({
@@ -198,7 +209,11 @@ export default function AdminContactDashboard() {
     successMessage: (count: number) => string
   ) => {
     if (!targetContacts.length) {
-      toast.error(emptyMessage);
+      toast({
+        title: "No contacts",
+        description: emptyMessage,
+        variant: "destructive",
+      });
       return;
     }
 
@@ -224,16 +239,27 @@ export default function AdminContactDashboard() {
         throw new Error("Clipboard APIs are unavailable");
       }
 
-      toast.success(successMessage(targetContacts.length));
+      toast({
+        title: "Copied",
+        description: successMessage(targetContacts.length),
+      });
     } catch (error) {
       console.error("Failed to copy emails", error);
-      toast.error("Unable to copy emails. Try again from a secure context.");
+      toast({
+        title: "Error",
+        description: "Unable to copy emails. Try again from a secure context.",
+        variant: "destructive",
+      });
     }
   };
 
   const handleExportContacts = () => {
     if (!filteredContacts.length) {
-      toast.error("No contacts match the current filters.");
+      toast({
+        title: "No data",
+        description: "No contacts match the current filters.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -257,7 +283,10 @@ export default function AdminContactDashboard() {
       `hireall-contact-submissions-${new Date().toISOString().slice(0, 10)}`,
       rows
     );
-    toast.success(`Exported ${filteredContacts.length} contact records`);
+    toast({
+      title: "Export Successful",
+      description: `Exported ${filteredContacts.length} contact records`,
+    });
   };
 
   const handleCopyAllEmails = () =>
@@ -278,7 +307,10 @@ export default function AdminContactDashboard() {
 
   const handleRefresh = async () => {
     await Promise.resolve(refetchContacts());
-    toast.success("Contact dashboard refreshed");
+    toast({
+      title: "Refreshed",
+      description: "Contact dashboard refreshed",
+    });
   };
 
   const handleUpdateStatus = async (
@@ -294,11 +326,18 @@ export default function AdminContactDashboard() {
             status === "responded" ? userRecord?.email ?? "" : contact.respondedBy,
         },
       });
-      toast.success(`${contact.name} marked as ${STATUS_LABELS[status]}`);
+      toast({
+        title: "Status Updated",
+        description: `${contact.name} marked as ${STATUS_LABELS[status]}`,
+      });
       refetchContacts();
     } catch (error) {
       console.error("Failed to update contact status", error);
-      toast.error("Unable to update contact status");
+      toast({
+        title: "Error",
+        description: "Unable to update contact status",
+        variant: "destructive",
+      });
     }
   };
 
@@ -314,12 +353,19 @@ export default function AdminContactDashboard() {
           respondedAt: Date.now(),
         },
       });
-      toast.success("Response saved and contact marked as responded");
+      toast({
+        title: "Response Saved",
+        description: "Response saved and contact marked as responded",
+      });
       setShowContactDetails(false);
       refetchContacts();
     } catch (error) {
       console.error("Failed to save response", error);
-      toast.error("Unable to save response");
+      toast({
+        title: "Error",
+        description: "Unable to save response",
+        variant: "destructive",
+      });
     }
   };
 
@@ -334,11 +380,18 @@ export default function AdminContactDashboard() {
 
     try {
       await deleteContact({ contactId: contact._id });
-      toast.success("Contact submission deleted");
+      toast({
+        title: "Deleted",
+        description: "Contact submission deleted",
+      });
       refetchContacts();
     } catch (error) {
       console.error("Failed to delete contact", error);
-      toast.error("Unable to delete contact submission");
+      toast({
+        title: "Error",
+        description: "Unable to delete contact submission",
+        variant: "destructive",
+      });
     }
   };
 
@@ -357,76 +410,15 @@ export default function AdminContactDashboard() {
 
     if (typeof window !== "undefined") {
       window.open(mailto, "_blank");
-      toast.success(`Opened email composer for ${contact.email}`);
+      toast({
+        title: "Email Composer Opened",
+        description: `Opened email composer for ${contact.email}`,
+      });
     }
   };
 
   if (adminLoading) {
-    return (
-      <AdminLayout title="Contact Dashboard">
-        <div className="space-y-6">
-          {/* Header Skeleton */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Skeleton className="h-12 w-12 rounded-xl" />
-              <div className="space-y-2">
-                <Skeleton className="h-8 w-48" />
-                <Skeleton className="h-4 w-72" />
-              </div>
-            </div>
-            <Skeleton className="h-10 w-24" />
-          </div>
-          
-          {/* Stats Skeleton */}
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
-            {[1, 2, 3, 4].map((i) => (
-              <Card key={i} className="border-gray-200">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-8 w-8 rounded-full" />
-                </CardHeader>
-                <CardContent>
-                  <Skeleton className="h-8 w-12 mb-2" />
-                  <Skeleton className="h-3 w-32" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-          
-          {/* Content Skeleton */}
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-            <Card className="border-gray-200">
-              <CardHeader>
-                <Skeleton className="h-5 w-32 mb-2" />
-                <Skeleton className="h-4 w-48" />
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
-              </CardContent>
-            </Card>
-            <Card className="border-gray-200 xl:col-span-2">
-              <CardHeader>
-                <Skeleton className="h-5 w-48 mb-2" />
-                <Skeleton className="h-4 w-64" />
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="flex items-center justify-between pb-3 border-b">
-                    <div className="space-y-1">
-                      <Skeleton className="h-4 w-48" />
-                      <Skeleton className="h-3 w-72" />
-                    </div>
-                    <Skeleton className="h-8 w-16" />
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </AdminLayout>
-    );
+    return <LoadingPage label="Loading contact dashboard..." />;
   }
 
   if (!isAdmin) {
@@ -459,17 +451,6 @@ export default function AdminContactDashboard() {
             Refresh
           </Button>
         </motion.div>
-
-        {contactsError && (
-          <Card className="border-destructive/40 bg-destructive/5">
-            <CardHeader>
-              <CardTitle className="text-destructive">Failed to load contacts</CardTitle>
-              <CardDescription className="text-destructive">
-                {contactsError.message || "An unexpected error occurred."}
-              </CardDescription>
-            </CardHeader>
-          </Card>
-        )}
 
         {/* Stats */}
         <motion.div
@@ -772,8 +753,8 @@ export default function AdminContactDashboard() {
               )}
 
               {contactsLoading && (
-                <div className="py-6 flex items-center justify-center gap-2 text-gray-500">
-                  <Loader2 className="h-4 w-4 animate-spin" /> Loading submissions...
+                <div className="py-6 flex items-center justify-center">
+                  <LoadingSpinner label="Loading submissions..." />
                 </div>
               )}
             </div>

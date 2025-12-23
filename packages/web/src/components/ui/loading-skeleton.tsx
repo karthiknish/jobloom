@@ -176,23 +176,6 @@ function SkeletonJobCard({ className, ...props }: SkeletonProps) {
   );
 }
 
-function SkeletonInterviewQuestion({ className, ...props }: SkeletonProps) {
-  return (
-    <div className={cn("p-6 border border-border rounded-lg bg-background shadow-sm space-y-4 animate-shimmer", className)} {...props}>
-      <div className="flex items-center justify-between">
-        <div className="h-6 w-32 rounded-full bg-muted animate-pulse skeleton-shimmer" />
-        <div className="h-6 w-16 rounded-full bg-muted animate-pulse skeleton-shimmer" />
-      </div>
-      <div className="h-6 bg-muted rounded animate-pulse w-full skeleton-shimmer" />
-      <div className="h-4 bg-muted rounded animate-pulse w-4/5 skeleton-shimmer" />
-      <div className="flex space-x-2">
-        <div className="h-6 w-16 rounded-full bg-muted animate-pulse skeleton-shimmer" />
-        <div className="h-6 w-20 rounded-full bg-muted animate-pulse skeleton-shimmer" />
-      </div>
-    </div>
-  );
-}
-
 // New enhanced shimmer skeleton components for better visibility
 function SkeletonShimmer({ className, ...props }: SkeletonProps) {
   return (
@@ -258,7 +241,6 @@ export {
   SkeletonList,
   SkeletonGrid,
   SkeletonJobCard,
-  SkeletonInterviewQuestion,
   SkeletonShimmer,
   SkeletonShimmerText,
   SkeletonShimmerCard,

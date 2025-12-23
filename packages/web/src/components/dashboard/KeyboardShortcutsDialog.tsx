@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { KeyboardShortcut, formatShortcut } from "@/hooks/useKeyboardShortcuts";
 import { Keyboard } from "lucide-react";
+import { useRestoreFocus } from "@/hooks/useRestoreFocus";
 
 interface KeyboardShortcutsDialogProps {
   open: boolean;
@@ -22,6 +23,7 @@ export function KeyboardShortcutsDialog({
   onOpenChange,
   shortcuts,
 }: KeyboardShortcutsDialogProps) {
+  useRestoreFocus(open);
   // Group shortcuts by category
   const groupedShortcuts = shortcuts.reduce((acc, shortcut) => {
     const category = shortcut.category || "General";

@@ -212,6 +212,7 @@ export function ErrorDisplay({
             className="flex-shrink-0 p-1 hover:bg-white/50 rounded transition-colors"
           >
             <X className="w-4 h-4" />
+            <span className="sr-only">Dismiss</span>
           </button>
         )}
       </div>
@@ -256,6 +257,7 @@ export function ErrorDisplay({
               className="h-8 w-8 p-0"
             >
               <X className="w-4 h-4" />
+              <span className="sr-only">Dismiss</span>
             </Button>
           )}
         </div>
@@ -286,6 +288,7 @@ export function ErrorDisplay({
             className="h-8 w-8 p-0"
           >
             <X className="w-4 h-4" />
+            <span className="sr-only">Dismiss</span>
           </Button>
         )}
       </div>

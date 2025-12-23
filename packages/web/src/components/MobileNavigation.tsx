@@ -29,7 +29,7 @@ const navigationItems = [
     requiresAuth: true,
   },
   {
-    name: "Tools",
+    name: "Career Tools",
     href: "/career-tools",
     icon: FileText,
     requiresAuth: false,
@@ -82,9 +82,9 @@ export default function MobileNavigation() {
       initial={{ y: 100 }}
       animate={{ y: 0 }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-background/95 backdrop-blur-sm border-t border-border safe-area-inset-bottom"
+      className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-background/95 backdrop-blur-sm border-t border-border safe-area-inset-bottom min-h-[calc(var(--mobile-nav-height)+env(safe-area-inset-bottom,0px))]"
     >
-      <div className="flex items-center justify-around py-2 px-2 safe-area-inset-left safe-area-inset-right">
+      <div className="flex items-center justify-around py-3 px-3 safe-area-inset-left safe-area-inset-right">
         {visibleItems.map((item) => {
           const isActive = pathname === item.href ||
             (item.href !== "/" && pathname.startsWith(item.href));
@@ -93,10 +93,12 @@ export default function MobileNavigation() {
             <Link
               key={item.name}
               href={item.href}
+              aria-label={`Navigate to ${item.name}`}
+              aria-current={isActive ? "page" : undefined}
               className={cn(
                 "flex flex-col items-center justify-center py-3 px-2 rounded-lg motion-control min-w-0 flex-1 mobile-full-width",
                 isActive
-                  ? "bg-primary/10 text-primary"
+                  ? "bg-primary/20 text-primary font-semibold"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
               )}
             >
@@ -109,6 +111,7 @@ export default function MobileNavigation() {
                     "h-6 w-6 mb-1",
                     isActive ? "text-primary" : "text-current"
                   )}
+                  aria-hidden="true"
                 />
                 <span className={cn(
                   "text-xs font-medium w-full text-center",

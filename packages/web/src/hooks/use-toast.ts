@@ -4,6 +4,7 @@ import { useCallback } from "react";
 import { showSuccess, showError, showInfo, showWarning, showLoading, dismissToast } from "@/components/ui/Toast";
 
 interface ToastHook {
+  toast: (options: { title?: string; description?: string; variant?: "default" | "destructive" }) => void;
   success: (message: string, description?: string) => void;
   error: (message: string, description?: string) => void;
   info: (message: string, description?: string) => void;
@@ -20,7 +21,16 @@ export function useToast(): ToastHook {
   const loading = useCallback(showLoading, []);
   const dismiss = useCallback(dismissToast, []);
 
+  const toast = useCallback(({ title, description, variant }: { title?: string; description?: string; variant?: "default" | "destructive" }) => {
+    if (variant === "destructive") {
+      error(title || "Error", description);
+    } else {
+      success(title || "Success", description);
+    }
+  }, [error, success]);
+
   return {
+    toast,
     success,
     error,
     info,

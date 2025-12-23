@@ -157,9 +157,11 @@ export default function BlogPostPage() {
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" onClick={handleLike} className={hasLiked ? "text-red-500" : ""}>
               <Heart className={`h-5 w-5 ${hasLiked ? "fill-current" : ""}`} />
+              <span className="sr-only">{hasLiked ? "Unlike" : "Like"}</span>
             </Button>
             <Button variant="ghost" size="icon" onClick={handleShare}>
               <Share2 className="h-5 w-5" />
+              <span className="sr-only">Share post</span>
             </Button>
           </div>
         </div>
@@ -211,12 +213,12 @@ export default function BlogPostPage() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2, duration: 0.6 }}
-            className="mb-16 rounded-2xl overflow-hidden shadow-xl"
+            className="mb-16 rounded-2xl overflow-hidden shadow-xl aspect-video bg-muted"
           >
             <img
               src={post.featuredImage}
               alt={post.title}
-              className="w-full h-auto object-cover"
+              className="w-full h-full object-cover"
               loading="lazy"
             />
           </motion.div>
@@ -247,6 +249,7 @@ export default function BlogPostPage() {
             <span className="text-sm font-medium text-muted-foreground">Share this article:</span>
             <Button variant="outline" size="icon" onClick={handleShare} className="rounded-full">
               <Share2 className="h-4 w-4" />
+              <span className="sr-only">Share post</span>
             </Button>
           </div>
         </div>

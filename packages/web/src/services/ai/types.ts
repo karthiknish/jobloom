@@ -1,3 +1,5 @@
+import type { ResumeData } from '@/types/resume';
+
 /**
  * Types for AI Services
  */
@@ -35,6 +37,7 @@ export interface ResumeAnalysisResponse {
   suggestions: string[];
   strengths: string[];
   weaknesses: string[];
+  parsedData?: ResumeData;
 }
 
 export interface ResumeGenerationRequest {
@@ -58,23 +61,6 @@ export interface ResumeGenerationResult {
   education: string;
 }
 
-export interface MockInterviewQuestion {
-  id: string;
-  question: string;
-  type: "behavioral" | "technical" | "situational" | "leadership";
-  category: string;
-  difficulty: string;
-  timeLimit: number;
-  followUpQuestions?: string[];
-}
-
-export interface MockInterviewGenerationRequest {
-  role: string;
-  experience: string;
-  duration: number;
-  focus: string[];
-}
-
 export interface EditorContentRequest {
   prompt: string;
   tone?: 'professional' | 'approachable' | 'enthusiastic' | string;
@@ -82,4 +68,12 @@ export interface EditorContentRequest {
   keywords?: string[];
   length?: 'short' | 'medium' | 'long';
   format?: 'plain' | 'bullet' | 'html' | string;
+}
+
+export interface JobSummaryResponse {
+  summary: string;
+  keyRequirements: string[];
+  cultureInsights: string[];
+  atsKeywords: string[];
+  salaryEstimate?: string;
 }

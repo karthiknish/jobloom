@@ -14,7 +14,7 @@ const genAI = GEMINI_API_KEY ? new GoogleGenerativeAI(GEMINI_API_KEY) : null;
 
 // Job/Career related keywords for guardrails
 const ALLOWED_TOPICS = [
-  'job', 'career', 'interview', 'resume', 'cv', 'application', 'hiring', 'employment',
+  'job', 'career', 'resume', 'cv', 'application', 'hiring', 'employment',
   'work', 'professional', 'salary', 'compensation', 'benefits', 'skills', 'experience',
   'networking', 'linkedin', 'cover letter', 'portfolio', 'freelance', 'startup',
   'management', 'leadership', 'team', 'project', 'deadline', 'performance', 'promotion',
@@ -40,7 +40,7 @@ function isJobRelated(message: string): boolean {
     /i (want|need|have|am)/i,
     /(advice|tips?|guidance|help)/i,
     /(looking for|seeking|applying)/i,
-    /(interview|resume|job|career)/i
+    /(resume|job|career)/i
   ];
 
   const hasQuestionPattern = jobQuestionPatterns.some(pattern =>
@@ -52,11 +52,10 @@ function isJobRelated(message: string): boolean {
 
 // Generate guardrail response for off-topic questions
 function getGuardrailResponse(): string {
-  return `I'm Hireall's AI career assistant, specialized in helping with job search, career development, interview preparation, and professional growth. 
+  return `I'm Hireall's AI career assistant, specialized in helping with job search, career development, and professional growth. 
 
 I can help you with:
 • Resume and CV optimization
-• Interview preparation and practice
 • Career planning and advice
 • Job search strategies
 • Salary negotiation tips
@@ -147,7 +146,6 @@ export const POST = withApi({
 
 - Job search strategies and applications
 - Resume/CV writing and optimization
-- Interview preparation and practice
 - Career planning and development
 - Salary negotiation and compensation
 - Professional networking and LinkedIn optimization

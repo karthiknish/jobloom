@@ -55,7 +55,6 @@ export interface Application {
   status: string;
   appliedDate?: number;
   notes?: string;
-  interviewDates?: number[];
   followUpDate?: number;
   createdAt: number;
   updatedAt: number;
@@ -129,7 +128,6 @@ export const dashboardApi = {
       status: app.status,
       appliedDate: app.appliedDate ?? undefined,
       notes: app.notes ?? undefined,
-      interviewDates: Array.isArray(app.interviewDates) ? app.interviewDates : undefined,
       followUpDate: app.followUpDate ?? undefined,
       createdAt: app.createdAt ?? Date.now(),
       updatedAt: app.updatedAt ?? Date.now(),
@@ -249,9 +247,6 @@ export const dashboardApi = {
       status: data.status ?? "interested",
       appliedDate: data.appliedDate ?? undefined,
       notes: data.notes ?? "",
-      interviewDates: Array.isArray(data.interviewDates)
-        ? data.interviewDates
-        : [],
       followUpDate: data.followUpDate ?? undefined,
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -275,8 +270,6 @@ export const dashboardApi = {
     if (data.appliedDate !== undefined)
       updatePayload.appliedDate = data.appliedDate;
     if (data.notes !== undefined) updatePayload.notes = data.notes;
-    if (data.interviewDates !== undefined)
-      updatePayload.interviewDates = data.interviewDates;
     if (data.followUpDate !== undefined)
       updatePayload.followUpDate = data.followUpDate;
     if (data.jobId !== undefined) updatePayload.jobId = data.jobId;
@@ -422,6 +415,23 @@ export const dashboardApi = {
     location?: string;
   }): Promise<ImportResult> => {
     return apiClient.post<ImportResult>("/app/jobs/import-api", data);
+  },
+
+  parseJobFromUrl: async (url: string): Promise<Partial<Job>> => {
+    const auth = getAuthClient();
+    const currentUser = auth?.currentUser;
+    if (!currentUser) {
+      throw new Error("Not authenticated");
+    }
+
+    const token = await currentUser.getIdToken();
+    const response = await apiClient.post<{ job: Partial<Job> }>("/jobs/parse-url", { url }, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return response.job;
   },
 
   getJobsByUser: async (userId: string): Promise<Job[]> => {

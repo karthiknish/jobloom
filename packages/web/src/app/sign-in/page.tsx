@@ -1,16 +1,18 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import { Skeleton, SkeletonInput, SkeletonButton } from "@/components/ui/loading-skeleton";
+import { AuthSkeleton } from "@/components/auth/AuthSkeletons";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useFirebaseAuth, getLastAuthMethod } from "@/providers/firebase-auth-provider";
 import { motion } from "framer-motion";
-import { Eye, EyeOff, Loader2, Mail, Lock, Chrome, X as XIcon } from "lucide-react";
+import { Eye, EyeOff, Loader2, Mail, Lock, Chrome } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
+import { useToast } from "@/hooks/use-toast";
+import { animations } from "@/styles/animations";
 
 function SignInInner() {
   const router = useRouter();
@@ -28,11 +30,12 @@ function SignInInner() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [lastAuthMethod, setLastAuthMethod] = useState<string | null>(null);
+  const isLoading = authLoading || isSubmitting;
+  const { toast } = useToast();
 
   const fromExtension = search.get("from") === "extension";
   const redirectUrlComplete = search.get("redirect_url") || "/dashboard";
@@ -100,7 +103,7 @@ function SignInInner() {
       return;
     }
 
-    setLoading(true);
+    setIsSubmitting(true);
 
     (async () => {
       try {
@@ -110,7 +113,7 @@ function SignInInner() {
         router.replace(redirectUrlComplete);
       } catch (err) {
         console.error("Auto-sign-in error:", err);
-        setLoading(false);
+        setIsSubmitting(false);
       }
     })();
   }, [redirectUrlComplete, refreshToken, router, search, signInWithGoogle]);
@@ -123,39 +126,11 @@ function SignInInner() {
   }, [isInitialized, user, router, redirectUrlComplete]);
 
   if (authLoading) {
-    return (
-      <main className="flex min-h-screen items-center justify-center p-4 sm:p-6 lg:p-8 pt-16 sm:pt-20 lg:pt-24 bg-gradient-to-br from-primary/5 via-background to-secondary/5">
-        <div className="w-full max-w-md sm:max-w-lg space-y-6">
-          <div className="text-center space-y-4">
-            <Skeleton className="h-16 w-16 mx-auto rounded-full" />
-            <Skeleton className="h-8 w-48 mx-auto" />
-            <Skeleton className="h-4 w-64 mx-auto" />
-          </div>
-          <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-sm">
-            <CardHeader className="space-y-1 text-center pb-6">
-              <Skeleton className="h-8 w-48 mx-auto" />
-              <Skeleton className="h-4 w-72 mx-auto" />
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <SkeletonInput className="h-11" />
-              <SkeletonInput className="h-11" />
-              <SkeletonButton className="h-11 w-full" />
-              <div className="relative my-6">
-                <Skeleton className="h-px w-full" />
-                <Skeleton className="h-4 w-32 mx-auto -mt-2" />
-              </div>
-              <SkeletonButton className="h-11 w-full" />
-              <Skeleton className="h-20 w-full" />
-            </CardContent>
-          </Card>
-        </div>
-      </main>
-    );
+    return <AuthSkeleton />;
   }
 
   async function handlePasswordSignIn(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setError(null);
 
     // Validate all fields
     const emailErr = validateEmail(email);
@@ -168,70 +143,72 @@ function SignInInner() {
       return;
     }
 
-    setLoading(true);
+    setIsSubmitting(true);
     try {
       await signIn(email, password);
       await refreshToken();
       router.replace(redirectUrlComplete);
     } catch (err: unknown) {
       const error = err as { code?: string; message?: string };
-      
-      // Handle specific Firebase auth errors
-      switch (error.code) {
-        case 'auth/user-not-found':
-          setError("No account found with this email address");
-          break;
-        case 'auth/wrong-password':
-          setError("Incorrect password. Please try again");
-          break;
-        case 'auth/too-many-requests':
-          setError("Too many failed attempts. Please try again later or reset your password");
-          break;
-        case 'auth/user-disabled':
-          setError("This account has been disabled. Please contact support");
-          break;
-        case 'auth/invalid-email':
-          setError("Invalid email address format");
-          break;
-        case 'auth/network-request-failed':
-          setError("Network error. Please check your connection and try again");
-          break;
-        default:
-          setError(error?.message || "Sign in failed. Please try again");
-      }
+      // Surface errors via toast for consistent messaging
+      const message = (() => {
+        switch (error.code) {
+          case 'auth/user-not-found':
+            return "No account found with this email address";
+          case 'auth/wrong-password':
+            return "Incorrect password. Please try again";
+          case 'auth/too-many-requests':
+            return "Too many failed attempts. Please try again later or reset your password";
+          case 'auth/user-disabled':
+            return "This account has been disabled. Please contact support";
+          case 'auth/invalid-email':
+            return "Invalid email address format";
+          case 'auth/network-request-failed':
+            return "Network error. Please check your connection and try again";
+          default:
+            return error?.message || "Sign in failed. Please try again";
+        }
+      })();
+
+      toast({
+        variant: "destructive",
+        title: "Authentication error",
+        description: message,
+      });
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   }
 
   async function handleGoogle() {
-    setError(null);
-    setLoading(true);
+    setIsSubmitting(true);
     try {
       await signInWithGoogle();
       await refreshToken();
       router.replace(redirectUrlComplete);
     } catch (err: unknown) {
       const error = err as { code?: string; message?: string };
-      
-      // Handle specific Google auth errors
-      switch (error.code) {
-        case 'auth/popup-closed-by-user':
-          setError("Sign-in popup was closed before completion");
-          break;
-        case 'auth/popup-blocked':
-          setError("Sign-in popup was blocked by your browser. Please allow popups");
-          break;
-        case 'auth/cancelled-popup-request':
-          setError("Sign-in was cancelled");
-          break;
-        case 'auth/network-request-failed':
-          setError("Network error. Please check your connection and try again");
-          break;
-        default:
-          setError(error?.message || "Google sign-in failed. Please try again");
-      }
-      setLoading(false);
+      const message = (() => {
+        switch (error.code) {
+          case 'auth/popup-closed-by-user':
+            return "Sign-in popup was closed before completion";
+          case 'auth/popup-blocked':
+            return "Sign-in popup was blocked by your browser. Please allow popups";
+          case 'auth/cancelled-popup-request':
+            return "Sign-in was cancelled";
+          case 'auth/network-request-failed':
+            return "Network error. Please check your connection and try again";
+          default:
+            return error?.message || "Google sign-in failed. Please try again";
+        }
+      })();
+
+      toast({
+        variant: "destructive",
+        title: "Authentication error",
+        description: message,
+      });
+      setIsSubmitting(false);
     }
   }
 
@@ -244,25 +221,25 @@ function SignInInner() {
       </div>
 
       <motion.div
-        initial={{ opacity: 0, y: 30 }}
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
+        transition={{ duration: animations.duration.slow }}
         className="w-full max-w-md sm:max-w-lg space-y-8 relative z-10"
       >
     
         <Card className="card-premium-elevated border-0 bg-surface p-8">
           <CardHeader className="space-y-4 text-center pb-8">
             <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
+              initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
+              transition={{ duration: animations.duration.normal, delay: 0.1 }}
             >
               <CardTitle className="text-3xl font-bold text-gradient-premium">Welcome back</CardTitle>
             </motion.div>
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
+              transition={{ duration: animations.duration.normal, delay: 0.2 }}
             >
               <CardDescription className="text-muted-foreground text-lg">
                 Sign in to your Hireall account
@@ -270,29 +247,12 @@ function SignInInner() {
             </motion.div>
           </CardHeader>
           <CardContent className="space-y-6">
-            {error && (
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3 }}
-                className="rounded-lg border border-destructive/20 bg-destructive/5 p-4 flex items-start gap-3"
-              >
-                <div className="flex-shrink-0 w-5 h-5 bg-destructive/10 rounded-full flex items-center justify-center mt-0.5">
-                  <XIcon className="h-3 w-3 text-destructive" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-destructive">Authentication Error</p>
-                  <p className="text-sm text-destructive/80 mt-1">{error}</p>
-                </div>
-              </motion.div>
-            )}
-
             <motion.form
               onSubmit={handlePasswordSignIn}
               className="space-y-6"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.6 }}
+              transition={{ duration: animations.duration.normal, delay: 0.3 }}
             >
               <div className="space-y-3">
                 <Label htmlFor="email" className="text-sm font-semibold text-foreground">Email</Label>
@@ -306,7 +266,7 @@ function SignInInner() {
                     required
                     className={`input-premium pl-12 h-12 ${emailError ? 'border-destructive focus:ring-destructive' : ''}`}
                     placeholder="you@example.com"
-                    disabled={loading}
+                    disabled={isLoading}
                   />
                 </div>
                 {emailError && (
@@ -332,22 +292,18 @@ function SignInInner() {
                     required
                     className={`input-premium pl-12 pr-12 h-12 ${passwordError ? 'border-destructive focus:ring-destructive' : ''}`}
                     placeholder="••••••••"
-                    disabled={loading}
+                    disabled={isLoading}
                   />
-                  <Button
+                  <button
                     type="button"
-                    variant="ghost"
-                    size="icon"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-2.5 h-8 w-8 text-muted-foreground transition-premium"
-                    disabled={loading}
+                    className="absolute right-3 top-2.5 h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    disabled={isLoading}
                     aria-label={showPassword ? "Hide password" : "Show password"}
-                    asChild
+                    aria-pressed={showPassword}
                   >
-                    <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </motion.button>
-                  </Button>
+                    {showPassword ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
+                  </button>
                 </div>
                 {passwordError && (
                   <motion.p
@@ -360,45 +316,43 @@ function SignInInner() {
                 )}
               </div>
 
-              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                <Button
-                  type="submit"
-                  className="btn-premium w-full h-12 font-bold gradient-primary hover:shadow-premium-xl text-base"
-                  disabled={loading}
-                  size="lg"
-                >
-                  {loading ? (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="flex items-center justify-center"
-                    >
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      <span>Signing in...</span>
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="flex items-center justify-center"
-                    >
-                      <div className="flex items-center">
-                        <span>Sign in</span>
-                        {lastAuthMethod === "email" && (
-                          <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            className="ml-2 flex items-center text-xs text-muted-foreground"
-                          >
-                            <div className="w-2 h-2 bg-primary rounded-full mr-1" />
-                            <span>Last used</span>
-                          </motion.div>
-                        )}
-                      </div>
-                    </motion.div>
-                  )}
-                </Button>
-              </motion.div>
+              <Button
+                type="submit"
+                className="motion-button btn-premium w-full h-12 font-bold gradient-primary hover:shadow-premium-xl text-base"
+                disabled={isLoading}
+                size="lg"
+              >
+                {isLoading ? (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex items-center justify-center"
+                  >
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <span>Signing in...</span>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex items-center justify-center"
+                  >
+                    <div className="flex items-center">
+                      <span>Sign in</span>
+                      {lastAuthMethod === "email" && (
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className="ml-2 flex items-center text-xs text-muted-foreground"
+                        >
+                          <div className="w-2 h-2 bg-primary rounded-full mr-1" />
+                          <span>Last used</span>
+                        </motion.div>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </Button>
             </motion.form>
 
             <div className="relative my-6">
@@ -410,75 +364,66 @@ function SignInInner() {
               </div>
             </div>
 
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <Button
-                variant="outline"
-                onClick={handleGoogle}
-                className="btn-premium w-full h-12 bg-surface border-2 hover:bg-muted/20 hover:border-primary/30 font-semibold text-base shadow-premium hover:shadow-premium-lg"
-                disabled={loading}
-                size="lg"
-              >
-                {loading ? (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="flex items-center justify-center"
-                  >
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    <span>Redirecting to Google...</span>
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="flex items-center justify-center"
-                  >
-                    <div className="relative">
-                      <Chrome className="mr-2 h-5 w-5" />
-                      {lastAuthMethod === "google" && (
-                        <motion.div
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full"
-                          title="Last used method"
-                        />
-                      )}
-                    </div>
-                    <span>{lastAuthMethod === "google" ? "Continue with Google (Last used)" : "Continue with Google"}</span>
-                  </motion.div>
-                )}
-              </Button>
-            </motion.div>
+            <Button
+              variant="outline"
+              onClick={handleGoogle}
+              className="motion-button btn-premium w-full h-12 bg-surface border-2 hover:bg-muted/20 hover:border-primary/30 font-semibold text-base shadow-premium hover:shadow-premium-lg"
+              disabled={isLoading}
+              size="lg"
+            >
+              {isLoading ? (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="flex items-center justify-center"
+                >
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <span>Redirecting to Google...</span>
+                </motion.div>
+              ) : (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="flex items-center justify-center"
+                >
+                  <div className="relative">
+                    <Chrome className="mr-2 h-5 w-5" />
+                    {lastAuthMethod === "google" && (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full"
+                        title="Last used method"
+                      />
+                    )}
+                  </div>
+                  <span>{lastAuthMethod === "google" ? "Continue with Google (Last used)" : "Continue with Google"}</span>
+                </motion.div>
+              )}
+            </Button>
 
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.8 }}
+              transition={{ duration: animations.duration.normal, delay: 0.4 }}
               className="text-center text-sm space-y-4 pt-6 border-t border-border/50"
             >
               <div className="flex items-center justify-center space-x-2">
                 <span className="text-muted-foreground">Don&apos;t have an account? </span>
-                <motion.a
+                <Link
                   href={`/sign-up?redirect_url=${encodeURIComponent(redirectUrlComplete)}`}
-                  className="font-semibold text-primary hover:text-primary/80 transition-premium"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  className="font-semibold text-primary hover:text-primary/80 transition-colors duration-fast"
                 >
                   Sign up
-                </motion.a>
+                </Link>
               </div>
               <div>
-                <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                <Link
+                  href={`/auth/forgot?redirect_url=${encodeURIComponent(redirectUrlComplete)}`}
+                  className="text-muted-foreground hover:text-primary font-medium transition-colors duration-fast inline-flex items-center gap-1"
                 >
-                  <Link
-                    href={`/auth/forgot?redirect_url=${encodeURIComponent(redirectUrlComplete)}`}
-                    className="text-muted-foreground hover:text-primary font-medium transition-premium inline-flex items-center gap-1"
-                  >
-                    Forgot your password?
-                  </Link>
-                </motion.div>
+                  Forgot your password?
+                </Link>
               </div>
             </motion.div>
           </CardContent>

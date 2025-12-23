@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRestoreFocus } from "@/hooks/useRestoreFocus";
 import { motion } from "framer-motion";
 import {
   Users,
@@ -78,6 +79,8 @@ export function EmailList({
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingSubscriber, setEditingSubscriber] = useState<EmailSubscriber | null>(null);
   const [previewSubscriber, setPreviewSubscriber] = useState<EmailSubscriber | null>(null);
+  useRestoreFocus(showAddDialog);
+  useRestoreFocus(!!previewSubscriber);
 
   const [subscriberForm, setSubscriberForm] = useState({
     email: "",

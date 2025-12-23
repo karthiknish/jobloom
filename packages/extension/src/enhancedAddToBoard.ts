@@ -11,7 +11,7 @@ interface JobBoardEntry {
   location: string;
   url: string;
   dateAdded: string;
-  status: "interested" | "applied" | "interviewing" | "rejected" | "offered" | "withdrawn";
+  status: "interested" | "applied" | "rejected" | "offered" | "withdrawn";
   notes: string;
   salary?: string;
   description?: string;
@@ -516,7 +516,6 @@ export class EnhancedJobBoardManager {
         }).length,
         interested: jobBoardData.filter(job => job.status === "interested").length,
         applied: jobBoardData.filter(job => job.status === "applied").length,
-        interviewing: jobBoardData.filter(job => job.status === "interviewing").length,
         remoteJobs: jobBoardData.filter(job => job.remoteWork).length,
         sponsoredJobs: jobBoardData.filter(job => job.isSponsored).length,
         departments: [...new Set(jobBoardData.map(job => job.department).filter(Boolean))]

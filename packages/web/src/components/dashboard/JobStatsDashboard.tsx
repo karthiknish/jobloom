@@ -38,7 +38,6 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
   const statusVariants: Record<
     | "interested"
     | "applied"
-    | "interviewing"
     | "offered"
     | "rejected"
     | "withdrawn",
@@ -46,7 +45,6 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
   > = {
     interested: "default",
     applied: "yellow",
-    interviewing: "teal",
     offered: "green",
     rejected: "destructive",
     withdrawn: "secondary",
@@ -55,7 +53,6 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
   const statusLabels = {
     interested: "Interested",
     applied: "Applied",
-    interviewing: "Interviewing",
     offered: "Offered",
     rejected: "Rejected",
     withdrawn: "Withdrawn",

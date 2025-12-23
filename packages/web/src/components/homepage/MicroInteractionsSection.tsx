@@ -2,6 +2,7 @@
 
 import { motion, useInView, AnimatePresence } from "framer-motion";
 import { useRef, useState, useEffect } from "react";
+import { animations } from "@/styles/animations";
 import { 
   MousePointer2, 
   Sparkles, 
@@ -29,19 +30,19 @@ function InteractionCard({ title, description, children, delay = 0 }: Interactio
   return (
     <motion.div
       ref={ref}
-      initial={{ opacity: 0, y: 30 }}
-      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-      transition={{ duration: 0.5, delay }}
-      className="group relative bg-card rounded-2xl border border-border p-6 hover:shadow-2xl transition-all duration-500 hover:border-primary/50 hover:-translate-y-1 overflow-hidden"
+      initial={{ opacity: 0, y: 20 }}
+      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+      transition={{ duration: animations.duration.normal, delay }}
+      className="group relative bg-card rounded-2xl border border-border p-6 motion-card overflow-hidden"
     >
-      {/* Hover Glow Effect */}
-      <div className="absolute -inset-px bg-gradient-to-br from-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+      {/* Hover Glow Effect - Simplified */}
+      <div className="absolute -inset-px bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-medium pointer-events-none" />
       
       <div className="relative z-10">
         <div className="mb-6">{children}</div>
         <div className="flex items-center gap-2 mb-2">
           <h3 className="text-lg font-bold text-foreground">{title}</h3>
-          <div className="px-1.5 py-0.5 rounded-md bg-primary/10 text-[10px] font-bold text-primary uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          <div className="px-1.5 py-0.5 rounded-md bg-primary/10 text-[10px] font-bold text-primary uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity duration-fast">
             Live Demo
           </div>
         </div>
@@ -231,7 +232,6 @@ function ApplicationPipelineDemo() {
   const stages = [
     { label: "Applied", icon: FileCheck },
     { label: "Screening", icon: Search },
-    { label: "Interview", icon: Zap },
     { label: "Offer", icon: Trophy }
   ];
 
@@ -455,7 +455,7 @@ export function MicroInteractionsSection() {
 
           <InteractionCard
             title="AI Assistant"
-            description="Generate high-converting cover letters and interview answers tailored to your unique profile."
+            description="Generate high-converting cover letters and application responses tailored to your unique profile."
             delay={0.4}
           >
             <AIWritingDemo />
@@ -465,16 +465,16 @@ export function MicroInteractionsSection() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-          transition={{ delay: 0.6 }}
+          transition={{ delay: 0.6, duration: animations.duration.normal }}
           className="text-center mt-20"
         >
           <div className="inline-flex flex-col items-center gap-6">
             <a
               href="/sign-up"
-              className="group relative inline-flex items-center gap-3 px-10 py-5 bg-primary text-primary-foreground rounded-2xl font-black text-lg hover:bg-primary/90 transition-all hover:scale-105 hover:shadow-2xl hover:shadow-primary/30 overflow-hidden"
+              className="group relative inline-flex items-center gap-3 px-10 py-5 bg-primary text-primary-foreground rounded-2xl font-black text-lg motion-button overflow-hidden"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-              Start Your Journey <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-ultra-slow" />
+              Start Your Journey <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-fast" />
             </a>
             <p className="text-sm text-muted-foreground font-medium flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-500" /> No credit card required • Free forever plan

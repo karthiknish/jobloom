@@ -61,6 +61,7 @@ export interface EmailData {
   text?: string;
   from?: string;
   replyTo?: string;
+  tags?: { name: string; value: string }[];
 }
 
 export interface EmailResult {
@@ -112,6 +113,7 @@ export async function sendEmail(data: EmailData): Promise<EmailResult> {
       html,
       text: data.text,
       reply_to: data.replyTo,
+      tags: data.tags,
     });
 
     if (error) {

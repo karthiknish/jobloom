@@ -43,7 +43,10 @@ export function EducationSection({ items, add, remove, update }: EducationSectio
             </div>
             <div className="flex gap-2">
               <Textarea rows={2} placeholder="Honors / Awards" value={ed.honors} onChange={e => update(idx, d => { d.honors = e.target.value; })} />
-              <Button variant="outline" size="sm" onClick={() => remove(ed.id)} className="h-fit"><Trash2 className="h-4 w-4" /></Button>
+              <Button variant="outline" size="sm" onClick={() => remove(ed.id)} className="h-fit">
+                <Trash2 className="h-4 w-4" />
+                <span className="sr-only">Remove education</span>
+              </Button>
             </div>
           </div>
         ))}

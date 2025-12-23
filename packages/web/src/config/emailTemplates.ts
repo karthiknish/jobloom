@@ -426,10 +426,6 @@ export const defaultEmailTemplates: EmailTemplate[] = [
                 <div>Applications Sent</div>
               </div>
               <div class="stat">
-                <div class="stat-number">{{interviewsLanded}}</div>
-                <div>Interviews Landed</div>
-              </div>
-              <div class="stat">
                 <div class="stat-number">{{timeToHire}} weeks</div>
                 <div>Time to Hire</div>
               </div>
@@ -471,7 +467,6 @@ export const defaultEmailTemplates: EmailTemplate[] = [
       
       Stats:
       • {{applicationsSent}} applications sent
-      • {{interviewsLanded}} interviews landed  
       • {{timeToHire}} weeks to hire
       
       {{candidateName}}'s Top Tips:
@@ -484,7 +479,7 @@ export const defaultEmailTemplates: EmailTemplate[] = [
       Best regards,
       The HireAll Team
     `,
-    variables: ['firstName', 'candidateName', 'candidateRole', 'candidateCompany', 'candidateInitials', 'testimonialQuote', 'challenge', 'solution', 'result', 'applicationsSent', 'interviewsLanded', 'timeToHire', 'tips', 'dashboardUrl'],
+    variables: ['firstName', 'candidateName', 'candidateRole', 'candidateCompany', 'candidateInitials', 'testimonialQuote', 'challenge', 'solution', 'result', 'applicationsSent', 'timeToHire', 'tips', 'dashboardUrl'],
     preview: 'Success story testimonial to inspire and motivate users',
     tags: ['success-story', 'testimonial', 'motivation', 'case-study'],
     active: true,

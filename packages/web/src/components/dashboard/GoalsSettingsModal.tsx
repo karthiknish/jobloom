@@ -18,25 +18,23 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Target, Briefcase, Star, TrendingUp, Save, RotateCcw } from "lucide-react";
 import { showSuccess, showError } from "@/components/ui/Toast";
+import { useRestoreFocus } from "@/hooks/useRestoreFocus";
 
 interface GoalsSettingsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   currentGoals?: {
     weeklyApplications: number;
-    monthlyInterviews: number;
     responseRate: number;
   };
   onSaveGoals?: (goals: {
     weeklyApplications: number;
-    monthlyInterviews: number;
     responseRate: number;
   }) => void;
 }
 
 const DEFAULT_GOALS = {
   weeklyApplications: 10,
-  monthlyInterviews: 4,
   responseRate: 20,
 };
 
@@ -47,6 +45,7 @@ export function GoalsSettingsModal({
   onSaveGoals,
 }: GoalsSettingsModalProps) {
   const [goals, setGoals] = useState(currentGoals);
+  useRestoreFocus(open);
 
   useEffect(() => {
     // Load from localStorage if available
@@ -78,9 +77,9 @@ export function GoalsSettingsModal({
   };
 
   const goalPresets = [
-    { name: "Casual", weeklyApplications: 5, monthlyInterviews: 2, responseRate: 15 },
-    { name: "Active", weeklyApplications: 10, monthlyInterviews: 4, responseRate: 20 },
-    { name: "Aggressive", weeklyApplications: 20, monthlyInterviews: 8, responseRate: 25 },
+    { name: "Casual", weeklyApplications: 5, responseRate: 15 },
+    { name: "Active", weeklyApplications: 10, responseRate: 20 },
+    { name: "Aggressive", weeklyApplications: 20, responseRate: 25 },
   ];
 
   return (
@@ -107,7 +106,6 @@ export function GoalsSettingsModal({
                   key={preset.name}
                   onClick={() => setGoals({
                     weeklyApplications: preset.weeklyApplications,
-                    monthlyInterviews: preset.monthlyInterviews,
                     responseRate: preset.responseRate,
                   })}
                   className={`p-3 rounded-lg border text-center transition-all hover:border-primary hover:bg-primary/5 ${
@@ -153,38 +151,6 @@ export function GoalsSettingsModal({
               <div className="flex justify-between text-xs text-muted-foreground mt-2">
                 <span>1</span>
                 <span>50</span>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Monthly Interviews Goal */}
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-purple-500/10 dark:bg-purple-500/20">
-                    <Star className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium">Monthly Interviews</Label>
-                    <p className="text-xs text-muted-foreground">Interview target per month</p>
-                  </div>
-                </div>
-                <Badge variant="secondary" className="text-lg font-bold">
-                  {goals.monthlyInterviews}
-                </Badge>
-              </div>
-              <Slider
-                value={[goals.monthlyInterviews]}
-                onValueChange={([value]) => setGoals({ ...goals, monthlyInterviews: value })}
-                min={1}
-                max={20}
-                step={1}
-                className="w-full"
-              />
-              <div className="flex justify-between text-xs text-muted-foreground mt-2">
-                <span>1</span>
-                <span>20</span>
               </div>
             </CardContent>
           </Card>

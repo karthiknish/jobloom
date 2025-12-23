@@ -43,7 +43,6 @@ interface JobBoardEntry {
   status:
     | "interested"
     | "applied"
-    | "interviewing"
     | "rejected"
     | "offered"
     | "withdrawn";
@@ -65,7 +64,6 @@ interface JobBoardEntry {
   applicationId?: string;
   appliedDate?: string;
   lastUpdated?: string;
-  interviewDate?: string;
   offerDetails?: {
     salary?: string;
     startDate?: string;
@@ -80,12 +78,10 @@ interface ApplicationData {
   status:
     | "interested"
     | "applied"
-    | "interviewing"
     | "rejected"
     | "offered"
     | "withdrawn";
   appliedDate?: number;
-  interviewDate?: number;
   notes?: string;
   followUps?: FollowUpData[];
   createdAt: string;
@@ -95,7 +91,7 @@ interface ApplicationData {
 interface FollowUpData {
   id: string;
   applicationId: string;
-  type: "email" | "call" | "interview" | "follow_up";
+  type: "email" | "call" | "follow_up";
   scheduledDate: number;
   completed: boolean;
   notes?: string;
@@ -258,7 +254,6 @@ export class JobBoardManager {
     status:
       | "interested"
       | "applied"
-      | "interviewing"
       | "offered"
       | "rejected"
       | "withdrawn" = "interested"
@@ -524,13 +519,11 @@ export class JobBoardManager {
     newStatus:
       | "interested"
       | "applied"
-      | "interviewing"
       | "rejected"
       | "offered"
       | "withdrawn",
     notes?: string,
     additionalData?: {
-      interviewDate?: number;
       appliedDate?: number;
       offerDetails?: any;
     }
@@ -580,9 +573,6 @@ export class JobBoardManager {
       if (additionalData) {
         if (additionalData.appliedDate) {
           updateData.appliedDate = additionalData.appliedDate;
-        }
-        if (additionalData.interviewDate) {
-          updateData.interviewDate = additionalData.interviewDate;
         }
         if (additionalData.offerDetails) {
           updateData.offerDetails = additionalData.offerDetails;
@@ -642,7 +632,6 @@ export class JobBoardManager {
         applicationId: applicationData?.id,
         appliedDate: applicationData?.appliedDate,
         lastUpdated: applicationData?.updatedAt,
-        interviewDate: applicationData?.interviewDate,
         status: applicationData?.status || "interested",
       };
 
@@ -682,7 +671,6 @@ export class JobBoardManager {
           applicationId: application?.id,
           appliedDate: application?.appliedDate,
           lastUpdated: application?.updatedAt,
-          interviewDate: application?.interviewDate,
           status: application?.status || "interested",
           notes: application?.notes || "",
         };
@@ -696,7 +684,7 @@ export class JobBoardManager {
   public static async addFollowUp(
     applicationId: string,
     followUpData: {
-      type: "email" | "call" | "interview" | "follow_up";
+      type: "email" | "call" | "follow_up";
       scheduledDate: number;
       notes?: string;
     }
@@ -757,7 +745,6 @@ export class JobBoardManager {
     newStatus:
       | "interested"
       | "applied"
-      | "interviewing"
       | "rejected"
       | "offered"
       | "withdrawn",
@@ -795,7 +782,6 @@ export class JobBoardManager {
     statusBreakdown: Record<string, number>;
     sponsoredJobs: number;
     appliedThisWeek: number;
-    interviewRate: number;
   }> {
     try {
       const jobs = await this.getAllJobs();
@@ -813,7 +799,6 @@ export class JobBoardManager {
             : null;
           return appliedDate && appliedDate >= weekAgo;
         }).length,
-        interviewRate: 0,
       };
 
       // Calculate status breakdown
@@ -821,12 +806,6 @@ export class JobBoardManager {
         stats.statusBreakdown[job.status] =
           (stats.statusBreakdown[job.status] || 0) + 1;
       });
-
-      // Calculate interview rate
-      const appliedCount = stats.statusBreakdown.applied || 0;
-      const interviewCount = stats.statusBreakdown.interviewing || 0;
-      stats.interviewRate =
-        appliedCount > 0 ? (interviewCount / appliedCount) * 100 : 0;
 
       return stats;
     } catch (error) {
@@ -836,7 +815,6 @@ export class JobBoardManager {
         statusBreakdown: {},
         sponsoredJobs: 0,
         appliedThisWeek: 0,
-        interviewRate: 0,
       };
     }
   }

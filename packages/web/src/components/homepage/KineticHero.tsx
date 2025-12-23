@@ -6,6 +6,7 @@ import { ArrowRight, CheckCircle, FileText, Sparkles, Zap } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import Marquee from "@/components/ui/Marquee";
+import { animations } from "@/styles/animations";
 
 const words = ["HIRED", "PROMOTED", "NOTICED", "CONFIDENT"];
 
@@ -29,7 +30,7 @@ export function KineticHero() {
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
+              transition={{ duration: animations.duration.slow }}
               className="inline-flex items-center rounded-full border border-border bg-muted/50 px-3 py-1 text-sm font-medium text-foreground"
             >
               <span className="flex h-2 w-2 rounded-full bg-primary mr-2 animate-pulse"></span>
@@ -52,7 +53,7 @@ export function KineticHero() {
               <Button
                 asChild
                 size="lg"
-                className="h-14 px-8 text-lg rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-105"
+                className="h-14 px-8 text-lg rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 motion-button"
               >
                 <Link href="/sign-up">
                   Start Building Free <ArrowRight className="ml-2 h-5 w-5" />
@@ -62,7 +63,7 @@ export function KineticHero() {
                 asChild
                 size="lg"
                 variant="outline"
-                className="h-14 px-8 text-lg rounded-full border-2 hover:bg-muted"
+                className="h-14 px-8 text-lg rounded-full border-2 hover:bg-muted transition-colors duration-fast"
               >
                 <Link href="#features" scroll={false} onClick={(e) => {
                   e.preventDefault();
@@ -85,7 +86,7 @@ export function KineticHero() {
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
+                transition={{ delay: 0.2, duration: animations.duration.normal }}
                 className="col-span-2 bg-card rounded-2xl shadow-xl border border-border p-6 flex items-center justify-between"
               >
                 <div>
@@ -101,7 +102,7 @@ export function KineticHero() {
               <motion.div 
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.4 }}
+                transition={{ delay: 0.4, duration: animations.duration.normal }}
                 className="row-span-2 bg-slate-900 text-white rounded-2xl shadow-xl p-6 flex flex-col justify-between overflow-hidden relative"
               >
                 <div className="absolute top-0 right-0 p-4 opacity-20">
@@ -127,7 +128,7 @@ export function KineticHero() {
               <motion.div 
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.6 }}
+                transition={{ delay: 0.6, duration: animations.duration.normal }}
                 className="bg-card rounded-2xl shadow-xl border border-border p-6 flex flex-col justify-center"
               >
                 <div className="flex items-center gap-3 mb-3">
@@ -148,8 +149,8 @@ export function KineticHero() {
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.8 }}
-                className="bg-gradient-to-br from-primary to-emerald-600 rounded-2xl shadow-xl p-6 flex flex-col items-center justify-center text-white text-center cursor-pointer hover:scale-[1.02] transition-transform"
+                transition={{ delay: 0.8, duration: animations.duration.normal }}
+                className="bg-gradient-to-br from-primary to-emerald-600 rounded-2xl shadow-xl p-6 flex flex-col items-center justify-center text-white text-center cursor-pointer motion-surface"
               >
                 <FileText className="h-10 w-10 mb-3 opacity-90" />
                 <h3 className="font-bold">Upload CV</h3>
@@ -178,7 +179,7 @@ export function KineticHero() {
               <img 
                 src={company.logo} 
                 alt={company.name} 
-                className="h-10 max-w-[150px] object-contain opacity-40 grayscale hover:opacity-100 hover:grayscale-0 transition-all duration-300" 
+                className="h-10 max-w-[150px] object-contain opacity-40 grayscale hover:opacity-100 hover:grayscale-0 transition-all duration-medium" 
               />
             </div>
           ))}

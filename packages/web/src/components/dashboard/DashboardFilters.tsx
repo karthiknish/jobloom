@@ -57,7 +57,6 @@ export function DashboardFilters({
                 <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="interested">Interested</SelectItem>
                 <SelectItem value="applied">Applied</SelectItem>
-                <SelectItem value="interviewing">Interviewing</SelectItem>
                 <SelectItem value="offered">Offered</SelectItem>
                 <SelectItem value="rejected">Rejected</SelectItem>
                 <SelectItem value="withdrawn">Withdrawn</SelectItem>

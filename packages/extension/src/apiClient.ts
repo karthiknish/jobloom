@@ -28,6 +28,15 @@ const BACKGROUND_PROXY_TIMEOUT_BUFFER_MS = 2500;
 const RETRYABLE_STATUS_CODES = [408, 429, 500, 502, 503, 504];
 const RETRYABLE_ERRORS = ['ECONNRESET', 'ETIMEDOUT', 'ENOTFOUND', 'ENETUNREACH', 'ECONNREFUSED'];
 
+// Request deduplication cache - prevents duplicate concurrent requests
+const pendingRequests = new Map<string, Promise<any>>();
+
+function getRequestKey(method: string, url: string, body?: string | null): string {
+  // Create a unique key based on method, url, and (for non-GET) a hash of the body
+  const bodyHash = body ? body.slice(0, 100) : '';
+  return `${method}:${url}:${bodyHash}`;
+}
+
 export async function getBaseUrl(): Promise<string> {
   const storageValues = await safeChromeStorageGet(
     "sync",
@@ -253,6 +262,16 @@ export async function apiRequest<T = any>(opts: ApiOptions): Promise<T> {
     requiresAuth,
     base,
   });
+
+  // Request deduplication for GET requests
+  const requestKey = getRequestKey(method, url, rest.body as string | null);
+  if (method === 'GET' && pendingRequests.has(requestKey)) {
+    console.debug(`[Hireall] Deduplicating request: ${method} ${path}`);
+    return pendingRequests.get(requestKey) as Promise<T>;
+  }
+
+  // Wrap the actual request execution in a promise for deduplication
+  const executeRequest = async (): Promise<T> => {
 
   // Determine rate limit endpoint based on path
   let rateLimitEndpoint = 'general';
@@ -542,6 +561,19 @@ export async function apiRequest<T = any>(opts: ApiOptions): Promise<T> {
   
   // Should not reach here, but just in case
   throw lastError || new Error('Request failed after all retries');
+  }; // End of executeRequest function
+
+  // Store promise in deduplication cache for GET requests
+  const requestPromise = executeRequest().finally(() => {
+    // Clean up the request from the cache when it completes (success or failure)
+    pendingRequests.delete(requestKey);
+  });
+
+  if (method === 'GET') {
+    pendingRequests.set(requestKey, requestPromise);
+  }
+
+  return requestPromise;
 }
 
 // Convenience wrappers

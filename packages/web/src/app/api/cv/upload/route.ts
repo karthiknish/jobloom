@@ -422,6 +422,7 @@ async function performCvAnalysis(
     await db.collection("cvAnalyses").doc(analysisId).update({
       ...combinedAnalysis,
       aiInsights: aiInsights ?? null,
+      parsedData: aiInsights?.parsedData ?? null, // Store the structured data
       analysisEngine: aiInsights ? "gemini_with_heuristics" : "heuristic_only",
       analysisStatus: "completed",
       completedAt: FieldValue.serverTimestamp(),

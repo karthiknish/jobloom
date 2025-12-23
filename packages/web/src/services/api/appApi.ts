@@ -94,7 +94,6 @@ class AppApiClient {
         status: string;
         appliedDate?: number;
         notes?: string;
-        interviewDates?: number[];
         followUpDate?: number;
         createdAt: number;
         updatedAt: number;

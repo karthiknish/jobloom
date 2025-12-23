@@ -104,11 +104,6 @@ export const analytics = {
   logJobSponsorCheck: (jobId: string, isSponsored: boolean, company: string) => analyticsService.logJobSponsorCheck(jobId, isSponsored, company),
   logJobImport: (source: string, jobCount: number) => analyticsService.logJobImport(source, jobCount),
 
-  // Interview preparation events
-  logInterviewPrepStarted: (lessonType: string) => analyticsService.logInterviewPrepStarted(lessonType),
-  logInterviewQuestionAnswered: (questionCategory: string, correct: boolean) => analyticsService.logInterviewQuestionAnswered(questionCategory, correct),
-  logMockInterviewCompleted: (interviewType: string, score: number) => analyticsService.logMockInterviewCompleted(interviewType, score),
-
   // Extension events
   logExtensionPopupOpened: () => analyticsService.logExtensionPopupOpened(),
   logExtensionJobChecked: (checkType: 'sponsorship' | 'details', result: 'success' | 'error') => analyticsService.logExtensionJobChecked(checkType, result),

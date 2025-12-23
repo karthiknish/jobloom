@@ -90,7 +90,7 @@
 ### Web Application
 - User authentication with Firebase Auth
 - Job application tracking
-- Status management (interested → applied → interviewing → offered/rejected)
+- Status management (interested → applied → offered/rejected)
 - Statistics dashboard
 - Real-time updates
 

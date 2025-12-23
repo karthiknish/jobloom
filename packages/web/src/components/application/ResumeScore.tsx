@@ -122,7 +122,7 @@ export function ResumeScore({ score, enhanced = true, compact = false }: ResumeS
               <item.icon className="w-4 h-4" />
             </div>
             <div className="text-sm font-semibold">{item.value}%</div>
-            <div className="text-[10px] text-muted-foreground">{item.label}</div>
+            <div className="text-xxs text-muted-foreground">{item.label}</div>
           </motion.div>
         ))}
       </div>

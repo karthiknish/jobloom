@@ -33,7 +33,7 @@ export const DASHBOARD_TOUR_STEPS: StepType[] = [
   },
   {
     selector: '[data-tour="stats-cards"]',
-    content: "Track Your Progress|See your job search stats at a glance - total jobs, sponsored opportunities, interview rate, and weekly activity.",
+    content: "Track Your Progress|See your job search stats at a glance - total jobs, sponsored opportunities, and weekly activity.",
   },
   {
     selector: '[data-tour="cv-evaluator"]',

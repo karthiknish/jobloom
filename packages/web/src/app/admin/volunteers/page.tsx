@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Users,
@@ -18,7 +18,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
-import toast from "react-hot-toast";
+import { useToast } from "@/hooks/use-toast";
 
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { useApiQuery, useApiMutation } from "@/hooks/useApi";
@@ -27,6 +27,7 @@ import { exportToCsv } from "@/utils/exportToCsv";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminAccessDenied } from "@/components/admin/AdminAccessDenied";
 import { Button } from "@/components/ui/button";
+import { LoadingSpinner, LoadingPage } from "@/components/ui/loading";
 import {
   Card,
   CardContent,
@@ -116,6 +117,7 @@ const parseVolunteerData = (message: string) => {
 };
 
 export default function AdminVolunteerDashboard() {
+  const { toast } = useToast();
   const { isAdmin, isLoading: adminLoading, userRecord } = useAdminAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -139,6 +141,15 @@ export default function AdminVolunteerDashboard() {
     [userRecord?._id, isAdmin],
     { enabled: canFetchAdminData }
   );
+
+  useEffect(() => {
+    if (!contactsError) return;
+    toast({
+      title: "Error",
+      description: contactsError.message || "Failed to load volunteers",
+      variant: "destructive",
+    });
+  }, [contactsError, toast]);
 
   // Filter only volunteer applications
   const volunteers = useMemo(() => {
@@ -195,7 +206,11 @@ export default function AdminVolunteerDashboard() {
 
   const copyEmailsToClipboard = async (targetVolunteers: ContactSubmission[]) => {
     if (!targetVolunteers.length) {
-      toast.error("No volunteer emails to copy.");
+      toast({
+        title: "No emails",
+        description: "No volunteer emails to copy.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -203,16 +218,27 @@ export default function AdminVolunteerDashboard() {
 
     try {
       await navigator.clipboard.writeText(emails);
-      toast.success(`Copied ${targetVolunteers.length} email(s) to clipboard`);
+      toast({
+        title: "Copied",
+        description: `Copied ${targetVolunteers.length} email(s) to clipboard`,
+      });
     } catch (error) {
       console.error("Failed to copy emails", error);
-      toast.error("Unable to copy emails");
+      toast({
+        title: "Error",
+        description: "Unable to copy emails",
+        variant: "destructive",
+      });
     }
   };
 
   const handleExport = () => {
     if (!filteredVolunteers.length) {
-      toast.error("No volunteers to export.");
+      toast({
+        title: "No data",
+        description: "No volunteers to export.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -230,7 +256,10 @@ export default function AdminVolunteerDashboard() {
     });
 
     exportToCsv(`volunteer-applications-${new Date().toISOString().slice(0, 10)}`, rows);
-    toast.success(`Exported ${filteredVolunteers.length} volunteer applications`);
+    toast({
+      title: "Export Successful",
+      description: `Exported ${filteredVolunteers.length} volunteer applications`,
+    });
   };
 
   const handleUpdateStatus = async (
@@ -246,11 +275,18 @@ export default function AdminVolunteerDashboard() {
           respondedAt: status === "responded" ? Date.now() : volunteer.respondedAt,
         },
       });
-      toast.success(`${volunteer.name} marked as ${STATUS_LABELS[status]}`);
+      toast({
+        title: "Status Updated",
+        description: `${volunteer.name} marked as ${STATUS_LABELS[status]}`,
+      });
       refetchContacts();
     } catch (error) {
       console.error("Failed to update status", error);
-      toast.error("Unable to update status");
+      toast({
+        title: "Error",
+        description: "Unable to update status",
+        variant: "destructive",
+      });
     }
   };
 
@@ -261,11 +297,18 @@ export default function AdminVolunteerDashboard() {
 
     try {
       await deleteContact({ contactId: volunteer._id });
-      toast.success("Application deleted");
+      toast({
+        title: "Deleted",
+        description: "Application deleted",
+      });
       refetchContacts();
     } catch (error) {
       console.error("Failed to delete", error);
-      toast.error("Unable to delete application");
+      toast({
+        title: "Error",
+        description: "Unable to delete application",
+        variant: "destructive",
+      });
     }
   };
 
@@ -277,81 +320,7 @@ export default function AdminVolunteerDashboard() {
   };
 
   if (adminLoading) {
-    return (
-      <AdminLayout title="Volunteers">
-        <div className="space-y-6">
-          {/* Header Skeleton */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Skeleton className="h-12 w-12 rounded-xl" />
-              <div className="space-y-2">
-                <Skeleton className="h-8 w-48" />
-                <Skeleton className="h-4 w-64" />
-              </div>
-            </div>
-            <Skeleton className="h-10 w-24" />
-          </div>
-          
-          {/* Stats Skeleton */}
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
-            {[1, 2, 3, 4].map((i) => (
-              <Card key={i} className="border-gray-200">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-8 w-8 rounded-full" />
-                </CardHeader>
-                <CardContent>
-                  <Skeleton className="h-8 w-12" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-          
-          {/* Quick Actions Skeleton */}
-          <Card className="border-gray-200">
-            <CardHeader>
-              <Skeleton className="h-5 w-32" />
-            </CardHeader>
-            <CardContent className="flex gap-3">
-              <Skeleton className="h-10 w-36" />
-              <Skeleton className="h-10 w-48" />
-              <Skeleton className="h-10 w-32" />
-            </CardContent>
-          </Card>
-          
-          {/* Table Skeleton */}
-          <Card className="border-gray-200">
-            <CardHeader>
-              <Skeleton className="h-6 w-32 mb-2" />
-              <Skeleton className="h-4 w-48" />
-            </CardHeader>
-            <CardContent>
-              <div className="flex gap-4 mb-6">
-                <Skeleton className="h-10 flex-1" />
-                <Skeleton className="h-10 w-44" />
-              </div>
-              <div className="space-y-3">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <div key={i} className="flex items-center justify-between py-3 border-b">
-                    <div className="flex items-center gap-4">
-                      <div className="space-y-1">
-                        <Skeleton className="h-4 w-32" />
-                        <Skeleton className="h-3 w-48" />
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <Skeleton className="h-4 w-24" />
-                      <Skeleton className="h-6 w-16 rounded-full" />
-                      <Skeleton className="h-8 w-8" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </AdminLayout>
-    );
+    return <LoadingPage label="Loading volunteers..." />;
   }
 
   if (!isAdmin) {
@@ -389,17 +358,6 @@ export default function AdminVolunteerDashboard() {
             Refresh
           </Button>
         </motion.div>
-
-        {contactsError && (
-          <Card className="border-destructive/40 bg-destructive/5">
-            <CardHeader>
-              <CardTitle className="text-destructive">Failed to load volunteers</CardTitle>
-              <CardDescription className="text-destructive">
-                {contactsError.message || "An unexpected error occurred."}
-              </CardDescription>
-            </CardHeader>
-          </Card>
-        )}
 
         {/* Stats */}
         <motion.div
@@ -648,8 +606,8 @@ export default function AdminVolunteerDashboard() {
               )}
 
               {contactsLoading && (
-                <div className="py-6 flex items-center justify-center gap-2 text-gray-500">
-                  <Loader2 className="h-4 w-4 animate-spin" /> Loading applications...
+                <div className="py-6 flex items-center justify-center">
+                  <LoadingSpinner label="Loading applications..." />
                 </div>
               )}
             </div>

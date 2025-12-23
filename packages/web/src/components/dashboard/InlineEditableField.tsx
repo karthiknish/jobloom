@@ -151,6 +151,7 @@ export function InlineEditableField({
                 onClick={handleSave}
                 className="p-1 hover:bg-primary/10 rounded transition-colors"
                 title="Save (Enter)"
+                aria-label="Save"
               >
                 <Check className="h-4 w-4 text-primary" />
               </button>
@@ -159,6 +160,7 @@ export function InlineEditableField({
                 onClick={handleCancel}
                 className="p-1 hover:bg-destructive/10 rounded transition-colors"
                 title="Cancel (Escape)"
+                aria-label="Cancel"
               >
                 <X className="h-4 w-4 text-muted-foreground" />
               </button>

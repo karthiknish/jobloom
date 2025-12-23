@@ -171,96 +171,121 @@
 
 /* Utility classes for common animations */
 .animate-fade-in {
-  animation: fade-in 0.2s ease-out;
+  animation: fade-in var(--motion-duration-fast) var(--motion-ease-out);
 }
 
 .animate-fade-out {
-  animation: fade-out 0.2s ease-in;
+  animation: fade-out var(--motion-duration-fast) var(--motion-ease-in);
 }
 
 .animate-slide-in-top {
-  animation: slide-in-top 0.3s ease-out;
+  animation: slide-in-top var(--motion-duration-medium) var(--motion-ease-out);
 }
 
 .animate-slide-in-bottom {
-  animation: slide-in-bottom 0.3s ease-out;
+  animation: slide-in-bottom var(--motion-duration-medium) var(--motion-ease-out);
 }
 
 .animate-slide-in-left {
-  animation: slide-in-left 0.3s ease-out;
+  animation: slide-in-left var(--motion-duration-medium) var(--motion-ease-out);
 }
 
 .animate-slide-in-right {
-  animation: slide-in-right 0.3s ease-out;
+  animation: slide-in-right var(--motion-duration-medium) var(--motion-ease-out);
 }
 
 .animate-scale-in {
-  animation: scale-in 0.2s ease-out;
+  animation: scale-in var(--motion-duration-fast) var(--motion-ease-out);
 }
 
 .animate-scale-out {
-  animation: scale-out 0.2s ease-in;
+  animation: scale-out var(--motion-duration-fast) var(--motion-ease-in);
 }
 
 .animate-bounce-in {
-  animation: bounce-in 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  animation: bounce-in var(--motion-duration-slow) cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
 .animate-drawer-slide-in {
-  animation: drawer-slide-in 0.3s ease-out;
+  animation: drawer-slide-in var(--motion-duration-medium) var(--motion-ease-out);
 }
 
 .animate-modal-scale-in {
-  animation: modal-scale-in 0.2s ease-out;
+  animation: modal-scale-in var(--motion-duration-fast) var(--motion-ease-out);
 }
 
 .animate-list-item-slide-in {
-  animation: list-item-slide-in 0.25s ease-out;
+  animation: list-item-slide-in var(--motion-duration-medium) var(--motion-ease-out);
 }
 
 .animate-shake {
-  animation: shake 0.4s ease-out;
+  animation: shake var(--motion-duration-slow) var(--motion-ease-out);
 }
 
 .animate-success-bounce {
-  animation: success-bounce 0.4s ease-out;
+  animation: success-bounce var(--motion-duration-slow) var(--motion-ease-out);
 }
 
 .animate-error-shake {
-  animation: error-shake 0.4s ease-out;
+  animation: error-shake var(--motion-duration-slow) var(--motion-ease-out);
 }
 
-/* Duration utilities */
+/* Duration utilities - mapped to design tokens */
+.duration-ultra-fast {
+  animation-duration: var(--motion-duration-ultra-fast);
+}
+
+.duration-fast {
+  animation-duration: var(--motion-duration-fast);
+}
+
+.duration-medium {
+  animation-duration: var(--motion-duration-medium);
+}
+
+.duration-slow {
+  animation-duration: var(--motion-duration-slow);
+}
+
+.duration-very-slow {
+  animation-duration: var(--motion-duration-very-slow);
+}
+
+.duration-ultra-slow {
+  animation-duration: var(--motion-duration-ultra-slow);
+}
+
+/* Legacy duration utilities (mapped to closest tokens) */
 .duration-150 {
-  animation-duration: 150ms;
+  animation-duration: var(--motion-duration-fast);
 }
 
 .duration-200 {
-  animation-duration: 200ms;
+  animation-duration: var(--motion-duration-fast);
 }
 
 .duration-250 {
-  animation-duration: 250ms;
+  animation-duration: var(--motion-duration-medium);
 }
 
 .duration-300 {
-  animation-duration: 300ms;
+  animation-duration: var(--motion-duration-medium);
 }
 
 .duration-350 {
-  animation-duration: 350ms;
+  animation-duration: var(--motion-duration-slow);
 }
 
 .duration-400 {
-  animation-duration: 400ms;
+  animation-duration: var(--motion-duration-slow);
 }
 
 .duration-500 {
-  animation-duration: 500ms;
+  animation-duration: var(--motion-duration-very-slow);
 }
 
 .duration-750 {
-  animation-duration: 750ms;
+  animation-duration: var(--motion-duration-ultra-slow);
 }
 
 /* Easing utilities */
@@ -269,68 +294,68 @@
 }
 
 .ease-in {
-  animation-timing-function: cubic-bezier(0.4, 0, 1, 1);
+  animation-timing-function: var(--motion-ease-in);
 }
 
 .ease-out {
-  animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  animation-timing-function: var(--motion-ease-out);
 }
 
 .ease-in-out {
-  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  animation-timing-function: var(--motion-ease-in-out);
 }
 
 /* Transition utilities */
 .transition-all {
   transition-property: all;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
+  transition-timing-function: var(--motion-ease-out);
+  transition-duration: var(--motion-duration-fast);
 }
 
 .transition-colors {
   transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
+  transition-timing-function: var(--motion-ease-out);
+  transition-duration: var(--motion-duration-fast);
 }
 
 .transition-opacity {
   transition-property: opacity;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
+  transition-timing-function: var(--motion-ease-out);
+  transition-duration: var(--motion-duration-fast);
 }
 
 .transition-transform {
   transition-property: transform;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
+  transition-timing-function: var(--motion-ease-out);
+  transition-duration: var(--motion-duration-fast);
 }
 
 .transition-shadow {
   transition-property: box-shadow;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
+  transition-timing-function: var(--motion-ease-out);
+  transition-duration: var(--motion-duration-fast);
 }
 
 /* Hover animation utilities */
 .hover-scale:hover {
   transform: scale(1.02);
-  transition: transform 0.2s ease-out;
+  transition: transform var(--motion-duration-fast) var(--motion-ease-out);
 }
 
 .hover-scale-105:hover {
   transform: scale(1.05);
-  transition: transform 0.2s ease-out;
+  transition: transform var(--motion-duration-fast) var(--motion-ease-out);
 }
 
 .hover-lift:hover {
   transform: translateY(-4px);
-  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+  transition: transform var(--motion-duration-medium) var(--motion-ease-out), box-shadow var(--motion-duration-medium) var(--motion-ease-out);
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
 .hover-glow:hover {
   box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
-  transition: box-shadow 0.2s ease-out;
+  transition: box-shadow var(--motion-duration-medium) var(--motion-ease-out);
 }
 
 /* Stagger animation utilities */

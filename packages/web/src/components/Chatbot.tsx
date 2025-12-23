@@ -21,16 +21,16 @@ interface Message {
 
 const WELCOME_MESSAGE: Message = {
   id: 'welcome',
-  content: "Hi! I'm Hireall AI, your career assistant. I can help with interview prep, resume tips, salary negotiation, and career advice. How can I help you today?",
+  content: "Hi! I'm Hireall AI, your career assistant. I can help with resume tips, salary negotiation, and career advice. How can I help you today?",
   role: 'assistant',
   timestamp: new Date()
 };
 
 const SUGGESTED_QUESTIONS = [
-  "How do I prepare for an interview?",
   "What should I include in my resume?",
   "How do I negotiate salary?",
-  "What skills should I learn for tech?"
+  "What skills should I learn for tech?",
+  "How can I improve my job search?"
 ];
 
 const sanitizeAssistantContent = (text: string): string => {
@@ -221,7 +221,7 @@ export default function Chatbot() {
           {/* Chat Window */}
       {isOpen && (
         <div className="fixed inset-x-4 bottom-4 top-auto z-50 sm:inset-auto sm:bottom-24 sm:right-6 sm:w-96">
-          <div className="bg-background border border-border rounded-lg shadow-lg flex flex-col h-[calc(100vh-5rem)] max-h-[680px] sm:h-[600px] sm:max-h-[calc(100vh-8rem)]">
+          <div className="bg-background border border-border rounded-lg shadow-lg flex flex-col h-[calc(100vh-var(--header-height-desktop))] max-h-[680px] sm:h-[600px] sm:max-h-[calc(100vh-var(--header-height-desktop)-3rem)]">
           {/* Header */}
           <div className="flex items-center gap-3 p-4 border-b border-border bg-primary text-primary-foreground rounded-t-lg">
             <Avatar className="h-8 w-8">
@@ -240,6 +240,7 @@ export default function Chatbot() {
               className="h-8 w-8 p-0 text-primary-foreground hover:bg-primary-foreground/20"
             >
               <X className="h-4 w-4" />
+              <span className="sr-only">Close chat</span>
             </Button>
           </div>
 

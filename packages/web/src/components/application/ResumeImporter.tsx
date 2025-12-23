@@ -49,6 +49,7 @@ interface ResumeAnalysisItem {
   industryAlignment?: CvAnalysis["industryAlignment"];
   targetRole?: string | null;
   industry?: string | null;
+  parsedData?: ResumeData | null; // Added for structured import
   createdAt?: number;
   updatedAt?: number;
 }
@@ -152,6 +153,7 @@ function mapAnalysis(record: CvAnalysis): ResumeAnalysisItem {
     industryAlignment: record.industryAlignment,
     targetRole: record.targetRole ?? null,
     industry: record.industry ?? null,
+    parsedData: recordAny.parsedData as ResumeData | null,
     createdAt: record.createdAt,
     updatedAt: record.updatedAt,
   };
@@ -424,6 +426,31 @@ export function ResumeImporter({ onImport }: ResumeImporterProps) {
       return;
     }
 
+    // If we have full parsed data from Gemini, use it directly
+    if (selectedAnalysis.parsedData) {
+      const fullData = selectedAnalysis.parsedData;
+      
+      // Ensure personal info has at least the user's name/email if missing
+      if (!fullData.personalInfo.fullName) fullData.personalInfo.fullName = user?.displayName || "";
+      if (!fullData.personalInfo.email) fullData.personalInfo.email = user?.email || "";
+
+      try {
+        localStorage.setItem('hireall_resume_data', JSON.stringify(fullData));
+        localStorage.setItem('hireall_resume_import_timestamp', new Date().toISOString());
+        
+        if (onImport) {
+          onImport(fullData);
+          showSuccess("Imported to Builder", "Full resume data has been imported successfully.");
+        } else {
+          showSuccess("Resume Data Saved", "Your resume data has been saved. Go to the Resume Builder to see it.");
+        }
+        return;
+      } catch (e) {
+        console.error("Failed to save full parsed data", e);
+      }
+    }
+
+    // Fallback to heuristic mapping if parsedData is missing
     // Build professional summary from analysis data
     const buildSummary = (): string => {
       const parts: string[] = [];
@@ -703,7 +730,7 @@ export function ResumeImporter({ onImport }: ResumeImporterProps) {
                               <Badge
                                 variant="outline"
                                 className={cn(
-                                  "text-[10px] px-1.5 py-0 h-5",
+                                  "text-xxs px-1.5 py-0 h-5",
                                   statusClasses[analysis.status]
                                 )}
                               >

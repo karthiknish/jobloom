@@ -51,7 +51,6 @@ interface Application {
   status: string;
   appliedDate?: number;
   notes?: string;
-  interviewDates?: number[];
   followUpDate?: number;
   createdAt: number;
   updatedAt: number;
@@ -78,14 +77,9 @@ export function ApplicationForm({
     followUpDate: application?.followUpDate ? format(new Date(application.followUpDate), "yyyy-MM-dd") : "",
   });
 
-  const [interviewDates, setInterviewDates] = useState<string[]>(
-    application?.interviewDates?.map(date => format(new Date(date), "yyyy-MM-dd")) || [""]
-  );
-
   const statusOptions = [
     { value: "interested", label: "Interested" },
     { value: "applied", label: "Applied" },
-    { value: "interviewing", label: "Interviewing" },
     { value: "offered", label: "Offered" },
     { value: "rejected", label: "Rejected" },
     { value: "withdrawn", label: "Withdrawn" },
@@ -94,7 +88,6 @@ export function ApplicationForm({
   const statusBadges: Record<
     | "interested"
     | "applied"
-    | "interviewing"
     | "offered"
     | "rejected"
     | "withdrawn",
@@ -109,7 +102,6 @@ export function ApplicationForm({
   > = {
     interested: "default",
     applied: "yellow",
-    interviewing: "teal",
     offered: "green",
     rejected: "destructive",
     withdrawn: "secondary",
@@ -122,22 +114,6 @@ export function ApplicationForm({
 
   const handleStatusChange = (value: string) => {
     setFormData(prev => ({ ...prev, status: value }));
-  };
-
-  const addInterviewDate = () => {
-    setInterviewDates(prev => [...prev, ""]);
-  };
-
-  const updateInterviewDate = (index: number, value: string) => {
-    const updated = [...interviewDates];
-    updated[index] = value;
-    setInterviewDates(updated);
-  };
-
-  const removeInterviewDate = (index: number) => {
-    if (interviewDates.length > 1) {
-      setInterviewDates(prev => prev.filter((_, i) => i !== index));
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -154,12 +130,6 @@ export function ApplicationForm({
     
     if (formData.followUpDate) {
       submitData.followUpDate = new Date(formData.followUpDate).getTime();
-    }
-    
-    if (interviewDates.some(date => date)) {
-      submitData.interviewDates = interviewDates
-        .filter(date => date)
-        .map(date => new Date(date).getTime());
     }
     
     if (!application && jobId) {
@@ -340,45 +310,6 @@ export function ApplicationForm({
               value={formData.appliedDate}
               onChange={handleChange}
             />
-          </div>
-          
-          {/* Interview Dates */}
-          <div className="space-y-2 motion-fade-in-out">
-            <div className="flex items-center justify-between">
-              <Label>Interview Dates</Label>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="gap-1 motion-button"
-                onClick={addInterviewDate}
-              >
-                <PlusCircle className="h-4 w-4" />
-                Add Date
-              </Button>
-            </div>
-            <div className="space-y-2">
-              {interviewDates.map((date, index) => (
-                <div key={index} className="flex items-center space-x-2 motion-fade-in-out">
-                  <Input
-                    type="date"
-                    value={date}
-                    onChange={(e) => updateInterviewDate(index, e.target.value)}
-                  />
-                  {interviewDates.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="motion-button"
-                      onClick={() => removeInterviewDate(index)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              ))}
-            </div>
           </div>
           
           {/* Follow-up Date */}

@@ -39,7 +39,10 @@ export function ProjectsSection({ items, add, remove, update }: ProjectsSectionP
               <Input placeholder="GitHub" value={proj.github} onChange={e => update(idx, d => { d.github = e.target.value; })} />
             </div>
             <div className="flex justify-end">
-              <Button variant="outline" size="sm" onClick={() => remove(proj.id)}><Trash2 className="h-4 w-4" /></Button>
+              <Button variant="outline" size="sm" onClick={() => remove(proj.id)}>
+                <Trash2 className="h-4 w-4" />
+                <span className="sr-only">Remove project</span>
+              </Button>
             </div>
           </div>
         ))}

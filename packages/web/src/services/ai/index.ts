@@ -10,9 +10,8 @@ export type {
   ResumeAnalysisResponse,
   ResumeGenerationRequest,
   ResumeGenerationResult,
-  MockInterviewQuestion,
-  MockInterviewGenerationRequest,
   EditorContentRequest,
+  JobSummaryResponse,
 } from './types';
 
 // Robust client
@@ -27,13 +26,6 @@ export {
   generateCoverLetter,
   analyzeResume,
   generateResumeWithAI,
-  generateMockInterviewQuestions,
   generateEditorContent,
-  evaluateInterviewAnswer,
-} from './services';
-
-// Re-export types for interview evaluation
-export type {
-  InterviewAnswerEvaluationRequest,
-  InterviewAnswerEvaluation,
+  summarizeJobDescription,
 } from './services';

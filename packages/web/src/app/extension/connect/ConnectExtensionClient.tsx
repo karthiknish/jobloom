@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { showSuccess } from "@/components/ui/Toast";
+import { showSuccess, showError } from "@/components/ui/Toast";
 import { CheckCircle, XCircle } from "lucide-react";
 
 export default function ConnectExtensionClient() {
@@ -29,12 +29,19 @@ export default function ConnectExtensionClient() {
     }
   }, []);
 
+  useEffect(() => {
+    if (errorMessage) {
+      showError("Connection error", errorMessage);
+    }
+  }, [errorMessage]);
+
   const syncExtensionSettings = async () => {
     try {
       window.postMessage({ type: "HIREALL_REQUEST_SETTINGS_SYNC" }, window.location.origin);
       showSuccess("Requested settings sync. Check your extension.");
     } catch (error) {
       console.error('Failed to sync extension settings:', error);
+      setConnectionStatus('error');
       setErrorMessage('Failed to sync extension settings. Please try again.');
     }
   };
@@ -68,17 +75,12 @@ export default function ConnectExtensionClient() {
             </div>
           )}
           {connectionStatus === 'error' && (
-            <div className="flex items-center">
-              <XCircle className="h-4 w-4 text-destructive mr-2" />
-              <span className="text-destructive">Connection failed</span>
+            <div className="flex items-center text-muted-foreground">
+              <XCircle className="h-4 w-4 mr-2" />
+              <span>Connection failed. See notification for details.</span>
             </div>
           )}
         </div>
-        {errorMessage && (
-          <div className="mt-2 p-2 bg-destructive/5 border border-destructive/20 rounded text-sm text-destructive">
-            {errorMessage}
-          </div>
-        )}
       </div>
 
       <div className="mt-6 flex gap-3">

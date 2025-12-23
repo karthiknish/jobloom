@@ -14,7 +14,6 @@ import {
 export type KanbanStatus =
   | "interested"
   | "applied"
-  | "interviewing"
   | "offered"
   | "rejected"
   | "withdrawn";
@@ -55,7 +54,6 @@ export function KanbanBoard({
   const columns: KanbanStatus[] = [
     "interested",
     "applied",
-    "interviewing",
     "offered",
     "rejected",
     "withdrawn",
@@ -67,11 +65,10 @@ export function KanbanBoard({
     const map: Record<KanbanStatus, Application[]> = {
       interested: [],
       applied: [],
-      interviewing: [],
       offered: [],
       rejected: [],
       withdrawn: [],
-    };
+    } as any;
     for (const a of applications) {
       const s = (a.status as KanbanStatus) || "interested";
       if (map[s]) map[s].push(a);
@@ -123,7 +120,6 @@ export function KanbanBoard({
   const statusBadge: Record<KanbanStatus, React.ReactNode> = {
     interested: <Badge variant="secondary" className="bg-slate-100 text-slate-700 hover:bg-slate-200">Interested</Badge>,
     applied: <Badge variant="secondary" className="bg-blue-100 text-blue-700 hover:bg-blue-200">Applied</Badge>,
-    interviewing: <Badge variant="secondary" className="bg-teal-100 text-teal-700 hover:bg-teal-200">Interviewing</Badge>,
     offered: <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200">Offered</Badge>,
     rejected: <Badge variant="secondary" className="bg-red-100 text-red-700 hover:bg-red-200">Rejected</Badge>,
     withdrawn: <Badge variant="secondary" className="bg-gray-100 text-gray-700 hover:bg-gray-200">Withdrawn</Badge>,
@@ -132,7 +128,6 @@ export function KanbanBoard({
   const statusTooltips: Record<KanbanStatus, string> = {
     interested: "Jobs you're considering applying to",
     applied: "Applications you've submitted",
-    interviewing: "Actively interviewing with the company",
     offered: "You've received an offer!",
     rejected: "Applications that weren't successful",
     withdrawn: "Applications you chose to withdraw",
@@ -142,7 +137,7 @@ export function KanbanBoard({
     <div className="overflow-x-auto pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
       <div className="flex gap-4 min-w-max pb-2">
       {columns.map((col) => (
-        <div key={col} className="w-80 flex-shrink-0 flex flex-col bg-muted/30 rounded-xl border border-border/50 max-h-[calc(100vh-220px)]">
+        <div key={col} className="w-80 flex-shrink-0 flex flex-col bg-muted/30 rounded-xl border border-border/50 max-h-[calc(100vh-var(--header-height-desktop)-var(--dashboard-header-height)-var(--dashboard-tabs-height)-2rem)]">
           <TooltipProvider>
             <div className="p-3 flex items-center justify-between border-b border-border/50 bg-background/50 backdrop-blur-sm rounded-t-xl sticky top-0 z-10">
               <Tooltip>

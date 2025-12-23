@@ -34,6 +34,9 @@ import {
   Target,
 } from "lucide-react";
 import { Application } from "@/types/dashboard";
+import { useRestoreFocus } from "@/hooks/useRestoreFocus";
+import { JobAISummary } from "./JobAISummary";
+import { EmailHistory } from "./EmailHistory";
 
 interface JobDetailsModalProps {
   application: Application | null;
@@ -52,11 +55,6 @@ const statusConfig: Record<string, { color: string; bg: string; icon: React.Reac
     color: "text-amber-600 dark:text-amber-400",
     bg: "bg-amber-100 dark:bg-amber-900/30",
     icon: <Clock className="h-4 w-4" />,
-  },
-  interviewing: {
-    color: "text-purple-600 dark:text-purple-400",
-    bg: "bg-purple-100 dark:bg-purple-900/30",
-    icon: <TrendingUp className="h-4 w-4" />,
   },
   offered: {
     color: "text-green-600 dark:text-green-400",
@@ -81,6 +79,7 @@ export function JobDetailsModal({
   onOpenChange,
   onEdit,
 }: JobDetailsModalProps) {
+  useRestoreFocus(open);
   if (!application) return null;
 
   const job = application.job;
@@ -169,6 +168,14 @@ export function JobDetailsModal({
             </DialogHeader>
 
             <Separator />
+
+            {/* AI Summary Section */}
+            {job?.description && (
+              <JobAISummary 
+                jobDescription={job.description} 
+                jobId={job._id} 
+              />
+            )}
 
             {/* Job Info Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -356,29 +363,6 @@ export function JobDetailsModal({
                 )}
               </div>
 
-              {/* Interview Dates */}
-              {application.interviewDates && application.interviewDates.length > 0 && (
-                <div className="p-4 rounded-xl bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800/30">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Calendar className="h-4 w-4 text-purple-600" />
-                    <h5 className="font-medium text-purple-800 dark:text-purple-300">
-                      Interview Dates
-                    </h5>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {application.interviewDates.map((date, index) => (
-                      <Badge
-                        key={index}
-                        variant="purple"
-                        className="px-3 py-1"
-                      >
-                        {formatDate(date)}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-
               {/* Notes */}
               {application.notes && (
                 <div className="p-4 rounded-xl bg-muted/50 border border-border/50">
@@ -391,6 +375,9 @@ export function JobDetailsModal({
                   </p>
                 </div>
               )}
+
+              {/* Email History */}
+              <EmailHistory applicationId={application._id} />
             </div>
 
             {/* Footer Actions */}

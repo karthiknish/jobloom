@@ -492,7 +492,7 @@ export class AuthManager {
       authStatus?.classList.remove("unauthenticated");
 
       if (statusDot) {
-        statusDot.style.backgroundColor = "#10b981"; // Emerald-500
+        statusDot.style.backgroundColor = "var(--primary)";
       }
 
       // Hide login form and show profile/logout section
@@ -529,7 +529,7 @@ export class AuthManager {
       authStatus?.classList.add("unauthenticated");
 
       if (statusDot) {
-        statusDot.style.backgroundColor = "#ef4444"; // Red-500
+        statusDot.style.backgroundColor = "var(--accent-red)";
       }
 
       // Show login form and hide profile/logout section

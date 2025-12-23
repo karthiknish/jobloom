@@ -32,7 +32,7 @@ import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { useSubscription } from "@/providers/subscription-provider";
 import { showSuccess, showError, showInfo } from "@/components/ui/Toast";
 import { apiClient } from "@/lib/api/client";
-import PDFGenerator from "@/lib/pdfGenerator";
+import PDFGenerator, { PDFOptions } from "@/lib/pdfGenerator";
 import { cn } from "@/lib/utils";
 
 interface CoverLetterData {
@@ -85,6 +85,12 @@ export function AICoverLetterGenerator() {
   const [keywordFocus, setKeywordFocus] = useState(true);
   const [deepResearch, setDeepResearch] = useState(false);
   const [downloadingPDF, setDownloadingPDF] = useState(false);
+  const [pdfOptions, setPdfOptions] = useState<PDFOptions>({
+    template: 'modern',
+    colorScheme: 'hireall',
+    fontSize: 12,
+    font: 'helvetica'
+  });
 
   const jobDescriptionChars = formData.jobDescription.length;
   const experienceChars = formData.experience.length;
@@ -266,7 +272,10 @@ Sincerely,
           month: 'long',
           day: 'numeric',
         }),
-        recipientTitle: 'Hiring Manager'
+        recipientTitle: 'Hiring Manager',
+        email: user?.email || '',
+        phone: '',
+        location: ''
       };
 
       // Generate and download PDF
@@ -274,13 +283,7 @@ Sincerely,
         contentToExport,
         metadata,
         undefined,
-        {
-          fontSize: 12,
-          lineHeight: 1.5,
-          margin: 20,
-          font: 'helvetica',
-          fontStyle: 'normal'
-        }
+        pdfOptions
       );
 
       showSuccess("Success", "PDF downloaded successfully!");
@@ -494,6 +497,48 @@ Sincerely,
                     <SelectItem value="detailed">Detailed (300+ words)</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+            </div>
+
+            <div className="space-y-4 pt-4 border-t">
+              <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">Export Options</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="pdf-template">Template</Label>
+                  <Select 
+                    value={pdfOptions.template} 
+                    onValueChange={(value: any) => setPdfOptions(prev => ({ ...prev, template: value }))}
+                  >
+                    <SelectTrigger id="pdf-template" className="bg-background">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="modern">Modern</SelectItem>
+                      <SelectItem value="classic">Classic</SelectItem>
+                      <SelectItem value="creative">Creative</SelectItem>
+                      <SelectItem value="executive">Executive</SelectItem>
+                      <SelectItem value="minimal">Minimal</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="pdf-color">Color Scheme</Label>
+                  <Select 
+                    value={pdfOptions.colorScheme} 
+                    onValueChange={(value: any) => setPdfOptions(prev => ({ ...prev, colorScheme: value }))}
+                  >
+                    <SelectTrigger id="pdf-color" className="bg-background">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="hireall">Hireall (Teal)</SelectItem>
+                      <SelectItem value="blue">Professional Blue</SelectItem>
+                      <SelectItem value="gray">Elegant Gray</SelectItem>
+                      <SelectItem value="green">Nature Green</SelectItem>
+                      <SelectItem value="purple">Creative Purple</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
 

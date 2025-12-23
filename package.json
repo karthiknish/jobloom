@@ -4,6 +4,7 @@
   "description": "A monorepo for HireAll - Chrome extension and job board for tracking sponsored roles",
   "private": true,
   "workspaces": [
+    "packages/shared",
     "packages/web",
     "packages/extension"
   ],

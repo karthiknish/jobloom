@@ -114,6 +114,7 @@ export function SponsorFilters({
         <div className="flex flex-wrap items-center justify-end gap-2 self-stretch md:self-auto">
           <Button variant="outline" size="icon" onClick={onRefresh} title="Refresh" className="border-gray-200 hover:bg-gray-50">
             <RefreshCw className="h-4 w-4 text-gray-500" />
+            <span className="sr-only">Refresh</span>
           </Button>
           <Button variant="outline" onClick={onExport} disabled={isExporting} className="border-gray-200 hover:bg-gray-50">
             <Download className="mr-2 h-4 w-4 text-gray-500" />

@@ -4,17 +4,19 @@ import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { motion } from "framer-motion";
-import { Mail, Loader2, CheckCircle, RefreshCw } from "lucide-react";
+import { Mail, CheckCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { LoadingSpinner } from "@/components/ui/loading";
 
 function VerifyEmailInner() {
   const router = useRouter();
   const search = useSearchParams();
   const { user, sendEmailVerification } = useFirebaseAuth();
+  const { toast } = useToast();
 
   const [verificationStatus, setVerificationStatus] = useState<'checking' | 'verified' | 'not_verified' | 'error'>('checking');
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const redirectUrlComplete = search.get("redirect_url") || "/dashboard";
@@ -29,18 +31,25 @@ function VerifyEmailInner() {
       }
     } else {
       setVerificationStatus('error');
-      setError('No authenticated user found');
+      toast({
+        variant: "destructive",
+        title: "Verification error",
+        description: "No authenticated user found",
+      });
     }
-  }, [user]);
+  }, [toast, user]);
 
   const handleResendVerification = async () => {
     setLoading(true);
-    setError(null);
     try {
       await sendEmailVerification();
     } catch (err: unknown) {
       const e = err as { message?: string };
-      setError(e?.message || "Failed to send verification email");
+      toast({
+        variant: "destructive",
+        title: "Verification error",
+        description: e?.message || "Failed to send verification email",
+      });
     } finally {
       setLoading(false);
     }
@@ -67,8 +76,7 @@ function VerifyEmailInner() {
         >
           <Card className="card-premium-elevated border-0 bg-surface p-8">
             <CardContent className="flex flex-col items-center justify-center p-8">
-              <Loader2 className="h-12 w-12 animate-spin text-primary mb-6" />
-              <p className="text-center text-lg font-medium text-muted-foreground">Checking verification status...</p>
+              <LoadingSpinner size="xl" label="Checking verification status..." />
             </CardContent>
           </Card>
         </motion.div>
@@ -153,17 +161,6 @@ function VerifyEmailInner() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-8">
-            {error && (
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3 }}
-                className="rounded-lg border border-destructive/20 bg-destructive/5 p-4 flex items-start gap-3"
-              >
-                <p className="text-sm font-medium text-destructive">{error}</p>
-              </motion.div>
-            )}
-
             <div className="text-center text-base text-muted-foreground space-y-4">
               <p>
                 Click the verification link in the email to verify your account.
@@ -182,14 +179,7 @@ function VerifyEmailInner() {
                   className="btn-premium w-full h-12 bg-surface border-2 hover:bg-muted/20 hover:border-primary/30 font-semibold text-base shadow-premium"
                 >
                   {loading ? (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="flex items-center justify-center"
-                    >
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      <span>Sending...</span>
-                    </motion.div>
+                    <LoadingSpinner size="sm" label="Sending..." className="flex-row gap-2" />
                   ) : (
                     <motion.div
                       initial={{ opacity: 0 }}

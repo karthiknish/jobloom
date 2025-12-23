@@ -43,7 +43,10 @@ export function ExperienceSection({ items, add, remove, update }: ExperienceSect
               <Input placeholder="Location" value={exp.location} onChange={e => update(idx, d => { d.location = e.target.value; })} />
               <Input placeholder="Start" value={exp.startDate} onChange={e => update(idx, d => { d.startDate = e.target.value; })} />
               <Input placeholder="End" value={exp.endDate} onChange={e => update(idx, d => { d.endDate = e.target.value; })} />
-              <Button variant="outline" size="sm" onClick={() => remove(exp.id)} className="justify-center"><Trash2 className="h-4 w-4" /></Button>
+              <Button variant="outline" size="sm" onClick={() => remove(exp.id)} className="justify-center">
+                <Trash2 className="h-4 w-4" />
+                <span className="sr-only">Remove experience</span>
+              </Button>
             </div>
             <Textarea rows={3} placeholder="Role description / achievements" value={exp.description} onChange={e => update(idx, d => { d.description = e.target.value; })} />
             <div className="space-y-2">

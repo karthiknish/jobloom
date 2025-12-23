@@ -72,7 +72,7 @@ const stats = [
   {
     icon: TrendingUp,
     title: "89% Success Rate",
-    description: "Users report higher interview rates",
+    description: "Users report higher response rates",
     color: "text-green-600",
     bgColor: "bg-green-50",
     iconBg: "bg-gradient-to-br from-green-500 to-green-600"

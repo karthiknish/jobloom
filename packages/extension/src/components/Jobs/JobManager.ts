@@ -82,8 +82,6 @@ export class JobManager {
               return job.status === 'interested';
             case 'applied':
               return job.status === 'applied';
-            case 'interviewing':
-              return job.status === 'interviewing';
             default:
               return true;
           }
@@ -215,7 +213,7 @@ export class JobManager {
       popupUI.showLoading(`status-btn-${jobId}`);
       
       const { EnhancedJobBoardManager } = await import("../../enhancedAddToBoard");
-      const result = await EnhancedJobBoardManager.getInstance().updateJobStatus(jobId, newStatus as "interested" | "applied" | "interviewing" | "rejected" | "offered" | "withdrawn");
+      const result = await EnhancedJobBoardManager.getInstance().updateJobStatus(jobId, newStatus as "interested" | "applied" | "rejected" | "offered" | "withdrawn");
       
       if (result) {
         // Update the job in local array

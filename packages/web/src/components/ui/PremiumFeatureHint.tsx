@@ -113,6 +113,7 @@ export function PremiumFeatureHint({
             <button
               onClick={handleDismiss}
               className="ml-1 p-0.5 rounded hover:bg-amber-200/50 text-amber-500"
+              aria-label="Dismiss"
             >
               <X className="h-3 w-3" />
             </button>
@@ -135,6 +136,7 @@ export function PremiumFeatureHint({
             <button
               onClick={handleDismiss}
               className="absolute top-2 right-2 p-1 rounded-full hover:bg-amber-200/50 text-amber-500"
+              aria-label="Dismiss"
             >
               <X className="h-4 w-4" />
             </button>
@@ -200,6 +202,7 @@ export function PremiumFeatureHint({
               <button
                 onClick={handleDismiss}
                 className="p-1 rounded hover:bg-white/20"
+                aria-label="Dismiss"
               >
                 <X className="h-4 w-4" />
               </button>

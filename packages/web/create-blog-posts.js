@@ -33,11 +33,11 @@ const sampleBlogPosts = [
     status: "published"
   },
   {
-    title: "How to Ace Your Technical Interview",
-    excerpt: "Master the art of technical interviews with proven strategies.",
-    content: "# How to Ace Your Technical Interview\n\nTechnical interviews can be intimidating, but preparation is key.\n\n## Preparation Strategies\n\nPractice coding problems regularly and understand algorithms.\n\n## During the Interview\n\nCommunicate your thought process clearly.\n\n## Key Tips\n\nStay calm and ask clarifying questions when needed.",
-    category: "Interview Preparation",
-    tags: ["interview", "technical"],
+    title: "Mastering Salary Negotiation",
+    excerpt: "Learn how to negotiate your salary and benefits package effectively.",
+    content: "# Mastering Salary Negotiation\n\nNegotiating your salary is a critical part of the job search process.\n\n## Research Market Rates\n\nUnderstand the market value for your role and experience level.\n\n## Know Your Value\n\nHighlight your achievements and the value you bring to the company.\n\n## Key Tips\n\nBe professional, prepared, and ready to discuss the entire compensation package.",
+    category: "Career Development",
+    tags: ["salary", "negotiation"],
     featuredImage: "https://images.pexels.com/photos/3184465/pexels-photo-3184465.jpeg?auto=compress&cs=tinysrgb&w=1200",
     status: "published"
   },
