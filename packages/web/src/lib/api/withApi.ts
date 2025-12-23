@@ -752,8 +752,11 @@ export function withApi<
 
       // Check for Firebase auth errors
       if (error instanceof Error) {
+        const errorCode = (error as any).code;
+        const isStringCode = typeof errorCode === 'string';
+        
         if (error.message.includes("auth/") || error.message.includes("token") || 
-            (error as any).code?.startsWith("auth/")) {
+            (isStringCode && errorCode.startsWith("auth/"))) {
           ErrorLogger.log(error, { ...logContext, errorType: 'authorization' });
           return respond(
             createApiErrorResponse(
@@ -766,7 +769,7 @@ export function withApi<
         }
 
         // Check for Firebase database errors
-        if ((error as any).code?.startsWith("firestore/")) {
+        if (isStringCode && errorCode.startsWith("firestore/")) {
           ErrorLogger.log(error, { ...logContext, errorType: 'database' });
           return respond(
             createApiErrorResponse(

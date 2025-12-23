@@ -163,13 +163,18 @@ export default function AdminReportsPage() {
   );
 
   // Filter to only show issue reports
-  const issueReports = useMemo(() => {
-    const all = contacts ?? [];
+  const issueReports = useMemo((): ContactSubmission[] => {
+    // Handle both array and object response formats
+    if (Array.isArray(contacts)) {
+      return contacts.filter(isIssueReport);
+    }
+    const wrapped = contacts as unknown as { contacts?: ContactSubmission[]; data?: ContactSubmission[] } | undefined;
+    const all: ContactSubmission[] = wrapped?.contacts ?? wrapped?.data ?? [];
     return all.filter(isIssueReport);
   }, [contacts]);
 
   const filteredReports = useMemo(() => {
-    return issueReports.filter((report) => {
+    return issueReports.filter((report: ContactSubmission) => {
       // Type filter
       if (typeFilter !== "all") {
         const issueType = extractIssueType(report.subject);
@@ -194,10 +199,10 @@ export default function AdminReportsPage() {
 
   const stats = useMemo(() => {
     const total = issueReports.length;
-    const open = issueReports.filter((r) => r.status === "new" || r.status === "read").length;
-    const resolved = issueReports.filter((r) => r.status === "responded").length;
-    const bugs = issueReports.filter((r) => extractIssueType(r.subject) === "bug").length;
-    const features = issueReports.filter((r) => extractIssueType(r.subject) === "feature").length;
+    const open = issueReports.filter((r: ContactSubmission) => r.status === "new" || r.status === "read").length;
+    const resolved = issueReports.filter((r: ContactSubmission) => r.status === "responded").length;
+    const bugs = issueReports.filter((r: ContactSubmission) => extractIssueType(r.subject) === "bug").length;
+    const features = issueReports.filter((r: ContactSubmission) => extractIssueType(r.subject) === "feature").length;
 
     return { total, open, resolved, bugs, features };
   }, [issueReports]);
@@ -270,7 +275,7 @@ export default function AdminReportsPage() {
       return;
     }
 
-    const rows = filteredReports.map((r) => ({
+    const rows = filteredReports.map((r: ContactSubmission) => ({
       ID: r._id,
       Type: extractIssueType(r.subject),
       Status: STATUS_LABELS[r.status],
@@ -452,7 +457,7 @@ export default function AdminReportsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredReports.map((report) => {
+                    {filteredReports.map((report: ContactSubmission) => {
                       const issueType = extractIssueType(report.subject);
                       const typeInfo = ISSUE_TYPE_INFO[issueType] || ISSUE_TYPE_INFO.other;
 

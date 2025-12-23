@@ -665,7 +665,7 @@ function MetricCard({ label, value, description, trend, trendValue, icon: Icon, 
           </div>
           <div>
             <p className="text-sm font-medium text-gray-500">{label}</p>
-            <h3 className="text-2xl font-bold tracking-tight mt-1 text-gray-900">{value}</h3>
+            <h3 className="text-2xl font-semibold mt-1 text-gray-900">{value}</h3>
             <p className="text-xs text-gray-500 mt-1">{description}</p>
           </div>
         </CardContent>

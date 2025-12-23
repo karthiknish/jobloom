@@ -129,27 +129,7 @@ export function Dashboard() {
     onRefetchApplications: refetchApplications,
   });
 
-  // Show skeleton during auth loading OR data loading
-  const isDataLoading = loading || userRecordLoading || (!!userRecord && (applicationsLoading || jobStatsLoading));
-  
-  if (isDataLoading) {
-    return <DashboardSkeleton />;
-  }
-
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center mt-14">
-        <div className="text-center">
-          <p className="mb-4">Please sign in to access your dashboard.</p>
-          <a className="underline" href="/sign-in">
-            Sign in
-          </a>
-        </div>
-      </div>
-    );
-  }
-
-  // Use the new hook functions
+  // Destructure application management BEFORE conditional returns
   const {
     showApplicationForm,
     setShowApplicationForm,
@@ -171,10 +151,31 @@ export function Dashboard() {
     handleJobSubmit,
   } = jobManagement;
 
+  // useRestoreFocus hooks MUST be called unconditionally (before any early returns)
   useRestoreFocus(showApplicationForm);
   useRestoreFocus(showJobForm);
   useRestoreFocus(showImportModal);
   useRestoreFocus(!!selectedApplication);
+
+  // Show skeleton during auth loading OR data loading
+  const isDataLoading = loading || userRecordLoading || (!!userRecord && (applicationsLoading || jobStatsLoading));
+  
+  if (isDataLoading) {
+    return <DashboardSkeleton />;
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center mt-14">
+        <div className="text-center">
+          <p className="mb-4">Please sign in to access your dashboard.</p>
+          <a className="underline" href="/sign-in">
+            Sign in
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   const handleDeleteApplicationWrapper = async (application: Application) => {
     if (!application?._id) {
@@ -289,83 +290,6 @@ export function Dashboard() {
                 <X className="h-4 w-4" />
               </Button>
             </div>
-          </motion.div>
-        )}
-
-        {/* Enhanced Quick Stats */}
-        {hasData && (
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1, duration: 0.5 }}
-            className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
-          >
-            {/* Total Jobs */}
-            <motion.div
-              className="motion-card bg-card border border-border rounded-xl p-4 shadow-sm hover:shadow-md motion-surface"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-muted-foreground text-xs font-medium mb-0.5">Total Jobs</p>
-                  <p className="text-2xl font-bold text-foreground">
-                    {jobStats ? jobStats.totalJobs : (applications?.length || 0)}
-                  </p>
-                  <p className="text-xxs text-muted-foreground mt-0.5">
-                    {jobStats ? 'Imported & Tracked' : 'Tracking'}
-                  </p>
-                </div>
-                <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center">
-                  <Briefcase className="w-5 h-5 text-foreground" />
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Sponsored Jobs */}
-            <motion.div
-              className="motion-card bg-card border border-border rounded-xl p-4 shadow-sm hover:shadow-md motion-surface"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-muted-foreground text-xs font-medium mb-0.5">Sponsored</p>
-                  <p className="text-2xl font-bold text-foreground">
-                    {jobStats ? jobStats.sponsoredJobs : (applications?.filter(app => app.job?.isSponsored).length || 0)}
-                  </p>
-                  <p className="text-xxs text-muted-foreground mt-0.5">
-                    {jobStats 
-                      ? `${calculatePercentage(jobStats.sponsoredJobs, jobStats.totalJobs)}% of total`
-                      : `${calculatePercentage(applications?.filter(app => app.job?.isSponsored).length || 0, applications?.length || 0)}% of total`
-                    }
-                  </p>
-                </div>
-                <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center">
-                  <Target className="w-5 h-5 text-foreground" />
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Today's Activity */}
-            <motion.div
-              className="motion-card bg-card border border-border rounded-xl p-4 shadow-sm hover:shadow-md motion-surface"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-muted-foreground text-xs font-medium mb-0.5">Today</p>
-                  <p className="text-2xl font-bold text-foreground">
-                    {jobStats ? jobStats.jobsToday : (() => {
-                      const today = new Date();
-                      today.setHours(0, 0, 0, 0);
-                      return applications?.filter(app =>
-                        new Date(app.createdAt || app.job?.dateFound || 0) >= today
-                      ).length || 0;
-                    })()}
-                  </p>
-                  <p className="text-xxs text-muted-foreground mt-0.5">New jobs found</p>
-                </div>
-                <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center">
-                  <Calendar className="w-5 h-5 text-foreground" />
-                </div>
-              </div>
-            </motion.div>
           </motion.div>
         )}
 

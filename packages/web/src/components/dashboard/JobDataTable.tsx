@@ -227,6 +227,7 @@ export function JobDataTable({
         data={filteredApplications}
         searchKey="jobTitle"
         searchPlaceholder="Search jobs by title, company, or location..."
+        onRowClick={onViewApplication}
       />
       
       {filteredApplications.length === 0 && applications.length > 0 && (
