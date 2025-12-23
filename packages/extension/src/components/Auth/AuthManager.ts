@@ -235,11 +235,14 @@ export class AuthManager {
       popupUI.showLoading('google-auth-btn');
 
       // Run OAuth in the background service worker.
-      // Chrome extension popups often auto-close when they lose focus (opening the Google window),
-      // which can interrupt sign-in if done in the popup context.
       if (typeof chrome === 'undefined' || !chrome.runtime?.sendMessage) {
         throw new Error('Chrome runtime messaging not available');
       }
+
+      // Clear any old errors before starting
+      await new Promise<void>((resolve) => {
+        chrome.storage.local.remove(['hireallLastGoogleSignInError'], () => resolve());
+      });
 
       const response = await new Promise<any>((resolve) => {
         chrome.runtime.sendMessage({ action: 'googleSignIn' }, (resp) => {
@@ -255,14 +258,82 @@ export class AuthManager {
         throw new Error(response?.error || 'Google sign-in failed');
       }
 
-      // If the popup stayed open, attempt to sync immediately.
-      // If it closed, the next popup open will pick up persisted auth state via onAuthStateChanged.
+      // Background returns { success: true, started: true } immediately and runs OAuth async.
+      // Wait for completion via AUTH_STATE_CHANGED message or polling for errors.
+      if (response?.started) {
+        const maxWaitMs = 30000; // 30 seconds max wait
+        const pollIntervalMs = 300;
+        const startTime = Date.now();
+
+        // Set up listener for auth state change from background
+        let authCompleted = false;
+        let authError: string | null = null;
+
+        const authListener = (message: any) => {
+          if (message?.type === 'AUTH_STATE_CHANGED') {
+            if (message.payload?.isAuthenticated) {
+              authCompleted = true;
+            }
+          }
+        };
+
+        chrome.runtime.onMessage.addListener(authListener);
+
+        try {
+          while (Date.now() - startTime < maxWaitMs) {
+            // Check if auth completed via message
+            if (authCompleted) {
+              await this.attemptSyncFromWebApp();
+              popupUI.showSuccess('Signed in with Google!');
+              popupUI.switchTab('jobs');
+              return;
+            }
+
+            // Check for stored errors from background
+            const errorCheck = await new Promise<{ hireallLastGoogleSignInError?: { message: string; at: number } }>((resolve) => {
+              chrome.storage.local.get(['hireallLastGoogleSignInError'], (result) => {
+                resolve(result);
+              });
+            });
+
+            if (errorCheck.hireallLastGoogleSignInError?.message) {
+              // Only process errors from after we started
+              if (errorCheck.hireallLastGoogleSignInError.at >= startTime) {
+                authError = errorCheck.hireallLastGoogleSignInError.message;
+                chrome.storage.local.remove(['hireallLastGoogleSignInError']);
+                break;
+              }
+            }
+
+            // Also check auth state directly
+            if (this.isAuthenticated()) {
+              popupUI.showSuccess('Signed in with Google!');
+              popupUI.switchTab('jobs');
+              return;
+            }
+
+            await new Promise(r => setTimeout(r, pollIntervalMs));
+          }
+        } finally {
+          chrome.runtime.onMessage.removeListener(authListener);
+        }
+
+        if (authError) {
+          throw new Error(authError);
+        }
+
+        // Timeout - show message but don't keep loading forever
+        popupUI.showSuccess('Sign-in timed out. Try reopening the extension.');
+        return;
+      }
+
+      // Legacy path: direct success response
       await this.attemptSyncFromWebApp();
       if (this.isAuthenticated()) {
         popupUI.showSuccess('Signed in with Google!');
         popupUI.switchTab('jobs');
       } else {
-        popupUI.showSuccess('Sign-in started. Reopen the extension to continue.');
+        popupUI.showError('Sign-in failed. Please try again.');
       }
 
     } catch (error: any) {
@@ -274,8 +345,12 @@ export class AuthManager {
         errorMessage = 'Invalid credentials. Please try signing in again.';
       } else if (error?.message?.includes('Identity API') || error?.message?.includes('runtime messaging')) {
         errorMessage = 'Google sign-in not available in this context.';
-      } else if (error?.message?.includes('user denied')) {
+      } else if (error?.message?.includes('user denied') || error?.message?.includes('cancelled') || error?.message?.includes('canceled')) {
         errorMessage = 'Sign-in was cancelled.';
+      } else if (error?.message?.includes('browser sign-in')) {
+        errorMessage = 'Please sign in to Chrome browser first, then try again.';
+      } else if (error?.message?.includes('Auth not ready') || error?.message?.includes('auth token')) {
+        errorMessage = 'Chrome sign-in required. Please sign in to Chrome, then try again.';
       } else if (typeof error?.message === 'string' && error.message.length) {
         errorMessage = error.message;
       }
@@ -479,22 +554,11 @@ export class AuthManager {
   }
 
   private updateAuthUI(isAuthenticated: boolean): void {
-    const authStatus = document.getElementById("auth-indicator") as HTMLElement;
-    const statusDot = authStatus?.querySelector(".status-dot") as HTMLElement;
-    const authTab = document.querySelector('.nav-item[data-tab="auth"]') as HTMLElement;
     const mainTabs = document.querySelectorAll('.nav-item:not([data-tab="auth"])');
     const formContainer = document.getElementById("auth-form-container") as HTMLElement;
     const logoutSection = document.getElementById("logout-section") as HTMLElement;
-    const userEmailDisplay = document.getElementById("user-email-display");
 
     if (isAuthenticated) {
-      authStatus?.classList.add("authenticated");
-      authStatus?.classList.remove("unauthenticated");
-
-      if (statusDot) {
-        statusDot.style.backgroundColor = "var(--primary)";
-      }
-
       // Hide login form and show profile/logout section
       // Must remove 'hidden' class since it uses !important
       if (formContainer) {
@@ -525,13 +589,6 @@ export class AuthManager {
       }
 
     } else {
-      authStatus?.classList.remove("authenticated");
-      authStatus?.classList.add("unauthenticated");
-
-      if (statusDot) {
-        statusDot.style.backgroundColor = "var(--accent-red)";
-      }
-
       // Show login form and hide profile/logout section
       if (formContainer) {
         formContainer.classList.remove("hidden");
@@ -544,9 +601,6 @@ export class AuthManager {
 
       mainTabs.forEach(tab => {
         // Hide other tabs if not authenticated
-        // (tab as HTMLElement).style.display = "none"; 
-        // Actually, let's just disable them or redirect. 
-        // For now, let's hide them to force auth.
         (tab as HTMLElement).style.display = "none";
       });
 
@@ -554,6 +608,7 @@ export class AuthManager {
       popupUI.switchTab('auth');
     }
   }
+
 
   private showAuthError(message: string): void {
     // Only show toast notification - no inline error message

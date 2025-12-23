@@ -13,6 +13,8 @@ import {
   ExtensionRateLimiter,
   ExtensionSecurityLogger
 } from "./security";
+// Import Firebase - static import since dynamic imports don't work reliably in service workers
+import { signInWithGoogle, getAuthInstance, waitForAuthState } from "./firebase";
 
 // Import logging utility
 import { logger, log } from "./utils/logger";
@@ -647,10 +649,8 @@ chrome.runtime.onMessage.addListener((request: any, sender: chrome.runtime.Messa
 
     void (async () => {
       try {
-        // Dynamic import keeps the background bundle smaller and avoids eager Firebase init.
-        const { signInWithGoogle, getAuthInstance } = await import('./firebase');
-
         const user = await signInWithGoogle();
+        logger.info('Background', 'Google sign-in successful', { userId: user?.uid });
 
         // Ensure token is minted and cached for API usage.
         const token = await user.getIdToken();
@@ -735,7 +735,6 @@ chrome.runtime.onMessage.addListener((request: any, sender: chrome.runtime.Messa
         // No token from cache or currentUser - try waiting for Firebase auth to restore
         logger.debug("Background", "No immediate token, waiting for Firebase auth state...");
         try {
-          const { waitForAuthState } = await import('./firebase');
           const user = await waitForAuthState();
           
           if (user) {

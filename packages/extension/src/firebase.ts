@@ -260,38 +260,62 @@ export const signInWithGoogle = async (): Promise<User> => {
       return signInWithGoogleToken();
     }
 
-    // Build the OAuth URL
+
+    // Build the OAuth URL - use id_token response type (implicit flow for ID tokens is still supported)
     const scopes = ['openid', 'email', 'profile'].join(' ');
+    
+    // Generate a random nonce for security
+    const nonce = Array.from(crypto.getRandomValues(new Uint8Array(16)))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
     
     const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
     authUrl.searchParams.set('client_id', GOOGLE_WEB_APP_CLIENT_ID);
     authUrl.searchParams.set('redirect_uri', redirectUrl);
-    authUrl.searchParams.set('response_type', 'token');
+    authUrl.searchParams.set('response_type', 'id_token token');
     authUrl.searchParams.set('scope', scopes);
     authUrl.searchParams.set('prompt', 'select_account');
+    authUrl.searchParams.set('nonce', nonce);
 
-    logger.debug('Firebase', 'Launching web auth flow...');
+    const authUrlString = authUrl.toString();
+    logger.debug('Firebase', 'Launching web auth flow...', { authUrl: authUrlString, clientId: GOOGLE_WEB_APP_CLIENT_ID });
 
-    // Launch the auth flow
-    const responseUrl = await new Promise<string>((resolve, reject) => {
-      chrome.identity.launchWebAuthFlow(
-        {
-          url: authUrl.toString(),
-          interactive: true,
-        },
-        (callbackUrl) => {
-          if (chrome.runtime.lastError) {
-            reject(new Error(chrome.runtime.lastError.message));
-            return;
+    // Launch the auth flow with a hard timeout so we never hang forever
+    const responseUrl = await (() => {
+      const launchFlow = new Promise<string>((resolve, reject) => {
+        chrome.identity.launchWebAuthFlow(
+          {
+            url: authUrlString,
+            interactive: true,
+          },
+          (callbackUrl) => {
+            if (chrome.runtime.lastError) {
+              logger.error('Firebase', 'launchWebAuthFlow lastError', { message: chrome.runtime.lastError.message });
+              reject(new Error(chrome.runtime.lastError.message));
+              return;
+            }
+            if (!callbackUrl) {
+              logger.error('Firebase', 'launchWebAuthFlow returned empty callbackUrl');
+              reject(new Error('No callback URL received'));
+              return;
+            }
+            logger.debug('Firebase', 'launchWebAuthFlow callback received', { callbackUrl });
+            resolve(callbackUrl);
           }
-          if (!callbackUrl) {
-            reject(new Error('No callback URL received'));
-            return;
-          }
-          resolve(callbackUrl);
-        }
-      );
-    });
+        );
+      });
+
+      // Fallback after 25 seconds if Google never calls back (e.g., redirect mismatch)
+      const timeoutMs = 25000;
+      const timeout = new Promise<string>((_, reject) => {
+        setTimeout(() => {
+          logger.warn('Firebase', 'Web auth flow timed out', { timeoutMs });
+          reject(new Error('Web auth flow timed out'));
+        }, timeoutMs);
+      });
+
+      return Promise.race([launchFlow, timeout]);
+    })();
 
     logger.debug('Firebase', 'Auth flow completed, parsing response...');
 
@@ -332,9 +356,11 @@ export const signInWithGoogle = async (): Promise<User> => {
     if (
       message.includes('redirect_uri_mismatch') ||
       message.includes('No callback URL received') ||
-      message.includes('redirect_uri')
+      message.includes('redirect_uri') ||
+      message.includes('timed out') ||
+      message.toLowerCase().includes('response_type')
     ) {
-      logger.warn('Firebase', 'Web auth flow failed (likely redirect URI mismatch). Falling back to getAuthToken.', {
+      logger.warn('Firebase', 'Web auth flow failed (redirect/timeout/response_type). Falling back to getAuthToken.', {
         message,
       });
       return signInWithGoogleToken();

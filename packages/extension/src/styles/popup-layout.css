@@ -49,26 +49,6 @@
     color: var(--text-primary);
 }
 
-.auth-indicator {
-    padding: 6px;
-    border-radius: 50%;
-    background: var(--bg-hover);
-    cursor: help;
-}
-
-.status-dot {
-    display: block;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--text-tertiary);
-    transition: background 0.3s ease;
-}
-
-.auth-indicator.authenticated .status-dot {
-    background: var(--primary);
-    box-shadow: 0 0 0 2px var(--primary-light);
-}
 
 /* --- Overlay Toggle (Header) --- */
 .overlay-toggle-container {

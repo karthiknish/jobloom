@@ -103,23 +103,55 @@ const SITE_PATTERNS: Record<JobSite, { hostnames: string[]; selectors: Record<st
     hostnames: ['linkedin.com'],
     selectors: {
       title: [
+        // Job detail page (2024/2025)
         '.job-details-jobs-unified-top-card__job-title',
         '.job-details-jobs-unified-top-card__job-title-link',
         'h1.top-card-layout__title',
         '.jobs-unified-top-card__job-title',
         'h1.t-24',
+        // Job cards in list view (2024/2025)
+        '.job-card-list__title',
+        '.job-card-list__title--link',
+        '.artdeco-entity-lockup__title',
+        '.artdeco-entity-lockup__title a',
+        '.job-card-container__link span',
+        '.job-card-container__link',
+        'a[data-control-name="job_card_title"]',
       ],
       company: [
+        // Job detail page (new design 2024/2025)
+        '.job-details-jobs-unified-top-card__company-name a',
         '.job-details-jobs-unified-top-card__company-name',
         '.job-details-jobs-unified-top-card__primary-description-container a',
+        // Job detail page (legacy)
         '.topcard__org-name-link',
+        '.jobs-unified-top-card__company-name a',
         '.jobs-unified-top-card__company-name',
+        // Job cards in list view (2024/2025)
+        '.job-card-container__company-name',
+        '.job-card-container__primary-description',
+        '.artdeco-entity-lockup__subtitle',
+        '.artdeco-entity-lockup__subtitle span',
+        '.job-card-list__subtitle span',
+        '.job-card-list__entity-lockup .artdeco-entity-lockup__subtitle',
+        // Search results
+        '.entity-result__secondary-subtitle',
+        '.job-card-search__company-name',
+        // Legacy
+        '.job-card-list__company',
+        '.jobs-company-name',
       ],
       location: [
+        // Job detail page
         '.job-details-jobs-unified-top-card__bullet',
         '.job-details-jobs-unified-top-card__primary-description-container .tvm__text',
         '.topcard__flavor--bullet',
         '.jobs-unified-top-card__bullet',
+        // Job cards
+        '.job-card-container__metadata-item',
+        '.artdeco-entity-lockup__caption',
+        '.job-card-list__metadata-item',
+        '.job-card-list__location',
       ],
       description: [
         '.jobs-description__content',

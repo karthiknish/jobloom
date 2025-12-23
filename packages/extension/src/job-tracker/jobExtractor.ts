@@ -10,26 +10,41 @@ export function extractLinkedInJob(element: Element): JobData {
       // Job detail page (legacy)
       "h1.top-card-layout__title",
       ".jobs-unified-top-card__job-title",
-      // Job cards
+      // Job cards in list view (2024/2025)
       ".job-card-list__title",
+      ".job-card-list__title--link",
+      ".artdeco-entity-lockup__title",
+      ".artdeco-entity-lockup__title a",
+      ".job-card-container__link span",
       ".job-card-container__link",
       ".scaffold-layout__list-item h3",
+      'a[data-control-name="job_card_title"]',
       '[data-test="job-title"]',
     ]) ?? "Unknown role";
 
   const company =
     getText(element, [
-      // Job detail page (new design)
+      // Job detail page (new design 2024/2025)
+      ".job-details-jobs-unified-top-card__company-name a",
       ".job-details-jobs-unified-top-card__company-name",
       ".job-details-jobs-unified-top-card__primary-description-container a",
       // Job detail page (legacy)
       "a.topcard__org-name-link",
       "span.topcard__flavor",
+      ".jobs-unified-top-card__company-name a",
       ".jobs-unified-top-card__company-name",
-      // Job cards
+      // Job cards in list view (2024/2025)
+      ".job-card-container__company-name",
       ".job-card-container__primary-description",
-      ".job-card-list__company",
+      ".job-card-list__entity-lockup a[data-tracking-control-name*='company']",
+      ".artdeco-entity-lockup__subtitle span",
       ".artdeco-entity-lockup__subtitle",
+      // Search results
+      ".entity-result__secondary-subtitle",
+      ".job-card-search__company-name",
+      // Legacy job cards
+      ".job-card-list__company",
+      ".jobs-company-name",
       '[data-test="company-name"]',
     ]) ?? "Unknown company";
 

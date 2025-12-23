@@ -135,34 +135,81 @@ export function extractJobData(element: Element): JobData {
 
 function extractLinkedInCompanyFallback(element: Element): string | null {
   const selectors = [
-    // Job detail page (new/legacy)
+    // Job detail page (new/legacy 2024/2025)
     ".job-details-jobs-unified-top-card__company-name a",
     ".job-details-jobs-unified-top-card__company-name",
     ".job-details-jobs-unified-top-card__primary-description-container a",
     ".jobs-unified-top-card__company-name a",
     ".jobs-unified-top-card__company-name",
     "a.topcard__org-name-link",
-    // Job cards
+    // Job cards in list view (2024/2025)
+    ".job-card-container__company-name",
     "a.job-card-container__company-name",
     ".job-card-container__primary-description",
-    ".job-card-list__company",
+    ".job-card-list__entity-lockup a[data-tracking-control-name*='company']",
+    ".artdeco-entity-lockup__subtitle span",
     ".artdeco-entity-lockup__subtitle",
+    // Search results
+    ".entity-result__secondary-subtitle",
+    ".job-card-search__company-name",
+    // Legacy job cards
+    ".job-card-list__company",
+    ".jobs-company-name",
+    // Company link anywhere
     "a[href*='/company/']",
     "[data-test='company-name']",
   ];
 
-  for (const root of [element, document.documentElement]) {
-    for (const selector of selectors) {
-      try {
-        const node = root.querySelector(selector);
-        const text = node?.textContent?.trim();
-        const normalized = text ? normalizeCompanyName(text) : "";
-        if (normalized && !isLikelyPlaceholderCompany(normalized)) {
-          return normalized;
-        }
-      } catch {
-        // ignore selector errors
+  // First try the provided element
+  for (const selector of selectors) {
+    try {
+      const node = element.querySelector(selector);
+      const text = node?.textContent?.trim();
+      const normalized = text ? normalizeCompanyName(text) : "";
+      if (normalized && !isLikelyPlaceholderCompany(normalized)) {
+        return normalized;
       }
+    } catch {
+      // ignore selector errors
+    }
+  }
+
+  // Then try the job detail panel (right side of LinkedIn jobs page)
+  const detailPanelSelectors = [
+    ".jobs-details",
+    ".job-details",
+    "#job-details",
+    ".jobs-unified-top-card",
+  ];
+  for (const panelSelector of detailPanelSelectors) {
+    try {
+      const panel = document.querySelector(panelSelector);
+      if (panel) {
+        for (const selector of selectors) {
+          const node = panel.querySelector(selector);
+          const text = node?.textContent?.trim();
+          const normalized = text ? normalizeCompanyName(text) : "";
+          if (normalized && !isLikelyPlaceholderCompany(normalized)) {
+            return normalized;
+          }
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  // Try the document root last
+  for (const selector of selectors) {
+    try {
+      const node = document.querySelector(selector);
+      const text = node?.textContent?.trim();
+      const normalized = text ? normalizeCompanyName(text) : "";
+      if (normalized && !isLikelyPlaceholderCompany(normalized)) {
+        return normalized;
+      }
+    } catch {
+      // ignore selector errors
     }
   }
 
