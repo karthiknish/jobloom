@@ -203,20 +203,17 @@ export function AnalyticsDashboard() {
       setAnalyticsData(data);
     } catch (err) {
       console.error('Failed to load analytics data:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load analytics');
+      const message = err instanceof Error ? err.message : 'Failed to load analytics';
+      setError(message);
+      toast({
+        variant: "destructive",
+        title: "Analytics error",
+        description: message,
+      });
     } finally {
       setIsLoading(false);
     }
-  }, []);
-
-  useEffect(() => {
-    if (!error) return;
-    toast({
-      variant: "destructive",
-      title: "Analytics error",
-      description: error,
-    });
-  }, [error, toast]);
+  }, [toast]);
 
   useEffect(() => {
     // Track dashboard view

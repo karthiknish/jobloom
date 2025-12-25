@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { rateLimitApi } from '@/utils/api/rateLimit';
+import { useToast } from '@/hooks/use-toast';
 
 export interface RateLimitStatus {
   remaining: number;
@@ -23,6 +24,8 @@ export function useRateLimitStatus(endpoint: string = 'general') {
   });
   
   const [error, setError] = useState<string | null>(null);
+  const hasNotifiedError = useRef(false);
+  const { toast } = useToast();
 
   const updateStatus = useCallback(async () => {
     try {
@@ -35,11 +38,21 @@ export function useRateLimitStatus(endpoint: string = 'general') {
         isLimited: data.remaining === 0,
       }));
       setError(null);
+      hasNotifiedError.current = false;
     } catch (err) {
       console.warn('Failed to fetch rate limit status:', err);
-      setError('Unable to fetch rate limit status');
+      const message = 'Unable to fetch rate limit status';
+      setError(message);
+      if (!hasNotifiedError.current) {
+        toast({
+          variant: "destructive",
+          title: "Rate limit status unavailable",
+          description: message,
+        });
+        hasNotifiedError.current = true;
+      }
     }
-  }, [endpoint]);
+  }, [endpoint, toast]);
 
   useEffect(() => {
     // Update status immediately
@@ -69,12 +82,26 @@ export function useRateLimitStatus(endpoint: string = 'general') {
           resetIn: err.details?.resetIn || 0,
           retryAfter: err.details?.retryAfter,
         }));
+        toast({
+          variant: "destructive",
+          title: "Rate limit reached",
+          description: "You have hit the rate limit for now. Please retry shortly.",
+        });
       } else {
-        setError('Failed to check rate limit');
+        const message = 'Failed to check rate limit';
+        setError(message);
+        if (!hasNotifiedError.current) {
+          toast({
+            variant: "destructive",
+            title: "Rate limit check failed",
+            description: message,
+          });
+          hasNotifiedError.current = true;
+        }
       }
       return false;
     }
-  }, [updateStatus]);
+  }, [toast, updateStatus]);
 
   const resetStatus = useCallback(() => {
     setStatus({
