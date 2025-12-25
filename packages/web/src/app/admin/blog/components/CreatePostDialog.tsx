@@ -13,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { SafeNextImage } from "@/components/ui/SafeNextImage";
 import {
   Select,
   SelectContent,
@@ -198,11 +199,15 @@ export function CreatePostDialog({
               </Button>
             </div>
             {formData.featuredImage && (
-              <img
-                src={formData.featuredImage}
-                alt="Featured image preview"
-                className="mt-2 h-32 w-32 object-cover rounded"
-              />
+              <div className="mt-2 relative h-32 w-32 overflow-hidden rounded bg-muted">
+                <SafeNextImage
+                  src={formData.featuredImage}
+                  alt="Featured image preview"
+                  fill
+                  sizes="128px"
+                  className="object-cover"
+                />
+              </div>
             )}
           </div>
 

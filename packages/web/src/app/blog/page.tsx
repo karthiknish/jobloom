@@ -21,6 +21,7 @@ import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { SafeNextImage } from "@/components/ui/SafeNextImage";
 import {
   Select,
   SelectContent,
@@ -53,7 +54,11 @@ export default function BlogPage() {
       `/api/blog/posts?page=${currentPage}&limit=9&search=${encodeURIComponent(
         searchTerm
       )}&category=${encodeURIComponent(selectedCategory ?? "")}`
-    ).then((res) => res.json());
+    ).then(async (res) => {
+      const json = await res.json();
+      // withApi wraps responses as { success, data, meta }
+      return json?.data ?? json;
+    });
   }, [currentPage, searchTerm, selectedCategory]);
 
   const { data, loading, refetch } = useApiQuery<BlogPostWithPagination>(
@@ -199,10 +204,12 @@ export default function BlogPage() {
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center bg-card rounded-3xl overflow-hidden border border-border/50 shadow-sm hover:shadow-md transition-all duration-300">
                     <div className="aspect-video lg:aspect-square lg:h-full overflow-hidden relative">
                       {featuredPost.featuredImage ? (
-                        <img
+                        <SafeNextImage
                           src={featuredPost.featuredImage}
                           alt={featuredPost.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          fill
+                          sizes="(max-width: 1024px) 100vw, 50vw"
+                          className="object-cover group-hover:scale-105 transition-transform duration-500"
                         />
                       ) : (
                         <div className="w-full h-full bg-muted flex items-center justify-center">
@@ -264,11 +271,12 @@ export default function BlogPage() {
                     <Card className="h-full flex flex-col overflow-hidden border-border/50 hover:border-primary/30 hover:shadow-lg transition-all duration-300 bg-card">
                       <div className="aspect-video overflow-hidden relative bg-muted">
                         {post.featuredImage ? (
-                          <img
+                          <SafeNextImage
                             src={post.featuredImage}
                             alt={post.title}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                            loading="lazy"
+                            fill
+                            sizes="(max-width: 1024px) 100vw, 33vw"
+                            className="object-cover group-hover:scale-105 transition-transform duration-500"
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">

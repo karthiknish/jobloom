@@ -23,10 +23,14 @@ import { showSuccess } from "@/components/ui/Toast";
 import { useEnhancedApi } from "../../../hooks/useEnhancedApi";
 import type { BlogPost } from "../../../types/api";
 import { blogApi } from "@/utils/api/blog";
+import { SafeNextImage } from "@/components/ui/SafeNextImage";
+import { BlogContent } from "@/components/blog/BlogContent";
 
 export default function BlogPostPage() {
   const params = useParams();
-  const slug = params.slug as string;
+  const rawSlug = (params as any)?.slug;
+  const slug = Array.isArray(rawSlug) ? rawSlug[0] : rawSlug;
+  const shouldFetchPost = typeof slug === "string" && slug.length > 0;
   const [hasLiked, setHasLiked] = useState(false);
   const { scrollYProgress } = useScroll();
   const scaleX = useSpring(scrollYProgress, {
@@ -36,9 +40,14 @@ export default function BlogPostPage() {
   });
 
   // Fetch individual blog post using apiClient
-  const { data: post, loading: isLoading } = useEnhancedApi<BlogPost>(
-    () => blogApi.getPost(slug),
-    { immediate: !!slug }
+  const { data: post, loading: isLoading, error: postError } = useEnhancedApi<BlogPost>(
+    () => blogApi.getPost(slug as string),
+    {
+      immediate: shouldFetchPost,
+      // Avoid cross-page cache collisions (useEnhancedApi cache key is function-name based)
+      cacheTime: 0,
+      showGlobalError: false,
+    }
   );
 
   // Fetch related posts using apiClient
@@ -52,7 +61,7 @@ export default function BlogPostPage() {
     .slice(0, 2) || [];
 
   const handleLike = async () => {
-    if (!post || hasLiked) return;
+    if (!post || hasLiked || typeof slug !== "string" || !slug) return;
 
     try {
       await blogApi.likePost(slug);
@@ -98,7 +107,11 @@ export default function BlogPostPage() {
     return minutes || 1;
   };
 
-  if (isLoading) {
+  // If slug isn't ready yet, or the hook hasn't kicked off its first request,
+  // render the skeleton instead of flashing the 404 state.
+  const shouldShowInitialSkeleton = !shouldFetchPost || (!post && !isLoading && !postError);
+
+  if (isLoading || shouldShowInitialSkeleton) {
     return (
       <div className="min-h-screen bg-background">
         <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
@@ -213,13 +226,15 @@ export default function BlogPostPage() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2, duration: 0.6 }}
-            className="mb-16 rounded-2xl overflow-hidden shadow-xl aspect-video bg-muted"
+            className="mb-16 rounded-2xl overflow-hidden shadow-xl aspect-video bg-muted relative"
           >
-            <img
+            <SafeNextImage
               src={post.featuredImage}
               alt={post.title}
-              className="w-full h-full object-cover"
-              loading="lazy"
+              fill
+              sizes="100vw"
+              className="object-cover"
+              priority
             />
           </motion.div>
         )}
@@ -229,9 +244,9 @@ export default function BlogPostPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.6 }}
-          className="prose prose-lg max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-a:text-primary prose-img:rounded-xl"
-          dangerouslySetInnerHTML={{ __html: post.content }}
-        />
+        >
+          <BlogContent content={post.content} />
+        </motion.div>
 
         <Separator className="my-12" />
 
@@ -278,11 +293,13 @@ export default function BlogPostPage() {
                 <Link key={relatedPost._id} href={`/blog/${relatedPost.slug}`} className="group block">
                   <Card className="h-full overflow-hidden border-border/50 hover:border-primary/30 hover:shadow-lg transition-all duration-300">
                     {relatedPost.featuredImage && (
-                      <div className="aspect-video overflow-hidden bg-muted">
-                        <img
+                      <div className="aspect-video overflow-hidden bg-muted relative">
+                        <SafeNextImage
                           src={relatedPost.featuredImage}
                           alt={relatedPost.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          fill
+                          sizes="(max-width: 768px) 100vw, 50vw"
+                          className="object-cover group-hover:scale-105 transition-transform duration-500"
                         />
                       </div>
                     )}

@@ -12,7 +12,7 @@ export interface BlogListResponse {
 }
 
 export const blogApi = {
-  getPost: (slug: string) => apiClient.get<BlogPost>(`/api/blog/posts/${slug}`),
+  getPost: (slug: string) => apiClient.get<BlogPost>(`/blog/posts/${slug}`),
 
   getPosts: (params?: { page?: number; limit?: number; search?: string; category?: string }) => {
     const searchParams = new URLSearchParams();
@@ -23,10 +23,10 @@ export const blogApi = {
 
     const query = searchParams.toString();
     const suffix = query ? `?${query}` : "";
-    return apiClient.get<BlogListResponse>(`/api/blog/posts${suffix}`);
+    return apiClient.get<BlogListResponse>(`/blog/posts${suffix}`);
   },
 
-  getRelated: (limit = 3) => apiClient.get<{ posts: BlogPost[] }>(`/api/blog/posts?limit=${limit}`),
+  getRelated: (limit = 3) => apiClient.get<{ posts: BlogPost[] }>(`/blog/posts?limit=${limit}`),
 
-  likePost: (slug: string) => apiClient.post(`/api/blog/posts/${slug}`),
+  likePost: (slug: string) => apiClient.post(`/blog/posts/${slug}`),
 };

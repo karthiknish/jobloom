@@ -38,6 +38,68 @@ const SubscriptionContext = createContext<SubscriptionContextType | undefined>(u
 // Cache duration in milliseconds (5 minutes)
 const CACHE_DURATION = 5 * 60 * 1000;
 
+type PersistedSubscriptionCache = {
+  uid: string;
+  timestamp: number;
+  state: Omit<SubscriptionState, "isLoading" | "error">;
+};
+
+const getCacheKey = (uid: string) => `hireall:subscription-cache:${uid}`;
+const getCooldownKey = (uid: string) => `hireall:subscription-cooldown:${uid}`;
+
+function readPersistedCache(uid: string): PersistedSubscriptionCache | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(getCacheKey(uid));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as PersistedSubscriptionCache;
+    if (!parsed || parsed.uid !== uid || typeof parsed.timestamp !== "number" || !parsed.state) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writePersistedCache(uid: string, state: Omit<SubscriptionState, "isLoading" | "error">) {
+  if (typeof window === "undefined") return;
+  try {
+    const payload: PersistedSubscriptionCache = { uid, timestamp: Date.now(), state };
+    window.localStorage.setItem(getCacheKey(uid), JSON.stringify(payload));
+  } catch {
+    // ignore
+  }
+}
+
+function clearPersistedCache(uid: string) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem(getCacheKey(uid));
+    window.localStorage.removeItem(getCooldownKey(uid));
+  } catch {
+    // ignore
+  }
+}
+
+function getCooldownUntil(uid: string): number {
+  if (typeof window === "undefined") return 0;
+  try {
+    const raw = window.localStorage.getItem(getCooldownKey(uid));
+    const millis = raw ? Number(raw) : 0;
+    return Number.isFinite(millis) ? millis : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function setCooldownUntil(uid: string, untilMillis: number) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(getCooldownKey(uid), String(untilMillis));
+  } catch {
+    // ignore
+  }
+}
+
 export function SubscriptionProvider({ children }: { children: React.ReactNode }) {
   const { user } = useFirebaseAuth();
   const [state, setState] = useState<SubscriptionState>({
@@ -66,6 +128,9 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         isLoading: false,
         error: null,
       });
+      if (userIdRef.current) {
+        clearPersistedCache(userIdRef.current);
+      }
       lastFetchRef.current = 0;
       userIdRef.current = null;
       return;
@@ -73,6 +138,39 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
 
     const now = Date.now();
     const userChanged = userIdRef.current !== user.uid;
+
+    // If we were rate-limited recently, avoid re-hitting the endpoint on reload.
+    const cooldownUntil = getCooldownUntil(user.uid);
+    if (!force && cooldownUntil > now) {
+      const cached = readPersistedCache(user.uid);
+      if (cached) {
+        setState({
+          ...cached.state,
+          isLoading: false,
+          error: null,
+        });
+        lastFetchRef.current = cached.timestamp;
+        userIdRef.current = user.uid;
+      } else {
+        setState(prev => ({ ...prev, isLoading: false }));
+      }
+      return;
+    }
+
+    // Hydrate from persisted cache on reload (prevents rate limit hits in dev/strict mode).
+    if (!force) {
+      const persisted = readPersistedCache(user.uid);
+      if (persisted && now - persisted.timestamp < CACHE_DURATION) {
+        setState({
+          ...persisted.state,
+          isLoading: false,
+          error: null,
+        });
+        lastFetchRef.current = persisted.timestamp;
+        userIdRef.current = user.uid;
+        return;
+      }
+    }
     
     // Return cached data if still valid and same user
     if (!force && !userChanged && now - lastFetchRef.current < CACHE_DURATION) {
@@ -95,7 +193,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
 
         const data = await subscriptionApi.getStatus();
         const actions: SubscriptionActions = data.actions ?? {};
-        setState({
+        const nextState: SubscriptionState = {
           subscription: data.subscription,
           plan: data.plan,
           limits: data.limits,
@@ -104,11 +202,31 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
           isAdmin: data.isAdmin === true,
           isLoading: false,
           error: null,
+        };
+        setState(nextState);
+        writePersistedCache(user.uid, {
+          subscription: nextState.subscription,
+          plan: nextState.plan,
+          limits: nextState.limits,
+          actions: nextState.actions,
+          isAdmin: nextState.isAdmin,
+          currentUsage: nextState.currentUsage,
         });
         lastFetchRef.current = Date.now();
         userIdRef.current = user.uid;
       } catch (error) {
         console.error("Error fetching subscription:", error);
+
+        // If rate-limited, back off for the server-advised duration to avoid repeated logs.
+        const retryAfterSeconds =
+          typeof error?.retryAfter === "number" ? error.retryAfter :
+          typeof error?.details?.retryAfter === "number" ? error.details.retryAfter :
+          0;
+        if (error?.status === 429 || error?.code === "RATE_LIMIT_EXCEEDED") {
+          const until = Date.now() + Math.max(15, retryAfterSeconds || 60) * 1000;
+          setCooldownUntil(user.uid, until);
+        }
+
         setState({
           subscription: null,
           plan: "free",

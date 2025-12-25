@@ -50,6 +50,83 @@ const MOCK_POSTS = [
   },
 ];
 
+const toMillis = (value: unknown): number => {
+  if (!value) return Date.now();
+  if (typeof value === "number") return Number.isFinite(value) ? value : Date.now();
+  if (typeof value === "string") {
+    const n = /^\d+$/.test(value) ? Number(value) : new Date(value).getTime();
+    return Number.isFinite(n) ? n : Date.now();
+  }
+  if (value instanceof Date) {
+    const n = value.getTime();
+    return Number.isFinite(n) ? n : Date.now();
+  }
+  if (typeof value === "object") {
+    const anyVal = value as any;
+    if (typeof anyVal.toMillis === "function") {
+      const n = anyVal.toMillis();
+      return typeof n === "number" && Number.isFinite(n) ? n : Date.now();
+    }
+    if (typeof anyVal.toDate === "function") {
+      const d = anyVal.toDate();
+      const n = d instanceof Date ? d.getTime() : NaN;
+      return Number.isFinite(n) ? n : Date.now();
+    }
+    if (typeof anyVal.seconds === "number") {
+      const nanos = typeof anyVal.nanoseconds === "number" ? anyVal.nanoseconds : 0;
+      const n = anyVal.seconds * 1000 + Math.floor(nanos / 1_000_000);
+      return Number.isFinite(n) ? n : Date.now();
+    }
+    if (typeof anyVal._seconds === "number") {
+      const nanos = typeof anyVal._nanoseconds === "number" ? anyVal._nanoseconds : 0;
+      const n = anyVal._seconds * 1000 + Math.floor(nanos / 1_000_000);
+      return Number.isFinite(n) ? n : Date.now();
+    }
+  }
+  return Date.now();
+};
+
+const normalizeAuthor = (value: unknown) => {
+  if (value && typeof value === "object") {
+    const anyVal = value as any;
+    const name = typeof anyVal.name === "string" && anyVal.name.trim() ? anyVal.name : "HireAll Team";
+    const email = typeof anyVal.email === "string" ? anyVal.email : "";
+    const id = typeof anyVal.id === "string" ? anyVal.id : "";
+    return { id, name, email };
+  }
+  if (typeof value === "string" && value.trim()) {
+    return { id: "", name: value, email: "" };
+  }
+  return { id: "", name: "HireAll Team", email: "" };
+};
+
+const normalizePost = (docId: string, data: Record<string, any>) => {
+  const title = typeof data.title === "string" ? data.title : "Untitled";
+  const slug = typeof data.slug === "string" ? data.slug : "";
+  const excerpt = typeof data.excerpt === "string" ? data.excerpt : "";
+  const content = typeof data.content === "string" ? data.content : "";
+  const category = typeof data.category === "string" ? data.category : "General";
+  const tags = Array.isArray(data.tags) ? data.tags.filter((t: any) => typeof t === "string") : [];
+
+  return {
+    _id: docId,
+    ...data,
+    title,
+    slug,
+    excerpt,
+    content,
+    category,
+    tags,
+    author: normalizeAuthor(data.author),
+    status: data.status || "published",
+    createdAt: toMillis(data.createdAt),
+    updatedAt: toMillis(data.updatedAt),
+    publishedAt: data.publishedAt ? toMillis(data.publishedAt) : undefined,
+    viewCount: typeof data.viewCount === "number" ? data.viewCount : 0,
+    likeCount: typeof data.likeCount === "number" ? data.likeCount : 0,
+  };
+};
+
 // Zod schema for query parameters
 const blogPostsQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
@@ -65,9 +142,9 @@ export const GET = withApi({
   querySchema: blogPostsQuerySchema,
 }, async ({ query }) => {
   const enableMockFallback = process.env.NEXT_PUBLIC_USE_BLOG_MOCK_FALLBACK === "false" ? false : true;
-  const isDevelopment = process.env.NODE_ENV === "development";
+  const forceMock = process.env.NEXT_PUBLIC_USE_BLOG_MOCK_FALLBACK === "true";
 
-  if (isDevelopment) {
+  if (forceMock) {
     return {
       posts: MOCK_POSTS,
       pagination: {
@@ -106,26 +183,27 @@ export const GET = withApi({
   const { page, limit, category, tag, search } = query;
 
   // Start with published posts only
-  let firestoreQuery = db.collection("blogPosts").where("status", "==", "published");
+  let firestoreQuery: any = db.collection("blogPosts").where("status", "==", "published");
 
   if (category) {
     firestoreQuery = firestoreQuery.where("category", "==", category);
   }
 
-  firestoreQuery = firestoreQuery.orderBy("createdAt", "desc");
+  // Prefer ordering in Firestore, but fall back if the query errors (e.g. missing index)
+  let snapshot;
+  try {
+    snapshot = await firestoreQuery.orderBy("createdAt", "desc").get();
+  } catch (e) {
+    snapshot = await firestoreQuery.get();
+  }
 
-  const snapshot = await firestoreQuery.get();
-
-  let posts = snapshot.docs.map((doc) => {
+  let posts = snapshot.docs.map((doc: any) => {
     const data = doc.data() as Record<string, any>;
-    return {
-      _id: doc.id,
-      ...data,
-      createdAt: data.createdAt?.toMillis?.() || data.createdAt || Date.now(),
-      updatedAt: data.updatedAt?.toMillis?.() || data.updatedAt || Date.now(),
-      publishedAt: data.publishedAt?.toMillis?.() || data.publishedAt,
-    };
+    return normalizePost(doc.id, data);
   });
+
+  // Ensure deterministic sort even if Firestore ordering was skipped
+  posts.sort((a: any, b: any) => (b.createdAt || 0) - (a.createdAt || 0));
 
   if (tag) {
     const tagLower = tag.toLowerCase();

@@ -1,0 +1,33 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1600" y2="900" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0B1220"/>
+      <stop offset="1" stop-color="#111827"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="300" y1="180" x2="1300" y2="720" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#60A5FA" stop-opacity="0.20"/>
+      <stop offset="1" stop-color="#A78BFA" stop-opacity="0.12"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <rect x="220" y="140" width="1160" height="620" rx="48" fill="url(#accent)" stroke="rgba(255,255,255,0.08)"/>
+
+  <g opacity="0.9">
+    <path d="M646 318C646 292.49 666.49 272 692 272H1040C1065.51 272 1086 292.49 1086 318V622C1086 647.51 1065.51 668 1040 668H692C666.49 668 646 647.51 646 622V318Z" fill="rgba(255,255,255,0.06)"/>
+    <path d="M708 346H1024" stroke="rgba(255,255,255,0.18)" stroke-width="10" stroke-linecap="round"/>
+    <path d="M708 402H982" stroke="rgba(255,255,255,0.14)" stroke-width="10" stroke-linecap="round"/>
+    <path d="M708 458H1006" stroke="rgba(255,255,255,0.12)" stroke-width="10" stroke-linecap="round"/>
+    <path d="M708 514H942" stroke="rgba(255,255,255,0.10)" stroke-width="10" stroke-linecap="round"/>
+  </g>
+
+  <g opacity="0.85">
+    <circle cx="560" cy="450" r="84" fill="rgba(96,165,250,0.20)"/>
+    <path d="M520 450C520 427.909 537.909 410 560 410C582.091 410 600 427.909 600 450C600 472.091 582.091 490 560 490C537.909 490 520 472.091 520 450Z" fill="rgba(255,255,255,0.14)"/>
+    <path d="M530 510C545 496 575 496 590 510" stroke="rgba(255,255,255,0.18)" stroke-width="10" stroke-linecap="round"/>
+  </g>
+
+  <text x="800" y="740" text-anchor="middle" fill="rgba(255,255,255,0.55)" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial" font-size="28">
+    Image unavailable
+  </text>
+</svg>

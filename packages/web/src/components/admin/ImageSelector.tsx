@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Search, Image as ImageIcon, X, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SafeNextImage } from "@/components/ui/SafeNextImage";
 import { pexelsApi } from "@/services/pexelsApi";
 import type { PexelsPhoto } from "@/types/pexels";
 import { showError } from "@/components/ui/Toast";
@@ -147,11 +148,15 @@ export function ImageSelector({ selectedImage, onImageSelect, onClose }: ImageSe
       {selectedPhoto && (
         <div className="p-3 bg-muted rounded-lg">
           <div className="flex items-center gap-3">
-            <img
-              src={selectedPhoto.src.small}
-              alt={selectedPhoto.alt}
-              className="w-16 h-16 object-cover rounded"
-            />
+            <div className="relative w-16 h-16 overflow-hidden rounded bg-muted">
+              <SafeNextImage
+                src={selectedPhoto.src.small}
+                alt={selectedPhoto.alt}
+                fill
+                sizes="64px"
+                className="object-cover"
+              />
+            </div>
             <div className="flex-1">
               <p className="text-sm font-medium">Selected Image</p>
               <p className="text-xs text-muted-foreground">
@@ -178,12 +183,15 @@ export function ImageSelector({ selectedImage, onImageSelect, onClose }: ImageSe
             }`}
             onClick={() => handlePhotoSelect(photo)}
           >
-            <img
-              src={photo.src.medium}
-              alt={photo.alt}
-              className="w-full h-32 object-cover"
-              loading="lazy"
-            />
+            <div className="relative w-full h-32">
+              <SafeNextImage
+                src={photo.src.medium}
+                alt={photo.alt}
+                fill
+                sizes="(max-width: 768px) 50vw, 25vw"
+                className="object-cover"
+              />
+            </div>
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
               <p className="text-white text-xs truncate">

@@ -15,10 +15,15 @@ async function getRequestBaseUrl(): Promise<string> {
 export async function generateMetadata({
   params,
 }: {
-  params: { slug: string };
+  params: { slug?: string } | Promise<{ slug?: string }>;
 }): Promise<Metadata> {
-  const { slug } = params;
-  const pathname = `/blog/${slug}`;
+  const resolvedParams = (params as any)?.then ? await (params as Promise<{ slug?: string }>) : (params as { slug?: string });
+  const slug = typeof resolvedParams?.slug === "string" ? resolvedParams.slug : "";
+  const pathname = slug ? `/blog/${slug}` : "/blog";
+
+  if (!slug) {
+    return generatePageMetadata(pathname);
+  }
 
   try {
     const baseUrl = await getRequestBaseUrl();
@@ -28,7 +33,9 @@ export async function generateMetadata({
     });
 
     if (res.ok) {
-      const post = (await res.json()) as BlogPost;
+      const json = await res.json();
+      // withApi wraps responses as { success, data, meta }
+      const post = ((json?.data ?? json) as BlogPost) ?? ({} as BlogPost);
       const ogImage = post.featuredImage ? getOgImageUrl(post.featuredImage) : undefined;
       return generatePageMetadata(pathname, {
         title: `${post.title} | HireAll`,

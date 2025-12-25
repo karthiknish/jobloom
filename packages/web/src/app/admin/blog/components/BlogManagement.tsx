@@ -99,7 +99,7 @@ export function BlogManagement() {
       }
     };
     checkAdminAccess();
-  }, [user]);
+  }, [user?.uid]);
 
   // Fetch blog posts and stats
   const fetchPosts = useCallback(async (status?: string) => {

@@ -9,7 +9,14 @@ import { withApi } from "@/lib/api/withApi";
 export const GET = withApi({
   auth: "none",
 }, async () => {
-  const db = getAdminDb();
+  let db;
+  try {
+    db = getAdminDb();
+  } catch (e) {
+    const response = NextResponse.json({ slugs: [], count: 0 });
+    response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=3600');
+    return response;
+  }
   
   const postsSnapshot = await db.collection("blogPosts")
     .where("status", "==", "published")
