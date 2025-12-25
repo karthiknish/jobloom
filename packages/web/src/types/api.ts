@@ -265,7 +265,6 @@ export interface SubscriptionLimits {
   advancedAnalytics: boolean;
   prioritySupport: boolean;
   customAlerts: boolean;
-  teamCollaboration: boolean;
   apiAccess: boolean;
   apiRateLimit: number; // requests per minute
 }
@@ -304,7 +303,6 @@ export const SUBSCRIPTION_LIMITS: Record<SubscriptionPlan, SubscriptionLimits> =
     advancedAnalytics: false,
     prioritySupport: false,
     customAlerts: false,
-    teamCollaboration: false,
     apiAccess: false,
     apiRateLimit: 10,
   },
@@ -315,7 +313,6 @@ export const SUBSCRIPTION_LIMITS: Record<SubscriptionPlan, SubscriptionLimits> =
     advancedAnalytics: true,
     prioritySupport: true,
     customAlerts: true,
-    teamCollaboration: true,
     apiAccess: true,
     apiRateLimit: 200,
   },

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { dashboardApi } from "@/utils/api/dashboard";
 import { showSuccess, showError } from "@/components/ui/Toast";
 import { useOnboardingState } from "@/hooks/useOnboardingState";
+import { useSubscription } from "@/providers/subscription-provider";
 
 interface JobFormData {
   title: string;
@@ -20,9 +21,26 @@ interface JobFormData {
 export function useJobManagement(onRefetchJobStats: () => void) {
   const [showJobForm, setShowJobForm] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const onboarding = useOnboardingState();
+  const { canUseFeature, currentUsage, limits } = useSubscription();
+
+  const checkApplicationLimit = (): boolean => {
+    const usage = currentUsage?.applications ?? 0;
+    const canAdd = canUseFeature("applicationsPerMonth", usage);
+    if (!canAdd) {
+      setShowUpgradePrompt(true);
+      return false;
+    }
+    return true;
+  };
 
   const handleJobSubmit = async (data: JobFormData) => {
+    // Check application limit before creating job
+    if (!checkApplicationLimit()) {
+      return;
+    }
+
     try {
       await dashboardApi.createJob(data as unknown as Record<string, unknown>);
       await onRefetchJobStats();
@@ -46,6 +64,11 @@ export function useJobManagement(onRefetchJobStats: () => void) {
     setShowJobForm,
     showImportModal,
     setShowImportModal,
+    showUpgradePrompt,
+    setShowUpgradePrompt,
     handleJobSubmit,
+    checkApplicationLimit,
+    applicationLimit: limits.applicationsPerMonth,
+    currentApplications: currentUsage?.applications ?? 0,
   };
 }

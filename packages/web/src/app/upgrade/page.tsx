@@ -97,7 +97,6 @@ export default function UpgradePage() {
         "CSV, JSON & PDF exports",
         "Custom job alerts",
         "Priority support",
-        "Team collaboration tools",
         "AI-powered recommendations",
         "Professional templates",
       ],

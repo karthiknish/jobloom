@@ -36,6 +36,7 @@ import { DashboardAnalytics } from "@/components/dashboard/DashboardAnalytics";
 import { DashboardEmptyState } from "@/components/dashboard/DashboardEmptyState";
 import { DashboardJobsView } from "@/components/dashboard/DashboardJobsView";
 import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeletons";
+import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { Application, DashboardView, BoardMode } from "@/types/dashboard";
 import { FileText, Target, TrendingUp, Calendar, Briefcase, Sparkles, AlertCircle, Bell, X } from "lucide-react";
 import { useRestoreFocus } from "@/hooks/useRestoreFocus";
@@ -174,6 +175,8 @@ export function Dashboard() {
     setShowJobForm,
     showImportModal,
     setShowImportModal,
+    showUpgradePrompt,
+    setShowUpgradePrompt,
     handleJobSubmit,
   } = jobManagement;
 
@@ -456,6 +459,21 @@ export function Dashboard() {
             handleEditApplication(app);
           }}
         />
+
+        {/* Upgrade prompt for applications limit */}
+        <Dialog open={showUpgradePrompt} onOpenChange={setShowUpgradePrompt}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Application Limit Reached</DialogTitle>
+              <DialogDescription>
+                You&apos;ve reached your monthly limit of 50 job applications. Upgrade to Premium for unlimited applications.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <UpgradePrompt feature="applicationsPerMonth" />
+            </div>
+          </DialogContent>
+        </Dialog>
 
         <WelcomeDialog />
       </div>
