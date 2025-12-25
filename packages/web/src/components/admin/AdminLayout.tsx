@@ -149,7 +149,7 @@ export function AdminLayout({ children, title }: AdminLayoutProps) {
             "flex h-16 items-center border-b border-gray-200",
             isCollapsed ? "justify-center px-2" : "justify-between px-4"
           )}>
-            <Link href="/admin" className="flex items-center gap-2 font-bold text-xl">
+            <Link href="/admin" prefetch={false} className="flex items-center gap-2 font-bold text-xl">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-sm">
                 H
               </div>
@@ -186,6 +186,7 @@ export function AdminLayout({ children, title }: AdminLayoutProps) {
                     <Link
                       key={item.href}
                       href={item.href}
+                      prefetch={false}
                       className={cn(
                         "group relative flex items-center rounded-lg motion-control",
                         isCollapsed ? "justify-center p-3" : "px-3 py-2.5",
@@ -274,6 +275,7 @@ export function AdminLayout({ children, title }: AdminLayoutProps) {
                   <TooltipTrigger asChild>
                     <Link
                       href="/"
+                      prefetch={false}
                       className="flex items-center justify-center p-3 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors mb-4"
                     >
                       <Settings className="h-5 w-5" />
@@ -286,6 +288,7 @@ export function AdminLayout({ children, title }: AdminLayoutProps) {
               ) : (
                 <Link
                   href="/"
+                  prefetch={false}
                   className="flex items-center px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors mb-4"
                 >
                   <Settings className="h-5 w-5 mr-3" />
@@ -382,7 +385,7 @@ export function AdminLayout({ children, title }: AdminLayoutProps) {
                 <span className="sr-only">Open menu</span>
               </Button>
               <div className="flex items-center gap-2 text-sm">
-                <Link href="/admin" className="text-gray-500 hover:text-gray-700 transition-colors">
+                <Link href="/admin" prefetch={false} className="text-gray-500 hover:text-gray-700 transition-colors">
                   Admin
                 </Link>
                 {pathname !== "/admin" && (

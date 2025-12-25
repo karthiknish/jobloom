@@ -217,12 +217,14 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       } catch (error) {
         console.error("Error fetching subscription:", error);
 
+        const err = error as any;
+
         // If rate-limited, back off for the server-advised duration to avoid repeated logs.
         const retryAfterSeconds =
-          typeof error?.retryAfter === "number" ? error.retryAfter :
-          typeof error?.details?.retryAfter === "number" ? error.details.retryAfter :
+          typeof err?.retryAfter === "number" ? err.retryAfter :
+          typeof err?.details?.retryAfter === "number" ? err.details.retryAfter :
           0;
-        if (error?.status === 429 || error?.code === "RATE_LIMIT_EXCEEDED") {
+        if (err?.status === 429 || err?.code === "RATE_LIMIT_EXCEEDED") {
           const until = Date.now() + Math.max(15, retryAfterSeconds || 60) * 1000;
           setCooldownUntil(user.uid, until);
         }

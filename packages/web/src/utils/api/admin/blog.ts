@@ -26,6 +26,22 @@ export const blogApi = {
     });
   },
 
+  getBlogPost: async (postId: string): Promise<any> => {
+    await verifyAdminAccess();
+
+    const auth = getAuthClient();
+    if (!auth?.currentUser) {
+      throw new Error("Authentication required");
+    }
+
+    const token = await auth.currentUser.getIdToken();
+    return apiClient.get(`/blog/admin/posts/${postId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
+
   getBlogStats: async (): Promise<any> => {
     // Verify admin access before fetching blog stats
     await verifyAdminAccess();

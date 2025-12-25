@@ -134,7 +134,11 @@ export const verifyAdminAccess = async () => {
 
   const inFlight = (async () => {
     try {
-      const token = await auth.currentUser.getIdToken();
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        throw new Error("Authentication required");
+      }
+      const token = await currentUser.getIdToken();
       const data = await apiClient.post<any>(
         "/admin/verify",
         {},

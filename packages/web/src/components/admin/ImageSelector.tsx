@@ -34,13 +34,17 @@ export function ImageSelector({ selectedImage, onImageSelect, onClose }: ImageSe
         per_page: 20,
       });
 
+      const nextPhotos: PexelsPhoto[] = Array.isArray((response as any)?.photos)
+        ? (response as any).photos
+        : [];
+
       if (pageNum === 1) {
-        setPhotos(response.photos);
+        setPhotos(nextPhotos);
       } else {
-        setPhotos(prev => [...prev, ...response.photos]);
+        setPhotos((prev) => [...prev, ...nextPhotos]);
       }
 
-      setHasMore(response.photos.length === 20);
+      setHasMore(nextPhotos.length === 20);
       setPage(pageNum);
     } catch (error) {
       console.error("Error searching photos:", error);
@@ -60,8 +64,11 @@ export function ImageSelector({ selectedImage, onImageSelect, onClose }: ImageSe
       setLoading(true);
       try {
         const response = await pexelsApi.getCuratedPhotos({ per_page: 20 });
-        setPhotos(response.photos);
-        setHasMore(response.photos.length === 20);
+        const nextPhotos: PexelsPhoto[] = Array.isArray((response as any)?.photos)
+          ? (response as any).photos
+          : [];
+        setPhotos(nextPhotos);
+        setHasMore(nextPhotos.length === 20);
       } catch (error) {
         console.error("Error loading curated photos:", error);
         if (error instanceof Error) {
@@ -98,8 +105,11 @@ export function ImageSelector({ selectedImage, onImageSelect, onClose }: ImageSe
             page: page + 1,
             per_page: 20
           });
-          setPhotos(prev => [...prev, ...response.photos]);
-          setHasMore(response.photos.length === 20);
+          const nextPhotos: PexelsPhoto[] = Array.isArray((response as any)?.photos)
+            ? (response as any).photos
+            : [];
+          setPhotos((prev) => [...prev, ...nextPhotos]);
+          setHasMore(nextPhotos.length === 20);
           setPage(prev => prev + 1);
         } catch (error) {
           console.error("Error loading more photos:", error);

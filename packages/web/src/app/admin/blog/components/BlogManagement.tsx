@@ -14,9 +14,9 @@ import { BlogFilters } from "./BlogFilters";
 import { BlogTable } from "./BlogTable";
 import { BlogPagination } from "./BlogPagination";
 import { BulkActions } from "./BulkActions";
-import { CreatePostDialog, type CreatePostData } from "./CreatePostDialog";
 import type { BlogPost } from "@/types/api";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useRouter } from "next/navigation";
 
 function BlogManagementSkeleton() {
   return (
@@ -74,6 +74,7 @@ function BlogManagementSkeleton() {
 }
 
 export function BlogManagement() {
+  const router = useRouter();
   const { user } = useFirebaseAuth();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -81,8 +82,6 @@ export function BlogManagement() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(10);
   const [selectedPosts, setSelectedPosts] = useState<string[]>([]);
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
 
   // Check admin access
   useEffect(() => {
@@ -133,13 +132,8 @@ export function BlogManagement() {
     "admin-blog-stats"
   );
 
-  // Mutations
-  const createPostMutation = useApiMutation(async (data: CreatePostData) => {
-    return adminApi.blog.createBlogPost(data);
-  });
-
   const updatePostMutation = useApiMutation(
-    async ({ postId, data }: { postId: string; data: Partial<CreatePostData> }) => {
+    async ({ postId, data }: { postId: string; data: any }) => {
       return adminApi.blog.updateBlogPost(postId, data);
     }
   );
@@ -171,27 +165,8 @@ export function BlogManagement() {
     setSelectedPosts([]);
   }, [searchTerm, statusFilter]);
 
-  // Handlers
-  const handleCreatePost = async (data: CreatePostData) => {
-    try {
-      if (editingPost) {
-        await updatePostMutation.mutate({ postId: editingPost._id, data });
-        showSuccess("Post updated successfully");
-      } else {
-        await createPostMutation.mutate(data);
-        showSuccess("Post created successfully");
-      }
-      setIsCreateDialogOpen(false);
-      setEditingPost(null);
-      refetchPosts();
-    } catch (error) {
-      showError(editingPost ? "Failed to update post" : "Failed to create post");
-    }
-  };
-
   const handleEditPost = (post: BlogPost) => {
-    setEditingPost(post);
-    setIsCreateDialogOpen(true);
+    router.push(`/admin/blog/edit/${post._id}`);
   };
 
   const handleDeletePost = async (postId: string) => {
@@ -344,7 +319,7 @@ export function BlogManagement() {
             onSearchChange={setSearchTerm}
             statusFilter={statusFilter}
             onStatusFilterChange={setStatusFilter}
-            onCreatePost={() => setIsCreateDialogOpen(true)}
+            onCreatePost={() => router.push("/admin/blog/new")}
             selectedCount={selectedPosts.length}
             onClearSelection={() => setSelectedPosts([])}
           />
@@ -414,17 +389,6 @@ export function BlogManagement() {
         </Card>
       </motion.div>
 
-      {/* Create Post Dialog */}
-      <CreatePostDialog
-        open={isCreateDialogOpen}
-        onOpenChange={(open) => {
-          setIsCreateDialogOpen(open);
-          if (!open) setEditingPost(null);
-        }}
-        onSubmit={handleCreatePost}
-        isSubmitting={createPostMutation.loading || updatePostMutation.loading}
-        initialData={editingPost}
-      />
     </motion.div>
     </AdminLayout>
   );

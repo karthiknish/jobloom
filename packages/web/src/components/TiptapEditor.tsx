@@ -2,6 +2,7 @@
 
 import { useEditor, EditorContent } from "@tiptap/react";
 import { BubbleMenu, FloatingMenu } from "@tiptap/react/menus";
+import { DOMParser as ProseMirrorDOMParser } from "prosemirror-model";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import CharacterCount from "@tiptap/extension-character-count";
@@ -70,6 +71,173 @@ import { aiApi } from "@/utils/api/ai";
 import { cn } from "@/lib/utils";
 
 const lowlight = createLowlight(common);
+
+function looksLikeMarkdown(text: string): boolean {
+  const value = (text || "").trim();
+  if (value.length < 2) return false;
+
+  // Common multi-line markdown patterns
+  if (value.includes("\n")) {
+    if (/^#{1,6}\s/m.test(value)) return true;
+    if (/^>\s/m.test(value)) return true;
+    if (/^\s*[-*+]\s+/m.test(value)) return true;
+    if (/^\s*\d+\.\s+/m.test(value)) return true;
+    if (/```[\s\S]*```/m.test(value)) return true;
+  }
+
+  // Single-line patterns
+  if (/^#{1,6}\s+/.test(value)) return true;
+  if (/^\s*[-*+]\s+/.test(value)) return true;
+  if (/^\s*\d+\.\s+/.test(value)) return true;
+
+  // Links / emphasis
+  if (/\[[^\]]+\]\([^\)]+\)/.test(value)) return true;
+  if (/(\*\*[^*]+\*\*)|(__[^_]+__)|(_[^_]+_)|(\*[^*]+\*)/.test(value)) return true;
+
+  return false;
+}
+
+function looksLikeHtml(text: string): boolean {
+  const value = (text || "").trim();
+  if (!value) return false;
+  // Very small heuristic: if it starts with a tag or contains typical block tags.
+  if (/^<([a-z][\w-]*)(\s[^>]*)?>/i.test(value)) return true;
+  if (/<\/(p|h1|h2|h3|ul|ol|li|blockquote|pre|code)>/i.test(value)) return true;
+  return false;
+}
+
+function normalizeIncomingContent(raw: string): string {
+  const value = raw || "";
+  if (!value.trim()) return "";
+  if (looksLikeHtml(value)) return value;
+  if (looksLikeMarkdown(value)) return markdownToHtml(value);
+
+  // Plain text fallback: preserve newlines as paragraphs.
+  const lines = value.replace(/\r\n/g, "\n").split("\n").map((l) => l.trim());
+  const nonEmpty = lines.filter(Boolean);
+  if (nonEmpty.length === 0) return "";
+  return nonEmpty.map((l) => `<p>${l.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>`).join("\n");
+}
+
+function markdownToHtml(markdown: string): string {
+  const input = (markdown || "").replace(/\r\n/g, "\n");
+  const lines = input.split("\n");
+
+  const escapeHtml = (value: string) =>
+    value
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/\"/g, "&quot;");
+
+  const inline = (value: string) => {
+    let v = escapeHtml(value);
+    v = v.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+    v = v.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+    v = v.replace(/__([^_]+)__/g, "<strong>$1</strong>");
+    v = v.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+    v = v.replace(/_([^_]+)_/g, "<em>$1</em>");
+    v = v.replace(/`([^`]+)`/g, "<code>$1</code>");
+    return v;
+  };
+
+  const out: string[] = [];
+  let inCode = false;
+  let inUl = false;
+  let inOl = false;
+  let inBlockquote = false;
+
+  const closeListsAndQuote = () => {
+    if (inUl) {
+      out.push("</ul>");
+      inUl = false;
+    }
+    if (inOl) {
+      out.push("</ol>");
+      inOl = false;
+    }
+    if (inBlockquote) {
+      out.push("</blockquote>");
+      inBlockquote = false;
+    }
+  };
+
+  for (const rawLine of lines) {
+    const line = rawLine ?? "";
+
+    if (/^```/.test(line.trim())) {
+      closeListsAndQuote();
+      if (!inCode) {
+        out.push("<pre><code>");
+        inCode = true;
+      } else {
+        out.push("</code></pre>");
+        inCode = false;
+      }
+      continue;
+    }
+
+    if (inCode) {
+      out.push(escapeHtml(line));
+      continue;
+    }
+
+    if (line.trim() === "") {
+      closeListsAndQuote();
+      continue;
+    }
+
+    const headingMatch = line.match(/^(#{1,6})\s+(.*)$/);
+    if (headingMatch) {
+      closeListsAndQuote();
+      const level = headingMatch[1].length;
+      out.push(`<h${level}>${inline(headingMatch[2])}</h${level}>`);
+      continue;
+    }
+
+    const quoteMatch = line.match(/^>\s?(.*)$/);
+    if (quoteMatch) {
+      if (!inBlockquote) {
+        closeListsAndQuote();
+        out.push("<blockquote>");
+        inBlockquote = true;
+      }
+      out.push(`<p>${inline(quoteMatch[1])}</p>`);
+      continue;
+    }
+
+    const ulMatch = line.match(/^\s*[-*+]\s+(.*)$/);
+    if (ulMatch) {
+      if (!inUl) {
+        closeListsAndQuote();
+        out.push("<ul>");
+        inUl = true;
+      }
+      out.push(`<li>${inline(ulMatch[1])}</li>`);
+      continue;
+    }
+
+    const olMatch = line.match(/^\s*(\d+)\.\s+(.*)$/);
+    if (olMatch) {
+      if (!inOl) {
+        closeListsAndQuote();
+        out.push("<ol>");
+        inOl = true;
+      }
+      out.push(`<li>${inline(olMatch[2])}</li>`);
+      continue;
+    }
+
+    closeListsAndQuote();
+    out.push(`<p>${inline(line)}</p>`);
+  }
+
+  if (inCode) out.push("</code></pre>");
+  closeListsAndQuote();
+
+  return out.join("\n");
+}
+
 
 interface TiptapEditorProps {
   content: string;
@@ -146,6 +314,35 @@ const MenuBar = ({ editor }: { editor: any }) => {
     } finally {
       setIsGenerating(false);
     }
+  }, [editor]);
+
+  const convertMarkdown = useCallback(() => {
+    if (!editor) return;
+
+    const { from, to, empty } = editor.state.selection;
+    const selectedText = empty
+      ? ""
+      : editor.state.doc.textBetween(from, to, "\n");
+
+    const source = selectedText.trim().length ? selectedText : editor.getText();
+    if (!looksLikeMarkdown(source)) {
+      showError("No Markdown detected to convert.");
+      return;
+    }
+
+    const html = markdownToHtml(source);
+    if (!html.trim()) {
+      showError("Could not convert Markdown.");
+      return;
+    }
+
+    if (selectedText.trim().length) {
+      editor.chain().focus().insertContentAt({ from, to }, html).run();
+    } else {
+      editor.commands.setContent(html);
+    }
+
+    showSuccess("Converted Markdown to rich text.");
   }, [editor]);
 
   // AI Quick Actions
@@ -304,6 +501,9 @@ const MenuBar = ({ editor }: { editor: any }) => {
                 {editor.isActive("heading", { level: 1 }) ? "H1" :
                  editor.isActive("heading", { level: 2 }) ? "H2" :
                  editor.isActive("heading", { level: 3 }) ? "H3" :
+                 editor.isActive("heading", { level: 4 }) ? "H4" :
+                 editor.isActive("heading", { level: 5 }) ? "H5" :
+                 editor.isActive("heading", { level: 6 }) ? "H6" :
                  "Paragraph"}
               </span>
               <MoreHorizontal className="h-3 w-3 opacity-50" />
@@ -321,6 +521,15 @@ const MenuBar = ({ editor }: { editor: any }) => {
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}>
               Heading 3
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => editor.chain().focus().toggleHeading({ level: 4 }).run()}>
+              Heading 4
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => editor.chain().focus().toggleHeading({ level: 5 }).run()}>
+              Heading 5
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => editor.chain().focus().toggleHeading({ level: 6 }).run()}>
+              Heading 6
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -371,6 +580,17 @@ const MenuBar = ({ editor }: { editor: any }) => {
 
       {/* Insert Group */}
       <div className="flex items-center gap-0.5">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={convertMarkdown}
+          className="h-8 px-2 gap-1"
+          title="Convert Markdown (selection or whole document)"
+        >
+          <Code className="h-4 w-4" />
+          <span className="text-xs hidden sm:inline">MD</span>
+        </Button>
+
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Insert Image">
@@ -517,6 +737,8 @@ export function TiptapEditor({
   placeholder = "Start writing...",
   className = "",
 }: TiptapEditorProps) {
+  const normalizedContent = normalizeIncomingContent(content);
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -566,7 +788,7 @@ export function TiptapEditor({
       Subscript,
       Superscript,
     ],
-    content,
+    content: normalizedContent,
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
@@ -574,18 +796,46 @@ export function TiptapEditor({
       attributes: {
         class: "prose prose-sm sm:prose-base lg:prose-lg xl:prose-xl mx-auto focus:outline-none min-h-[300px] p-6 max-w-none",
       },
+      handlePaste: (view, event) => {
+        try {
+          const clipboard = event.clipboardData;
+          if (!clipboard) return false;
+
+          // If HTML exists, let TipTap handle it.
+          const html = clipboard.getData("text/html");
+          if (html && html.trim()) return false;
+
+          const text = clipboard.getData("text/plain");
+          if (!text || !looksLikeMarkdown(text)) return false;
+
+          const converted = markdownToHtml(text);
+          if (!converted.trim()) return false;
+
+          const dom = document.createElement("div");
+          dom.innerHTML = converted;
+
+          const parser = ProseMirrorDOMParser.fromSchema(view.state.schema);
+          const slice = parser.parseSlice(dom, { preserveWhitespace: true });
+
+          const tr = view.state.tr.replaceSelection(slice);
+          view.dispatch(tr);
+          return true;
+        } catch {
+          return false;
+        }
+      },
     },
     immediatelyRender: false,
   });
 
   // Sync content when it changes externally (e.g., when editing an existing post)
   useEffect(() => {
-    if (editor && content !== editor.getHTML()) {
-      // Only update if content actually differs to avoid cursor position issues
-      const currentContent = editor.getHTML();
-      if (content !== currentContent && content !== "") {
-        editor.commands.setContent(content, { emitUpdate: false });
-      }
+    if (!editor) return;
+
+    const incoming = normalizeIncomingContent(content);
+    const currentContent = editor.getHTML();
+    if (incoming && incoming !== currentContent) {
+      editor.commands.setContent(incoming, { emitUpdate: false });
     }
   }, [content, editor]);
 
@@ -597,7 +847,12 @@ export function TiptapEditor({
       <MenuBar editor={editor} />
       
       {editor && (
-        <BubbleMenu editor={editor}>
+        <BubbleMenu
+          editor={editor}
+          appendTo={() => document.body}
+          options={{ strategy: "fixed" }}
+          style={{ zIndex: 10000 }}
+        >
           <div className="flex items-center gap-1 p-1 bg-background border border-border rounded-lg shadow-lg">
             <Button
               variant={editor.isActive("bold") ? "secondary" : "ghost"}
@@ -636,7 +891,12 @@ export function TiptapEditor({
       )}
 
       {editor && (
-        <FloatingMenu editor={editor}>
+        <FloatingMenu
+          editor={editor}
+          appendTo={() => document.body}
+          options={{ strategy: "fixed" }}
+          style={{ zIndex: 10000 }}
+        >
           <div className="flex items-center gap-1 p-1 bg-background border border-border rounded-lg shadow-lg">
             <Button
               variant={editor.isActive("heading", { level: 1 }) ? "secondary" : "ghost"}
@@ -653,6 +913,15 @@ export function TiptapEditor({
               className="h-8 w-8 p-0"
             >
               <Heading2 className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={editor.isActive("heading", { level: 3 }) ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+              className="h-8 w-8 p-0"
+              title="Heading 3"
+            >
+              <Heading3 className="h-4 w-4" />
             </Button>
             <Button
               variant={editor.isActive("bulletList") ? "secondary" : "ghost"}

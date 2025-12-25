@@ -1,4 +1,5 @@
 import { PexelsApiError, type PexelsPhoto, type PexelsSearchResponse } from "@/types/pexels";
+import { getAuthClient } from "@/firebase/client";
 
 const ORIENTATION_VALUES = ["landscape", "portrait", "square"] as const;
 const ORIENTATION_WHITELIST = new Set<string>(ORIENTATION_VALUES);
@@ -35,10 +36,28 @@ class PexelsApiClient {
     const searchParams = new URLSearchParams(params);
     const url = `${this.apiBase}/api/pexels${endpoint}${searchParams.size ? `?${searchParams.toString()}` : ""}`;
 
+    const headers: Record<string, string> = {
+      Accept: "application/json",
+    };
+
+    // These endpoints are admin-protected, so include a Firebase ID token when available.
+    if (typeof window !== "undefined") {
+      const auth = getAuthClient();
+      const user = auth?.currentUser;
+      if (user) {
+        try {
+          const token = await user.getIdToken();
+          headers.Authorization = `Bearer ${token}`;
+        } catch {
+          // If token retrieval fails, let the request go through; API will respond with 401.
+        }
+      }
+    }
+
     const response = await fetch(url, {
       method: "GET",
       headers: {
-        Accept: "application/json",
+        ...headers,
       },
       credentials: "same-origin",
       cache: "no-store",
@@ -66,7 +85,15 @@ class PexelsApiClient {
       throw new PexelsApiError(message, response.status);
     }
 
-    return response.json() as Promise<T>;
+    const json = await response.json().catch(() => null);
+
+    // Most API routes in this app use an envelope: { success, data, meta }.
+    // Pexels routes are implemented with the same helper, so unwrap when present.
+    if (json && typeof json === "object" && "data" in (json as any)) {
+      return (json as any).data as T;
+    }
+
+    return json as T;
   }
 
   /**

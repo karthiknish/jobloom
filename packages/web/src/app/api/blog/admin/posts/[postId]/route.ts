@@ -20,6 +20,38 @@ const blogPostUpdateSchema = z.object({
   featuredImage: z.string().url().nullable().optional(),
 });
 
+// GET /api/blog/admin/posts/[postId] - Get a single blog post for admin
+export const GET = withApi({
+  auth: "admin",
+  rateLimit: "blog-admin",
+  paramsSchema: postIdParamsSchema,
+}, async ({ params }) => {
+  const { postId } = params;
+
+  const postRef = db.collection("blogPosts").doc(postId);
+  const postDoc = await postRef.get();
+
+  if (!postDoc.exists) {
+    throw new Error("Post not found");
+  }
+
+  const data = postDoc.data() || {};
+
+  const createdAt = (data as any).createdAt?.toMillis?.() ?? (data as any).createdAt ?? null;
+  const updatedAt = (data as any).updatedAt?.toMillis?.() ?? (data as any).updatedAt ?? null;
+  const publishedAt = (data as any).publishedAt?.toMillis?.() ?? (data as any).publishedAt ?? null;
+
+  return {
+    post: {
+      _id: postDoc.id,
+      ...(data as any),
+      createdAt,
+      updatedAt,
+      publishedAt,
+    },
+  };
+});
+
 // PUT /api/blog/admin/posts/[postId] - Update a blog post
 export const PUT = withApi({
   auth: "admin",
