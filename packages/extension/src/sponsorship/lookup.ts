@@ -1,5 +1,6 @@
-import { get, post } from "../apiClient";
+import { post } from "../apiClient";
 import { isLikelyPlaceholderCompany, normalizeCompanyName } from "../utils/companyName";
+import { sponsorshipCache } from "./cache";
 
 export interface SponsorLookupResult {
   id?: string;
@@ -42,9 +43,6 @@ interface SponsorCheckResponse {
   processingTime?: number;
 }
 
-const sponsorshipCache = new Map<string, SponsorLookupResult | null>();
-const sponsorshipInFlight = new Map<string, Promise<SponsorLookupResult | null>>();
-
 function mapCheckResponseToResult(response: SponsorCheckResponse): SponsorLookupResult | null {
   if (!response.found || !response.sponsor) {
     return null;
@@ -75,6 +73,10 @@ export interface SponsorLookupOptions {
   location?: string;
 }
 
+/**
+ * Fetch sponsor record from API with caching and deduplication.
+ * Uses shared sponsorshipCache to prevent duplicate lookups across components.
+ */
 export async function fetchSponsorRecord(
   company: string,
   options?: SponsorLookupOptions
@@ -87,82 +89,68 @@ export async function fetchSponsorRecord(
   }
 
   // Include location in cache key if provided
-  const cacheKey = options?.city || options?.location 
+  const cacheKey = `lookup:${options?.city || options?.location 
     ? `${key}:${(options.city || options.location || '').toLowerCase()}`
-    : key;
+    : key}`;
 
-  if (sponsorshipCache.has(cacheKey)) {
-    console.debug("Hireall: Using cached sponsor result for", company);
-    return sponsorshipCache.get(cacheKey) ?? null;
-  }
-
-  if (sponsorshipInFlight.has(cacheKey)) {
-    return sponsorshipInFlight.get(cacheKey) ?? null;
-  }
-
-  // NOTE: Do NOT wrap in runWithSponsorLimit here.
-  // SponsorshipManager.fetchSponsorRecord already handles batch limiting.
-  // Double-queuing causes deadlock where outer task waits for inner task that's behind it in queue.
-  const lookupPromise = (async () => {
-    const startTime = Date.now();
-    try {
-      console.log(`[Hireall:Sponsor] Starting API call for "${company}"`);
-      
-      // Use the new dedicated check endpoint - requires authentication
-      const checkResponse = await post<SponsorCheckResponse>("/api/app/sponsorship/check", {
-        company: normalizedCompany,
-        city: options?.city,
-        location: options?.location,
-      }, true, {  // true = require auth
-        timeout: 10000, // 10 second timeout
-        retryCount: 0,  // No retries for faster response
-      });
-      
-      const elapsed = Date.now() - startTime;
-      console.log(`[Hireall:Sponsor] API responded in ${elapsed}ms for "${company}"`, {
-        found: checkResponse.found,
-        confidence: checkResponse.matchDetails?.confidence,
-      });
-
-
-      if (checkResponse.found && checkResponse.sponsor) {
-        const result = mapCheckResponseToResult(checkResponse);
+  // Use shared cache with automatic deduplication
+  return sponsorshipCache.getOrFetch<SponsorLookupResult | null>(
+    cacheKey,
+    async () => {
+      const startTime = Date.now();
+      try {
+        console.log(`[Hireall:Sponsor] Starting API call for "${company}"`);
         
-        if (result) {
-          console.debug("Hireall: Sponsor found:", {
-            name: result.name,
-            confidence: result.matchConfidence,
-            nameMatch: result.nameMatch,
-            locationMatch: result.locationMatch,
-          });
+        // Use the new dedicated check endpoint - requires authentication
+        const checkResponse = await post<SponsorCheckResponse>("/api/app/sponsorship/check", {
+          company: normalizedCompany,
+          city: options?.city,
+          location: options?.location,
+        }, true, {  // true = require auth
+          timeout: 10000, // 10 second timeout
+          retryCount: 0,  // No retries for faster response
+        });
+        
+        const elapsed = Date.now() - startTime;
+        console.log(`[Hireall:Sponsor] API responded in ${elapsed}ms for "${company}"`, {
+          found: checkResponse.found,
+          confidence: checkResponse.matchDetails?.confidence,
+        });
+
+        if (checkResponse.found && checkResponse.sponsor) {
+          const result = mapCheckResponseToResult(checkResponse);
           
-          sponsorshipCache.set(cacheKey, result);
-          sponsorshipCache.set(key, result); // Also cache without location
-          return result;
+          if (result) {
+            console.debug("Hireall: Sponsor found:", {
+              name: result.name,
+              confidence: result.matchConfidence,
+              nameMatch: result.nameMatch,
+              locationMatch: result.locationMatch,
+            });
+            
+            // Also cache without location for broader matches
+            const baseKey = `lookup:${key}`;
+            if (cacheKey !== baseKey) {
+              sponsorshipCache.set(baseKey, result);
+            }
+            
+            return result;
+          }
         }
+
+        console.debug("Hireall: No sponsor match found for:", company);
+        return null;
+
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        console.warn("Hireall: Sponsor check failed:", errorMsg);
+        // Return null (will be cached to avoid repeated failures)
+        return null;
       }
-
-      console.debug("Hireall: No sponsor match found for:", company);
-      sponsorshipCache.set(cacheKey, null);
-      return null;
-
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : String(error);
-      console.warn("Hireall: Sponsor check failed:", errorMsg);
-      // Cache null to avoid repeated failures
-      sponsorshipCache.set(cacheKey, null);
-      return null;
-    } finally {
-      sponsorshipInFlight.delete(cacheKey);
     }
-  })();
-
-  sponsorshipInFlight.set(cacheKey, lookupPromise);
-  return lookupPromise;
+  );
 }
 
 export function clearSponsorLookupCache(): void {
   sponsorshipCache.clear();
-  sponsorshipInFlight.clear();
 }
-

@@ -31,7 +31,7 @@ import { Switch } from "@/components/ui/switch";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { useSubscription } from "@/providers/subscription-provider";
 import { showSuccess, showError, showInfo } from "@/components/ui/Toast";
-import { apiClient } from "@/lib/api/client";
+import { aiApi } from "@/utils/api/ai";
 import PDFGenerator, { PDFOptions } from "@/lib/pdfGenerator";
 import { cn } from "@/lib/utils";
 
@@ -142,7 +142,7 @@ export function AICoverLetterGenerator() {
     setIsGenerating(true);
     
     try {
-      const payload = await apiClient.post<GeneratedCoverLetter>("/ai/cover-letter", {
+      const payload = await aiApi.generateCoverLetter({
         ...formData,
         atsOptimization,
         keywordFocus,

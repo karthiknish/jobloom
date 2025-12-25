@@ -19,10 +19,9 @@ import { AdminAccessDenied } from "@/components/admin/AdminAccessDenied";
 import { EmailTemplate, EmailCampaign } from "@/config/emailTemplates";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Skeleton } from "@/components/ui/skeleton";
-import { apiClient } from "@/lib/api/client";
+import { emailMarketingApi } from "@/utils/api/emailMarketing";
 
 // Import components
-import { EmailMarketingHeader } from "@/components/admin/email-marketing/EmailMarketingHeader";
 import { EmailTemplates } from "@/components/admin/email-marketing/EmailTemplates";
 import { EmailCampaigns } from "@/components/admin/email-marketing/EmailCampaigns";
 import { EmailList } from "@/components/admin/email-marketing/EmailList";
@@ -46,15 +45,15 @@ export default function EmailMarketingPage() {
   const fetchInitialData = async () => {
     try {
       // Fetch templates
-      const templatesData = await apiClient.get<EmailTemplate[]>("/admin/email-templates");
+      const templatesData = await emailMarketingApi.getTemplates();
       setTemplates(templatesData);
 
       // Fetch campaigns
-      const campaignsData = await apiClient.get<EmailCampaign[]>("/admin/email-campaigns");
+      const campaignsData = await emailMarketingApi.getCampaigns();
       setCampaigns(campaignsData);
 
       // Fetch email list
-      const emailListData = await apiClient.get<any>("/admin/email-list");
+      const emailListData = await emailMarketingApi.getEmailList();
       setEmailList(emailListData.emailList || []);
       setEmailListStats(emailListData.segments || {});
     } catch (error) {
@@ -69,7 +68,7 @@ export default function EmailMarketingPage() {
     if (!testEmail) return;
 
     try {
-      await apiClient.post("/admin/email-test", {
+      await emailMarketingApi.sendTestEmail({
         to: testEmail,
         subject: "HireAll Email Marketing Test",
         html: `

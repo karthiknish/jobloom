@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SkeletonCard, SkeletonInput, SkeletonButton } from "@/components/ui/loading-skeleton";
 import { showError, showSuccess } from "@/components/ui/Toast";
-import { apiClient } from "@/lib/api/client";
+import { authApi } from "@/utils/api/auth";
 
 type ViewState = "form" | "success" | "invalid" | "expired";
 
@@ -28,11 +28,11 @@ function validatePassword(password: string) {
 }
 
 async function requestPasswordReset(email: string, redirectUrl?: string) {
-  return apiClient.post<any>("/auth/password/request", { email, redirectUrl });
+  return authApi.requestPasswordReset(email, redirectUrl);
 }
 
 async function resetPasswordRequest(token: string, password: string) {
-  return apiClient.post<any>("/auth/password/reset", { token, password });
+  return authApi.resetPassword(token, password);
 }
 
 export default function ResetPasswordPage() {

@@ -8,6 +8,7 @@ import { withApi } from "@/lib/api/withApi";
  */
 export const GET = withApi({
   auth: "admin",
+  rateLimit: "admin",
 }, async () => {
   const db = getAdminDb();
   const now = new Date();

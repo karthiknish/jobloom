@@ -83,7 +83,7 @@ export const POST = withApi({
   await validateUserSession(decoded);
 
   // Create session with enhanced security
-  const { sessionCookie, expiresAt } = await createSessionCookie(idToken, {
+  const { sessionCookie, expiresAt, sessionHash } = await createSessionCookie(idToken, {
     userAgent: request.headers.get("user-agent"),
     ip: getClientIp(request),
   });
@@ -95,6 +95,8 @@ export const POST = withApi({
       email: decoded?.email,
       emailVerified: decoded?.email_verified,
       isNewUser: false,
+      sessionHash,
+      expiresAt,
     },
     "Session established successfully"
   );

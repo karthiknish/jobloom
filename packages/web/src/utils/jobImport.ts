@@ -1,26 +1,7 @@
 // utils/jobImport.ts
 import { parse } from "csv-parse/browser/esm/sync";
-import { apiClient } from "@/lib/api/client";
-
-export interface ImportJob {
-  title: string;
-  company: string;
-  location: string;
-  url: string;
-  description?: string;
-  salary?: string;
-  isSponsored: boolean;
-  isRecruitmentAgency?: boolean;
-  source: string;
-}
-
-export interface ImportResult {
-  importedCount: number;
-  skippedCount: number;
-  importedJobIds: string[];
-  skippedUrls: string[];
-  source?: string;
-}
+import { dashboardApi } from "@/utils/api/dashboard";
+import type { ImportJob, ImportResult } from "@/types/jobImport";
 
 /**
  * Parse CSV data into job objects
@@ -134,12 +115,11 @@ export async function importJobsFromCSV(userId: string, csvData: string): Promis
     }
     
     // Send to API
-    const result = await apiClient.post<ImportResult>("/app/jobs/import", {
+    const result = await dashboardApi.importJobsFromCSV({
       userId,
       jobs,
-      source: "csv",
     });
-    
+
     return result;
   } catch (error) {
     console.error("Error importing jobs from CSV:", error);
@@ -163,13 +143,13 @@ export async function importJobsFromAPI(
 ): Promise<ImportResult> {
   try {
     // Send to API
-    const result = await apiClient.post<ImportResult>("/app/jobs/import-api", {
+    const result = await dashboardApi.importJobsFromAPI({
       userId,
       source,
       searchQuery,
       location,
     });
-    
+
     return result;
   } catch (error) {
     console.error("Error importing jobs from API:", error);

@@ -42,7 +42,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z, ZodSchema, ZodError } from "zod";
 import { verifyIdToken, isUserAdmin, getAdminDb } from "@/firebase/admin";
-import { verifySessionFromRequest } from "@/lib/auth/session";
+import { verifySessionFromRequest, verifySessionHashForUser } from "@/lib/auth/session";
 import { applyCorsHeaders, preflightResponse, isExtensionRequest } from "./cors";
 import { 
   checkServerRateLimitWithAuth, 
@@ -280,7 +280,8 @@ async function getUserTier(uid: string): Promise<'free' | 'premium' | 'admin'> {
 }
 
 async function authenticateRequest(
-  request: NextRequest
+  request: NextRequest,
+  options: { isExtension: boolean }
 ): Promise<{ user: AuthenticatedUser; token: string } | null> {
   // Try session-based auth first
   try {
@@ -303,6 +304,9 @@ async function authenticateRequest(
     // Session verification failed, try Bearer token
   }
 
+  // For extension-origin requests, require a verified session (hash) even when a bearer token is present.
+  const isExtensionClient = options.isExtension;
+
   // Try Bearer token auth
   const authHeader = request.headers.get("authorization");
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -320,6 +324,18 @@ async function authenticateRequest(
   const decodedToken = await verifyIdToken(token);
   if (!decodedToken) {
     return null;
+  }
+
+  if (isExtensionClient) {
+    const sessionHash = request.headers.get("x-session-hash") || request.headers.get("x-session-proof");
+    if (!sessionHash) {
+      return null;
+    }
+
+    const hashValid = await verifySessionHashForUser(decodedToken.uid, sessionHash);
+    if (!hashValid) {
+      return null;
+    }
   }
 
   const tier = await getUserTier(decodedToken.uid);
@@ -421,7 +437,7 @@ export function withApi<
     routeContext?: RouteParams<Record<string, string>>
   ): Promise<NextResponse> => {
     const requestId = generateRequestId();
-    const isExtension = isExtensionRequest(request);
+    const isExtension = isExtensionRequest(request) || request.headers.get("x-client-platform") === "extension";
     
     // Helper to create response with CORS headers
     const respond = (
@@ -441,7 +457,7 @@ export function withApi<
       // 1. Authentication
 
       if (auth !== 'none') {
-        const authResult = await authenticateRequest(request);
+        const authResult = await authenticateRequest(request, { isExtension });
         
         if (auth === 'required' || auth === 'admin') {
           if (!authResult) {

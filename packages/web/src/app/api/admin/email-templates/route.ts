@@ -18,6 +18,7 @@ const emailTemplateCreateSchema = z.object({
 
 export const GET = withApi({
   auth: "admin",
+  rateLimit: "admin",
 }, async () => {
   const db = getAdminDb();
   const templatesRef = db.collection('emailTemplates');
@@ -49,6 +50,7 @@ export const GET = withApi({
 
 export const POST = withApi({
   auth: "admin",
+  rateLimit: "admin",
   bodySchema: emailTemplateCreateSchema,
 }, async ({ body }) => {
   const db = getAdminDb();

@@ -66,7 +66,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { showSuccess, showError } from "@/components/ui/Toast";
-import { apiClient } from "@/lib/api/client";
+import { aiApi } from "@/utils/api/ai";
 import { cn } from "@/lib/utils";
 
 const lowlight = createLowlight(common);
@@ -127,7 +127,7 @@ const MenuBar = ({ editor }: { editor: any }) => {
 
     setIsGenerating(true);
     try {
-      const response = await apiClient.post<{ content: string }>("/ai/editor", {
+      const response = await aiApi.generateEditorContent({
         prompt,
         tone: "professional",
         format: options?.format || "html",

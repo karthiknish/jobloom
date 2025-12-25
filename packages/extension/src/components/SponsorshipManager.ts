@@ -1,6 +1,7 @@
 import { sponsorBatchLimiter } from "../rateLimiter";
 import { get } from "../apiClient";
 import { fetchSponsorRecord as fetchSponsorLookup, SponsorLookupResult } from "../sponsorship/lookup";
+import { sponsorshipCache, socCodeCache } from "../sponsorship/cache";
 import { type JobData as JobDescriptionData } from "../parsers";
 import { UserProfileManager, type UserVisaCriteria } from "../components/UserProfileManager";
 import { ExtensionMessageHandler } from "../components/ExtensionMessageHandler";
@@ -142,10 +143,7 @@ function defaultShouldRetry(error: unknown): boolean {
   return false;
 }
 
-// Sponsorship lookup cache & concurrency limiter utilities
-const sponsorshipCache = new Map<string, SponsorshipRecord | null>();
-const sponsorshipInFlight = new Map<string, Promise<SponsorshipRecord | null>>();
-const socDetailsCache = new Map<string, SocCodeDetails | null>();
+// NOTE: Local caches removed - now using shared sponsorshipCache and socCodeCache from sponsorship/cache.ts
 
 interface SocCodeDetails {
   code: string;
@@ -210,10 +208,11 @@ export class SponsorshipManager {
     company: string,
     jobDescription?: JobDescriptionData
   ): Promise<SponsorshipRecord | null> {
-    const key = company.toLowerCase().trim();
+    const key = `manager:${company.toLowerCase().trim()}`;
 
-    if (sponsorshipCache.has(key)) {
-      const cached = sponsorshipCache.get(key);
+    // Check cache first
+    const cached = sponsorshipCache.get<SponsorshipRecord | null>(key);
+    if (cached !== null && sponsorshipCache.has(key)) {
       if (!cached) {
         return null;
       }
@@ -225,11 +224,10 @@ export class SponsorshipManager {
       return { ...cached };
     }
 
-    if (sponsorshipInFlight.has(key)) {
-      return sponsorshipInFlight.get(key) ?? null;
-    }
-
-    const lookupPromise = this.runWithSponsorLimit(async () => {
+    // Use getOrFetch for deduplication
+    return sponsorshipCache.getOrFetch<SponsorshipRecord | null>(
+      key,
+      () => this.runWithSponsorLimit(async () => {
       console.debug("Hireall: Making API call for sponsor lookup:", company);
       try {
         // Extract location from job description if available
@@ -244,8 +242,6 @@ export class SponsorshipManager {
         );
         if (sponsorRecord) {
           const baseRecord = this.mapApiRecordToSponsorship(sponsorRecord);
-          sponsorshipCache.set(key, baseRecord);
-
           if (jobDescription) {
             console.debug("Hireall: Enhancing sponsor record with job context for", company);
             return await this.enhanceSponsorRecordWithJobContext({ ...baseRecord }, jobDescription);
@@ -254,7 +250,6 @@ export class SponsorshipManager {
           return baseRecord;
         }
 
-        sponsorshipCache.set(key, null);
         return null;
       } catch (e: any) {
         console.warn("Sponsorship lookup failed", e);
@@ -291,14 +286,10 @@ export class SponsorshipManager {
           console.info("Hireall: This could be a CORS issue or network connectivity problem.");
         }
 
-        return null;
-      } finally {
-        sponsorshipInFlight.delete(key);
-      }
-    });
-
-    sponsorshipInFlight.set(key, lookupPromise);
-    return lookupPromise;
+          return null;
+        }
+      })
+    );
   }
 
   private static async runWithSponsorLimit<T>(fn: () => Promise<T>): Promise<T> {
@@ -463,8 +454,7 @@ export class SponsorshipManager {
 
   static clearCache(): void {
     sponsorshipCache.clear();
-    sponsorshipInFlight.clear();
-    socDetailsCache.clear();
+    socCodeCache.clear();
   }
 
   static getCacheSize(): number {
@@ -489,42 +479,44 @@ export class SponsorshipManager {
     const normalized = socCode.trim();
     if (!normalized) return null;
 
-    if (socDetailsCache.has(normalized)) {
-      return socDetailsCache.get(normalized) ?? null;
-    }
+    const cacheKey = `soc:${normalized}`;
+    
+    // Use shared cache with getOrFetch for deduplication
+    return socCodeCache.getOrFetch<SocCodeDetails | null>(
+      cacheKey,
+      async () => {
+        try {
+          // Use retry wrapper for robust SOC code lookups
+          const response = await withRetry(
+            () => get<any>("/api/soc-codes/authenticated", { code: normalized, limit: 1 }, true),
+            `fetchSocDetails(${normalized})`
+          );
+          const details = response.results?.[0];
+          if (details) {
+            const mapped: SocCodeDetails = {
+              code: details.code ?? normalized,
+              jobType: details.jobType ?? details.title ?? "",
+              relatedTitles: details.relatedTitles ?? [],
+              eligibility: details.eligibility ?? "Unknown",
+              // New fields for July 2025 compliance
+              goingRate: typeof details.goingRate === 'number' ? details.goingRate : undefined,
+              rqfLevel: typeof details.rqfLevel === 'number' ? details.rqfLevel : undefined,
+              isOnISL: details.isOnISL === true,
+              isOnTSL: details.isOnTSL === true,
+              isHealthCare: details.isHealthCare === true,
+            };
+            return mapped;
+          }
+        } catch (error) {
+          console.warn("SponsorshipManager: failed to load SOC details", error);
+          if (error instanceof Error && (error.message.includes('CORS') || error.message.includes('Failed to fetch'))) {
+            console.info("Hireall: SOC details fetch failed due to CORS or network issue - this is a server-side configuration issue");
+          }
+        }
 
-    try {
-      // Use retry wrapper for robust SOC code lookups
-      const response = await withRetry(
-        () => get<any>("/api/soc-codes/authenticated", { code: normalized, limit: 1 }, true),
-        `fetchSocDetails(${normalized})`
-      );
-      const details = response.results?.[0];
-      if (details) {
-        const mapped: SocCodeDetails = {
-          code: details.code ?? normalized,
-          jobType: details.jobType ?? details.title ?? "",
-          relatedTitles: details.relatedTitles ?? [],
-          eligibility: details.eligibility ?? "Unknown",
-          // New fields for July 2025 compliance
-          goingRate: typeof details.goingRate === 'number' ? details.goingRate : undefined,
-          rqfLevel: typeof details.rqfLevel === 'number' ? details.rqfLevel : undefined,
-          isOnISL: details.isOnISL === true,
-          isOnTSL: details.isOnTSL === true,
-          isHealthCare: details.isHealthCare === true,
-        };
-        socDetailsCache.set(normalized, mapped);
-        return mapped;
+        return null;
       }
-    } catch (error) {
-      console.warn("SponsorshipManager: failed to load SOC details", error);
-      if (error instanceof Error && (error.message.includes('CORS') || error.message.includes('Failed to fetch'))) {
-        console.info("Hireall: SOC details fetch failed due to CORS or network issue - this is a server-side configuration issue");
-      }
-    }
-
-    socDetailsCache.set(normalized, null);
-    return null;
+    );
   }
 
   private static evaluateUkEligibility(params: {

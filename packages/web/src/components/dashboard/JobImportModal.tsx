@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
-import { useApiQuery } from "@/hooks/useApi";
+import { useEnhancedApi } from "@/hooks/useEnhancedApi";
 import { dashboardApi, Job } from "@/utils/api/dashboard";
 import {
   importJobsFromCSV,
@@ -99,12 +99,12 @@ export function JobImportModal({
   const [importProgress, setImportProgress] = useState(0);
 
   // Fetch user record
-  const { data: userRecord } = useApiQuery(
+  const { data: userRecord } = useEnhancedApi(
     () =>
       user && user.uid
         ? dashboardApi.getUserByFirebaseUid(user.uid)
         : Promise.reject(new Error("No user")),
-    [user?.uid]
+    { immediate: !!user?.uid }
   );
 
   // Check if extension is installed

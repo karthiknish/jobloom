@@ -21,6 +21,7 @@ const emailTemplateUpdateSchema = z.object({
 
 export const GET = withApi({
   auth: "admin",
+  rateLimit: "admin",
   paramsSchema,
 }, async ({ params }) => {
   const db = getAdminDb();
@@ -38,6 +39,7 @@ export const GET = withApi({
 
 export const PUT = withApi({
   auth: "admin",
+  rateLimit: "admin",
   paramsSchema,
   bodySchema: emailTemplateUpdateSchema,
 }, async ({ params, body }) => {
@@ -64,6 +66,7 @@ export const PUT = withApi({
 
 export const DELETE = withApi({
   auth: "admin",
+  rateLimit: "admin",
   paramsSchema,
 }, async ({ params }) => {
   const db = getAdminDb();

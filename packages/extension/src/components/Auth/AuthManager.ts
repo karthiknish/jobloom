@@ -6,10 +6,10 @@ import {
   onAuthStateChanged,
   signOut as firebaseSignOut,
 } from "../../firebase";
-import { cacheAuthToken, clearCachedAuthToken, acquireIdToken, getCachedUserInfo } from "../../authToken";
+import { cacheAuthToken, clearCachedAuthToken, acquireIdToken, getCachedUserInfo, setSessionProof, clearSessionProof } from "../../authToken";
 import { ExtensionMessageHandler } from "../ExtensionMessageHandler";
 import { sanitizeBaseUrl, DEFAULT_WEB_APP_URL } from "../../constants";
-import { get } from "../../apiClient";
+import { get, post } from "../../apiClient";
 import { popupUI } from "../UI/PopupUI";
 
 // Enhanced validation functions
@@ -113,6 +113,14 @@ export class AuthManager {
         source: 'popup'
       });
 
+      const sessionOk = await this.establishServerSession(token);
+      if (!sessionOk) {
+        await clearSessionProof();
+        await clearCachedAuthToken();
+        this.showAuthError('Session validation failed. Please sign in again.');
+        return;
+      }
+
       this.currentUser = userCredential.user;
       this.updateAuthUI(true);
 
@@ -191,6 +199,14 @@ export class AuthManager {
         userEmail: userCredential.user.email,
         source: 'popup'
       });
+
+      const sessionOk = await this.establishServerSession(token);
+      if (!sessionOk) {
+        await clearSessionProof();
+        await clearCachedAuthToken();
+        this.showAuthError('Session validation failed. Please try again.');
+        return;
+      }
 
       this.currentUser = userCredential.user;
       this.updateAuthUI(true);
@@ -371,6 +387,7 @@ export class AuthManager {
 
       // Clear cached auth token
       clearCachedAuthToken();
+      await clearSessionProof();
 
       // Clear any additional stored data
       try {
@@ -427,6 +444,16 @@ export class AuthManager {
         source: 'popup'
       });
 
+      // Ensure server-side session is established for parity with web app
+      const sessionOk = await this.establishServerSession(token);
+      if (!sessionOk) {
+        await clearSessionProof();
+        await clearCachedAuthToken();
+        this.updateAuthUI(false);
+        popupUI.showError('Session validation failed. Please sign in again.');
+        return;
+      }
+
       // Store in sync storage for other extension components
       if (typeof chrome !== 'undefined' && chrome.storage?.sync) {
         await chrome.storage.sync.set({
@@ -472,6 +499,13 @@ export class AuthManager {
       }
       if (!token) {
         console.debug('AuthManager: No token acquired from web app');
+        return false;
+      }
+
+      const sessionOk = await this.establishServerSession(token);
+      if (!sessionOk) {
+        console.warn('AuthManager: Server session validation failed');
+        popupUI.showError('Please re-sign in to validate your session');
         return false;
       }
 
@@ -541,6 +575,41 @@ export class AuthManager {
       if ((error as any)?.code !== 'AUTH_REQUIRED') {
         popupUI.showError('Failed to sync with web app');
       }
+      return false;
+    }
+  }
+
+  private async establishServerSession(idToken: string): Promise<boolean> {
+    try {
+      // Prime CSRF cookie if needed; ignore errors because extensions may be exempt.
+      try {
+        await get('/api/auth/session', undefined, true, { retries: 0, timeout: 8000 });
+      } catch (csrfError) {
+        console.debug('AuthManager: CSRF preflight skipped/failed', csrfError);
+      }
+
+      const response = await post<{ ok?: boolean; uid?: string; sessionHash?: string; expiresAt?: number }>(
+        '/api/auth/session',
+        { idToken },
+        true,
+        { retries: 0, timeout: 15000 }
+      );
+
+      if (response && typeof response === 'object' && response.ok === true) {
+        if (response.sessionHash) {
+          const expiresAt = typeof response.expiresAt === 'number'
+            ? response.expiresAt
+            : Date.now() + 7 * 24 * 60 * 60 * 1000;
+          await setSessionProof({ sessionHash: response.sessionHash, expiresAt });
+        }
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.warn('AuthManager: Failed to establish server session', error);
+      await clearSessionProof();
+      await clearCachedAuthToken();
       return false;
     }
   }

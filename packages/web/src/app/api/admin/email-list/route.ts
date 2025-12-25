@@ -21,6 +21,7 @@ const emailListPostSchema = z.object({
 
 export const GET = withApi({
   auth: "admin",
+  rateLimit: "admin",
   querySchema: emailListQuerySchema,
 }, async ({ query }) => {
   const { segment, activeOnly } = query;
@@ -67,6 +68,7 @@ export const GET = withApi({
 
 export const POST = withApi({
   auth: "admin",
+  rateLimit: "admin",
   bodySchema: emailListPostSchema,
 }, async ({ body }) => {
   const { emails, subscribeAll } = body;

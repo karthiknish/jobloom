@@ -14,8 +14,9 @@ import { FeaturesSettings } from "@/components/settings/FeaturesSettings";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { useSubscription } from "@/providers/subscription-provider";
 import { useToast, TOAST_MESSAGES } from "@/hooks/use-toast";
-import { apiClient } from "@/lib/api/client";
 import { LoadingPage } from "@/components/ui/loading";
+import { settingsApi } from "@/utils/api/settings";
+import { subscriptionApi } from "@/utils/api/subscription";
 
 export default function SettingsPage() {
   const { user: firebaseUser, loading: userLoading } = useFirebaseAuth();
@@ -78,7 +79,7 @@ export default function SettingsPage() {
       if (!userLoading && firebaseUser) {
         try {
           // Load preferences from backend
-          const data = await apiClient.get<any>("/settings/preferences");
+          const data = await settingsApi.getPreferences();
           const backendPrefs = data.preferences || {};
           const minimumSalary = sanitizeNonNegativeNumber(backendPrefs.minimumSalary, 38700);
 
@@ -174,7 +175,7 @@ export default function SettingsPage() {
       };
 
       // Save preferences to backend
-      await apiClient.put("/settings/preferences", {
+      await settingsApi.updatePreferences({
         preferences: preferencesToSave,
       });
 
@@ -280,7 +281,7 @@ export default function SettingsPage() {
     try {
       setBillingPortalLoading(true);
 
-      const data = await apiClient.post<any>("/subscription/portal");
+      const data = await subscriptionApi.openPortal();
 
       if (data?.url) {
         window.location.href = data.url;

@@ -259,6 +259,7 @@ export const GET = withApi({
 // POST /api/app/sponsorship/companies - Create new sponsored company
 export const POST = withApi({
   auth: "admin",
+  rateLimit: "admin",
 }, async ({ request, user }) => {
   const companyData = await request.json();
   

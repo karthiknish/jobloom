@@ -22,7 +22,7 @@ import { format, formatDistanceToNow } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 
 import { useAdminAuth } from "@/hooks/useAdminAuth";
-import { useApiQuery, useApiMutation } from "@/hooks/useApi";
+import { useEnhancedApi, usePost, useDelete } from "@/hooks/useEnhancedApi";
 import { adminApi } from "@/utils/api/admin";
 import { exportToCsv } from "@/utils/exportToCsv";
 import { AdminLayout } from "@/components/admin/AdminLayout";
@@ -125,19 +125,15 @@ export default function AdminReportsPage() {
 
   const canFetchAdminData = isAdmin === true;
 
-  const loadContacts = useCallback(
-    () => adminApi.getAllContactSubmissions(),
-    []
-  );
-
   const {
     data: contacts,
     loading: contactsLoading,
     error: contactsError,
     refetch: refetchContacts,
-  } = useApiQuery(loadContacts, [userRecord?._id, isAdmin], {
-    enabled: canFetchAdminData,
-  });
+  } = useEnhancedApi<ContactSubmission[]>(
+    () => adminApi.getAllContactSubmissions(),
+    { immediate: canFetchAdminData }
+  );
 
   useEffect(() => {
     if (!contactsError) return;
@@ -148,18 +144,20 @@ export default function AdminReportsPage() {
     });
   }, [contactsError, toast]);
 
-  const { mutate: updateContact, loading: updateLoading } = useApiMutation(
-    ({
+  const { execute: updateContact, loading: updateLoading } = useEnhancedApi(
+    async ({
       contactId,
       updates,
     }: {
       contactId: string;
       updates: Partial<Pick<ContactSubmission, "status" | "response" | "respondedAt" | "respondedBy">>;
-    }) => adminApi.updateContactSubmission(contactId, updates)
+    }) => adminApi.updateContactSubmission(contactId, updates),
+    { immediate: false }
   );
 
-  const { mutate: deleteContact, loading: deleteLoading } = useApiMutation(
-    ({ contactId }: { contactId: string }) => adminApi.deleteContactSubmission(contactId)
+  const { execute: deleteContact, loading: deleteLoading } = useEnhancedApi(
+    async ({ contactId }: { contactId: string }) => adminApi.deleteContactSubmission(contactId),
+    { immediate: false }
   );
 
   // Filter to only show issue reports

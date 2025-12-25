@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { Subscription, SubscriptionPlan, SUBSCRIPTION_LIMITS, SubscriptionLimits } from "@/types/api";
-import { apiClient } from "@/lib/api/client";
+import { subscriptionApi } from "@/utils/api/subscription";
 
 export interface SubscriptionActions {
   checkoutUrl?: string;
@@ -93,7 +93,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
           setState(prev => ({ ...prev, isLoading: true, error: null }));
         }
 
-        const data = await apiClient.get<any>("/subscription/status");
+        const data = await subscriptionApi.getStatus();
         const actions: SubscriptionActions = data.actions ?? {};
         setState({
           subscription: data.subscription,

@@ -23,7 +23,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { getAuth, EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "firebase/auth";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
-import { apiClient } from "@/lib/api/client";
+import { settingsApi } from "@/utils/api/settings";
 
 interface SecuritySettingsProps {
   formData: {
@@ -162,7 +162,7 @@ export function SecuritySettings({ formData, onInputChange, user }: SecuritySett
 
     setIsLoading(true);
     try {
-      const responseData = await apiClient.get<any>("/settings/export");
+      const responseData = await settingsApi.exportData();
       
       if (responseData.downloadUrl) {
         // Download the file from the signed URL
@@ -197,7 +197,7 @@ export function SecuritySettings({ formData, onInputChange, user }: SecuritySett
   const handleAccountDeletion = async (confirmation: string, reason?: string) => {
     setIsLoading(true);
     try {
-      const result = await apiClient.post<any>("/settings/delete-account", {
+      const result = await settingsApi.deleteAccount({
         confirmation,
         reason: reason || undefined,
       });

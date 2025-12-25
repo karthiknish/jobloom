@@ -27,6 +27,14 @@ export interface CvStats {
   recentAnalysis?: CvAnalysis;
 }
 
+export interface UploadLimits {
+  maxSize: number;
+  maxSizeMB: number;
+  allowedTypes: string[];
+  allowedExtensions: string[];
+  description: string;
+}
+
 export const cvEvaluatorApi = {
   // Temporary shim during migration: treat Firebase UID as user identifier
   getUserByFirebaseUid: async (uid: string): Promise<UserRecord> => {
@@ -225,5 +233,16 @@ export const cvEvaluatorApi = {
     const db = getDb();
     if (!db) throw new Error("Firestore not initialized");
     await deleteDoc(doc(db, "cvAnalyses", analysisId));
+  },
+
+  getUploadLimits: async (): Promise<{ uploadLimits: UploadLimits }> => {
+    return apiClient.get<{ uploadLimits: UploadLimits }>("/user/upload-limits");
+  },
+
+  uploadCv: async (
+    file: File,
+    payload: { userId: string; targetRole?: string; industry?: string }
+  ): Promise<any> => {
+    return apiClient.upload<any>("/cv/upload", file, payload);
   },
 };

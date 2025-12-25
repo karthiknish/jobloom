@@ -13,7 +13,7 @@ import {
   type DocumentData,
 } from "firebase/firestore";
 import { getDb } from "@/firebase/client";
-import { ImportJob, ImportResult } from "../jobImport";
+import { ImportJob, ImportResult } from "@/types/jobImport";
 import { getAuthClient } from "@/firebase/client";
 import { apiClient } from "@/lib/api/client";
 
@@ -46,6 +46,14 @@ export interface Job {
   source: string;
   dateFound: number;
   userId: string;
+  // Enhanced fields from extension
+  likelySocCode?: string;
+  socMatchConfidence?: number;
+  department?: string;
+  seniority?: string;
+  employmentType?: string;
+  locationType?: string;
+  extractedKeywords?: string[];
 }
 
 export interface Application {
@@ -157,6 +165,14 @@ export const dashboardApi = {
         source: app.job.source ?? "manual",
         dateFound: app.job.dateFound ?? Date.now(),
         userId: app.job.userId,
+        // Enhanced fields from extension
+        likelySocCode: app.job.likelySocCode ?? undefined,
+        socMatchConfidence: app.job.socMatchConfidence ?? undefined,
+        department: app.job.department ?? undefined,
+        seniority: app.job.seniority ?? undefined,
+        employmentType: app.job.employmentType ?? undefined,
+        locationType: app.job.locationType ?? undefined,
+        extractedKeywords: app.job.extractedKeywords ?? undefined,
       } : undefined,
     })) : [];
   },

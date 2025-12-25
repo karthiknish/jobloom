@@ -648,7 +648,15 @@ export class JobTracker {
     button.innerHTML = `${UIComponents.createIcon("clock", 12, "#fff")} <span>Adding...</span>`;
 
     try {
-      // Add to board using enhanced manager
+      // Use cached sponsorship result if available (actual check is now in EnhancedJobBoardManager)
+      const cacheKey = this.buildSponsorshipCacheKey(normalizedCompany, jobData);
+      const cachedSponsor = this.sponsorCache.get(cacheKey);
+      if (cachedSponsor?.isSponsored) {
+        jobData.isSponsored = true;
+        jobData.sponsorshipType = cachedSponsor.sponsorshipType || 'Skilled Worker';
+      }
+
+      // Add to board using enhanced manager (handles sponsorship pre-check internally)
       const result = await EnhancedJobBoardManager.getInstance().addToBoard(jobData);
       
       if (result) {
@@ -657,7 +665,8 @@ export class JobTracker {
         if (result.id.startsWith('pending-')) {
           UIComponents.showToast("Job queued for sync (offline)", { type: "info" });
         } else {
-          UIComponents.showToast("Job added to board successfully", { type: "success" });
+          const sponsorNote = result.isSponsored ? " ✓ Sponsored" : "";
+          UIComponents.showToast(`Job added to board${sponsorNote}`, { type: "success" });
         }
       } else {
         button.innerHTML = `${UIComponents.createIcon("alertTriangle", 12, "#fff")} <span>Retry</span>`;

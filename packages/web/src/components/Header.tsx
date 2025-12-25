@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
 import { Menu, Settings, LogOut } from "lucide-react";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { Button } from "@/components/ui/button";
-import { apiClient } from "@/lib/api/client";
+import { authApi } from "@/utils/api/auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -35,7 +35,7 @@ export default function Header() {
   useEffect(() => {
     if (user?.uid) {
       // Check if user is admin
-      apiClient.get<boolean>(`/app/admin/is-admin/${user.uid}`)
+      authApi.isAdmin(user.uid)
         .then((isAdmin) => setIsAdmin(isAdmin))
         .catch(() => setIsAdmin(false));
     } else {

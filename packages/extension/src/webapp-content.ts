@@ -3,7 +3,7 @@
 import { ExtensionSecurityLogger } from "./security";
 import { put } from "./apiClient";
 import { ExtensionMessageHandler } from "./components/ExtensionMessageHandler";
-import { cacheAuthToken, clearCachedAuthToken } from "./authToken";
+import { cacheAuthToken, clearCachedAuthToken, setSessionProof } from "./authToken";
 import { safeLocalStorageGet, isLocalStorageAvailable } from "./utils/safeLocalStorage";
 
 // Detect sandboxed context early using the safe check
@@ -75,6 +75,11 @@ interface HireallSessionInfo {
   userId: string | null;
   userEmail: string | null;
   isAuthenticated: boolean;
+}
+
+interface SessionProof {
+  sessionHash: string;
+  expiresAt: number;
 }
 
 function extractUserInfo(): UserInfo {
@@ -205,6 +210,72 @@ function extractHireallSession(): HireallSessionInfo {
   return result;
 }
 
+async function fetchSessionProofFromWebApp(forceRefresh = false): Promise<SessionProof | null> {
+  try {
+    // Acquire ID token from the web app (bridge first, fallback to Firebase auth/localStorage).
+    const tokenResponse = await new Promise<{ token?: string | null; userId?: string; userEmail?: string }>((resolve) => {
+      if (typeof (window as any).getHireallAuthToken === 'function') {
+        (window as any).getHireallAuthToken(forceRefresh)
+          .then((resp: any) => resolve(resp || {}))
+          .catch(() => resolve({}));
+        return;
+      }
+
+      // Fallback: use existing message-based flow
+      chrome.runtime.sendMessage({ action: 'acquireAuthToken', target: 'background', forceRefresh }, (resp) => {
+        if (chrome.runtime?.lastError) {
+          resolve({});
+          return;
+        }
+        resolve(resp || {});
+      });
+    });
+
+    const idToken = tokenResponse?.token;
+    if (!idToken || typeof idToken !== 'string') {
+      return null;
+    }
+
+    // Preflight to ensure CSRF cookie is present
+    try {
+      await fetch('/api/auth/session', { method: 'GET', credentials: 'include' });
+    } catch {
+      // Ignore preflight errors; CSRF may still be available
+    }
+
+    const csrfToken = getCookie('__csrf-token');
+
+    const res = await fetch('/api/auth/session', {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}),
+        'X-Client-Platform': 'extension',
+      },
+      body: JSON.stringify({ idToken }),
+    });
+
+    if (!res.ok) {
+      return null;
+    }
+
+    const payload = await res.json().catch(() => ({}));
+    const sessionHash = payload?.data?.sessionHash || payload?.sessionHash;
+    const expiresAt = payload?.data?.expiresAt || payload?.expiresAt || (Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    if (sessionHash && typeof sessionHash === 'string') {
+      await setSessionProof({ sessionHash, expiresAt });
+      return { sessionHash, expiresAt };
+    }
+
+    return null;
+  } catch (error) {
+    ExtensionSecurityLogger.log('Failed to fetch session proof from web app', error);
+    return null;
+  }
+}
+
 /**
  * Get a cookie value by name
  */
@@ -279,6 +350,22 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       });
       return true;
     }
+  }
+
+  if (request.action === "getSessionProof") {
+    fetchSessionProofFromWebApp(request?.forceRefresh === true)
+      .then((proof) => {
+        if (proof) {
+          sendResponse({ success: true, sessionHash: proof.sessionHash, expiresAt: proof.expiresAt });
+        } else {
+          sendResponse({ success: false, sessionHash: null });
+        }
+      })
+      .catch((error) => {
+        ExtensionSecurityLogger.log('Error fetching session proof', error);
+        sendResponse({ success: false, sessionHash: null, error: 'Failed to fetch session proof' });
+      });
+    return true;
   }
 
   // Additional action to get auth token

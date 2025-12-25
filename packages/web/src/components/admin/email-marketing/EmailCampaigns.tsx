@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   Send,
   Plus,
-  BarChart3,
   Users,
   Clock,
   CheckCircle,
@@ -13,16 +12,13 @@ import {
   Pause,
   Calendar,
   FileText,
-  Play,
   Square,
   Eye,
   Edit,
   Trash2,
   Copy,
-  TrendingUp,
   Mail,
   Target,
-  Zap,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,15 +26,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
-import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { showSuccess, showError } from "@/components/ui/Toast";
 import { EmailCampaign } from "@/config/emailTemplates";
-import { apiClient } from "@/lib/api/client";
 import { useRestoreFocus } from "@/hooks/useRestoreFocus";
 import { EmptyState } from "@/components/ui/empty-state";
+import { emailMarketingApi } from "@/utils/api/emailMarketing";
 
 interface EmailCampaignsProps {
   campaigns: EmailCampaign[];
@@ -53,7 +47,6 @@ export function EmailCampaigns({
   loading, 
   onCampaignsChange 
 }: EmailCampaignsProps) {
-  const { user } = useFirebaseAuth();
   const [showCampaignDialog, setShowCampaignDialog] = useState(false);
   const [sendingCampaign, setSendingCampaign] = useState<string | null>(null);
   const [editingCampaign, setEditingCampaign] = useState<EmailCampaign | null>(null);
@@ -148,8 +141,8 @@ export function EmailCampaigns({
       };
 
       const savedCampaign = editingCampaign 
-        ? await apiClient.put<EmailCampaign>('/api/admin/email-campaigns', campaignData)
-        : await apiClient.post<EmailCampaign>('/api/admin/email-campaigns', campaignData);
+        ? await emailMarketingApi.updateCampaign(campaignData as EmailCampaign)
+        : await emailMarketingApi.createCampaign(campaignData as EmailCampaign);
       
       if (editingCampaign) {
         onCampaignsChange(campaigns.map(c => c.id === editingCampaign.id ? savedCampaign : c));
@@ -170,7 +163,7 @@ export function EmailCampaigns({
     try {
       setSendingCampaign(campaignId);
       
-      const updatedCampaign = await apiClient.post<EmailCampaign>(`/api/admin/email-campaigns/${campaignId}/send`);
+      const updatedCampaign = await emailMarketingApi.sendCampaign(campaignId);
       onCampaignsChange(campaigns.map(c => c.id === campaignId ? updatedCampaign : c));
       showSuccess("Campaign sent successfully");
     } catch (error) {
@@ -187,7 +180,7 @@ export function EmailCampaigns({
     }
 
     try {
-      await apiClient.delete(`/api/admin/email-campaigns/${campaignId}`);
+      await emailMarketingApi.deleteCampaign(campaignId);
 
       onCampaignsChange(campaigns.filter(c => c.id !== campaignId));
       showSuccess("Campaign deleted successfully");

@@ -1,4 +1,4 @@
-import { get } from "./apiClient";
+import { get, post } from "./apiClient";
 import { clearCachedAuthToken } from "./authToken";
 
 export interface SubscriptionDetails {
@@ -367,61 +367,38 @@ export async function checkRateLimit(
   endpoint: string,
   config?: Partial<RateLimitConfig>
 ): Promise<{ allowed: boolean; resetIn?: number; remaining?: number; retryAfter?: number }> {
-  const userTier = tierLookupDepth > 0
-    ? currentUserTier
-    : (endpoint === 'sponsor-lookup'
-      ? await getCurrentUserTierWithTimeout(USER_TIER_LOOKUP_TIMEOUT_MS)
-      : await getCurrentUserTier());
-  const rateLimitConfig = resolveRateLimitConfig(endpoint, config, userTier);
-  const now = Date.now();
-  const stateKey = `${endpoint}:${userTier}`;
-  const state = rateLimitState.get(stateKey);
+  // Defer entirely to server-side rate limiting for a single source of truth.
+  try {
+    const serverCheck = await post<RateLimitResult>('/api/rate-limit-check', { endpoint }, true, {
+      retryCount: 0,
+      timeout: 2500,
+    });
 
-  // If no state exists or window has expired, reset
-  if (!state || now > state.resetTime) {
-    const newState: RateLimitState = {
-      count: 1,
-      resetTime: now + rateLimitConfig.windowMs,
-      lastRequest: now,
-      violations: 0,
-    };
-    rateLimitState.set(stateKey, newState);
-    return {
-      allowed: true,
-      remaining: rateLimitConfig.maxRequests - 1,
-      resetIn: rateLimitConfig.windowMs,
-      retryAfter: 0,
-    };
-  }
+    if (serverCheck && serverCheck.allowed) {
+      return {
+        allowed: true,
+        resetIn: serverCheck.resetIn,
+        remaining: serverCheck.remaining,
+        retryAfter: serverCheck.retryAfter,
+      };
+    }
 
-  // Check if we've exceeded the limit
-  if (state.count >= rateLimitConfig.maxRequests) {
-    const resetIn = state.resetTime - now;
-    
-    // Increment violation count for potential penalties
-    state.violations = (state.violations || 0) + 1;
-    
-    // Add progressive delays for repeat violators
-    const penaltyDelay = Math.min(state.violations * 3000, 30000); // Max 30 seconds penalty
-    
     return {
       allowed: false,
-      resetIn: resetIn > 0 ? resetIn + penaltyDelay : penaltyDelay,
+      resetIn: serverCheck?.resetIn,
+      remaining: serverCheck?.remaining,
+      retryAfter: serverCheck?.retryAfter ?? 60,
+    };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn('Rate limit server check failed; denying request to maintain parity', { endpoint, message });
+    return {
+      allowed: false,
+      resetIn: 60000,
       remaining: 0,
-      retryAfter: Math.ceil((resetIn + penaltyDelay) / 1000),
+      retryAfter: 60,
     };
   }
-
-  // Increment counter and allow request
-  state.count++;
-  state.lastRequest = now;
-
-  return {
-    allowed: true,
-    remaining: rateLimitConfig.maxRequests - state.count,
-    resetIn: state.resetTime - now,
-    retryAfter: 0,
-  };
 }
 
 /**

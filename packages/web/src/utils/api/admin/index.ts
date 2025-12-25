@@ -196,6 +196,15 @@ export const adminApi = {
     });
   },
 
+  getDashboardStats: async (): Promise<any> => {
+    const token = await getAuthToken();
+    return apiClient.get("/admin/dashboard/stats", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
+
   // Sponsorship functions
   getAllSponsoredCompanies: async (filters?: any): Promise<any> => {
     return sponsorApi.getSponsors(filters);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   Mail,
@@ -31,15 +31,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { showSuccess, showError } from "@/components/ui/Toast";
 import { EmailTemplate } from "@/config/emailTemplates";
-import { apiClient } from "@/lib/api/client";
 import { useRestoreFocus } from "@/hooks/useRestoreFocus";
 import { EmptyState } from "@/components/ui/empty-state";
+import { emailMarketingApi } from "@/utils/api/emailMarketing";
 
 interface EmailTemplatesProps {
   templates: EmailTemplate[];
@@ -54,7 +53,6 @@ export function EmailTemplates({
   onTemplatesChange, 
   onSendTestEmail 
 }: EmailTemplatesProps) {
-  const { user } = useFirebaseAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
@@ -152,8 +150,8 @@ export function EmailTemplates({
 
       // Save to API using apiClient
       const savedTemplate = editingTemplate
-        ? await apiClient.put<EmailTemplate>('/api/admin/email-templates', templateData)
-        : await apiClient.post<EmailTemplate>('/api/admin/email-templates', templateData);
+        ? await emailMarketingApi.updateTemplate(templateData as EmailTemplate)
+        : await emailMarketingApi.createTemplate(templateData as EmailTemplate);
       
       if (editingTemplate) {
         onTemplatesChange(templates.map(t => t.id === editingTemplate.id ? savedTemplate : t));
@@ -176,7 +174,7 @@ export function EmailTemplates({
     }
 
     try {
-      await apiClient.delete(`/api/admin/email-templates/${templateId}`);
+      await emailMarketingApi.deleteTemplate(templateId);
 
       onTemplatesChange(templates.filter(t => t.id !== templateId));
       showSuccess("Template deleted successfully");
@@ -200,7 +198,7 @@ export function EmailTemplates({
 
   const handleSendTest = async (templateId: string) => {
     try {
-      await apiClient.post('/api/admin/email-templates/test', { templateId });
+      await emailMarketingApi.sendTemplateTest(templateId);
 
       showSuccess("Test email sent successfully");
     } catch (error) {

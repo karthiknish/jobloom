@@ -27,7 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { showError, showSuccess, showWarning } from "@/components/ui/Toast";
-import { apiClient } from "@/lib/api/client";
+import { cvEvaluatorApi, type UploadLimits } from "@/utils/api/cvEvaluator";
 
 interface CvUploadFormProps {
   userId: string;
@@ -64,14 +64,6 @@ function AnalysisStep({ step, label, active }: { step: number; label: string; ac
   );
 }
 
-interface UploadLimits {
-  maxSize: number;
-  maxSizeMB: number;
-  allowedTypes: string[];
-  allowedExtensions: string[];
-  description: string;
-}
-
 export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted, onResumeUpdate }: CvUploadFormProps) {
   const { user } = useFirebaseAuth();
   const [file, setFile] = useState<File | null>(null);
@@ -98,7 +90,7 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted, onResum
       if (!user) return;
       
       try {
-        const result = await apiClient.get<any>('/user/upload-limits');
+        const result = await cvEvaluatorApi.getUploadLimits();
         setUploadLimits(result.uploadLimits);
         console.log('Upload limits loaded:', result.uploadLimits);
       } catch (error) {
@@ -149,7 +141,7 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted, onResum
   onUploadStarted?.();
 
     try {
-      const result = await apiClient.upload<any>("/cv/upload", file, {
+      const result = await cvEvaluatorApi.uploadCv(file, {
         userId,
         targetRole,
         industry,
@@ -301,7 +293,7 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted, onResum
           <CardTitle className="text-lg">Upload Your CV for Analysis</CardTitle>
           <CardDescription className="text-base">
             Get AI-powered insights to improve your CV. Supported formats: PDF,
-            TXT (max 5MB)
+            TXT (max {uploadLimits.maxSizeMB}MB)
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -353,7 +345,7 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted, onResum
                     </motion.p>
                   )}
                   <p className="mt-2 text-sm text-muted-foreground">
-                    PDF or TXT up to 5MB
+                    PDF or TXT up to {uploadLimits.maxSizeMB}MB
                   </p>
                 </div>
               </div>

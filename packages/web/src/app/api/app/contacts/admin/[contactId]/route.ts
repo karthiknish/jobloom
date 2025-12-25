@@ -18,6 +18,7 @@ const contactUpdateSchema = z.object({
 // GET /api/app/contacts/admin/[contactId] - Get a specific contact submission (admin only)
 export const GET = withApi({
   auth: 'admin',
+  rateLimit: 'admin',
   paramsSchema: contactParamsSchema,
 }, async ({ params }) => {
   const { contactId } = params;
@@ -46,6 +47,7 @@ export const GET = withApi({
 // PUT /api/app/contacts/admin/[contactId] - Update a contact submission (admin only)
 export const PUT = withApi({
   auth: 'admin',
+  rateLimit: 'admin',
   paramsSchema: contactParamsSchema,
   bodySchema: contactUpdateSchema,
 }, async ({ params, body, user }) => {
@@ -76,6 +78,7 @@ export const PUT = withApi({
 // DELETE /api/app/contacts/admin/[contactId] - Delete a contact submission (admin only)
 export const DELETE = withApi({
   auth: 'admin',
+  rateLimit: 'admin',
   paramsSchema: contactParamsSchema,
 }, async ({ params }) => {
   const { contactId } = params;

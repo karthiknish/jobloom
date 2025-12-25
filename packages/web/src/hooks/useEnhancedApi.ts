@@ -4,14 +4,18 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { apiClient, FrontendApiError, ApiResponseOptions } from '@/lib/api/client';
+import { apiClient, ApiResponseOptions } from '@/lib/api/client';
+import { ApiError } from '@hireall/shared';
 import { toast } from 'react-hot-toast';
+
+// Re-export ApiError for consumers
+export type { ApiError };
 
 // Hook state interface
 interface UseApiState<T> {
   data: T | null;
   loading: boolean;
-  error: FrontendApiError | null;
+  error: ApiError | null;
   lastUpdated: number | null;
   requestId: string | null;
 }
@@ -20,7 +24,7 @@ interface UseApiState<T> {
 interface UseApiOptions extends ApiResponseOptions {
   immediate?: boolean;
   onSuccess?: (data: any) => void;
-  onError?: (error: FrontendApiError) => void;
+  onError?: (error: ApiError) => void;
   retryOnMount?: boolean;
   cacheTime?: number;
   retries?: number;
@@ -31,7 +35,7 @@ interface UseApiOptions extends ApiResponseOptions {
 interface UseApiReturn<T> {
   data: T | null;
   loading: boolean;
-  error: FrontendApiError | null;
+  error: ApiError | null;
   execute: (...args: any[]) => Promise<T | null>;
   reset: () => void;
   refetch: () => Promise<T | null>;
@@ -166,7 +170,7 @@ export function useEnhancedApi<T = any>(
       return data;
 
     } catch (error) {
-      const apiError = error as FrontendApiError;
+      const apiError = error as ApiError;
       
       setState({
         data: null,

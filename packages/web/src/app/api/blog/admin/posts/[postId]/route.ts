@@ -23,6 +23,7 @@ const blogPostUpdateSchema = z.object({
 // PUT /api/blog/admin/posts/[postId] - Update a blog post
 export const PUT = withApi({
   auth: "admin",
+  rateLimit: "blog-admin",
   paramsSchema: postIdParamsSchema,
   bodySchema: blogPostUpdateSchema,
 }, async ({ params, body }) => {
@@ -87,6 +88,7 @@ export const PUT = withApi({
 // DELETE /api/blog/admin/posts/[postId] - Delete a blog post
 export const DELETE = withApi({
   auth: "admin",
+  rateLimit: "blog-admin",
   paramsSchema: postIdParamsSchema,
 }, async ({ params }) => {
   const { postId } = params;

@@ -1,10 +1,12 @@
 // Note: Firebase is NOT imported at module level to avoid loading in content scripts
 // Content scripts cannot use localStorage and Firebase SDK tries to access it on load
 // Use dynamic import in getTokenFromFirebase() instead
+import { getEnv } from "./env";
 
 const AUTH_TOKEN_STORAGE_KEY = "hireallAuthToken";
 const AUTH_FAILURE_COUNT_KEY = "hireallAuthFailureCount";
 const AUTH_LAST_FAILURE_KEY = "hireallAuthLastFailure";
+const SESSION_PROOF_STORAGE_KEY = "hireallSessionData";
 const TOKEN_SAFETY_BUFFER_MS = 30 * 1000; // subtract 30 seconds to avoid edge expirations
 const DEFAULT_TOKEN_TTL_MS = 55 * 60 * 1000; // refresh slightly before Firebase's 60 minute expiry
 const MAX_CONSECUTIVE_FAILURES = 3; // Clear stale auth after this many failures
@@ -14,12 +16,23 @@ const BACKGROUND_TOKEN_REQUEST_TIMEOUT_MS = 2500;
 const HIREALL_TAB_TOKEN_REQUEST_TIMEOUT_MS = 2000;
 const HIREALL_TAB_MAX_TABS_TO_TRY = 2;
 
+const EXPECTED_PROJECT_ID =
+  getEnv("NEXT_PUBLIC_FIREBASE_PROJECT_ID") ||
+  getEnv("FIREBASE_PROJECT_ID") ||
+  "";
+
 export interface CachedAuthToken {
   token: string;
   expiresAt: number;
   userId?: string;
   userEmail?: string;
   source?: "popup" | "webapp" | "background" | "tab";
+  updatedAt: number;
+}
+
+export interface SessionProof {
+  sessionHash: string;
+  expiresAt: number;
   updatedAt: number;
 }
 
@@ -180,6 +193,37 @@ async function writeCachedAuthToken(cache: CachedAuthToken | null): Promise<void
   });
 }
 
+async function readSessionProof(): Promise<SessionProof | null> {
+  if (!isChromeStorageAvailable()) {
+    return null;
+  }
+
+  return new Promise((resolve) => {
+    chrome.storage.local.get([SESSION_PROOF_STORAGE_KEY], (result) => {
+      const raw = result?.[SESSION_PROOF_STORAGE_KEY];
+      if (raw && typeof raw === "object" && typeof raw.sessionHash === "string") {
+        resolve(raw as SessionProof);
+      } else {
+        resolve(null);
+      }
+    });
+  });
+}
+
+async function writeSessionProof(proof: SessionProof | null): Promise<void> {
+  if (!isChromeStorageAvailable()) {
+    return;
+  }
+
+  return new Promise((resolve) => {
+    if (!proof) {
+      chrome.storage.local.remove([SESSION_PROOF_STORAGE_KEY], () => resolve());
+    } else {
+      chrome.storage.local.set({ [SESSION_PROOF_STORAGE_KEY]: proof }, () => resolve());
+    }
+  });
+}
+
 async function getValidCachedToken(forceRefresh: boolean): Promise<CachedAuthToken | null> {
   if (forceRefresh) {
     return null;
@@ -188,6 +232,19 @@ async function getValidCachedToken(forceRefresh: boolean): Promise<CachedAuthTok
   const cached = await readCachedAuthToken();
   if (!cached) {
     return null;
+  }
+
+  // Decode token expiry (Firebase ID tokens are JWTs). If parsing fails, fall back to stored expiry.
+  const payload = decodeJwtPayload(cached.token);
+  if (payload) {
+    const exp = typeof payload.exp === "number" ? payload.exp * 1000 : null;
+    if (exp && (!cached.expiresAt || exp < cached.expiresAt)) {
+      cached.expiresAt = exp;
+    }
+    if (!isTokenForProject(payload)) {
+      await writeCachedAuthToken(null);
+      return null;
+    }
   }
 
   if (!cached.expiresAt || cached.expiresAt - TOKEN_SAFETY_BUFFER_MS <= Date.now()) {
@@ -314,6 +371,33 @@ export async function clearCachedAuthToken(): Promise<void> {
   }
 }
 
+export async function getSessionProof(): Promise<SessionProof | null> {
+  const proof = await readSessionProof();
+  if (!proof) return null;
+  if (proof.expiresAt && proof.expiresAt <= Date.now()) {
+    await writeSessionProof(null);
+    return null;
+  }
+  return proof;
+}
+
+export async function setSessionProof(params: { sessionHash: string; expiresAt: number }): Promise<void> {
+  if (!params.sessionHash || params.sessionHash.length < 8) {
+    console.warn("Hireall: Invalid session hash provided to setSessionProof");
+    return;
+  }
+  const proof: SessionProof = {
+    sessionHash: params.sessionHash,
+    expiresAt: params.expiresAt,
+    updatedAt: Date.now(),
+  };
+  await writeSessionProof(proof);
+}
+
+export async function clearSessionProof(): Promise<void> {
+  await writeSessionProof(null);
+}
+
 async function getTokenFromHireallTab(forceRefresh: boolean): Promise<CachedAuthToken | null> {
   if (!canAccessTabsApi()) {
     return null;
@@ -431,11 +515,21 @@ async function getTokenFromHireallTab(forceRefresh: boolean): Promise<CachedAuth
       });
 
       if (response?.token) {
+        let expiresAt = Date.now() + DEFAULT_TOKEN_TTL_MS;
+        const payload = decodeJwtPayload(response.token);
+        if (payload) {
+          if (!isTokenForProject(payload)) {
+            continue;
+          }
+          if (typeof payload.exp === 'number') {
+            expiresAt = payload.exp * 1000;
+          }
+        }
         const cache: CachedAuthToken = {
           token: response.token,
           userId: response.userId,
           userEmail: response.userEmail,
-          expiresAt: Date.now() + DEFAULT_TOKEN_TTL_MS,
+          expiresAt,
           source: "tab",
           updatedAt: Date.now(),
         };
@@ -467,11 +561,21 @@ async function getTokenFromFirebase(forceRefresh: boolean): Promise<CachedAuthTo
     }
 
     const token = await user.getIdToken(forceRefresh);
+    const payload = decodeJwtPayload(token);
+    let expiresAt = Date.now() + DEFAULT_TOKEN_TTL_MS;
+    if (payload) {
+      if (!isTokenForProject(payload)) {
+        return null;
+      }
+      if (typeof payload.exp === 'number') {
+        expiresAt = payload.exp * 1000;
+      }
+    }
     const cache: CachedAuthToken = {
       token,
       userId: user.uid,
       userEmail: user.email ?? undefined,
-      expiresAt: Date.now() + DEFAULT_TOKEN_TTL_MS,
+      expiresAt,
       source: "popup",
       updatedAt: Date.now(),
     };
@@ -517,11 +621,22 @@ async function requestTokenFromBackground(forceRefresh: boolean): Promise<Cached
           }
 
           if (response?.token && typeof response.token === "string") {
+            let expiresAt = response.expiresAt ?? Date.now() + DEFAULT_TOKEN_TTL_MS;
+            const payload = decodeJwtPayload(response.token);
+            if (payload) {
+              if (!isTokenForProject(payload)) {
+                resolve(null);
+                return;
+              }
+              if (typeof payload.exp === 'number') {
+                expiresAt = payload.exp * 1000;
+              }
+            }
             const cache: CachedAuthToken = {
               token: response.token,
               userId: response.userId ?? undefined,
               userEmail: response.userEmail ?? undefined,
-              expiresAt: response.expiresAt ?? Date.now() + DEFAULT_TOKEN_TTL_MS,
+              expiresAt,
               source: "background",
               updatedAt: Date.now(),
             };
@@ -541,6 +656,30 @@ async function requestTokenFromBackground(forceRefresh: boolean): Promise<Cached
       resolve(null);
     }
   });
+}
+
+export function decodeJwtPayload(token: string): Record<string, any> | null {
+  if (!token || typeof token !== 'string') return null;
+  const parts = token.split('.');
+  if (parts.length !== 3) return null;
+  try {
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64.padEnd(base64.length + (4 - (base64.length % 4)) % 4, '=');
+    const json = atob(padded);
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+}
+
+function isTokenForProject(payload: Record<string, any> | null): boolean {
+  if (!payload) return false;
+  if (!EXPECTED_PROJECT_ID) return true;
+  const audMatches = !payload.aud || payload.aud === EXPECTED_PROJECT_ID;
+  const issMatches = !payload.iss || typeof payload.iss === 'string'
+    ? payload.iss.endsWith(EXPECTED_PROJECT_ID)
+    : true;
+  return audMatches && issMatches;
 }
 
 export async function acquireIdToken(

@@ -15,7 +15,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import { apiClient } from "@/lib/api/client";
+import { emailApi } from "@/utils/api/email";
 
 interface EmailHistoryItem {
   id: string;
@@ -44,7 +44,7 @@ export function EmailHistory({ applicationId }: EmailHistoryProps) {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const response = await apiClient.get<{ history: EmailHistoryItem[] }>(`/email/history/${applicationId}`);
+        const response = await emailApi.getHistory(applicationId);
         setHistory(response.history);
       } catch (error) {
         console.error("Failed to fetch email history:", error);

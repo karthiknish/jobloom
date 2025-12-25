@@ -9,6 +9,7 @@ export { OPTIONS };
 // GET /api/contact/[id] - Get a specific contact (admin only)
 export const GET = withApi({
   auth: "admin",
+  rateLimit: "admin",
 }, async ({ params }) => {
   const db = getAdminDb();
   const contactDoc = await db.collection('contacts').doc(params.id).get();
@@ -33,6 +34,7 @@ const updateContactSchema = z.object({
 // PUT /api/contact/[id] - Update a specific contact (admin only)
 export const PUT = withApi({
   auth: "admin",
+  rateLimit: "admin",
   bodySchema: updateContactSchema,
 }, async ({ params, body }) => {
   const { status, response } = body;
@@ -62,6 +64,7 @@ export const PUT = withApi({
 // DELETE /api/contact/[id] - Delete a specific contact (admin only)
 export const DELETE = withApi({
   auth: "admin",
+  rateLimit: "admin",
 }, async ({ params }) => {
   const db = getAdminDb();
   await db.collection('contacts').doc(params.id).delete();

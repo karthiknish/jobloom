@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSubscription } from "@/providers/subscription-provider";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
-import { apiClient } from "@/lib/api/client";
+import { subscriptionApi } from "@/utils/api/subscription";
 
 function UpgradeSuccessContent() {
   const router = useRouter();
@@ -28,7 +28,7 @@ function UpgradeSuccessContent() {
 
       try {
         if (user) {
-          await apiClient.post("/subscription/upgrade", { sessionId });
+          await subscriptionApi.confirmUpgrade(sessionId);
         }
       } catch (error) {
         console.error("Error confirming subscription:", error);

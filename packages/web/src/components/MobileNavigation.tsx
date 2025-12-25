@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { useState, useEffect } from "react";
-import { apiClient } from "@/lib/api/client";
+import { authApi } from "@/utils/api/auth";
 
 const navigationItems = [
   {
@@ -56,7 +56,7 @@ export default function MobileNavigation() {
 
   useEffect(() => {
     if (user?.uid) {
-      apiClient.get<boolean>(`/app/admin/is-admin/${user.uid}`)
+      authApi.isAdmin(user.uid)
         .then((res) => setIsAdmin(res))
         .catch(() => setIsAdmin(false));
     } else {

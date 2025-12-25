@@ -118,7 +118,7 @@ function applyDrawColor(pdf: jsPDF, color: ThemeColor): void {
 // ============ END THEME COLOR SYSTEM ============
 
 export interface ResumePDFOptions {
-  template?: 'modern' | 'classic' | 'creative' | 'minimal' | 'executive' | 'academic' | 'tech' | 'startup' | 'technical';
+  template?: 'modern' | 'classic' | 'creative' | 'executive' | 'technical';
   fontSize?: number;
   lineHeight?: number;
   margin?: number;

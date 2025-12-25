@@ -3,6 +3,8 @@ import { get, post, put } from "./apiClient";
 import { safeChromeStorageGet } from "./utils/safeStorage";
 import { UnifiedJobParser, type JobData as EnhancedJobData, type SocCodeMatch } from "./parsers";
 import { normalizeJobUrl, extractJobIdentifier } from "./utils/url";
+import { SponsorshipManager } from "./components/SponsorshipManager";
+import { normalizeCompanyName, isLikelyPlaceholderCompany } from "./utils/companyName";
 
 interface JobBoardEntry {
   id: string;
@@ -214,6 +216,28 @@ export class EnhancedJobBoardManager {
       if (existingJob) {
         console.log("Job already exists in board:", existingJob.id);
         return existingJob;
+      }
+
+      // Pre-check sponsorship if not already set and company is valid
+      if (!jobData.isSponsored && jobData.company) {
+        const normalizedCompany = normalizeCompanyName(jobData.company);
+        if (normalizedCompany && !isLikelyPlaceholderCompany(normalizedCompany)) {
+          try {
+            console.log('[HireAll] Pre-checking sponsorship for:', normalizedCompany);
+            const sponsorRecord = await SponsorshipManager.fetchSponsorRecord(normalizedCompany, jobData);
+            if (sponsorRecord?.isSponsored) {
+              jobData.isSponsored = true;
+              jobData.sponsorshipType = sponsorRecord.sponsorshipType || 'Skilled Worker';
+              console.log('[HireAll] Sponsorship verified:', {
+                company: normalizedCompany,
+                type: jobData.sponsorshipType
+              });
+            }
+          } catch (sponsorError) {
+            console.warn('[HireAll] Sponsorship pre-check failed (continuing without):', sponsorError);
+            // Continue without sponsorship data rather than failing the add
+          }
+        }
       }
 
       // Create job entry with enhanced data

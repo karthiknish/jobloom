@@ -23,6 +23,7 @@ const emailCampaignCreateSchema = z.object({
 
 export const GET = withApi({
   auth: "admin",
+  rateLimit: "admin",
 }, async () => {
   const db = getAdminDb();
   const campaignsRef = db.collection('emailCampaigns');
@@ -38,6 +39,7 @@ export const GET = withApi({
 
 export const POST = withApi({
   auth: "admin",
+  rateLimit: "admin",
   bodySchema: emailCampaignCreateSchema,
 }, async ({ body }) => {
   const db = getAdminDb();

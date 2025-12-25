@@ -35,7 +35,7 @@ import { Switch } from "@/components/ui/switch";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { useSubscription } from "@/providers/subscription-provider";
 import { showSuccess, showError, showInfo } from "@/components/ui/Toast";
-import { apiClient } from "@/lib/api/client";
+import { aiApi } from "@/utils/api/ai";
 import ResumePDFGenerator from "@/lib/resumePDFGenerator";
 import { themeColors, themeUtils } from "@/styles/theme-colors";
 import { cn } from "@/lib/utils";
@@ -178,7 +178,7 @@ export function AIResumeGenerator() {
     setIsGenerating(true);
     
     try {
-      const payload = await apiClient.post<GeneratedResume>("/ai/resume", {
+      const payload = await aiApi.generateResume({
         ...formData,
         atsOptimization,
         aiEnhancement,

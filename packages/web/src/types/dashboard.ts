@@ -27,6 +27,14 @@ export interface Job {
   source: string;
   dateFound: number;
   userId: string;
+  // Enhanced fields from extension
+  likelySocCode?: string;
+  socMatchConfidence?: number;
+  department?: string;
+  seniority?: string;
+  employmentType?: string;
+  locationType?: string;
+  extractedKeywords?: string[];
 }
 
 export interface Application {

@@ -489,8 +489,28 @@ export function ResumeImporter({ onImport }: ResumeImporterProps) {
         github: "",
         website: "",
       },
-      experience: [],
-      education: [],
+      // Add placeholder experience when parsedData is missing
+      experience: selectedAnalysis.strengths.length > 0 ? [{
+        id: 'imported-1',
+        company: 'Your Previous Company',
+        position: selectedAnalysis.targetRole || 'Professional Role',
+        location: '',
+        startDate: '',
+        endDate: '',
+        current: false,
+        description: 'Update with your experience details from the uploaded resume.',
+        achievements: selectedAnalysis.strengths.slice(0, 5)
+      }] : [],
+      // Add placeholder education when parsedData is missing
+      education: selectedAnalysis.industry ? [{
+        id: 'imported-1',
+        institution: 'Your University',
+        degree: 'Degree',
+        field: selectedAnalysis.industry || 'Your Field',
+        graduationDate: '',
+        gpa: '',
+        honors: ''
+      }] : [],
       skills: [],
       projects: [],
       certifications: [],
@@ -504,9 +524,9 @@ export function ResumeImporter({ onImport }: ResumeImporterProps) {
       const softSkills: string[] = [];
       const otherSkills: string[] = [];
       
-      // Categorize skills (basic heuristic)
-      const technicalPatterns = /^(javascript|typescript|react|node|python|java|sql|aws|azure|docker|kubernetes|git|api|html|css|database|cloud|devops|ci\/cd|testing|agile)/i;
-      const softPatterns = /^(communication|leadership|team|management|problem|analytical|creative|strategic|collaboration|presentation)/i;
+      // Categorize skills with expanded patterns
+      const technicalPatterns = /^(javascript|typescript|react|angular|vue|svelte|next\.?js|node\.?js|express|python|django|flask|java|spring|kotlin|swift|objective-c|c\+\+|c#|\.net|rust|go|golang|ruby|rails|php|laravel|sql|mysql|postgresql|mongodb|redis|elasticsearch|firebase|supabase|aws|azure|gcp|docker|kubernetes|k8s|terraform|ansible|jenkins|ci\/cd|git|github|gitlab|bitbucket|api|rest|graphql|grpc|html|css|sass|scss|less|tailwind|bootstrap|webpack|vite|rollup|babel|testing|jest|mocha|cypress|playwright|selenium|puppeteer|agile|scrum|kanban|linux|unix|bash|powershell|shell|nginx|apache|kafka|rabbitmq|microservices|serverless|lambda|vercel|netlify|heroku|figma|sketch|adobe|xd|photoshop|illustrator)/i;
+      const softPatterns = /^(communication|leadership|team|teamwork|management|problem[- ]?solving|analytical|creative|creativity|strategic|collaboration|presentation|negotiation|mentoring|coaching|conflict[- ]?resolution|decision[- ]?making|time[- ]?management|organization|planning|critical[- ]?thinking|interpersonal|customer[- ]?service|stakeholder|project[- ]?management|product|budget|vendor|hiring|recruiting|training|onboarding|facilitation|delegation|adaptability|flexibility|resilience|emotional[- ]?intelligence|public[- ]?speaking|writing|documentation|research|data[- ]?analysis|prioritization|multitasking)/i;
       
       keywords.forEach(skill => {
         if (technicalPatterns.test(skill)) {

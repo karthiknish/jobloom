@@ -24,7 +24,7 @@ import { useSubscription } from "@/providers/subscription-provider";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { useRouter } from "next/navigation";
 import { showSuccess, showError } from "@/components/ui/Toast";
-import { apiClient } from "@/lib/api/client";
+import { subscriptionApi } from "@/utils/api/subscription";
 
 export default function UpgradePage() {
   const [isUpgrading, setIsUpgrading] = useState(false);
@@ -46,7 +46,7 @@ export default function UpgradePage() {
 
     setIsUpgrading(true);
     try {
-      const data = await apiClient.post<any>("/stripe/create-checkout-session", {
+      const data = await subscriptionApi.createCheckout({
         plan: targetPlan,
         billingCycle: "monthly",
       });

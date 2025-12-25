@@ -21,7 +21,7 @@ import { format, formatDistanceToNow } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 
 import { useAdminAuth } from "@/hooks/useAdminAuth";
-import { useApiQuery, useApiMutation } from "@/hooks/useApi";
+import { useEnhancedApi } from "@/hooks/useEnhancedApi";
 import { adminApi } from "@/utils/api/admin";
 import { exportToCsv } from "@/utils/exportToCsv";
 import { AdminLayout } from "@/components/admin/AdminLayout";
@@ -126,20 +126,14 @@ export default function AdminVolunteerDashboard() {
 
   const canFetchAdminData = isAdmin === true;
 
-  const loadContacts = useCallback(
-    () => adminApi.getAllContactSubmissions(),
-    []
-  );
-
   const {
     data: allContacts,
     loading: contactsLoading,
     error: contactsError,
     refetch: refetchContacts,
-  } = useApiQuery(
-    loadContacts,
-    [userRecord?._id, isAdmin],
-    { enabled: canFetchAdminData }
+  } = useEnhancedApi<ContactSubmission[]>(
+    () => adminApi.getAllContactSubmissions(),
+    { immediate: canFetchAdminData }
   );
 
   useEffect(() => {
@@ -157,8 +151,8 @@ export default function AdminVolunteerDashboard() {
     return contacts.filter(isVolunteerApplication);
   }, [allContacts]);
 
-  const { mutate: updateContact, loading: updateLoading } = useApiMutation(
-    ({
+  const { execute: updateContact, loading: updateLoading } = useEnhancedApi(
+    async ({
       contactId,
       updates,
     }: {
@@ -166,11 +160,13 @@ export default function AdminVolunteerDashboard() {
       updates: Partial<
         Pick<ContactSubmission, "status" | "response" | "respondedAt" | "respondedBy">
       >;
-    }) => adminApi.updateContactSubmission(contactId, updates)
+    }) => adminApi.updateContactSubmission(contactId, updates),
+    { immediate: false }
   );
 
-  const { mutate: deleteContact, loading: deleteLoading } = useApiMutation(
-    ({ contactId }: { contactId: string }) => adminApi.deleteContactSubmission(contactId)
+  const { execute: deleteContact, loading: deleteLoading } = useEnhancedApi(
+    async ({ contactId }: { contactId: string }) => adminApi.deleteContactSubmission(contactId),
+    { immediate: false }
   );
 
   const filteredVolunteers = useMemo(() => {

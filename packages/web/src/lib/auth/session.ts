@@ -122,7 +122,7 @@ async function verifySessionCookieValue(
 export async function createSessionCookie(
   idToken: string,
   metadata: SessionMetadata,
-): Promise<{ sessionCookie: string; expiresAt: number }> {
+): Promise<{ sessionCookie: string; expiresAt: number; sessionHash: string }> {
   const auth = getAdminAuth();
   const expiresAt = Date.now() + SESSION_EXPIRY_SECONDS * 1000;
   const sessionCookie = await auth.createSessionCookie(idToken, {
@@ -149,7 +149,43 @@ export async function createSessionCookie(
     { merge: true },
   );
 
-  return { sessionCookie, expiresAt };
+  return { sessionCookie, expiresAt, sessionHash: hash };
+}
+
+export async function verifySessionHashForUser(
+  uid: string,
+  sessionHash: string,
+): Promise<boolean> {
+  if (!sessionHash || sessionHash.length < 8) {
+    return false;
+  }
+
+  try {
+    const db = getAdminDb();
+    const doc = await db
+      .collection(SESSION_COLLECTION)
+      .doc(uid)
+      .collection("sessions")
+      .doc(sessionHash)
+      .get();
+
+    if (!doc.exists) {
+      return false;
+    }
+
+    await doc.ref.update({ lastSeenAt: new Date().toISOString() });
+    return true;
+  } catch (error) {
+    SecurityLogger.logSecurityEvent({
+      type: "auth_failure",
+      severity: "medium",
+      details: {
+        reason: "Session hash verification failed",
+        error: error instanceof Error ? error.message : "unknown",
+      },
+    });
+    return false;
+  }
 }
 
 export async function verifySessionFromRequest(request: NextRequest) {

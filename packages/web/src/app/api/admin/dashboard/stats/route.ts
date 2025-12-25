@@ -110,6 +110,7 @@ async function countWithFallback(
 
 export const GET = withApi({
   auth: "admin",
+  rateLimit: "admin",
 }, async () => {
   const db = getAdminDb();
   const nowMs = Date.now();

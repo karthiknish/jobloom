@@ -10,13 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { showError, showSuccess } from "@/components/ui/Toast";
-import { apiClient } from "@/lib/api/client";
+import { authApi } from "@/utils/api/auth";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-async function requestPasswordReset(email: string, redirectUrl?: string) {
-  return apiClient.post<any>("/auth/password/request", { email, redirectUrl });
-}
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -52,7 +48,7 @@ export default function ForgotPasswordPage() {
     setLoading(true);
     try {
       const redirectUrl = typeof window !== "undefined" ? `${window.location.origin}/auth/reset` : undefined;
-      await requestPasswordReset(trimmed, redirectUrl);
+      await authApi.requestPasswordReset(trimmed, redirectUrl);
 
       setSent(true);
       showSuccess("Password reset email sent!", "Check your inbox for instructions to reset your password.");

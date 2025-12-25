@@ -4,48 +4,30 @@ import type {
   SponsoredCompany,
   SponsorshipStats,
 } from "../../types/api";
+import { apiClient, FrontendApiError } from "../../lib/api/client";
 
-// Generic API error class
-export class ApiError extends Error {
-  constructor(
-    message: string,
-    public status: number,
-    public code?: string
-  ) {
-    super(message);
-    this.name = "ApiError";
-  }
-}
+// Re-export for backward compatibility
+export { FrontendApiError as ApiError };
 
-// Base API client
+// Base API client - now uses the unified apiClient under the hood
 class AppApiClient {
   private baseUrl: string;
 
   constructor() {
-    this.baseUrl = "/api/app";
+    this.baseUrl = "/app";
   }
 
+  /**
+   * Make an API request using the unified apiClient.
+   * This ensures consistent error handling, retries, and auth across all API calls.
+   */
   async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const url = `${this.baseUrl}${endpoint}`;
-    const response = await fetch(url, {
+    const fullEndpoint = `${this.baseUrl}${endpoint}`;
+    
+    // Use the unified API client for consistent behavior
+    return apiClient.request<T>(fullEndpoint, {
       ...options,
-      headers: {
-        "Content-Type": "application/json",
-        ...options.headers,
-      },
     });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new ApiError(
-        errorData.message ||
-          `API request failed with status ${response.status}`,
-        response.status,
-        errorData.code
-      );
-    }
-
-    return response.json();
   }
 
   // User endpoints (Firebase userId)

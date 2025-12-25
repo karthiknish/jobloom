@@ -27,10 +27,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAnalytics } from "@/providers/analytics-provider";
-import { apiClient } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { EmptyState } from "@/components/ui/empty-state";
+import { analyticsApi } from "@/utils/api/analytics";
 
 function AnalyticsDashboardSkeleton() {
   return (
@@ -160,21 +160,21 @@ export function AnalyticsDashboard() {
       setIsLoading(true);
       setError(null);
 
-      const rawData = await apiClient.get<any>("/admin/analytics");
+      const rawData = await analyticsApi.getAdminAnalytics();
       
       // Transform new API response to existing interface
       const data: AnalyticsData = {
         users: {
-          total: rawData.users?.total || 0,
-          newLast30Days: rawData.users?.newThisMonth || 0,
-          activeLast7Days: rawData.activeUsers?.weekly || 0,
-          premium: rawData.users?.premium || 0,
-          free: rawData.users?.free || 0,
-          conversionRate: rawData.users?.total > 0 
-            ? Math.round((rawData.users?.premium / rawData.users?.total) * 10000) / 100 
+          total: rawData.users?.total ?? 0,
+          newLast30Days: rawData.users?.newThisMonth ?? 0,
+          activeLast7Days: rawData.activeUsers?.weekly ?? 0,
+          premium: rawData.users?.premium ?? 0,
+          free: rawData.users?.free ?? 0,
+          conversionRate: (rawData.users?.total ?? 0) > 0 
+            ? Math.round(((rawData.users?.premium ?? 0) / (rawData.users?.total ?? 1)) * 10000) / 100 
             : 0,
-          activeRate: rawData.users?.total > 0 
-            ? Math.round((rawData.activeUsers?.weekly / rawData.users?.total) * 10000) / 100 
+          activeRate: (rawData.users?.total ?? 0) > 0 
+            ? Math.round(((rawData.activeUsers?.weekly ?? 0) / (rawData.users?.total ?? 1)) * 10000) / 100 
             : 0,
         },
         content: {

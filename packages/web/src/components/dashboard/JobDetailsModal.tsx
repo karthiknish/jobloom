@@ -37,6 +37,7 @@ import { Application } from "@/types/dashboard";
 import { useRestoreFocus } from "@/hooks/useRestoreFocus";
 import { JobAISummary } from "./JobAISummary";
 import { EmailHistory } from "./EmailHistory";
+import { UkVisaBadge } from "./UkVisaBadge";
 
 interface JobDetailsModalProps {
   application: Application | null;
@@ -139,7 +140,13 @@ export function JobDetailsModal({
                 {job?.isSponsored && (
                   <Badge variant="orange" className="gap-1">
                     <Sparkles className="h-3 w-3" />
-                    Sponsored
+                    Sponsored{job.sponsorshipType ? ` - ${job.sponsorshipType}` : ""}
+                  </Badge>
+                )}
+                {job?.likelySocCode && (
+                  <Badge variant="secondary" className="gap-1" title="UK SOC Code for visa classification">
+                    SOC: {job.likelySocCode}
+                    {job?.socMatchConfidence && ` (${Math.round(job.socMatchConfidence * 100)}%)`}
                   </Badge>
                 )}
                 {job?.remoteWork && (
@@ -154,16 +161,29 @@ export function JobDetailsModal({
                     Agency
                   </Badge>
                 )}
-                {job?.jobType && (
+                {job?.locationType && job.locationType !== "remote" && (
                   <Badge variant="outline" className="capitalize">
-                    {job.jobType}
+                    {job.locationType}
                   </Badge>
                 )}
-                {job?.experienceLevel && (
+                {job?.employmentType && (
                   <Badge variant="outline" className="capitalize">
-                    {job.experienceLevel}
+                    {job.employmentType}
                   </Badge>
                 )}
+                {job?.seniority && (
+                  <Badge variant="outline" className="gap-1 capitalize">
+                    <TrendingUp className="h-3 w-3" />
+                    {job.seniority}
+                  </Badge>
+                )}
+                {job?.department && (
+                  <Badge variant="outline" className="gap-1 capitalize">
+                    <Briefcase className="h-3 w-3" />
+                    {job.department}
+                  </Badge>
+                )}
+                {job && <UkVisaBadge job={job} />}
               </div>
             </DialogHeader>
 

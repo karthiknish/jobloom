@@ -87,6 +87,12 @@ export function ensureFirebase(): FirebaseApp {
 }
 
 export function getAuthInstance(): Auth {
+  // Firebase auth is only supported in extension contexts (popup/options/background).
+  // Content scripts run in sandboxed pages and cannot access the required storage APIs.
+  if (typeof window !== 'undefined' && window.location?.protocol !== 'chrome-extension:') {
+    throw new Error('Firebase Auth unavailable outside extension context');
+  }
+
   if (cachedAuth) {
     return cachedAuth;
   }

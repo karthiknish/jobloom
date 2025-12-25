@@ -9,8 +9,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { showError } from "@/components/ui/Toast";
-import { collection, addDoc, serverTimestamp, query, orderBy, limit, onSnapshot, getFirestore } from "firebase/firestore";
-import { apiClient } from "@/lib/api/client";
+import { collection, addDoc, serverTimestamp, getFirestore } from "firebase/firestore";
+import { chatbotApi } from "@/utils/api/chatbot";
 
 interface Message {
   id: string;
@@ -145,7 +145,7 @@ export default function Chatbot() {
     await saveMessageToFirebase(userMessage);
 
     try {
-      const data = await apiClient.post<any>('/api/chatbot', {
+      const data = await chatbotApi.sendMessage({
         message: message.trim(),
         context: user ? `User is signed in with email: ${user.email}` : `User email: ${userEmail}`
       });

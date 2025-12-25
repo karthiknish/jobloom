@@ -4,71 +4,66 @@
  */
 
 import { ERROR_CODES, ERROR_STATUS_MAP } from './errorCodes';
+import {
+  ApiError,
+  API_DEFAULTS,
+  RETRYABLE_STATUS_CODES,
+  type ApiRequestOptions,
+  type ErrorCategory,
+  type ErrorSeverity,
+  type ApiErrorInfo,
+  type ApiSuccessResponse,
+  type ApiErrorResponse,
+} from '@hireall/shared';
 
-// Enhanced error interface matching backend response
-export interface ApiError {
-  success: false;
-  error: {
-    code: string;
-    message: string;
-    details?: Record<string, any>;
-    field?: string;
-    retryAfter?: number;
-    timestamp: number;
-    requestId: string;
-    path?: string;
-    method?: string;
-  };
-}
+// Re-export shared types for consuming code
+export {
+  type ErrorCategory,
+  type ErrorSeverity,
+  type ApiErrorInfo,
+};
 
-export interface ApiSuccess<T = any> {
-  success: true;
-  data: T;
-  message?: string;
-  meta?: Record<string, any>;
-  timestamp: number;
-}
+// Backend API response types
+export type ApiResponse<T = any> = ApiSuccessResponse<T> | ApiErrorResponse;
 
-export type ApiResponse<T = any> = ApiSuccess<T> | ApiError;
-
-// Frontend error class with additional context
-export class FrontendApiError extends Error {
+/**
+ * Frontend-specific error class that extends the shared ApiError.
+ * Maintains backward compatibility with existing constructor signature.
+ */
+export class FrontendApiError extends ApiError {
   constructor(
     message: string,
-    public code: string,
-    public status: number,
-    public requestId?: string,
-    public field?: string,
-    public details?: Record<string, any>,
-    public retryAfter?: number,
-    public timestamp?: number,
-    public category?: string,
-    public shouldRetry?: boolean,
-    public requiresAuth?: boolean,
-    public requiresPayment?: boolean,
-    public severity?: string
+    code: string,
+    status: number,
+    requestId?: string,
+    field?: string,
+    details?: Record<string, any>,
+    retryAfter?: number,
+    timestamp?: number,
+    category?: ErrorCategory,
+    shouldRetry?: boolean,
+    requiresAuth?: boolean,
+    requiresPayment?: boolean,
+    severity?: ErrorSeverity
   ) {
-    super(message);
+    super({
+      message,
+      code,
+      status,
+      requestId,
+      field,
+      details,
+      retryAfter,
+      timestamp,
+      category,
+      shouldRetry,
+      requiresAuth,
+      requiresPayment,
+      severity,
+    });
     this.name = 'FrontendApiError';
   }
 }
-
-// Error severity levels
-export type ErrorSeverity = 'low' | 'medium' | 'high' | 'critical';
-
-// Error categories for better handling
-export type ErrorCategory = 
-  | 'authentication'
-  | 'authorization'
-  | 'validation'
-  | 'network'
-  | 'server'
-  | 'rate_limit'
-  | 'subscription'
-  | 'file_upload'
-  | 'business_logic'
-  | 'not_found'
-  | 'unknown';
 
 // Error classification result
 export interface ErrorClassification {
@@ -82,21 +77,17 @@ export interface ErrorClassification {
   isFieldError: boolean;
 }
 
-// Request configuration
-export interface ApiRequestConfig extends RequestInit {
-  timeout?: number;
-  retries?: number;
-  retryDelay?: number;
-  skipAuth?: boolean;
-  skipErrorHandler?: boolean;
+// Request configuration - extends shared options with web-specific fields
+export interface ApiRequestConfig extends RequestInit, ApiRequestOptions {
+  // All fields come from ApiRequestOptions: timeout, retries, retryDelay, skipAuth, skipErrorHandler
 }
 
-// API response options
+// API response options (web-specific)
 export interface ApiResponseOptions {
   showGlobalError?: boolean;
   showLocalError?: boolean;
   retryOnFailure?: boolean;
-  customErrorHandler?: (error: FrontendApiError) => void;
+  customErrorHandler?: (error: ApiError) => void;
 }
 
 class ApiClient {
@@ -663,6 +654,37 @@ class ApiClient {
         ...(csrfToken ? { 'x-csrf-token': csrfToken } : {})
       }
     }, options);
+  }
+
+  /**
+   * Health check for the API
+   * Returns health status and latency information
+   */
+  async checkHealth(): Promise<{
+    healthy: boolean;
+    latencyMs: number;
+    version?: string;
+    error?: string;
+  }> {
+    const startTime = Date.now();
+    try {
+      const result = await this.get<{ status: string; version: string }>('/app', {
+        skipAuth: true,
+        retries: 1,
+        timeout: 10000,
+      });
+      return {
+        healthy: result.status === 'healthy',
+        latencyMs: Date.now() - startTime,
+        version: result.version,
+      };
+    } catch (error: any) {
+      return {
+        healthy: false,
+        latencyMs: Date.now() - startTime,
+        error: error.message || 'Unknown error',
+      };
+    }
   }
 }
 

@@ -12,6 +12,7 @@ const emailExportQuerySchema = z.object({
 
 export const GET = withApi({
   auth: "admin",
+  rateLimit: "admin",
   querySchema: emailExportQuerySchema,
 }, async ({ query }) => {
   const { segment, format, activeOnly } = query;

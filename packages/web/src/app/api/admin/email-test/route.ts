@@ -11,6 +11,7 @@ const emailTestSchema = z.object({
 
 export const POST = withApi({
   auth: "admin",
+  rateLimit: "admin",
   bodySchema: emailTestSchema,
 }, async ({ body }) => {
   const { to, subject, html, text } = body;

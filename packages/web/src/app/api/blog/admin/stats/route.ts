@@ -8,6 +8,7 @@ const db = getAdminDb();
 // GET /api/blog/admin/stats - Get blog statistics for admin dashboard
 export const GET = withApi({
   auth: "admin",
+  rateLimit: "blog-admin",
 }, async () => {
   // Get all blog posts
   const postsSnapshot = await db.collection("blogPosts").get();

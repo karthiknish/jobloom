@@ -346,6 +346,60 @@ chrome.runtime.onMessage.addListener((request: any, sender: chrome.runtime.Messa
     return true;
   }
 
+  // Handle SESSION_PROOF_FAILED - session expired and needs user re-authentication
+  if (request.type === 'SESSION_PROOF_FAILED' && request.payload) {
+    logger.warn("Background", "Session proof failed, user needs to re-authenticate", {
+      requestId: request.payload.requestId,
+      path: request.payload.path,
+      recoveryAction: request.payload.recoveryAction,
+    });
+
+    void (async () => {
+      try {
+        // Clear all stale auth state
+        await clearCachedAuthToken();
+
+        // Set badge to indicate session issue
+        try {
+          await chrome.action.setBadgeText({ text: '!' });
+          await chrome.action.setBadgeBackgroundColor({ color: '#EF4444' }); // Red
+
+          // Clear badge after 30 seconds
+          setTimeout(() => {
+            chrome.action.setBadgeText({ text: '' }).catch(() => {});
+          }, 30000);
+        } catch (badgeError) {
+          // Badge API may not be available in all contexts
+          logger.debug("Background", "Could not set badge", {
+            error: badgeError instanceof Error ? badgeError.message : String(badgeError)
+          });
+        }
+
+        // Store recovery info for popup to display
+        await chrome.storage.local.set({
+          hireallSessionRecovery: {
+            needed: true,
+            message: request.payload.message || 'Your session has expired. Please sign in again.',
+            timestamp: Date.now(),
+          },
+        });
+
+        // Clear sync storage auth identifiers
+        await chrome.storage.sync.remove(['firebaseUid', 'userId', 'userEmail', 'sessionToken']);
+
+        logger.info("Background", "Session recovery state prepared");
+      } catch (error) {
+        logger.error("Background", "Failed to handle session proof failure", {
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+
+      sendResponse({ success: true });
+    })();
+
+    return true;
+  }
+
   // Only process messages that are meant for the background script
   if (request.target && request.target !== 'background') {
     logger.debug("Background", "Message not for background script", {

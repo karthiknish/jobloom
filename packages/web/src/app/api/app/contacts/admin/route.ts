@@ -14,6 +14,7 @@ const contactsAdminQuerySchema = z.object({
 // GET /api/app/contacts/admin - Get all contact submissions (admin only)
 export const GET = withApi({
   auth: "admin",
+  rateLimit: "admin",
   querySchema: contactsAdminQuerySchema,
   handler: async ({ query }) => {
     const { status, limit, offset } = query;

@@ -13,6 +13,7 @@ const adminBodySchema = z.object({
 // POST /api/app/users/[userId]/admin - Toggle admin status
 export const POST = withApi({
   auth: "admin",
+  rateLimit: "admin",
   paramsSchema: adminParamsSchema,
   bodySchema: adminBodySchema,
   handler: async ({ params, body, user }) => {

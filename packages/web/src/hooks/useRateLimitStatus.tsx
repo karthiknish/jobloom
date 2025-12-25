@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import { apiClient } from '@/lib/api/client';
+import { rateLimitApi } from '@/utils/api/rateLimit';
 
 export interface RateLimitStatus {
   remaining: number;
@@ -27,7 +27,7 @@ export function useRateLimitStatus(endpoint: string = 'general') {
   const updateStatus = useCallback(async () => {
     try {
       // Get rate limit status from server using apiClient
-      const data = await apiClient.get<any>('/api/rate-limit-status');
+      const data = await rateLimitApi.getStatus();
       
       setStatus(prev => ({
         ...prev,
@@ -54,7 +54,7 @@ export function useRateLimitStatus(endpoint: string = 'general') {
   const checkLimit = useCallback(async (): Promise<boolean> => {
     try {
       // Make a test request to check current rate limit
-      await apiClient.post('/api/rate-limit-check', { endpoint });
+      await rateLimitApi.check(endpoint);
 
       // Update status on successful request
       await updateStatus();

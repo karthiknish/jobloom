@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { motion } from "framer-motion";
 
-import { useApiQuery } from "@/hooks/useApi";
+import { useEnhancedApi } from "@/hooks/useEnhancedApi";
 import { dashboardApi } from "@/utils/api/dashboard";
 import { ApplicationForm } from "@/components/dashboard/ApplicationForm";
 import { JobForm } from "@/components/dashboard/JobForm";
@@ -45,7 +45,6 @@ import { isPast, isToday } from "date-fns";
 
 
 
-
 export function Dashboard() {
   const { user, loading } = useFirebaseAuth();
   const { plan } = useSubscription();
@@ -62,36 +61,39 @@ export function Dashboard() {
   const { dashboardLayout, handleLayoutChange } = useDashboardLayout();
 
   // Fetch user record
-  const { data: userRecord, loading: userRecordLoading, error: userRecordError } = useApiQuery(
+  const { data: userRecord, loading: userRecordLoading, error: userRecordError, refetch: refetchUserRecord } = useEnhancedApi(
     () =>
       user && user.uid
         ? dashboardApi.getUserByFirebaseUid(user.uid)
         : Promise.reject(new Error("No user")),
-    [user?.uid],
-    { enabled: !!user?.uid }
+    { immediate: !!user?.uid }
   );
 
   // Fetch applications
-  const { data: applications, refetch: refetchApplications, loading: applicationsLoading, error: applicationsError } = useApiQuery(
+  const { data: applications, refetch: refetchApplications, loading: applicationsLoading, error: applicationsError } = useEnhancedApi<Application[]>(
     () => dashboardApi.getApplicationsByUser(userRecord!._id),
-    [userRecord?._id],
-    { enabled: !!userRecord, staleTime: 0 }, // Disable cache for debugging
-    `applications-${userRecord?._id}` // Unique key
+    { immediate: !!userRecord }
   );
 
   // Fetch job stats
-  const { data: jobStats, refetch: refetchJobStats, loading: jobStatsLoading, error: jobStatsError } = useApiQuery(
+  const { data: jobStats, refetch: refetchJobStats, loading: jobStatsLoading, error: jobStatsError } = useEnhancedApi(
     () => dashboardApi.getJobStats(userRecord!._id),
-    [userRecord?._id],
-    { enabled: !!userRecord }
+    { immediate: !!userRecord }
   );
 
   // Fetch CV analyses
-  const { data: cvAnalyses } = useApiQuery(
+  const { data: cvAnalyses } = useEnhancedApi(
     () => cvEvaluatorApi.getCvAnalysesByUser(userRecord!._id),
-    [userRecord?._id],
-    { enabled: !!userRecord }
+    { immediate: !!userRecord }
   );
+
+  // Re-fetch when userRecord changes
+  useEffect(() => {
+    if (userRecord?._id) {
+      refetchApplications();
+      refetchJobStats();
+    }
+  }, [userRecord?._id]);
 
 
 

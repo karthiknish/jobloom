@@ -24,6 +24,7 @@ import {
   AlertCircle
 } from "lucide-react";
 import { Application } from "@/utils/api/dashboard";
+import { UkVisaBadge } from "./UkVisaBadge";
 
 interface JobDataTableProps {
   applications: Application[];
@@ -169,21 +170,32 @@ export function JobDataTable({
     {
       id: "sponsorship",
       accessorFn: (row) => row.job?.isSponsored,
-      header: "Sponsorship",
+      header: "Sponsorship & SOC",
       cell: ({ row }) => {
-        const isSponsored = row.original.job?.isSponsored;
+        const job = row.original.job;
+        const isSponsored = job?.isSponsored;
+        const sponsorshipType = job?.sponsorshipType;
+        const socCode = job?.likelySocCode;
+        const socConfidence = job?.socMatchConfidence;
+        
         return (
           <div className="space-y-1">
             {isSponsored && (
               <Badge variant="outline" className="border-primary text-primary text-xs">
-                Sponsored
+                Sponsored{sponsorshipType ? ` - ${sponsorshipType}` : ""}
               </Badge>
             )}
-            {row.original.job?.remoteWork && (
+            {socCode && (
+              <Badge variant="secondary" className="text-xs" title="UK SOC Code">
+                SOC: {socCode}{socConfidence ? ` (${Math.round(socConfidence * 100)}%)` : ""}
+              </Badge>
+            )}
+            {job?.remoteWork && (
               <Badge variant="outline" className="border-blue-500 text-blue-700 text-xs">
                 Remote
               </Badge>
             )}
+            {job && <UkVisaBadge job={job} compact />}
           </div>
         );
       },

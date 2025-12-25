@@ -17,7 +17,7 @@ import {
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { AdminLayout } from "../../components/admin/AdminLayout";
 import { AdminAccessDenied } from "../../components/admin/AdminAccessDenied";
-import { apiClient } from "@/lib/api/client";
+import { adminApi } from "@/utils/api/admin";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -55,7 +55,7 @@ export default function AdminPage() {
     const load = async () => {
       setStatsLoading(true);
       try {
-        const data = await apiClient.get<DashboardStats>("/admin/dashboard/stats");
+        const data = await adminApi.getDashboardStats() as DashboardStats;
         if (!cancelled) {
           setStats(data);
         }

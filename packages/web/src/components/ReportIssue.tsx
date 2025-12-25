@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
-import { apiClient } from "@/lib/api/client";
+import { contactApi } from "@/utils/api/contact";
 
 interface ReportIssueProps {
   /** Position of the floating button */
@@ -106,7 +106,7 @@ Submitted via Report Issue Feature
 Browser: ${typeof navigator !== "undefined" ? navigator.userAgent : "Unknown"}
 `.trim();
 
-      await apiClient.post("/contact", {
+      await contactApi.submitContact({
         name: formData.name || "Anonymous User",
         email: formData.email || "noreply@hireall.app",
         subject: `[${issueLabel}] ${formData.page || "General"}`,

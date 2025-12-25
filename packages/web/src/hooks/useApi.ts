@@ -1,19 +1,51 @@
+/**
+ * @deprecated This file is maintained for backward compatibility.
+ * Use hooks from useEnhancedApi.ts instead for new code:
+ * 
+ * Migration guide:
+ * - useApiQuery → useEnhancedApi with { immediate: true }
+ * - useApiMutation → usePost/usePut/usePatch with execute()
+ * - useParallelQueries → Multiple useGet hooks
+ * 
+ * @see useEnhancedApi.ts for the recommended API hooks
+ */
+
 // hooks/useApi.ts
 import { useState, useEffect, useCallback, useRef } from "react";
-import { ApiError } from "../services/api/appApi";
+import { FrontendApiError } from "../lib/api/client";
+import { ApiError, type ErrorCategory, type ErrorSeverity } from "@hireall/shared";
 
-// Enhanced error interface with more context
+// Re-export shared types for consumers
+export type { ErrorCategory, ErrorSeverity };
+
+// EnhancedApiError extends the shared ApiError with operation context
 export interface EnhancedApiError extends ApiError {
-  requestId?: string;
-  timestamp?: number;
-  field?: string;
   operation?: string;
-  retryAfter?: number;
-  details?: Record<string, any>;
 }
 
-// Error severity levels
-export type ErrorSeverity = 'low' | 'medium' | 'high' | 'critical';
+/**
+ * Helper to create an EnhancedApiError from an unknown error
+ */
+function createEnhancedError(err: unknown, operation?: string): EnhancedApiError {
+  if (ApiError.isApiError(err)) {
+    // If it's already an ApiError, just add operation
+    const enhanced = err as EnhancedApiError;
+    enhanced.operation = operation;
+    return enhanced;
+  }
+
+  // Create a new ApiError from unknown error
+  const message = err instanceof Error ? err.message : 'Unknown error';
+  const error = new ApiError({
+    message,
+    code: 'UNKNOWN_ERROR',
+    status: 500,
+    timestamp: Date.now(),
+    requestId: `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+  }) as EnhancedApiError;
+  error.operation = operation;
+  return error;
+}
 
 // Error categorization
 export function categorizeError(error: ApiError | EnhancedApiError): {
@@ -250,14 +282,10 @@ export function useApiQuery<T>(
       
       onSuccess?.(result);
     } catch (err: any) {
-      const enhancedError: EnhancedApiError = err instanceof ApiError
-        ? { ...err }
-        : new ApiError(typeof err?.message === 'string' ? err.message : 'Unknown error', 500) as EnhancedApiError;
+      const enhancedError = createEnhancedError(err, 'query');
 
       // Add retry information
       const errorInfo = categorizeError(enhancedError);
-      enhancedError.timestamp = Date.now();
-      enhancedError.requestId = enhancedError.requestId || `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
       setError(enhancedError);
 
@@ -360,12 +388,7 @@ export function useApiMutation<T, V = Record<string, unknown>>(
       onSuccess?.(result, variables);
       return result;
     } catch (err: any) {
-      const enhancedError: EnhancedApiError = err instanceof ApiError
-        ? { ...err }
-        : new ApiError("Unknown error", 500) as EnhancedApiError;
-
-      enhancedError.timestamp = Date.now();
-      enhancedError.requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const enhancedError = createEnhancedError(err, 'mutation');
 
       setError(enhancedError);
       logApiError(enhancedError, {
@@ -414,11 +437,7 @@ export function useParallelQueries<T extends Record<string, () => Promise<any>>>
           const result = await queryFn();
           return { key, result, error: null };
         } catch (error: any) {
-          const enhancedError: EnhancedApiError = error instanceof ApiError
-            ? { ...error }
-            : new ApiError("Unknown error", 500) as EnhancedApiError;
-
-          enhancedError.timestamp = Date.now();
+          const enhancedError = createEnhancedError(error, 'parallel_query');
           logApiError(enhancedError, { operation: 'parallel_query', key: String(key) });
           return { key, result: null, error: enhancedError };
         }

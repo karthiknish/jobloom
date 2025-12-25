@@ -23,6 +23,7 @@ const blogPostCreateSchema = z.object({
 // GET /api/blog/admin/posts - Get all blog posts for admin (including drafts)
 export const GET = withApi({
   auth: "admin",
+  rateLimit: "blog-admin",
   querySchema: blogAdminQuerySchema,
 }, async ({ query }) => {
   const { status } = query;
@@ -60,6 +61,7 @@ export const GET = withApi({
 // POST /api/blog/admin/posts - Create a new blog post
 export const POST = withApi({
   auth: "admin",
+  rateLimit: "blog-admin",
   bodySchema: blogPostCreateSchema,
 }, async ({ body, user }) => {
   const {

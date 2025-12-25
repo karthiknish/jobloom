@@ -20,9 +20,9 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { showSuccess } from "@/components/ui/Toast";
-import { useApiQuery } from "../../../hooks/useApi";
+import { useEnhancedApi } from "../../../hooks/useEnhancedApi";
 import type { BlogPost } from "../../../types/api";
-import { apiClient } from "@/lib/api/client";
+import { blogApi } from "@/utils/api/blog";
 
 export default function BlogPostPage() {
   const params = useParams();
@@ -36,15 +36,15 @@ export default function BlogPostPage() {
   });
 
   // Fetch individual blog post using apiClient
-  const { data: post, loading: isLoading } = useApiQuery<BlogPost>(
-    () => apiClient.get<BlogPost>(`/api/blog/posts/${slug}`),
-    [slug]
+  const { data: post, loading: isLoading } = useEnhancedApi<BlogPost>(
+    () => blogApi.getPost(slug),
+    { immediate: !!slug }
   );
 
   // Fetch related posts using apiClient
-  const { data: relatedPostsData } = useApiQuery<{ posts: BlogPost[] }>(
-    () => apiClient.get<{ posts: BlogPost[] }>(`/api/blog/posts?limit=3`),
-    []
+  const { data: relatedPostsData } = useEnhancedApi<{ posts: BlogPost[] }>(
+    () => blogApi.getRelated(3),
+    { immediate: true }
   );
 
   const relatedPosts = relatedPostsData?.posts
@@ -55,7 +55,7 @@ export default function BlogPostPage() {
     if (!post || hasLiked) return;
 
     try {
-      await apiClient.post(`/api/blog/posts/${slug}`);
+      await blogApi.likePost(slug);
 
       setHasLiked(true);
       showSuccess("Thanks for liking this post!");

@@ -1,8 +1,16 @@
 // utils/api/contact.ts
 import { appApi } from "../../services/api/appApi";
+import { apiClient } from "@/lib/api/client";
 import type { ContactSubmission } from "../../types/api";
 
 export const contactApi = {
+  submitContact: async (data: {
+    name: string;
+    email: string;
+    message: string;
+    subject?: string;
+  }) => apiClient.post("/contact", data),
+
   createContact: async (data: {
     name: string;
     email: string;

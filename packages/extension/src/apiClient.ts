@@ -1,15 +1,24 @@
-import { acquireIdToken, clearCachedAuthToken } from './authToken';
+import { acquireIdToken, clearCachedAuthToken, getSessionProof, clearSessionProof, setSessionProof, decodeJwtPayload } from './authToken';
 import { DEFAULT_WEB_APP_URL, sanitizeBaseUrl } from './constants';
 import { checkRateLimit } from './rateLimiter';
 import { safeChromeStorageGet } from './utils/safeStorage';
+import {
+  ApiError,
+  API_DEFAULTS,
+  RETRYABLE_STATUS_CODES,
+  RETRYABLE_ERROR_CODES,
+  type ApiRequestOptions,
+} from '@hireall/shared';
 
-interface ApiOptions extends RequestInit {
-  auth?: boolean; // whether to inject bearer token (defaults true for /api/app/*)
-  path: string;   // relative path starting with /api/
-  query?: Record<string, string | number | boolean | undefined | null>;
-  retryCount?: number; // number of retries (default: 2)
-  retryDelay?: number; // delay between retries in ms (default: 1000)
-  timeout?: number; // request timeout in ms (default: 30000)
+/**
+ * Extension API request options.
+ * Extends the shared ApiRequestOptions with extension-specific fields.
+ */
+export interface ApiOptions extends RequestInit, ApiRequestOptions {
+  /** Relative path starting with /api/ */
+  path: string;
+  /** @deprecated Use retries instead */
+  retryCount?: number;
 }
 
 interface ApiResponse<T> {
@@ -18,18 +27,21 @@ interface ApiResponse<T> {
   headers: Headers;
 }
 
-// Retry configuration
-const DEFAULT_RETRY_COUNT = 2;
-const DEFAULT_RETRY_DELAY = 1000;
-const DEFAULT_TIMEOUT = 30000;
+// Use shared defaults
+const DEFAULT_RETRY_COUNT = API_DEFAULTS.retries;
+const DEFAULT_RETRY_DELAY = API_DEFAULTS.retryDelay;
+const DEFAULT_TIMEOUT = API_DEFAULTS.timeout;
 const BACKGROUND_PROXY_TIMEOUT_BUFFER_MS = 2500;
+const SESSION_PROOF_REFRESH_BUFFER_MS = 5 * 60 * 1000; // Refresh proof within 5 minutes of expiry
 
-// Errors that should trigger a retry
-const RETRYABLE_STATUS_CODES = [408, 429, 500, 502, 503, 504];
-const RETRYABLE_ERRORS = ['ECONNRESET', 'ETIMEDOUT', 'ENOTFOUND', 'ENETUNREACH', 'ECONNREFUSED'];
+// Network error codes that should trigger a retry
+const RETRYABLE_ERRORS = [...RETRYABLE_ERROR_CODES];
 
 // Request deduplication cache - prevents duplicate concurrent requests
 const pendingRequests = new Map<string, Promise<any>>();
+
+// Session proof refresh deduplication - prevents multiple concurrent session refreshes
+const pendingProofRefresh = new Map<string, Promise<string | null>>();
 
 function getRequestKey(method: string, url: string, body?: string | null): string {
   // Create a unique key based on method, url, and (for non-GET) a hash of the body
@@ -65,7 +77,7 @@ function buildQuery(q?: ApiOptions['query']): string {
 
 function shouldRetry(error: any, status?: number): boolean {
   // Retry on specific status codes
-  if (status && RETRYABLE_STATUS_CODES.includes(status)) {
+  if (status && (RETRYABLE_STATUS_CODES as readonly number[]).includes(status)) {
     return true;
   }
   
@@ -108,6 +120,169 @@ async function fetchWithTimeout(
   } finally {
     clearTimeout(timeoutId);
   }
+}
+
+/**
+ * Check if we can access tabs API (for getting session proof from web app tab)
+ */
+function canAccessTabsApi(): boolean {
+  return typeof chrome !== 'undefined' && !!chrome.tabs?.query && !!chrome.tabs?.sendMessage;
+}
+
+/**
+ * Try to get session proof from an active HireAll web app tab.
+ * This leverages the existing web app session instead of creating a new one.
+ */
+async function getSessionProofFromWebAppTab(): Promise<{
+  sessionHash: string;
+  expiresAt: number;
+} | null> {
+  if (!canAccessTabsApi()) {
+    return null;
+  }
+
+  try {
+    const tabs = await chrome.tabs.query({
+      url: [
+        "https://hireall.app/*",
+        "https://*.hireall.app/*",
+        "http://localhost:3000/*"
+      ]
+    });
+
+    if (!tabs.length) {
+      return null;
+    }
+
+    // Try first 2 candidate tabs
+    for (const tab of tabs.slice(0, 2)) {
+      if (!tab.id) continue;
+
+      const response = await new Promise<any>((resolve) => {
+        const timeout = setTimeout(() => resolve(null), 2000);
+        chrome.tabs.sendMessage(
+          tab.id!,
+          { action: 'getSessionProof', target: 'webapp-content' },
+          (resp) => {
+            clearTimeout(timeout);
+            if (chrome.runtime?.lastError || !resp?.success) {
+              resolve(null);
+              return;
+            }
+            resolve(resp);
+          }
+        );
+      });
+
+      if (response?.sessionHash) {
+        return {
+          sessionHash: response.sessionHash,
+          expiresAt: response.expiresAt || Date.now() + 7 * 24 * 60 * 60 * 1000
+        };
+      }
+    }
+  } catch (error) {
+    console.debug('Hireall: Failed to get session proof from web app tab', error);
+  }
+
+  return null;
+}
+
+/**
+ * Refresh session proof if needed, with:
+ * - Token validation (skip if expired)
+ * - Request deduplication (prevent concurrent refreshes)
+ * - Web app tab integration (try active tab first)
+ */
+async function refreshSessionProofIfNeeded(
+  token: string,
+  baseUrl: string,
+  requestId: string
+): Promise<string | null> {
+  // Validate token before using it for refresh
+  const tokenPayload = decodeJwtPayload(token);
+  if (!tokenPayload) {
+    console.debug('Hireall: Invalid token format, skipping session proof refresh');
+    const existing = await getSessionProof();
+    return existing?.sessionHash ?? null;
+  }
+
+  // Check if token is expired - don't use expired token for refresh
+  if (tokenPayload.exp && tokenPayload.exp * 1000 <= Date.now()) {
+    console.debug('Hireall: Token expired, skipping session proof refresh');
+    const existing = await getSessionProof();
+    return existing?.sessionHash ?? null;
+  }
+
+  // Create deduplication key based on user and token prefix
+  const dedupKey = `${tokenPayload.sub || tokenPayload.user_id || 'unknown'}_${token.slice(0, 20)}`;
+
+  // If refresh is already in progress, return existing promise (prevents race condition)
+  if (pendingProofRefresh.has(dedupKey)) {
+    console.debug('Hireall: Session proof refresh already in progress, waiting...');
+    return pendingProofRefresh.get(dedupKey)!;
+  }
+
+  // Wrap the refresh logic in a deduplication promise
+  const refreshPromise = (async (): Promise<string | null> => {
+    const existing = await getSessionProof();
+    const now = Date.now();
+
+    // Return existing if still valid
+    if (existing && existing.expiresAt - now > SESSION_PROOF_REFRESH_BUFFER_MS) {
+      return existing.sessionHash;
+    }
+
+    // Priority 1: Try to get session proof from active web app tab
+    const tabProof = await getSessionProofFromWebAppTab();
+    if (tabProof) {
+      await setSessionProof(tabProof);
+      console.debug('Hireall: Got session proof from web app tab');
+      return tabProof.sessionHash;
+    }
+
+    // Priority 2: Call /api/auth/session directly
+    try {
+      const res = await fetchWithTimeout(
+        `${baseUrl}/api/auth/session`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+            'X-Client-Platform': 'extension',
+            'X-Request-ID': requestId,
+          },
+          credentials: 'include',
+          body: JSON.stringify({ idToken: token }),
+        },
+        12000
+      );
+
+      if (!res.ok) {
+        return existing?.sessionHash ?? null;
+      }
+
+      const payload = await res.json().catch(() => null);
+      const sessionHash = payload?.data?.sessionHash || payload?.sessionHash;
+      const expiresAt = payload?.data?.expiresAt || payload?.expiresAt || (Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+      if (sessionHash) {
+        await setSessionProof({ sessionHash, expiresAt });
+        return sessionHash;
+      }
+
+      return existing?.sessionHash ?? null;
+    } catch (error) {
+      console.warn('Hireall: Failed to refresh session proof', error);
+      return existing?.sessionHash ?? null;
+    }
+  })().finally(() => {
+    pendingProofRefresh.delete(dedupKey);
+  });
+
+  pendingProofRefresh.set(dedupKey, refreshPromise);
+  return refreshPromise;
 }
 
 function createRequestId(): string {
@@ -240,16 +415,19 @@ export async function apiRequest<T = any>(opts: ApiOptions): Promise<T> {
   const { 
     path, 
     query, 
-    auth, 
+    skipAuth,
+    retries,
     headers, 
-    retryCount = DEFAULT_RETRY_COUNT,
+    retryCount = retries ?? DEFAULT_RETRY_COUNT,
     retryDelay = DEFAULT_RETRY_DELAY,
     timeout = DEFAULT_TIMEOUT,
     ...rest 
   } = opts;
   
   const base = await getBaseUrl();
-  const requiresAuth = auth === true || (auth === undefined && path.startsWith('/api/app/'));
+  // skipAuth = false (default) means auth IS required for /api/app/* paths
+  // skipAuth = true means skip auth entirely
+  const requiresAuth = skipAuth !== true && (skipAuth === false || path.startsWith('/api/app/'));
   const url = `${base}${path}${buildQuery(query)}`;
   const requestId = createRequestId();
   const method = (rest.method || 'GET').toString().toUpperCase();
@@ -287,19 +465,22 @@ export async function apiRequest<T = any>(opts: ApiOptions): Promise<T> {
   const rateCheck = await checkRateLimit(rateLimitEndpoint);
   if (!rateCheck.allowed) {
     const retryAfter = rateCheck.retryAfter || Math.ceil((rateCheck.resetIn || 0) / 1000);
-    const error = new Error(
-      `Rate limit exceeded for ${rateLimitEndpoint}. Try again in ${retryAfter} seconds.`
-    );
-    (error as any).rateLimitInfo = rateCheck;
-    (error as any).retryAfter = retryAfter;
-    (error as any).code = 'RATE_LIMITED';
-    throw error;
+    throw new ApiError({
+      message: `Rate limit exceeded for ${rateLimitEndpoint}. Try again in ${retryAfter} seconds.`,
+      code: 'RATE_LIMITED',
+      status: 429,
+      requestId,
+      retryAfter,
+      details: { rateLimitInfo: rateCheck },
+    });
   }
 
   const finalHeaders: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(headers as any),
   };
+
+  finalHeaders['X-Client-Platform'] = 'extension';
 
   // Attach a request id for correlating client logs with backend logs (if supported).
   // Backend emits/understands X-Request-ID; keep a single canonical header to avoid CORS allow-list mismatches.
@@ -349,10 +530,12 @@ export async function apiRequest<T = any>(opts: ApiOptions): Promise<T> {
         requestId,
         elapsedMs: Date.now() - authStart,
       });
-      const error = new Error('Authentication required. Please sign in to the extension or web app.');
-      (error as any).code = 'AUTH_REQUIRED';
-      (error as any).statusCode = 401;
-      throw error;
+      throw new ApiError({
+        message: 'Authentication required. Please sign in to the extension or web app.',
+        code: 'AUTH_REQUIRED',
+        status: 401,
+        requestId,
+      });
     }
 
     console.debug(`Hireall: Successfully acquired token for ${method} ${path}`, {
@@ -360,7 +543,47 @@ export async function apiRequest<T = any>(opts: ApiOptions): Promise<T> {
       elapsedMs: Date.now() - authStart,
       tokenLength: token.length,
     });
+
+      // Ensure we have a fresh session proof bound to the web session
+      const sessionHash = await refreshSessionProofIfNeeded(token, base, requestId);
+      if (!sessionHash) {
+        // Clear stale auth state for clean recovery
+        await clearCachedAuthToken();
+        await clearSessionProof();
+        
+        // Notify user via background script (for popup/badge update)
+        try {
+          if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
+            chrome.runtime.sendMessage({
+              type: 'SESSION_PROOF_FAILED',
+              payload: {
+                requestId,
+                path,
+                recoveryAction: 'sign_in_required',
+                message: 'Your session has expired. Please sign in again to continue.',
+              },
+            }).catch(() => { /* ignore messaging errors */ });
+          }
+        } catch {
+          // Ignore notification errors
+        }
+        
+        throw new ApiError({
+          message: 'Your session has expired. Please sign in again to continue using HireAll.',
+          code: 'SESSION_EXPIRED',
+          status: 401,
+          requestId,
+          details: {
+            recoveryAction: 'sign_in_required',
+            recoveryUrl: `${base}/sign-in`,
+          },
+        });
+      }
+
     finalHeaders['Authorization'] = `Bearer ${token}`;
+
+    // Attach session proof so the server can bind bearer tokens to a verified session
+      finalHeaders['X-Session-Hash'] = sessionHash;
   }
 
   // Perform request with retry logic
@@ -444,11 +667,13 @@ export async function apiRequest<T = any>(opts: ApiOptions): Promise<T> {
             errorMessage = 'Authentication failed. Please sign in again.';
             errorCode = 'AUTH_FAILED';
             await clearCachedAuthToken();
+            await clearSessionProof();
             break;
           case 403:
             errorMessage = 'Permission denied. You do not have access to this resource.';
             errorCode = 'FORBIDDEN';
             await clearCachedAuthToken();
+            await clearSessionProof();
             break;
           case 404:
             errorMessage = 'The requested resource was not found.';
@@ -468,31 +693,17 @@ export async function apiRequest<T = any>(opts: ApiOptions): Promise<T> {
             break;
         }
         
-        const error = new Error(errorMessage);
-        (error as any).statusCode = status;
-        (error as any).code = errorCode;
-        (error as any).requestId = requestId;
-        (error as any).endpoint = path;
-        (error as any).method = method;
-        (error as any).serverRequestId = serverRequestId;
-        
-        // Try to parse error response for more details
-        try {
-          const parsed = JSON.parse(text);
-          if (parsed.error) {
-            (error as any).serverError = parsed.error;
-          }
-          if (parsed.message && typeof parsed.message === 'string') {
-            (error as any).serverMessage = parsed.message;
-          }
-          if (parsed.code) {
-            (error as any).code = parsed.code;
-          }
-        } catch {
-          // Ignore parse errors
-        }
-        
-        throw error;
+        throw new ApiError({
+          message: errorMessage,
+          code: errorCode,
+          status,
+          requestId,
+          details: {
+            endpoint: path,
+            method,
+            serverRequestId,
+          },
+        });
       }
 
       console.debug(`[Hireall:API] <- ${method} ${path} ${status} (${attemptElapsedMs}ms)`, {
@@ -510,11 +721,13 @@ export async function apiRequest<T = any>(opts: ApiOptions): Promise<T> {
         // Unwrap standardized response format { success: true, data: T }
         if (parsed && typeof parsed === 'object' && 'success' in parsed && 'data' in parsed) {
           if (parsed.success === false) {
-            const error = new Error(parsed.error?.message || 'API request failed');
-            (error as any).code = parsed.error?.code || 'API_ERROR';
-            (error as any).statusCode = status;
-            (error as any).details = parsed.error?.details;
-            throw error;
+            throw new ApiError({
+              message: parsed.error?.message || 'API request failed',
+              code: parsed.error?.code || 'API_ERROR',
+              status,
+              requestId,
+              details: parsed.error?.details,
+            });
           }
           return parsed.data as T;
         }
@@ -577,24 +790,63 @@ export async function apiRequest<T = any>(opts: ApiOptions): Promise<T> {
 }
 
 // Convenience wrappers
-export function get<T=any>(path: string, query?: ApiOptions['query'], auth?: boolean, options?: Partial<ApiOptions>) {
-  return apiRequest<T>({ path, method: 'GET', query, auth, ...options });
+// NOTE: For backward compatibility, the 'skipAuth' parameter defaults to undefined,
+// meaning auth will be auto-detected based on path (included for /api/app/*).
+// Pass skipAuth: true to explicitly skip authentication.
+export function get<T=any>(path: string, query?: ApiOptions['query'], skipAuth?: boolean, options?: Partial<ApiOptions>) {
+  return apiRequest<T>({ path, method: 'GET', query, skipAuth, ...options });
 }
 
-export function post<T=any>(path: string, body?: any, auth?: boolean, options?: Partial<ApiOptions>) {
-  return apiRequest<T>({ path, method: 'POST', body: body ? JSON.stringify(body) : undefined, auth, ...options });
+export function post<T=any>(path: string, body?: any, skipAuth?: boolean, options?: Partial<ApiOptions>) {
+  return apiRequest<T>({ path, method: 'POST', body: body ? JSON.stringify(body) : undefined, skipAuth, ...options });
 }
 
-export function put<T=any>(path: string, body?: any, auth?: boolean, options?: Partial<ApiOptions>) {
-  return apiRequest<T>({ path, method: 'PUT', body: body ? JSON.stringify(body) : undefined, auth, ...options });
+export function put<T=any>(path: string, body?: any, skipAuth?: boolean, options?: Partial<ApiOptions>) {
+  return apiRequest<T>({ path, method: 'PUT', body: body ? JSON.stringify(body) : undefined, skipAuth, ...options });
 }
 
-export function del<T=any>(path: string, auth?: boolean, options?: Partial<ApiOptions>) {
-  return apiRequest<T>({ path, method: 'DELETE', auth, ...options });
+export function del<T=any>(path: string, skipAuth?: boolean, options?: Partial<ApiOptions>) {
+  return apiRequest<T>({ path, method: 'DELETE', skipAuth, ...options });
 }
 
-export function patch<T=any>(path: string, body?: any, auth?: boolean, options?: Partial<ApiOptions>) {
-  return apiRequest<T>({ path, method: 'PATCH', body: body ? JSON.stringify(body) : undefined, auth, ...options });
+export function patch<T=any>(path: string, body?: any, skipAuth?: boolean, options?: Partial<ApiOptions>) {
+  return apiRequest<T>({ path, method: 'PATCH', body: body ? JSON.stringify(body) : undefined, skipAuth, ...options });
+}
+
+/**
+ * Upload a file to the API
+ * Handles FormData and multipart requests
+ */
+export async function upload<T=any>(
+  path: string,
+  file: File,
+  additionalData?: Record<string, any>,
+  skipAuth?: boolean,
+  options?: Partial<ApiOptions>
+): Promise<T> {
+  const formData = new FormData();
+  formData.append('file', file);
+  
+  if (additionalData) {
+    Object.entries(additionalData).forEach(([key, value]) => {
+      formData.append(key, String(value));
+    });
+  }
+
+  // For FormData, don't set Content-Type header - browser will set it with boundary
+  const { headers: customHeaders, ...restOptions } = options || {};
+  
+  return apiRequest<T>({
+    path,
+    method: 'POST',
+    body: formData,
+    skipAuth,
+    headers: {
+      // Remove Content-Type so browser sets it with boundary
+      ...customHeaders,
+    },
+    ...restOptions,
+  });
 }
 
 /**
@@ -610,7 +862,7 @@ export interface ApiHealthStatus {
 /**
  * Health check for the API
  */
-export async function checkApiHealth(): Promise<ApiHealthStatus> {
+export async function checkHealth(): Promise<ApiHealthStatus> {
   const startTime = Date.now();
   
   try {
@@ -621,8 +873,8 @@ export async function checkApiHealth(): Promise<ApiHealthStatus> {
     }>({
       path: '/api/app',
       method: 'GET',
-      auth: false,
-      retryCount: 1,
+      skipAuth: true,
+      retries: 1,
       timeout: 10000 // 10 second timeout for health check
     });
     
@@ -639,3 +891,11 @@ export async function checkApiHealth(): Promise<ApiHealthStatus> {
     };
   }
 }
+
+/**
+ * @deprecated Use checkHealth() instead
+ */
+export const checkApiHealth = checkHealth;
+
+// Re-export ApiError for convenience
+export { ApiError };

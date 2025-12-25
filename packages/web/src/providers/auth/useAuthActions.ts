@@ -33,7 +33,7 @@ import {
   createMicrosoftPopupProvider,
   type RunPopupSignIn,
 } from "./usePopupSignIn";
-import { apiClient } from "@/lib/api/client";
+import { emailApi } from "@/utils/api/email";
 
 interface AuthActionDependencies {
   setError: Dispatch<SetStateAction<AuthError | null>>;
@@ -109,7 +109,7 @@ export function useAuthActions({
         }
 
         try {
-          await apiClient.post("/email/welcome", {
+          await emailApi.sendWelcome({
             email: credential.user.email ?? email,
             name: name ?? credential.user.displayName ?? undefined,
           });
