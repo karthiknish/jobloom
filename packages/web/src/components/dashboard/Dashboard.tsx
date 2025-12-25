@@ -41,6 +41,9 @@ import { FileText, Target, TrendingUp, Calendar, Briefcase, Sparkles, AlertCircl
 import { useRestoreFocus } from "@/hooks/useRestoreFocus";
 import { calculatePercentage } from "@/utils/dashboard";
 import { isPast, isToday } from "date-fns";
+import { useOnboardingState } from "@/hooks/useOnboardingState";
+import { useTourContext } from "@/providers/onboarding-tour-provider";
+import { WelcomeDialog } from "@/components/onboarding/WelcomeDialog";
 
 
 
@@ -59,6 +62,27 @@ export function Dashboard() {
 
   // Use the new hooks
   const { dashboardLayout, handleLayoutChange } = useDashboardLayout();
+  
+  // Onboarding state and tour
+  const onboarding = useOnboardingState();
+  const tour = useTourContext();
+  
+  // Auto-start dashboard tour for new users
+  useEffect(() => {
+    if (
+      onboarding.isLoaded &&
+      onboarding.isNewUser &&
+      !onboarding.hasCompletedDashboardTour &&
+      user &&
+      !loading
+    ) {
+      // Small delay to ensure DOM is ready
+      const timer = setTimeout(() => {
+        tour.startDashboardTour();
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [onboarding.isLoaded, onboarding.isNewUser, onboarding.hasCompletedDashboardTour, user, loading, tour]);
 
   // Fetch user record
   const { data: userRecord, loading: userRecordLoading, error: userRecordError, refetch: refetchUserRecord } = useEnhancedApi(
@@ -241,6 +265,7 @@ export function Dashboard() {
                   onClick={() => window.location.href = '/career-tools'}
                   variant="ghost" 
                   size="sm"
+                  data-tour="cv-evaluator"
                   className="bg-white/20 text-white border border-white/30 hover:bg-white/30"
                 >
                   Optimize CV
@@ -315,7 +340,7 @@ export function Dashboard() {
             }
             className="mb-6"
           >
-            <TabsList className="bg-background/80 backdrop-blur-sm p-1 rounded-xl border border-border/50 shadow-sm inline-flex h-auto gap-1">
+            <TabsList data-tour="nav-tabs" className="bg-background/80 backdrop-blur-sm p-1 rounded-xl border border-border/50 shadow-sm inline-flex h-auto gap-1">
               <TabsTrigger
                 value="dashboard"
                 className="motion-button px-5 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md motion-control rounded-lg font-medium text-sm"
@@ -431,6 +456,8 @@ export function Dashboard() {
             handleEditApplication(app);
           }}
         />
+
+        <WelcomeDialog />
       </div>
       </div>
     </div>

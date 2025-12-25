@@ -126,6 +126,7 @@ export function DashboardHeader({
                   <Button
                     onClick={onImportJobs}
                     size="sm"
+                    data-tour="import-jobs"
                     className="motion-button motion-button-on-dark shadow-md hover:shadow-lg bg-primary hover:bg-primary/90 text-primary-foreground border-0 gap-2"
                   >
                     <Chrome className="h-4 w-4" />
@@ -145,6 +146,7 @@ export function DashboardHeader({
                     onClick={onAddJob}
                     variant="default"
                     size="sm"
+                    data-tour="add-job"
                     className="motion-button motion-button-on-dark shadow-md hover:shadow-lg bg-secondary hover:bg-secondary/90 text-secondary-foreground border-0 gap-2"
                   >
                     <FilePlus className="h-4 w-4" />

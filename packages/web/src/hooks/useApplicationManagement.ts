@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { dashboardApi } from "@/utils/api/dashboard";
 import { showSuccess, showError } from "@/components/ui/Toast";
+import { useOnboardingState } from "@/hooks/useOnboardingState";
 
 interface Application {
   _id: string;
@@ -16,6 +17,7 @@ interface Application {
 }
 
 export function useApplicationManagement(onRefetchApplications: () => void) {
+  const onboarding = useOnboardingState();
   const [showApplicationForm, setShowApplicationForm] = useState(false);
   const [editingApplication, setEditingApplication] = useState<Application | null>(null);
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
@@ -52,6 +54,10 @@ export function useApplicationManagement(onRefetchApplications: () => void) {
       } else {
         await dashboardApi.createApplication(data);
         showSuccess("Application created successfully");
+        // Mark job applied for onboarding tracking
+        if (!onboarding.hasAppliedToJob) {
+          onboarding.markJobApplied();
+        }
       }
       await onRefetchApplications();
       setShowApplicationForm(false);

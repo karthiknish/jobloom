@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { showSuccess, showError } from "@/components/ui/Toast";
 import { CheckCircle, XCircle } from "lucide-react";
+import { useOnboardingState } from "@/hooks/useOnboardingState";
 
 export default function ConnectExtensionClient() {
   const [uid, setUid] = useState<string | null>(null);
@@ -11,6 +12,7 @@ export default function ConnectExtensionClient() {
     'connecting'
   );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const onboarding = useOnboardingState();
 
   useEffect(() => {
     const w = window as any;
@@ -23,11 +25,16 @@ export default function ConnectExtensionClient() {
       setUid(stringId);
       setConnectionStatus('connected');
       window.postMessage({ type: "FIREBASE_AUTH_SUCCESS", uid: stringId }, window.location.origin);
+      
+      // Mark extension connected for onboarding tracking
+      if (!onboarding.hasConnectedExtension) {
+        onboarding.markExtensionConnected();
+      }
     } else {
       setConnectionStatus('error');
       setErrorMessage('No authentication found. Please sign in first.');
     }
-  }, []);
+  }, [onboarding]);
 
   useEffect(() => {
     if (errorMessage) {

@@ -25,6 +25,7 @@ export function CvUploadSection({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.3 }}
+      data-tour="cv-upload"
     >
       <div className="space-y-6">
         {/* Upload Form */}

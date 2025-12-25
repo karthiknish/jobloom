@@ -263,7 +263,7 @@ export function RealTimeAtsFeedback({
     <TooltipProvider>
       <div className="space-y-6">
         {/* Header with Score */}
-        <Card>
+        <Card data-tour="cv-score">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>

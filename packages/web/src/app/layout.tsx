@@ -16,6 +16,7 @@ import { JsonLd } from "@/components/JsonLd";
 import EmailVerificationBanner from "@/components/EmailVerificationBanner";
 import { ReportIssue } from "@/components/ReportIssue";
 import { rootMetadata } from "@/metadata";
+import { OnboardingTourProvider } from "@/providers/onboarding-tour-provider";
 import {
   generateOrganizationSchema,
   generateWebSiteSchema,
@@ -73,14 +74,16 @@ export default function RootLayout({
           <SubscriptionProvider>
             <AnalyticsProvider>
               <PerformanceProvider>
-                <Header />
-                <EmailVerificationBanner />
-                <main id="main">{children}</main>
-                <Footer />
-                <MobileNavigation />
-                <AppToaster />
-                <Chatbot />
-                <ReportIssue position="bottom-left" />
+                <OnboardingTourProvider>
+                  <Header />
+                  <EmailVerificationBanner />
+                  <main id="main">{children}</main>
+                  <Footer />
+                  <MobileNavigation />
+                  <AppToaster />
+                  <Chatbot />
+                  <ReportIssue position="bottom-left" />
+                </OnboardingTourProvider>
               </PerformanceProvider>
             </AnalyticsProvider>
           </SubscriptionProvider>

@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/select";
 import { showError, showSuccess, showWarning } from "@/components/ui/Toast";
 import { cvEvaluatorApi, type UploadLimits } from "@/utils/api/cvEvaluator";
+import { useOnboardingState } from "@/hooks/useOnboardingState";
 
 interface CvUploadFormProps {
   userId: string;
@@ -66,6 +67,7 @@ function AnalysisStep({ step, label, active }: { step: number; label: string; ac
 
 export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted, onResumeUpdate }: CvUploadFormProps) {
   const { user } = useFirebaseAuth();
+  const onboarding = useOnboardingState();
   const [file, setFile] = useState<File | null>(null);
   const [targetRole, setTargetRole] = useState("");
   const [industry, setIndustry] = useState("");
@@ -160,6 +162,10 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted, onResum
       ) as HTMLInputElement;
       if (fileInput) fileInput.value = "";
       if (result.analysisId) {
+        // Mark CV uploaded for onboarding tracking
+        if (!onboarding.hasUploadedCv) {
+          onboarding.markCvUploaded();
+        }
         // Notify parent so it can refetch & switch tabs
           onUploadSuccess?.(result.analysisId);
       }

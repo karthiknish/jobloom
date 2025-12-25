@@ -11,6 +11,8 @@ import type { ResumeScore as ATSResumeScore } from "@/lib/ats";
 import type { ResumeData as AdvancedResumeData } from "@/components/application/types";
 import { useCvEvaluator } from "@/hooks/useCvEvaluator";
 import { ensureFirebaseApp } from "@/firebase/client";
+import { useOnboardingState } from "@/hooks/useOnboardingState";
+import { useTourContext } from "@/providers/onboarding-tour-provider";
 import { RefreshCw, Save, Download, Eye, CheckCircle2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -125,8 +127,29 @@ export default function CareerToolsPage() {
 
   const { user, loading: authLoading } = useFirebaseAuth();
   
+  // Onboarding state and tour
+  const onboarding = useOnboardingState();
+  const tour = useTourContext();
+  
   // Main tabs state
   const [activeMainTab, setActiveMainTab] = useState("cv-evaluator");
+  
+  // Auto-start CV evaluator tour for new users
+  useEffect(() => {
+    if (
+      onboarding.isLoaded &&
+      onboarding.isNewUser &&
+      !onboarding.hasCompletedCvTour &&
+      user &&
+      !authLoading &&
+      activeMainTab === "cv-evaluator"
+    ) {
+      const timer = setTimeout(() => {
+        tour.startCvEvaluatorTour();
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [onboarding.isLoaded, onboarding.isNewUser, onboarding.hasCompletedCvTour, user, authLoading, tour, activeMainTab]);
   
   // CV Evaluator state
   const [currentAtsScore, setCurrentAtsScore] = useState<ATSResumeScore | null>(null);
@@ -581,7 +604,7 @@ export default function CareerToolsPage() {
                         />
                       </TabsContent>
 
-                      <TabsContent value="history">
+                      <TabsContent value="history" data-tour="cv-analysis">
                         {loadingData ? (
                           <div className="space-y-4">
                             {[1, 2, 3].map((index) => (
