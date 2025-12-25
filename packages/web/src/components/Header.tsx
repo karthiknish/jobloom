@@ -3,8 +3,8 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
-import { useState, useEffect } from "react";
-import { Menu, Settings, LogOut } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Menu, Settings, LogOut, Search, Keyboard } from "lucide-react";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { Button } from "@/components/ui/button";
 import { authApi } from "@/utils/api/auth";
@@ -17,6 +17,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 // Dark mode removed; ModeToggle no longer used
 import {
   Sheet,
@@ -25,12 +31,43 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { GlobalSearch } from "@/components/GlobalSearch";
+import { KeyboardShortcutsDialog } from "@/components/dashboard/KeyboardShortcutsDialog";
+import { createDashboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 
 export default function Header() {
-  const { user } = useFirebaseAuth();
+  const { user, signOut, loading: authLoading } = useFirebaseAuth();
+  const toast = useToast();
   const isSignedIn = !!user;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
+
+  // Create shortcuts for the dialog (minimal set for display)
+  const shortcuts = createDashboardShortcuts({
+    onSearch: () => setIsSearchOpen(true),
+    onHelp: () => setIsShortcutsOpen(true),
+  });
+
+  // Keyboard shortcut for search (Cmd/Ctrl + K) and help (?)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Search: Cmd/Ctrl + K
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setIsSearchOpen(true);
+      }
+      // Help: ? key (when not in input)
+      if (e.key === "?" && !["INPUT", "TEXTAREA"].includes((e.target as HTMLElement)?.tagName)) {
+        e.preventDefault();
+        setIsShortcutsOpen(true);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   useEffect(() => {
     if (user?.uid) {
@@ -43,56 +80,71 @@ export default function Header() {
     }
   }, [user]);
 
-  const userLinks = [
-    { href: "/dashboard", label: "Dashboard" },
-    { href: "/career-tools", label: "Career Tools" },
+  const mainLinks = [
+    { href: "/dashboard", label: "Dashboard", requiresAuth: true },
+    { href: "/career-tools", label: "Career Tools", requiresAuth: false },
   ];
+
+  const accountLinks = [{ href: "/settings", label: "Settings", requiresAuth: true }];
 
   const adminLinks = [{ href: "/admin", label: "Admin Panel" }];
 
+  const visibleMainLinks = mainLinks.filter((link) => !link.requiresAuth || isSignedIn || authLoading);
+  const visibleAdminLinks = isSignedIn && isAdmin ? adminLinks : [];
+
+  const mobileMainLinks = visibleMainLinks.filter(
+    (link) => !(isSignedIn && link.href === "/dashboard")
+  );
+
+  const renderMobileLink = (link: { href: string; label: string }) => (
+    <Link
+      key={link.href}
+      href={link.href}
+      className="flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
+      onClick={() => setIsMobileMenuOpen(false)}
+    >
+      <span>{link.label}</span>
+      <span className="text-xs text-muted-foreground">&gt;</span>
+    </Link>
+  );
+
+  const handleLogout = useCallback(async () => {
+    try {
+      await signOut();
+      toast.success("Signed Out", "You have been successfully signed out.");
+    } catch (error: any) {
+      console.error("Logout error:", error);
+      toast.error("Logout Failed", "There was an issue signing you out. Please try again.");
+    }
+  }, [signOut, toast]);
+
   const NavItems = () => (
     <>
-      {isSignedIn &&
-        userLinks.map((link) => (
-          <Link
-            key={link.href}
-            href={link.href}
-            className="text-muted-foreground hover:text-foreground transition-colors text-sm font-medium w-fit text-center py-2 flex"
-            onClick={() => setIsMobileMenuOpen(false)}
-          >
-            {link.label}
-          </Link>
-        ))}
+      {visibleMainLinks.map((link) => (
+        <Link
+          key={link.href}
+          href={link.href}
+          className="text-muted-foreground hover:text-foreground transition-colors text-sm font-medium w-fit text-center py-2 flex"
+          onClick={() => setIsMobileMenuOpen(false)}
+        >
+          {link.label}
+        </Link>
+      ))}
 
-      {isSignedIn &&
-        isAdmin &&
-        adminLinks.map((link) => (
-          <Link
-            key={link.href}
-            href={link.href}
-            className="text-muted-foreground hover:text-foreground transition-colors text-sm font-medium w-fit text-center py-2 flex"
-            onClick={() => setIsMobileMenuOpen(false)}
-          >
-            {link.label}
-          </Link>
-        ))}
+      {visibleAdminLinks.map((link) => (
+        <Link
+          key={link.href}
+          href={link.href}
+          className="text-muted-foreground hover:text-foreground transition-colors text-sm font-medium w-fit text-center py-2 flex"
+          onClick={() => setIsMobileMenuOpen(false)}
+        >
+          {link.label}
+        </Link>
+      ))}
     </>
   );
 
   const AuthButtons = () => {
-    const { signOut } = useFirebaseAuth();
-    const toast = useToast();
-
-    const handleLogout = async () => {
-      try {
-        await signOut();
-        toast.success("Signed Out", "You have been successfully signed out.");
-      } catch (error: any) {
-        console.error("Logout error:", error);
-        toast.error("Logout Failed", "There was an issue signing you out. Please try again.");
-      }
-    };
-
     return (
       <>
         {isSignedIn ? (
@@ -162,6 +214,7 @@ export default function Header() {
   };
 
   return (
+    <>
     <motion.header
       initial={{ y: -60, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
@@ -188,6 +241,43 @@ export default function Header() {
 
           {/* Desktop Controls */}
           <div className="hidden md:flex items-center space-x-2">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setIsSearchOpen(true)}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    <Search className="h-5 w-5" />
+                    <span className="sr-only">Search (⌘K)</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p className="text-sm">Search <kbd className="ml-1 px-1.5 py-0.5 bg-muted rounded text-xs">⌘K</kbd></p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setIsShortcutsOpen(true)}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    <Keyboard className="h-5 w-5" />
+                    <span className="sr-only">Keyboard shortcuts</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p className="text-sm">Keyboard shortcuts <kbd className="ml-1 px-1.5 py-0.5 bg-muted rounded text-xs">?</kbd></p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             <AuthButtons />
           </div>
 
@@ -206,7 +296,7 @@ export default function Header() {
               </SheetTrigger>
               <SheetContent
                 side="right"
-                className="w-full sm:w-full bg-background safe-area-inset-top safe-area-inset-bottom safe-area-inset-left safe-area-inset-right"
+                className="w-full sm:w-full bg-background safe-area-inset-top safe-area-inset-bottom safe-area-inset-left safe-area-inset-right overflow-y-auto"
               >
                 <SheetHeader>
                   <SheetTitle>
@@ -224,13 +314,80 @@ export default function Header() {
                     </Link>
                   </SheetTitle>
                 </SheetHeader>
-                <div className="flex flex-col space-y-6 mt-6 h-full">
-                  <nav className="flex flex-col space-y-4">
-                    <NavItems />
-                  </nav>
-                  <div className="pt-4 border-t mt-auto">
-                    <AuthButtons />
+                <div className="flex flex-col space-y-6 mt-6 min-h-full">
+                  {isSignedIn && (
+                    <Button asChild size="lg" className="w-full" variant="secondary">
+                      <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)}>
+                        Dashboard
+                      </Link>
+                    </Button>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      variant="outline"
+                      className="justify-start"
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        setIsSearchOpen(true);
+                      }}
+                    >
+                      <Search className="mr-2 h-4 w-4" />
+                      Search
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="justify-start"
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        setIsShortcutsOpen(true);
+                      }}
+                    >
+                      <Keyboard className="mr-2 h-4 w-4" />
+                      Shortcuts
+                    </Button>
                   </div>
+
+                  <nav className="flex flex-col space-y-6 flex-1">
+                    <div className="space-y-3">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground/70">Main</p>
+                      <div className="flex flex-col space-y-2">
+                        {mobileMainLinks.map(renderMobileLink)}
+                      </div>
+                    </div>
+
+                    {isSignedIn && (
+                      <div className="space-y-3">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground/70">Account</p>
+                        <div className="flex flex-col space-y-2">
+                          {accountLinks.map(renderMobileLink)}
+                          {visibleAdminLinks.map(renderMobileLink)}
+                          <Button
+                            variant="ghost"
+                            className="justify-start"
+                            onClick={() => {
+                              setIsMobileMenuOpen(false);
+                              handleLogout();
+                            }}
+                          >
+                            <LogOut className="mr-2 h-4 w-4" />
+                            Sign out
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </nav>
+
+                  {!isSignedIn && (
+                    <div className="pt-4 border-t space-y-2">
+                      <Button asChild variant="ghost" size="lg" className="w-full" onClick={() => setIsMobileMenuOpen(false)}>
+                        <Link href="/sign-in">Sign In</Link>
+                      </Button>
+                      <Button asChild size="lg" className="w-full" onClick={() => setIsMobileMenuOpen(false)}>
+                        <Link href="/sign-up">Get Started</Link>
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </SheetContent>
             </Sheet>
@@ -238,5 +395,16 @@ export default function Header() {
         </div>
       </div>
     </motion.header>
+
+    {/* Global Search Modal */}
+    <GlobalSearch isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+    
+    {/* Keyboard Shortcuts Dialog */}
+    <KeyboardShortcutsDialog
+      open={isShortcutsOpen}
+      onOpenChange={setIsShortcutsOpen}
+      shortcuts={shortcuts}
+    />
+    </>
   )
 }

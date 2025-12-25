@@ -120,6 +120,13 @@ export const POST = withApi({
 
   const userName = userData?.name || userData?.displayName;
   const emailPrefs = userData?.emailPreferences || {};
+  const prefs = userData?.preferences || {};
+
+  // Master toggle: user-level email notifications
+  if (prefs.emailNotifications === false) {
+    await idemRef.set({ status: "skipped", reason: "user_master_disabled", updatedAt: new Date().toISOString() }, { merge: true });
+    return { sent: false, reason: "User disabled email notifications" };
+  }
 
   // Check if user has disabled status notifications
   if (emailPrefs.statusUpdates === false) {

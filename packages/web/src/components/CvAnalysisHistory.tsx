@@ -15,6 +15,8 @@ import { cvEvaluatorApi } from "../utils/api/cvEvaluator";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ScoreBadge, getScoreBadgeVariant, getScoreBadgeLabel } from "@/components/ui/StatusBadge";
+import { getCvAnalysisTitle } from "@/utils/cvAnalysisTitle";
 
 interface CvAnalysisHistoryProps {
   analyses: CvAnalysis[];
@@ -124,6 +126,56 @@ export function CvAnalysisHistory({ analyses, optimistic }: CvAnalysisHistoryPro
     if (score >= 60) return "bg-amber-100 text-amber-700";
     if (score >= 40) return "bg-orange-100 text-orange-700";
     return "bg-red-100 text-red-700";
+  };
+
+  const formatCreatedAt = (value: unknown): string | null => {
+    try {
+      let date: Date | null = null;
+      if (value instanceof Date) {
+        date = value;
+      } else if (typeof value === "number" || typeof value === "string") {
+        const normalizedValue =
+          typeof value === "string" && /^\d+$/.test(value)
+            ? Number(value)
+            : value;
+
+        const d = new Date(normalizedValue as any);
+        date = Number.isNaN(d.getTime()) ? null : d;
+      } else if (value && typeof value === "object") {
+        const anyVal = value as any;
+        if (typeof anyVal.toDate === "function") {
+          const d = anyVal.toDate();
+          date = d instanceof Date && !Number.isNaN(d.getTime()) ? d : null;
+        } else if (typeof anyVal.toMillis === "function") {
+          const d = new Date(anyVal.toMillis());
+          date = Number.isNaN(d.getTime()) ? null : d;
+        } else {
+          const seconds =
+            typeof anyVal.seconds === "number"
+              ? anyVal.seconds
+              : typeof anyVal._seconds === "number"
+                ? anyVal._seconds
+                : null;
+          const nanos =
+            typeof anyVal.nanoseconds === "number"
+              ? anyVal.nanoseconds
+              : typeof anyVal._nanoseconds === "number"
+                ? anyVal._nanoseconds
+                : 0;
+
+          if (typeof seconds === "number") {
+            const millis = seconds * 1000 + Math.floor(nanos / 1_000_000);
+            const d = new Date(millis);
+            date = Number.isNaN(d.getTime()) ? null : d;
+          }
+        }
+      }
+
+      if (!date) return null;
+      return format(date, "MMM d, yyyy 'at' h:mm a");
+    } catch {
+      return null;
+    }
   };
 
   if (showComparison) {
@@ -258,7 +310,7 @@ export function CvAnalysisHistory({ analyses, optimistic }: CvAnalysisHistoryPro
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                       <h4 className="text-lg font-medium text-foreground truncate">
-                        {analysis.fileName}
+                        {getCvAnalysisTitle(analysis as any)}
                       </h4>
                       <Badge
                         variant={getStatusVariant(analysis.analysisStatus || 'pending')}
@@ -269,28 +321,30 @@ export function CvAnalysisHistory({ analyses, optimistic }: CvAnalysisHistoryPro
                     </div>
 
                     <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                      <span>
-                        {format(
-                          new Date(analysis.createdAt),
-                          "MMM d, yyyy 'at' h:mm a"
-                        )}
-                      </span>
-                      <span>•</span>
-                      {typeof analysis.fileSize === "number" && (
-                        <span>{(analysis.fileSize / 1024).toFixed(1)} KB</span>
-                      )}
-                      {analysis.overallScore && (
-                        <>
-                          <span>•</span>
-                          <span
-                            className={`font-semibold px-2 py-0.5 rounded-full text-xs ${getScoreBg(
-                              analysis.overallScore
-                            )}`}
-                          >
-                            Score: {analysis.overallScore}
+                      {(() => {
+                        const items: React.ReactNode[] = [];
+                        const createdAtLabel = formatCreatedAt(analysis.createdAt);
+                        if (createdAtLabel) items.push(<span key="date">{createdAtLabel}</span>);
+                        if (typeof analysis.fileSize === "number") {
+                          items.push(
+                            <span key="size">{(analysis.fileSize / 1024).toFixed(1)} KB</span>
+                          );
+                        }
+                        if (analysis.overallScore) {
+                          items.push(
+                            <span key="score">
+                              <ScoreBadge score={analysis.overallScore} />
+                            </span>
+                          );
+                        }
+
+                        return items.map((item, index) => (
+                          <span key={index} className="inline-flex items-center gap-2">
+                            {index > 0 && <span>•</span>}
+                            {item}
                           </span>
-                        </>
-                      )}
+                        ));
+                      })()}
                     </div>
 
                     {analysis.analysisStatus === "failed" &&
@@ -310,20 +364,8 @@ export function CvAnalysisHistory({ analyses, optimistic }: CvAnalysisHistoryPro
                           </p>
                           {analysis.atsCompatibility && (
                             <div className="flex items-center gap-2">
-                              <span className="font-medium text-muted-foreground">ATS Score:</span>
-                              <span
-                                className={`font-semibold px-2.5 py-0.5 rounded-full text-xs ${
-                                  analysis.atsCompatibility.score >= 80
-                                    ? "bg-primary/20 text-primary"
-                                    : analysis.atsCompatibility.score >= 60
-                                    ? "bg-amber-100 text-amber-700"
-                                    : analysis.atsCompatibility.score >= 40
-                                    ? "bg-orange-100 text-orange-700"
-                                    : "bg-red-100 text-red-700"
-                                }`}
-                              >
-                                {analysis.atsCompatibility.score}
-                              </span>
+                              <span className="text-sm text-muted-foreground">ATS:</span>
+                              <ScoreBadge score={analysis.atsCompatibility.score} />
                             </div>
                           )}
                         </div>

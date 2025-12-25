@@ -26,9 +26,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DashboardSidebar, type DashboardSection } from "@/components/dashboard/DashboardSidebar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cvEvaluatorApi } from "@/utils/api/cvEvaluator";
+import { settingsApi } from "@/utils/api/settings";
 import { useSubscription } from "@/providers/subscription-provider";
 import { PremiumUpgradeBanner } from "@/components/dashboard/PremiumUpgradeBanner";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
@@ -37,6 +38,7 @@ import { DashboardEmptyState } from "@/components/dashboard/DashboardEmptyState"
 import { DashboardJobsView } from "@/components/dashboard/DashboardJobsView";
 import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeletons";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
+import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { Application, DashboardView, BoardMode } from "@/types/dashboard";
 import { FileText, Target, TrendingUp, Calendar, Briefcase, Sparkles, AlertCircle, Bell, X } from "lucide-react";
 import { useRestoreFocus } from "@/hooks/useRestoreFocus";
@@ -61,11 +63,52 @@ export function Dashboard() {
   );
 
   const [view, setView] = useState<DashboardView>("dashboard");
-  const [boardMode, setBoardMode] = useState<BoardMode>("list");
+  const [boardMode, setBoardMode] = useState<BoardMode>(() => {
+    // Load from localStorage on initial render (fallback while API loads)
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('hireall_dashboard_board_mode');
+      if (saved === 'kanban' || saved === 'list') {
+        return saved;
+      }
+    }
+    return "list";
+  });
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [companyFilter, setCompanyFilter] = useState<string>("all");
   const [showReminderAlert, setShowReminderAlert] = useState(true);
+
+  // Load boardMode from user settings on mount
+  useEffect(() => {
+    if (!user?.uid) return;
+    
+    settingsApi.getPreferences()
+      .then((response) => {
+        const savedMode = response?.preferences?.boardMode;
+        if (savedMode === 'kanban' || savedMode === 'list') {
+          setBoardMode(savedMode);
+          localStorage.setItem('hireall_dashboard_board_mode', savedMode);
+        }
+      })
+      .catch((error) => {
+        console.error('Failed to load preferences:', error);
+      });
+  }, [user?.uid]);
+
+  // Persist boardMode preference to both localStorage and API
+  const handleBoardModeChange = (mode: BoardMode) => {
+    setBoardMode(mode);
+    localStorage.setItem('hireall_dashboard_board_mode', mode);
+    
+    // Save to user settings API
+    if (user) {
+      settingsApi.updatePreferences({
+        preferences: { boardMode: mode }
+      }).catch((error) => {
+        console.error('Failed to save board mode preference:', error);
+      });
+    }
+  };
 
 
   // Use the new hooks
@@ -107,6 +150,14 @@ export function Dashboard() {
     { immediate: !!userRecord }
   );
 
+  const safeApplications: Application[] = Array.isArray(applications)
+    ? applications
+    : Array.isArray((applications as any)?.applications)
+      ? (applications as any).applications
+      : Array.isArray((applications as any)?.data)
+        ? (applications as any).data
+        : [];
+
   // Fetch job stats
   const { data: jobStats, refetch: refetchJobStats, loading: jobStatsLoading, error: jobStatsError } = useEnhancedApi(
     () => dashboardApi.getJobStats(userRecord!._id),
@@ -144,16 +195,15 @@ export function Dashboard() {
 
   const jobManagement = useJobManagement(refetchJobStats, handleUpgradeIntent);
 
-  const overdueReminders = (applications || []).filter(
+  const overdueReminders = safeApplications.filter(
     (app) => app.followUpDate && isPast(new Date(app.followUpDate)) && !isToday(new Date(app.followUpDate))
   );
   
-  const todayReminders = (applications || []).filter(
+  const todayReminders = safeApplications.filter(
     (app) => app.followUpDate && isToday(new Date(app.followUpDate))
   );
 
-  const hasApplications =
-    Array.isArray(applications) && applications.length > 0;
+  const hasApplications = safeApplications.length > 0;
 
   const hasData = hasApplications || (jobStats && jobStats.totalJobs > 0);
 
@@ -165,7 +215,7 @@ export function Dashboard() {
   // Define dashboard widgets using the hook
   const dashboardWidgets = useDashboardWidgets({
     jobStats,
-    applications: applications || [],
+    applications: safeApplications,
     hasApplications,
     userRecord,
     onEditApplication: applicationManagement.handleEditApplication,
@@ -216,7 +266,11 @@ export function Dashboard() {
   }, []);
 
   // Show skeleton during auth loading OR data loading
-  const isDataLoading = loading || userRecordLoading || (!!userRecord && (applicationsLoading || jobStatsLoading));
+  const isDataLoading =
+    loading ||
+    (userRecordLoading && !userRecord) ||
+    (!!userRecord && applicationsLoading && !applications) ||
+    (!!userRecord && jobStatsLoading && !jobStats);
   
   if (isDataLoading) {
     return <DashboardSkeleton />;
@@ -262,11 +316,13 @@ export function Dashboard() {
         />
 
         <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+          {/* Breadcrumbs for navigation */}
+          <Breadcrumbs className="mb-4" />
         {/* Premium Upgrade Banner for Free Users */}
         {plan === "free" && <PremiumUpgradeBanner className="mb-6" />}
 
         {/* Welcome / Onboarding Banner */}
-        {hasApplications && applications.length < 5 && (
+        {hasApplications && safeApplications.length < 5 && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -352,95 +408,62 @@ export function Dashboard() {
           </motion.div>
         )}
 
-        {/* Enhanced Navigation Tabs */}
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.4 }}
-        >
-          <Tabs
-            value={view}
-            onValueChange={(value) =>
-              setView(
-                value === "dashboard" ||
-                  value === "jobs" ||
-                  value === "applications" ||
-                  value === "analytics"
-                  ? value
-                  : "dashboard"
-              )
-            }
-            className="mb-6"
-          >
-            <TabsList data-tour="nav-tabs" className="bg-background/80 backdrop-blur-sm p-1 rounded-xl border border-border/50 shadow-sm inline-flex h-auto gap-1">
-              <TabsTrigger
-                value="dashboard"
-                className="motion-button px-5 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md motion-control rounded-lg font-medium text-sm"
-              >
-                Overview
-              </TabsTrigger>
-              <TabsTrigger
-                value="jobs"
-                className="motion-button px-5 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md motion-control rounded-lg font-medium text-sm"
-              >
-                Jobs <Badge variant="secondary" className="ml-1.5 text-xxs px-1.5 py-0 bg-muted/80">{applications?.length || 0}</Badge>
-              </TabsTrigger>
-              <TabsTrigger
-                value="analytics"
-                className="motion-button px-5 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md motion-control rounded-lg font-medium text-sm"
-              >
-                Analytics
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </motion.div>
-
-        {/* Main Content */}
-        {view === "dashboard" &&
-          (hasData ? (
-            <DraggableDashboard
-              widgets={dashboardWidgets}
-              onLayoutChange={handleLayoutChange}
-              savedLayout={
-                dashboardLayout.length > 0 ? dashboardLayout : undefined
-              }
-            />
-          ) : (
-            <DashboardEmptyState
-              onImportJobs={() => setShowImportModal(true)}
-              onAddJob={() => setShowJobForm(true)}
-              onAddApplication={() => setShowApplicationForm(true)}
-              userRecord={userRecord}
-            />
-          ))}
-
-        {view === "analytics" && (
-          <DashboardAnalytics
-            applications={applications || []}
-            cvAnalyses={cvAnalyses || []}
-            jobStats={jobStats}
+        {/* Sidebar Navigation + Content (matches Career Tools layout) */}
+        <div className="flex gap-6">
+          <DashboardSidebar
+            activeSection={(view as DashboardSection) || "dashboard"}
+            onSectionChange={(next) => setView(next)}
+            jobsCount={safeApplications.length}
           />
-        )}
 
-        {view === "jobs" && (
-          <DashboardJobsView
-            applications={applications || []}
-            boardMode={boardMode}
-            setBoardMode={setBoardMode}
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            statusFilter={statusFilter}
-            setStatusFilter={setStatusFilter}
-            companyFilter={companyFilter}
-            setCompanyFilter={setCompanyFilter}
-            onEditApplication={handleEditApplication}
-            onDeleteApplication={handleDeleteApplicationWrapper}
-            onViewApplication={handleViewApplication}
-            onChanged={refetchApplications}
-            onAddJob={() => setShowJobForm(true)}
-            onImport={() => setShowImportModal(true)}
-          />
-        )}
+          <div className="flex-1 min-w-0">
+            {view === "dashboard" &&
+              (hasData ? (
+                <DraggableDashboard
+                  widgets={dashboardWidgets}
+                  onLayoutChange={handleLayoutChange}
+                  savedLayout={
+                    dashboardLayout.length > 0 ? dashboardLayout : undefined
+                  }
+                />
+              ) : (
+                <DashboardEmptyState
+                  onImportJobs={() => setShowImportModal(true)}
+                  onAddJob={() => setShowJobForm(true)}
+                  onAddApplication={() => setShowApplicationForm(true)}
+                  userRecord={userRecord}
+                />
+              ))}
+
+            {view === "analytics" && (
+              <DashboardAnalytics
+                applications={applications || []}
+                cvAnalyses={cvAnalyses || []}
+                jobStats={jobStats}
+              />
+            )}
+
+            {view === "jobs" && (
+              <DashboardJobsView
+                applications={safeApplications}
+                boardMode={boardMode}
+                setBoardMode={handleBoardModeChange}
+                searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
+                statusFilter={statusFilter}
+                setStatusFilter={setStatusFilter}
+                companyFilter={companyFilter}
+                setCompanyFilter={setCompanyFilter}
+                onEditApplication={handleEditApplication}
+                onDeleteApplication={handleDeleteApplicationWrapper}
+                onViewApplication={handleViewApplication}
+                onChanged={refetchApplications}
+                onAddJob={() => setShowJobForm(true)}
+                onImport={() => setShowImportModal(true)}
+              />
+            )}
+          </div>
+        </div>
 
         {/* Modals */}
         <Dialog
@@ -487,19 +510,23 @@ export function Dashboard() {
             setSelectedApplication(null);
             handleEditApplication(app);
           }}
+          onChanged={() => {
+            refetchJobStats();
+            refetchApplications();
+          }}
         />
 
         {/* Upgrade prompt for premium features */}
         <Dialog open={showUpgradePrompt} onOpenChange={setShowUpgradePrompt}>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="w-[95vw] max-w-4xl max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{upgradeTitle}</DialogTitle>
-              <DialogDescription>
+              <DialogDescription className="text-sm leading-relaxed">
                 {upgradeDescription}
               </DialogDescription>
             </DialogHeader>
-            <div className="py-4">
-              <UpgradePrompt feature={upgradeFeature} />
+            <div className="mt-4">
+              <UpgradePrompt feature={upgradeFeature} variant="dialog" />
             </div>
           </DialogContent>
         </Dialog>

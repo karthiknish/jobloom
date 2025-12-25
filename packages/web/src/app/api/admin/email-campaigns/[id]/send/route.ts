@@ -50,13 +50,19 @@ export const POST = withApi({
     throw new Error('Template not found');
   }
 
+  const templateCategory = (template as any)?.category as string | undefined;
+  // Newsletter campaigns should respect newsletter opt-in; others use marketing opt-in.
+  const preferenceField = templateCategory === 'newsletter'
+    ? 'emailPreferences.newsletter'
+    : 'emailPreferences.marketing';
+
   // Get recipients
   let recipients: Array<{ userId?: string; email: string; displayName?: string; firstName?: string }> = [];
   
   if (campaign.recipients.type === 'all') {
     // Get all users who have opted in to emails
     const usersSnap = await db.collection('users')
-      .where('emailPreferences.marketing', '==', true)
+      .where(preferenceField, '==', true)
       .get();
     recipients = usersSnap.docs
       .map((doc: any) => ({ userId: doc.id, ...(doc.data() || {}) }))
@@ -70,7 +76,7 @@ export const POST = withApi({
   } else if (campaign.recipients.type === 'segment') {
     // Get users by segment (you can customize this logic)
     const segment = campaign.recipients.segment;
-    let query: any = db.collection('users').where('emailPreferences.marketing', '==', true);
+    let query: any = db.collection('users').where(preferenceField, '==', true);
     
     if (segment === 'active') {
       query = query.where('lastLoginAt', '>', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));

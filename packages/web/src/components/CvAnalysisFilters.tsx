@@ -48,7 +48,9 @@ export function CvAnalysisFilters({ analyses, onFilteredAnalyses }: CvAnalysisFi
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
       filtered = filtered.filter(analysis =>
-        (analysis.fileName || "").toLowerCase().includes(searchLower) ||
+          ((analysis.fileName || (analysis as any).filename || "") as string)
+            .toLowerCase()
+            .includes(searchLower) ||
         (analysis.targetRole && analysis.targetRole.toLowerCase().includes(searchLower)) ||
         (analysis.industry && analysis.industry.toLowerCase().includes(searchLower))
       );

@@ -94,7 +94,7 @@ export default function SettingsPage() {
             preferences: {
               emailNotifications: backendPrefs.emailNotifications ?? true,
               pushNotifications: backendPrefs.pushNotifications ?? false,
-              newsletter: backendPrefs.newsletter ?? backendPrefs.marketingEmails ?? true,
+              newsletter: backendPrefs.newsletter ?? true,
               marketingEmails: backendPrefs.marketingEmails ?? false,
               theme: backendPrefs.theme ?? "light",
               // Extension-specific preferences from backend
@@ -151,6 +151,44 @@ export default function SettingsPage() {
       section === "preferences" && field === "minimumSalary"
         ? sanitizeNonNegativeNumber(value, formData.preferences.minimumSalary)
         : value;
+
+    // Make Push Notifications toggle actually do something:
+    // when turning on, request browser notification permission.
+    if (section === "preferences" && field === "pushNotifications" && value === true) {
+      if (typeof window !== "undefined" && "Notification" in window) {
+        // Don't block UI; resolve permission asynchronously.
+        void Notification.requestPermission().then((permission) => {
+          if (permission !== "granted") {
+            // Revert the toggle if permission wasn't granted.
+            setFormData((prev) => ({
+              ...prev,
+              preferences: {
+                ...prev.preferences,
+                pushNotifications: false,
+              },
+            }));
+            toast.info(
+              "Push notifications disabled",
+              "Browser permission was not granted. You can enable it in your browser settings."
+            );
+          }
+        });
+      } else {
+        // No Notification API available (e.g. unsupported browser)
+        toast.info(
+          "Push notifications unavailable",
+          "Your browser doesn't support push notifications."
+        );
+        setFormData((prev) => ({
+          ...prev,
+          preferences: {
+            ...prev.preferences,
+            pushNotifications: false,
+          },
+        }));
+        return;
+      }
+    }
 
     setFormData(prev => ({
       ...prev,

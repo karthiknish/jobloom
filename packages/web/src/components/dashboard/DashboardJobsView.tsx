@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Application } from "@/types/dashboard";
 import { JobList } from "@/components/dashboard/JobList";
-import { KanbanBoard } from "@/components/dashboard/KanbanBoard";
+import { KanbanBoard, type KanbanStatus } from "@/components/dashboard/KanbanBoard";
 import { DashboardFilters } from "@/components/dashboard/DashboardFilters";
 import { BulkActionsBar, ApplicationStatus } from "@/components/dashboard/BulkActionsBar";
 import { ExportOptionsDropdown } from "@/components/dashboard/ExportOptionsDropdown";
@@ -54,17 +54,45 @@ export function DashboardJobsView({
 }: DashboardJobsViewProps) {
   // Ensure applications is always an array
   const safeApplications = Array.isArray(applications) ? applications : [];
+
+  const [optimisticApplications, setOptimisticApplications] = useState<Application[]>(safeApplications);
+  const [isKanbanSaving, setIsKanbanSaving] = useState(false);
+  const [savingApplicationId, setSavingApplicationId] = useState<string | null>(null);
+  const lastKanbanMutationRef = useRef<
+    { id: string; status: KanbanStatus; order: number } | null
+  >(null);
+
+  // Keep optimistic state until the upstream data reflects the latest mutation.
+  useEffect(() => {
+    const pending = lastKanbanMutationRef.current;
+    if (!pending) {
+      setOptimisticApplications(safeApplications);
+      return;
+    }
+
+    const match = safeApplications.some((a) => {
+      if (a._id !== pending.id) return false;
+      if ((a.status as KanbanStatus) !== pending.status) return false;
+      const ao = typeof a.order === "number" ? a.order : null;
+      return ao !== null && Math.abs(ao - pending.order) < 1e-9;
+    });
+
+    if (match) {
+      lastKanbanMutationRef.current = null;
+      setOptimisticApplications(safeApplications);
+    }
+  }, [safeApplications]);
   
   // Filtered applications
   const filteredApplications = useMemo(() => 
-    filterApplications(safeApplications, searchTerm, statusFilter, companyFilter),
-    [safeApplications, searchTerm, statusFilter, companyFilter]
+    filterApplications(optimisticApplications, searchTerm, statusFilter, companyFilter),
+    [optimisticApplications, searchTerm, statusFilter, companyFilter]
   );
   
   // Unique companies for filter
   const uniqueCompanies = useMemo(() => 
-    getUniqueCompanies(safeApplications),
-    [safeApplications]
+    getUniqueCompanies(optimisticApplications),
+    [optimisticApplications]
   );
   
   // Get all application IDs for bulk selection
@@ -113,6 +141,73 @@ export function DashboardJobsView({
   useKeyboardShortcuts(shortcuts);
 
   const hasApplications = safeApplications.length > 0;
+
+  const saveKanbanMove = useCallback(
+    async (draggedId: string, targetStatus: KanbanStatus, beforeId: string | null) => {
+      if (isKanbanSaving) return;
+
+      const prev = optimisticApplications;
+      try {
+        setIsKanbanSaving(true);
+        setSavingApplicationId(draggedId);
+
+        const nextApps = [...optimisticApplications];
+        const idx = nextApps.findIndex((a) => a._id === draggedId);
+        if (idx === -1) {
+          setIsKanbanSaving(false);
+          setSavingApplicationId(null);
+          return;
+        }
+
+        const targetCol = nextApps
+          .filter((a) => a.status === targetStatus && a._id !== draggedId)
+          .sort((a, b) => {
+            const ao = typeof a.order === "number" ? a.order : Number.MAX_SAFE_INTEGER;
+            const bo = typeof b.order === "number" ? b.order : Number.MAX_SAFE_INTEGER;
+            if (ao !== bo) return ao - bo;
+            return (a.job?.title || "").localeCompare(b.job?.title || "");
+          });
+
+        let newOrder: number;
+        if (beforeId) {
+          const before = targetCol.find((a) => a._id === beforeId);
+          const beforeOrder = typeof before?.order === "number" ? (before!.order as number) : 0;
+          newOrder = beforeOrder - 0.001;
+        } else {
+          const maxOrder = targetCol.reduce(
+            (m, a) => Math.max(m, typeof a.order === "number" ? (a.order as number) : 0),
+            0
+          );
+          newOrder = maxOrder + 1;
+        }
+
+        nextApps[idx] = {
+          ...nextApps[idx],
+          status: targetStatus,
+          order: newOrder,
+        };
+
+        lastKanbanMutationRef.current = { id: draggedId, status: targetStatus, order: newOrder };
+        setOptimisticApplications(nextApps);
+
+        const { dashboardApi } = await import("@/utils/api/dashboard");
+        await dashboardApi.updateApplication(draggedId, {
+          status: targetStatus,
+          order: newOrder,
+        });
+
+        onChanged();
+      } catch (e: any) {
+        setOptimisticApplications(prev);
+        const { showError } = await import("@/components/ui/Toast");
+        showError(e?.message || "Reorder failed");
+      } finally {
+        setIsKanbanSaving(false);
+        setSavingApplicationId(null);
+      }
+    },
+    [isKanbanSaving, optimisticApplications, onChanged]
+  );
 
   // Wrapper for delete that takes applicationId
   const handleDeleteApplicationForJobList = useCallback((applicationId: string) => {
@@ -275,48 +370,13 @@ export function DashboardJobsView({
           {boardMode === "kanban" ? (
             <KanbanBoard
               applications={filteredApplications}
+              isSaving={isKanbanSaving}
+              savingApplicationId={savingApplicationId}
               onChangeStatus={async (id, status) => {
-                try {
-                  const { dashboardApi } = await import("@/utils/api/dashboard");
-                  await dashboardApi.updateApplicationStatus(id, status);
-                  onChanged();
-                } catch (e: any) {
-                  const { showError } = await import("@/components/ui/Toast");
-                  showError(e?.message || "Update failed");
-                }
+                await saveKanbanMove(id, status, null);
               }}
               onReorder={async (draggedId, targetStatus, beforeId) => {
-                try {
-                  const { dashboardApi } = await import("@/utils/api/dashboard");
-                  const col = safeApplications.filter(
-                    (a) => a.status === targetStatus
-                  );
-                  let newOrder: number;
-                  if (beforeId) {
-                    const before = col.find((a) => a._id === beforeId);
-                    const beforeOrder =
-                      typeof before?.order === "number" ? before!.order! : 0;
-                    newOrder = beforeOrder - 0.001;
-                  } else {
-                    const maxOrder = col.reduce(
-                      (m, a) =>
-                        Math.max(
-                          m,
-                          typeof a.order === "number" ? a.order : 0
-                        ),
-                      0
-                    );
-                    newOrder = maxOrder + 1;
-                  }
-                  await dashboardApi.updateApplication(draggedId, {
-                    status: targetStatus,
-                    order: newOrder,
-                  });
-                  onChanged();
-                } catch (e: any) {
-                  const { showError } = await import("@/components/ui/Toast");
-                  showError(e?.message || "Reorder failed");
-                }
+                await saveKanbanMove(draggedId, targetStatus, beforeId);
               }}
             />
           ) : (

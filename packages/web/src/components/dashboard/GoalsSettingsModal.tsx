@@ -17,7 +17,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Target, Briefcase, Star, TrendingUp, Save, RotateCcw } from "lucide-react";
-import { showSuccess, showError } from "@/components/ui/Toast";
 import { useRestoreFocus } from "@/hooks/useRestoreFocus";
 
 interface GoalsSettingsModalProps {
@@ -48,28 +47,12 @@ export function GoalsSettingsModal({
   useRestoreFocus(open);
 
   useEffect(() => {
-    // Load from localStorage if available
-    const saved = localStorage.getItem("hireall-goals");
-    if (saved) {
-      try {
-        setGoals(JSON.parse(saved));
-      } catch (e) {
-        console.error("Failed to parse saved goals");
-      }
-    } else {
-      setGoals(currentGoals);
-    }
+    setGoals(currentGoals);
   }, [currentGoals, open]);
 
   const handleSave = () => {
-    try {
-      localStorage.setItem("hireall-goals", JSON.stringify(goals));
-      onSaveGoals?.(goals);
-      showSuccess("Goals saved", "Your job search goals have been updated.");
-      onOpenChange(false);
-    } catch (e) {
-      showError("Failed to save", "Could not save your goals. Please try again.");
-    }
+    onSaveGoals?.(goals);
+    onOpenChange(false);
   };
 
   const handleReset = () => {

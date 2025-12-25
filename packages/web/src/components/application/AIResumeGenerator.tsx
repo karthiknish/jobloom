@@ -22,6 +22,8 @@ import {
   GraduationCap,
   Layers,
   PenTool,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -109,6 +111,7 @@ export function AIResumeGenerator() {
   const [atsOptimization, setAtsOptimization] = useState(true);
   const [aiEnhancement, setAiEnhancement] = useState(true);
   const [downloadingPDF, setDownloadingPDF] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [resumeOptions, setResumeOptions] = useState<{
     template: 'modern' | 'classic' | 'creative' | 'executive' | 'technical';
     colorScheme: 'hireall' | 'blue' | 'gray' | 'green' | 'purple' | 'orange';
@@ -601,6 +604,33 @@ ${data.experience}
               </div>
             </div>
 
+            {/* Show/Hide Advanced Fields */}
+            <button
+              type="button"
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              className="w-full flex items-center justify-center gap-2 py-3 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors border-t"
+            >
+              {showAdvanced ? (
+                <>
+                  <ChevronUp className="h-4 w-4" />
+                  Hide advanced options
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-4 w-4" />
+                  Show more options (contact, style, AI settings)
+                </>
+              )}
+            </button>
+
+            {/* Advanced Options - Collapsible */}
+            {showAdvanced && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="space-y-6"
+              >
             {/* Professional Info Section */}
             <div className="space-y-4 pt-4 border-t">
               <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wider flex items-center gap-2">
@@ -809,6 +839,8 @@ ${data.experience}
                 </div>
               </div>
             </div>
+              </motion.div>
+            )}
 
             <Button 
               onClick={generateResume} 

@@ -283,6 +283,21 @@ function SignUpInner() {
                 Join Hireall and start tracking your job applications
               </CardDescription>
             </motion.div>
+            {/* Plans comparison hint */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.5 }}
+              className="flex items-center justify-center gap-2 text-sm"
+            >
+              <span className="text-muted-foreground">Free plan includes 50 apps/month.</span>
+              <Link 
+                href="/upgrade" 
+                className="text-primary font-medium hover:underline inline-flex items-center gap-1"
+              >
+                Compare plans →
+              </Link>
+            </motion.div>
           </CardHeader>
           <CardContent className="space-y-6">
             <motion.form

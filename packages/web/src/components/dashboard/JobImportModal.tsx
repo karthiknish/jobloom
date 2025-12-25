@@ -1,7 +1,7 @@
 // components/dashboard/JobImportModal.tsx
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { useEnhancedApi } from "@/hooks/useEnhancedApi";
 import { dashboardApi, Job } from "@/utils/api/dashboard";
@@ -50,6 +50,7 @@ import { extensionAuthBridge } from "@/lib/extensionAuthBridge";
 import Link from "next/link";
 import { CHROME_EXTENSION_URL, isExternalUrl } from "@/config/links";
 import { useRestoreFocus } from "@/hooks/useRestoreFocus";
+import { useBulkSelection } from "@/hooks/useBulkSelection";
 
 interface JobImportModalProps {
   isOpen: boolean;
@@ -95,8 +96,13 @@ export function JobImportModal({
   const [isExtensionInstalled, setIsExtensionInstalled] = useState(false);
   const [extensionJobs, setExtensionJobs] = useState<ExtensionJob[]>([]);
   const [isLoadingExtensionJobs, setIsLoadingExtensionJobs] = useState(false);
-  const [selectedExtensionJobs, setSelectedExtensionJobs] = useState<Set<string>>(new Set());
   const [importProgress, setImportProgress] = useState(0);
+
+  const extensionJobIds = useMemo(
+    () => extensionJobs.map((j, i) => j.id || `job-${i}`),
+    [extensionJobs]
+  );
+  const extensionSelection = useBulkSelection(extensionJobIds);
 
   // Fetch user record
   const { data: userRecord } = useEnhancedApi(
@@ -154,8 +160,6 @@ export function JobImportModal({
         if (event.data.type === 'HIREALL_SAVED_JOBS_RESPONSE') {
           const jobs = event.data.jobs || [];
           setExtensionJobs(jobs);
-          // Auto-select all jobs
-          setSelectedExtensionJobs(new Set(jobs.map((j: ExtensionJob, i: number) => j.id || `job-${i}`)));
           window.removeEventListener('message', handleMessage);
         }
       };
@@ -175,6 +179,16 @@ export function JobImportModal({
     }
   }, [isExtensionInstalled, userRecord]);
 
+  // Auto-select all whenever the extension job list changes
+  useEffect(() => {
+    if (!isOpen || importMethod !== "extension") return;
+    if (extensionJobs.length === 0) {
+      extensionSelection.clearSelection();
+      return;
+    }
+    extensionSelection.selectAll();
+  }, [extensionJobs, extensionSelection, importMethod, isOpen]);
+
   // Load extension jobs when modal opens and extension method is selected
   useEffect(() => {
     if (isOpen && importMethod === 'extension' && isExtensionInstalled) {
@@ -184,7 +198,7 @@ export function JobImportModal({
 
   // Handle extension job import
   const handleExtensionImport = async () => {
-    if (!userRecord || selectedExtensionJobs.size === 0) {
+    if (!userRecord || extensionSelection.selectedCount === 0) {
       showWarning("No jobs selected", "Select at least one job to import.");
       return;
     }
@@ -194,7 +208,7 @@ export function JobImportModal({
 
     try {
       const jobsToImport = extensionJobs.filter((job, index) => 
-        selectedExtensionJobs.has(job.id || `job-${index}`)
+        extensionSelection.selectedIds.has(job.id || `job-${index}`)
       );
 
       let imported = 0;
@@ -236,7 +250,7 @@ export function JobImportModal({
       // Notify extension to clear imported jobs
       window.postMessage({
         type: 'HIREALL_JOBS_IMPORTED',
-        jobIds: Array.from(selectedExtensionJobs),
+        jobIds: extensionSelection.selectedArray,
         timestamp: Date.now()
       }, '*');
 
@@ -253,22 +267,12 @@ export function JobImportModal({
 
   // Toggle job selection
   const toggleJobSelection = (jobId: string) => {
-    const newSelection = new Set(selectedExtensionJobs);
-    if (newSelection.has(jobId)) {
-      newSelection.delete(jobId);
-    } else {
-      newSelection.add(jobId);
-    }
-    setSelectedExtensionJobs(newSelection);
+    extensionSelection.toggleSelection(jobId);
   };
 
   // Select/deselect all
   const toggleSelectAll = () => {
-    if (selectedExtensionJobs.size === extensionJobs.length) {
-      setSelectedExtensionJobs(new Set());
-    } else {
-      setSelectedExtensionJobs(new Set(extensionJobs.map((j, i) => j.id || `job-${i}`)));
-    }
+    extensionSelection.toggleSelectAll();
   };
 
   const handleCsvImport = async () => {
@@ -647,19 +651,19 @@ export function JobImportModal({
                             onClick={toggleSelectAll}
                             className="text-sm"
                           >
-                            {selectedExtensionJobs.size === extensionJobs.length
+                            {extensionSelection.isAllSelected
                               ? "Deselect All"
                               : "Select All"}
                           </Button>
                           <Badge variant="secondary" className="font-medium">
-                            {selectedExtensionJobs.size} of {extensionJobs.length} selected
+                            {extensionSelection.selectedCount} of {extensionJobs.length} selected
                           </Badge>
                         </div>
 
                         <div className="max-h-64 overflow-y-auto space-y-2 pr-2">
                           {extensionJobs.map((job, index) => {
                             const jobId = job.id || `job-${index}`;
-                            const isSelected = selectedExtensionJobs.has(jobId);
+                            const isSelected = extensionSelection.selectedIds.has(jobId);
                             return (
                               <motion.div
                                 key={jobId}
@@ -724,7 +728,7 @@ export function JobImportModal({
                       </Button>
                       <Button
                         onClick={handleExtensionImport}
-                        disabled={isImporting || selectedExtensionJobs.size === 0}
+                        disabled={isImporting || extensionSelection.selectedCount === 0}
                         className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white gap-2"
                       >
                         {isImporting ? (
@@ -735,7 +739,7 @@ export function JobImportModal({
                         ) : (
                           <>
                             <Download className="h-4 w-4" />
-                            Import {selectedExtensionJobs.size} Job{selectedExtensionJobs.size !== 1 ? 's' : ''}
+                            Import {extensionSelection.selectedCount} Job{extensionSelection.selectedCount !== 1 ? 's' : ''}
                           </>
                         )}
                       </Button>

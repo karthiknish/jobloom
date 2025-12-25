@@ -17,7 +17,7 @@ service cloud.firestore {
   // - Normal users cannot escalate themselves to admin
   // - Server-side operations use Admin SDK and bypass these rules
   //
-  // Last Updated: December 2024
+  // Last Updated: December 2025
 
   match /databases/{database}/documents {
 
@@ -128,6 +128,16 @@ service cloud.firestore {
         && (resource.data.userId == request.auth.uid || isAdmin());
     }
 
+    // ============ FOLLOW UPS ============
+    match /followUps/{followUpId} {
+      allow read: if isSignedIn()
+        && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isSignedIn()
+        && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
     // ============ SPONSORED COMPANIES (Admin-managed) ============
     match /sponsoredCompanies/{companyId} {
       allow read: if true; // Public for client-side sponsorship detection
@@ -184,7 +194,7 @@ service cloud.firestore {
       allow read: if true;
       allow create: if isSignedIn()
         && request.resource.data.userId == request.auth.uid
-        && !resource.exists();
+        && !exists(/databases/$(database)/documents/subdomains/$(sub));
       allow update: if false; // Immutable by default
       allow delete: if isAdmin(); // Admin override
     }
@@ -251,6 +261,18 @@ service cloud.firestore {
 
     // ============ EMAIL SENDS (Admin only) ============
     match /emailSends/{sendId} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false; // Server-side only
+    }
+
+    // ============ EMAIL IDEMPOTENCY (Server-managed) ============
+    match /emailIdempotency/{id} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false;
+    }
+
+    // ============ EMAIL LOGS (Admin only) ============
+    match /emailLogs/{logId} {
       allow read: if isAdmin();
       allow create, update, delete: if false; // Server-side only
     }

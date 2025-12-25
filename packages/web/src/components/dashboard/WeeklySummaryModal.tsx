@@ -46,6 +46,54 @@ export function WeeklySummaryModal({
   const safeApps = Array.isArray(applications) ? applications : [];
   const now = new Date();
 
+  const toValidDate = (value: unknown): Date | null => {
+    try {
+      if (value instanceof Date) {
+        return Number.isNaN(value.getTime()) ? null : value;
+      }
+      if (typeof value === "number") {
+        const d = new Date(value);
+        return Number.isNaN(d.getTime()) ? null : d;
+      }
+      if (typeof value === "string") {
+        const normalized = /^\d+$/.test(value) ? Number(value) : value;
+        const d = new Date(normalized as any);
+        return Number.isNaN(d.getTime()) ? null : d;
+      }
+      if (value && typeof value === "object") {
+        const anyVal = value as any;
+        if (typeof anyVal.toDate === "function") {
+          const d = anyVal.toDate();
+          return d instanceof Date && !Number.isNaN(d.getTime()) ? d : null;
+        }
+        if (typeof anyVal.toMillis === "function") {
+          const d = new Date(anyVal.toMillis());
+          return Number.isNaN(d.getTime()) ? null : d;
+        }
+        const seconds =
+          typeof anyVal.seconds === "number"
+            ? anyVal.seconds
+            : typeof anyVal._seconds === "number"
+              ? anyVal._seconds
+              : null;
+        const nanos =
+          typeof anyVal.nanoseconds === "number"
+            ? anyVal.nanoseconds
+            : typeof anyVal._nanoseconds === "number"
+              ? anyVal._nanoseconds
+              : 0;
+        if (typeof seconds === "number") {
+          const millis = seconds * 1000 + Math.floor(nanos / 1_000_000);
+          const d = new Date(millis);
+          return Number.isNaN(d.getTime()) ? null : d;
+        }
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  };
+
   // This week and last week boundaries
   const thisWeekStart = startOfWeek(now, { weekStartsOn: 1 }); // Monday
   const thisWeekEnd = endOfWeek(now, { weekStartsOn: 1 });
@@ -54,12 +102,14 @@ export function WeeklySummaryModal({
 
   // Filter applications by week
   const thisWeekApps = safeApps.filter((a) => {
-    const date = new Date(a.createdAt || 0);
+    const date = toValidDate((a as any).createdAt);
+    if (!date) return false;
     return isWithinInterval(date, { start: thisWeekStart, end: thisWeekEnd });
   });
 
   const lastWeekApps = safeApps.filter((a) => {
-    const date = new Date(a.createdAt || 0);
+    const date = toValidDate((a as any).createdAt);
+    if (!date) return false;
     return isWithinInterval(date, { start: lastWeekStart, end: lastWeekEnd });
   });
 

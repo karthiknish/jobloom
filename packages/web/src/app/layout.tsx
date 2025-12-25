@@ -17,6 +17,7 @@ import EmailVerificationBanner from "@/components/EmailVerificationBanner";
 import { ReportIssue } from "@/components/ReportIssue";
 import { rootMetadata } from "@/metadata";
 import { OnboardingTourProvider } from "@/providers/onboarding-tour-provider";
+import { SuccessAnimationProvider } from "@/components/ui/SuccessAnimation";
 import {
   generateOrganizationSchema,
   generateWebSiteSchema,
@@ -75,14 +76,16 @@ export default function RootLayout({
             <AnalyticsProvider>
               <PerformanceProvider>
                 <OnboardingTourProvider>
-                  <Header />
-                  <EmailVerificationBanner />
-                  <main id="main">{children}</main>
-                  <Footer />
-                  <MobileNavigation />
-                  <AppToaster />
-                  <Chatbot />
-                  <ReportIssue position="bottom-left" />
+                  <SuccessAnimationProvider>
+                    <Header />
+                    <EmailVerificationBanner />
+                    <main id="main">{children}</main>
+                    <Footer />
+                    <MobileNavigation />
+                    <AppToaster />
+                    <Chatbot />
+                    <ReportIssue position="bottom-left" />
+                  </SuccessAnimationProvider>
                 </OnboardingTourProvider>
               </PerformanceProvider>
             </AnalyticsProvider>

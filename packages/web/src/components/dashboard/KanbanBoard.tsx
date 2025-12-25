@@ -3,7 +3,9 @@
 import * as React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ApplicationStatusBadge } from "@/components/ui/StatusBadge";
 import { Button } from "@/components/ui/button";
+import { Loader2, Move, DownloadCloud } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -41,6 +43,8 @@ export function KanbanBoard({
   onChangeStatus,
   onReorder,
   onView,
+  isSaving = false,
+  savingApplicationId,
 }: {
   applications: Application[];
   onChangeStatus: (id: string, status: KanbanStatus) => Promise<void> | void;
@@ -50,6 +54,8 @@ export function KanbanBoard({
     beforeId: string | null
   ) => Promise<void> | void;
   onView?: (application: Application) => void;
+  isSaving?: boolean;
+  savingApplicationId?: string | null;
 }) {
   const columns: KanbanStatus[] = [
     "interested",
@@ -60,6 +66,9 @@ export function KanbanBoard({
   ];
 
   const [draggedId, setDraggedId] = React.useState<string | null>(null);
+  const [activeDrop, setActiveDrop] = React.useState<
+    { status: KanbanStatus; beforeId: string | null } | null
+  >(null);
 
   const byCol: Record<KanbanStatus, Application[]> = React.useMemo(() => {
     const map: Record<KanbanStatus, Application[]> = {
@@ -86,21 +95,25 @@ export function KanbanBoard({
   }, [applications]);
 
   const onDragStart = (id: string) => (e: React.DragEvent) => {
+    if (isSaving) return;
     e.dataTransfer.setData("text/plain", id);
     setDraggedId(id);
   };
 
   const onDragOver = (e: React.DragEvent) => {
+    if (isSaving) return;
     e.preventDefault();
   };
 
   const onDrop = (status: KanbanStatus) => async (e: React.DragEvent) => {
+    if (isSaving) return;
     e.preventDefault();
     const id = e.dataTransfer.getData("text/plain") || draggedId;
     if (!id) return;
     if (onReorder) await onReorder(id, status, null);
     else await onChangeStatus(id, status);
     setDraggedId(null);
+    setActiveDrop(null);
   };
 
   const onDropBefore = (
@@ -108,21 +121,23 @@ export function KanbanBoard({
     beforeId: string | null
   ) =>
     async (e: React.DragEvent) => {
+      if (isSaving) return;
       e.preventDefault();
       const id = e.dataTransfer.getData("text/plain") || draggedId;
       if (!id) return;
       if (onReorder) await onReorder(id, status, beforeId);
       else await onChangeStatus(id, status);
       setDraggedId(null);
+      setActiveDrop(null);
     };
 
   // ...existing code...
   const statusBadge: Record<KanbanStatus, React.ReactNode> = {
-    interested: <Badge variant="secondary" className="bg-slate-100 text-slate-700 hover:bg-slate-200">Interested</Badge>,
-    applied: <Badge variant="secondary" className="bg-blue-100 text-blue-700 hover:bg-blue-200">Applied</Badge>,
-    offered: <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200">Offered</Badge>,
-    rejected: <Badge variant="secondary" className="bg-red-100 text-red-700 hover:bg-red-200">Rejected</Badge>,
-    withdrawn: <Badge variant="secondary" className="bg-gray-100 text-gray-700 hover:bg-gray-200">Withdrawn</Badge>,
+    interested: <ApplicationStatusBadge status="interested" />,
+    applied: <ApplicationStatusBadge status="applied" />,
+    offered: <ApplicationStatusBadge status="offered" />,
+    rejected: <ApplicationStatusBadge status="rejected" />,
+    withdrawn: <ApplicationStatusBadge status="withdrawn" />,
   } as const;
 
   const statusTooltips: Record<KanbanStatus, string> = {
@@ -134,10 +149,20 @@ export function KanbanBoard({
   };
 
   return (
-    <div className="overflow-x-auto pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
-      <div className="flex gap-4 min-w-max pb-2">
+    <div className="pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
+      <div className="relative">
+        {isSaving && (
+          <div className="absolute inset-0 z-20 rounded-xl bg-background/40 backdrop-blur-[1px] flex items-start justify-end p-3 pointer-events-none">
+            <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/80 px-3 py-1.5 text-xs text-muted-foreground shadow-sm">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              Saving changes…
+            </div>
+          </div>
+        )}
+
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 pb-2">
       {columns.map((col) => (
-        <div key={col} className="w-80 flex-shrink-0 flex flex-col bg-muted/30 rounded-xl border border-border/50 max-h-[calc(100vh-var(--header-height-desktop)-var(--dashboard-header-height)-var(--dashboard-tabs-height)-2rem)]">
+        <div key={col} className="w-full min-w-0 flex flex-col bg-muted/30 rounded-xl border border-border/50 max-h-[calc(100vh-var(--header-height-desktop)-var(--dashboard-header-height)-var(--dashboard-tabs-height)-2rem)]">
           <TooltipProvider>
             <div className="p-3 flex items-center justify-between border-b border-border/50 bg-background/50 backdrop-blur-sm rounded-t-xl sticky top-0 z-10">
               <Tooltip>
@@ -169,13 +194,25 @@ export function KanbanBoard({
               <li
                 onDragOver={onDragOver}
                 onDrop={onDropBefore(col, byCol[col][0]?._id ?? null)}
-                className="h-1"
+                onDragEnter={() => setActiveDrop({ status: col, beforeId: byCol[col][0]?._id ?? null })}
+                className={
+                  draggedId
+                    ? "h-3 rounded-md transition-colors " +
+                      (activeDrop?.status === col && activeDrop?.beforeId === (byCol[col][0]?._id ?? null)
+                        ? "bg-primary/30"
+                        : "bg-transparent")
+                    : "h-1"
+                }
               />
               {byCol[col].map((a, idx) => (
                 <React.Fragment key={a._id}>
                   <li
-                    draggable
+                    draggable={!isSaving}
                     onDragStart={onDragStart(a._id)}
+                    onDragEnd={() => {
+                      setDraggedId(null);
+                      setActiveDrop(null);
+                    }}
                     className={`
                       group relative rounded-lg bg-card border border-border/60 p-3 shadow-sm 
                       hover:shadow-md hover:border-primary/30 motion-surface cursor-grab active:cursor-grabbing
@@ -199,8 +236,15 @@ export function KanbanBoard({
                       <div className="text-[10px] text-muted-foreground">
                         {new Date(a.job?.dateFound || Date.now()).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                       </div>
+                      {savingApplicationId === a._id && (
+                        <div className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          Saving
+                        </div>
+                      )}
                       {onView && (
                         <Button 
+                          type="button"
                           size="sm" 
                           variant="ghost" 
                           className="h-6 px-2 text-xs hover:bg-primary/10 hover:text-primary"
@@ -221,19 +265,52 @@ export function KanbanBoard({
                       col,
                       byCol[col][idx + 1]?._id ?? null
                     )}
-                    className="h-1"
+                    onDragEnter={() => setActiveDrop({ status: col, beforeId: byCol[col][idx + 1]?._id ?? null })}
+                    className={
+                      draggedId
+                        ? "h-3 rounded-md transition-colors " +
+                          (activeDrop?.status === col && activeDrop?.beforeId === (byCol[col][idx + 1]?._id ?? null)
+                            ? "bg-primary/30"
+                            : "bg-transparent")
+                        : "h-1"
+                    }
                   />
                 </React.Fragment>
               ))}
               {byCol[col].length === 0 && (
-                <div className="h-24 border-2 border-dashed border-border/40 rounded-lg flex items-center justify-center text-muted-foreground/40 text-xs">
-                  Drop here
+                <div
+                  onDragOver={onDragOver}
+                  onDrop={onDrop(col)}
+                  onDragEnter={() => setActiveDrop({ status: col, beforeId: null })}
+                  className={
+                    "h-28 border-2 border-dashed rounded-lg flex flex-col items-center justify-center text-xs transition-colors " +
+                    (draggedId
+                      ? activeDrop?.status === col
+                        ? "border-primary/50 bg-primary/5 text-primary"
+                        : "border-border/50 bg-background/40 text-muted-foreground"
+                      : "border-border/40 text-muted-foreground/60")
+                  }
+                >
+                  <div className="flex items-center gap-2">
+                    {draggedId ? (
+                      <DownloadCloud className="h-4 w-4" />
+                    ) : (
+                      <Move className="h-4 w-4" />
+                    )}
+                    <span className="font-medium">
+                      {draggedId ? "Release to drop" : "Drag a card here"}
+                    </span>
+                  </div>
+                  <span className="mt-1 text-[10px] text-muted-foreground">
+                    {draggedId ? "We’ll save this automatically" : "Reorder by dragging cards"}
+                  </span>
                 </div>
               )}
             </ul>
           </div>
         </div>
       ))}
+      </div>
       </div>
     </div>
   );

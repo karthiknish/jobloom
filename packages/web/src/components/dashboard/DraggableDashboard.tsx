@@ -25,6 +25,7 @@ import { GripVertical, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface DashboardWidget {
   id: string;
@@ -44,9 +45,11 @@ interface DraggableDashboardProps {
 interface SortableWidgetProps {
   widget: DashboardWidget;
   onToggleVisibility: (id: string) => void;
+  customizing: boolean;
+  onRequestCustomize: () => void;
 }
 
-function SortableWidget({ widget, onToggleVisibility }: SortableWidgetProps) {
+function SortableWidget({ widget, onToggleVisibility, customizing, onRequestCustomize }: SortableWidgetProps) {
   const {
     attributes,
     listeners,
@@ -97,8 +100,15 @@ function SortableWidget({ widget, onToggleVisibility }: SortableWidgetProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => onToggleVisibility(widget.id)}
+                onClick={() => {
+                  if (!customizing) {
+                    onRequestCustomize();
+                    return;
+                  }
+                  onToggleVisibility(widget.id);
+                }}
                 className="h-8 w-8 p-0 hover:bg-muted/50"
+                aria-label={customizing ? "Hide widget" : "Customize dashboard"}
               >
                 <Settings className="h-4 w-4" />
               </Button>
@@ -113,14 +123,39 @@ function SortableWidget({ widget, onToggleVisibility }: SortableWidgetProps) {
   );
 }
 
+function normalizeLayout(widgetIds: string[], widgets: DashboardWidget[]) {
+  const allowed = new Set(widgets.map((w) => w.id));
+  const requiredIds = widgets.filter((w) => w.required).map((w) => w.id);
+
+  const next: string[] = [];
+  for (const id of widgetIds) {
+    if (!allowed.has(id)) continue;
+    if (next.includes(id)) continue;
+    next.push(id);
+  }
+
+  for (const id of requiredIds) {
+    if (!next.includes(id)) next.unshift(id);
+  }
+
+  return next;
+}
+
+function getDefaultVisibleIds(widgets: DashboardWidget[]) {
+  return widgets.filter((w) => w.visible || w.required).map((w) => w.id);
+}
+
 export function DraggableDashboard({
   widgets,
   onLayoutChange,
   savedLayout,
   className = ""
 }: DraggableDashboardProps) {
+  const defaultVisibleIds = getDefaultVisibleIds(widgets);
+  const defaultLayout = normalizeLayout(defaultVisibleIds, widgets);
+
   const [layout, setLayout] = useState<string[]>(
-    savedLayout || widgets.filter(w => w.visible).map(w => w.id)
+    normalizeLayout(savedLayout ?? defaultLayout, widgets)
   );
   const [customizing, setCustomizing] = useState(false);
 
@@ -138,18 +173,41 @@ export function DraggableDashboard({
   // Update layout when savedLayout changes
   useEffect(() => {
     if (savedLayout) {
-      setLayout(savedLayout);
+      setLayout(normalizeLayout(savedLayout, widgets));
     }
-  }, [savedLayout]);
+  }, [savedLayout, widgets]);
+
+  // One-time migration: older saved layouts only stored ordering and may omit
+  // newer default widgets (e.g. Job Statistics). We append default-visible
+  // widgets once, then persist the updated layout.
+  useEffect(() => {
+    if (!savedLayout) return;
+    if (typeof window === "undefined") return;
+
+    const MIGRATION_KEY = "hireall:dashboardLayout:migrated_v2";
+    const alreadyMigrated = window.localStorage.getItem(MIGRATION_KEY) === "1";
+    if (alreadyMigrated) return;
+
+    const merged = normalizeLayout(
+      [...savedLayout, ...defaultVisibleIds],
+      widgets
+    );
+
+    if (merged.join("|") !== normalizeLayout(savedLayout, widgets).join("|")) {
+      setLayout(merged);
+      onLayoutChange(merged);
+    }
+
+    window.localStorage.setItem(MIGRATION_KEY, "1");
+  }, [savedLayout, widgets, defaultVisibleIds, onLayoutChange]);
 
   // Filter and sort widgets based on current layout
   const visibleWidgets = widgets
-    .filter(widget => widget.visible)
-    .sort((a, b) => {
-      const aIndex = layout.indexOf(a.id);
-      const bIndex = layout.indexOf(b.id);
-      return aIndex - bIndex;
-    });
+    .filter((widget) => layout.includes(widget.id))
+    .sort((a, b) => layout.indexOf(a.id) - layout.indexOf(b.id));
+
+  const optionalWidgets = widgets.filter((w) => !w.required);
+  const isWidgetShown = (widgetId: string) => layout.includes(widgetId);
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -168,16 +226,15 @@ export function DraggableDashboard({
     const widget = widgets.find(w => w.id === widgetId);
     if (!widget || widget.required) return;
 
-    const newLayout = widget.visible
-      ? layout.filter(id => id !== widgetId)
-      : [...layout, widgetId];
+    const nextLayout = isWidgetShown(widgetId)
+      ? layout.filter((id) => id !== widgetId)
+      : normalizeLayout([...layout, widgetId], widgets);
 
-    setLayout(newLayout);
-    onLayoutChange(newLayout);
+    setLayout(nextLayout);
+    onLayoutChange(nextLayout);
   };
 
   const resetToDefault = () => {
-    const defaultLayout = widgets.filter(w => w.visible).map(w => w.id);
     setLayout(defaultLayout);
     onLayoutChange(defaultLayout);
   };
@@ -227,11 +284,36 @@ export function DraggableDashboard({
                 key={widget.id}
                 widget={widget}
                 onToggleVisibility={toggleWidgetVisibility}
+                customizing={customizing}
+                onRequestCustomize={() => setCustomizing(true)}
               />
             ))}
           </div>
         </SortableContext>
       </DndContext>
+
+      {/* Customize Panel */}
+      {customizing && optionalWidgets.length > 0 && (
+        <Card className="border-dashed">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Show/Hide Widgets</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {optionalWidgets.map((w) => (
+              <label
+                key={w.id}
+                className="flex items-center justify-between gap-3 rounded-lg border border-border/60 p-3 hover:bg-muted/30"
+              >
+                <span className="text-sm font-medium text-foreground">{w.title}</span>
+                <Checkbox
+                  checked={isWidgetShown(w.id)}
+                  onCheckedChange={() => toggleWidgetVisibility(w.id)}
+                />
+              </label>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Instructions */}
       {customizing && (
@@ -248,7 +330,7 @@ export function DraggableDashboard({
               <h4 className="font-medium text-blue-900">Customize Your Dashboard</h4>
               <p className="text-sm text-blue-700 mt-1">
                 Drag widgets using the grip handle to reorder them.
-                Click the settings icon to hide/show optional widgets.
+                Click the settings icon on a card to hide it, or use the panel above to show/hide widgets.
                 Your layout will be saved automatically.
               </p>
             </div>

@@ -230,6 +230,69 @@ function SkeletonShimmerCard({ className, ...props }: SkeletonProps) {
   );
 }
 
+// Analytics widget skeleton
+function SkeletonAnalyticsCard({ className, ...props }: SkeletonProps) {
+  return (
+    <div
+      className={cn(
+        "p-5 border border-border rounded-xl bg-background space-y-3",
+        className
+      )}
+      {...props}
+    >
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-8 w-8 rounded-lg" />
+      </div>
+      <Skeleton className="h-8 w-20" />
+      <div className="flex items-center gap-2">
+        <Skeleton className="h-4 w-12" />
+        <Skeleton className="h-4 w-16" />
+      </div>
+    </div>
+  );
+}
+
+// CV history item skeleton
+function SkeletonCVHistory({ items = 3, className, ...props }: SkeletonProps & { items?: number }) {
+  return (
+    <div className={cn("space-y-4", className)} {...props}>
+      {Array.from({ length: items }).map((_, i) => (
+        <div key={i} className="p-4 border border-border rounded-lg space-y-3">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-10 w-10 rounded-lg" />
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-3 w-24" />
+              </div>
+            </div>
+            <Skeleton className="h-8 w-16 rounded-full" />
+          </div>
+          <div className="flex gap-2">
+            <Skeleton className="h-6 w-20 rounded-full" />
+            <Skeleton className="h-6 w-24 rounded-full" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Stats row skeleton (for quick stats sections)
+function SkeletonStatsRow({ items = 4, className, ...props }: SkeletonProps & { items?: number }) {
+  return (
+    <div className={cn("grid grid-cols-2 md:grid-cols-4 gap-4", className)} {...props}>
+      {Array.from({ length: items }).map((_, i) => (
+        <div key={i} className="p-4 border border-border rounded-lg space-y-2">
+          <Skeleton className="h-3 w-16" />
+          <Skeleton className="h-6 w-12" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export {
   Skeleton,
   SkeletonCard,
@@ -244,4 +307,8 @@ export {
   SkeletonShimmer,
   SkeletonShimmerText,
   SkeletonShimmerCard,
+  SkeletonAnalyticsCard,
+  SkeletonCVHistory,
+  SkeletonStatsRow,
 };
+

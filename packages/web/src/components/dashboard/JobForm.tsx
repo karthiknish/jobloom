@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { 
   Loader2, 
   AlertCircle, 
@@ -21,6 +22,12 @@ import {
   FileText,
   Save
 } from "lucide-react";
+import {
+  LEGACY_STORAGE_KEYS,
+  STORAGE_KEYS,
+  readAndMigrateJsonFromStorage,
+  writeJsonToStorage,
+} from "@/constants/storageKeys";
 
 interface JobFormData {
   title: string;
@@ -49,8 +56,6 @@ interface FieldError {
   field: string;
   message: string;
 }
-
-const DRAFT_STORAGE_KEY = "hireall_job_draft";
 
 const JOB_TYPES = [
   { value: "full-time", label: "Full-time" },
@@ -103,9 +108,11 @@ export function JobForm({ onSubmit, onCancel, initialData, isEditing = false }: 
     if (isEditing) return; // Don't load draft when editing
     
     try {
-      const saved = localStorage.getItem(DRAFT_STORAGE_KEY);
-      if (saved) {
-        const draft = JSON.parse(saved);
+      const draft = readAndMigrateJsonFromStorage<Partial<JobFormData>>(
+        STORAGE_KEYS.jobDraft,
+        LEGACY_STORAGE_KEYS.jobDraft
+      );
+      if (draft) {
         // Only restore if there's meaningful content
         if (draft.title || draft.company || draft.description) {
           setFormData(prev => ({ ...prev, ...draft }));
@@ -123,7 +130,7 @@ export function JobForm({ onSubmit, onCancel, initialData, isEditing = false }: 
     
     try {
       setIsSavingDraft(true);
-      localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(formData));
+      writeJsonToStorage(STORAGE_KEYS.jobDraft, formData, LEGACY_STORAGE_KEYS.jobDraft);
       setHasDraft(true);
       setTimeout(() => setIsSavingDraft(false), 500);
     } catch (e) {
@@ -142,7 +149,14 @@ export function JobForm({ onSubmit, onCancel, initialData, isEditing = false }: 
 
   // Clear draft
   const clearDraft = () => {
-    localStorage.removeItem(DRAFT_STORAGE_KEY);
+    try {
+      localStorage.removeItem(STORAGE_KEYS.jobDraft);
+      for (const legacyKey of LEGACY_STORAGE_KEYS.jobDraft) {
+        localStorage.removeItem(legacyKey);
+      }
+    } catch {
+      // ignore
+    }
     setHasDraft(false);
   };
 
@@ -253,9 +267,26 @@ export function JobForm({ onSubmit, onCancel, initialData, isEditing = false }: 
 
   const formError = errors.find(e => e.field === "_form")?.message;
 
+  const breadcrumbItems = useMemo(
+    () =>
+      isEditing
+        ? [
+            { label: "Dashboard", href: "/dashboard" },
+            { label: "Job Details" },
+            { label: "Edit Job" },
+          ]
+        : [
+            { label: "Dashboard", href: "/dashboard" },
+            { label: "Add Job" },
+          ],
+    [isEditing]
+  );
+
   return (
-    <Card className="w-full max-w-4xl mx-auto border-2 shadow-lg">
-      <CardHeader className="pb-4">
+    <div className="w-full max-w-4xl mx-auto">
+      <Breadcrumbs className="mb-4" items={breadcrumbItems} showHome={false} />
+      <Card className="border-2 shadow-lg">
+        <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-primary/10">
@@ -286,9 +317,9 @@ export function JobForm({ onSubmit, onCancel, initialData, isEditing = false }: 
             </div>
           )}
         </div>
-      </CardHeader>
+        </CardHeader>
 
-      <CardContent>
+        <CardContent>
         {/* Form Error Alert */}
         <AnimatePresence>
           {formError && (
@@ -509,9 +540,9 @@ export function JobForm({ onSubmit, onCancel, initialData, isEditing = false }: 
             </div>
           </div>
         </form>
-      </CardContent>
+        </CardContent>
 
-      <CardFooter className="flex justify-between border-t pt-4">
+        <CardFooter className="flex justify-between border-t pt-4">
         <div className="flex gap-2">
           {hasDraft && !isEditing && (
             <Button variant="ghost" size="sm" onClick={clearDraft} disabled={isSubmitting}>
@@ -541,7 +572,8 @@ export function JobForm({ onSubmit, onCancel, initialData, isEditing = false }: 
             )}
           </Button>
         </div>
-      </CardFooter>
-    </Card>
+        </CardFooter>
+      </Card>
+    </div>
   );
 }

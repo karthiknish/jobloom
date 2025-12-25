@@ -80,34 +80,11 @@ export function JobList({
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [showRecruitmentAgency, setShowRecruitmentAgency] = useState(true);
   const [sortBy, setSortBy] = useState("dateFound");
-  const [internalSelectedIds, setInternalSelectedIds] = useState<Set<string>>(new Set());
   const [_viewsOpen, _setViewsOpen] = useState(false);
   const [_remindersOpen, _setRemindersOpen] = useState(false);
   const [_reminderEnable, _setReminderEnable] = useState(false);
   const [_reminderDate, _setReminderDate] = useState("");
   const [_savedViews, _setSavedViews] = useState<{ [key: string]: any }>({});
-
-  // Use external selection if provided, otherwise use internal
-  const selectedIds = externalSelectedIds ?? internalSelectedIds;
-  const setSelectedIds = onToggleSelection 
-    ? undefined // When external, don't allow direct set
-    : setInternalSelectedIds;
-  
-  const toggleSelection = (id: string) => {
-    if (onToggleSelection) {
-      onToggleSelection(id);
-    } else {
-      setInternalSelectedIds(prev => {
-        const next = new Set(prev);
-        if (next.has(id)) {
-          next.delete(id);
-        } else {
-          next.add(id);
-        }
-        return next;
-      });
-    }
-  };
 
   // Restore filters from localStorage
   useEffect(() => {
@@ -194,30 +171,15 @@ export function JobList({
     }
   };
 
-  const handleBulkDelete = async () => {
-    try {
-      await Promise.all(
-        Array.from(selectedIds).map((id) =>
-          dashboardApi.deleteApplication(id)
-        )
-      );
-      showSuccess("Applications deleted", `${selectedIds.size} applications have been removed.`);
-      setInternalSelectedIds(new Set());
-      onChanged?.();
-    } catch (error) {
-      showError("Delete failed", "Unable to delete applications. Please try again.");
-      console.error("Bulk delete error:", error);
-    }
-  };
 
   return (
     <div className="space-y-6">
       {/* Filters and Search */}
-      <Card className="border-0 bg-card shadow-lg">
+      <Card className="border border-border/50 bg-card shadow-sm">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-xl text-amber-600">
+              <CardTitle className="text-xl text-foreground">
                 Job Filters
               </CardTitle>
               <CardDescription className="text-base">
@@ -237,7 +199,7 @@ export function JobList({
                 placeholder="Search jobs by title, company, or location..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-className="border-border focus:border-amber-500 focus:ring-amber-500"
+                className="border-border"
               />
             </div>
             <div className="space-y-2">
@@ -245,7 +207,7 @@ className="border-border focus:border-amber-500 focus:ring-amber-500"
                 Filter by Status
               </Label>
               <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                <SelectTrigger id="status" className="border-border focus:border-amber-500 focus:ring-amber-500">
+                <SelectTrigger id="status" className="border-border">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -287,37 +249,6 @@ className="border-border focus:border-amber-500 focus:ring-amber-500"
         </CardContent>
       </Card>
 
-      {/* Bulk Actions */}
-      {selectedIds.size > 0 && (
-        <Card className="border-0 bg-card shadow-lg">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-primary">
-                {selectedIds.size} application{selectedIds.size !== 1 ? "s" : ""} selected
-              </span>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setInternalSelectedIds(new Set())}
-                  className="text-primary border-primary/30 hover:bg-primary/10"
-                >
-                  Clear Selection
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={handleBulkDelete}
-                  className="bg-red-600 hover:bg-red-700"
-                >
-                  Delete Selected
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Applications List */}
       <JobDataTable
         applications={filteredApplications}
@@ -325,6 +256,8 @@ className="border-border focus:border-amber-500 focus:ring-amber-500"
         onDeleteApplication={handleDeleteClick}
         onViewApplication={onViewApplication}
         onChanged={onChanged}
+        selectedIds={externalSelectedIds}
+        onToggleSelection={onToggleSelection}
       />
 
         {/* Upgrade Prompt for Free Users with Many Applications */}
@@ -334,22 +267,22 @@ className="border-border focus:border-amber-500 focus:ring-amber-500"
             animate={{ opacity: 1, y: 0 }}
             className="mt-6"
           >
-            <Card className="bg-card border-amber-200 shadow-lg">
+            <Card className="bg-primary/5 border border-border/50 shadow-sm">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
-                    <div className="p-3 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full">
-                      <Crown className="h-6 w-6 text-white" />
+                    <div className="p-3 bg-primary/15 rounded-full">
+                      <Crown className="h-6 w-6 text-primary" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-amber-900">Upgrade to Premium</h3>
-                      <p className="text-amber-700">
+                      <h3 className="text-lg font-semibold text-foreground">Upgrade to Premium</h3>
+                      <p className="text-muted-foreground">
                         You&apos;ve reached {applications.length} applications! Upgrade to unlock unlimited job tracking, advanced analytics, and AI-powered insights.
                       </p>
                     </div>
                   </div>
                   <Button 
-                    className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white"
+                    className="bg-primary text-primary-foreground hover:bg-primary/90"
                     onClick={() => window.location.href = '/upgrade'}
                   >
                     <Crown className="h-4 w-4 mr-2" />

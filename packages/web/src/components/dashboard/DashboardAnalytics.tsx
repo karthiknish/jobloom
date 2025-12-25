@@ -29,8 +29,15 @@ import {
   calculateSalaryGrowth,
   calculateSalaryMetrics,
 } from "@/utils/dashboard";
-import { ANALYTICS_GOALS } from "@/constants/dashboard";
 import { slideInUp } from "@/styles/animations";
+import { settingsApi } from "@/utils/api/settings";
+import {
+  LEGACY_STORAGE_KEYS,
+  STORAGE_KEYS,
+  readAndMigrateJsonFromStorage,
+  writeJsonToStorage,
+} from "@/constants/storageKeys";
+import { showError, showSuccess } from "@/components/ui/Toast";
 
 interface DashboardAnalyticsProps {
   applications: Application[];
@@ -56,17 +63,62 @@ export function DashboardAnalytics({
     responseRate: 20,
   });
 
-  // Load goals from localStorage
+  // Load goals from Firestore-backed preferences, with localStorage fallback + migration
   useEffect(() => {
-    const saved = localStorage.getItem("hireall-goals");
-    if (saved) {
+    let cancelled = false;
+
+    const loadGoals = async () => {
+      const localGoals = readAndMigrateJsonFromStorage<typeof goals>(
+        STORAGE_KEYS.goals,
+        LEGACY_STORAGE_KEYS.goals
+      );
+
       try {
-        setGoals(JSON.parse(saved));
-      } catch (e) {
-        console.error("Failed to parse saved goals");
+        const result = await settingsApi.getPreferences();
+        const remoteGoals = (result as any)?.preferences?.goals;
+
+        const isValidRemoteGoals =
+          remoteGoals &&
+          typeof remoteGoals.weeklyApplications === "number" &&
+          typeof remoteGoals.responseRate === "number";
+
+        if (cancelled) return;
+
+        if (isValidRemoteGoals) {
+          setGoals(remoteGoals);
+          writeJsonToStorage(STORAGE_KEYS.goals, remoteGoals, LEGACY_STORAGE_KEYS.goals);
+          return;
+        }
+
+        if (localGoals) {
+          setGoals(localGoals);
+          // Best-effort push local goals up to Firestore so they sync cross-device.
+          void settingsApi.updatePreferences({
+            preferences: { goals: localGoals },
+          });
+        }
+      } catch {
+        if (cancelled) return;
+        if (localGoals) setGoals(localGoals);
       }
-    }
+    };
+
+    void loadGoals();
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
+  const handleSaveGoals = async (nextGoals: typeof goals) => {
+    setGoals(nextGoals);
+    writeJsonToStorage(STORAGE_KEYS.goals, nextGoals, LEGACY_STORAGE_KEYS.goals);
+    try {
+      await settingsApi.updatePreferences({ preferences: { goals: nextGoals } });
+      showSuccess("Goals saved", "Your job search goals have been updated.");
+    } catch (e: any) {
+      showError(e?.message || "Failed to save", "Could not sync your goals. They are saved locally.");
+    }
+  };
 
   // Ensure applications is always an array
   const safeApplications = Array.isArray(applications) ? applications : [];
@@ -536,7 +588,7 @@ export function DashboardAnalytics({
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium">Response Rate</span>
                   <span className="text-sm text-muted-foreground">
-                    {responseRate}% / {ANALYTICS_GOALS.responseRate}%
+                    {responseRate}% / {goals.responseRate}%
                   </span>
                 </div>
                 <div className="w-full bg-muted rounded-full h-2">
@@ -545,7 +597,7 @@ export function DashboardAnalytics({
                     style={{
                       width: `${Math.min(
                         100,
-                        (responseRate / ANALYTICS_GOALS.responseRate) * 100
+                        (responseRate / goals.responseRate) * 100
                       )}%`,
                     }}
                   ></div>
@@ -591,7 +643,7 @@ export function DashboardAnalytics({
         open={showGoalsModal}
         onOpenChange={setShowGoalsModal}
         currentGoals={goals}
-        onSaveGoals={setGoals}
+        onSaveGoals={handleSaveGoals}
       />
       <ProgressReportModal
         open={showProgressModal}

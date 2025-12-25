@@ -37,7 +37,7 @@ const faqSchema = generateFAQSchema(
 
 export default function FAQSection() {
   return (
-    <section className="py-20 bg-muted/30">
+    <section className="py-20 bg-muted/30" id="faq">
       {/* FAQ Structured Data for SEO */}
       <script
         type="application/ld+json"

@@ -16,6 +16,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Sparkline } from "@/components/ui/Sparkline";
 import type { CvAnalysis } from "../types/api";
 
 interface CvImprovementTrackerProps {
@@ -164,33 +165,44 @@ export function CvImprovementTracker({ analyses }: CvImprovementTrackerProps) {
             </div>
           </div>
 
-          {/* Score Progression */}
+          {/* Score Progression Sparkline Chart */}
           <div>
             <h4 className="font-medium mb-3 flex items-center">
               <LineChart className="h-4 w-4 mr-2" />
-              Score Progression
+              Score Trend
             </h4>
-            <div className="space-y-2">
-              {sortedAnalyses.map((analysis, index) => (
-                <div key={analysis._id} className="flex items-center gap-3">
-                  <div className="text-sm text-muted-foreground w-16">
-                    {index === 0
-                      ? "Start"
-                      : index === sortedAnalyses.length - 1
-                      ? "Latest"
-                      : `CV ${index + 1}`}
-                  </div>
-                  <div className="flex-1">
-                    <Progress
-                      value={analysis.overallScore || 0}
-                      className="h-2"
-                    />
-                  </div>
-                  <div className="text-sm font-medium w-12 text-right">
-                    {analysis.overallScore}
-                  </div>
+            <div className="bg-muted/30 rounded-lg p-4 mb-4">
+              <Sparkline
+                data={sortedAnalyses.map(a => a.overallScore || 0)}
+                labels={sortedAnalyses.map((a, i) => 
+                  i === 0 ? "Start" : i === sortedAnalyses.length - 1 ? "Latest" : `CV ${i + 1}`
+                )}
+                width={400}
+                height={80}
+                showPoints={true}
+                showArea={true}
+                className="w-full max-w-full"
+              />
+            </div>
+            
+            {/* Score details */}
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="p-3 bg-muted/50 rounded-lg">
+                <div className="text-muted-foreground mb-1">Starting Score</div>
+                <div className="text-xl font-bold">{firstAnalysis.overallScore || 0}</div>
+              </div>
+              <div className="p-3 bg-muted/50 rounded-lg">
+                <div className="text-muted-foreground mb-1">Latest Score</div>
+                <div className="text-xl font-bold flex items-center gap-2">
+                  {latestAnalysis.overallScore || 0}
+                  {overallImprovement > 0 && (
+                    <span className="text-sm text-green-600 font-medium">+{overallImprovement}</span>
+                  )}
+                  {overallImprovement < 0 && (
+                    <span className="text-sm text-red-600 font-medium">{overallImprovement}</span>
+                  )}
                 </div>
-              ))}
+              </div>
             </div>
           </div>
         </CardContent>

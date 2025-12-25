@@ -12,6 +12,42 @@ const deleteQuerySchema = z.object({
   analysisId: z.string().min(1, "Missing analysisId parameter"),
 });
 
+const toMillis = (value: unknown): number => {
+  if (!value) return Date.now();
+  if (typeof value === "number") return Number.isFinite(value) ? value : Date.now();
+  if (typeof value === "string") {
+    const n = /^\d+$/.test(value) ? Number(value) : new Date(value).getTime();
+    return Number.isFinite(n) ? n : Date.now();
+  }
+  if (value instanceof Date) {
+    const n = value.getTime();
+    return Number.isFinite(n) ? n : Date.now();
+  }
+  if (typeof value === "object") {
+    const anyVal = value as any;
+    if (typeof anyVal.toMillis === "function") {
+      const n = anyVal.toMillis();
+      return typeof n === "number" && Number.isFinite(n) ? n : Date.now();
+    }
+    if (typeof anyVal.toDate === "function") {
+      const d = anyVal.toDate();
+      const n = d instanceof Date ? d.getTime() : NaN;
+      return Number.isFinite(n) ? n : Date.now();
+    }
+    if (typeof anyVal.seconds === "number") {
+      const nanos = typeof anyVal.nanoseconds === "number" ? anyVal.nanoseconds : 0;
+      const n = anyVal.seconds * 1000 + Math.floor(nanos / 1_000_000);
+      return Number.isFinite(n) ? n : Date.now();
+    }
+    if (typeof anyVal._seconds === "number") {
+      const nanos = typeof anyVal._nanoseconds === "number" ? anyVal._nanoseconds : 0;
+      const n = anyVal._seconds * 1000 + Math.floor(nanos / 1_000_000);
+      return Number.isFinite(n) ? n : Date.now();
+    }
+  }
+  return Date.now();
+};
+
 // GET /api/app/cv-analysis/user/[userId] - Get CV analyses for a user
 export const GET = withApi({
   auth: 'required',
@@ -32,7 +68,9 @@ export const GET = withApi({
   const analysesRef = db
     .collection("cvAnalyses")
     .where("userId", "==", userId);
-  const snapshot = await analysesRef.orderBy("createdAt", "desc").get();
+  // Avoid orderBy("createdAt") because legacy records may store createdAt as mixed types
+  // (Timestamp vs number), which can make Firestore queries fail.
+  const snapshot = await analysesRef.get();
 
   const analyses = snapshot.docs.map((doc) => {
     const data = doc.data();
@@ -41,8 +79,8 @@ export const GET = withApi({
       userId: data.userId,
       fileName: data.fileName || "",
       fileSize: data.fileSize || 0,
-      createdAt: data.createdAt?.toMillis() || Date.now(),
-      analysisStatus: data.analysisStatus || "pending",
+      createdAt: toMillis(data.createdAt),
+      analysisStatus: data.analysisStatus || data.status || "pending",
       overallScore: data.overallScore || undefined,
       strengths: data.strengths || [],
       weaknesses: data.weaknesses || [],
@@ -58,7 +96,7 @@ export const GET = withApi({
     };
   });
 
-  return analyses;
+  return analyses.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 });
 
 // DELETE /api/app/cv-analysis/user/[userId] - Delete a CV analysis

@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { Crown, Star, Zap } from "lucide-react";
+import { Crown, Star, Zap, PlayCircle, HelpCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,7 @@ import { useSubscription } from "@/providers/subscription-provider";
 import { PremiumUpgradeBanner } from "@/components/dashboard/PremiumUpgradeBanner";
 import { dispatchUpgradeIntent } from "@/utils/upgradeIntent";
 import { analytics } from "@/firebase/analytics";
+import { useTourContext } from "@/providers/onboarding-tour-provider";
 
 interface FeaturesSettingsProps {
   showBillingButton: boolean;
@@ -22,6 +23,15 @@ export function FeaturesSettings({ showBillingButton, billingPortalLoading, onBi
   const { plan } = useSubscription();
   const isPaidPlan = plan !== "free";
   const router = useRouter();
+  const tour = useTourContext();
+
+  const handleStartTour = () => {
+    analytics.logFeatureUsed("onboarding_tour", "settings_help_section");
+    router.push('/dashboard');
+    setTimeout(() => {
+      tour.startDashboardTour();
+    }, 500);
+  };
 
   const handlePriorityUpgrade = () => {
     analytics.logFeatureUsed("priority_support_upgrade_cta", "settings_priority_support_row");
@@ -185,6 +195,42 @@ export function FeaturesSettings({ showBillingButton, billingPortalLoading, onBi
                 </div>
               </div>
             </div>
+          </motion.div>
+
+          {/* Help & Onboarding Section */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.8 }}
+          >
+            <h3 className="text-lg font-semibold text-foreground mb-4">Help & Onboarding</h3>
+            <Card className="card-premium border border-blue-500/20 bg-blue-500/5">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center">
+                      <PlayCircle className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-foreground">Show Me Around</div>
+                      <div className="text-sm text-muted-foreground">
+                        Take a guided tour of all features
+                      </div>
+                    </div>
+                  </div>
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Button
+                      onClick={handleStartTour}
+                      variant="outline"
+                      className="border-blue-500/30 text-blue-600 hover:bg-blue-500/10"
+                    >
+                      <PlayCircle className="h-4 w-4 mr-2" />
+                      Start Tour
+                    </Button>
+                  </motion.div>
+                </div>
+              </CardContent>
+            </Card>
           </motion.div>
         </CardContent>
       </Card>

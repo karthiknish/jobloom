@@ -20,6 +20,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   CheckSquare,
@@ -106,9 +112,16 @@ export function BulkActionsBar({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
-            className="flex items-center gap-3 p-3 bg-primary/5 border border-primary/20 rounded-xl mb-4"
+            className="flex items-center gap-3 p-3 bg-primary/5 border border-primary/20 rounded-xl mb-4 shadow-sm"
           >
-            {/* Select All Checkbox */}
+            {/* Animated indicator dot */}
+            <motion.div
+              animate={{ scale: [1, 1.2, 1] }}
+              transition={{ repeat: Infinity, duration: 2 }}
+              className="w-2 h-2 rounded-full bg-primary"
+            />
+            
+            <TooltipProvider delayDuration={300}>
             <div className="flex items-center gap-2">
               <Checkbox
                 checked={isAllSelected}
@@ -120,86 +133,118 @@ export function BulkActionsBar({
               <span className="text-sm font-medium text-foreground">
                 {selectedCount} of {totalCount} selected
               </span>
+              <span className="text-xs text-muted-foreground hidden sm:inline">
+                — Use actions below
+              </span>
             </div>
 
             <div className="h-4 w-px bg-border mx-1" />
 
             {/* Status Change Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-2"
-                  disabled={isLoading}
-                >
-                  <CheckSquare className="h-4 w-4" />
-                  Change Status
-                  <ChevronDown className="h-3 w-3" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
-                {STATUS_OPTIONS.map((option) => (
-                  <DropdownMenuItem
-                    key={option.value}
-                    onClick={() => handleStatusChange(option.value)}
-                    className="gap-2"
-                  >
-                    {option.icon}
-                    {option.label}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2"
+                      disabled={isLoading}
+                    >
+                      <CheckSquare className="h-4 w-4" />
+                      <span className="hidden sm:inline">Change Status</span>
+                      <ChevronDown className="h-3 w-3" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    {STATUS_OPTIONS.map((option) => (
+                      <DropdownMenuItem
+                        key={option.value}
+                        onClick={() => handleStatusChange(option.value)}
+                        className="gap-2"
+                      >
+                        {option.icon}
+                        {option.label}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p>Change status for {selectedCount} selected jobs</p>
+              </TooltipContent>
+            </Tooltip>
 
             {/* Export Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2"
+                      disabled={isLoading}
+                    >
+                      <Download className="h-4 w-4" />
+                      <span className="hidden sm:inline">Export</span>
+                      <ChevronDown className="h-3 w-3" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    <DropdownMenuItem onClick={() => onBulkExport("csv")}>
+                      Export as CSV
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onBulkExport("json")}>
+                      Export as JSON
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p>Export {selectedCount} jobs to file</p>
+              </TooltipContent>
+            </Tooltip>
+
+            {/* Delete Button */}
+            <Tooltip>
+              <TooltipTrigger asChild>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="gap-2"
+                  className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                  onClick={() => setShowDeleteConfirm(true)}
                   disabled={isLoading}
                 >
-                  <Download className="h-4 w-4" />
-                  Export
-                  <ChevronDown className="h-3 w-3" />
+                  <Trash2 className="h-4 w-4" />
+                  <span className="hidden sm:inline">Delete</span>
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
-                <DropdownMenuItem onClick={() => onBulkExport("csv")}>
-                  Export as CSV
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onBulkExport("json")}>
-                  Export as JSON
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {/* Delete Button */}
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
-              onClick={() => setShowDeleteConfirm(true)}
-              disabled={isLoading}
-            >
-              <Trash2 className="h-4 w-4" />
-              Delete
-            </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p>Permanently delete {selectedCount} jobs</p>
+              </TooltipContent>
+            </Tooltip>
 
             <div className="flex-1" />
 
             {/* Clear Selection */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-2"
-              onClick={onClearSelection}
-            >
-              <X className="h-4 w-4" />
-              Clear
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="gap-2"
+                  onClick={onClearSelection}
+                >
+                  <X className="h-4 w-4" />
+                  <span className="hidden sm:inline">Clear</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p>Clear selection</p>
+              </TooltipContent>
+            </Tooltip>
+            </TooltipProvider>
           </motion.div>
         )}
       </AnimatePresence>

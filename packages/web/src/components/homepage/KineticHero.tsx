@@ -74,7 +74,75 @@ export function KineticHero() {
 
           </div>
 
-          {/* Right: Bento-style Hero Visual */}
+          {/* Mobile: Horizontal Scrollable Feature Cards */}
+          <div className="lg:hidden mt-8 -mx-4 px-4">
+            <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide">
+              {/* Card 1: Resume Score */}
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="min-w-[280px] snap-center bg-card rounded-2xl shadow-lg border border-border p-5 flex items-center justify-between"
+              >
+                <div>
+                  <h3 className="font-bold text-foreground">Resume Score</h3>
+                  <p className="text-muted-foreground text-sm">Optimized for ATS</p>
+                </div>
+                <div className="h-14 w-14 rounded-full border-4 border-primary/20 border-t-primary flex items-center justify-center font-bold text-lg text-primary">
+                  98
+                </div>
+              </motion.div>
+
+              {/* Card 2: AI Generation */}
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="min-w-[280px] snap-center bg-slate-900 text-white rounded-2xl shadow-lg p-5"
+              >
+                <div className="h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center mb-3 text-primary">
+                  <Zap className="h-4 w-4" />
+                </div>
+                <h3 className="font-bold mb-1">AI Cover Letter</h3>
+                <p className="text-sm opacity-80 font-mono">Draft generated in seconds.</p>
+              </motion.div>
+
+              {/* Card 3: Job Match */}
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="min-w-[280px] snap-center bg-card rounded-2xl shadow-lg border border-border p-5"
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="h-10 w-10 rounded-full bg-success/10 flex items-center justify-center text-success">
+                    <CheckCircle className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-sm text-foreground">Perfect Match</h4>
+                    <p className="text-xs text-muted-foreground">Senior Developer</p>
+                  </div>
+                </div>
+                <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
+                  <div className="bg-success h-full w-[92%]"></div>
+                </div>
+              </motion.div>
+
+              {/* Card 4: Upload */}
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                className="min-w-[280px] snap-center bg-gradient-to-br from-primary to-emerald-600 rounded-2xl shadow-lg p-5 flex flex-col items-center justify-center text-white text-center"
+              >
+                <FileText className="h-8 w-8 mb-2 opacity-90" />
+                <h3 className="font-bold">Upload CV</h3>
+                <p className="text-xs opacity-80 mt-1">PDF or DOCX</p>
+              </motion.div>
+            </div>
+          </div>
+
+          {/* Right: Bento-style Hero Visual (Desktop only) */}
           <div className="relative h-[600px] w-full hidden lg:block">
             {/* Abstract Background Blob */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-gradient-to-tr from-primary/10 to-secondary/10 rounded-full blur-3xl opacity-50" />

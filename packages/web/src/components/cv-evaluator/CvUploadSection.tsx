@@ -5,6 +5,8 @@ import { CvUploadForm } from "../CvUploadForm";
 
 interface CvUploadSectionProps {
   userId: string;
+  onUploadSuccess?: (analysisId: string) => void;
+  onUploadStarted?: () => void;
   onResumeUpdate: (resume: any) => void;
   currentResume: any;
   currentAtsScore: any;
@@ -13,6 +15,8 @@ interface CvUploadSectionProps {
 
 export function CvUploadSection({
   userId,
+  onUploadSuccess,
+  onUploadStarted,
   onResumeUpdate,
   currentResume,
   currentAtsScore,
@@ -31,6 +35,8 @@ export function CvUploadSection({
         {/* Upload Form */}
         <CvUploadForm
           userId={userId}
+          onUploadSuccess={onUploadSuccess}
+          onUploadStarted={onUploadStarted}
           onResumeUpdate={onResumeUpdate}
           currentResume={currentResume}
           currentAtsScore={currentAtsScore}

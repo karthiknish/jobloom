@@ -127,6 +127,75 @@ export function DashboardEmptyState({
         </div>
       </motion.div>
 
+      {/* Quick Start Checklist */}
+      <motion.div
+        variants={slideInUp}
+        initial="hidden"
+        animate="visible"
+        transition={{ delay: 0.35 }}
+        className="rounded-xl bg-card border border-border p-6 shadow-sm"
+      >
+        <div className="flex items-center gap-2 mb-4">
+          <CheckCircle className="h-5 w-5 text-primary" />
+          <h4 className="font-semibold text-foreground">Quick Start Checklist</h4>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* Step 1: Upload CV */}
+          <a 
+            href="/career-tools" 
+            className="flex items-start gap-3 p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors group"
+          >
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
+              <UploadCloud className="h-4 w-4 text-primary" />
+            </div>
+            <div>
+              <div className="font-medium text-sm text-foreground group-hover:text-primary transition-colors">
+                Upload Your CV
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Get ATS score & tips
+              </p>
+            </div>
+          </a>
+          
+          {/* Step 2: Install Extension */}
+          <button
+            onClick={onImportJobs}
+            className="flex items-start gap-3 p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors group text-left"
+          >
+            <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center shrink-0 group-hover:bg-blue-500/20 transition-colors">
+              <Chrome className="h-4 w-4 text-blue-600" />
+            </div>
+            <div>
+              <div className="font-medium text-sm text-foreground group-hover:text-blue-600 transition-colors">
+                Install Extension
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Save jobs with 1 click
+              </p>
+            </div>
+          </button>
+          
+          {/* Step 3: Add First Job */}
+          <button
+            onClick={onAddJob}
+            className="flex items-start gap-3 p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors group text-left"
+          >
+            <div className="w-8 h-8 rounded-full bg-green-500/10 flex items-center justify-center shrink-0 group-hover:bg-green-500/20 transition-colors">
+              <FilePlus className="h-4 w-4 text-green-600" />
+            </div>
+            <div>
+              <div className="font-medium text-sm text-foreground group-hover:text-green-600 transition-colors">
+                Add First Job
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Start tracking today
+              </p>
+            </div>
+          </button>
+        </div>
+      </motion.div>
+
       {/* Features Grid */}
       <motion.div
         variants={slideInUp}

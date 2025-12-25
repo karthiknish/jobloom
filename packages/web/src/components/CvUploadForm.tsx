@@ -406,6 +406,20 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted, onResum
               </div>
             </div>
 
+            {/* Inline Hint for Optional Fields */}
+            {!targetRole && !industry && (
+              <motion.div
+                initial={{ opacity: 0, y: -5 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-start gap-2 p-3 rounded-lg border bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-sm text-blue-700 dark:text-blue-300"
+              >
+                <Lightbulb className="h-4 w-4 mt-0.5 shrink-0 text-blue-500" />
+                <span>
+                  <strong>Pro tip:</strong> Specifying your target role and industry improves ATS score accuracy by up to 40% with industry-specific keyword matching.
+                </span>
+              </motion.div>
+            )}
+
             {/* Tips */}
             <div className="rounded-lg border bg-primary/5 border-primary/20 p-4">
               <h4 className="flex items-center gap-2 text-sm font-medium text-primary mb-3">

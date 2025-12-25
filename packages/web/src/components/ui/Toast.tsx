@@ -6,6 +6,7 @@ import { CheckCircle, AlertCircle, Info, AlertTriangle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { themeColors } from "@/styles/theme-colors";
 import { cn } from "@/lib/utils";
+import { humanizeError } from "@/utils/errorMessages";
 
 const DEFAULT_ERROR_MESSAGE = "We couldn't complete that request. Please try again.";
 
@@ -177,8 +178,15 @@ export function AppToaster() {
 export const showSuccess = (message: string, description?: string) =>
   showStructuredToast("success", message, description);
 
-export const showError = (message: string, description?: string) =>
-  showStructuredToast("error", sanitizeMessage(message), description ? sanitizeMessage(description) : undefined);
+export const showError = (message: string, description?: string) => {
+  // Use humanizeError for comprehensive pattern matching
+  const humanized = humanizeError(message);
+  // Fall back to existing sanitization if humanizeError returns default
+  const finalMessage = humanized !== "Something went wrong. Please try again." 
+    ? humanized 
+    : sanitizeMessage(message);
+  showStructuredToast("error", finalMessage, description ? sanitizeMessage(description) : undefined);
+};
 
 export const showInfo = (message: string, description?: string) =>
   showStructuredToast("info", message, description);

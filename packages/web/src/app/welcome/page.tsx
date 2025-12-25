@@ -4,14 +4,16 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { motion } from "framer-motion";
-import { CheckCircle, ArrowRight, Sparkles, Target, Zap, Loader2 } from "lucide-react";
+import { CheckCircle, ArrowRight, Sparkles, Target, Zap, Loader2, PlayCircle, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useTourContext } from "@/providers/onboarding-tour-provider";
 
 function WelcomeInner() {
   const router = useRouter();
   const search = useSearchParams();
   const { user } = useFirebaseAuth();
+  const tour = useTourContext();
 
   const [redirectUrl] = useState(search.get("redirect_url") || "/dashboard");
 
@@ -25,6 +27,15 @@ function WelcomeInner() {
 
   const handleGoToDashboard = () => {
     router.replace(redirectUrl);
+  };
+
+  const handleStartTour = () => {
+    // Go to dashboard and start the tour
+    router.replace('/dashboard');
+    // Small delay to ensure dashboard loads first
+    setTimeout(() => {
+      tour.startDashboardTour();
+    }, 500);
   };
 
   if (!user) {
@@ -121,25 +132,41 @@ function WelcomeInner() {
               </div>
             </motion.div>
 
-            {/* Main CTA - Dashboard Link */}
+            {/* Main CTAs */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.8, duration: 0.6 }}
-              className="text-center pt-4"
+              className="space-y-4 pt-4"
             >
-              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                <Button
-                  onClick={handleGoToDashboard}
-                  className="btn-premium h-14 px-10 text-lg font-bold gradient-primary hover:shadow-premium-xl w-full sm:w-auto"
-                  size="lg"
-                >
-                  Go to Dashboard
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </motion.div>
-              <p className="text-sm text-muted-foreground mt-6">
-                Start tracking your job applications and building your career
+              {/* Primary CTA: Take the tour */}
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  <Button
+                    onClick={handleStartTour}
+                    className="btn-premium h-14 px-8 text-lg font-bold gradient-primary hover:shadow-premium-xl w-full sm:w-auto"
+                    size="lg"
+                  >
+                    <PlayCircle className="mr-2 h-5 w-5" />
+                    Take a Quick Tour
+                  </Button>
+                </motion.div>
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  <Button
+                    onClick={handleGoToDashboard}
+                    variant="outline"
+                    className="h-14 px-8 text-lg font-semibold w-full sm:w-auto"
+                    size="lg"
+                  >
+                    Skip to Dashboard
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </motion.div>
+              </div>
+              
+              {/* Quick start hint */}
+              <p className="text-sm text-muted-foreground text-center">
+                The tour takes ~1 minute and helps you get the most out of Hireall
               </p>
             </motion.div>
           </CardContent>

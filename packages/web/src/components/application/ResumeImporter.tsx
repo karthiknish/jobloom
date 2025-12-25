@@ -25,6 +25,11 @@ import { cn } from "@/lib/utils";
 import { themeColors, themeUtils } from "@/styles/theme-colors";
 import type { ResumeData } from "@/types/resume";
 import { apiClient } from "@/lib/api/client";
+import {
+  LEGACY_STORAGE_KEYS,
+  STORAGE_KEYS,
+  writeJsonToStorage,
+} from "@/constants/storageKeys";
 
 type AnalysisStatus = "pending" | "processing" | "completed" | "failed";
 
@@ -435,7 +440,7 @@ export function ResumeImporter({ onImport }: ResumeImporterProps) {
       if (!fullData.personalInfo.email) fullData.personalInfo.email = user?.email || "";
 
       try {
-        localStorage.setItem('hireall_resume_data', JSON.stringify(fullData));
+        writeJsonToStorage(STORAGE_KEYS.resumeData, fullData, LEGACY_STORAGE_KEYS.resumeData);
         localStorage.setItem('hireall_resume_import_timestamp', new Date().toISOString());
         
         if (onImport) {
@@ -573,7 +578,7 @@ export function ResumeImporter({ onImport }: ResumeImporterProps) {
 
     // Always save to local storage for persistence
     try {
-      localStorage.setItem('hireall_resume_data', JSON.stringify(resumeData));
+      writeJsonToStorage(STORAGE_KEYS.resumeData, resumeData, LEGACY_STORAGE_KEYS.resumeData);
       localStorage.setItem('hireall_resume_import_timestamp', new Date().toISOString());
     } catch (storageError) {
       console.warn('Failed to save resume data to localStorage:', storageError);

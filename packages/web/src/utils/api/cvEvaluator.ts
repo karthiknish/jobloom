@@ -89,7 +89,54 @@ export const cvEvaluatorApi = {
         { retries: 0 }, // Don't retry - fall back to Firestore on failure
         { showGlobalError: false } // Don't show error toast
       );
-      return Array.isArray(response) ? response : [];
+      const arr = Array.isArray(response) ? response : [];
+
+      return arr.map((x: any) => {
+        const fileName =
+          (typeof x?.fileName === "string" && x.fileName.trim())
+            ? x.fileName
+            : (typeof x?.filename === "string" && x.filename.trim())
+              ? x.filename
+              : (typeof x?.originalFileName === "string" && x.originalFileName.trim())
+                ? x.originalFileName
+                : "";
+
+        const status =
+          (typeof x?.analysisStatus === "string" && x.analysisStatus) ||
+          (typeof x?.status === "string" && x.status) ||
+          "pending";
+
+        const rawCreatedAt = x?.createdAt;
+        let createdAt: number = Date.now();
+        if (rawCreatedAt instanceof Date) {
+          createdAt = rawCreatedAt.getTime();
+        } else if (typeof rawCreatedAt === "number") {
+          createdAt = rawCreatedAt;
+        } else if (typeof rawCreatedAt === "string") {
+          createdAt = /^\d+$/.test(rawCreatedAt) ? Number(rawCreatedAt) : new Date(rawCreatedAt).getTime();
+        } else if (rawCreatedAt && typeof rawCreatedAt === "object") {
+          if (typeof (rawCreatedAt as any).toMillis === "function") {
+            createdAt = (rawCreatedAt as any).toMillis();
+          } else if (typeof (rawCreatedAt as any).toDate === "function") {
+            createdAt = (rawCreatedAt as any).toDate().getTime();
+          } else if (typeof (rawCreatedAt as any).seconds === "number") {
+            const nanos = typeof (rawCreatedAt as any).nanoseconds === "number" ? (rawCreatedAt as any).nanoseconds : 0;
+            createdAt = (rawCreatedAt as any).seconds * 1000 + Math.floor(nanos / 1_000_000);
+          } else if (typeof (rawCreatedAt as any)._seconds === "number") {
+            const nanos = typeof (rawCreatedAt as any)._nanoseconds === "number" ? (rawCreatedAt as any)._nanoseconds : 0;
+            createdAt = (rawCreatedAt as any)._seconds * 1000 + Math.floor(nanos / 1_000_000);
+          }
+        }
+
+        if (!Number.isFinite(createdAt)) createdAt = Date.now();
+
+        return {
+          ...x,
+          fileName,
+          createdAt,
+          analysisStatus: status,
+        } as CvAnalysis;
+      });
     } catch (error) {
       // Fallback to Firestore if API fails (silently for 401 errors)
       const apiError = error as FrontendApiError;

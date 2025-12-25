@@ -6,13 +6,7 @@ import { SponsorshipQuickCheck } from "@/components/dashboard/SponsorshipQuickCh
 import { ExtensionIntegration } from "@/components/dashboard/ExtensionIntegration";
 import { JobStatsDashboard } from "@/components/dashboard/JobStatsDashboard";
 import { JobList } from "@/components/dashboard/JobList";
-import { ExportCsvButton } from "@/components/dashboard/ExportCsvButton";
-import { ExportPdfButton } from "@/components/dashboard/ExportPdfButton";
-import { FeatureGate } from "@/components/UpgradePrompt";
-import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { FileText } from "lucide-react";
-import { showSuccess, showError } from "@/components/ui/Toast";
 
 interface DashboardWidgetsProps {
   jobStats: any;
@@ -130,102 +124,6 @@ export function useDashboardWidgets({
           <ExtensionIntegration userId={userRecord._id} />
         ) : null,
         visible: true,
-        required: false,
-      },
-      {
-        id: "recent-applications",
-        title: "Recent Applications",
-        component: safeApplications.length > 0 ? (
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex gap-2">
-                <ExportCsvButton
-                  fileName="applications.csv"
-                  rows={safeApplications.map((a) => ({
-                    id: a._id,
-                    title: a.job?.title,
-                    company: a.job?.company,
-                    location: a.job?.location,
-                    status: a.status,
-                    dateFound: a.job?.dateFound,
-                    appliedDate: a.appliedDate,
-                    source: a.job?.source,
-                    salary: a.job?.salary,
-                    sponsored: a.job?.isSponsored,
-                  }))}
-                />
-                <ExportPdfButton
-                  fileName="applications.pdf"
-                  title="My Job Applications"
-                  rows={safeApplications.map((a) => ({
-                    title: a.job?.title,
-                    company: a.job?.company,
-                    location: a.job?.location,
-                    status: a.status,
-                    appliedDate: a.appliedDate,
-                    salary: a.job?.salary,
-                    sponsored: a.job?.isSponsored,
-                  }))}
-                />
-                <FeatureGate
-                  feature="exportFormats"
-                  requires="json"
-                  fallback={
-                    <Button size="sm" variant="outline" disabled>
-                      <FileText className="h-4 w-4 mr-2" />
-                      JSON <span className="ml-1 text-xs">Pro</span>
-                    </Button>
-                  }
-                >
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      const data = safeApplications.map((a) => ({
-                        id: a._id,
-                        title: a.job?.title,
-                        company: a.job?.company,
-                        location: a.job?.location,
-                        status: a.status,
-                        dateFound: a.job?.dateFound,
-                        appliedDate: a.appliedDate,
-                        source: a.job?.source,
-                        salary: a.job?.salary,
-                        sponsored: a.job?.isSponsored,
-                        agency: a.job?.isRecruitmentAgency,
-                        notes: a.notes,
-                        followUpDate: a.followUpDate,
-                      }));
-                      const blob = new Blob([JSON.stringify(data, null, 2)], {
-                        type: "application/json",
-                      });
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement("a");
-                      a.href = url;
-                      a.download = "applications-export.json";
-                      document.body.appendChild(a);
-                      a.click();
-                      document.body.removeChild(a);
-                      URL.revokeObjectURL(url);
-                      showSuccess("JSON export completed");
-                    }}
-                  >
-                    <FileText className="h-4 w-4 mr-2" />
-                    JSON <span className="text-xs text-primary">Pro</span>
-                  </Button>
-                </FeatureGate>
-              </div>
-            </div>
-            <JobList
-              applications={safeApplications.slice(0, 5)}
-              onEditApplication={onEditApplication}
-              onDeleteApplication={onDeleteApplication}
-              onViewApplication={onViewApplication}
-              onChanged={onRefetchApplications}
-            />
-          </div>
-        ) : null,
-        visible: hasApplications,
         required: false,
       },
     ],

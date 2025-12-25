@@ -5,6 +5,7 @@ import { AlertTriangle, Check, Rocket, Lightbulb, CheckCircle, XCircle } from "l
 import type { CvAnalysis } from "../types/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { getCvAnalysisTitle } from "@/utils/cvAnalysisTitle";
 import { EnhancedAtsScore } from "./EnhancedAtsScore";
 
 interface CvAnalysisResultsProps {
@@ -37,7 +38,7 @@ export function CvAnalysisResults({ analysis }: CvAnalysisResultsProps) {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h3 className="text-lg font-medium text-foreground">
-                {analysis.fileName}
+                {getCvAnalysisTitle(analysis as any)}
               </h3>
               <p className="text-sm text-muted-foreground">
                 Analyzed on{" "}

@@ -160,7 +160,7 @@ export class ErrorTrackingService {
         errorReport.context = { ...errorReport.context, ...context };
       } else {
         // Create new error report
-        const errorReport: ErrorReport = {
+        errorReport = {
           errorId,
           message: error.message,
           name: error.name,

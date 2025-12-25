@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import {
   BarChart3,
   Bot,
+  Database,
   Zap,
   Bell,
   FileText,
@@ -22,12 +23,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useSubscription } from "@/providers/subscription-provider";
 import { SUBSCRIPTION_LIMITS } from "@/types/api";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 // Helper to get icon component by name
 const getIcon = (iconName: string) => {
   const icons: Record<string, any> = {
     "bar-chart": BarChart3,
     bot: Bot,
+    database: Database,
     zap: Zap,
     bell: Bell,
     "file-text": FileText,
@@ -53,23 +56,23 @@ const FEATURES = [
     title: "AI-Powered Recommendations",
     description:
       "Receive personalized job recommendations based on your profile",
-    icon: "Bot",
+    icon: "bot",
   },
   {
     title: "Priority Support",
     description: "Get faster responses from our dedicated support team",
-    icon: "Zap",
+    icon: "zap",
   },
   {
     title: "Custom Alerts",
     description: "Set up custom job alerts for specific companies or roles",
-    icon: "Bell",
+    icon: "bell",
   },
 ];
 
-export function UpgradePrompt({ feature }: UpgradePromptProps) {
+export function UpgradePrompt({ feature, variant = "default" }: UpgradePromptProps) {
   const [isHovered, setIsHovered] = useState(false);
-  const { plan } = useSubscription();
+  useSubscription();
 
   // Define feature-specific messaging
   const getFeatureSpecificContent = () => {
@@ -83,13 +86,13 @@ export function UpgradePrompt({ feature }: UpgradePromptProps) {
             {
               title: "Unlimited CV Analyses",
               description: "Analyze as many resumes as you need",
-              icon: "FileText",
+              icon: "file-text",
             },
             {
               title: "AI-Powered Insights",
               description:
                 "Get detailed feedback on content, structure, and ATS compatibility",
-              icon: "Bot",
+              icon: "bot",
             },
             {
               title: "Industry-Specific Advice",
@@ -120,7 +123,7 @@ export function UpgradePrompt({ feature }: UpgradePromptProps) {
               title: "Performance Insights",
               description:
                 "AI-powered recommendations to improve your job search strategy",
-              icon: "Lightbulb",
+              icon: "lightbulb",
             },
           ],
         };
@@ -134,13 +137,13 @@ export function UpgradePrompt({ feature }: UpgradePromptProps) {
               title: "PDF Reports",
               description:
                 "Generate beautiful, shareable PDF reports of your job search",
-              icon: "FileText",
+              icon: "file-text",
             },
             {
               title: "JSON Export",
               description:
                 "Export all your data in JSON format for backup and analysis",
-              icon: "Database",
+              icon: "database",
             },
             {
               title: "Professional Templates",
@@ -159,12 +162,12 @@ export function UpgradePrompt({ feature }: UpgradePromptProps) {
             {
               title: "Priority Support",
               description: "Get responses within 24 hours from our expert team",
-              icon: "Zap",
+              icon: "zap",
             },
             {
               title: "Career Coaching",
               description: "1-on-1 sessions with experienced career counselors",
-              icon: "Users",
+              icon: "users",
             },
             {
               title: "Resume Reviews",
@@ -184,7 +187,7 @@ export function UpgradePrompt({ feature }: UpgradePromptProps) {
               title: "Custom Alerts",
               description:
                 "Create personalized job alerts for specific companies and roles",
-    icon: "Bell",
+              icon: "bell",
             },
             {
               title: "Smart Filtering",
@@ -196,7 +199,7 @@ export function UpgradePrompt({ feature }: UpgradePromptProps) {
               title: "Real-time Notifications",
               description:
                 "Instant notifications when new jobs match your criteria",
-              icon: "Zap",
+              icon: "zap",
             },
           ],
         };
@@ -213,23 +216,39 @@ export function UpgradePrompt({ feature }: UpgradePromptProps) {
   const content = getFeatureSpecificContent();
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div
+      className={cn(
+        variant === "dialog" ? "w-full" : "max-w-4xl mx-auto p-6"
+      )}
+    >
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
         <Card className="bg-gradient-to-br from-primary/10 to-secondary/10 border-primary/20 shadow-sm">
-          <CardContent className="p-8">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-foreground mb-4">
-                {content.title}
-              </h2>
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                {content.description}
-              </p>
-            </div>
+          <CardContent
+            className={cn(
+              "p-8",
+              variant === "dialog" && "p-5 sm:p-6"
+            )}
+          >
+            {variant !== "dialog" && (
+              <div className="text-center mb-8">
+                <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-3 sm:mb-4">
+                  {content.title}
+                </h2>
+                <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
+                  {content.description}
+                </p>
+              </div>
+            )}
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div
+              className={cn(
+                "grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6",
+                variant === "dialog" ? "mb-5 sm:mb-6" : "mb-8"
+              )}
+            >
               {content.highlightFeatures.map((feature, index) => (
                 <motion.div key={index} whileHover={{ y: -5 }}>
                   <Card className="bg-background border-border h-full">
@@ -261,7 +280,7 @@ export function UpgradePrompt({ feature }: UpgradePromptProps) {
                   <Button
                     onMouseEnter={() => setIsHovered(true)}
                     onMouseLeave={() => setIsHovered(false)}
-                    className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground font-semibold py-6 px-8 rounded-xl shadow-lg hover:shadow-xl text-lg"
+                    className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground font-semibold h-12 px-8 rounded-xl shadow-lg hover:shadow-xl text-lg"
                     size="lg"
                   >
                     {isHovered ? "Upgrade Now" : "Upgrade to Premium"}
@@ -335,4 +354,5 @@ export function FeatureGate({
 
 interface UpgradePromptProps {
   feature?: string;
+  variant?: "default" | "dialog";
 }

@@ -7,8 +7,15 @@ const preferencesSchema = z.object({
   theme: z.string().optional(),
   language: z.string().optional(),
   timezone: z.string().optional(),
+  goals: z
+    .object({
+      weeklyApplications: z.number().min(1).max(50),
+      responseRate: z.number().min(0).max(100),
+    })
+    .optional(),
   emailNotifications: z.boolean().optional(),
   pushNotifications: z.boolean().optional(),
+  newsletter: z.boolean().optional(),
   jobAlertsEnabled: z.boolean().optional(),
   jobKeywords: z.array(z.string()).optional(),
   preferredCompanies: z.array(z.string()).optional(),
@@ -36,8 +43,13 @@ const defaultPreferences = {
   theme: 'system',
   language: 'en',
   timezone: 'UTC',
+  goals: {
+    weeklyApplications: 10,
+    responseRate: 20,
+  },
   emailNotifications: true,
-  pushNotifications: true,
+  pushNotifications: false,
+  newsletter: true,
   jobAlertsEnabled: false,
   jobKeywords: [],
   preferredCompanies: [],
@@ -48,7 +60,7 @@ const defaultPreferences = {
   industries: [],
   analyticsTracking: true,
   dataSharing: false,
-  marketingEmails: true,
+  marketingEmails: false,
   ukFiltersEnabled: false,
   autoDetectJobs: true,
   showSponsorButton: true,
@@ -85,13 +97,40 @@ export const PUT = withApi({
   }),
 }, async ({ user, body }) => {
   const db = getAdminDb();
-  
-  await db.collection('users').doc(user!.uid).set({
+
+  const updateData: Record<string, unknown> = {
     preferences: {
       ...body.preferences,
-      updatedAt: new Date()
-    }
-  }, { merge: true });
+      updatedAt: new Date(),
+    },
+  };
+
+  // Keep legacy/other subsystems in sync:
+  // Email sending routes and admin marketing tools currently rely on `emailPreferences.*`.
+  const prefs = body.preferences ?? {};
+  const emailPreferencesUpdate: Record<string, unknown> = {};
+
+  if (typeof prefs.emailNotifications === 'boolean') {
+    // Treat emailNotifications as a master switch for application-related emails.
+    emailPreferencesUpdate.reminders = prefs.emailNotifications;
+    emailPreferencesUpdate.weeklyDigest = prefs.emailNotifications;
+    emailPreferencesUpdate.statusUpdates = prefs.emailNotifications;
+  }
+  if (typeof prefs.marketingEmails === 'boolean') {
+    emailPreferencesUpdate.marketing = prefs.marketingEmails;
+  }
+  if (typeof (prefs as any).newsletter === 'boolean') {
+    emailPreferencesUpdate.newsletter = (prefs as any).newsletter;
+  }
+
+  if (Object.keys(emailPreferencesUpdate).length > 0) {
+    updateData.emailPreferences = {
+      ...emailPreferencesUpdate,
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
+  await db.collection('users').doc(user!.uid).set(updateData, { merge: true });
 
   return {
     success: true,

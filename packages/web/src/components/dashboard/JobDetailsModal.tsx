@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
 import {
@@ -11,8 +11,16 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Building2,
   MapPin,
@@ -32,18 +40,23 @@ import {
   AlertCircle,
   FileText,
   Target,
+  Info,
+  ListChecks,
+  Activity,
 } from "lucide-react";
 import { Application } from "@/types/dashboard";
 import { useRestoreFocus } from "@/hooks/useRestoreFocus";
 import { JobAISummary } from "./JobAISummary";
 import { EmailHistory } from "./EmailHistory";
 import { UkVisaBadge } from "./UkVisaBadge";
+import { dashboardApi } from "@/utils/api/dashboard";
 
 interface JobDetailsModalProps {
   application: Application | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onEdit: (application: Application) => void;
+  onChanged?: () => void;
 }
 
 const statusConfig: Record<string, { color: string; bg: string; icon: React.ReactNode }> = {
@@ -53,8 +66,8 @@ const statusConfig: Record<string, { color: string; bg: string; icon: React.Reac
     icon: <Star className="h-4 w-4" />,
   },
   applied: {
-    color: "text-amber-600 dark:text-amber-400",
-    bg: "bg-amber-100 dark:bg-amber-900/30",
+    color: "text-blue-600 dark:text-blue-400",
+    bg: "bg-blue-100 dark:bg-blue-900/30",
     icon: <Clock className="h-4 w-4" />,
   },
   offered: {
@@ -79,12 +92,33 @@ export function JobDetailsModal({
   open,
   onOpenChange,
   onEdit,
+  onChanged,
 }: JobDetailsModalProps) {
   useRestoreFocus(open);
   if (!application) return null;
 
   const job = application.job;
-  const status = application.status || "interested";
+
+  const statusOptions = useMemo(
+    () =>
+      [
+        { value: "interested", label: "Interested" },
+        { value: "applied", label: "Applied" },
+        { value: "offered", label: "Offered" },
+        { value: "rejected", label: "Rejected" },
+        { value: "withdrawn", label: "Withdrawn" },
+      ] as const,
+    []
+  );
+
+  const [localStatus, setLocalStatus] = useState<string>(application.status || "interested");
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+
+  useEffect(() => {
+    setLocalStatus(application.status || "interested");
+  }, [application._id, application.status]);
+
+  const status = localStatus || "interested";
   const statusStyle = statusConfig[status] || statusConfig.interested;
 
   const formatDate = (timestamp: number | string | undefined) => {
@@ -121,18 +155,54 @@ export function JobDetailsModal({
                     </span>
                   </div>
                 </div>
-                
-                {/* Status Badge */}
-                <motion.div
-                  initial={{ scale: 0.9, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-full ${statusStyle.bg}`}
-                >
-                  <span className={statusStyle.color}>{statusStyle.icon}</span>
-                  <span className={`font-semibold capitalize ${statusStyle.color}`}>
-                    {status}
-                  </span>
-                </motion.div>
+
+                <div className="flex flex-col items-end gap-2">
+                  {/* Status Badge */}
+                  <motion.div
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-full ${statusStyle.bg}`}
+                  >
+                    <span className={statusStyle.color}>{statusStyle.icon}</span>
+                    <span className={`font-semibold capitalize ${statusStyle.color}`}>
+                      {status}
+                    </span>
+                  </motion.div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">Change</span>
+                    <Select
+                      value={status}
+                      onValueChange={async (next) => {
+                        if (!next || next === status) return;
+                        const prev = status;
+                        setLocalStatus(next);
+                        setIsUpdatingStatus(true);
+                        try {
+                          await dashboardApi.updateApplication(application._id, { status: next });
+                          onChanged?.();
+                        } catch (err) {
+                          console.error("Failed to update status", err);
+                          setLocalStatus(prev);
+                        } finally {
+                          setIsUpdatingStatus(false);
+                        }
+                      }}
+                      disabled={isUpdatingStatus}
+                    >
+                      <SelectTrigger className="h-8 w-[160px]">
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {statusOptions.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </div>
 
               {/* Quick Tags */}
@@ -187,8 +257,25 @@ export function JobDetailsModal({
               </div>
             </DialogHeader>
 
-            <Separator />
+            {/* Tabs for Content Organization */}
+            <Tabs defaultValue="overview" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="overview" className="gap-2 text-sm">
+                  <Info className="h-4 w-4" />
+                  <span className="hidden sm:inline">Overview</span>
+                </TabsTrigger>
+                <TabsTrigger value="details" className="gap-2 text-sm">
+                  <ListChecks className="h-4 w-4" />
+                  <span className="hidden sm:inline">Details</span>
+                </TabsTrigger>
+                <TabsTrigger value="activity" className="gap-2 text-sm">
+                  <Activity className="h-4 w-4" />
+                  <span className="hidden sm:inline">Activity</span>
+                </TabsTrigger>
+              </TabsList>
 
+              {/* Overview Tab */}
+              <TabsContent value="overview" className="space-y-6 mt-4">
             {/* AI Summary Section */}
             {job?.description && (
               <JobAISummary 
@@ -273,7 +360,10 @@ export function JobDetailsModal({
                 </motion.div>
               )}
             </div>
+              </TabsContent>
 
+              {/* Details Tab */}
+              <TabsContent value="details" className="space-y-6 mt-4">
             {/* Skills Section */}
             {job?.skills && job.skills.length > 0 && (
               <motion.div
@@ -335,16 +425,17 @@ export function JobDetailsModal({
                 <ul className="space-y-2">
                   {job.benefits.map((benefit, index) => (
                     <li key={index} className="flex items-start gap-2 text-sm">
-                      <Star className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
+                      <Star className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
                       <span>{benefit}</span>
                     </li>
                   ))}
                 </ul>
               </motion.div>
             )}
+              </TabsContent>
 
-            <Separator />
-
+              {/* Activity Tab */}
+              <TabsContent value="activity" className="space-y-6 mt-4">
             {/* Application Details */}
             <div className="space-y-4">
               <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
@@ -354,13 +445,13 @@ export function JobDetailsModal({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Applied Date */}
                 {application.appliedDate && (
-                  <div className="flex items-start gap-3 p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/30">
-                    <Briefcase className="h-4 w-4 text-green-600 mt-0.5" />
+                  <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 border border-border/50">
+                    <Briefcase className="h-4 w-4 text-primary mt-0.5" />
                     <div>
-                      <p className="text-xs text-green-700 dark:text-green-400 font-medium">
+                      <p className="text-xs text-muted-foreground font-medium">
                         Applied On
                       </p>
-                      <p className="font-medium text-green-800 dark:text-green-300">
+                      <p className="font-medium text-foreground">
                         {formatDate(application.appliedDate)}
                       </p>
                     </div>
@@ -369,13 +460,13 @@ export function JobDetailsModal({
 
                 {/* Follow-up Date */}
                 {application.followUpDate && (
-                  <div className="flex items-start gap-3 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/30">
-                    <Clock className="h-4 w-4 text-amber-600 mt-0.5" />
+                  <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 border border-border/50">
+                    <Clock className="h-4 w-4 text-primary mt-0.5" />
                     <div>
-                      <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">
+                      <p className="text-xs text-muted-foreground font-medium">
                         Follow-up On
                       </p>
-                      <p className="font-medium text-amber-800 dark:text-amber-300">
+                      <p className="font-medium text-foreground">
                         {formatDate(application.followUpDate)}
                       </p>
                     </div>
@@ -396,9 +487,10 @@ export function JobDetailsModal({
                 </div>
               )}
 
-              {/* Email History */}
               <EmailHistory applicationId={application._id} />
             </div>
+              </TabsContent>
+            </Tabs>
 
             {/* Footer Actions */}
             <div className="flex flex-col sm:flex-row gap-3 pt-2">

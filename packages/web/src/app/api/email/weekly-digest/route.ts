@@ -45,6 +45,13 @@ export const POST = withApi({
     const userEmail = userData?.email;
     const userName = userData?.name || userData?.displayName;
     const emailPrefs = userData?.emailPreferences || {};
+    const prefs = userData?.preferences || {};
+
+    // Master toggle: user-level email notifications
+    if (prefs.emailNotifications === false) {
+      results.skipped++;
+      continue;
+    }
 
     // Skip if user disabled weekly digest
     if (emailPrefs.weeklyDigest === false) {

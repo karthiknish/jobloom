@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, BarChart3, TrendingUp, TrendingDown, Minus, AlertTriangle, Search } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { getCvAnalysisTitle } from "@/utils/cvAnalysisTitle";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -92,7 +93,7 @@ export function CvComparison({ analyses, onBack }: CvComparisonProps) {
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <h4 className="font-medium truncate">{analysis.fileName}</h4>
+                        <h4 className="font-medium truncate">{getCvAnalysisTitle(analysis as any)}</h4>
                         <Badge
                           variant={
                             analysis.analysisStatus === "completed" ? "default" :
@@ -157,7 +158,7 @@ export function CvComparison({ analyses, onBack }: CvComparisonProps) {
             {selectedAnalysisData.map((analysis, index) => (
               <div key={analysis._id} className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="font-medium text-sm">{analysis.fileName}</span>
+                  <span className="font-medium text-sm">{getCvAnalysisTitle(analysis as any)}</span>
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-muted-foreground">
                       {new Date(analysis.createdAt).toLocaleDateString()}
@@ -182,7 +183,7 @@ export function CvComparison({ analyses, onBack }: CvComparisonProps) {
         {selectedAnalysisData.map((analysis, index) => (
           <Card key={analysis._id}>
             <CardHeader>
-              <CardTitle className="text-lg">{analysis.fileName}</CardTitle>
+              <CardTitle className="text-lg">{getCvAnalysisTitle(analysis as any)}</CardTitle>
               <div className="flex items-center gap-2">
                 <Badge variant="outline">
                   Score: {analysis.overallScore || 0}/100

@@ -81,6 +81,13 @@ export const POST = withApi({
 
       const userName = userData?.name || userData?.displayName;
       const emailPrefs = userData?.emailPreferences || {};
+      const prefs = userData?.preferences || {};
+
+      // Master toggle: user-level email notifications
+      if (prefs.emailNotifications === false) {
+        results.skipped++;
+        continue;
+      }
 
       // Check if user has disabled reminder notifications
       if (emailPrefs.reminders === false) {

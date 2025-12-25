@@ -4,7 +4,9 @@ import { useState, useMemo } from "react";
 import { format } from "date-fns";
 import type { ColumnDef, Row } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
+import { ApplicationStatusBadge } from "@/components/ui/StatusBadge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { DataTable } from "@/components/ui/data-table";
 import { DataTableColumnActions } from "@/components/ui/data-table";
 import { 
@@ -32,6 +34,8 @@ interface JobDataTableProps {
   onDeleteApplication: (applicationId: string) => void;
   onViewApplication: (application: Application) => void;
   onChanged?: () => void;
+  selectedIds?: Set<string>;
+  onToggleSelection?: (id: string) => void;
 }
 
 export function JobDataTable({
@@ -40,6 +44,8 @@ export function JobDataTable({
   onDeleteApplication,
   onViewApplication,
   onChanged,
+  selectedIds,
+  onToggleSelection,
 }: JobDataTableProps) {
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -64,7 +70,7 @@ export function JobDataTable({
       case "rejected":
         return <XCircle className="h-4 w-4 text-red-500" />;
       default:
-        return <Clock className="h-4 w-4 text-gray-500" />;
+        return <Clock className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
@@ -82,6 +88,31 @@ export function JobDataTable({
   };
 
   const columns: ColumnDef<Application>[] = [
+    {
+      id: "select",
+      header: () => <span className="sr-only">Select</span>,
+      cell: ({ row }) => {
+        if (!onToggleSelection) return null;
+        const id = row.original._id;
+        const checked = !!selectedIds?.has(id);
+        return (
+          <div
+            className="flex items-center"
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
+          >
+            <Checkbox
+              checked={checked}
+              onCheckedChange={() => onToggleSelection(id)}
+              aria-label="Select application"
+            />
+          </div>
+        );
+      },
+      enableSorting: false,
+      enableHiding: false,
+    },
     {
       id: "jobTitle",
       accessorFn: (row) => row.job?.title,
@@ -156,9 +187,7 @@ export function JobDataTable({
         return (
           <div className="flex items-center gap-2">
             {getStatusIcon(status)}
-            <Badge variant={getStatusVariant(status)}>
-              {status}
-            </Badge>
+            <ApplicationStatusBadge status={status} />
           </div>
         );
       },
