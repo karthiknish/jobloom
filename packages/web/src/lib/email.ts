@@ -164,9 +164,15 @@ export async function verifyEmailService(): Promise<EmailHealth> {
   }
 
   try {
-    const client = getBrevoClient();
+    const apiKey = process.env.BREVO_API_KEY;
+    if (!apiKey) {
+      return { ok: false, provider: 'brevo', error: 'BREVO_API_KEY is not configured' };
+    }
+
+    const accountClient = new brevo.AccountApi();
+    accountClient.setApiKey(brevo.AccountApiApiKeys.apiKey, apiKey);
     // getAccount is a low-cost call to validate credentials
-    await client.getAccount();
+    await accountClient.getAccount();
     return { ok: true, provider: 'brevo' };
   } catch (error: any) {
     const message = error?.response?.body?.message || error?.message || 'Unknown error';
