@@ -29,6 +29,7 @@ import {
 import { showError, showSuccess, showWarning } from "@/components/ui/Toast";
 import { cvEvaluatorApi, type UploadLimits } from "@/utils/api/cvEvaluator";
 import { useOnboardingState } from "@/hooks/useOnboardingState";
+import { analytics } from "@/firebase/analytics";
 
 interface CvUploadFormProps {
   userId: string;
@@ -122,12 +123,14 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted, onResum
 
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       setFile(e.dataTransfer.files[0]);
+      analytics.logFeatureUsed("cv_upload_drop", e.dataTransfer.files[0].type);
     }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setFile(e.target.files[0]);
+      analytics.logFeatureUsed("cv_upload_file_selected", e.target.files[0].type);
     }
   };
 
@@ -148,6 +151,8 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted, onResum
         targetRole,
         industry,
       });
+
+      analytics.logCvUploaded(result.analysisId || file.name, file.size, file.type);
 
       showSuccess(
         "CV uploaded successfully",
@@ -176,11 +181,13 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted, onResum
         // Show upgrade prompt for limit reached
         setUpgradePromptVisible(true);
         setLimitInfo(error.details);
+        analytics.logFeatureUsed("cv_upload_upgrade_required", JSON.stringify(error.details));
       } else {
         showError(
           "Upload failed",
           `${error.message ? `${error.message}. ` : ""}Check the file format and size, then try again.`
         );
+        analytics.logError("cv_upload_failed", error.message || "unknown_error", { fileType: file?.type, fileSize: file?.size });
       }
     } finally {
       setUploading(false);
@@ -243,6 +250,7 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted, onResum
     const resume = sampleResume || createSampleResume();
     setSampleResume(resume);
     setShowRealTimeFeedback(true);
+    analytics.logFeatureUsed("cv_realtime_feedback_open", targetRole || industry || "none");
     
     // Call the parent's update function for ATS analysis
     if (onResumeUpdate) {

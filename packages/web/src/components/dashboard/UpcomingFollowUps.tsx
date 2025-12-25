@@ -6,12 +6,30 @@ import { dashboardApi, type Application } from "@/utils/api/dashboard";
 import { format, isPast, isToday, isTomorrow } from "date-fns";
 import { showSuccess, showError } from "@/components/ui/Toast";
 import { CheckCircle, Clock, AlertCircle, Calendar, ChevronRight } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { dispatchUpgradeIntent } from "@/utils/upgradeIntent";
+import { analytics } from "@/firebase/analytics";
 
 export function UpcomingFollowUps({ applications, onChanged }: { applications: Application[]; onChanged?: () => void }) {
   const now = new Date();
   now.setHours(0, 0, 0, 0);
   const todayTimestamp = now.getTime();
+  const router = useRouter();
+
+  const handleCustomAlertsUpgrade = () => {
+    analytics.logFeatureUsed("custom_alerts_upgrade_cta", "followups_card_header");
+    const handled = dispatchUpgradeIntent({
+      feature: "customAlerts",
+      title: "Customize Alert Settings",
+      description: "Upgrade to unlock SMS alerts, custom reminder schedules, and multiple alert types.",
+      source: "followups_card_header",
+    });
+
+    if (!handled) {
+      router.push("/upgrade");
+    }
+  };
   
   const followUps = applications
     .filter((a) => typeof a.followUpDate === "number")
@@ -107,6 +125,9 @@ export function UpcomingFollowUps({ applications, onChanged }: { applications: A
                 : "Stay on top of your job search"}
             </CardDescription>
           </div>
+          <Button size="sm" variant="secondary" className="whitespace-nowrap" onClick={handleCustomAlertsUpgrade}>
+            Customize Alert Settings
+          </Button>
           {totalCount > 0 && (
             <Badge variant={overdue.length > 0 ? "destructive" : "secondary"} className="animate-pulse">
               {totalCount}

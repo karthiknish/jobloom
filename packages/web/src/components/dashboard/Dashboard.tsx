@@ -45,6 +45,8 @@ import { isPast, isToday } from "date-fns";
 import { useOnboardingState } from "@/hooks/useOnboardingState";
 import { useTourContext } from "@/providers/onboarding-tour-provider";
 import { WelcomeDialog } from "@/components/onboarding/WelcomeDialog";
+import { UpgradeIntentDetail } from "@/utils/upgradeIntent";
+import { analytics } from "@/firebase/analytics";
 
 
 
@@ -52,6 +54,11 @@ import { WelcomeDialog } from "@/components/onboarding/WelcomeDialog";
 export function Dashboard() {
   const { user, loading } = useFirebaseAuth();
   const { plan } = useSubscription();
+  const [upgradeFeature, setUpgradeFeature] = useState<string | undefined>("applicationsPerMonth");
+  const [upgradeTitle, setUpgradeTitle] = useState("Application Limit Reached");
+  const [upgradeDescription, setUpgradeDescription] = useState(
+    "You've reached your monthly limit of 50 job applications. Upgrade to Premium for unlimited applications."
+  );
 
   const [view, setView] = useState<DashboardView>("dashboard");
   const [boardMode, setBoardMode] = useState<BoardMode>("list");
@@ -124,7 +131,18 @@ export function Dashboard() {
 
   // Initialize management hooks after refetch functions are available
   const applicationManagement = useApplicationManagement(refetchApplications);
-  const jobManagement = useJobManagement(refetchJobStats);
+  const handleUpgradeIntent = (detail: UpgradeIntentDetail) => {
+    analytics.logFeatureUsed("upgrade_dialog_open", JSON.stringify(detail));
+    setUpgradeFeature(detail?.feature ?? "applicationsPerMonth");
+    setUpgradeTitle(detail?.title ?? "Upgrade to Premium");
+    setUpgradeDescription(
+      detail?.description ??
+      "Unlock premium features to keep your job search moving without limits."
+    );
+    setShowUpgradePrompt(true);
+  };
+
+  const jobManagement = useJobManagement(refetchJobStats, handleUpgradeIntent);
 
   const overdueReminders = (applications || []).filter(
     (app) => app.followUpDate && isPast(new Date(app.followUpDate)) && !isToday(new Date(app.followUpDate))
@@ -185,6 +203,17 @@ export function Dashboard() {
   useRestoreFocus(showJobForm);
   useRestoreFocus(showImportModal);
   useRestoreFocus(!!selectedApplication);
+
+  useEffect(() => {
+    const listener = (event: Event) => {
+      const upgradeEvent = event as CustomEvent<UpgradeIntentDetail>;
+      handleUpgradeIntent(upgradeEvent.detail || {});
+      upgradeEvent.preventDefault();
+    };
+
+    window.addEventListener("hireall:open-upgrade", listener as EventListener);
+    return () => window.removeEventListener("hireall:open-upgrade", listener as EventListener);
+  }, []);
 
   // Show skeleton during auth loading OR data loading
   const isDataLoading = loading || userRecordLoading || (!!userRecord && (applicationsLoading || jobStatsLoading));
@@ -460,17 +489,17 @@ export function Dashboard() {
           }}
         />
 
-        {/* Upgrade prompt for applications limit */}
+        {/* Upgrade prompt for premium features */}
         <Dialog open={showUpgradePrompt} onOpenChange={setShowUpgradePrompt}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Application Limit Reached</DialogTitle>
+              <DialogTitle>{upgradeTitle}</DialogTitle>
               <DialogDescription>
-                You&apos;ve reached your monthly limit of 50 job applications. Upgrade to Premium for unlimited applications.
+                {upgradeDescription}
               </DialogDescription>
             </DialogHeader>
             <div className="py-4">
-              <UpgradePrompt feature="applicationsPerMonth" />
+              <UpgradePrompt feature={upgradeFeature} />
             </div>
           </DialogContent>
         </Dialog>

@@ -53,6 +53,25 @@ export async function ensureCsrfCookie(
   return token;
 }
 
+/**
+ * Apply CSRF protection for API routes.
+ * - For safe methods: ensure cookie is present/renewed.
+ * - For unsafe methods: validate header/query token against cookie (skips extension requests).
+ */
+export async function applyCsrfProtection(
+  request: NextRequest,
+  response: NextResponse,
+): Promise<void> {
+  const method = request.method.toUpperCase();
+
+  if (["GET", "HEAD", "OPTIONS"].includes(method)) {
+    await ensureCsrfCookie(request, response);
+    return;
+  }
+
+  validateCsrf(request);
+}
+
 function extractCsrfCandidate(request: NextRequest): string | undefined {
   // Always check the primary CSRF header first
   const header = request.headers.get(CSRF_HEADER_NAME);

@@ -321,6 +321,15 @@ const SEO_RULES: SeoRule[] = [
       noIndex: true,
     },
   },
+  // ============ API ROUTES (no SEO) ============
+  {
+    pattern: /^\/api\//,
+    meta: {
+      title: "API | HireAll",
+      description: "API route",
+      noIndex: true,
+    },
+  },
 ];
 
 /**

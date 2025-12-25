@@ -101,6 +101,9 @@ export interface ApiOptions<
   
   /** Rate limit endpoint key from rateLimiter.ts */
   rateLimit?: string;
+
+  /** Apply a default general rate limit when a specific rateLimit key is not provided (default: true) */
+  applyGeneralRateLimit?: boolean;
   
   /** Custom rate limit config override */
   rateLimitConfig?: {
@@ -417,6 +420,7 @@ export function withApi<
     paramsSchema,
     errorMessages = {},
     includeRateLimitHeaders = true,
+    applyGeneralRateLimit = true,
     corsOptions,
     handler: optionsHandler,
   } = options;
@@ -494,13 +498,15 @@ export function withApi<
       // 2. Rate Limiting
       let rateLimitResult: RateLimitResult | undefined;
       
-      if (rateLimit) {
+      const rateLimitKey = rateLimit || (applyGeneralRateLimit ? 'general' : undefined);
+
+      if (rateLimitKey) {
         const identifier = user?.uid || getClientIdentifier(request);
         const authToken = request.headers.get("authorization")?.substring(7);
         
         rateLimitResult = await checkServerRateLimitWithAuth(
           identifier,
-          rateLimit,
+          rateLimitKey,
           authToken,
           rateLimitConfig
         );

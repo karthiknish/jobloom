@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useApiMutation } from "../../hooks/useApi";
 import { contactApi } from "../../utils/api/contact";
@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { motion } from "framer-motion";
 import { Loader2, Mail, MessageSquare, Send, User } from "lucide-react";
+import { analytics } from "@/firebase/analytics";
 
 export default function ContactPage() {
   const { mutate: createContact } = useApiMutation(
@@ -28,6 +29,11 @@ export default function ContactPage() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    analytics.logPageView("/contact", "Contact");
+    analytics.logFeatureUsed("contact_page_visit");
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,12 +65,14 @@ export default function ContactPage() {
     setLoading(true);
     try {
       await createContact({ name, email, message });
+      analytics.logGoalCompleted("contact", "contact_form_submitted");
       toast.success("Message sent! We'll get back to you soon.");
       setName("");
       setEmail("");
       setMessage("");
     } catch (err: any) {
       console.error("Contact form error:", err);
+      analytics.logError("contact_form_failed", err?.message || "unknown_error");
       
       // Provide more specific error messages
       if (err?.message?.includes("400")) {

@@ -25,6 +25,7 @@ import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { useRouter } from "next/navigation";
 import { showSuccess, showError } from "@/components/ui/Toast";
 import { subscriptionApi } from "@/utils/api/subscription";
+import { analytics } from "@/firebase/analytics";
 
 export default function UpgradePage() {
   const [isUpgrading, setIsUpgrading] = useState(false);
@@ -32,19 +33,26 @@ export default function UpgradePage() {
   const { user } = useFirebaseAuth();
   const router = useRouter();
 
+  useEffect(() => {
+    analytics.logPageView("/upgrade", "Upgrade");
+  }, []);
+
   const handleUpgrade = async (targetPlan: string) => {
     if (!user) {
       showError("Please sign in to upgrade");
       router.push("/sign-in");
+      analytics.logFeatureUsed("upgrade_cta_click", "unauthenticated");
       return;
     }
 
     if (plan === targetPlan) {
       showError("You're already on this plan");
+      analytics.logFeatureUsed("upgrade_cta_click", "already_on_plan");
       return;
     }
 
     setIsUpgrading(true);
+    analytics.logFeatureUsed("upgrade_cta_click", targetPlan);
     try {
       const data = await subscriptionApi.createCheckout({
         plan: targetPlan,
@@ -53,13 +61,16 @@ export default function UpgradePage() {
 
       if (data.url) {
         showSuccess(`Redirecting to secure checkout for ${targetPlan} plan`);
+        analytics.logGoalCompleted("upgrade", `checkout_start_${targetPlan}`);
         window.location.href = data.url;
       } else {
         showError("Unable to start checkout session. Please contact support.");
+        analytics.logError("upgrade_checkout_missing_url", "Checkout URL missing", { targetPlan });
       }
     } catch (error: any) {
       console.error("Upgrade error:", error);
       showError(error.message || "Failed to upgrade subscription. Please try again.");
+      analytics.logError("upgrade_checkout_failed", error.message || "unknown_error", { targetPlan });
     } finally {
       setIsUpgrading(false);
     }

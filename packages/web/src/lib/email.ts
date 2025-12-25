@@ -70,6 +70,12 @@ export interface EmailResult {
   error?: string;
 }
 
+export interface EmailHealth {
+  ok: boolean;
+  provider: 'brevo';
+  error?: string;
+}
+
 export async function sendEmail(data: EmailData): Promise<EmailResult> {
   try {
     const toList = (Array.isArray(data.to) ? data.to : [data.to])
@@ -148,6 +154,23 @@ export async function sendEmail(data: EmailData): Promise<EmailResult> {
       success: false,
       error: error?.response?.body?.message || error?.message || 'Unknown error'
     };
+  }
+}
+
+// Lightweight provider health check to verify Brevo configuration/connectivity
+export async function verifyEmailService(): Promise<EmailHealth> {
+  if (!isEmailConfigured()) {
+    return { ok: false, provider: 'brevo', error: 'BREVO_API_KEY is not configured' };
+  }
+
+  try {
+    const client = getBrevoClient();
+    // getAccount is a low-cost call to validate credentials
+    await client.getAccount();
+    return { ok: true, provider: 'brevo' };
+  } catch (error: any) {
+    const message = error?.response?.body?.message || error?.message || 'Unknown error';
+    return { ok: false, provider: 'brevo', error: message };
   }
 }
 

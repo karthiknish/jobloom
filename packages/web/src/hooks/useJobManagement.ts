@@ -3,6 +3,7 @@ import { dashboardApi } from "@/utils/api/dashboard";
 import { showSuccess, showError } from "@/components/ui/Toast";
 import { useOnboardingState } from "@/hooks/useOnboardingState";
 import { useSubscription } from "@/providers/subscription-provider";
+import { UpgradeIntentDetail } from "@/utils/upgradeIntent";
 
 interface JobFormData {
   title: string;
@@ -18,7 +19,10 @@ interface JobFormData {
   experienceLevel: string;
 }
 
-export function useJobManagement(onRefetchJobStats: () => void) {
+export function useJobManagement(
+  onRefetchJobStats: () => void,
+  onUpgradeIntent?: (detail: UpgradeIntentDetail) => void
+) {
   const [showJobForm, setShowJobForm] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
@@ -29,6 +33,12 @@ export function useJobManagement(onRefetchJobStats: () => void) {
     const usage = currentUsage?.applications ?? 0;
     const canAdd = canUseFeature("applicationsPerMonth", usage);
     if (!canAdd) {
+      onUpgradeIntent?.({
+        feature: "applicationsPerMonth",
+        title: "Application Limit Reached",
+        description:
+          "You've reached your monthly limit of 50 job applications. Upgrade to Premium for unlimited applications.",
+      });
       setShowUpgradePrompt(true);
       return false;
     }

@@ -1,6 +1,7 @@
 // utils/jobImport.ts
 import { parse } from "csv-parse/browser/esm/sync";
 import { dashboardApi } from "@/utils/api/dashboard";
+import { analytics } from "@/firebase/analytics";
 import type { ImportJob, ImportResult } from "@/types/jobImport";
 
 /**
@@ -120,9 +121,12 @@ export async function importJobsFromCSV(userId: string, csvData: string): Promis
       jobs,
     });
 
+    analytics.logJobImport("csv", jobs.length);
+
     return result;
   } catch (error) {
     console.error("Error importing jobs from CSV:", error);
+    analytics.logError("job_import_failed", (error as Error).message, { source: "csv" });
     throw error;
   }
 }
@@ -150,9 +154,12 @@ export async function importJobsFromAPI(
       location,
     });
 
+    analytics.logJobImport(source, result?.importedCount || 0);
+
     return result;
   } catch (error) {
     console.error("Error importing jobs from API:", error);
+    analytics.logError("job_import_failed", (error as Error).message, { source });
     throw error;
   }
 }
@@ -173,6 +180,7 @@ Data Scientist,Microsoft,Seattle, WA,https://microsoft.com/jobs/789,"Analyze lar
   link.setAttribute('download', 'hireall_job_import_template.csv');
   link.style.visibility = 'hidden';
   document.body.appendChild(link);
+  analytics.logFeatureUsed("job_import_template_downloaded");
   link.click();
   document.body.removeChild(link);
 }

@@ -76,6 +76,9 @@ export function AnalyticsProvider({
   useEffect(() => {
     if (!isInitialized || !autoPageViewTracking) return;
 
+    // Skip admin routes from analytics tracking
+    if (pathname?.startsWith('/admin')) return;
+
     const pageName = pathname || 'unknown';
     const pageTitle = document.title || pageName;
 

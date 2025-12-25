@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bug, X, Send, AlertTriangle, CheckCircle, Loader2 } from "lucide-react";
+import { Bug, X, Send, AlertTriangle, CheckCircle, Loader2, ShieldCheck } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -16,6 +18,8 @@ import {
 } from "@/components/ui/select";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { contactApi } from "@/utils/api/contact";
+import { dispatchUpgradeIntent } from "@/utils/upgradeIntent";
+import { analytics } from "@/firebase/analytics";
 
 interface ReportIssueProps {
   /** Position of the floating button */
@@ -43,6 +47,7 @@ const ISSUE_TYPES: { value: IssueType; label: string }[] = [
 
 export function ReportIssue({ position = "bottom-right", className = "" }: ReportIssueProps) {
   const { user } = useFirebaseAuth();
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle");
@@ -113,6 +118,8 @@ Browser: ${typeof navigator !== "undefined" ? navigator.userAgent : "Unknown"}
         message,
       });
 
+      analytics.logGoalCompleted("support", "issue_report_submitted");
+
       setSubmitStatus("success");
       
       // Reset form after success
@@ -133,6 +140,20 @@ Browser: ${typeof navigator !== "undefined" ? navigator.userAgent : "Unknown"}
       setSubmitStatus("error");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleUpgradeClick = () => {
+    analytics.logFeatureUsed("priority_support_upgrade_cta", "report_issue_header");
+    const handled = dispatchUpgradeIntent({
+      feature: "prioritySupport",
+      title: "Get Priority Support",
+      description: "Upgrade to Premium for 24h response times and dedicated support.",
+      source: "report_issue_header",
+    });
+
+    if (!handled) {
+      router.push("/upgrade");
     }
   };
 
@@ -193,14 +214,28 @@ Browser: ${typeof navigator !== "undefined" ? navigator.userAgent : "Unknown"}
                       <p className="text-sm text-muted-foreground">Help us improve Hireall</p>
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setIsOpen(false)}
-                    disabled={isSubmitting}
-                  >
-                    <X className="h-5 w-5" />
-                  </Button>
+                  <div className="flex items-center gap-3">
+                    <Badge variant="outline" className="hidden sm:inline-flex items-center gap-2 bg-primary/5 border-primary/30 text-primary px-3 py-1 rounded-full">
+                      <ShieldCheck className="h-4 w-4" />
+                      <span className="text-xs font-semibold">Get Priority Support · 24h response guaranteed</span>
+                    </Badge>
+                    <Button
+                      size="sm"
+                      className="hidden sm:inline-flex"
+                      variant="secondary"
+                      onClick={handleUpgradeClick}
+                    >
+                      Upgrade
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setIsOpen(false)}
+                      disabled={isSubmitting}
+                    >
+                      <X className="h-5 w-5" />
+                    </Button>
+                  </div>
                 </div>
 
                 {/* Form */}

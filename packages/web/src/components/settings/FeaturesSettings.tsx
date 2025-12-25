@@ -3,11 +3,14 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Crown, Star, Zap } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useSubscription } from "@/providers/subscription-provider";
 import { PremiumUpgradeBanner } from "@/components/dashboard/PremiumUpgradeBanner";
+import { dispatchUpgradeIntent } from "@/utils/upgradeIntent";
+import { analytics } from "@/firebase/analytics";
 
 interface FeaturesSettingsProps {
   showBillingButton: boolean;
@@ -18,6 +21,21 @@ interface FeaturesSettingsProps {
 export function FeaturesSettings({ showBillingButton, billingPortalLoading, onBillingPortalClick }: FeaturesSettingsProps) {
   const { plan } = useSubscription();
   const isPaidPlan = plan !== "free";
+  const router = useRouter();
+
+  const handlePriorityUpgrade = () => {
+    analytics.logFeatureUsed("priority_support_upgrade_cta", "settings_priority_support_row");
+    const handled = dispatchUpgradeIntent({
+      feature: "prioritySupport",
+      title: "Priority Support",
+      description: "Upgrade to Premium for 24h response times and dedicated support.",
+      source: "settings_priority_support_row",
+    });
+
+    if (!handled) {
+      router.push("/upgrade");
+    }
+  };
 
   return (
     <motion.div
@@ -142,12 +160,17 @@ export function FeaturesSettings({ showBillingButton, billingPortalLoading, onBi
                 <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
                   <Star className="h-5 w-5 text-primary" />
                 </div>
-                <div>
+                <div className="flex-1">
                   <div className="font-medium text-foreground">Priority Support</div>
                   <div className="text-sm text-muted-foreground">
                     Get help when you need it most
                   </div>
                 </div>
+                {!isPaidPlan && (
+                  <Button size="sm" variant="secondary" className="whitespace-nowrap" onClick={handlePriorityUpgrade}>
+                    Upgrade
+                  </Button>
+                )}
               </div>
 
               <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/20">

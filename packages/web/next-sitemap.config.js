@@ -97,6 +97,11 @@ module.exports = {
 };
 
 // Helper function to fetch blog slugs
+const FALLBACK_BLOG_SLUGS = (process.env.NEXT_PUBLIC_FALLBACK_BLOG_SLUGS || "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+
 async function fetchPublishedBlogSlugs() {
   // During build, we can't easily access Firestore
   // This would be replaced with actual API call in production
@@ -113,11 +118,12 @@ async function fetchPublishedBlogSlugs() {
     
     if (response?.ok) {
       const data = await response.json();
-      return data.slugs || [];
+      const apiSlugs = data.slugs || [];
+      return apiSlugs.length > 0 ? apiSlugs : FALLBACK_BLOG_SLUGS;
     }
   } catch {
     // Silently fail during build
   }
   
-  return [];
+  return FALLBACK_BLOG_SLUGS;
 }
