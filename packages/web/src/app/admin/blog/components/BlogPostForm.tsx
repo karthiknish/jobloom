@@ -33,6 +33,18 @@ export interface CreatePostData {
   featuredImage?: string;
 }
 
+const BLOG_CATEGORY_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: "technology", label: "Technology" },
+  { value: "business", label: "Business" },
+  { value: "design", label: "Design" },
+  { value: "marketing", label: "Marketing" },
+  { value: "development", label: "Development" },
+  { value: "tutorial", label: "Tutorial" },
+  { value: "news", label: "News" },
+  { value: "remote-work", label: "Remote Work" },
+  { value: "other", label: "Other" },
+];
+
 interface BlogPostFormProps {
   initialData?: CreatePostData | null;
   isSubmitting: boolean;
@@ -71,11 +83,29 @@ export function BlogPostForm({
 
   useEffect(() => {
     if (initialData) {
+      const normalizeCategory = (raw: unknown): string => {
+        const value = String(raw ?? "").trim();
+        if (!value) return "";
+
+        const byValue = BLOG_CATEGORY_OPTIONS.find(
+          (opt) => opt.value.toLowerCase() === value.toLowerCase()
+        );
+        if (byValue) return byValue.value;
+
+        const byLabel = BLOG_CATEGORY_OPTIONS.find(
+          (opt) => opt.label.toLowerCase() === value.toLowerCase()
+        );
+        if (byLabel) return byLabel.value;
+
+        // Preserve legacy/custom category strings so they display in the Select.
+        return value;
+      };
+
       setFormData({
         title: initialData.title || "",
         excerpt: initialData.excerpt || "",
         content: initialData.content || "",
-        category: initialData.category || "",
+        category: normalizeCategory(initialData.category),
         tags: initialData.tags || [],
         status: initialData.status || "draft",
         featuredImage: initialData.featuredImage || "",
@@ -87,6 +117,13 @@ export function BlogPostForm({
     }
   }, [emptyData, initialData]);
 
+  const normalizeStatus = (value: unknown): CreatePostData["status"] => {
+    if (value === "draft" || value === "published" || value === "archived") {
+      return value;
+    }
+    return "draft";
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const tagsArray = tagsInput
@@ -94,7 +131,12 @@ export function BlogPostForm({
       .map((tag) => tag.trim())
       .filter(Boolean);
 
-    onSubmit({ ...formData, tags: tagsArray });
+    onSubmit({
+      ...formData,
+      category: (formData.category || "").trim(),
+      status: normalizeStatus(formData.status),
+      tags: tagsArray,
+    });
   };
 
   const handleImageSelect = (imageUrl: string) => {
@@ -134,14 +176,15 @@ export function BlogPostForm({
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="technology">Technology</SelectItem>
-                <SelectItem value="business">Business</SelectItem>
-                <SelectItem value="design">Design</SelectItem>
-                <SelectItem value="marketing">Marketing</SelectItem>
-                <SelectItem value="development">Development</SelectItem>
-                <SelectItem value="tutorial">Tutorial</SelectItem>
-                <SelectItem value="news">News</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
+                {formData.category &&
+                !BLOG_CATEGORY_OPTIONS.some((opt) => opt.value === formData.category) ? (
+                  <SelectItem value={formData.category}>{formData.category}</SelectItem>
+                ) : null}
+                {BLOG_CATEGORY_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
