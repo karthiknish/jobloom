@@ -247,7 +247,7 @@ export function InlineStatusSelect({
       className={cn(
         "text-xs font-medium px-2 py-1 rounded-full border-0 cursor-pointer",
         "bg-muted hover:bg-muted/80 transition-colors",
-        "focus:outline-none focus:ring-2 focus:ring-primary/20",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         disabled && "cursor-not-allowed opacity-50"
       )}
     >

@@ -8,35 +8,35 @@ const statusBadgeVariants = cva(
   {
     variants: {
       variant: {
-        // CV Score variants
+        // CV Score variants - using theme tokens
         score_critical: "bg-destructive/10 text-destructive",
-        score_low: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
-        score_good: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+        score_low: "bg-warning-soft text-warning",
+        score_good: "bg-success-soft text-success",
         score_excellent: "bg-primary/10 text-primary",
         
-        // Job Priority variants
+        // Job Priority variants - using theme tokens
         priority_high: "bg-destructive/10 text-destructive",
-        priority_medium: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
-        priority_low: "bg-blue-500/10 text-blue-700 dark:text-blue-400",
+        priority_medium: "bg-warning-soft text-warning",
+        priority_low: "bg-info-soft text-info",
         
-        // Application Status variants
+        // Application Status variants - using theme tokens
         status_interested: "bg-secondary text-secondary-foreground",
-        status_applied: "bg-blue-500/10 text-blue-700 dark:text-blue-400",
+        status_applied: "bg-info-soft text-info",
         status_interviewing: "bg-purple-500/10 text-purple-700 dark:text-purple-400",
-        status_offer: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+        status_offer: "bg-success-soft text-success",
         status_rejected: "bg-destructive/10 text-destructive",
         status_withdrawn: "bg-muted text-muted-foreground",
         
-        // Visa Sponsorship variants
-        visa_sponsor: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+        // Visa Sponsorship variants - using theme tokens
+        visa_sponsor: "bg-success-soft text-success",
         visa_unknown: "bg-muted text-muted-foreground",
         visa_no: "bg-destructive/10 text-destructive",
         
-        // General variants
-        success: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
-        warning: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
+        // General variants - using theme tokens
+        success: "bg-success-soft text-success",
+        warning: "bg-warning-soft text-warning",
         error: "bg-destructive/10 text-destructive",
-        info: "bg-blue-500/10 text-blue-700 dark:text-blue-400",
+        info: "bg-info-soft text-info",
         neutral: "bg-muted text-muted-foreground",
       },
       size: {

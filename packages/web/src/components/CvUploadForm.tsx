@@ -374,7 +374,7 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted, onResum
                   value={targetRole}
                   onChange={(e) => setTargetRole(e.target.value)}
                   placeholder="e.g., Software Engineer, Marketing Manager"
-                  className="focus:ring-2 focus:ring-primary/20"
+                  className="focus-visible:ring-2 focus-visible:ring-ring"
                 />
                 <p className="text-xs text-muted-foreground">
                   Helps provide more targeted feedback
@@ -384,7 +384,7 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted, onResum
               <div className="space-y-2">
                 <Label htmlFor="industry" className="text-sm font-medium">Industry (Optional)</Label>
                 <Select value={industry} onValueChange={setIndustry}>
-                  <SelectTrigger id="industry" className="focus:ring-2 focus:ring-primary/20">
+                  <SelectTrigger id="industry" className="focus-visible:ring-2 focus-visible:ring-ring">
                     <SelectValue placeholder="Select industry" />
                   </SelectTrigger>
                   <SelectContent>

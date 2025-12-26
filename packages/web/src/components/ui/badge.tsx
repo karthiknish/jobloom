@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils"
 import { themeColors } from "@/styles/theme-colors"
 
 const badgeVariants = cva(
-  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
   {
     variants: {
       variant: {
@@ -18,7 +18,7 @@ const badgeVariants = cva(
         outline: "text-foreground",
         orange: cn("border-transparent", themeColors.warning.bg, themeColors.warning.text),
         purple: cn("border-transparent", themeColors.primary.bg, themeColors.primary.text),
-        teal: cn("border-transparent bg-teal-100 text-teal-800"),
+        teal: cn("border-transparent", themeColors.info.bg, themeColors.info.text),
         green: cn("border-transparent", themeColors.success.bg, themeColors.success.text),
         yellow: cn("border-transparent", themeColors.warning.bg, themeColors.warning.text),
       },

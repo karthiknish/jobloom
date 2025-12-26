@@ -75,19 +75,19 @@ export default function EmailVerificationBanner() {
   const resendDisabled = sending || cooldown > 0;
 
   return (
-    <div className="mt-16 md:mt-20 border-b border-amber-200 bg-amber-50 text-amber-900">
+    <div className="mt-16 md:mt-20 border-b border-warning/30 bg-warning-soft text-warning">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-3 sm:px-6 md:flex-row md:items-center md:justify-between">
         <div className="flex items-start gap-3">
-          <ShieldAlert className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-500" />
+          <ShieldAlert className="mt-0.5 h-5 w-5 flex-shrink-0 text-warning" />
           <div className="space-y-1">
-            <p className="text-sm font-semibold leading-tight sm:text-base">
+            <p className="text-sm font-semibold leading-tight sm:text-base text-foreground">
               Verify your email to keep your account secure
             </p>
-            <p className="text-xs leading-relaxed text-amber-800 sm:text-sm">
+            <p className="text-xs leading-relaxed text-muted-foreground sm:text-sm">
               We sent a verification link to <span className="font-medium">{user?.email ?? "your email"}</span>. Confirm your address to unlock all features.
             </p>
             {cooldown > 0 && (
-              <p className="text-xs text-amber-700 sm:text-sm">
+              <p className="text-xs text-warning sm:text-sm">
                 You can request another email in {formatCooldown(cooldown)}.
               </p>
             )}
@@ -99,7 +99,7 @@ export default function EmailVerificationBanner() {
             size="sm"
             onClick={handleRefresh}
             disabled={refreshing}
-            className="border-amber-300 text-amber-900 hover:bg-amber-100"
+            className="border-warning/50 text-foreground hover:bg-warning-soft"
           >
             {refreshing ? (
               <>
@@ -114,7 +114,7 @@ export default function EmailVerificationBanner() {
             size="sm"
             onClick={handleResend}
             disabled={resendDisabled}
-            className="bg-amber-600 text-white hover:bg-amber-600/90"
+            className="bg-warning text-white hover:bg-warning/90"
           >
             {sending ? (
               <>
@@ -131,7 +131,7 @@ export default function EmailVerificationBanner() {
             variant="ghost"
             size="sm"
             asChild
-            className="text-amber-900 hover:text-amber-700"
+            className="text-foreground hover:text-muted-foreground"
           >
             <Link href="/verify-email">Need help?</Link>
           </Button>

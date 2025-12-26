@@ -175,7 +175,7 @@ export function TabsSystem({
                 currentVariant.trigger,
                 isDisabled && "opacity-50 cursor-not-allowed",
                 isActive && currentVariant.activeTrigger,
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               )}
               data-state={isActive ? "active" : "inactive"}
             >

@@ -94,34 +94,25 @@ export function DashboardEmptyState({
               Import jobs from the browser extension, add them manually, or upload a CSV file to begin tracking your applications.
             </motion.p>
 
-            {/* Action Buttons */}
-            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+            {/* Action Buttons - Focused hierarchy */}
+            <div className="mt-8 flex flex-col items-center gap-4">
               <Button
                 onClick={onImportJobs}
                 size="lg"
-                className="motion-button w-full sm:w-auto shadow-lg hover:shadow-xl bg-primary hover:from-emerald-700 hover:to-teal-700 text-white border-0 gap-2"
+                className="motion-button w-full sm:w-auto shadow-lg hover:shadow-xl bg-primary hover:bg-primary/90 text-white border-0 gap-2 px-8"
               >
                 <Chrome className="h-5 w-5" />
                 Import from Extension
               </Button>
-              <Button
-                onClick={onAddJob}
-                variant="secondary"
-                size="lg"
-                className="motion-button w-full sm:w-auto shadow-md hover:shadow-lg gap-2"
-              >
-                <FilePlus className="h-5 w-5" />
-                Add Job Manually
-              </Button>
-              <Button
-                onClick={onAddApplication}
-                variant="outline"
-                size="lg"
-                className="motion-button w-full sm:w-auto shadow-md hover:shadow-lg border-border hover:border-emerald-300 hover:bg-primary/10/50 gap-2"
-              >
-                Track Application
-                <ArrowRight className="h-4 w-4" />
-              </Button>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span>or</span>
+                <button
+                  onClick={onAddJob}
+                  className="text-primary hover:underline font-medium"
+                >
+                  add a job manually
+                </button>
+              </div>
             </div>
           </div>
         </div>

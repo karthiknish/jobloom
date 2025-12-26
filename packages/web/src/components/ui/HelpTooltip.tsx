@@ -1,6 +1,7 @@
 "use client";
 
 import { HelpCircle } from "lucide-react";
+import Link from "next/link";
 import {
   Tooltip,
   TooltipContent,
@@ -14,6 +15,10 @@ interface HelpTooltipProps {
   className?: string;
   side?: "top" | "right" | "bottom" | "left";
   size?: "sm" | "md" | "lg";
+  /** Optional "Learn more" documentation link */
+  learnMoreUrl?: string;
+  /** Label for the learn more link */
+  learnMoreLabel?: string;
 }
 
 /**
@@ -23,7 +28,9 @@ export function HelpTooltip({
   content, 
   className, 
   side = "top",
-  size = "sm" 
+  size = "sm",
+  learnMoreUrl,
+  learnMoreLabel = "Learn more",
 }: HelpTooltipProps) {
   const sizeClasses = {
     sm: "h-3.5 w-3.5",
@@ -46,14 +53,25 @@ export function HelpTooltip({
             )}
             aria-label="Help information"
           >
-            <HelpCircle className={sizeClasses[size]} />
+            <HelpCircle className={sizeClasses[size]} aria-hidden="true" />
           </button>
         </TooltipTrigger>
         <TooltipContent 
           side={side} 
           className="max-w-xs text-sm leading-relaxed"
         >
-          {content}
+          <div className="space-y-1.5">
+            <p>{content}</p>
+            {learnMoreUrl && (
+              <Link
+                href={learnMoreUrl}
+                className="text-xs text-primary hover:underline inline-flex items-center gap-1"
+              >
+                {learnMoreLabel}
+                <span aria-hidden="true">→</span>
+              </Link>
+            )}
+          </div>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

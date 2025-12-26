@@ -42,7 +42,7 @@ const options = [
     border: "border-purple-500/20 hover:border-purple-500/40",
   },
   {
-    id: "manual" as CareerToolsSection,
+    id: "manual-builder" as CareerToolsSection,
     icon: PenTool,
     title: "Build From Scratch",
     description: "Create your resume step-by-step with our guided builder",

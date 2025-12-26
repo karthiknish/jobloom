@@ -25,7 +25,7 @@ export default function Footer() {
 
       {/* Main footer */}
       <div className="bg-primary text-primary-foreground">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12">
+        <nav aria-label="Footer navigation" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12">
           {/* Brand */}
           <div>
             <div className="flex items-center space-x-2 mb-4">
@@ -130,7 +130,7 @@ export default function Footer() {
               </li>
             </ul>
           </div>
-        </div>
+        </nav>
 
         {/* Bottom bar */}
         <Separator className="h-px" />

@@ -113,15 +113,16 @@ export function DashboardSidebar({
 
   return (
     <>
-      {/* Mobile toggle button */}
-      <div className="lg:hidden fixed bottom-20 right-4 z-40">
+      {/* Mobile toggle button - positioned above mobile nav */}
+      <div className="lg:hidden fixed bottom-[6.5rem] right-4 z-30">
         <Button
           size="icon"
           className="rounded-full shadow-lg h-12 w-12"
           onClick={() => setIsOpen(!isOpen)}
           aria-label={isOpen ? "Close dashboard navigation" : "Open dashboard navigation"}
+          aria-expanded={isOpen}
         >
-          {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          {isOpen ? <X className="h-5 w-5" aria-hidden="true" /> : <Menu className="h-5 w-5" aria-hidden="true" />}
         </Button>
       </div>
 

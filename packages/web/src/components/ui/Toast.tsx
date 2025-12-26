@@ -95,8 +95,9 @@ const showStructuredToast = (
 export function AppToaster() {
   return (
     <Toaster
-      position="top-right"
+      position="top-center"
       reverseOrder={false}
+      containerClassName="!top-16 sm:!top-4 sm:!right-4 sm:!left-auto"
       toastOptions={{
         duration: 4000,
         style: {

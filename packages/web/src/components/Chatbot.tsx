@@ -258,7 +258,7 @@ export default function Chatbot() {
                     value={userEmail}
                     onChange={(e) => setUserEmail(e.target.value)}
                     placeholder="your@email.com"
-                    className="w-full px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     required
                   />
                   <div className="flex gap-2">

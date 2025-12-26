@@ -608,16 +608,18 @@ ${data.experience}
             <button
               type="button"
               onClick={() => setShowAdvanced(!showAdvanced)}
-              className="w-full flex items-center justify-center gap-2 py-3 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors border-t"
+              aria-expanded={showAdvanced}
+              aria-controls="advanced-options-panel"
+              className="w-full flex items-center justify-center gap-2 py-3 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors border-t focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-md"
             >
               {showAdvanced ? (
                 <>
-                  <ChevronUp className="h-4 w-4" />
+                  <ChevronUp className="h-4 w-4" aria-hidden="true" />
                   Hide advanced options
                 </>
               ) : (
                 <>
-                  <ChevronDown className="h-4 w-4" />
+                  <ChevronDown className="h-4 w-4" aria-hidden="true" />
                   Show more options (contact, style, AI settings)
                 </>
               )}
@@ -626,6 +628,7 @@ ${data.experience}
             {/* Advanced Options - Collapsible */}
             {showAdvanced && (
               <motion.div
+                id="advanced-options-panel"
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
@@ -713,7 +716,7 @@ ${data.experience}
                   }}
                   className="bg-background"
                 />
-                <Button type="button" onClick={addSkill} size="sm" variant="secondary">
+                <Button type="button" onClick={addSkill} size="sm" variant="secondary" aria-label="Add skill">
                   Add
                 </Button>
               </div>
@@ -722,7 +725,21 @@ ${data.experience}
                   <span className="text-sm text-muted-foreground italic p-1">No skills added yet</span>
                 )}
                 {formData.skills.map(skill => (
-                  <Badge key={skill} variant="secondary" className="cursor-pointer hover:bg-destructive/10 hover:text-destructive transition-colors" onClick={() => removeSkill(skill)}>
+                  <Badge 
+                    key={skill} 
+                    variant="secondary" 
+                    className="cursor-pointer hover:bg-destructive/10 hover:text-destructive transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1" 
+                    onClick={() => removeSkill(skill)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ' || e.key === 'Delete' || e.key === 'Backspace') {
+                        e.preventDefault();
+                        removeSkill(skill);
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Remove ${skill} skill`}
+                  >
                     {skill} ×
                   </Badge>
                 ))}

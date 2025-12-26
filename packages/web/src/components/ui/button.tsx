@@ -55,17 +55,37 @@ export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean
+  /** Screen reader text for icon-only buttons */
+  srText?: string
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
+  ({ className, variant, size, asChild = false, srText, children, ...props }, ref) => {
     const Comp = asChild ? Slot : "button"
+    
+    // When asChild is true, Slot requires a single child element
+    // Don't add srText in that case - the consumer should handle it
+    if (asChild) {
+      return (
+        <Comp
+          className={cn(buttonVariants({ variant, size, className }))}
+          ref={ref}
+          {...props}
+        >
+          {children}
+        </Comp>
+      )
+    }
+    
     return (
       <Comp
         className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
         {...props}
-      />
+      >
+        {children}
+        {srText && <span className="sr-only">{srText}</span>}
+      </Comp>
     )
   }
 )

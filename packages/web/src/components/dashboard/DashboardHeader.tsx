@@ -117,17 +117,17 @@ export function DashboardHeader({
             </div>
           </div>
 
-          {/* Right Section - Action Buttons */}
+          {/* Right Section - Action Buttons with clear hierarchy */}
           <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
             <TooltipProvider>
-              {/* Import from Extension - Primary CTA */}
+              {/* Import from Extension - PRIMARY CTA */}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
                     onClick={onImportJobs}
                     size="sm"
                     data-tour="import-jobs"
-                    className="motion-button motion-button-on-dark shadow-md hover:shadow-lg bg-primary hover:bg-primary/90 text-primary-foreground border-0 gap-2"
+                    className="motion-button shadow-lg hover:shadow-xl bg-white text-primary hover:bg-white/90 border-0 gap-2 font-semibold"
                   >
                     <Chrome className="h-4 w-4" />
                     <span className="hidden sm:inline">Import from Extension</span>
@@ -139,15 +139,15 @@ export function DashboardHeader({
                 </TooltipContent>
               </Tooltip>
 
-              {/* Add Job */}
+              {/* Add Job - SECONDARY */}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
                     onClick={onAddJob}
-                    variant="default"
+                    variant="ghost"
                     size="sm"
                     data-tour="add-job"
-                    className="motion-button motion-button-on-dark shadow-md hover:shadow-lg bg-secondary hover:bg-secondary/90 text-secondary-foreground border-0 gap-2"
+                    className="motion-button text-primary-foreground/90 hover:text-primary-foreground hover:bg-white/20 gap-2"
                   >
                     <FilePlus className="h-4 w-4" />
                     <span className="hidden sm:inline">Add Job</span>
@@ -158,17 +158,17 @@ export function DashboardHeader({
                 </TooltipContent>
               </Tooltip>
 
-              {/* Add Application */}
+              {/* Add Application - TERTIARY */}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
                     onClick={onAddApplication}
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
-                    className="motion-button motion-button-on-dark shadow-sm hover:shadow-md border-border/60 hover:border-emerald-300 hover:bg-emerald-50/50 gap-2"
+                    className="motion-button text-primary-foreground/70 hover:text-primary-foreground hover:bg-white/10 gap-2"
                   >
                     <ClipboardList className="h-4 w-4" />
-                    <span className="hidden sm:inline">Track Application</span>
+                    <span className="hidden md:inline">Track Application</span>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">
