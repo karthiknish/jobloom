@@ -142,12 +142,12 @@ export function TabsSystem({
       list: "bg-transparent gap-2",
       trigger: cn(
         "rounded-lg border font-medium motion-control",
-        "hover:border-emerald-300 hover:bg-emerald-50",
-        "data-[state=active]:border-emerald-600 data-[state=active]:bg-emerald-50",
-        "data-[state=active]:text-emerald-900 data-[state=active]:shadow-sm",
+        "hover:border-primary/30 hover:bg-primary/5",
+        "data-[state=active]:border-primary data-[state=active]:bg-primary/5",
+        "data-[state=active]:text-foreground data-[state=active]:shadow-sm",
         "data-[state=inactive]:border-border bg-background text-muted-foreground"
       ),
-      activeTrigger: "border-emerald-600 bg-emerald-50 text-emerald-900 shadow-sm",
+      activeTrigger: "border-primary bg-primary/5 text-foreground shadow-sm",
     },
   };
 
@@ -195,7 +195,7 @@ export function TabsSystem({
                   "inline-flex items-center justify-center rounded-full text-xs font-medium",
                   isActive && variant === "pills" 
                     ? "bg-white/20 text-white" 
-                    : "bg-emerald-100 text-emerald-800",
+                    : "bg-primary/10 text-primary",
                   size === "sm" ? "h-4 w-4 text-[10px]" : "h-5 w-5"
                 )}>
                   {typeof tab.badge === "number" && tab.badge > 99 ? "99+" : tab.badge}

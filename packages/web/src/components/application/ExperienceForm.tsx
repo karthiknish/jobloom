@@ -96,7 +96,7 @@ export function ExperienceForm({ data, onChange }: ExperienceFormProps) {
             className={cn(
               "relative border rounded-xl overflow-hidden motion-surface",
               "hover:shadow-md hover:border-primary/20",
-              exp.current && "ring-2 ring-primary/20 border-primary/30"
+              exp.current && "ring-2 ring-ring border-primary/30"
             )}
           >
             {/* Card Header */}

@@ -67,42 +67,42 @@ export function TabsConfig({
         "rounded-md font-medium motion-control",
         "hover:bg-background hover:shadow-sm",
         "data-[state=active]:bg-background data-[state=active]:shadow-md",
-        "data-[state=active]:text-foreground data-[state=active]:border border-emerald-200",
+        "data-[state=active]:text-foreground data-[state=active]:border border-primary/30",
         "data-[state=inactive]:text-muted-foreground"
       ),
-      activeTrigger: "bg-gradient-to-r from-emerald-50 to-emerald-100 border-emerald-300 text-emerald-900 shadow-sm",
+      activeTrigger: "bg-primary/5 border-primary/30 text-foreground shadow-sm",
     },
     pills: {
       list: "bg-transparent gap-2",
       trigger: cn(
         "rounded-full font-medium motion-control",
-        "hover:bg-emerald-50 hover:text-emerald-700",
-        "data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-600 data-[state=active]:to-green-600",
-        "data-[state=active]:text-white data-[state=active]:shadow-lg",
+        "hover:bg-primary/10 hover:text-primary",
+        "data-[state=active]:bg-primary",
+        "data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg",
         "data-[state=inactive]:text-muted-foreground bg-muted/50"
       ),
-      activeTrigger: "bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-lg",
+      activeTrigger: "bg-primary text-primary-foreground shadow-lg",
     },
     underline: {
       list: "border-b border-border bg-transparent",
       trigger: cn(
         "border-b-2 font-medium motion-control",
-        "hover:text-foreground hover:border-emerald-200",
-        "data-[state=active]:text-emerald-700 data-[state=active]:border-emerald-600",
+        "hover:text-foreground hover:border-primary/30",
+        "data-[state=active]:text-primary data-[state=active]:border-primary",
         "data-[state=inactive]:text-muted-foreground border-transparent"
       ),
-      activeTrigger: "text-emerald-700 border-emerald-600",
+      activeTrigger: "text-primary border-primary",
     },
     card: {
       list: "bg-transparent gap-2",
       trigger: cn(
         "rounded-lg border font-medium motion-control",
-        "hover:border-emerald-300 hover:bg-emerald-50",
-        "data-[state=active]:border-emerald-600 data-[state=active]:bg-emerald-50",
-        "data-[state=active]:text-emerald-900 data-[state=active]:shadow-sm",
+        "hover:border-primary/30 hover:bg-primary/5",
+        "data-[state=active]:border-primary data-[state=active]:bg-primary/5",
+        "data-[state=active]:text-foreground data-[state=active]:shadow-sm",
         "data-[state=inactive]:border-border bg-background text-muted-foreground"
       ),
-      activeTrigger: "border-emerald-600 bg-emerald-50 text-emerald-900 shadow-sm",
+      activeTrigger: "border-primary bg-primary/5 text-foreground shadow-sm",
     },
   };
 
@@ -148,7 +148,7 @@ export function TabsConfig({
                   "inline-flex items-center justify-center rounded-full text-xs font-medium",
                   isActive && variant === "pills" 
                     ? "bg-white/20 text-white" 
-                    : "bg-emerald-100 text-emerald-800",
+                    : "bg-primary/10 text-primary",
                   size === "sm" ? "h-4 w-4 text-[10px]" : "h-5 w-5"
                 )}>
                   {typeof tab.badge === "number" && tab.badge > 99 ? "99+" : tab.badge}

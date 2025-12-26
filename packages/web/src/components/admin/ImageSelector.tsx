@@ -173,7 +173,7 @@ export function ImageSelector({ selectedImage, onImageSelect, onClose }: ImageSe
                 Photo by {selectedPhoto.photographer}
               </p>
             </div>
-            <Button onClick={handleConfirmSelection} size="sm" className="bg-emerald-600 hover:bg-emerald-700">
+            <Button onClick={handleConfirmSelection} size="sm" className="bg-primary hover:bg-primary/90">
               <Check className="h-4 w-4 mr-1" />
               Use This Image
             </Button>
@@ -188,7 +188,7 @@ export function ImageSelector({ selectedImage, onImageSelect, onClose }: ImageSe
             key={photo.id}
             className={`relative group cursor-pointer rounded-lg overflow-hidden border-2 transition-all ${
               selectedPhoto?.id === photo.id
-                ? "border-emerald-500 ring-2 ring-emerald-500/20"
+                ? "border-primary ring-2 ring-ring"
                 : "border-transparent hover:border-muted-foreground/50"
             }`}
             onClick={() => handlePhotoSelect(photo)}
@@ -209,7 +209,7 @@ export function ImageSelector({ selectedImage, onImageSelect, onClose }: ImageSe
               </p>
             </div>
             {selectedPhoto?.id === photo.id && (
-              <div className="absolute top-2 right-2 bg-emerald-500 text-white rounded-full p-1">
+              <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full p-1">
                 <Check className="h-3 w-3" />
               </div>
             )}
