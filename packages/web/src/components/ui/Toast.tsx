@@ -124,17 +124,17 @@ export function AppToaster() {
         >
           {({ icon, message }) => (
             <div className={cn("flex items-start gap-3 p-4 rounded-lg shadow-lg border", 
-              t.type === 'success' ? cn(themeColors.success.bg, themeColors.success.border) :
-              t.type === 'error' ? cn(themeColors.error.bg, themeColors.error.border) :
-              (t.type as any) === 'warning' ? cn(themeColors.warning.bg, themeColors.warning.border) :
-              cn(themeColors.info.bg, themeColors.info.border)
+              t.type === 'success' ? "bg-emerald-50 dark:bg-emerald-950/50 border-emerald-200 dark:border-emerald-800" :
+              t.type === 'error' ? "bg-red-50 dark:bg-red-950/50 border-red-200 dark:border-red-800" :
+              (t.type as any) === 'warning' ? "bg-amber-50 dark:bg-amber-950/50 border-amber-200 dark:border-amber-800" :
+              "bg-blue-50 dark:bg-blue-950/50 border-blue-200 dark:border-blue-800"
             )}>
               <div className="flex-shrink-0 mt-0.5">
-                <div className={cn("p-1 rounded-full",
-                  t.type === 'success' ? themeColors.success.bg :
-                  t.type === 'error' ? themeColors.error.bg :
-                  (t.type as any) === 'warning' ? themeColors.warning.bg :
-                  themeColors.info.bg
+                <div className={cn("p-1.5 rounded-full",
+                  t.type === 'success' ? "bg-emerald-100 dark:bg-emerald-900/50" :
+                  t.type === 'error' ? "bg-red-100 dark:bg-red-900/50" :
+                  (t.type as any) === 'warning' ? "bg-amber-100 dark:bg-amber-900/50" :
+                  "bg-blue-100 dark:bg-blue-900/50"
                 )}>
                   {icon}
                 </div>
@@ -155,13 +155,14 @@ export function AppToaster() {
                 size="icon"
                 onClick={() => toast.dismiss(t.id)}
                 className={cn(
+                  "h-6 w-6",
                   t.type === 'success'
-                    ? cn(themeColors.success.text, "hover:bg-green-100")
+                    ? "text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/50"
                     : t.type === 'error'
-                    ? cn(themeColors.error.text, "hover:bg-red-100")
+                    ? "text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50"
                     : (t.type as any) === 'warning'
-                    ? cn(themeColors.warning.text, "hover:bg-amber-100")
-                    : cn(themeColors.info.text, "hover:bg-sky-100")
+                    ? "text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/50"
+                    : "text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50"
                 )}
                 aria-label="Dismiss notification"
               >
