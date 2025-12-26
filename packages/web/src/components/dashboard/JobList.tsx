@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -160,7 +160,8 @@ export function JobList({
     return filtered;
   }, [applications, searchQuery, selectedStatus, showRecruitmentAgency, sortBy]);
 
-  const handleDeleteClick = async (applicationId: string) => {
+  // Memoize delete handler to prevent JobDataTable re-renders
+  const handleDeleteClick = useCallback(async (applicationId: string) => {
     try {
       await dashboardApi.deleteApplication(applicationId);
       showSuccess("Application deleted", "The job application has been removed.");
@@ -169,7 +170,8 @@ export function JobList({
       showError("Delete failed", "Unable to delete application. Please try again.");
       console.error("Delete application error:", error);
     }
-  };
+  }, [onChanged]);
+
 
 
   return (

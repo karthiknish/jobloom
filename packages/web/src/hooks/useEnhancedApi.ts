@@ -29,6 +29,11 @@ interface UseApiOptions extends ApiResponseOptions {
   cacheTime?: number;
   retries?: number;
   retryDelay?: number;
+  /**
+   * When true, return stale cached data immediately while refetching in background.
+   * This provides a faster perceived load time for cached resources.
+   */
+  staleWhileRevalidate?: boolean;
 }
 
 // Return type for the hook
@@ -125,7 +130,8 @@ export function useEnhancedApi<T = any>(
       showGlobalError: optShowGlobalError = true,
       showLocalError: optShowLocalError = true,
       customErrorHandler: optCustomErrorHandler,
-      cacheTime: optCacheTime = 5 * 60 * 1000
+      cacheTime: optCacheTime = 5 * 60 * 1000,
+      staleWhileRevalidate: optSWR = false
     } = currentOptions;
 
     try {
@@ -133,7 +139,11 @@ export function useEnhancedApi<T = any>(
       const cacheKey = JSON.stringify({ fn: executeRef.current.name, args });
       const cached = apiCache.get(cacheKey);
       
-      if (cached && Date.now() - cached.timestamp < cached.ttl) {
+      const isCacheValid = cached && Date.now() - cached.timestamp < cached.ttl;
+      const isCacheStale = cached && !isCacheValid;
+      
+      // Return fresh cached data immediately
+      if (isCacheValid) {
         setState({
           data: cached.data,
           loading: false,
@@ -144,6 +154,21 @@ export function useEnhancedApi<T = any>(
         
         if (optOnSuccess) optOnSuccess(cached.data);
         return cached.data;
+      }
+      
+      // Stale-while-revalidate: return stale data immediately, refetch in background
+      if (optSWR && isCacheStale) {
+        setState({
+          data: cached.data,
+          loading: true, // Show loading indicator for background refetch
+          error: null,
+          lastUpdated: cached.timestamp,
+          requestId: 'stale'
+        });
+        
+        if (optOnSuccess) optOnSuccess(cached.data);
+        
+        // Continue to refetch in background (don't return early)
       }
 
       // Execute API call

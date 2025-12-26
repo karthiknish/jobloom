@@ -183,7 +183,8 @@ interface SearchResultItemProps {
   onMouseEnter: () => void;
 }
 
-function SearchResultItem({
+// Memoized to prevent re-renders when other search results change
+const SearchResultItem = React.memo(function SearchResultItem({
   result,
   isSelected,
   onClick,
@@ -231,6 +232,7 @@ function SearchResultItem({
       )}
     </motion.button>
   );
-}
+});
+
 
 export default GlobalSearch;

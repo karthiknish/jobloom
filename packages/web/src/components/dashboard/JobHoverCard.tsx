@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useMemo } from "react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,9 +29,15 @@ interface JobHoverCardProps {
   onViewDetails?: (application: Application) => void;
 }
 
-export function JobHoverCard({ application, children, onViewDetails }: JobHoverCardProps) {
-  const getStatusIcon = (status: string) => {
-    switch (status) {
+// Memoized to prevent re-renders when parent list updates other items
+export const JobHoverCard = React.memo(function JobHoverCard({ 
+  application, 
+  children, 
+  onViewDetails 
+}: JobHoverCardProps) {
+  // Memoize status-dependent values
+  const statusIcon = useMemo(() => {
+    switch (application.status) {
       case "applied":
         return <Clock className="h-4 w-4 text-blue-500" />;
       case "offered":
@@ -40,10 +47,10 @@ export function JobHoverCard({ application, children, onViewDetails }: JobHoverC
       default:
         return <Clock className="h-4 w-4 text-muted-foreground" />;
     }
-  };
+  }, [application.status]);
 
-  const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
-    switch (status) {
+  const statusVariant = useMemo((): "default" | "secondary" | "destructive" | "outline" => {
+    switch (application.status) {
       case "applied":
         return "default";
       case "offered":
@@ -53,7 +60,8 @@ export function JobHoverCard({ application, children, onViewDetails }: JobHoverC
       default:
         return "outline";
     }
-  };
+  }, [application.status]);
+
 
   return (
     <HoverCard>
@@ -106,8 +114,8 @@ export function JobHoverCard({ application, children, onViewDetails }: JobHoverC
 
           {/* Status */}
           <div className="flex items-center gap-2">
-            {getStatusIcon(application.status)}
-            <Badge variant={getStatusVariant(application.status)} className="text-xs">
+            {statusIcon}
+            <Badge variant={statusVariant} className="text-xs">
               {application.status}
             </Badge>
           </div>
@@ -168,4 +176,5 @@ export function JobHoverCard({ application, children, onViewDetails }: JobHoverC
       </HoverCardContent>
     </HoverCard>
   );
-}
+});
+

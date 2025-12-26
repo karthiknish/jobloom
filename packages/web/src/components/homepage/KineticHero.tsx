@@ -4,9 +4,11 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle, FileText, Sparkles, Zap } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import Marquee from "@/components/ui/Marquee";
 import { animations } from "@/styles/animations";
+
 
 const words = ["HIRED", "PROMOTED", "NOTICED", "CONFIDENT"];
 
@@ -244,10 +246,13 @@ export function KineticHero() {
             { name: "Uber", logo: "/logos/uber.svg" },
           ].map((company) => (
             <div key={company.name} className="mx-6 flex items-center justify-center">
-              <img 
+              <Image 
                 src={company.logo} 
-                alt={company.name} 
-                className="h-10 max-w-[150px] object-contain opacity-40 grayscale hover:opacity-100 hover:grayscale-0 transition-all duration-medium" 
+                alt={company.name}
+                width={150}
+                height={40}
+                className="h-10 w-auto object-contain opacity-40 grayscale hover:opacity-100 hover:grayscale-0 transition-all duration-medium"
+                loading="lazy"
               />
             </div>
           ))}

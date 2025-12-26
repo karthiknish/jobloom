@@ -15,11 +15,10 @@ export function SafeImg({
   ...props
 }: SafeImgProps) {
   const normalizedSrc = typeof src === "string" && src.trim().length > 0 ? src : undefined;
-  const [currentSrc, setCurrentSrc] = React.useState<string | undefined>(normalizedSrc);
-
-  React.useEffect(() => {
-    setCurrentSrc(normalizedSrc);
-  }, [normalizedSrc]);
+  
+  // Use fallback flag instead of syncing state with props
+  const [useFallback, setUseFallback] = React.useState(false);
+  const currentSrc = useFallback ? fallbackSrc : normalizedSrc;
 
   if (!currentSrc) return null;
 
@@ -28,12 +27,15 @@ export function SafeImg({
       {...props}
       src={currentSrc}
       referrerPolicy={referrerPolicy ?? "no-referrer"}
+      loading="lazy"
+      decoding="async"
       onError={(event) => {
-        if (fallbackSrc && currentSrc !== fallbackSrc) {
-          setCurrentSrc(fallbackSrc);
+        if (!useFallback && fallbackSrc) {
+          setUseFallback(true);
         }
         onError?.(event);
       }}
     />
   );
 }
+
