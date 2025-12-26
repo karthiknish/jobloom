@@ -2,6 +2,7 @@ import { z } from "zod";
 import { withApi, OPTIONS } from "@/lib/api/withApi";
 import { checkFirebaseHealth, getInitializationStatus } from "@/firebase/admin";
 import { ServiceUnavailableError } from "@/lib/api/errorResponse";
+import { getAllCircuitStatuses, CircuitState } from "@/lib/api/circuitBreaker";
 
 // Re-export OPTIONS for CORS preflight
 export { OPTIONS };
@@ -27,13 +28,27 @@ export const GET = withApi({
     return basicHealth;
   }
   
-  // For detailed health checks, include Firebase status
+  // For detailed health checks, include Firebase status and circuit breakers
   const firebaseHealth = await checkFirebaseHealth();
   const initStatus = getInitializationStatus();
+  const circuitStatuses = getAllCircuitStatuses();
+  
+  // Count open circuits
+  const openCircuits = Object.entries(circuitStatuses)
+    .filter(([_, status]) => status.state === CircuitState.OPEN)
+    .map(([name]) => name);
+  
+  // Determine overall status
+  let overallStatus = "ok";
+  if (!firebaseHealth.healthy) {
+    overallStatus = "degraded";
+  } else if (openCircuits.length > 0) {
+    overallStatus = "partial";
+  }
   
   const detailedHealth = {
     ...basicHealth,
-    status: firebaseHealth.healthy ? "ok" : "degraded",
+    status: overallStatus,
     firebase: {
       healthy: firebaseHealth.healthy,
       latencyMs: firebaseHealth.latencyMs,
@@ -41,11 +56,16 @@ export const GET = withApi({
       projectId: initStatus.projectId,
       error: firebaseHealth.error
     },
+    circuits: {
+      statuses: circuitStatuses,
+      openCircuits,
+      allHealthy: openCircuits.length === 0
+    },
     environment: process.env.NODE_ENV,
     uptime: process.uptime ? Math.floor(process.uptime()) : undefined
   };
   
-  // For degraded status, throw ServiceUnavailableError
+  // For degraded status (Firebase down), throw ServiceUnavailableError
   if (!firebaseHealth.healthy) {
     throw new ServiceUnavailableError(
       "Firebase is unreachable or unhealthy",
