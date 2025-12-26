@@ -142,14 +142,29 @@ export class JobManager {
     return this.loadJobsInFlight;
   }
   
+  private static readonly BATCH_SIZE = 20;
+  private renderedCount = 0;
+  private observer: IntersectionObserver | null = null;
+  
   private async renderJobs(): Promise<void> {
     const jobList = document.getElementById("job-list") as HTMLElement;
     
     if (!jobList) return;
     
+    // Show enhanced empty state if no jobs
     if (this.jobs.length === 0) {
-      this.renderEmptyState();
+      // Show the enhanced empty state
+      const emptyState = document.getElementById("empty-state");
+      if (emptyState) {
+        emptyState.classList.remove("hidden");
+      }
       return;
+    }
+    
+    // Hide empty state
+    const emptyState = document.getElementById("empty-state");
+    if (emptyState) {
+      emptyState.classList.add("hidden");
     }
     
     // Update job count
@@ -158,31 +173,103 @@ export class JobManager {
       jobCount.textContent = this.jobs.length.toString();
     }
     
+    // Store job count for skeleton loader
+    chrome.storage.local.set({ cachedJobCount: this.jobs.length });
+    
     // Check if UK filters are enabled
     const ukFiltersEnabled = await this.checkUKFiltersEnabled();
     
-    const jobsHTML = this.jobs.map(job => {
-      // Add pending indicator if needed
-      let html = createJobItemHTML(job, ukFiltersEnabled);
-      if ((job as any).isPending) {
-        // Inject pending badge (hacky but works without changing createJobItemHTML signature too much)
-        html = html.replace('<div class="job-card">', '<div class="job-card pending-job" style="opacity: 0.7; border-left: 3px solid orange;">');
-        html = html.replace('<h3 class="job-title">', '<h3 class="job-title"><span style="font-size: 10px; background: orange; color: white; padding: 2px 4px; border-radius: 4px; margin-right: 4px;">QUEUED</span>');
-      }
-      
-      // If UK filters are enabled, check eligibility
-      if (ukFiltersEnabled && job.sponsored && !(job as any).isPending) {
-        this.checkUKEligibilityForJob(job.id);
-      }
-      
-      return html;
-    }).join('');
+    // Reset state for fresh render
+    this.renderedCount = 0;
+    jobList.innerHTML = '';
     
-    jobList.innerHTML = jobsHTML;
+    // Disconnect previous observer
+    if (this.observer) {
+      this.observer.disconnect();
+      this.observer = null;
+    }
+    
+    // Render first batch immediately
+    this.renderBatch(jobList, ukFiltersEnabled);
+    
+    // Setup intersection observer for infinite scroll
+    if (this.jobs.length > JobManager.BATCH_SIZE) {
+      this.setupScrollObserver(jobList, ukFiltersEnabled);
+    }
     
     // Update active filter button
     popupUI.setActiveFilter(this.activeFilter);
   }
+  
+  private renderBatch(container: HTMLElement, ukFiltersEnabled: boolean): void {
+    const startIndex = this.renderedCount;
+    const endIndex = Math.min(startIndex + JobManager.BATCH_SIZE, this.jobs.length);
+    
+    if (startIndex >= this.jobs.length) return;
+    
+    const fragment = document.createDocumentFragment();
+    
+    for (let i = startIndex; i < endIndex; i++) {
+      const job = this.jobs[i];
+      let html = createJobItemHTML(job, ukFiltersEnabled);
+      
+      // Add pending indicator if needed
+      if ((job as any).isPending) {
+        html = html.replace('<div class="job-card">', '<div class="job-card pending-job" style="opacity: 0.7; border-left: 3px solid orange;">');
+        html = html.replace('<h3 class="job-title">', '<h3 class="job-title"><span style="font-size: 10px; background: orange; color: white; padding: 2px 4px; border-radius: 4px; margin-right: 4px;">QUEUED</span>');
+      }
+      
+      // Create DOM element from HTML
+      const template = document.createElement('template');
+      template.innerHTML = html.trim();
+      const element = template.content.firstChild as HTMLElement;
+      
+      fragment.appendChild(element);
+      
+      // Check eligibility for sponsored jobs
+      if (ukFiltersEnabled && job.sponsored && !(job as any).isPending) {
+        this.checkUKEligibilityForJob(job.id);
+      }
+    }
+    
+    container.appendChild(fragment);
+    this.renderedCount = endIndex;
+  }
+  
+  private setupScrollObserver(container: HTMLElement, ukFiltersEnabled: boolean): void {
+    // Create sentinel element for infinite scroll
+    const sentinel = document.createElement('div');
+    sentinel.className = 'scroll-sentinel';
+    sentinel.style.cssText = 'height: 1px; width: 100%;';
+    container.appendChild(sentinel);
+    
+    this.observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting && this.renderedCount < this.jobs.length) {
+            // Remove old sentinel
+            sentinel.remove();
+            
+            // Render next batch
+            this.renderBatch(container, ukFiltersEnabled);
+            
+            // Add new sentinel if more items remain
+            if (this.renderedCount < this.jobs.length) {
+              container.appendChild(sentinel);
+            }
+          }
+        });
+      },
+      {
+        root: container.closest('.app-content'),
+        rootMargin: '100px',
+        threshold: 0
+      }
+    );
+    
+    this.observer.observe(sentinel);
+  }
+
   
   private renderEmptyState(errorMessage?: string): void {
     const jobList = document.getElementById("job-list") as HTMLElement;

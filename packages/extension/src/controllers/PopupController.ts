@@ -5,6 +5,8 @@ import { popupUI } from "../components/UI/PopupUI";
 import { sanitizeBaseUrl, DEFAULT_WEB_APP_URL } from "../constants";
 import { fetchSubscriptionStatus } from "../rateLimiter";
 import type { SubscriptionStatus } from "../rateLimiter";
+import { Onboarding } from "../components/Onboarding";
+import { connectivityStatus } from "../components/ConnectivityStatus";
 import {
   signInWithGoogle,
   signInWithEmail,
@@ -32,9 +34,24 @@ export class PopupController {
     if (this.isInitialized) return;
 
     try {
+      // Show cached job count immediately for better UX
+      this.showCachedJobCount();
+      
       // Show loading state during initialization
       popupUI.showSkeletonLoader(true);
       popupUI.toggleGlobalLoading(true);
+
+
+      // Check if onboarding should be shown (first-time users)
+      const shouldShowOnboarding = await Onboarding.shouldShow();
+      if (shouldShowOnboarding) {
+        const onboarding = new Onboarding({
+          onComplete: () => this.loadInitialData(),
+          onSkip: () => this.loadInitialData(),
+        });
+        (window as any).onboardingInstance = onboarding;
+        onboarding.show();
+      }
 
       // Initialize settings first
       await settingsManager.loadSettings();
@@ -100,15 +117,48 @@ export class PopupController {
       });
     });
 
-    // Job filters
-    document.querySelectorAll('.filter-pill').forEach(filter => {
+    // Job filters with keyboard navigation
+    const filterPills = document.querySelectorAll('.filter-pill');
+    filterPills.forEach((filter, index) => {
       filter.addEventListener('click', () => {
         const filterType = (filter as HTMLElement).dataset.filter;
         if (filterType !== undefined) {
-          jobManager.loadJobs(filterType);
+          this.activateFilter(filterType, filter as HTMLElement);
+        }
+      });
+
+      // Keyboard navigation for filter pills
+      filter.addEventListener('keydown', (e: Event) => {
+        const keyEvent = e as KeyboardEvent;
+        let targetIndex = -1;
+
+        if (keyEvent.key === 'ArrowRight' || keyEvent.key === 'ArrowDown') {
+          targetIndex = (index + 1) % filterPills.length;
+          keyEvent.preventDefault();
+        } else if (keyEvent.key === 'ArrowLeft' || keyEvent.key === 'ArrowUp') {
+          targetIndex = (index - 1 + filterPills.length) % filterPills.length;
+          keyEvent.preventDefault();
+        } else if (keyEvent.key === 'Home') {
+          targetIndex = 0;
+          keyEvent.preventDefault();
+        } else if (keyEvent.key === 'End') {
+          targetIndex = filterPills.length - 1;
+          keyEvent.preventDefault();
+        } else if (keyEvent.key === 'Enter' || keyEvent.key === ' ') {
+          const filterType = (filter as HTMLElement).dataset.filter;
+          if (filterType !== undefined) {
+            this.activateFilter(filterType, filter as HTMLElement);
+          }
+          keyEvent.preventDefault();
+        }
+
+        if (targetIndex !== -1) {
+          const targetFilter = filterPills[targetIndex] as HTMLElement;
+          targetFilter.focus();
         }
       });
     });
+
 
     // Settings event listeners
     settingsManager.setupEventListeners();
@@ -129,7 +179,34 @@ export class PopupController {
       e.preventDefault();
       this.handleForgotPassword();
     });
+
+    // Empty State Buttons
+    document.getElementById('open-linkedin-btn')?.addEventListener('click', () => {
+      chrome.tabs.create({ url: 'https://www.linkedin.com/jobs/' });
+    });
+
+    document.getElementById('open-indeed-btn')?.addEventListener('click', () => {
+      chrome.tabs.create({ url: 'https://www.indeed.co.uk/jobs' });
+    });
+
+    // Retry sync event from ConnectivityStatus
+    window.addEventListener('sync-retry', () => {
+      this.handleSync();
+    });
   }
+
+  private activateFilter(filterType: string, clickedElement: HTMLElement): void {
+    // Update aria-pressed for all filter pills
+    document.querySelectorAll('.filter-pill').forEach(pill => {
+      const isActive = (pill as HTMLElement).dataset.filter === filterType;
+      pill.setAttribute('aria-pressed', isActive.toString());
+      pill.classList.toggle('active', isActive);
+    });
+
+    // Load filtered jobs
+    jobManager.loadJobs(filterType);
+  }
+
 
   private handleTabSwitch(targetTab: string): void {
     popupUI.switchTab(targetTab);
@@ -300,14 +377,32 @@ export class PopupController {
   private async handleSync() {
     if (!authManager.isAuthenticated()) return;
 
+    // Check if online
+    if (!connectivityStatus.isOnline()) {
+      popupUI.showWarning('You are offline. Sync will resume when connected.');
+      return;
+    }
+
     popupUI.setSyncing(true);
+    
     try {
-      await jobManager.loadJobs();
-      await this.loadStats();
+      // Use connectivity status for retry handling
+      await connectivityStatus.executeWithRetry(
+        async () => {
+          await jobManager.loadJobs();
+          await this.loadStats();
+          await connectivityStatus.updatePendingCount();
+        },
+        (attempt, delay) => {
+          console.log(`Sync retry attempt ${attempt}, delay ${delay}ms`);
+        }
+      );
+      
       popupUI.showSuccess('Jobs synced successfully');
     } catch (error) {
       console.error('Sync failed:', error);
-      popupUI.showError('Failed to sync jobs');
+      const message = error instanceof Error ? error.message : 'Failed to sync jobs';
+      popupUI.showError(message);
     } finally {
       popupUI.setSyncing(false);
     }
@@ -350,7 +445,12 @@ export class PopupController {
       }).length;
 
       // Update UI
-      popupUI.setElementText('jobs-count-display', totalTracked.toString());
+      const jobCountDisplay = document.getElementById('jobs-count-display');
+      if (jobCountDisplay) {
+        jobCountDisplay.textContent = totalTracked.toString();
+        jobCountDisplay.style.opacity = '1'; // Reset from loading state
+      }
+
 
       const weeklyDisplay = document.getElementById('weekly-count-display');
       if (weeklyDisplay) {
@@ -361,6 +461,20 @@ export class PopupController {
       console.error('Error loading stats:', error);
     }
   }
+
+  private showCachedJobCount(): void {
+    // Show cached job count immediately for instant feedback
+    chrome.storage.local.get(['cachedJobCount'], (result) => {
+      if (result.cachedJobCount && result.cachedJobCount > 0) {
+        const jobCount = document.getElementById('jobs-count-display');
+        if (jobCount) {
+          jobCount.textContent = result.cachedJobCount.toString();
+          jobCount.style.opacity = '0.6'; // Indicate it's loading
+        }
+      }
+    });
+  }
+
 
   public async refreshData(): Promise<void> {
     if (!authManager.isAuthenticated()) return;

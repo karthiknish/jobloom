@@ -9,6 +9,8 @@ import {
 import { EnhancedJobBoardManager } from "../enhancedAddToBoard";
 import { UnifiedJobParser, type JobData as EnhancedJobData } from "../parsers";
 import { isLikelyPlaceholderCompany, normalizeCompanyName } from "../utils/companyName";
+import { QuickNotes } from "./QuickNotes";
+import { JobEditModal } from "./JobEditModal";
 
 export interface SponsorshipCheckResult {
   company: string;
@@ -534,13 +536,140 @@ export class JobTracker {
     return addButton;
   }
 
+  private createNoteButton(card: Element): HTMLButtonElement {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "hireall-quick-note-btn";
+    button.style.cssText = `
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: none;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      background: rgba(107, 114, 128, 0.8);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      transition: all 0.2s ease;
+    `;
+    button.innerHTML = `${UIComponents.createIcon("edit3", 12, "#fff")} <span>Note</span>`;
+    button.title = "Add a quick note";
+
+    button.addEventListener("click", async (event) => {
+      event.stopPropagation();
+      
+      // Get job data for this card
+      const jobData = await UnifiedJobParser.extractJobFromElement(card, window.location.href);
+      if (!jobData) {
+        UIComponents.showToast("Failed to get job data", { type: "error" });
+        return;
+      }
+
+      // Create a temporary ID if job hasn't been saved yet
+      const jobId = (jobData as any).id || `temp-${Date.now()}`;
+      
+      // Create and show quick notes
+      const quickNotes = new QuickNotes(jobId, "", {
+        onSave: (note) => {
+          // Update button appearance
+          button.style.background = note ? EXT_COLORS.warning : 'rgba(107, 114, 128, 0.8)';
+          button.innerHTML = note 
+            ? `${UIComponents.createIcon("fileText", 12, "#fff")} <span>Note</span>`
+            : `${UIComponents.createIcon("edit3", 12, "#fff")} <span>Note</span>`;
+        }
+      });
+      
+      // Toggle the panel
+      const panel = button.parentElement?.querySelector(".hireall-quick-notes-panel");
+      if (panel) {
+        panel.remove();
+      } else {
+        // Create button that toggles
+        const noteBtn = quickNotes.createButton();
+        noteBtn.click(); // Trigger the panel to open
+        // Replace our button with the QuickNotes button
+        button.replaceWith(noteBtn);
+      }
+    });
+
+    return button;
+  }
+
+  private createEditButton(card: Element): HTMLButtonElement {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "hireall-edit-job-btn";
+    button.style.cssText = `
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      border: none;
+      font-size: 11px;
+      cursor: pointer;
+      background: rgba(107, 114, 128, 0.15);
+      color: #6b7280;
+      transition: all 0.2s ease;
+    `;
+    button.innerHTML = UIComponents.createIcon("edit2", 14, "#6b7280");
+    button.title = "Edit job details";
+
+    button.addEventListener("mouseenter", () => {
+      button.style.background = EXT_COLORS.info;
+      button.innerHTML = UIComponents.createIcon("edit2", 14, "#fff");
+    });
+
+    button.addEventListener("mouseleave", () => {
+      button.style.background = "rgba(107, 114, 128, 0.15)";
+      button.innerHTML = UIComponents.createIcon("edit2", 14, "#6b7280");
+    });
+
+    button.addEventListener("click", async (event) => {
+      event.stopPropagation();
+
+      // Get job data for this card
+      const jobData = await UnifiedJobParser.extractJobFromElement(card, window.location.href);
+      if (!jobData) {
+        UIComponents.showToast("Failed to get job data", { type: "error" });
+        return;
+      }
+
+      // Create edit modal
+      const modal = new JobEditModal(
+        {
+          id: (jobData as any).id || `temp-${Date.now()}`,
+          title: jobData.title,
+          company: jobData.company,
+          location: jobData.location,
+          salary: jobData.salary?.original || "",
+          status: "interested",
+        },
+        (updatedData) => {
+          // Optionally refresh the card display
+          UIComponents.showToast("Job details updated", { type: "success" });
+        }
+      );
+
+      modal.show();
+    });
+
+    return button;
+  }
+
   private syncControlButtons(controls: HTMLDivElement, card: Element): void {
+    // Add button (always present)
     let addButton = controls.querySelector<HTMLButtonElement>(".hireall-add-to-board");
     if (!addButton) {
       addButton = this.createAddButton(card);
       controls.appendChild(addButton);
     }
 
+    // Sponsor button (conditional)
     const existingSponsor = controls.querySelector<HTMLButtonElement>(".hireall-check-sponsorship");
     if (this.sponsorButtonsEnabled) {
       if (!existingSponsor) {
@@ -549,6 +678,18 @@ export class JobTracker {
       }
     } else if (existingSponsor) {
       existingSponsor.remove();
+    }
+
+    // Note button (new)
+    if (!controls.querySelector<HTMLButtonElement>(".hireall-quick-note-btn")) {
+      const noteButton = this.createNoteButton(card);
+      controls.appendChild(noteButton);
+    }
+
+    // Edit button (new)
+    if (!controls.querySelector<HTMLButtonElement>(".hireall-edit-job-btn")) {
+      const editButton = this.createEditButton(card);
+      controls.appendChild(editButton);
     }
   }
 

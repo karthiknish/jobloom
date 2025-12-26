@@ -74,8 +74,8 @@ export function SettingsLayout({
             />
 
             {/* Main Content */}
-            <div className="flex-1">
-              <div className="space-y-6">
+            <div className="flex-1 min-w-0">
+              <div className="space-y-6 max-h-[calc(100vh-12rem)] lg:max-h-none overflow-y-auto lg:overflow-visible px-1 -mx-1">
                 <SettingsTabs
                   activeTab={activeTab}
                   onTabChange={onTabChange}
@@ -90,6 +90,7 @@ export function SettingsLayout({
               </div>
             </div>
           </div>
+
         </div>
       </div>
     </div>

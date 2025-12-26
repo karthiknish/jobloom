@@ -70,3 +70,103 @@ body {
 .hidden {
     display: none !important;
 }
+
+/* Sync Status Bar */
+.sync-status-bar {
+    display: none;
+    padding: 8px 16px;
+    font-size: 12px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-card);
+}
+
+.sync-status-bar.visible {
+    display: block;
+}
+
+.status-offline,
+.status-syncing,
+.status-error,
+.status-success {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.status-dot.online {
+    background: var(--primary);
+    box-shadow: 0 0 6px var(--primary);
+}
+
+.status-dot.offline {
+    background: var(--accent-orange);
+    animation: pulse-dot 2s infinite;
+}
+
+.status-dot.error {
+    background: var(--accent-red);
+}
+
+@keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.sync-spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--border);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.pending-badge {
+    background: var(--accent-orange);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 600;
+    margin-left: auto;
+}
+
+.retry-btn {
+    margin-left: auto;
+    padding: 4px 12px;
+    border-radius: 6px;
+    border: none;
+    background: var(--primary);
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.retry-btn:hover {
+    background: var(--primary-dark);
+}
+
+.status-offline {
+    color: var(--accent-orange);
+}
+
+.status-error {
+    color: var(--accent-red);
+}
+
+.status-success {
+    color: var(--text-secondary);
+}

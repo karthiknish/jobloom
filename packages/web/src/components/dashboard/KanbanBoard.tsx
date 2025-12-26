@@ -160,16 +160,16 @@ export function KanbanBoard({
           </div>
         )}
 
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 pb-2">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 pb-2">
       {columns.map((col) => (
         <div key={col} className="w-full min-w-0 flex flex-col bg-muted/30 rounded-xl border border-border/50 max-h-[calc(100vh-var(--header-height-desktop)-var(--dashboard-header-height)-var(--dashboard-tabs-height)-2rem)]">
           <TooltipProvider>
             <div className="p-3 flex items-center justify-between border-b border-border/50 bg-background/50 backdrop-blur-sm rounded-t-xl sticky top-0 z-10">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className="flex items-center gap-2 cursor-help">
-                    <span className="font-semibold text-sm capitalize text-foreground/80">{col}</span>
-                    <span className="bg-muted text-muted-foreground text-xs px-2 py-0.5 rounded-full font-medium">
+                  <div className="flex items-center gap-2 cursor-help min-w-0">
+                    <span className="font-semibold text-sm capitalize text-foreground/80 truncate">{col}</span>
+                    <span className="bg-muted text-muted-foreground text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0">
                       {byCol[col].length}
                     </span>
                   </div>
@@ -178,7 +178,7 @@ export function KanbanBoard({
                   <p>{statusTooltips[col]}</p>
                 </TooltipContent>
               </Tooltip>
-              <div className="scale-90 origin-right">
+              <div className="scale-90 origin-right flex-shrink-0">
                 {statusBadge[col]}
               </div>
             </div>
@@ -214,23 +214,24 @@ export function KanbanBoard({
                       setActiveDrop(null);
                     }}
                     className={`
-                      group relative rounded-lg bg-card border border-border/60 p-3 shadow-sm 
+                      group relative rounded-lg bg-card border border-border/60 p-3 shadow-sm min-w-0
                       hover:shadow-md hover:border-primary/30 motion-surface cursor-grab active:cursor-grabbing
                       ${draggedId === a._id ? 'opacity-50 ring-2 ring-primary ring-offset-2' : ''}
                     `}
                   >
-                    <div className="font-medium text-sm text-foreground mb-1 line-clamp-2 leading-tight">
+                    <div className="font-medium text-sm text-foreground mb-1 line-clamp-2 leading-tight break-words">
                       {a.job?.title}
                     </div>
-                    <div className="text-xs text-muted-foreground mb-3 flex items-center gap-1 truncate">
-                      <span className="font-medium text-foreground/70">{a.job?.company}</span>
+                    <div className="text-xs text-muted-foreground mb-3 flex items-center gap-1 min-w-0">
+                      <span className="font-medium text-foreground/70 truncate">{a.job?.company}</span>
                       {a.job?.location && (
                         <>
-                          <span>•</span>
+                          <span className="flex-shrink-0">•</span>
                           <span className="truncate">{a.job?.location}</span>
                         </>
                       )}
                     </div>
+
                     
                     <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/30">
                       <div className="text-[10px] text-muted-foreground">

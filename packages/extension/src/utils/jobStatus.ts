@@ -66,13 +66,15 @@ function getCompanyColor(company: string): string {
 
 function getCompanyLogoHTML(company: string, logoUrl?: string): string {
   if (logoUrl) {
-    return `<img src="${logoUrl}" alt="${company}" class="company-logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+    // Use lazy loading for images to improve performance
+    return `<img src="${logoUrl}" alt="${company}" class="company-logo-img" loading="lazy" decoding="async" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
             <div class="company-logo-placeholder" style="display:none; background-color: ${getCompanyColor(company)}">${company.charAt(0).toUpperCase()}</div>`;
   }
 
   const color = getCompanyColor(company);
   return `<div class="company-logo-placeholder" style="background-color: ${color}; color: white;">${company.charAt(0).toUpperCase()}</div>`;
 }
+
 
 export function createJobItemHTML(job: JobStatus, showEligibility?: boolean): string {
   const statusColor = getStatusColor(job.status);
@@ -91,11 +93,22 @@ export function createJobItemHTML(job: JobStatus, showEligibility?: boolean): st
 
   const pendingClass = job.isPending ? 'pending-job' : '';
   const pendingBadge = job.isPending
-    ? `<span class="tag" style="background: rgba(245, 158, 11, 0.1); color: rgb(245, 158, 11);">${createSVGString("clock", 12)} Queued</span>`
+    ? `<span class="tag" style="background: rgba(245, 158, 11, 0.1); color: rgb(245, 158, 11);" aria-label="Queued for sync">${createSVGString("clock", 12)} Queued</span>`
     : '';
 
+  // Build aria-label for screen readers
+  const ariaLabel = `${job.title} at ${job.company}${job.location ? `, ${job.location}` : ''}. Status: ${getStatusLabel(job.status)}${job.sponsored ? '. Visa sponsorship available' : ''}`;
+
   return `
-    <div class="job-card ${pendingClass}" data-status="${job.status}" data-sponsored="${job.sponsored}" data-job-id="${job.id}" style="${job.isPending ? 'opacity: 0.8; border-left: 3px solid #f59e0b;' : ''}">
+    <div class="job-card ${pendingClass}" 
+         role="article" 
+         tabindex="0"
+         aria-label="${ariaLabel}"
+         aria-describedby="job-status-${job.id}"
+         data-status="${job.status}" 
+         data-sponsored="${job.sponsored}" 
+         data-job-id="${job.id}" 
+         style="${job.isPending ? 'opacity: 0.8; border-left: 3px solid #f59e0b;' : ''}">
       <div class="job-header">
         ${companyLogoHTML}
         <div class="job-info">
@@ -103,11 +116,12 @@ export function createJobItemHTML(job: JobStatus, showEligibility?: boolean): st
           <div class="job-company">${job.company}</div>
           <div class="job-meta">
             <span>${job.location}</span>
-            <span class="meta-dot"></span>
+            <span class="meta-dot" aria-hidden="true"></span>
             <span>${dateDisplay}</span>
           </div>
         </div>
       </div>
+
       
       <div class="job-tags">
         ${pendingBadge}

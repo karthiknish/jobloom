@@ -243,22 +243,56 @@ export class PopupUI {
     }
   }
 
-  showSkeletonLoader(show: boolean) {
+  async showSkeletonLoader(show: boolean, count?: number) {
     const skeleton = document.getElementById('jobs-skeleton');
     const emptyState = document.querySelector('.empty-state');
-    const jobListContainer = document.getElementById('job-list');
-
-    // Hide actual jobs if they exist (optional, depending on behavior)
-    // const actualJobs = document.querySelectorAll('.job-card');
-    // actualJobs.forEach(job => job.classList.toggle('hidden', show));
+    const loadingState = document.querySelector('.loading-state');
+    const loadingText = loadingState?.querySelector('span');
 
     if (show) {
-      skeleton?.classList.remove('hidden');
+      // Get cached job count for dynamic skeleton
+      let skeletonCount = count ?? 3;
+      
+      if (!count) {
+        try {
+          const result = await new Promise<{ cachedJobCount?: number }>((resolve) => {
+            chrome.storage.local.get(['cachedJobCount'], (data) => resolve(data));
+          });
+          if (result.cachedJobCount && result.cachedJobCount > 0) {
+            skeletonCount = Math.min(result.cachedJobCount, 10); // Cap at 10 skeletons
+          }
+        } catch (e) {
+          // Fallback to default
+        }
+      }
+      
+      // Update loading message with count
+      if (loadingText && skeletonCount > 1) {
+        loadingText.textContent = `Loading ${skeletonCount} jobs...`;
+      }
+      
+      // Generate dynamic skeleton cards
+      if (skeleton) {
+        const skeletonHTML = Array(skeletonCount).fill(0).map(() => `
+          <div class="skeleton-card">
+            <div class="skeleton-line title"></div>
+            <div class="skeleton-line subtitle"></div>
+            <div class="skeleton-line meta"></div>
+          </div>
+        `).join('');
+        skeleton.innerHTML = skeletonHTML;
+        skeleton.classList.remove('hidden');
+      }
+      
       emptyState?.classList.add('hidden');
     } else {
       skeleton?.classList.add('hidden');
+      if (loadingText) {
+        loadingText.textContent = 'Syncing jobs...';
+      }
     }
   }
+
 
   setSyncing(isSyncing: boolean) {
     const syncBtn = document.getElementById('sync-btn');

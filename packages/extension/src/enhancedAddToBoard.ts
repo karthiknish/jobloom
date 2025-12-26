@@ -674,6 +674,197 @@ export class EnhancedJobBoardManager {
     }
   }
 
+  // Add or append a note to a job
+  async addJobNote(jobId: string, note: string, append: boolean = false): Promise<boolean> {
+    try {
+      const userId = await this.getUserId();
+      if (!userId) {
+        throw new Error("User not authenticated");
+      }
+
+      // Get current applications
+      const applications = await get<any[]>(`/api/app/applications/user/${encodeURIComponent(userId)}`);
+      const application = applications.find(app => app.jobId === jobId);
+
+      if (application) {
+        const existingNotes = application.notes || "";
+        const newNotes = append && existingNotes 
+          ? `${existingNotes}\n---\n${new Date().toLocaleDateString()}: ${note}`
+          : note;
+
+        await put(`/api/app/applications/${application._id}`, {
+          notes: newNotes,
+          updatedAt: Date.now()
+        });
+
+        // Update local storage
+        await this.updateLocalJobNote(jobId, newNotes);
+        
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error("Failed to add job note:", error);
+      return false;
+    }
+  }
+
+  // Update local job note
+  private async updateLocalJobNote(jobId: string, notes: string): Promise<void> {
+    try {
+      const { jobBoardData } = await safeChromeStorageGet("local", ["jobBoardData"], { jobBoardData: [] as JobBoardEntry[] }, "enhancedAddToBoard");
+      
+      const updatedData = jobBoardData.map(job => {
+        if (job.id === jobId) {
+          return { ...job, notes };
+        }
+        return job;
+      });
+      
+      await new Promise<void>((resolve) => {
+        chrome.storage.local.set({ jobBoardData: updatedData }, () => resolve());
+      });
+    } catch (error) {
+      console.warn("Failed to update local job note:", error);
+    }
+  }
+
+  // Set a reminder for a job
+  async setReminder(jobId: string, reminderDate: Date, message?: string): Promise<boolean> {
+    try {
+      const { jobReminders } = await safeChromeStorageGet("local", ["jobReminders"], { jobReminders: {} as Record<string, any> }, "enhancedAddToBoard");
+      
+      const reminder = {
+        jobId,
+        reminderDate: reminderDate.getTime(),
+        message: message || "Follow up on this job",
+        createdAt: Date.now(),
+        dismissed: false
+      };
+
+      jobReminders[jobId] = reminder;
+      
+      await new Promise<void>((resolve) => {
+        chrome.storage.local.set({ jobReminders }, () => resolve());
+      });
+
+      // Schedule alarm if browser supports it
+      if (chrome.alarms) {
+        chrome.alarms.create(`job-reminder-${jobId}`, {
+          when: reminderDate.getTime()
+        });
+      }
+
+      console.log("Reminder set for job:", jobId, reminderDate);
+      return true;
+    } catch (error) {
+      console.error("Failed to set reminder:", error);
+      return false;
+    }
+  }
+
+  // Get reminder for a job
+  async getReminder(jobId: string): Promise<{ reminderDate: number; message: string } | null> {
+    try {
+      const { jobReminders } = await safeChromeStorageGet("local", ["jobReminders"], { jobReminders: {} as Record<string, any> }, "enhancedAddToBoard");
+      
+      const reminder = jobReminders[jobId];
+      if (reminder && !reminder.dismissed) {
+        return {
+          reminderDate: reminder.reminderDate,
+          message: reminder.message
+        };
+      }
+      return null;
+    } catch (error) {
+      console.warn("Failed to get reminder:", error);
+      return null;
+    }
+  }
+
+  // Dismiss a reminder
+  async dismissReminder(jobId: string): Promise<void> {
+    try {
+      const { jobReminders } = await safeChromeStorageGet("local", ["jobReminders"], { jobReminders: {} as Record<string, any> }, "enhancedAddToBoard");
+      
+      if (jobReminders[jobId]) {
+        jobReminders[jobId].dismissed = true;
+        
+        await new Promise<void>((resolve) => {
+          chrome.storage.local.set({ jobReminders }, () => resolve());
+        });
+
+        // Clear alarm
+        if (chrome.alarms) {
+          chrome.alarms.clear(`job-reminder-${jobId}`);
+        }
+      }
+    } catch (error) {
+      console.warn("Failed to dismiss reminder:", error);
+    }
+  }
+
+  // Update job details
+  async updateJobDetails(jobId: string, updates: Partial<JobBoardEntry>): Promise<boolean> {
+    try {
+      const userId = await this.getUserId();
+      if (!userId) {
+        throw new Error("User not authenticated");
+      }
+
+      // Update on server
+      await put(`/api/app/jobs/${jobId}`, {
+        ...updates,
+        userId,
+        updatedAt: Date.now()
+      });
+
+      // Update local storage
+      const { jobBoardData } = await safeChromeStorageGet("local", ["jobBoardData"], { jobBoardData: [] as JobBoardEntry[] }, "enhancedAddToBoard");
+      
+      const updatedData = jobBoardData.map(job => {
+        if (job.id === jobId) {
+          return { ...job, ...updates };
+        }
+        return job;
+      });
+      
+      await new Promise<void>((resolve) => {
+        chrome.storage.local.set({ jobBoardData: updatedData }, () => resolve());
+      });
+
+      return true;
+    } catch (error) {
+      console.error("Failed to update job details:", error);
+      return false;
+    }
+  }
+
+  // Get a single job by ID
+  async getJobById(jobId: string): Promise<JobBoardEntry | null> {
+    try {
+      // Check local storage first
+      const { jobBoardData } = await safeChromeStorageGet("local", ["jobBoardData"], { jobBoardData: [] as JobBoardEntry[] }, "enhancedAddToBoard");
+      
+      const localJob = jobBoardData.find(job => job.id === jobId);
+      if (localJob) {
+        return localJob;
+      }
+
+      // Fetch from server
+      const job = await get<any>(`/api/app/jobs/${jobId}`);
+      if (job) {
+        return this.mapToJobBoardEntry(job);
+      }
+
+      return null;
+    } catch (error) {
+      console.warn("Failed to get job by ID:", error);
+      return null;
+    }
+  }
+
   // Clear cache
   clearCache(): void {
     this.cache.clear();
