@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, FileText, Briefcase, FileCheck, ArrowRight, Clock, Command } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -20,7 +20,6 @@ interface GlobalSearchProps {
 }
 
 export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
   const {
     query,
     setQuery,
@@ -33,12 +32,9 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
     handleSelect,
   } = useGlobalSearch();
 
-  // Focus input when dialog opens
-  useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => inputRef.current?.focus(), 50);
-    }
-  }, [isOpen]);
+  // Removed: Focus useEffect - the input has `autoFocus` attribute which handles this
+  // The previous useEffect was redundant since autoFocus already focuses on mount
+
 
   // Handle close and reset
   const handleClose = () => {
@@ -56,7 +52,6 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
         <div className="flex items-center gap-3 pl-4 pr-14 py-3 border-b border-border/50">
           <Search className="h-5 w-5 text-muted-foreground flex-shrink-0" />
           <input
-            ref={inputRef}
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}

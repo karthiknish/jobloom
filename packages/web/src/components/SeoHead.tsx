@@ -1,23 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { resolveSeoMeta, getCanonicalUrl, getOgImageUrl, SITE_URL } from "@/seo.config";
 
-const baseMeta = resolveSeoMeta("/");
-
 export function SeoHead() {
-  const [meta, setMeta] = useState(baseMeta);
-  const [canonicalUrl, setCanonicalUrl] = useState(SITE_URL);
   const pathname = usePathname();
-
-  useEffect(() => {
-    const currentPath = pathname ?? "/";
-    setMeta(resolveSeoMeta(currentPath));
-    setCanonicalUrl(getCanonicalUrl(currentPath));
-  }, [pathname]);
+  
+  // Derive meta directly from pathname - no need for useState + useEffect
+  // This is a pure calculation that should happen during render
+  const currentPath = pathname ?? "/";
+  const meta = useMemo(() => resolveSeoMeta(currentPath), [currentPath]);
+  const canonicalUrl = useMemo(() => getCanonicalUrl(currentPath), [currentPath]);
 
   const ogImageUrl = getOgImageUrl(meta.ogImage);
+
 
   return (
     <>

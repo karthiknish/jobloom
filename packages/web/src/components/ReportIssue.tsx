@@ -70,20 +70,12 @@ export function ReportIssue({ position = "bottom-right", className = "" }: Repor
 
     setSubmitStatus("idle");
     setFormData(getInitialFormData());
-  }, [isOpen]);
+  }, [isOpen, user]); // Added user dependency so it gets fresh user data when modal opens
 
-  // Pre-fill user data when available
-  useEffect(() => {
-    if (!user) {
-      return;
-    }
+  // Removed: useEffect that pre-filled user data when user changes
+  // This is handled by getInitialFormData which already reads from user
+  // The modal reset effect above now has user as dependency
 
-    setFormData((prev) => ({
-      ...prev,
-      name: user.displayName || prev.name,
-      email: user.email || prev.email,
-    }));
-  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

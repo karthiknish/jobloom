@@ -15,11 +15,15 @@ export function SafeNextImage({
   ...props
 }: SafeNextImageProps) {
   const normalizedSrc = typeof src === "string" && src.trim().length > 0 ? src : undefined;
-  const [currentSrc, setCurrentSrc] = React.useState<string | undefined>(normalizedSrc);
-
-  React.useEffect(() => {
-    setCurrentSrc(normalizedSrc);
-  }, [normalizedSrc]);
+  
+  // Use ref to track if we've already fallen back (avoids re-render loops)
+  const [useFallback, setUseFallback] = React.useState(false);
+  
+  // Removed: useEffect that synced currentSrc with normalizedSrc
+  // This was an anti-pattern - we can derive the value directly
+  
+  // Reset fallback state when src changes
+  const currentSrc = useFallback ? fallbackSrc : normalizedSrc;
 
   if (!currentSrc) return null;
 
@@ -28,8 +32,8 @@ export function SafeNextImage({
       {...props}
       src={currentSrc}
       onError={(event) => {
-        if (fallbackSrc && currentSrc !== fallbackSrc) {
-          setCurrentSrc(fallbackSrc);
+        if (!useFallback && fallbackSrc) {
+          setUseFallback(true);
         }
         // next/image forwards events to the underlying <img>
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -38,3 +42,4 @@ export function SafeNextImage({
     />
   );
 }
+

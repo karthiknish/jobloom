@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -37,27 +37,29 @@ export function InlineEditableField({
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
 
-  // Update editValue when value prop changes
-  useEffect(() => {
-    if (!isEditing) {
-      setEditValue(value);
-    }
-  }, [value, isEditing]);
+  // Removed: useEffect that synced editValue with value prop
+  // The value is already set correctly in handleStartEdit, which is where sync
+  // actually needs to happen. The previous useEffect was an anti-pattern.
 
-  // Focus input when editing starts
-  useEffect(() => {
-    if (isEditing && inputRef.current) {
-      inputRef.current.focus();
-      inputRef.current.select();
-    }
-  }, [isEditing]);
+  // Focus input when editing starts - using callback in handleStartEdit instead
+  const focusInput = useCallback(() => {
+    // Use setTimeout to ensure DOM is ready
+    setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.focus();
+        inputRef.current.select();
+      }
+    }, 0);
+  }, []);
 
   const handleStartEdit = useCallback(() => {
     if (disabled) return;
     setIsEditing(true);
-    setEditValue(value);
+    setEditValue(value); // Sync value here - only when starting edit
     setError(null);
-  }, [disabled, value]);
+    focusInput(); // Focus via callback instead of useEffect
+  }, [disabled, value, focusInput]);
+
 
   const handleCancel = useCallback(() => {
     setIsEditing(false);

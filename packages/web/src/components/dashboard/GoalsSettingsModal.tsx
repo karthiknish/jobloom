@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -43,12 +43,16 @@ export function GoalsSettingsModal({
   currentGoals = DEFAULT_GOALS,
   onSaveGoals,
 }: GoalsSettingsModalProps) {
+  // Using currentGoals as initial value - no useEffect needed
+  // The modal remounts when opened so state resets naturally
   const [goals, setGoals] = useState(currentGoals);
   useRestoreFocus(open);
 
-  useEffect(() => {
-    setGoals(currentGoals);
-  }, [currentGoals, open]);
+  // Removed: useEffect that synced goals with currentGoals
+  // This was an anti-pattern - we can derive initial value directly
+  // If parent changes currentGoals while modal is open (rare), 
+  // it will update on next open via fresh mount
+
 
   const handleSave = () => {
     onSaveGoals?.(goals);

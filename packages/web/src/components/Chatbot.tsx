@@ -73,17 +73,16 @@ export default function Chatbot() {
     }, 100);
   };
 
-  // Auto-scroll when messages change
+  // Auto-scroll when messages change - this is a legitimate useEffect
+  // (reacting to data changes that affect the DOM)
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-  // Focus textarea when chat opens
-  useEffect(() => {
-    if (isOpen && textareaRef.current) {
-      setTimeout(() => textareaRef.current?.focus(), 100);
-    }
-  }, [isOpen]);
+  // Removed: Focus useEffect - moved to toggleChat function
+  // The previous pattern of useEffect(() => { if (isOpen) focus() }, [isOpen])
+  // was an anti-pattern because the action is a direct result of user interaction
+
 
   // Save conversation to Firebase
   const saveMessageToFirebase = async (message: Message) => {
@@ -196,8 +195,15 @@ export default function Chatbot() {
   };
 
   const toggleChat = () => {
-    setIsOpen(!isOpen);
+    const willOpen = !isOpen;
+    setIsOpen(willOpen);
+    
+    // Focus textarea when opening - directly in the event handler
+    if (willOpen) {
+      setTimeout(() => textareaRef.current?.focus(), 100);
+    }
   };
+
 
   return (
     <>
