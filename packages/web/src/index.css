@@ -88,6 +88,11 @@ html {
   --color-scrim: #000000;
   --color-shadow: rgba(0, 0, 0, 0.1);
   --color-shadow-strong: rgba(0, 0, 0, 0.25);
+
+  /* Premium shadows as theme variables */
+  --shadow-premium: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-premium-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05), 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  --shadow-premium-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04), 0 40px 50px -10px rgba(0, 0, 0, 0.15);
 }
 
 
@@ -174,26 +179,17 @@ body {
   box-shadow: var(--shadow-premium-lg);
 }
 
-/* Premium shadows */
+/* Premium shadows - keeping classes for compatibility but using theme vars */
 .shadow-premium {
-  box-shadow:
-    0 2px 4px -1px rgba(0, 0, 0, 0.06),
-    0 4px 6px -1px rgba(0, 0, 0, 0.1),
-    0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-premium);
 }
 
 .shadow-premium-lg {
-  box-shadow:
-    0 4px 6px -1px rgba(0, 0, 0, 0.1),
-    0 10px 15px -3px rgba(0, 0, 0, 0.1),
-    0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-premium-lg);
 }
 
 .shadow-premium-xl {
-  box-shadow:
-    0 10px 15px -3px rgba(0, 0, 0, 0.1),
-    0 20px 25px -5px rgba(0, 0, 0, 0.1),
-    0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--shadow-premium-xl);
 }
 
 /* Gradient backgrounds */
@@ -202,17 +198,18 @@ body {
 }
 
 .gradient-primary {
-  background: linear-gradient(135deg, var(--color-primary) 0%, #0d9488 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, #059669 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .gradient-secondary {
-  background: linear-gradient(135deg, var(--color-secondary) 0%, #e2e8f0 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+  border: 1px solid var(--color-border);
 }
 
 /* Premium button styles */
 .btn-premium {
   @apply inline-flex items-center justify-center rounded-xl px-6 py-3 text-sm font-medium transition-all duration-fast focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
 }
 
 .btn-premium:hover {
@@ -229,6 +226,17 @@ body {
 /* Smooth scrolling */
 .smooth-scroll {
   scroll-behavior: smooth;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
 }
 
 /* Focus visible improvements */

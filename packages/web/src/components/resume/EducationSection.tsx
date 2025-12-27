@@ -69,16 +69,29 @@ export function EducationSection({ data, onChange }: EducationSectionProps) {
   });
 
   useEffect(() => {
-    if (JSON.stringify(data) !== JSON.stringify(watchEducation)) {
+    const currentValues = form.getValues("education");
+    if (JSON.stringify(data) !== JSON.stringify(currentValues)) {
       form.reset({ education: data });
     }
-  }, [data, form, watchEducation]);
+  }, [data, form]);
 
   useEffect(() => {
     if (watchEducation) {
-      onChange(watchEducation as EducationItem[]);
+      const cleanedEducation = watchEducation.map(edu => ({
+        ...edu,
+        gpa: edu?.gpa || "",
+        honors: edu?.honors || "",
+        institution: edu?.institution || "",
+        degree: edu?.degree || "",
+        field: edu?.field || "",
+        graduationDate: edu?.graduationDate || ""
+      }));
+
+      if (JSON.stringify(data) !== JSON.stringify(cleanedEducation)) {
+        onChange(cleanedEducation as EducationItem[]);
+      }
     }
-  }, [watchEducation, onChange]);
+  }, [watchEducation, onChange, data]);
 
   const addEducation = () => {
     append({

@@ -32,7 +32,7 @@ const navigationItems = [
     name: "Career Tools",
     href: "/career-tools",
     icon: FileText,
-    requiresAuth: false,
+    requiresAuth: true,
   },
   {
     name: "Profile",

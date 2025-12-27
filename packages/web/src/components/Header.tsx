@@ -82,7 +82,7 @@ export default function Header() {
 
   const mainLinks = [
     { href: "/dashboard", label: "Dashboard", requiresAuth: true },
-    { href: "/career-tools", label: "Career Tools", requiresAuth: false },
+    { href: "/career-tools", label: "Career Tools", requiresAuth: true },
   ];
 
   const accountLinks = [{ href: "/settings", label: "Settings", requiresAuth: true }];
@@ -241,43 +241,47 @@ export default function Header() {
 
           {/* Desktop Controls */}
           <div className="hidden md:flex items-center space-x-2">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setIsSearchOpen(true)}
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    <Search className="h-5 w-5" />
-                    <span className="sr-only">Search (⌘K)</span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <p className="text-sm">Search <kbd className="ml-1 px-1.5 py-0.5 bg-muted rounded text-xs">⌘K</kbd></p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setIsShortcutsOpen(true)}
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    <Keyboard className="h-5 w-5" />
-                    <span className="sr-only">Keyboard shortcuts</span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <p className="text-sm">Keyboard shortcuts <kbd className="ml-1 px-1.5 py-0.5 bg-muted rounded text-xs">?</kbd></p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            {isSignedIn && (
+              <>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setIsSearchOpen(true)}
+                        className="text-muted-foreground hover:text-foreground"
+                      >
+                        <Search className="h-5 w-5" />
+                        <span className="sr-only">Search (⌘K)</span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      <p className="text-sm">Search <kbd className="ml-1 px-1.5 py-0.5 bg-muted rounded text-xs">⌘K</kbd></p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setIsShortcutsOpen(true)}
+                        className="text-muted-foreground hover:text-foreground"
+                      >
+                        <Keyboard className="h-5 w-5" />
+                        <span className="sr-only">Keyboard shortcuts</span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      <p className="text-sm">Keyboard shortcuts <kbd className="ml-1 px-1.5 py-0.5 bg-muted rounded text-xs">?</kbd></p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </>
+            )}
             <AuthButtons />
           </div>
 
@@ -323,30 +327,32 @@ export default function Header() {
                     </Button>
                   )}
 
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button
-                      variant="outline"
-                      className="justify-start"
-                      onClick={() => {
-                        setIsMobileMenuOpen(false);
-                        setIsSearchOpen(true);
-                      }}
-                    >
-                      <Search className="mr-2 h-4 w-4" />
-                      Search
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="justify-start"
-                      onClick={() => {
-                        setIsMobileMenuOpen(false);
-                        setIsShortcutsOpen(true);
-                      }}
-                    >
-                      <Keyboard className="mr-2 h-4 w-4" />
-                      Shortcuts
-                    </Button>
-                  </div>
+                  {isSignedIn && (
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        variant="outline"
+                        className="justify-start"
+                        onClick={() => {
+                          setIsMobileMenuOpen(false);
+                          setIsSearchOpen(true);
+                        }}
+                      >
+                        <Search className="mr-2 h-4 w-4" />
+                        Search
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="justify-start"
+                        onClick={() => {
+                          setIsMobileMenuOpen(false);
+                          setIsShortcutsOpen(true);
+                        }}
+                      >
+                        <Keyboard className="mr-2 h-4 w-4" />
+                        Shortcuts
+                      </Button>
+                    </div>
+                  )}
 
                   <nav className="flex flex-col space-y-6 flex-1">
                     <div className="space-y-3">

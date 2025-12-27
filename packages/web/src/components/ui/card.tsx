@@ -15,10 +15,10 @@ const cardVariants = cva(
   {
     variants: {
       variant: {
-        default: "border-border/70 bg-card/95 shadow-md hover:shadow-lg",
-        elevated: "border-border/50 bg-card shadow-xl hover:shadow-2xl",
+        default: "border-border/50 bg-card/95 shadow-premium hover:shadow-premium-lg transition-all duration-300",
+        elevated: "border-border/40 bg-card shadow-premium-lg hover:shadow-premium-xl transition-all duration-300",
         flat: "border-border bg-card shadow-none",
-        interactive: "border-border/70 bg-card/95 shadow-sm hover:shadow-md hover:border-primary/30 cursor-pointer transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        interactive: "border-border/70 bg-card/95 shadow-sm hover:shadow-premium hover:border-primary/30 cursor-pointer transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         premium: "rounded-2xl shadow-premium hover:shadow-premium-lg hover:-translate-y-1 transition-all duration-300",
         "premium-elevated": "rounded-2xl border-outline bg-surface shadow-premium-lg hover:shadow-premium-xl hover:-translate-y-1 transition-all duration-300",
       },

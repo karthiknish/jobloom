@@ -127,7 +127,7 @@ export function DashboardHeader({
                     onClick={onImportJobs}
                     size="sm"
                     data-tour="import-jobs"
-                    className="motion-button shadow-lg hover:shadow-xl bg-white text-primary hover:bg-white/90 border-0 gap-2 font-semibold"
+                    className="motion-button shadow-lg hover:shadow-xl bg-white text-primary hover:bg-white/90 border border-primary/10 gap-2 font-semibold"
                   >
                     <Chrome className="h-4 w-4" />
                     <span className="hidden sm:inline">Import from Extension</span>

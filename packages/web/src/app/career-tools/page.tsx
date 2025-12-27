@@ -19,6 +19,7 @@ import {
   useCareerToolsState,
   ResumeWizard
 } from "@/components/career-tools";
+import { CareerDashboard } from "@/components/career-tools/CareerDashboard";
 
 const AIResumeGenerator = dynamic(() => import("@/components/application/AIResumeGenerator").then(mod => mod.AIResumeGenerator), { ssr: false, loading: () => <SkeletonCard /> });
 const AICoverLetterGenerator = dynamic(() => import("@/components/application/AICoverLetterGenerator").then(mod => mod.AICoverLetterGenerator), { ssr: false, loading: () => <SkeletonCard /> });
@@ -166,36 +167,23 @@ export default function CareerToolsPage() {
     }
 
     switch (activeSection) {
+      case "dashboard":
+        return <CareerDashboard state={state} onSectionChange={setActiveSection} />;
       case "ai-generator":
-        return (
-          <div className="space-y-6">
-            <CvStatsOverview cvStats={cvStats || undefined} loading={loadingData} />
-            <AIResumeGenerator />
-          </div>
-        );
+        return <AIResumeGenerator />;
       case "manual-builder":
         return (
-          <div className="space-y-6">
-            <CvStatsOverview cvStats={cvStats || undefined} loading={loadingData} />
-            <ManualBuilderSection
-              state={state}
-              tabsListClassName={dashboardTabsListClassName}
-              tabsTriggerClassName={dashboardTabsTriggerClassName}
-            />
-          </div>
+          <ManualBuilderSection
+            state={state}
+            tabsListClassName={dashboardTabsListClassName}
+            tabsTriggerClassName={dashboardTabsTriggerClassName}
+          />
         );
       case "import":
-        return (
-          <div className="space-y-6">
-            <CvStatsOverview cvStats={cvStats || undefined} loading={loadingData} />
-            <ResumeImporter onImport={handleResumeImport} />
-          </div>
-        );
+        return <ResumeImporter onImport={handleResumeImport} />;
       case "cv-optimizer":
         return (
           <div className="space-y-6">
-            <CvStatsOverview cvStats={cvStats || undefined} loading={loadingData} />
-            
             <Tabs defaultValue="analyze" className="w-full">
               <TabsList className="mb-6">
                 <TabsTrigger value="analyze" className="flex items-center gap-2">
@@ -245,7 +233,7 @@ export default function CareerToolsPage() {
       case "cover-letter":
         return <AICoverLetterGenerator />;
       default:
-        return <AIResumeGenerator />;
+        return <CareerDashboard state={state} onSectionChange={setActiveSection} />;
     }
   };
 

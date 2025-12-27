@@ -120,7 +120,7 @@ export function PremiumUpgradeCard({
               {featureInfo.description}
             </p>
             <Link href="/upgrade" className="block">
-              <Button size="sm" className="w-full bg-white text-primary hover:bg-white/90 text-xs font-semibold">
+              <Button size="sm" className="w-full bg-white text-primary hover:bg-white/90 text-xs font-semibold border border-primary/10">
                 Upgrade Now
               </Button>
             </Link>

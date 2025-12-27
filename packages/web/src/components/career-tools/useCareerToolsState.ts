@@ -43,7 +43,7 @@ export function useCareerToolsState() {
   const { user, loading: authLoading } = useFirebaseAuth();
   
   // Single unified section state for sidebar navigation
-  const [activeSection, setActiveSection] = useState<CareerToolsSection>("ai-generator");
+  const [activeSection, setActiveSection] = useState<CareerToolsSection>("dashboard");
   
   // CV Evaluator state
   const [currentAtsScore, setCurrentAtsScore] = useState<ATSResumeScore | null>(null);
@@ -54,7 +54,7 @@ export function useCareerToolsState() {
   const [dirty, setDirty] = useState(false);
   const [advancedResumeData, setAdvancedResumeData] = useState<AdvancedResumeData>(defaultAdvancedResumeData);
   const [advancedResumeScore, setAdvancedResumeScore] = useState(calculateResumeScore(defaultAdvancedResumeData));
-  const [activeBuilderTab, setActiveBuilderTab] = useState("personal");
+  const [activeBuilderTab, setActiveBuilderTab] = useState("theme");
   const [resumeOptions, setResumeOptions] = useState<ResumePDFOptions>({
     template: 'modern',
     colorScheme: 'hireall',

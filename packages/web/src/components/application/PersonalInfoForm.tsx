@@ -48,10 +48,20 @@ export function PersonalInfoForm({ data, onChange }: PersonalInfoFormProps) {
   // Sync internal form changes back to parent
   useEffect(() => {
     const subscription = form.watch((value) => {
-      onChange(value as ResumeData['personalInfo']);
+      // Clean up value to match data structure (handle undefined vs empty string)
+      const cleanedValue = {
+        ...value,
+        linkedin: value.linkedin || "",
+        github: value.github || "",
+        website: value.website || "",
+      };
+      
+      if (JSON.stringify(data) !== JSON.stringify(cleanedValue)) {
+        onChange(cleanedValue as ResumeData['personalInfo']);
+      }
     });
     return () => subscription.unsubscribe();
-  }, [form.watch, onChange]);
+  }, [form.watch, onChange, data]);
 
   // Calculate completion percentage using values from react-hook-form
   const requiredFields = ['fullName', 'email', 'phone', 'location', 'summary'] as const;

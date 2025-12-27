@@ -265,7 +265,7 @@ function SignUpInner() {
         className="w-full max-w-md sm:max-w-lg space-y-8 relative z-10"
       >
 
-        <Card variant="premium-elevated" className="border-0 bg-surface p-8">
+        <Card variant="premium-elevated" className="bg-surface p-8">
           <CardHeader className="space-y-4 text-center pb-8">
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
@@ -463,22 +463,14 @@ function SignUpInner() {
                   disabled={loading}
                 >
                   {loading ? (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="flex items-center justify-center"
-                    >
+                    <div className="flex items-center justify-center">
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       <span>Setting up your account...</span>
-                    </motion.div>
+                    </div>
                   ) : (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="flex items-center justify-center"
-                    >
+                    <div className="flex items-center justify-center">
                       <span>Create account</span>
-                    </motion.div>
+                    </div>
                   )}
                 </Button>
               </motion.div>

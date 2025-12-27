@@ -125,21 +125,58 @@ export class ErrorBoundary extends Component<Props, State> {
           )}
 
           {process.env.NODE_ENV === 'development' && this.state.errorInfo && (
-            <details className="mt-8 text-left">
-              <summary 
-                className="cursor-pointer text-sm hover:text-gray-700 text-gray-500"
-              >
-                Error Details (Development)
-              </summary>
-              <pre className="mt-2 p-4 rounded text-xs overflow-auto max-h-64 bg-gray-100">
-                <code>
-                  {this.state.error?.toString()}
-                  {'\n\n'}
-                  Component Stack:
-                  {this.state.errorInfo.componentStack}
-                </code>
-              </pre>
-            </details>
+            <div className="mt-8 w-full max-w-3xl text-left mx-auto">
+              <div className="border border-red-200 rounded-xl overflow-hidden bg-white shadow-lg">
+                <div className="bg-red-50 px-4 py-3 border-b border-red-100 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                    <span className="text-sm font-bold text-red-900">Developer Diagnostics</span>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 text-xs bg-white hover:bg-red-100 border-red-200 text-red-700 font-bold shadow-sm transition-all active:scale-95"
+                    onClick={() => {
+                      const text = `Error: ${this.state.error?.message}\n\nStack Trace:\n${this.state.error?.stack}\n\nComponent Stack:\n${this.state.errorInfo?.componentStack}`;
+                      navigator.clipboard.writeText(text);
+                      // Simple visual feedback
+                      const btn = document.activeElement as HTMLButtonElement;
+                      if (btn) {
+                        const originalText = btn.innerText;
+                        btn.innerText = "Copied!";
+                        setTimeout(() => { btn.innerText = originalText; }, 2000);
+                      }
+                    }}
+                  >
+                    Copy Full Error Report
+                  </Button>
+                </div>
+                <div className="p-0 bg-slate-950 overflow-hidden">
+                  <div className="flex border-b border-white/5 bg-white/5">
+                    <div className="px-4 py-2 text-[10px] font-bold text-white/40 uppercase tracking-widest border-r border-white/5">
+                      Error Message
+                    </div>
+                  </div>
+                  <div className="p-4 font-mono text-xs text-red-400 bg-red-950/20">
+                    {this.state.error?.toString()}
+                  </div>
+                  
+                  <div className="flex border-y border-white/5 bg-white/5">
+                    <div className="px-4 py-2 text-[10px] font-bold text-white/40 uppercase tracking-widest border-r border-white/5">
+                      Component Stack Trace
+                    </div>
+                  </div>
+                  <div className="p-4 font-mono text-[10px] text-slate-400 overflow-auto max-h-[400px] leading-relaxed scrollbar-thin scrollbar-thumb-white/10">
+                    <pre className="whitespace-pre-wrap">
+                      {this.state.errorInfo.componentStack}
+                    </pre>
+                  </div>
+                </div>
+              </div>
+              <p className="text-[10px] text-center text-muted-foreground mt-3 italic">
+                This diagnostic view is only visible in development mode.
+              </p>
+            </div>
           )}
         </div>
       );

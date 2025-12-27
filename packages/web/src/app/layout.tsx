@@ -8,7 +8,6 @@ import { SubscriptionProvider } from "@/providers/subscription-provider";
 import { AppToaster } from "@/components/ui/Toast";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import Chatbot from "@/components/Chatbot";
 import MobileNavigation from "@/components/MobileNavigation";
 import { AnalyticsProvider } from "@/providers/analytics-provider";
 import { PerformanceProvider } from "@/providers/performance-provider";
@@ -83,7 +82,6 @@ export default function RootLayout({
                     <Footer />
                     <MobileNavigation />
                     <AppToaster />
-                    <Chatbot />
                     <ReportIssue position="bottom-left" />
                   </SuccessAnimationProvider>
                 </OnboardingTourProvider>

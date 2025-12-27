@@ -227,7 +227,7 @@ function SignInInner() {
         className="w-full max-w-md sm:max-w-lg space-y-8 relative z-10"
       >
     
-        <Card variant="premium-elevated" className="border-0 bg-surface p-8">
+        <Card variant="premium-elevated" className="bg-surface p-8">
           <CardHeader className="space-y-4 text-center pb-8">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
@@ -324,34 +324,22 @@ function SignInInner() {
                 disabled={isLoading}
               >
                 {isLoading ? (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="flex items-center justify-center"
-                  >
+                  <div className="flex items-center justify-center">
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     <span>Signing in...</span>
-                  </motion.div>
+                  </div>
                 ) : (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="flex items-center justify-center"
-                  >
+                  <div className="flex items-center justify-center">
                     <div className="flex items-center">
                       <span>Sign in</span>
                       {lastAuthMethod === "email" && (
-                        <motion.div
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          className="ml-2 flex items-center text-xs text-muted-foreground"
-                        >
-                          <div className="w-2 h-2 bg-primary rounded-full mr-1" />
+                        <div className="ml-2 flex items-center text-[10px] bg-white/20 px-2 py-0.5 rounded-full text-white">
+                          <div className="w-1.5 h-1.5 bg-white rounded-full mr-1 animate-pulse" />
                           <span>Last used</span>
-                        </motion.div>
+                        </div>
                       )}
                     </div>
-                  </motion.div>
+                  </div>
                 )}
               </Button>
             </motion.form>
@@ -373,33 +361,23 @@ function SignInInner() {
               disabled={isLoading}
             >
               {isLoading ? (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="flex items-center justify-center"
-                >
+                <div className="flex items-center justify-center">
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   <span>Redirecting to Google...</span>
-                </motion.div>
+                </div>
               ) : (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="flex items-center justify-center"
-                >
+                <div className="flex items-center justify-center">
                   <div className="relative">
                     <Chrome className="mr-2 h-5 w-5" />
                     {lastAuthMethod === "google" && (
-                      <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
+                      <div
                         className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full"
                         title="Last used method"
                       />
                     )}
                   </div>
                   <span>{lastAuthMethod === "google" ? "Continue with Google (Last used)" : "Continue with Google"}</span>
-                </motion.div>
+                </div>
               )}
             </Button>
 

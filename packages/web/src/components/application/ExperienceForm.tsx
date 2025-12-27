@@ -65,17 +65,28 @@ export function ExperienceForm({ data, onChange }: ExperienceFormProps) {
   });
 
   React.useEffect(() => {
-    // Check if external data is different from internal state to avoid loops
-    if (JSON.stringify(data) !== JSON.stringify(watchFieldArray)) {
+    const currentValues = form.getValues("experience");
+    if (JSON.stringify(data) !== JSON.stringify(currentValues)) {
       form.reset({ experience: data });
     }
-  }, [data]);
+  }, [data, form]);
 
   React.useEffect(() => {
-    // Only call onChange if the data has actually changed
-    // and we're not in the middle of a reset
-    onChange(watchFieldArray as ResumeData['experience']);
-  }, [watchFieldArray, onChange]);
+    if (watchFieldArray) {
+      // Ensure we don't have undefined values that cause stringify mismatch
+      const cleanedValues = watchFieldArray.map(exp => ({
+        ...exp,
+        location: exp.location || "",
+        endDate: exp.endDate || "",
+        description: exp.description || "",
+        achievements: exp.achievements || []
+      }));
+
+      if (JSON.stringify(data) !== JSON.stringify(cleanedValues)) {
+        onChange(cleanedValues as ResumeData['experience']);
+      }
+    }
+  }, [watchFieldArray, onChange, data]);
 
   const addExperience = () => {
     append({

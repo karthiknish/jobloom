@@ -96,9 +96,6 @@ export function JobDetailsModal({
   onChanged,
 }: JobDetailsModalProps) {
   useRestoreFocus(open);
-  if (!application) return null;
-
-  const job = application.job;
 
   const statusOptions = useMemo(
     () =>
@@ -112,15 +109,19 @@ export function JobDetailsModal({
     []
   );
 
-  const [localStatus, setLocalStatus] = useState<string>(application.status || "interested");
+  const [localStatus, setLocalStatus] = useState<string>(application?.status || "interested");
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   useEffect(() => {
-    setLocalStatus(application.status || "interested");
-  }, [application._id, application.status]);
+    if (application) {
+      setLocalStatus(application.status || "interested");
+    }
+  }, [application?._id, application?.status]);
 
-  const status = localStatus || "interested";
-  const statusStyle = statusConfig[status] || statusConfig.interested;
+  if (!application) return null;
+
+  const job = application.job;
+  const statusStyle = statusConfig[localStatus] || statusConfig.interested;
 
   const formatDate = (timestamp: number | string | undefined) => {
     if (!timestamp) return null;
@@ -170,7 +171,7 @@ export function JobDetailsModal({
                   >
                     <span className={statusStyle.color}>{statusStyle.icon}</span>
                     <span className={cn("text-xs font-bold uppercase tracking-wider", statusStyle.color)}>
-                      {status}
+                      {localStatus}
                     </span>
                   </motion.div>
                 </div>
@@ -244,7 +245,7 @@ export function JobDetailsModal({
                       <h3 className="font-bold text-gray-900">Application Status</h3>
                     </div>
                     <Badge variant="outline" className={cn("font-bold capitalize", statusStyle.color, statusStyle.bg, "border-none")}>
-                      {status}
+                      {localStatus}
                     </Badge>
                   </div>
 
@@ -252,10 +253,10 @@ export function JobDetailsModal({
                     <div className="flex-1 w-full">
                       <p className="text-xs text-muted-foreground mb-3 font-medium">Update current stage:</p>
                       <Select
-                        value={status}
+                        value={localStatus}
                         onValueChange={async (next) => {
-                          if (!next || next === status) return;
-                          const prev = status;
+                          if (!next || next === localStatus) return;
+                          const prev = localStatus;
                           setLocalStatus(next);
                           setIsUpdatingStatus(true);
                           try {

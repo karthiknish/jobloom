@@ -76,11 +76,18 @@ export function SkillsForm({ data, onChange }: SkillsFormProps) {
   useEffect(() => {
     const subscription = form.watch((value) => {
       if (value.skills) {
-        onChange(value.skills as ResumeData['skills']);
+        const cleanedSkills = value.skills.map(s => ({
+          category: s?.category || "",
+          skills: s?.skills || []
+        }));
+        
+        if (JSON.stringify(data) !== JSON.stringify(cleanedSkills)) {
+          onChange(cleanedSkills as ResumeData['skills']);
+        }
       }
     });
     return () => subscription.unsubscribe();
-  }, [form.watch, onChange]);
+  }, [form.watch, onChange, data]);
 
   const toggleCategory = (index: number) => {
     setExpandedCategories(prev =>

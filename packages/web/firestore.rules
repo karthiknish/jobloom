@@ -282,20 +282,6 @@ service cloud.firestore {
       allow read, create, update, delete: if isAdmin();
     }
 
-    // ============ CONVERSATIONS (Chatbot) ============
-    match /conversations/{conversationId} {
-      allow read, create, update: if isSignedIn()
-        && (resource == null || resource.data.userId == request.auth.uid);
-      allow delete: if isOwner(resource.data.userId) || isAdmin();
-
-      // Messages subcollection
-      match /messages/{messageId} {
-        allow read, create: if isSignedIn()
-          && get(/databases/$(database)/documents/conversations/$(conversationId)).data.userId == request.auth.uid;
-        allow update, delete: if false; // Messages are immutable
-      }
-    }
-
     // ============ ANALYTICS EVENTS (Server-managed) ============
     match /analyticsEvents/{eventId} {
       allow read: if isAdmin();

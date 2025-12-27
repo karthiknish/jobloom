@@ -88,21 +88,21 @@ export function TabsSystem({
   showDescriptions = false,
 }: TabsSystemProps) {
   const baseClasses = {
-    horizontal: "flex flex-row w-full",
+    horizontal: "flex flex-row w-full overflow-x-auto scrollbar-hide",
     vertical: "flex flex-col space-y-1 w-full",
   };
 
   const sizeClasses = {
     sm: {
-      list: orientation === "horizontal" ? "h-8 w-full" : "w-full",
+      list: orientation === "horizontal" ? "h-8 w-full min-w-max sm:min-w-0" : "w-full",
       trigger: "px-3 py-1 text-xs flex-1",
     },
     md: {
-      list: orientation === "horizontal" ? "h-10 w-full" : "w-full",
+      list: orientation === "horizontal" ? "h-10 w-full min-w-max sm:min-w-0" : "w-full",
       trigger: "px-4 py-2 text-sm flex-1",
     },
     lg: {
-      list: orientation === "horizontal" ? "h-12 w-full" : "w-full",
+      list: orientation === "horizontal" ? "h-12 w-full min-w-max sm:min-w-0" : "w-full",
       trigger: "px-6 py-3 text-base flex-1",
     },
   };
@@ -111,7 +111,7 @@ export function TabsSystem({
     default: {
       list: "bg-muted/50 rounded-lg p-1 flex",
       trigger: cn(
-        "rounded-md font-medium motion-control flex items-center justify-center flex-1",
+        "rounded-md font-medium motion-control flex items-center justify-center flex-1 shrink-0 sm:shrink",
         "hover:bg-background hover:shadow-sm",
         "data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md",
         "data-[state=inactive]:text-muted-foreground"
@@ -121,7 +121,7 @@ export function TabsSystem({
     pills: {
       list: "bg-transparent gap-2",
       trigger: cn(
-        "rounded-full font-medium motion-control",
+        "rounded-full font-medium motion-control shrink-0 sm:shrink",
         "hover:bg-primary/10 hover:text-primary",
         "data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg",
         "data-[state=inactive]:text-muted-foreground bg-muted/50"
@@ -131,7 +131,7 @@ export function TabsSystem({
     underline: {
       list: "border-b border-border bg-transparent",
       trigger: cn(
-        "border-b-2 font-medium motion-control",
+        "border-b-2 font-medium motion-control shrink-0 sm:shrink",
         "hover:text-foreground hover:border-primary/50",
         "data-[state=active]:text-primary data-[state=active]:border-primary",
         "data-[state=inactive]:text-muted-foreground border-transparent"
@@ -141,7 +141,7 @@ export function TabsSystem({
     card: {
       list: "bg-transparent gap-2",
       trigger: cn(
-        "rounded-lg border font-medium motion-control",
+        "rounded-lg border font-medium motion-control shrink-0 sm:shrink",
         "hover:border-primary/30 hover:bg-primary/5",
         "data-[state=active]:border-primary data-[state=active]:bg-primary/5",
         "data-[state=active]:text-foreground data-[state=active]:shadow-sm",
@@ -154,11 +154,9 @@ export function TabsSystem({
   const currentSize = sizeClasses[size];
   const currentVariant = variantClasses[variant];
 
-  const gridCols = orientation === "horizontal" ? `grid-cols-${tabs.length}` : undefined;
-
   return (
     <div className={cn("w-full", className)}>
-      <div className={cn(baseClasses[orientation], currentSize.list, currentVariant.list, gridCols)}>
+      <div className={cn(baseClasses[orientation], currentSize.list, currentVariant.list)}>
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;

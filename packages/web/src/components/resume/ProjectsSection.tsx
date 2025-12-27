@@ -70,32 +70,33 @@ export function ProjectsSection({ data, onChange }: ProjectsSectionProps) {
   });
 
   useEffect(() => {
-    const internalData = watchProjects?.map(item => ({
+    const currentValues = form.getValues("projects");
+    const normalizedData = data.map(item => ({
       ...item,
-      id: item.id || generateResumeId(),
-      technologies: item.technologies ? item.technologies.split(",").map(s => s.trim()).filter(Boolean) : []
-    })) || [];
+      technologies: Array.isArray(item.technologies) ? item.technologies.join(", ") : item.technologies
+    }));
 
-    if (JSON.stringify(data) !== JSON.stringify(internalData)) {
-      form.reset({
-        projects: data.map(item => ({
-          ...item,
-          technologies: item.technologies.join(", ")
-        }))
-      });
+    if (JSON.stringify(normalizedData) !== JSON.stringify(currentValues)) {
+      form.reset({ projects: normalizedData });
     }
-  }, [data, form]); // Removed watchProjects from deps to avoid loop
+  }, [data, form]);
 
   useEffect(() => {
     if (watchProjects) {
       const items = watchProjects.map(item => ({
         ...item,
-        id: item.id || generateResumeId(),
-        technologies: item.technologies ? item.technologies.split(",").map(s => s.trim()).filter(Boolean) : []
+        technologies: typeof item.technologies === 'string' 
+          ? item.technologies.split(",").map(s => s.trim()).filter(Boolean) 
+          : item.technologies,
+        link: item.link || "",
+        github: item.github || ""
       }));
-      onChange(items as ProjectItem[]);
+      
+      if (JSON.stringify(data) !== JSON.stringify(items)) {
+        onChange(items as ProjectItem[]);
+      }
     }
-  }, [watchProjects, onChange]);
+  }, [watchProjects, onChange, data]);
 
   const addProject = () => {
     append({
