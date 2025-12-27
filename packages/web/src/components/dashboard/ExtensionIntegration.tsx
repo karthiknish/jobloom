@@ -239,61 +239,63 @@ export function ExtensionIntegration({ userId }: ExtensionIntegrationProps) {
         {isExtensionInstalled ? (
           <div className="space-y-5">
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <motion.div 
-                    whileHover={{ scale: 1.02 }}
-                    className="bg-muted/40 rounded-xl p-4 text-center border border-border/50 hover:border-primary/30 transition-colors cursor-help group/stat"
-                  >
-                    <Briefcase className="h-5 w-5 text-blue-600 mx-auto mb-2 group-hover/stat:scale-110 transition-transform" />
-                    <p className="text-2xl font-bold text-foreground">
-                      {jobsDetected}
-                    </p>
-                    <p className="text-xs text-muted-foreground">Jobs Saved</p>
-                  </motion.div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Total jobs saved from job boards via the extension</p>
-                </TooltipContent>
-              </Tooltip>
+            <TooltipProvider>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <motion.div 
+                      whileHover={{ scale: 1.02 }}
+                      className="bg-muted/40 rounded-xl p-4 text-center border border-border/50 hover:border-primary/30 transition-colors cursor-help group/stat"
+                    >
+                      <Briefcase className="h-5 w-5 text-blue-600 mx-auto mb-2 group-hover/stat:scale-110 transition-transform" />
+                      <p className="text-2xl font-bold text-foreground">
+                        {jobsDetected}
+                      </p>
+                      <p className="text-xs text-muted-foreground">Jobs Saved</p>
+                    </motion.div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Total jobs saved from job boards via the extension</p>
+                  </TooltipContent>
+                </Tooltip>
 
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <motion.div 
-                    whileHover={{ scale: 1.02 }}
-                    className="bg-muted/40 rounded-xl p-4 text-center border border-border/50 hover:border-primary/30 transition-colors cursor-help group/stat"
-                  >
-                    <Clock className="h-5 w-5 text-teal-600 mx-auto mb-2 group-hover/stat:scale-110 transition-transform" />
-                    <p className="text-2xl font-bold text-foreground">
-                      {lastSync ? lastSync.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "--:--"}
-                    </p>
-                    <p className="text-xs text-muted-foreground">Last Sync</p>
-                  </motion.div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>When data was last synced from the extension</p>
-                </TooltipContent>
-              </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <motion.div 
+                      whileHover={{ scale: 1.02 }}
+                      className="bg-muted/40 rounded-xl p-4 text-center border border-border/50 hover:border-primary/30 transition-colors cursor-help group/stat"
+                    >
+                      <Clock className="h-5 w-5 text-teal-600 mx-auto mb-2 group-hover/stat:scale-110 transition-transform" />
+                      <p className="text-2xl font-bold text-foreground">
+                        {lastSync ? lastSync.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "--:--"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">Last Sync</p>
+                    </motion.div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>When data was last synced from the extension</p>
+                  </TooltipContent>
+                </Tooltip>
 
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <motion.div 
-                    whileHover={{ scale: 1.02 }}
-                    className="bg-muted/40 rounded-xl p-4 text-center border border-border/50 hover:border-primary/30 transition-colors cursor-help group/stat"
-                  >
-                    <Zap className="h-5 w-5 text-primary mx-auto mb-2 group-hover/stat:scale-110 transition-transform" />
-                    <p className="text-2xl font-bold text-primary">
-                      Active
-                    </p>
-                    <p className="text-xs text-primary/70">Status</p>
-                  </motion.div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Extension is connected and ready to sync</p>
-                </TooltipContent>
-              </Tooltip>
-            </div>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <motion.div 
+                      whileHover={{ scale: 1.02 }}
+                      className="bg-muted/40 rounded-xl p-4 text-center border border-border/50 hover:border-primary/30 transition-colors cursor-help group/stat"
+                    >
+                      <Zap className="h-5 w-5 text-primary mx-auto mb-2 group-hover/stat:scale-110 transition-transform" />
+                      <p className="text-2xl font-bold text-primary">
+                        Active
+                      </p>
+                      <p className="text-xs text-primary/70">Status</p>
+                    </motion.div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Extension is connected and ready to sync</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </TooltipProvider>
 
             {/* Sync Button */}
             <Button

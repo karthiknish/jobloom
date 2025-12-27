@@ -127,7 +127,7 @@ export class EnhancedJobBoardManager {
   }
 
   // Queue job for offline/retry processing
-  private async queueJob(jobData: EnhancedJobData, status: "interested" | "applied"): Promise<void> {
+  private async queueJob(jobData: EnhancedJobData, status: KanbanStatus): Promise<void> {
     try {
       const { pendingJobs } = await safeChromeStorageGet("local", ["pendingJobs"], { pendingJobs: [] as PendingJob[] }, "enhancedAddToBoard");
       
@@ -192,7 +192,7 @@ export class EnhancedJobBoardManager {
   }
 
   // Enhanced add to board with better data extraction
-  async addToBoard(jobData: EnhancedJobData, status: "interested" | "applied" = "interested", isRetry = false): Promise<JobBoardEntry | null> {
+  async addToBoard(jobData: EnhancedJobData, status: KanbanStatus = "interested", isRetry = false): Promise<JobBoardEntry | null> {
     try {
       const userId = await this.getUserId();
       if (!userId) {
@@ -281,7 +281,7 @@ export class EnhancedJobBoardManager {
         userId: userId
       });
       
-      const jobResponse = await post<{ id: string }>("/api/app/jobs", jobPayload);
+      const jobResponse = await post<CreateJobResponse>("/api/app/jobs", jobPayload);
       const createdJobId = jobResponse.id;
       
       console.log('[HireAll] Job created successfully:', { id: createdJobId });
@@ -469,6 +469,8 @@ export class EnhancedJobBoardManager {
     }
   }
 
+
+
   // Map API response to JobBoardEntry format
   private mapToJobBoardEntry(jobData: any): JobBoardEntry {
     return {
@@ -478,7 +480,7 @@ export class EnhancedJobBoardManager {
       location: jobData.location,
       url: jobData.url,
       dateAdded: jobData.createdAt || jobData.dateAdded,
-      status: jobData.status || "interested",
+      status: (jobData.status || "interested") as KanbanStatus,
       notes: jobData.notes || "",
       salary: jobData.salary,
       description: jobData.description,
