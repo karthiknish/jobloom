@@ -8,7 +8,7 @@ import {
 } from "./SponsorshipManager";
 import { EnhancedJobBoardManager } from "../enhancedAddToBoard";
 import { UnifiedJobParser, type JobData as EnhancedJobData } from "../parsers";
-import { isLikelyPlaceholderCompany, normalizeCompanyName } from "../utils/companyName";
+import { isLikelyPlaceholderCompany, normalizeCompanyName } from "@hireall/shared";
 import { QuickNotes } from "./QuickNotes";
 import { JobEditModal } from "./JobEditModal";
 

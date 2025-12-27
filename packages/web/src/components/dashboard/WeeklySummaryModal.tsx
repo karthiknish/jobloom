@@ -1,8 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { format, startOfWeek, endOfWeek, subWeeks, isWithinInterval } from "date-fns";
+import { format, startOfWeek, endOfWeek, subWeeks, addWeeks, isWithinInterval } from "date-fns";
 import {
   Dialog,
   DialogContent,
@@ -27,6 +27,9 @@ import {
   Clock,
   ArrowRight,
   Sparkles,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsUpDown,
 } from "lucide-react";
 import { Application } from "@/types/dashboard";
 import { useRestoreFocus } from "@/hooks/useRestoreFocus";
@@ -43,6 +46,8 @@ export function WeeklySummaryModal({
   applications = [],
 }: WeeklySummaryModalProps) {
   useRestoreFocus(open);
+  const [weekOffset, setWeekOffset] = useState(0);
+  const [showAllCompanies, setShowAllCompanies] = useState(false);
   const safeApps = Array.isArray(applications) ? applications : [];
   const now = new Date();
 
@@ -94,11 +99,12 @@ export function WeeklySummaryModal({
     }
   };
 
-  // This week and last week boundaries
-  const thisWeekStart = startOfWeek(now, { weekStartsOn: 1 }); // Monday
-  const thisWeekEnd = endOfWeek(now, { weekStartsOn: 1 });
-  const lastWeekStart = startOfWeek(subWeeks(now, 1), { weekStartsOn: 1 });
-  const lastWeekEnd = endOfWeek(subWeeks(now, 1), { weekStartsOn: 1 });
+  // This week and last week boundaries (relative to weekOffset)
+  const baseDate = weekOffset === 0 ? now : (weekOffset > 0 ? addWeeks(now, weekOffset) : subWeeks(now, Math.abs(weekOffset)));
+  const thisWeekStart = startOfWeek(baseDate, { weekStartsOn: 1 }); // Monday
+  const thisWeekEnd = endOfWeek(baseDate, { weekStartsOn: 1 });
+  const lastWeekStart = startOfWeek(subWeeks(baseDate, 1), { weekStartsOn: 1 });
+  const lastWeekEnd = endOfWeek(subWeeks(baseDate, 1), { weekStartsOn: 1 });
 
   // Filter applications by week
   const thisWeekApps = safeApps.filter((a) => {
@@ -172,10 +178,35 @@ export function WeeklySummaryModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-hidden">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <CalendarDays className="h-5 w-5 text-primary" />
-            Weekly Summary
-          </DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="flex items-center gap-2">
+              <CalendarDays className="h-5 w-5 text-primary" />
+              Weekly Summary
+            </DialogTitle>
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="icon" onClick={() => setWeekOffset(prev => prev - 1)} className="h-8 w-8">
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setWeekOffset(0)} 
+                disabled={weekOffset === 0}
+                className="text-xs h-8"
+              >
+                This Week
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setWeekOffset(prev => prev + 1)} 
+                disabled={weekOffset >= 0}
+                className="h-8 w-8"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
           <DialogDescription>
             {format(thisWeekStart, "MMM d")} - {format(thisWeekEnd, "MMM d, yyyy")}
           </DialogDescription>
@@ -263,11 +294,24 @@ export function WeeklySummaryModal({
             {topCompanies.length > 0 && (
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium">Top Companies This Week</CardTitle>
+                  <CardTitle className="text-sm font-medium flex items-center justify-between">
+                    <span>Top Companies This Week</span>
+                    {topCompanies.length > 5 && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => setShowAllCompanies(!showAllCompanies)}
+                        className="h-7 text-xs gap-1"
+                      >
+                        <ChevronsUpDown className="h-3 w-3" />
+                        {showAllCompanies ? "Show Less" : `+${topCompanies.length - 5} more`}
+                      </Button>
+                    )}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    {topCompanies.map(([company, count], index) => (
+                    {(showAllCompanies ? topCompanies : topCompanies.slice(0, 5)).map(([company, count], index) => (
                       <div key={company} className="flex items-center justify-between py-1">
                         <div className="flex items-center gap-2">
                           <Badge variant="outline" className="w-6 h-6 flex items-center justify-center p-0 text-xs">

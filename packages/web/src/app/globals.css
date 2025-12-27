@@ -945,3 +945,175 @@ h6 {
 
 .grid-form { @apply grid grid-cols-1 md:grid-cols-2 gap-4; }
 .grid-cards { @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6; }
+
+/* ============================================================================
+ * Accessibility Utilities
+ * ============================================================================
+ */
+
+/* Screen reader only - visually hidden but accessible to screen readers */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Screen reader only, but focusable (for skip links) */
+.sr-only-focusable:not(:focus):not(:focus-within) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Skip to content link styling */
+.skip-to-content {
+  position: fixed;
+  top: -100%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  padding: 0.75rem 1.5rem;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  font-weight: 600;
+  border-radius: var(--radius);
+  text-decoration: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: top 0.2s ease-in-out;
+}
+
+.skip-to-content:focus {
+  top: 1rem;
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* Enhanced focus-visible states for keyboard navigation */
+.focus-ring:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* Remove focus ring for mouse users, keep for keyboard */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Ensure all interactive elements have visible focus */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="button"]:focus-visible,
+[role="link"]:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* ============================================================================
+ * High Contrast Mode Support
+ * ============================================================================
+ */
+
+@media (prefers-contrast: more) {
+  :root {
+    /* Increase contrast for borders */
+    --color-border: 215 25% 40%;
+    
+    /* Ensure text meets higher contrast requirements */
+    --color-muted-foreground: 215 25% 25%;
+    
+    /* Stronger primary color */
+    --color-primary: 160 100% 30%;
+    
+    /* More visible focus ring */
+    --color-ring: 160 100% 35%;
+  }
+
+  .dark {
+    --color-border: 215 25% 60%;
+    --color-muted-foreground: 215 25% 70%;
+  }
+
+  /* Ensure all text has sufficient contrast */
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Make focus states more prominent */
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    outline-width: 3px;
+  }
+
+  /* Increase border widths for visibility */
+  .border {
+    border-width: 2px;
+  }
+}
+
+/* ============================================================================
+ * Forced Colors Mode (Windows High Contrast)
+ * ============================================================================
+ */
+
+@media (forced-colors: active) {
+  /* Ensure focus states are visible */
+  :focus-visible {
+    outline: 3px solid CanvasText;
+    outline-offset: 2px;
+  }
+
+  /* Ensure buttons are visible */
+  button,
+  [role="button"] {
+    border: 2px solid ButtonText;
+  }
+
+  /* Links should be distinguishable */
+  a {
+    text-decoration: underline;
+  }
+}
+
+/* ============================================================================
+ * ARIA Live Region Styles
+ * ============================================================================
+ */
+
+/* Status announcements - use sr-only class if visual hiding needed */
+
+/* Reduced motion - ensure all animations respect user preference */
+@media (prefers-reduced-motion: reduce) {
+  /* Catch any missed animations */
+  .animate-pulse,
+  .animate-bounce,
+  .animate-spin,
+  .animate-ping {
+    animation: none !important;
+  }
+  
+  /* Disable scroll-based animations */
+  [data-aos] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

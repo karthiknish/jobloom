@@ -1,11 +1,16 @@
 "use client";
 
 import React from "react";
-import { 
-  User, 
-  Settings, 
+import {
+  User,
+  Settings,
   Shield,
-  Crown
+  Crown,
+  Bell,
+  Mail,
+  Send,
+  Smartphone,
+  Zap
 } from "lucide-react";
 import { TabsSystem, TabConfig } from "@/components/ui/tabs-system";
 
@@ -14,31 +19,37 @@ export const SETTINGS_TABS: TabConfig[] = [
     id: "profile",
     label: "Profile",
     icon: User,
-    description: "Personal information and preferences",
+    description: "Personal Details",
   },
   {
     id: "preferences",
     label: "Preferences",
     icon: Settings,
-    description: "App settings and customization",
+    description: "App Behavior",
   },
   {
-    id: "visa-criteria",
-    label: "UK Visa Criteria",
+    id: "notifications",
+    label: "Notifications",
+    icon: Bell,
+    description: "Alerts & Emails",
+  },
+  {
+    id: "visa", 
+    label: "UK Visa",
     icon: Shield,
-    description: "UK visa eligibility settings",
+    description: "Eligibility Criteria",
   },
   {
     id: "features",
     label: "Features & Plan",
     icon: Crown,
-    description: "Manage subscription and premium features",
+    description: "Manage Subscription",
   },
   {
     id: "security",
     label: "Security",
     icon: Shield,
-    description: "Password and privacy settings",
+    description: "Privacy & Access",
   },
 ];
 

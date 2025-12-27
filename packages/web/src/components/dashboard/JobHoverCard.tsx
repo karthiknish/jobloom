@@ -144,7 +144,7 @@ export const JobHoverCard = React.memo(function JobHoverCard({
             <div className="space-y-2">
               <p className="text-xs font-medium text-muted-foreground">Skills:</p>
               <div className="flex flex-wrap gap-1">
-                {application.job.skills.slice(0, 4).map((skill, index) => (
+                {application.job.skills.slice(0, 4).map((skill: string, index: number) => (
                   <Badge key={index} variant="outline" className="text-xs">
                     {skill}
                   </Badge>

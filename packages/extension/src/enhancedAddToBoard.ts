@@ -2,43 +2,36 @@
 import { get, post, put } from "./apiClient";
 import { safeChromeStorageGet } from "./utils/safeStorage";
 import { UnifiedJobParser, type JobData as EnhancedJobData, type SocCodeMatch } from "./parsers";
-import { normalizeJobUrl, extractJobIdentifier } from "./utils/url";
+import { 
+  normalizeJobUrl, 
+  extractJobIdentifier, 
+  normalizeCompanyName, 
+  isLikelyPlaceholderCompany,
+  type Job,
+  type CreateJobResponse,
+  type KanbanStatus 
+} from "@hireall/shared";
 import { SponsorshipManager } from "./components/SponsorshipManager";
-import { normalizeCompanyName, isLikelyPlaceholderCompany } from "./utils/companyName";
 
-interface JobBoardEntry {
+/**
+ * Extension-specific job board entry that extends the shared Job type.
+ * Adds fields needed for local storage and UI state.
+ */
+interface JobBoardEntry extends Omit<Job, '_id' | 'userId' | 'source' | 'dateFound' | 'likelySocCode'> {
   id: string;
-  company: string;
-  title: string;
-  location: string;
-  url: string;
   dateAdded: string;
-  status: "interested" | "applied" | "rejected" | "offered" | "withdrawn";
+  status: KanbanStatus;
   notes: string;
-  salary?: string;
-  description?: string;
-  skills?: string[];
-  requirements?: string[];
-  benefits?: string[];
-  remoteWork?: boolean;
-  companySize?: string;
-  industry?: string;
-  postedDate?: string;
-  applicationDeadline?: string;
-  isSponsored?: boolean;
-  sponsorshipType?: string;
+  /** SOC code mapped from likelySocCode for local use */
   socCode?: string;
-  socMatchConfidence?: number;
-  department?: string;
-  seniority?: string;
-  employmentType?: string;
-  locationType?: string;
+  /** Industry alias for department */
+  industry?: string;
 }
 
 interface PendingJob {
   id: string;
   jobData: EnhancedJobData;
-  status: "interested" | "applied";
+  status: KanbanStatus;
   timestamp: number;
   retryCount: number;
 }

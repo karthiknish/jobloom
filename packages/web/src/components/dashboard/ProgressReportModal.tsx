@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import {
   Dialog,
@@ -26,7 +26,11 @@ import {
   Star,
   Calendar,
   Download,
+  Edit2,
+  Check,
+  X,
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { Application } from "@/types/dashboard";
 import { useRestoreFocus } from "@/hooks/useRestoreFocus";
 
@@ -47,6 +51,8 @@ export function ProgressReportModal({
   goals = { weeklyApplications: 10, responseRate: 20 },
 }: ProgressReportModalProps) {
   useRestoreFocus(open);
+  const [editableGoals, setEditableGoals] = useState(goals);
+  const [isEditingGoals, setIsEditingGoals] = useState(false);
   const safeApps = Array.isArray(applications) ? applications : [];
 
   // Calculate metrics
@@ -84,8 +90,39 @@ export function ProgressReportModal({
     : thisWeekApps.length > 0 ? 100 : 0;
 
   // Goal progress
-  const weeklyGoalProgress = Math.min(100, (thisWeekApps.length / goals.weeklyApplications) * 100);
-  const responseGoalProgress = Math.min(100, (responseRate / goals.responseRate) * 100);
+  const weeklyGoalProgress = Math.min(100, (thisWeekApps.length / editableGoals.weeklyApplications) * 100);
+  const responseGoalProgress = Math.min(100, (responseRate / editableGoals.responseRate) * 100);
+
+  // Export report
+  const exportReport = () => {
+    const reportText = `
+PROGRESS REPORT - ${new Date().toLocaleDateString()}
+====================================
+Total Applications: ${totalApplications}
+Offers: ${statusBreakdown.offered}
+Response Rate: ${responseRate}%
+This Week: ${thisWeekApps.length} applications
+Weekly Change: ${weeklyChange >= 0 ? "+" : ""}${weeklyChange} (${weeklyChangePercent}%)
+
+GOAL PROGRESS
+- Weekly Applications: ${thisWeekApps.length}/${editableGoals.weeklyApplications} (${weeklyGoalProgress.toFixed(0)}%)
+- Response Rate: ${responseRate}%/${editableGoals.responseRate}% (${responseGoalProgress.toFixed(0)}%)
+
+STATUS BREAKDOWN
+- Interested: ${statusBreakdown.interested}
+- Applied: ${statusBreakdown.applied}
+- Offered: ${statusBreakdown.offered}
+- Rejected: ${statusBreakdown.rejected}
+- Withdrawn: ${statusBreakdown.withdrawn}
+    `.trim();
+    const blob = new Blob([reportText], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "progress_report.txt";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const getTrendIcon = (change: number) => {
     if (change > 0) return <TrendingUp className="h-4 w-4 text-green-600" />;
@@ -103,10 +140,16 @@ export function ProgressReportModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-primary" />
-            Progress Report
-          </DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-primary" />
+              Progress Report
+            </DialogTitle>
+            <Button variant="outline" size="sm" onClick={exportReport} className="gap-2">
+              <Download className="h-4 w-4" />
+              Export
+            </Button>
+          </div>
           <DialogDescription>
             Your job search performance metrics and goal progress.
           </DialogDescription>
@@ -184,16 +227,45 @@ export function ProgressReportModal({
             {/* Goal Progress */}
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <Target className="h-4 w-4" />
-                  Goal Progress
+                <CardTitle className="text-sm font-medium flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    <Target className="h-4 w-4" />
+                    Goal Progress
+                  </span>
+                  {isEditingGoals ? (
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setIsEditingGoals(false)}>
+                        <Check className="h-3.5 w-3.5 text-green-600" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditableGoals(goals); setIsEditingGoals(false); }}>
+                        <X className="h-3.5 w-3.5 text-red-600" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button variant="ghost" size="sm" onClick={() => setIsEditingGoals(true)} className="h-7 text-xs gap-1">
+                      <Edit2 className="h-3 w-3" />
+                      Set Custom
+                    </Button>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <div className="flex justify-between text-sm mb-2">
+                  <div className="flex justify-between text-sm mb-2 items-center">
                     <span>Weekly Applications</span>
-                    <span className="font-medium">{thisWeekApps.length} / {goals.weeklyApplications}</span>
+                    {isEditingGoals ? (
+                      <div className="flex items-center gap-1">
+                        <span className="font-medium">{thisWeekApps.length} /</span>
+                        <Input 
+                          type="number" 
+                          value={editableGoals.weeklyApplications} 
+                          onChange={(e) => setEditableGoals(prev => ({ ...prev, weeklyApplications: parseInt(e.target.value) || 1 }))}
+                          className="w-16 h-7 text-sm text-right"
+                        />
+                      </div>
+                    ) : (
+                      <span className="font-medium">{thisWeekApps.length} / {editableGoals.weeklyApplications}</span>
+                    )}
                   </div>
                   <Progress value={weeklyGoalProgress} className="h-2" />
                   {weeklyGoalProgress >= 100 && (
@@ -202,9 +274,22 @@ export function ProgressReportModal({
                 </div>
 
                 <div>
-                  <div className="flex justify-between text-sm mb-2">
+                  <div className="flex justify-between text-sm mb-2 items-center">
                     <span>Response Rate</span>
-                    <span className="font-medium">{responseRate}% / {goals.responseRate}%</span>
+                    {isEditingGoals ? (
+                      <div className="flex items-center gap-1">
+                        <span className="font-medium">{responseRate}% /</span>
+                        <Input 
+                          type="number" 
+                          value={editableGoals.responseRate} 
+                          onChange={(e) => setEditableGoals(prev => ({ ...prev, responseRate: parseInt(e.target.value) || 1 }))}
+                          className="w-16 h-7 text-sm text-right"
+                        />
+                        <span>%</span>
+                      </div>
+                    ) : (
+                      <span className="font-medium">{responseRate}% / {editableGoals.responseRate}%</span>
+                    )}
                   </div>
                   <Progress value={responseGoalProgress} className="h-2" />
                   {responseGoalProgress >= 100 && (

@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
+import confetti from "canvas-confetti";
 import {
   TrendingUp,
   TrendingDown,
@@ -11,19 +12,25 @@ import {
   BarChart3,
   LineChart,
   Zap,
-  Lightbulb
+  Lightbulb,
+  Download,
+  ExternalLink
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Sparkline } from "@/components/ui/Sparkline";
+import { Button } from "@/components/ui/button";
 import type { CvAnalysis } from "../types/api";
 
 interface CvImprovementTrackerProps {
   analyses: CvAnalysis[];
+  onViewAnalysis?: (analysisId: string) => void;
 }
 
-export function CvImprovementTracker({ analyses }: CvImprovementTrackerProps) {
+export function CvImprovementTracker({ analyses, onViewAnalysis }: CvImprovementTrackerProps) {
+  const celebratedMilestones = useRef<Set<number>>(new Set());
+
   const improvementData = useMemo(() => {
     if (!analyses || analyses.length === 0) return null;
 
@@ -114,15 +121,49 @@ export function CvImprovementTracker({ analyses }: CvImprovementTrackerProps) {
     latestAnalysis,
   } = improvementData;
 
+  // Export to CSV
+  const exportToCSV = () => {
+    const headers = ["Date", "File", "Overall Score", "ATS Score", "Keywords Found"];
+    const rows = sortedAnalyses.map(a => [
+      new Date(a.createdAt).toLocaleDateString(),
+      a.fileName || "Unknown",
+      a.overallScore || 0,
+      a.atsCompatibility?.score || 0,
+      a.keywordAnalysis?.presentKeywords?.length || 0
+    ]);
+    const csvContent = [headers, ...rows].map(r => r.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "cv_improvement_data.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Confetti celebration for newly achieved milestones
+  useEffect(() => {
+    milestones.forEach(m => {
+      if (m.achieved && !celebratedMilestones.current.has(m.threshold)) {
+        celebratedMilestones.current.add(m.threshold);
+        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+      }
+    });
+  }, [milestones]);
+
   return (
     <div className="space-y-6">
       {/* Overall Progress Summary */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="flex items-center">
             <TrendingUp className="h-5 w-5 mr-2" />
             Your CV Improvement Journey
           </CardTitle>
+          <Button variant="outline" size="sm" onClick={exportToCSV} className="gap-2">
+            <Download className="h-4 w-4" />
+            Export CSV
+          </Button>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -319,9 +360,12 @@ export function CvImprovementTracker({ analyses }: CvImprovementTrackerProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between p-4 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg border border-yellow-200">
+          <div 
+            onClick={() => onViewAnalysis?.(bestAnalysis._id)}
+            className="flex items-center justify-between p-4 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg border border-yellow-200 cursor-pointer hover:shadow-md hover:border-yellow-300 transition-all group"
+          >
             <div>
-              <h4 className="font-medium text-yellow-900">
+              <h4 className="font-medium text-yellow-900 group-hover:underline">
                 {bestAnalysis.fileName}
               </h4>
               <p className="text-sm text-yellow-700">
@@ -329,12 +373,17 @@ export function CvImprovementTracker({ analyses }: CvImprovementTrackerProps) {
                 {new Date(bestAnalysis.createdAt).toLocaleDateString()}
               </p>
             </div>
-            <Badge
-              variant="default"
-              className="bg-yellow-500 hover:bg-yellow-600"
-            >
-              Best Score
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Badge
+                variant="default"
+                className="bg-yellow-500 hover:bg-yellow-600"
+              >
+                Best Score
+              </Badge>
+              {onViewAnalysis && (
+                <ExternalLink className="h-4 w-4 text-yellow-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>

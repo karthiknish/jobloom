@@ -63,7 +63,7 @@ function WelcomeInner() {
         transition={{ duration: 0.6 }}
         className="w-full max-w-2xl space-y-8 relative z-10"
       >
-        <Card className="card-premium-elevated border-0 bg-surface overflow-hidden">
+        <Card variant="premium-elevated" className="border-0 bg-surface overflow-hidden">
           <CardHeader className="space-y-6 text-center pb-8 pt-12 px-8 sm:px-12">
             <motion.div
               initial={{ scale: 0 }}
@@ -144,8 +144,9 @@ function WelcomeInner() {
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                   <Button
                     onClick={handleStartTour}
-                    className="btn-premium h-14 px-8 text-lg font-bold gradient-primary hover:shadow-premium-xl w-full sm:w-auto"
-                    size="lg"
+                    variant="premium"
+                    size="2xl"
+                    className="w-full sm:w-auto"
                   >
                     <PlayCircle className="mr-2 h-5 w-5" />
                     Take a Quick Tour
@@ -155,8 +156,8 @@ function WelcomeInner() {
                   <Button
                     onClick={handleGoToDashboard}
                     variant="outline"
-                    className="h-14 px-8 text-lg font-semibold w-full sm:w-auto"
-                    size="lg"
+                    size="2xl"
+                    className="w-full sm:w-auto font-semibold"
                   >
                     Skip to Dashboard
                     <ArrowRight className="ml-2 h-5 w-5" />

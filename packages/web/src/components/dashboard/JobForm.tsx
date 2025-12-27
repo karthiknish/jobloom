@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { 
   Loader2, 
   AlertCircle, 
@@ -29,25 +33,29 @@ import {
   writeJsonToStorage,
 } from "@/constants/storageKeys";
 
-interface JobFormData {
-  title: string;
-  company: string;
-  location: string;
-  url: string;
-  description: string;
-  salary: string;
-  isSponsored: boolean;
-  isRecruitmentAgency: boolean;
-  source: string;
-  jobType: string;
-  experienceLevel: string;
-}
+import { Job } from "@/types/dashboard";
+
+const jobSchema = z.object({
+  title: z.string().min(1, "Job title is required").max(200, "Title must be less than 200 characters"),
+  company: z.string().min(1, "Company name is required").max(200, "Company must be less than 200 characters"),
+  location: z.string().default(""),
+  url: z.string().url("Please enter a valid URL").or(z.literal("")).default(""),
+  description: z.string().max(5000, "Description must be less than 5000 characters").default(""),
+  salary: z.string().default(""),
+  isSponsored: z.boolean().default(false),
+  isRecruitmentAgency: z.boolean().default(false),
+  source: z.string().default("manual"),
+  jobType: z.string().default(""),
+  experienceLevel: z.string().default(""),
+});
+
+type JobFormValues = z.infer<typeof jobSchema>;
 
 interface JobFormProps {
-  onSubmit: (data: JobFormData) => Promise<void>;
+  onSubmit: (data: Job) => Promise<void>;
   onCancel: () => void;
   /** Optional initial data for editing */
-  initialData?: Partial<JobFormData>;
+  initialData?: Partial<Job>;
   /** Whether this is an edit form */
   isEditing?: boolean;
 }
@@ -83,46 +91,51 @@ const SOURCES = [
 ];
 
 export function JobForm({ onSubmit, onCancel, initialData, isEditing = false }: JobFormProps) {
-  const [formData, setFormData] = useState<JobFormData>({
-    title: initialData?.title || "",
-    company: initialData?.company || "",
-    location: initialData?.location || "",
-    url: initialData?.url || "",
-    description: initialData?.description || "",
-    salary: initialData?.salary || "",
-    isSponsored: initialData?.isSponsored || false,
-    isRecruitmentAgency: initialData?.isRecruitmentAgency || false,
-    source: initialData?.source || "manual",
-    jobType: initialData?.jobType || "",
-    experienceLevel: initialData?.experienceLevel || "",
-  });
-
-  const [errors, setErrors] = useState<FieldError[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle");
   const [hasDraft, setHasDraft] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const form = useForm<JobFormValues>({
+    resolver: zodResolver(jobSchema) as any,
+    defaultValues: {
+      title: initialData?.title || "",
+      company: initialData?.company || "",
+      location: initialData?.location || "",
+      url: initialData?.url || "",
+      description: initialData?.description || "",
+      salary: initialData?.salary || "",
+      isSponsored: initialData?.isSponsored || false,
+      isRecruitmentAgency: initialData?.isRecruitmentAgency || false,
+      source: initialData?.source || "manual",
+      jobType: initialData?.jobType || "",
+      experienceLevel: initialData?.experienceLevel || "",
+    },
+  });
 
   // Load draft from localStorage on mount
   useEffect(() => {
-    if (isEditing) return; // Don't load draft when editing
+    if (isEditing) return;
     
     try {
-      const draft = readAndMigrateJsonFromStorage<Partial<JobFormData>>(
+      const draft = readAndMigrateJsonFromStorage<Partial<Job>>(
         STORAGE_KEYS.jobDraft,
         LEGACY_STORAGE_KEYS.jobDraft
       );
       if (draft) {
-        // Only restore if there's meaningful content
         if (draft.title || draft.company || draft.description) {
-          setFormData(prev => ({ ...prev, ...draft }));
+          form.reset({
+            ...form.getValues(),
+            ...draft,
+          });
           setHasDraft(true);
         }
       }
     } catch (e) {
       console.warn("Failed to load draft:", e);
     }
-  }, [isEditing]);
+  }, [isEditing, form]);
 
   // Auto-save draft
   const saveDraft = useCallback(() => {
@@ -130,14 +143,15 @@ export function JobForm({ onSubmit, onCancel, initialData, isEditing = false }: 
     
     try {
       setIsSavingDraft(true);
-      writeJsonToStorage(STORAGE_KEYS.jobDraft, formData, LEGACY_STORAGE_KEYS.jobDraft);
+      const values = form.getValues();
+      writeJsonToStorage(STORAGE_KEYS.jobDraft, values, LEGACY_STORAGE_KEYS.jobDraft);
       setHasDraft(true);
       setTimeout(() => setIsSavingDraft(false), 500);
     } catch (e) {
       console.warn("Failed to save draft:", e);
       setIsSavingDraft(false);
     }
-  }, [formData, isEditing]);
+  }, [form, isEditing]);
 
   // Auto-save every 30 seconds
   useEffect(() => {
@@ -160,112 +174,40 @@ export function JobForm({ onSubmit, onCancel, initialData, isEditing = false }: 
     setHasDraft(false);
   };
 
-  // Validation
-  const validateForm = (): boolean => {
-    const newErrors: FieldError[] = [];
-
-    // Required fields
-    if (!formData.title.trim()) {
-      newErrors.push({ field: "title", message: "Job title is required" });
-    }
-    if (!formData.company.trim()) {
-      newErrors.push({ field: "company", message: "Company name is required" });
-    }
-
-    // URL validation (optional but must be valid if provided)
-    if (formData.url.trim()) {
-      try {
-        new URL(formData.url);
-      } catch {
-        newErrors.push({ field: "url", message: "Please enter a valid URL" });
-      }
-    }
-
-    // Title length
-    if (formData.title.length > 200) {
-      newErrors.push({ field: "title", message: "Title must be less than 200 characters" });
-    }
-
-    // Company length
-    if (formData.company.length > 200) {
-      newErrors.push({ field: "company", message: "Company must be less than 200 characters" });
-    }
-
-    setErrors(newErrors);
-    return newErrors.length === 0;
-  };
-
-  const getFieldError = (field: string): string | undefined => {
-    return errors.find(e => e.field === field)?.message;
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    // Clear error for this field
-    setErrors(prev => prev.filter(e => e.field !== name));
-  };
-
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleCheckboxChange = (name: string, checked: boolean | "indeterminate") => {
-    setFormData(prev => ({
-      ...prev,
-      [name]: checked === true
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
-
+  const onFormSubmit = async (values: JobFormValues) => {
     setIsSubmitting(true);
     setSubmitStatus("idle");
+    setFormError(null);
 
     try {
-      await onSubmit(formData);
+      const payload: Job = {
+        ...(initialData as Job),
+        ...values,
+        _id: initialData?._id || "",
+        userId: initialData?.userId || "",
+        dateFound: initialData?.dateFound || Date.now(),
+      };
+
+      await onSubmit(payload);
       setSubmitStatus("success");
       clearDraft();
       
       // Reset form after success
       setTimeout(() => {
-        setFormData({
-          title: "",
-          company: "",
-          location: "",
-          url: "",
-          description: "",
-          salary: "",
-          isSponsored: false,
-          isRecruitmentAgency: false,
-          source: "manual",
-          jobType: "",
-          experienceLevel: "",
-        });
+        if (!isEditing) {
+          form.reset();
+        }
         setSubmitStatus("idle");
       }, 1500);
 
     } catch (error) {
       console.error("Failed to submit job:", error);
       setSubmitStatus("error");
-      setErrors([{ field: "_form", message: error instanceof Error ? error.message : "Failed to add job. Please try again." }]);
+      setFormError(error instanceof Error ? error.message : "Failed to add job. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
-
-  const formError = errors.find(e => e.field === "_form")?.message;
 
   const breadcrumbItems = useMemo(
     () =>
@@ -354,192 +296,238 @@ export function JobForm({ onSubmit, onCancel, initialData, isEditing = false }: 
           )}
         </AnimatePresence>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Essential Fields */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {/* Job Title */}
-            <div className="space-y-2">
-              <Label htmlFor="title" className="flex items-center gap-2">
-                <Briefcase className="h-4 w-4 text-muted-foreground" />
-                Job Title <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="title"
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onFormSubmit)} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <FormField
+                control={form.control}
                 name="title"
-                value={formData.title}
-                onChange={handleChange}
-                placeholder="e.g., Software Engineer"
-                className={getFieldError("title") ? "border-red-500" : ""}
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <FormLabel className="flex items-center gap-2">
+                      <Briefcase className="h-4 w-4 text-muted-foreground" />
+                      Job Title <span className="text-red-500">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="e.g., Software Engineer" className="input-premium" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-              {getFieldError("title") && (
-                <p className="text-xs text-red-500">{getFieldError("title")}</p>
-              )}
-            </div>
-            
-            {/* Company */}
-            <div className="space-y-2">
-              <Label htmlFor="company" className="flex items-center gap-2">
-                <Building2 className="h-4 w-4 text-muted-foreground" />
-                Company <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="company"
+
+              <FormField
+                control={form.control}
                 name="company"
-                value={formData.company}
-                onChange={handleChange}
-                placeholder="e.g., Google"
-                className={getFieldError("company") ? "border-red-500" : ""}
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <FormLabel className="flex items-center gap-2">
+                      <Building2 className="h-4 w-4 text-muted-foreground" />
+                      Company <span className="text-red-500">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="e.g., Google" className="input-premium" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-              {getFieldError("company") && (
-                <p className="text-xs text-red-500">{getFieldError("company")}</p>
-              )}
-            </div>
-            
-            {/* Location */}
-            <div className="space-y-2">
-              <Label htmlFor="location" className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-muted-foreground" />
-                Location
-              </Label>
-              <Input
-                id="location"
+
+              <FormField
+                control={form.control}
                 name="location"
-                value={formData.location}
-                onChange={handleChange}
-                placeholder="e.g., San Francisco, CA or Remote"
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <FormLabel className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-muted-foreground" />
+                      Location
+                    </FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="e.g., San Francisco, CA or Remote" className="input-premium" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            
-            {/* Salary */}
-            <div className="space-y-2">
-              <Label htmlFor="salary" className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-                Salary
-              </Label>
-              <Input
-                id="salary"
+
+              <FormField
+                control={form.control}
                 name="salary"
-                value={formData.salary}
-                onChange={handleChange}
-                placeholder="e.g., £120,000 - £150,000"
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <FormLabel className="flex items-center gap-2">
+                      <DollarSign className="h-4 w-4 text-muted-foreground" />
+                      Salary
+                    </FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="e.g., £120,000 - £150,000" className="input-premium" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
             </div>
-          </div>
 
-          {/* Job URL */}
-          <div className="space-y-2">
-            <Label htmlFor="url" className="flex items-center gap-2">
-              <Link2 className="h-4 w-4 text-muted-foreground" />
-              Job URL
-            </Label>
-            <Input
-              id="url"
+            <FormField
+              control={form.control}
               name="url"
-              type="url"
-              value={formData.url}
-              onChange={handleChange}
-              placeholder="https://company.com/jobs/123"
-              className={getFieldError("url") ? "border-red-500" : ""}
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <FormLabel className="flex items-center gap-2">
+                    <Link2 className="h-4 w-4 text-muted-foreground" />
+                    Job URL
+                  </FormLabel>
+                  <FormControl>
+                    <Input {...field} type="url" placeholder="https://company.com/jobs/123" className="input-premium" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            {getFieldError("url") && (
-              <p className="text-xs text-red-500">{getFieldError("url")}</p>
-            )}
-          </div>
 
-          {/* Job Type & Experience Level */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <div className="space-y-2">
-              <Label htmlFor="jobType">Job Type</Label>
-              <Select value={formData.jobType} onValueChange={(v) => handleSelectChange("jobType", v)}>
-                <SelectTrigger id="jobType">
-                  <SelectValue placeholder="Select job type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {JOB_TYPES.map(type => (
-                    <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <FormField
+                control={form.control}
+                name="jobType"
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <FormLabel>Job Type</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="input-premium">
+                          <SelectValue placeholder="Select job type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {JOB_TYPES.map(type => (
+                          <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="experienceLevel"
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <FormLabel>Experience Level</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="input-premium">
+                          <SelectValue placeholder="Select level" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {EXPERIENCE_LEVELS.map(level => (
+                          <SelectItem key={level.value} value={level.value}>{level.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="experienceLevel">Experience Level</Label>
-              <Select value={formData.experienceLevel} onValueChange={(v) => handleSelectChange("experienceLevel", v)}>
-                <SelectTrigger id="experienceLevel">
-                  <SelectValue placeholder="Select level" />
-                </SelectTrigger>
-                <SelectContent>
-                  {EXPERIENCE_LEVELS.map(level => (
-                    <SelectItem key={level.value} value={level.value}>{level.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          
-          {/* Description */}
-          <div className="space-y-2">
-            <Label htmlFor="description" className="flex items-center gap-2">
-              <FileText className="h-4 w-4 text-muted-foreground" />
-              Description
-            </Label>
-            <Textarea
-              id="description"
+            <FormField
+              control={form.control}
               name="description"
-              value={formData.description}
-              onChange={handleChange}
-              rows={4}
-              placeholder="Paste the job description here..."
-              className="resize-none"
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <FormLabel className="flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    Description
+                  </FormLabel>
+                  <FormControl>
+                    <Textarea
+                      {...field}
+                      rows={4}
+                      placeholder="Paste the job description here..."
+                      className="resize-none input-premium"
+                    />
+                  </FormControl>
+                  <FormDescription className="text-right">
+                    {(field.value || "").length}/5000 characters
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            <p className="text-xs text-muted-foreground">
-              {formData.description.length}/5000 characters
-            </p>
-          </div>
-          
-          {/* Tags & Source Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 items-end">
-            {/* Checkboxes */}
-            <div className="space-y-3">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="isSponsored"
-                  checked={formData.isSponsored}
-                  onCheckedChange={(checked) => handleCheckboxChange("isSponsored", checked === true)}
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 items-start">
+              <div className="space-y-4 pt-2">
+                <FormField
+                  control={form.control}
+                  name="isSponsored"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel className="text-sm font-normal cursor-pointer">
+                          Visa Sponsorship
+                        </FormLabel>
+                      </div>
+                    </FormItem>
+                  )}
                 />
-                <Label htmlFor="isSponsored" className="text-sm font-normal cursor-pointer">
-                  Visa Sponsorship
-                </Label>
+
+                <FormField
+                  control={form.control}
+                  name="isRecruitmentAgency"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel className="text-sm font-normal cursor-pointer">
+                          Recruitment Agency
+                        </FormLabel>
+                      </div>
+                    </FormItem>
+                  )}
+                />
               </div>
-              
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="isRecruitmentAgency"
-                  checked={formData.isRecruitmentAgency}
-                  onCheckedChange={(checked) => handleCheckboxChange("isRecruitmentAgency", checked === true)}
+
+              <div className="sm:col-span-2">
+                <FormField
+                  control={form.control}
+                  name="source"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <FormLabel>Source</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="input-premium">
+                            <SelectValue placeholder="Select source" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {SOURCES.map(source => (
+                            <SelectItem key={source.value} value={source.value}>{source.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-                <Label htmlFor="isRecruitmentAgency" className="text-sm font-normal cursor-pointer">
-                  Recruitment Agency
-                </Label>
               </div>
             </div>
-            
-            {/* Source */}
-            <div className="sm:col-span-2 space-y-2">
-              <Label htmlFor="source">Source</Label>
-              <Select value={formData.source} onValueChange={(v) => handleSelectChange("source", v)}>
-                <SelectTrigger id="source">
-                  <SelectValue placeholder="Select source" />
-                </SelectTrigger>
-                <SelectContent>
-                  {SOURCES.map(source => (
-                    <SelectItem key={source.value} value={source.value}>{source.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </form>
+          </form>
+        </Form>
         </CardContent>
 
         <CardFooter className="flex justify-between border-t pt-4">
@@ -556,7 +544,7 @@ export function JobForm({ onSubmit, onCancel, initialData, isEditing = false }: 
             Cancel
           </Button>
           <Button 
-            onClick={handleSubmit} 
+            onClick={form.handleSubmit(onFormSubmit)} 
             disabled={isSubmitting}
             className="min-w-[120px]"
           >

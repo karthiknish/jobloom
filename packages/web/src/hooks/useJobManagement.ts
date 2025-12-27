@@ -5,19 +5,7 @@ import { useOnboardingState } from "@/hooks/useOnboardingState";
 import { useSubscription } from "@/providers/subscription-provider";
 import { UpgradeIntentDetail } from "@/utils/upgradeIntent";
 
-interface JobFormData {
-  title: string;
-  company: string;
-  location: string;
-  url: string;
-  description: string;
-  salary: string;
-  isSponsored: boolean;
-  isRecruitmentAgency: boolean;
-  source: string;
-  jobType: string;
-  experienceLevel: string;
-}
+import { Job } from "@/types/dashboard";
 
 export function useJobManagement(
   onRefetchJobStats: () => void,
@@ -45,7 +33,7 @@ export function useJobManagement(
     return true;
   };
 
-  const handleJobSubmit = async (data: JobFormData) => {
+  const handleJobSubmit = async (data: Job) => {
     // Check application limit before creating job
     if (!checkApplicationLimit()) {
       return;

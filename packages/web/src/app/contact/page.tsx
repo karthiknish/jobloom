@@ -1,19 +1,35 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import toast from "react-hot-toast";
+import { useEffect } from "react";
 import { useApiMutation } from "../../hooks/useApi";
 import { contactApi } from "../../utils/api/contact";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { motion } from "framer-motion";
 import { Loader2, Mail, MessageSquare, Send, User } from "lucide-react";
 import { analytics } from "@/firebase/analytics";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useToast } from "@/hooks/use-toast";
+
+// Zod schema for form validation
+const contactFormSchema = z.object({
+  name: z.string().min(1, "Name is required").max(100, "Name must be less than 100 characters"),
+  email: z.string().min(1, "Email is required").email("Please enter a valid email address"),
+  message: z
+    .string()
+    .min(10, "Message must be at least 10 characters long")
+    .max(1000, "Message must be less than 1000 characters"),
+});
+
+type ContactFormValues = z.infer<typeof contactFormSchema>;
 
 export default function ContactPage() {
+  const toast = useToast();
   const { mutate: createContact } = useApiMutation(
     (variables: Record<string, unknown>) => {
       const { name, email, message } = variables;
@@ -24,66 +40,43 @@ export default function ContactPage() {
       });
     }
   );
-  
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false);
+
+  const form = useForm<ContactFormValues>({
+    resolver: zodResolver(contactFormSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      message: "",
+    },
+  });
+
+  const { isSubmitting, isValid } = form.formState;
+  const messageValue = form.watch("message");
 
   useEffect(() => {
     analytics.logPageView("/contact", "Contact");
     analytics.logFeatureUsed("contact_page_visit");
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Basic client-side validation
-    if (!name.trim() || !email.trim() || !message.trim()) {
-      toast.error("Please fill in all required fields.");
-      return;
-    }
-
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      toast.error("Please enter a valid email address.");
-      return;
-    }
-
-    // Message length validation
-    if (message.trim().length < 10) {
-      toast.error("Message must be at least 10 characters long.");
-      return;
-    }
-
-    if (message.trim().length > 1000) {
-      toast.error("Message must be less than 1000 characters.");
-      return;
-    }
-
-    setLoading(true);
+  const handleSubmit = async (values: ContactFormValues) => {
     try {
-      await createContact({ name, email, message });
+      await createContact(values);
       analytics.logGoalCompleted("contact", "contact_form_submitted");
       toast.success("Message sent! We'll get back to you soon.");
-      setName("");
-      setEmail("");
-      setMessage("");
-    } catch (err: any) {
-      console.error("Contact form error:", err);
-      analytics.logError("contact_form_failed", err?.message || "unknown_error");
+      form.reset();
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      console.error("Contact form error:", error);
+      analytics.logError("contact_form_failed", error?.message || "unknown_error");
       
       // Provide more specific error messages
-      if (err?.message?.includes("400")) {
+      if (error?.message?.includes("400")) {
         toast.error("Invalid form data. Please check your inputs and try again.");
-      } else if (err?.message?.includes("500")) {
+      } else if (error?.message?.includes("500")) {
         toast.error("Server error. Please try again later.");
       } else {
         toast.error("Failed to send message. Please try again later.");
       }
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -101,7 +94,7 @@ export default function ContactPage() {
         transition={{ duration: 0.6 }}
         className="w-full max-w-lg sm:max-w-xl space-y-8 relative z-10"
       >
-        <Card className="card-premium-elevated border-0 bg-surface p-8">
+        <Card variant="premium-elevated" className="border-0 bg-surface p-8">
           <CardHeader className="space-y-4 text-center pb-8">
             <motion.div
               initial={{ scale: 0 }}
@@ -130,107 +123,127 @@ export default function ContactPage() {
             </motion.div>
           </CardHeader>
           <CardContent>
-            <motion.form 
-              onSubmit={handleSubmit} 
-              className="space-y-6"
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.6 }}
             >
-              <div className="space-y-3">
-                <Label htmlFor="name" className="text-sm font-semibold text-foreground">Name</Label>
-                <div className="relative group">
-                  <User className="absolute left-4 top-3.5 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-premium" />
-                  <Input
-                    id="name"
-                    type="text"
-                    required
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="input-premium pl-12 h-12"
-                    placeholder="Your name"
-                    disabled={loading}
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem className="space-y-3">
+                        <FormLabel className="text-sm font-semibold text-foreground">Name</FormLabel>
+                        <div className="relative group">
+                          <User className="absolute left-4 top-3.5 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-premium" />
+                          <FormControl>
+                            <Input
+                              {...field}
+                              className="input-premium pl-12 h-12"
+                              placeholder="Your name"
+                              disabled={isSubmitting}
+                            />
+                          </FormControl>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </div>
-              </div>
 
-              <div className="space-y-3">
-                <Label htmlFor="email" className="text-sm font-semibold text-foreground">Email</Label>
-                <div className="relative group">
-                  <Mail className="absolute left-4 top-3.5 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-premium" />
-                  <Input
-                    id="email"
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="input-premium pl-12 h-12"
-                    placeholder="you@example.com"
-                    disabled={loading}
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem className="space-y-3">
+                        <FormLabel className="text-sm font-semibold text-foreground">Email</FormLabel>
+                        <div className="relative group">
+                          <Mail className="absolute left-4 top-3.5 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-premium" />
+                          <FormControl>
+                            <Input
+                              {...field}
+                              type="email"
+                              className="input-premium pl-12 h-12"
+                              placeholder="you@example.com"
+                              disabled={isSubmitting}
+                            />
+                          </FormControl>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </div>
-              </div>
 
-              <div className="space-y-3">
-                <Label htmlFor="message" className="text-sm font-semibold text-foreground">
-                  Message
-                  <span className="text-xs font-normal text-muted-foreground ml-2">
-                    ({message.length}/1000)
-                  </span>
-                </Label>
-                <div className="relative group">
-                  <Textarea
-                    id="message"
-                    required
-                    rows={5}
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    maxLength={1000}
-                    placeholder="Please describe your question or feedback in detail..."
-                    className="input-premium min-h-[120px] resize-y p-4"
-                    disabled={loading}
+                  <FormField
+                    control={form.control}
+                    name="message"
+                    render={({ field }) => (
+                      <FormItem className="space-y-3">
+                        <FormLabel className="text-sm font-semibold text-foreground">
+                          Message
+                          <span className="text-xs font-normal text-muted-foreground ml-2">
+                            ({messageValue?.length || 0}/1000)
+                          </span>
+                        </FormLabel>
+                        <div className="relative group">
+                          <FormControl>
+                            <Textarea
+                              {...field}
+                              rows={5}
+                              maxLength={1000}
+                              placeholder="Please describe your question or feedback in detail..."
+                              className="input-premium min-h-[120px] resize-y p-4"
+                              disabled={isSubmitting}
+                            />
+                          </FormControl>
+                        </div>
+                        <FormMessage />
+                        {messageValue && messageValue.length > 900 && (
+                          <motion.p 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="text-sm text-amber-500 font-medium"
+                          >
+                            {messageValue.length > 1000 ? "Maximum length exceeded." : "Almost at character limit."}
+                          </motion.p>
+                        )}
+                      </FormItem>
+                    )}
                   />
-                </div>
-                {message.length > 900 && (
-                  <motion.p 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="text-sm text-amber-500 font-medium"
-                  >
-                    {message.length > 1000 ? "Maximum length exceeded." : "Almost at character limit."}
-                  </motion.p>
-                )}
-              </div>
 
-              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  className="btn-premium w-full h-12 font-bold gradient-primary hover:shadow-premium-xl text-base"
-                  size="lg"
-                >
-                  {loading ? (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="flex items-center justify-center"
+                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                    <Button
+                      type="submit"
+                      disabled={isSubmitting || !isValid}
+                      variant="premium"
+                      className="w-full h-12 text-base"
+                      size="lg"
                     >
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      <span>Sending...</span>
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="flex items-center justify-center"
-                    >
-                      <Send className="mr-2 h-4 w-4" />
-                      <span>Send Message</span>
-                    </motion.div>
-                  )}
-                </Button>
-              </motion.div>
-            </motion.form>
+                      {isSubmitting ? (
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          className="flex items-center justify-center"
+                        >
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          <span>Sending...</span>
+                        </motion.div>
+                      ) : (
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          className="flex items-center justify-center"
+                        >
+                          <Send className="mr-2 h-4 w-4" />
+                          <span>Send Message</span>
+                        </motion.div>
+                      )}
+                    </Button>
+                  </motion.div>
+                </form>
+              </Form>
+            </motion.div>
           </CardContent>
         </Card>
       </motion.div>

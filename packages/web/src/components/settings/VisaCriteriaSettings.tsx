@@ -9,31 +9,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useFormContext } from "react-hook-form";
+import { FormField, FormItem, FormControl, FormLabel, FormDescription } from "@/components/ui/form";
 
-interface VisaCriteriaSettingsProps {
-  formData: {
-    preferences: {
-      ukFiltersEnabled: boolean;
-      ageCategory: string;
-      educationStatus: string;
-      phdStatus: string;
-      professionalStatus: string;
-      minimumSalary: number;
-      jobCategories: string[];
-      locationPreference: string;
-    };
-  };
-  onInputChange: (section: string, field: string, value: any) => void;
-}
+interface VisaCriteriaSettingsProps {}
 
-export function VisaCriteriaSettings({ formData, onInputChange }: VisaCriteriaSettingsProps) {
+export function VisaCriteriaSettings() {
+  const { control, setValue, watch } = useFormContext();
+  const formData = watch();
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, delay: 0.2 }}
     >
-      <Card className="card-premium-elevated border-0 bg-surface">
+      <Card variant="premium" className="border-0 bg-surface">
         <CardHeader>
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -55,29 +45,35 @@ export function VisaCriteriaSettings({ formData, onInputChange }: VisaCriteriaSe
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 0.4 }}
           >
-            <div className="mb-6">
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label htmlFor="ukFiltersEnabledSetting" className="text-base font-semibold text-foreground">
-                    Enable UK Visa Analysis
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Turn on detailed UK visa eligibility assessment for job listings
-                  </p>
-                </div>
-                <Switch
-                  id="ukFiltersEnabledSetting"
-                  checked={formData.preferences.ukFiltersEnabled ?? false}
-                  onCheckedChange={(checked) => {
-                    onInputChange("preferences", "ukFiltersEnabled", checked);
-                    // Also sync with sponsor button preference
-                    if (checked) {
-                      onInputChange("preferences", "showSponsorButton", true);
-                    }
-                  }}
-                />
-              </div>
-            </div>
+            <FormField
+              control={control}
+              name="preferences.ukFiltersEnabled"
+              render={({ field }) => (
+                <FormItem className="mb-6">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <FormLabel className="text-base font-semibold text-foreground">
+                        Enable UK Visa Analysis
+                      </FormLabel>
+                      <FormDescription className="text-sm text-muted-foreground">
+                        Turn on detailed UK visa eligibility assessment for job listings
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={(checked) => {
+                          field.onChange(checked);
+                          if (checked) {
+                            setValue("preferences.showSponsorButton", true, { shouldDirty: true });
+                          }
+                        }}
+                      />
+                    </FormControl>
+                  </div>
+                </FormItem>
+              )}
+            />
 
             <Alert>
               <Shield className="h-4 w-4" />
@@ -87,102 +83,138 @@ export function VisaCriteriaSettings({ formData, onInputChange }: VisaCriteriaSe
             </Alert>
 
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label className="text-sm font-semibold text-foreground">Age Category</Label>
-                <Select
-                  value={formData.preferences.ageCategory || "adult"}
-                  onValueChange={(value) => onInputChange("preferences", "ageCategory", value)}
-                >
-                  <SelectTrigger className="input-premium">
-                    <SelectValue placeholder="Select age category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="student">Student (16-17)</SelectItem>
-                    <SelectItem value="youngAdult">Young Adult (18-25)</SelectItem>
-                    <SelectItem value="adult">Adult (26-45)</SelectItem>
-                    <SelectItem value="experienced">Experienced Professional (46+)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <FormField
+                control={control}
+                name="preferences.ageCategory"
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <FormLabel className="text-sm font-semibold text-foreground">Age Category</FormLabel>
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="input-premium">
+                          <SelectValue placeholder="Select age category" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="student">Student (16-17)</SelectItem>
+                        <SelectItem value="youngAdult">Young Adult (18-25)</SelectItem>
+                        <SelectItem value="adult">Adult (26-45)</SelectItem>
+                        <SelectItem value="experienced">Experienced Professional (46+)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
 
-              <div className="space-y-2">
-                <Label className="text-sm font-semibold text-foreground">Education Status</Label>
-                <Select
-                  value={formData.preferences.educationStatus || "none"}
-                  onValueChange={(value) => onInputChange("preferences", "educationStatus", value)}
-                >
-                  <SelectTrigger className="input-premium">
-                    <SelectValue placeholder="Select education status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    <SelectItem value="high-school">High School</SelectItem>
-                    <SelectItem value="bachelor">Bachelor&apos;s Degree</SelectItem>
-                    <SelectItem value="master">Master&apos;s Degree</SelectItem>
-                    <SelectItem value="phd">PhD</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <FormField
+                control={control}
+                name="preferences.educationStatus"
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <FormLabel className="text-sm font-semibold text-foreground">Education Status</FormLabel>
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="input-premium">
+                          <SelectValue placeholder="Select education status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        <SelectItem value="high-school">High School</SelectItem>
+                        <SelectItem value="bachelor">Bachelor&apos;s Degree</SelectItem>
+                        <SelectItem value="master">Master&apos;s Degree</SelectItem>
+                        <SelectItem value="phd">PhD</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
 
-              <div className="space-y-2">
-                <Label className="text-sm font-semibold text-foreground">PhD Status</Label>
-                <Select
-                  value={formData.preferences.phdStatus || "none"}
-                  onValueChange={(value) => onInputChange("preferences", "phdStatus", value)}
-                >
-                  <SelectTrigger className="input-premium">
-                    <SelectValue placeholder="Select PhD status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Not Applicable</SelectItem>
-                    <SelectItem value="in-progress">In Progress</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <FormField
+                control={control}
+                name="preferences.phdStatus"
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <FormLabel className="text-sm font-semibold text-foreground">PhD Status</FormLabel>
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="input-premium">
+                          <SelectValue placeholder="Select PhD status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="none">Not Applicable</SelectItem>
+                        <SelectItem value="in-progress">In Progress</SelectItem>
+                        <SelectItem value="completed">Completed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
 
-              <div className="space-y-2">
-                <Label className="text-sm font-semibold text-foreground">Professional Status</Label>
-                <Select
-                  value={formData.preferences.professionalStatus || "none"}
-                  onValueChange={(value) => onInputChange("preferences", "professionalStatus", value)}
-                >
-                  <SelectTrigger className="input-premium">
-                    <SelectValue placeholder="Select professional status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Not Employed</SelectItem>
-                    <SelectItem value="entry-level">Entry Level (0-2 years)</SelectItem>
-                    <SelectItem value="junior">Junior (2-5 years)</SelectItem>
-                    <SelectItem value="mid-level">Mid-Level (5-10 years)</SelectItem>
-                    <SelectItem value="senior">Senior (10+ years)</SelectItem>
-                    <SelectItem value="expert">Expert (15+ years)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <FormField
+                control={control}
+                name="preferences.professionalStatus"
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <FormLabel className="text-sm font-semibold text-foreground">Professional Status</FormLabel>
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="input-premium">
+                          <SelectValue placeholder="Select professional status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="none">Not Employed</SelectItem>
+                        <SelectItem value="entry-level">Entry Level (0-2 years)</SelectItem>
+                        <SelectItem value="junior">Junior (2-5 years)</SelectItem>
+                        <SelectItem value="mid-level">Mid-Level (5-10 years)</SelectItem>
+                        <SelectItem value="senior">Senior (10+ years)</SelectItem>
+                        <SelectItem value="expert">Expert (15+ years)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
 
-              <div className="space-y-2">
-                <Label className="text-sm font-semibold text-foreground">
-                  Minimum Salary (£/year)
-                </Label>
-                <Input
-                  type="number"
-                  value={formData.preferences.minimumSalary}
-                  onChange={(e) => {
-                    const valueAsNumber = e.currentTarget.valueAsNumber;
-                    onInputChange(
-                      "preferences",
-                      "minimumSalary",
-                      Number.isFinite(valueAsNumber) ? Math.max(0, valueAsNumber) : 0
-                    );
-                  }}
-                  placeholder="38700"
-                  className="input-premium"
-                />
-                <p className="text-sm text-muted-foreground">
-                  UK skilled worker visa minimum salary requirement
-                </p>
-              </div>
+              <FormField
+                control={control}
+                name="preferences.minimumSalary"
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <FormLabel className="text-sm font-semibold text-foreground">
+                      Minimum Salary (£/year)
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        {...field}
+                        onChange={(e) => {
+                          const val = e.target.value === "" ? 0 : Number(e.target.value);
+                          field.onChange(val);
+                        }}
+                        placeholder="38700"
+                        className="input-premium"
+                      />
+                    </FormControl>
+                    <FormDescription className="text-sm text-muted-foreground">
+                      UK skilled worker visa minimum salary requirement
+                    </FormDescription>
+                  </FormItem>
+                )}
+              />
             </div>
           </motion.div>
 

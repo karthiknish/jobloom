@@ -18,7 +18,18 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import {
   MoreVertical,
@@ -49,7 +60,7 @@ export type ApplicationStatus =
 interface QuickActionsMenuProps {
   application: Application;
   onEdit: (application: Application) => void;
-  onDelete: (applicationId: string) => void;
+  onDelete: (applicationId: string, applicationTitle?: string) => void;
   onStatusChange: (applicationId: string, status: ApplicationStatus) => Promise<void>;
   onAddNote: (applicationId: string, note: string) => Promise<void>;
   onCheckSponsor?: (company: string) => void;
@@ -74,9 +85,10 @@ export function QuickActionsMenu({
   onGenerateCoverLetter,
 }: QuickActionsMenuProps) {
   const [showNoteDialog, setShowNoteDialog] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [noteText, setNoteText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  useRestoreFocus(showNoteDialog);
+  useRestoreFocus(showNoteDialog || showDeleteConfirm);
 
   const handleStatusChange = async (status: ApplicationStatus) => {
     setIsLoading(true);
@@ -202,7 +214,7 @@ export function QuickActionsMenu({
 
           {/* Delete */}
           <DropdownMenuItem
-            onClick={() => onDelete(application._id)}
+            onClick={() => setShowDeleteConfirm(true)}
             className="gap-2 text-destructive focus:text-destructive"
           >
             <Trash2 className="h-4 w-4" />
@@ -210,6 +222,30 @@ export function QuickActionsMenu({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Application?</AlertDialogTitle>
+            <AlertDialogDescription>
+              <span className="font-semibold">{application.job?.title}</span> at <span className="font-semibold">{application.job?.company}</span> will be moved to trash. You can restore it within 30 days.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                onDelete(application._id, application.job?.title);
+                setShowDeleteConfirm(false);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Quick Note Dialog */}
       <Dialog open={showNoteDialog} onOpenChange={setShowNoteDialog}>

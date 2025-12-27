@@ -1,13 +1,10 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { RefreshCw } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { getAuth, signOut as firebaseSignOut, updateProfile } from "firebase/auth";
-
-import { SettingsLayout } from "@/components/settings/SettingsLayout";
+import { Bell, Mail, Send, Smartphone, Zap } from "lucide-react";
 import { ProfileSettings } from "@/components/settings/ProfileSettings";
 import { PreferencesSettings } from "@/components/settings/PreferencesSettings";
+import { NotificationsSettings } from "@/components/settings/NotificationsSettings";
 import { VisaCriteriaSettings } from "@/components/settings/VisaCriteriaSettings";
 import { SecuritySettings } from "@/components/settings/SecuritySettings";
 import { FeaturesSettings } from "@/components/settings/FeaturesSettings";
@@ -17,56 +14,110 @@ import { useToast, TOAST_MESSAGES } from "@/hooks/use-toast";
 import { LoadingPage } from "@/components/ui/loading";
 import { settingsApi } from "@/utils/api/settings";
 import { subscriptionApi } from "@/utils/api/subscription";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import { Form } from "@/components/ui/form";
+import { useRouter } from "next/navigation";
+import { getAuth, signOut as firebaseSignOut, updateProfile } from "firebase/auth";
+import { SettingsLayout } from "@/components/settings/SettingsLayout";
+
+const settingsSchema = z.object({
+  profile: z.object({
+    firstName: z.string().min(1, "First name is required"),
+    lastName: z.string().min(1, "Last name is required"),
+    email: z.string().email("Invalid email address"),
+    phone: z.string().optional(),
+    avatar: z.string().optional(),
+  }),
+  preferences: z.object({
+    emailNotifications: z.boolean(),
+    pushNotifications: z.boolean(),
+    newsletter: z.boolean(),
+    marketingEmails: z.boolean(),
+    theme: z.string(),
+    ukFiltersEnabled: z.boolean(),
+    autoDetectJobs: z.boolean(),
+    showSponsorButton: z.boolean(),
+    ageCategory: z.string(),
+    educationStatus: z.string(),
+    phdStatus: z.string(),
+    professionalStatus: z.string(),
+    minimumSalary: z.number().min(0),
+    jobCategories: z.array(z.string()),
+    locationPreference: z.string(),
+  }),
+  security: z.object({
+    currentPassword: z.string().optional(),
+    newPassword: z.string().optional(),
+    confirmPassword: z.string().optional(),
+  }).refine((data) => {
+    if (data.newPassword && data.newPassword !== data.confirmPassword) {
+      return false;
+    }
+    return true;
+  }, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  }),
+});
+
+type SettingsFormValues = z.infer<typeof settingsSchema>;
 
 export default function SettingsPage() {
   const { user: firebaseUser, loading: userLoading } = useFirebaseAuth();
   const toast = useToast();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState("profile");
   const [isLoading, setIsLoading] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
+  const [originalData, setOriginalData] = useState<SettingsFormValues | null>(null);
   const [billingPortalLoading, setBillingPortalLoading] = useState(false);
   const {
     plan,
     actions: subscriptionActions,
     isLoading: subscriptionLoading,
   } = useSubscription();
+
+  const [activeTab, setActiveTab] = useState("profile");
+
   const isPaidPlan = plan !== "free";
   const showBillingButton = !subscriptionLoading && isPaidPlan;
 
-  const [formData, setFormData] = useState({
-    profile: {
-      firstName: "",
-      lastName: "",
-      email: "",
-      phone: "",
-      avatar: "",
-    },
-    preferences: {
-      emailNotifications: true,
-      pushNotifications: false,
-      newsletter: true,
-      marketingEmails: false,
-      theme: "light",
-      ukFiltersEnabled: false,
-      autoDetectJobs: true,
-      showSponsorButton: true,
-      ageCategory: "adult",
-      educationStatus: "none",
-      phdStatus: "none",
-      professionalStatus: "none",
-      minimumSalary: 0,
-      jobCategories: [] as string[],
-      locationPreference: "uk",
-    },
-    security: {
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
+  const form = useForm<SettingsFormValues>({
+    resolver: zodResolver(settingsSchema),
+    defaultValues: {
+      profile: {
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+        avatar: "",
+      },
+      preferences: {
+        emailNotifications: true,
+        pushNotifications: false,
+        newsletter: true,
+        marketingEmails: false,
+        theme: "light",
+        ukFiltersEnabled: false,
+        autoDetectJobs: true,
+        showSponsorButton: true,
+        ageCategory: "adult",
+        educationStatus: "none",
+        phdStatus: "none",
+        professionalStatus: "none",
+        minimumSalary: 0,
+        jobCategories: [],
+        locationPreference: "uk",
+      },
+      security: {
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      },
     },
   });
 
-  const [originalData, setOriginalData] = useState(formData);
+  const { isDirty, isValid } = form.formState;
 
   const sanitizeNonNegativeNumber = (value: unknown, fallback: number) => {
     const asNumber = typeof value === "number" ? value : Number(value);
@@ -83,7 +134,7 @@ export default function SettingsPage() {
           const backendPrefs = data.preferences || {};
           const minimumSalary = sanitizeNonNegativeNumber(backendPrefs.minimumSalary, 38700);
 
-          const userData = {
+          const userData: SettingsFormValues = {
             profile: {
               firstName: firebaseUser.displayName?.split(' ')[0] || "",
               lastName: firebaseUser.displayName?.split(' ').slice(1).join(' ') || "",
@@ -97,7 +148,6 @@ export default function SettingsPage() {
               newsletter: backendPrefs.newsletter ?? true,
               marketingEmails: backendPrefs.marketingEmails ?? false,
               theme: backendPrefs.theme ?? "light",
-              // Extension-specific preferences from backend
               ukFiltersEnabled: backendPrefs.ukFiltersEnabled ?? false,
               autoDetectJobs: backendPrefs.autoDetectJobs ?? true,
               showSponsorButton: backendPrefs.showSponsorButton ?? true,
@@ -106,7 +156,7 @@ export default function SettingsPage() {
               phdStatus: backendPrefs.phdStatus ?? "none",
               professionalStatus: backendPrefs.professionalStatus ?? "none",
               minimumSalary,
-              jobCategories: backendPrefs.jobCategories ?? [] as string[],
+              jobCategories: backendPrefs.jobCategories ?? [],
               locationPreference: backendPrefs.locationPreference ?? "uk",
             },
             security: {
@@ -116,13 +166,7 @@ export default function SettingsPage() {
             },
           };
 
-          // Only update if the data has actually changed
-          setFormData(prev => {
-            if (JSON.stringify(prev) !== JSON.stringify(userData)) {
-              return userData;
-            }
-            return prev;
-          });
+          form.reset(userData);
           setOriginalData(userData);
         } catch (error) {
           console.error("Error loading user preferences:", error);
@@ -132,74 +176,11 @@ export default function SettingsPage() {
     };
 
     loadUserPreferences();
-  }, [userLoading, firebaseUser, toast]);
+  }, [userLoading, firebaseUser, toast, form]);
 
-  useEffect(() => {
-    const currentComparable = {
-      profile: formData.profile,
-      preferences: formData.preferences,
-    };
-    const originalComparable = {
-      profile: originalData.profile,
-      preferences: originalData.preferences,
-    };
-    setHasChanges(JSON.stringify(currentComparable) !== JSON.stringify(originalComparable));
-  }, [formData.profile, formData.preferences, originalData.profile, originalData.preferences]);
+  const formData = form.watch();
 
-  const handleInputChange = (section: string, field: string, value: any) => {
-    const sanitizedValue =
-      section === "preferences" && field === "minimumSalary"
-        ? sanitizeNonNegativeNumber(value, formData.preferences.minimumSalary)
-        : value;
-
-    // Make Push Notifications toggle actually do something:
-    // when turning on, request browser notification permission.
-    if (section === "preferences" && field === "pushNotifications" && value === true) {
-      if (typeof window !== "undefined" && "Notification" in window) {
-        // Don't block UI; resolve permission asynchronously.
-        void Notification.requestPermission().then((permission) => {
-          if (permission !== "granted") {
-            // Revert the toggle if permission wasn't granted.
-            setFormData((prev) => ({
-              ...prev,
-              preferences: {
-                ...prev.preferences,
-                pushNotifications: false,
-              },
-            }));
-            toast.info(
-              "Push notifications disabled",
-              "Browser permission was not granted. You can enable it in your browser settings."
-            );
-          }
-        });
-      } else {
-        // No Notification API available (e.g. unsupported browser)
-        toast.info(
-          "Push notifications unavailable",
-          "Your browser doesn't support push notifications."
-        );
-        setFormData((prev) => ({
-          ...prev,
-          preferences: {
-            ...prev.preferences,
-            pushNotifications: false,
-          },
-        }));
-        return;
-      }
-    }
-
-    setFormData(prev => ({
-      ...prev,
-      [section]: {
-        ...prev[section as keyof typeof prev],
-        [field]: sanitizedValue,
-      },
-    }));
-  };
-
-  const handleSave = async () => {
+  const handleSave = async (values: SettingsFormValues) => {
     setIsLoading(true);
     try {
       if (!firebaseUser) {
@@ -208,8 +189,8 @@ export default function SettingsPage() {
       }
 
       const preferencesToSave = {
-        ...formData.preferences,
-        minimumSalary: sanitizeNonNegativeNumber(formData.preferences.minimumSalary, 0),
+        ...values.preferences,
+        minimumSalary: sanitizeNonNegativeNumber(values.preferences.minimumSalary, 0),
       };
 
       // Save preferences to backend
@@ -219,44 +200,41 @@ export default function SettingsPage() {
 
       // Update profile if changed
       if (
-        formData.profile.firstName !== originalData.profile.firstName ||
-        formData.profile.lastName !== originalData.profile.lastName
+        values.profile.firstName !== originalData?.profile.firstName ||
+        values.profile.lastName !== originalData?.profile.lastName
       ) {
         await updateProfile(firebaseUser, {
-          displayName: `${formData.profile.firstName} ${formData.profile.lastName}`.trim(),
+          displayName: `${values.profile.firstName} ${values.profile.lastName}`.trim(),
         });
       }
 
-      // Sync both UK Settings and Extension settings
+      // Sync logic remains same using values...
       const syncData = {
-        // UK Settings - matches extension UserProfileManager structure
         userVisaCriteria: {
-          ukFiltersEnabled: formData.preferences.ukFiltersEnabled,
-          ageCategory: (formData.preferences.ageCategory === 'youngAdult' || formData.preferences.ageCategory === 'student') ? 'under26' : 'adult',
-          educationStatus: formData.preferences.educationStatus === 'bachelor' ? 'graduateVisa' : 
-                           formData.preferences.educationStatus === 'master' ? 'graduateVisa' :
-                           formData.preferences.educationStatus === 'phd' ? 'graduateVisa' :
-                           formData.preferences.educationStatus,
-          phdStatus: formData.preferences.phdStatus === 'completed' ? 'stemPhd' : 
-                     formData.preferences.phdStatus === 'in-progress' ? 'nonStemPhd' : 'none',
-          professionalStatus: formData.preferences.professionalStatus === 'entry-level' ? 'workingTowards' :
-                              formData.preferences.professionalStatus === 'junior' ? 'workingTowards' :
-                              formData.preferences.professionalStatus === 'mid-level' ? 'fullRegistration' :
-                              formData.preferences.professionalStatus === 'senior' ? 'charteredStatus' :
-                              formData.preferences.professionalStatus === 'expert' ? 'charteredStatus' : 'none',
+          ukFiltersEnabled: values.preferences.ukFiltersEnabled,
+          ageCategory: (values.preferences.ageCategory === 'youngAdult' || values.preferences.ageCategory === 'student') ? 'under26' : 'adult',
+          educationStatus: values.preferences.educationStatus === 'bachelor' ? 'graduateVisa' : 
+                           values.preferences.educationStatus === 'master' ? 'graduateVisa' :
+                           values.preferences.educationStatus === 'phd' ? 'graduateVisa' :
+                           values.preferences.educationStatus,
+          phdStatus: values.preferences.phdStatus === 'completed' ? 'stemPhd' : 
+                     values.preferences.phdStatus === 'in-progress' ? 'nonStemPhd' : 'none',
+          professionalStatus: values.preferences.professionalStatus === 'entry-level' ? 'workingTowards' :
+                              values.preferences.professionalStatus === 'junior' ? 'workingTowards' :
+                              values.preferences.professionalStatus === 'mid-level' ? 'fullRegistration' :
+                              values.preferences.professionalStatus === 'senior' ? 'charteredStatus' :
+                              values.preferences.professionalStatus === 'expert' ? 'charteredStatus' : 'none',
           minimumSalary: preferencesToSave.minimumSalary,
-          jobCategories: formData.preferences.jobCategories,
-          locationPreference: formData.preferences.locationPreference,
+          jobCategories: values.preferences.jobCategories,
+          locationPreference: values.preferences.locationPreference,
         },
-        // Extension Settings - matches extension UserProfileManager structure
         preferences: {
-          enableSponsorshipChecks: formData.preferences.showSponsorButton !== false,
-          enableAutoDetection: formData.preferences.autoDetectJobs !== false,
+          enableSponsorshipChecks: values.preferences.showSponsorButton !== false,
+          enableAutoDetection: values.preferences.autoDetectJobs !== false,
           enableJobBoardIntegration: true,
         },
       };
 
-      // Save to chrome storage sync for extension access
       if (typeof window !== "undefined") {
         const chromeApi = window.chrome;
         const chromeRuntime = chromeApi?.runtime;
@@ -275,39 +253,35 @@ export default function SettingsPage() {
         }
       }
 
-      // Also send message to any loaded extension instances
       if (typeof window !== "undefined") {
         window.postMessage(
           {
             type: "HIREALL_EXTENSION_UPDATE_PREFS",
             payload: {
               ...syncData,
-              // Legacy support for old extension versions
-              enableSponsorshipChecks: formData.preferences.showSponsorButton !== false,
-              ukFiltersEnabled: formData.preferences.ukFiltersEnabled,
+              enableSponsorshipChecks: values.preferences.showSponsorButton !== false,
+              ukFiltersEnabled: values.preferences.ukFiltersEnabled,
             },
           },
           "*"
         );
       }
 
-      setOriginalData({
-        ...formData,
-        preferences: preferencesToSave,
-        security: originalData.security,
-      });
-      toast.success(TOAST_MESSAGES.SETTINGS.PROFILE_SAVED);
+      setOriginalData(values);
+      form.reset(values);
+      toast.success("Settings saved successfully!");
     } catch (error) {
-      console.error("Error saving preferences:", error);
-      toast.error(TOAST_MESSAGES.SETTINGS.SETTINGS_ERROR);
+      console.error("Error saving settings:", error);
+      toast.error("Failed to save settings");
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleReset = () => {
-    setFormData(originalData);
-    setHasChanges(false);
+    if (originalData) {
+      form.reset(originalData);
+    }
   };
 
   const handleBillingPortal = async () => {
@@ -375,30 +349,24 @@ export default function SettingsPage() {
       case "profile":
         return (
           <ProfileSettings
-            formData={formData}
-            onInputChange={handleInputChange}
             firebaseUser={firebaseUser}
           />
         );
       case "preferences":
         return (
-          <PreferencesSettings
-            formData={formData}
-            onInputChange={handleInputChange}
-          />
+          <PreferencesSettings />
         );
-      case "visa-criteria":
+      case "notifications":
         return (
-          <VisaCriteriaSettings
-            formData={formData}
-            onInputChange={handleInputChange}
-          />
+          <NotificationsSettings />
+        );
+      case "visa":
+        return (
+          <VisaCriteriaSettings />
         );
       case "security":
         return (
           <SecuritySettings
-            formData={formData}
-            onInputChange={handleInputChange}
             user={firebaseUser}
           />
         );
@@ -416,23 +384,25 @@ export default function SettingsPage() {
   };
 
   return (
-    <SettingsLayout
-      user={firebaseUser}
-      plan={plan || "free"}
-      subscriptionLoading={subscriptionLoading}
-      billingPortalLoading={billingPortalLoading}
-      showBillingButton={showBillingButton}
-      activeTab={activeTab}
-      hasChanges={hasChanges}
-      isLoading={isLoading}
-      onTabChange={setActiveTab}
-      onSave={handleSave}
-      onReset={handleReset}
-      onBillingPortal={handleBillingPortal}
-      onUpgrade={handleUpgrade}
-      onSignOut={handleSignOut}
-    >
-      {renderActiveTabContent()}
-    </SettingsLayout>
+    <Form {...form}>
+      <SettingsLayout
+        user={firebaseUser}
+        plan={plan || "free"}
+        subscriptionLoading={subscriptionLoading}
+        billingPortalLoading={billingPortalLoading}
+        showBillingButton={showBillingButton}
+        activeTab={activeTab}
+        hasChanges={form.formState.isDirty}
+        isLoading={isLoading}
+        onTabChange={setActiveTab}
+        onSave={form.handleSubmit(handleSave)}
+        onReset={handleReset}
+        onBillingPortal={handleBillingPortal}
+        onUpgrade={handleUpgrade}
+        onSignOut={handleSignOut}
+      >
+        {renderActiveTabContent()}
+      </SettingsLayout>
+    </Form>
   );
 }

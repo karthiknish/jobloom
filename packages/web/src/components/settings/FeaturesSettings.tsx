@@ -64,7 +64,7 @@ export function FeaturesSettings({ showBillingButton, billingPortalLoading, onBi
         </motion.div>
       )}
 
-      <Card className="card-premium-elevated border-0 bg-surface">
+      <Card variant="premium-elevated" className="border-0 bg-surface">
         <CardHeader>
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -113,7 +113,7 @@ export function FeaturesSettings({ showBillingButton, billingPortalLoading, onBi
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.6 }}
             >
-              <Card className="card-premium border border-primary/20 bg-primary/5">
+              <Card variant="premium" className="border border-primary/20 bg-primary/5">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -129,7 +129,9 @@ export function FeaturesSettings({ showBillingButton, billingPortalLoading, onBi
                       <Button
                         onClick={onBillingPortalClick}
                         disabled={billingPortalLoading}
-                        className="btn-premium gradient-primary font-semibold"
+                        variant="premium"
+                        size="lg"
+                        className="font-semibold"
                       >
                         {billingPortalLoading ? (
                           <>
@@ -177,7 +179,7 @@ export function FeaturesSettings({ showBillingButton, billingPortalLoading, onBi
                   </div>
                 </div>
                 {!isPaidPlan && (
-                  <Button size="sm" variant="secondary" className="whitespace-nowrap" onClick={handlePriorityUpgrade}>
+                  <Button size="sm" variant="gradient-secondary" className="whitespace-nowrap" onClick={handlePriorityUpgrade}>
                     Upgrade
                   </Button>
                 )}
@@ -204,33 +206,67 @@ export function FeaturesSettings({ showBillingButton, billingPortalLoading, onBi
             transition={{ duration: 0.6, delay: 0.8 }}
           >
             <h3 className="text-lg font-semibold text-foreground mb-4">Help & Onboarding</h3>
-            <Card className="card-premium border border-blue-500/20 bg-blue-500/5">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center">
-                      <PlayCircle className="h-5 w-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <div className="font-semibold text-foreground">Show Me Around</div>
-                      <div className="text-sm text-muted-foreground">
-                        Take a guided tour of all features
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card variant="premium" className="border border-blue-500/20 bg-blue-500/5">
+                <CardContent className="p-4">
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center">
+                        <PlayCircle className="h-5 w-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <div className="font-semibold text-foreground">Dashboard Tour</div>
+                        <div className="text-sm text-muted-foreground">
+                          Guide for job tracking
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                     <Button
-                      onClick={handleStartTour}
+                      onClick={() => {
+                        tour.resetTour("dashboard");
+                        router.push('/dashboard');
+                        setTimeout(() => tour.startDashboardTour(), 500);
+                      }}
                       variant="outline"
-                      className="border-blue-500/30 text-blue-600 hover:bg-blue-500/10"
+                      size="sm"
+                      className="w-full border-blue-500/30 text-blue-600 hover:bg-blue-500/10"
                     >
-                      <PlayCircle className="h-4 w-4 mr-2" />
                       Start Tour
                     </Button>
-                  </motion.div>
-                </div>
-              </CardContent>
-            </Card>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card variant="premium" className="border border-purple-500/20 bg-purple-500/5">
+                <CardContent className="p-4">
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-purple-500/10 rounded-lg flex items-center justify-center">
+                        <HelpCircle className="h-5 w-5 text-purple-600" />
+                      </div>
+                      <div>
+                        <div className="font-semibold text-foreground">CV Tools Tour</div>
+                        <div className="text-sm text-muted-foreground">
+                          Guide for AI CV tools
+                        </div>
+                      </div>
+                    </div>
+                    <Button
+                      onClick={() => {
+                        tour.resetTour("cv_evaluator");
+                        router.push('/career-tools');
+                        setTimeout(() => tour.startCvEvaluatorTour(), 500);
+                      }}
+                      variant="outline"
+                      size="sm"
+                      className="w-full border-purple-500/30 text-purple-600 hover:bg-purple-500/10"
+                    >
+                      Start Tour
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </motion.div>
         </CardContent>
       </Card>

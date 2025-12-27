@@ -3,7 +3,7 @@ import { JobStatus, createJobItemHTML, updateJobStatusDisplay } from "../../util
 import { popupUI } from "../UI/PopupUI";
 import { fetchSponsorRecord } from "../../sponsorship/lookup";
 import { safeChromeStorageGet } from "../../utils/safeStorage";
-import { isLikelyPlaceholderCompany, normalizeCompanyName } from "../../utils/companyName";
+import { isLikelyPlaceholderCompany, normalizeCompanyName } from "@hireall/shared";
 import { SponsorshipManager } from "../SponsorshipManager";
 import { UserProfileManager } from "../UserProfileManager";
 

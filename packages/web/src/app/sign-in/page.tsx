@@ -227,7 +227,7 @@ function SignInInner() {
         className="w-full max-w-md sm:max-w-lg space-y-8 relative z-10"
       >
     
-        <Card className="card-premium-elevated border-0 bg-surface p-8">
+        <Card variant="premium-elevated" className="border-0 bg-surface p-8">
           <CardHeader className="space-y-4 text-center pb-8">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
@@ -318,9 +318,10 @@ function SignInInner() {
 
               <Button
                 type="submit"
-                className="motion-button btn-premium w-full h-12 font-bold gradient-primary hover:shadow-premium-xl text-base"
+                variant="premium"
+                size="xl"
+                className="w-full"
                 disabled={isLoading}
-                size="lg"
               >
                 {isLoading ? (
                   <motion.div
@@ -365,11 +366,11 @@ function SignInInner() {
             </div>
 
             <Button
-              variant="outline"
+              variant="gradient-secondary"
               onClick={handleGoogle}
-              className="motion-button btn-premium w-full h-12 bg-surface border-2 hover:bg-muted/20 hover:border-primary/30 font-semibold text-base shadow-premium hover:shadow-premium-lg"
+              size="xl"
+              className="w-full"
               disabled={isLoading}
-              size="lg"
             >
               {isLoading ? (
                 <motion.div

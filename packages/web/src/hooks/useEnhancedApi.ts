@@ -6,7 +6,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { apiClient, ApiResponseOptions } from '@/lib/api/client';
 import { ApiError } from '@hireall/shared';
-import { toast } from 'react-hot-toast';
+import { showError } from '@/components/ui/Toast';
 
 // Re-export ApiError for consumers
 export type { ApiError };
@@ -218,15 +218,9 @@ export function useEnhancedApi<T = any>(
           const toastId = isRateLimit ? 'rate-limit-error' : apiError.requestId;
           
           if (isRateLimit) {
-            toast.error('Too many requests. Please wait a moment before trying again.', {
-              duration: 5000,
-              id: toastId // Prevent duplicate rate limit toasts
-            });
+            showError('Too many requests. Please wait a moment before trying again.');
           } else {
-            toast.error(apiError.message, {
-              duration: apiError.status >= 500 ? 5000 : 3000,
-              id: toastId
-            });
+            showError(apiError.message);
           }
         }
       }

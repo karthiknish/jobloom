@@ -17,7 +17,7 @@ export const contactApi = {
     message: string;
     subject?: string;
   }): Promise<{ success: boolean; message: string; contactId: string }> => {
-    return appApi.createContact(data) as Promise<{
+    return appApi.createContact(data) as unknown as Promise<{
       success: boolean;
       message: string;
       contactId: string;

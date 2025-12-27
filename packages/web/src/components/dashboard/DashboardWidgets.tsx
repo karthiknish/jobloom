@@ -7,15 +7,18 @@ import { ExtensionIntegration } from "@/components/dashboard/ExtensionIntegratio
 import { JobStatsDashboard } from "@/components/dashboard/JobStatsDashboard";
 import { JobList } from "@/components/dashboard/JobList";
 import { motion } from "framer-motion";
+import { Application, JobStats } from "@/types/dashboard";
+import { EmptyStateInline } from "@/components/ui/EmptyState";
+import { Calendar, Shield } from "lucide-react";
 
 interface DashboardWidgetsProps {
-  jobStats: any;
-  applications: any[];
+  jobStats: JobStats | null;
+  applications: Application[];
   hasApplications: boolean;
   userRecord: any;
-  onEditApplication: (application: any) => void;
+  onEditApplication: (application: Application) => void;
   onDeleteApplication: (applicationId: string) => void;
-  onViewApplication: (application: any) => void;
+  onViewApplication: (application: Application) => void;
   onRefetchApplications: () => void;
 }
 
@@ -50,7 +53,16 @@ export function useDashboardWidgets({
               applications={safeApplications}
               onChanged={onRefetchApplications}
             />
-          ) : null,
+          ) : (
+            <EmptyStateInline 
+              icon={Calendar} 
+              message="No upcoming follow-ups scheduled." 
+              action={{
+                label: "Add Job",
+                onClick: () => (document.querySelector('[data-tour="add-job-btn"]') as HTMLButtonElement)?.click()
+              }}
+            />
+          ),
         visible: hasApplications,
         required: false,
       },
@@ -113,7 +125,12 @@ export function useDashboardWidgets({
         component:
           safeApplications.length > 0 ? (
             <SponsorshipQuickCheck applications={safeApplications} />
-          ) : null,
+          ) : (
+            <EmptyStateInline 
+              icon={Shield} 
+              message="Add jobs to see sponsorship eligibility insights." 
+            />
+          ),
         visible: hasApplications,
         required: false,
       },

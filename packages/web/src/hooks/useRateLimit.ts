@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useMemo } from 'react';
-import toast from 'react-hot-toast';
+import { showError } from '@/components/ui/Toast';
 import { ClientRateLimiter, RateLimitConfig, RATE_LIMITS } from '../lib/rateLimiter';
 
 const DEFAULT_CONFIG: RateLimitConfig = {
@@ -53,7 +53,7 @@ export function useRateLimit(config: Partial<RateLimitConfig> = {}) {
     
     if (status.isLimited) {
       const timeUntilReset = Math.ceil(status.resetTime / 1000);
-      toast.error(`Too many requests. Please wait ${timeUntilReset} seconds before trying again.`);
+      showError(`Too many requests. Please wait ${timeUntilReset} seconds before trying again.`);
       return false;
     }
     

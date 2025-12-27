@@ -1,5 +1,5 @@
 import { post } from "../apiClient";
-import { isLikelyPlaceholderCompany, normalizeCompanyName } from "../utils/companyName";
+import { isLikelyPlaceholderCompany, normalizeCompanyName } from "@hireall/shared";
 import { sponsorshipCache } from "./cache";
 
 export interface SponsorLookupResult {

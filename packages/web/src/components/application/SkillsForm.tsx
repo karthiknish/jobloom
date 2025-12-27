@@ -1,16 +1,28 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Plus, Trash2, Zap, Code, Users, Wrench, Star, Lightbulb, X, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ResumeData } from "./types";
 import { skillCategories } from "./constants";
 import { cn } from "@/lib/utils";
+import { useForm, useFieldArray } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+
+const skillsSchema = z.object({
+  skills: z.array(z.object({
+    category: z.string().min(1, "Category is required"),
+    skills: z.array(z.string())
+  }))
+});
+
+type SkillsValues = z.infer<typeof skillsSchema>;
 
 interface SkillsFormProps {
   data: ResumeData['skills'];
@@ -41,6 +53,35 @@ export function SkillsForm({ data, onChange }: SkillsFormProps) {
   const [expandedCategories, setExpandedCategories] = useState<number[]>([0]);
   const [skillInputs, setSkillInputs] = useState<Record<number, string>>({});
 
+  const form = useForm<SkillsValues>({
+    resolver: zodResolver(skillsSchema),
+    defaultValues: { skills: data },
+    mode: "onChange",
+  });
+
+  const { control, watch, reset, setValue } = form;
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "skills",
+  });
+
+  const values = watch();
+
+  // Sync data from props if it changes externally
+  useEffect(() => {
+    reset({ skills: data });
+  }, [data, reset]);
+
+  // Sync internal form changes back to parent
+  useEffect(() => {
+    const subscription = form.watch((value) => {
+      if (value.skills) {
+        onChange(value.skills as ResumeData['skills']);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [form.watch, onChange]);
+
   const toggleCategory = (index: number) => {
     setExpandedCategories(prev =>
       prev.includes(index) ? prev.filter(i => i !== index) : [...prev, index]
@@ -48,44 +89,28 @@ export function SkillsForm({ data, onChange }: SkillsFormProps) {
   };
 
   const addSkillCategory = () => {
-    const newCategory = {
+    append({
       category: "",
       skills: []
-    };
-    onChange([...data, newCategory]);
-    setExpandedCategories(prev => [...prev, data.length]);
-  };
-
-  const updateCategory = (index: number, field: 'category' | 'skills', value: any) => {
-    const updated = [...data];
-    if (field === 'category') {
-      updated[index] = { ...updated[index], category: value };
-    } else {
-      updated[index] = { ...updated[index], skills: value };
-    }
-    onChange(updated);
-  };
-
-  const removeCategory = (index: number) => {
-    onChange(data.filter((_, i) => i !== index));
+    });
+    setExpandedCategories(prev => [...prev, fields.length]);
   };
 
   const addSkill = (categoryIndex: number, skill?: string) => {
     const skillToAdd = skill || skillInputs[categoryIndex]?.trim();
     if (!skillToAdd) return;
 
-    const updated = [...data];
-    if (!updated[categoryIndex].skills.includes(skillToAdd)) {
-      updated[categoryIndex].skills.push(skillToAdd);
-      onChange(updated);
+    const currentSkills = values.skills[categoryIndex].skills;
+    if (!currentSkills.includes(skillToAdd)) {
+      setValue(`skills.${categoryIndex}.skills`, [...currentSkills, skillToAdd], { shouldDirty: true });
     }
     setSkillInputs(prev => ({ ...prev, [categoryIndex]: "" }));
   };
 
   const removeSkill = (categoryIndex: number, skillIndex: number) => {
-    const updated = [...data];
-    updated[categoryIndex].skills = updated[categoryIndex].skills.filter((_, i) => i !== skillIndex);
-    onChange(updated);
+    const currentSkills = values.skills[categoryIndex].skills;
+    const nextSkills = currentSkills.filter((_, i) => i !== skillIndex);
+    setValue(`skills.${categoryIndex}.skills`, nextSkills, { shouldDirty: true });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent, categoryIndex: number) => {
@@ -95,226 +120,239 @@ export function SkillsForm({ data, onChange }: SkillsFormProps) {
     }
   };
 
-  const getTotalSkills = () => data.reduce((sum, cat) => sum + cat.skills.length, 0);
+  const getTotalSkills = () => values.skills?.reduce((sum, cat) => sum + (cat.skills?.length || 0), 0) || 0;
 
-  const getSuggestions = (category: string) => {
-    return skillSuggestions[category] || [];
+  const getSuggestions = (category: string, currentSkills: string[]) => {
+    return (skillSuggestions[category] || []).filter(s => !currentSkills.includes(s));
   };
 
   return (
-    <div className="space-y-6">
-      {/* Stats Header */}
-      {data.length > 0 && (
-        <div className="flex items-center justify-between p-4 bg-gradient-to-r from-primary/5 to-primary/10 rounded-xl border border-primary/20">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center">
-              <Zap className="h-5 w-5 text-primary" />
+    <Form {...form}>
+      <div className="space-y-6">
+        {/* Stats Header */}
+        {fields.length > 0 && (
+          <div className="flex items-center justify-between p-4 bg-gradient-to-r from-primary/5 to-primary/10 rounded-xl border border-primary/20">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center">
+                <Zap className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="font-semibold">{getTotalSkills()} Skills Added</p>
+                <p className="text-sm text-muted-foreground">Across {fields.length} categories</p>
+              </div>
             </div>
-            <div>
-              <p className="font-semibold">{getTotalSkills()} Skills Added</p>
-              <p className="text-sm text-muted-foreground">Across {data.length} categories</p>
+            <div className="text-right">
+              <p className={cn(
+                "text-sm font-medium",
+                getTotalSkills() >= 10 ? "text-green-600" : getTotalSkills() >= 5 ? "text-amber-600" : "text-muted-foreground"
+              )}>
+                {getTotalSkills() >= 10 ? "Great coverage!" : getTotalSkills() >= 5 ? "Good start" : "Add more skills"}
+              </p>
             </div>
           </div>
-          <div className="text-right">
-            <p className={cn(
-              "text-sm font-medium",
-              getTotalSkills() >= 10 ? "text-green-600" : getTotalSkills() >= 5 ? "text-amber-600" : "text-muted-foreground"
-            )}>
-              {getTotalSkills() >= 10 ? "Great coverage!" : getTotalSkills() >= 5 ? "Good start" : "Add more skills"}
-            </p>
-          </div>
-        </div>
-      )}
+        )}
 
-      {/* Empty State */}
-      {data.length === 0 && (
-        <EmptyState
-          icon={Zap}
-          title="Showcase Your Skills"
-          description="Group your skills by category so recruiters can quickly find both your technical and soft skills."
-          variant="dashed"
-          actions={[{ label: "Add Your First Skill Category", onClick: addSkillCategory, icon: Plus }]}
-        />
-      )}
+        {/* Empty State */}
+        {fields.length === 0 && (
+          <EmptyState
+            icon={Zap}
+            title="Showcase Your Skills"
+            description="Group your skills by category so recruiters can quickly find both your technical and soft skills."
+            variant="dashed"
+            actions={[{ label: "Add Your First Skill Category", onClick: addSkillCategory, icon: Plus }]}
+          />
+        )}
 
-      {/* Skill Categories */}
-      {data.map((category, index) => {
-        const isExpanded = expandedCategories.includes(index);
-        const suggestions = getSuggestions(category.category).filter(s => !category.skills.includes(s));
-        const icon = categoryIcons[category.category] || <Star className="h-4 w-4" />;
+        {/* Skill Categories */}
+        {fields.map((field, index) => {
+          const isExpanded = expandedCategories.includes(index);
+          const currentSkills = values.skills?.[index]?.skills || [];
+          const category = values.skills?.[index]?.category || "";
+          const suggestions = getSuggestions(category, currentSkills);
+          const icon = categoryIcons[category] || <Star className="h-4 w-4" />;
 
-        return (
-          <div
-            key={index}
-            className={cn(
-              "border rounded-xl overflow-hidden motion-surface",
-              "hover:shadow-md hover:border-primary/20"
-            )}
-          >
-            {/* Category Header */}
+          return (
             <div
+              key={field.id}
               className={cn(
-                "flex items-center justify-between px-5 py-4 cursor-pointer motion-control",
-                "bg-gradient-to-r from-muted/50 to-muted/30 hover:from-muted/70 hover:to-muted/50"
+                "border rounded-xl overflow-hidden motion-surface",
+                "hover:shadow-md hover:border-primary/20"
               )}
-              onClick={() => toggleCategory(index)}
             >
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 bg-primary/10 rounded-lg flex items-center justify-center text-primary">
-                  {icon}
-                </div>
-                <div>
-                  <h3 className="font-semibold">
-                    {category.category || "Select Category"}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    {category.skills.length} skill{category.skills.length !== 1 ? 's' : ''}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removeCategory(index);
-                  }}
-                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-                {isExpanded ? (
-                  <ChevronUp className="h-5 w-5 text-muted-foreground" />
-                ) : (
-                  <ChevronDown className="h-5 w-5 text-muted-foreground" />
+              {/* Category Header */}
+              <div
+                className={cn(
+                  "flex items-center justify-between px-5 py-4 cursor-pointer motion-control",
+                  "bg-gradient-to-r from-muted/50 to-muted/30 hover:from-muted/70 hover:to-muted/50"
                 )}
-              </div>
-            </div>
-
-            {/* Category Content */}
-            {isExpanded && (
-              <div className="p-5 space-y-4 border-t">
-                {/* Category Selector */}
-                <div className="space-y-2">
-                  <Label htmlFor={`category-${index}`} className="flex items-center gap-2">
-                    Category <span className="text-red-500">*</span>
-                  </Label>
-                  <Select
-                    value={category.category}
-                    onValueChange={(value) => updateCategory(index, 'category', value)}
+                onClick={() => toggleCategory(index)}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 bg-primary/10 rounded-lg flex items-center justify-center text-primary">
+                    {icon}
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">
+                      {category || "Select Category"}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      {currentSkills.length} skill{currentSkills.length !== 1 ? 's' : ''}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      remove(index);
+                    }}
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
                   >
-                    <SelectTrigger className="bg-background">
-                      <SelectValue placeholder="Select a category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {skillCategories.map((cat) => (
-                        <SelectItem key={cat} value={cat}>
-                          {cat}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                  {isExpanded ? (
+                    <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                  )}
                 </div>
-
-                {/* Skills Input */}
-                <div className="space-y-2">
-                  <Label>Add Skills</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      value={skillInputs[index] || ""}
-                      onChange={(e) => setSkillInputs(prev => ({ ...prev, [index]: e.target.value }))}
-                      onKeyDown={(e) => handleKeyDown(e, index)}
-                      placeholder="Type a skill and press Enter"
-                      className="bg-background"
-                    />
-                    <Button
-                      variant="secondary"
-                      onClick={() => addSkill(index)}
-                      disabled={!skillInputs[index]?.trim()}
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Current Skills */}
-                {category.skills.length > 0 && (
-                  <div className="space-y-2">
-                    <Label className="text-muted-foreground text-xs uppercase tracking-wider">
-                      Current Skills
-                    </Label>
-                    <div className="flex flex-wrap gap-2">
-                      {category.skills.map((skill, skillIndex) => (
-                        <Badge
-                          key={skillIndex}
-                          variant="secondary"
-                          className="px-3 py-1.5 text-sm flex items-center gap-1.5 hover:bg-destructive/10 group transition-colors"
-                        >
-                          {skill}
-                          <button
-                            onClick={() => removeSkill(index, skillIndex)}
-                            className="ml-1 hover:text-destructive transition-colors"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Suggestions */}
-                {category.category && suggestions.length > 0 && (
-                  <div className="space-y-2 pt-2 border-t">
-                    <Label className="text-muted-foreground text-xs uppercase tracking-wider flex items-center gap-1">
-                      <Lightbulb className="h-3 w-3" />
-                      Suggested Skills
-                    </Label>
-                    <div className="flex flex-wrap gap-2">
-                      {suggestions.slice(0, 8).map((suggestion) => (
-                        <Badge
-                          key={suggestion}
-                          variant="outline"
-                          className="px-3 py-1.5 text-sm cursor-pointer hover:bg-primary/10 hover:border-primary transition-colors"
-                          onClick={() => addSkill(index, suggestion)}
-                        >
-                          <Plus className="h-3 w-3 mr-1" />
-                          {suggestion}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
-            )}
+
+              {/* Category Content */}
+              {isExpanded && (
+                <div className="p-5 space-y-4 border-t">
+                  {/* Category Selector */}
+                  <FormField
+                    control={control}
+                    name={`skills.${index}.category`}
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm font-medium">
+                          Category <span className="text-red-500">*</span>
+                        </div>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger className="bg-background">
+                              <SelectValue placeholder="Select a category" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {skillCategories.map((cat) => (
+                              <SelectItem key={cat} value={cat}>
+                                {cat}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Skills Input */}
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium">Add Skills</div>
+                    <div className="flex gap-2">
+                      <Input
+                        value={skillInputs[index] || ""}
+                        onChange={(e) => setSkillInputs(prev => ({ ...prev, [index]: e.target.value }))}
+                        onKeyDown={(e) => handleKeyDown(e, index)}
+                        placeholder="Type a skill and press Enter"
+                        className="bg-background"
+                      />
+                      <Button
+                        variant="secondary"
+                        onClick={() => addSkill(index)}
+                        disabled={!skillInputs[index]?.trim()}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Current Skills */}
+                  {currentSkills.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="text-muted-foreground text-xs uppercase tracking-wider font-medium">
+                        Current Skills
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {currentSkills.map((skill, skillIndex) => (
+                          <Badge
+                            key={skillIndex}
+                            variant="secondary"
+                            className="px-3 py-1.5 text-sm flex items-center gap-1.5 hover:bg-destructive/10 group transition-colors"
+                          >
+                            {skill}
+                            <button
+                              onClick={() => removeSkill(index, skillIndex)}
+                              className="ml-1 hover:text-destructive transition-colors"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Suggestions */}
+                  {category && suggestions.length > 0 && (
+                    <div className="space-y-2 pt-2 border-t">
+                      <div className="text-muted-foreground text-xs uppercase tracking-wider flex items-center gap-1 font-medium">
+                        <Lightbulb className="h-3 w-3" />
+                        Suggested Skills
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {suggestions.slice(0, 8).map((suggestion) => (
+                          <Badge
+                            key={suggestion}
+                            variant="outline"
+                            className="px-3 py-1.5 text-sm cursor-pointer hover:bg-primary/10 hover:border-primary transition-colors font-normal"
+                            onClick={() => addSkill(index, suggestion)}
+                          >
+                            <Plus className="h-3 w-3 mr-1" />
+                            {suggestion}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+        {fields.length > 0 && (
+          <Button
+            variant="outline"
+            onClick={addSkillCategory}
+            className="w-full border-dashed border-2 hover:border-primary hover:bg-primary/5 transition-all"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Another Category
+          </Button>
+        )}
+
+        {/* Tips */}
+        {fields.length > 0 && (
+          <div className="text-xs text-muted-foreground bg-blue-50 p-4 rounded-lg border border-blue-100 space-y-1">
+            <p className="font-medium text-foreground">Skills Tips:</p>
+            <ul className="list-disc list-inside space-y-0.5">
+              <li>Include a mix of technical skills and soft skills</li>
+              <li>List skills mentioned in job descriptions you&apos;re targeting</li>
+              <li>Be honest - only include skills you can demonstrate</li>
+              <li>Aim for 10-15 relevant skills total</li>
+            </ul>
           </div>
-        );
-      })}
-
-      {data.length > 0 && (
-        <Button
-          variant="outline"
-          onClick={addSkillCategory}
-          className="w-full border-dashed border-2 hover:border-primary hover:bg-primary/5 transition-all"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Another Category
-        </Button>
-      )}
-
-      {/* Tips */}
-      {data.length > 0 && (
-        <div className="text-xs text-muted-foreground bg-blue-50 p-4 rounded-lg border border-blue-100 space-y-1">
-          <p className="font-medium text-foreground">Skills Tips:</p>
-          <ul className="list-disc list-inside space-y-0.5">
-            <li>Include a mix of technical skills and soft skills</li>
-            <li>List skills mentioned in job descriptions you&apos;re targeting</li>
-            <li>Be honest - only include skills you can demonstrate</li>
-            <li>Aim for 10-15 relevant skills total</li>
-          </ul>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </Form>
   );
 }

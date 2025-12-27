@@ -2,287 +2,237 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { Bell, Mail, Send } from "lucide-react";
+import { Bell, Mail, Send, Settings, User, Monitor, Globe, Shield, Smartphone, Zap } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { useFormContext } from "react-hook-form";
+import { FormField, FormItem, FormControl, FormLabel, FormDescription } from "@/components/ui/form";
+import { useToast } from "@/hooks/use-toast";
+import { HelpTooltip } from "@/components/ui/HelpTooltip";
 
-interface PreferencesSettingsProps {
-  formData: {
-    preferences: {
-      emailNotifications: boolean;
-      pushNotifications: boolean;
-      newsletter: boolean;
-      marketingEmails: boolean;
-      theme: string;
-      ukFiltersEnabled: boolean;
-      autoDetectJobs: boolean;
-      showSponsorButton: boolean;
-      ageCategory: string;
-      educationStatus: string;
-      phdStatus: string;
-      professionalStatus: string;
-      minimumSalary: number;
-      jobCategories: string[];
-      locationPreference: string;
-    };
-  };
-  onInputChange: (section: string, field: string, value: any) => void;
-}
+interface PreferencesSettingsProps {}
 
-export function PreferencesSettings({ formData, onInputChange }: PreferencesSettingsProps) {
+export function PreferencesSettings() {
+  const { control, setValue, watch } = useFormContext();
+  const formData = watch();
+  const [showAdvanced, setShowAdvanced] = React.useState(false);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, delay: 0.2 }}
+      className="space-y-6"
     >
-      <Card className="card-premium border-0 bg-surface">
+      <Card variant="premium" className="overflow-hidden">
         <CardHeader>
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-          >
-            <CardTitle className="text-2xl font-bold text-foreground">Preferences</CardTitle>
-            <CardDescription className="text-muted-foreground text-lg">
-              Customize your notification and feature preferences
-            </CardDescription>
-          </motion.div>
+          <CardTitle className="text-xl font-bold flex items-center gap-2">
+            General Preferences
+          </CardTitle>
+          <CardDescription>
+            Customize your app experience and job searching defaults
+          </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-          >
-            <h3 className="text-lg font-semibold text-foreground mb-4">Notifications</h3>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label htmlFor="emailNotifications" className="text-sm font-medium text-foreground">
-                    Email Notifications
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Receive updates about your applications
-                  </p>
-                </div>
-                <Switch
-                  id="emailNotifications"
-                  checked={formData.preferences.emailNotifications}
-                  onCheckedChange={(checked) => onInputChange("preferences", "emailNotifications", checked)}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label htmlFor="pushNotifications" className="text-sm font-medium text-foreground">
-                    Push Notifications
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Browser notifications
-                  </p>
-                </div>
-                <Switch
-                  id="pushNotifications"
-                  checked={formData.preferences.pushNotifications}
-                  onCheckedChange={(checked) => onInputChange("preferences", "pushNotifications", checked)}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label htmlFor="newsletter" className="text-sm font-medium text-foreground">
-                    Newsletter
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Weekly job tips and opportunities
-                  </p>
-                </div>
-                <Switch
-                  id="newsletter"
-                  checked={formData.preferences.newsletter}
-                  onCheckedChange={(checked) => onInputChange("preferences", "newsletter", checked)}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label htmlFor="marketingEmails" className="text-sm font-medium text-foreground">
-                    Marketing Emails
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Special offers and promotions
-                  </p>
-                </div>
-                <Switch
-                  id="marketingEmails"
-                  checked={formData.preferences.marketingEmails}
-                  onCheckedChange={(checked) => onInputChange("preferences", "marketingEmails", checked)}
-                />
-              </div>
+        <CardContent className="space-y-8">
+          {/* Appearance Section */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+              Appearance
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={control}
+                name="preferences.theme"
+                render={({ field }) => (
+                  <FormItem className="space-y-1.5 p-4 rounded-xl border border-border/50 bg-muted/20">
+                    <FormLabel className="text-sm font-semibold flex items-center gap-1.5">
+                      Visual Theme
+                      <HelpTooltip content="Choose between light or dark mode, or follow your system settings." />
+                    </FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger className="input-premium bg-background">
+                          <SelectValue placeholder="Select theme" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="light">Light</SelectItem>
+                        <SelectItem value="dark">Dark</SelectItem>
+                        <SelectItem value="system">System Default</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
             </div>
-          </motion.div>
+          </div>
 
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.5 }}
-          >
-            <h3 className="text-lg font-semibold text-foreground mb-4">Appearance</h3>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="theme" className="text-sm font-medium text-foreground">Theme</Label>
-                <Select
-                  value={formData.preferences.theme}
-                  onValueChange={(value) => onInputChange("preferences", "theme", value)}
-                >
-                  <SelectTrigger className="input-premium">
-                    <SelectValue placeholder="Select theme" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="light">Light</SelectItem>
-                    <SelectItem value="dark">Dark</SelectItem>
-                    <SelectItem value="system">System</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+          {/* Core Feature Defaults */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
+              Search & Automation
+            </h3>
+            <div className="space-y-3">
+              <FormField
+                control={control}
+                name="preferences.autoDetectJobs"
+                render={({ field }) => (
+                  <FormItem className="flex items-center justify-between p-4 rounded-xl border border-border/50 bg-muted/20">
+                    <div className="space-y-1">
+                      <FormLabel className="text-sm font-semibold flex items-center gap-1.5">
+                        Auto-Detect Jobs
+                        <HelpTooltip content="Automatically identifies job listings on sites like LinkedIn and Indeed to show the 'Import' button." />
+                      </FormLabel>
+                      <FormDescription className="text-xs">
+                        Recognize jobs automatically on job boards
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={control}
+                name="preferences.locationPreference"
+                render={({ field }) => (
+                  <FormItem className="flex items-center justify-between p-4 rounded-xl border border-border/50 bg-muted/20">
+                    <div className="space-y-1">
+                      <FormLabel className="text-sm font-semibold flex items-center gap-1.5">
+                        Primary Location
+                        <HelpTooltip content="Sets the default region for sponsorship and salary analysis." />
+                      </FormLabel>
+                    </div>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger className="w-[180px] input-premium bg-background">
+                          <SelectValue placeholder="Select location" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="uk">United Kingdom</SelectItem>
+                        <SelectItem value="eu">European Union</SelectItem>
+                        <SelectItem value="us">United States</SelectItem>
+                        <SelectItem value="global">International</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
             </div>
-          </motion.div>
+          </div>
 
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.6 }}
-          >
-            <h3 className="text-lg font-semibold text-foreground mb-4">Extension Settings</h3>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label htmlFor="ukFiltersEnabled" className="text-sm font-medium text-foreground">
-                    UK Visa Sponsorship Analysis
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Enable detailed UK visa sponsorship analysis
-                  </p>
+          {/* Advanced Disclosure */}
+          <div className="pt-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              className="text-primary hover:text-primary/80 p-0 h-auto font-semibold"
+            >
+              {showAdvanced ? "Hide advanced settings" : "Show advanced settings"}
+            </Button>
+
+            {showAdvanced && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                className="mt-6 space-y-6 pt-6 border-t border-border/50"
+              >
+                <div className="space-y-4">
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
+                    Extension Controls
+                  </h3>
+                  <div className="space-y-3">
+                    <FormField
+                      control={control}
+                      name="preferences.showSponsorButton"
+                      render={({ field }) => (
+                        <FormItem className="flex items-center justify-between p-4 rounded-xl border border-border/50 bg-muted/5">
+                          <div className="space-y-1">
+                            <FormLabel className="text-sm font-semibold flex items-center gap-1.5">
+                              Sponsor Check Button
+                              <HelpTooltip content="Toggles the visibility of the primary action button on job cards." />
+                            </FormLabel>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={(checked) => {
+                                field.onChange(checked);
+                                if (!checked && formData.preferences.ukFiltersEnabled) {
+                                  setValue("preferences.ukFiltersEnabled", false, { shouldDirty: true });
+                                }
+                              }}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                 </div>
-                <Switch
-                  id="ukFiltersEnabled"
-                  checked={formData.preferences.ukFiltersEnabled ?? false}
-                  onCheckedChange={(checked) => {
-                    onInputChange("preferences", "ukFiltersEnabled", checked);
-                    // Also enable sponsor button when UK filters are enabled
-                    if (checked && !formData.preferences.showSponsorButton) {
-                      onInputChange("preferences", "showSponsorButton", true);
-                    }
-                  }}
-                />
-              </div>
 
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label htmlFor="autoDetectJobs" className="text-sm font-medium text-foreground">
-                    Auto-Detect Jobs
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Automatically detect jobs on job sites
-                  </p>
+                <div className="space-y-4">
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
+                    Job Match Tuning
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={control}
+                      name="preferences.minimumSalary"
+                      render={({ field }) => (
+                        <FormItem className="space-y-1.5 p-4 rounded-xl border border-border/50 bg-muted/5">
+                          <FormLabel className="text-sm font-semibold flex items-center gap-1.5">
+                            Min Salary Baseline
+                            <HelpTooltip content="Jobs below this value will be flagged." />
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              {...field}
+                              onChange={(e) => field.onChange(Number(e.target.value))}
+                              className="input-premium bg-background"
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={control}
+                      name="preferences.ageCategory"
+                      render={({ field }) => (
+                        <FormItem className="space-y-1.5 p-4 rounded-xl border border-border/50 bg-muted/5">
+                          <FormLabel className="text-sm font-semibold flex items-center gap-1.5">
+                            Experience Bracket
+                          </FormLabel>
+                          <Select value={field.value} onValueChange={field.onChange}>
+                            <FormControl>
+                              <SelectTrigger className="input-premium bg-background">
+                                <SelectValue placeholder="Select age category" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="student">Student</SelectItem>
+                              <SelectItem value="graduate">Recent Graduate</SelectItem>
+                              <SelectItem value="adult">Adult</SelectItem>
+                              <SelectItem value="experienced">Experienced</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                 </div>
-                <Switch
-                  id="autoDetectJobs"
-                  checked={formData.preferences.autoDetectJobs ?? true}
-                  onCheckedChange={(checked) => onInputChange("preferences", "autoDetectJobs", checked)}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label htmlFor="showSponsorButton" className="text-sm font-medium text-foreground">
-                    Sponsor Button on Job Cards
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Show the sponsor check button inside the extension on job listings
-                  </p>
-                </div>
-                <Switch
-                  id="showSponsorButton"
-                  checked={formData.preferences.showSponsorButton ?? true}
-                  onCheckedChange={(checked) => {
-                    onInputChange("preferences", "showSponsorButton", checked);
-                    // Also disable UK filters when sponsor button is disabled
-                    if (!checked && formData.preferences.ukFiltersEnabled) {
-                      onInputChange("preferences", "ukFiltersEnabled", false);
-                    }
-                  }}
-                />
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.7 }}
-          >
-            <h3 className="text-lg font-semibold text-foreground mb-4">Job Preferences</h3>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-foreground">Age Category</Label>
-                <Select
-                  value={formData.preferences.ageCategory || "adult"}
-                  onValueChange={(value) => onInputChange("preferences", "ageCategory", value)}
-                >
-                  <SelectTrigger className="input-premium">
-                    <SelectValue placeholder="Select age category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="student">Student</SelectItem>
-                    <SelectItem value="graduate">Recent Graduate</SelectItem>
-                    <SelectItem value="adult">Adult</SelectItem>
-                    <SelectItem value="experienced">Experienced</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-foreground">Location Preference</Label>
-                <Select
-                  value={formData.preferences.locationPreference || "uk"}
-                  onValueChange={(value) => onInputChange("preferences", "locationPreference", value)}
-                >
-                  <SelectTrigger className="input-premium">
-                    <SelectValue placeholder="Select location" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="uk">United Kingdom</SelectItem>
-                    <SelectItem value="eu">European Union</SelectItem>
-                    <SelectItem value="us">United States</SelectItem>
-                    <SelectItem value="global">Global</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-foreground">Minimum Salary</Label>
-                <Input
-                  type="number"
-                  value={formData.preferences.minimumSalary}
-                  onChange={(e) => {
-                    const valueAsNumber = e.currentTarget.valueAsNumber;
-                    onInputChange(
-                      "preferences",
-                      "minimumSalary",
-                      Number.isFinite(valueAsNumber) ? Math.max(0, valueAsNumber) : 0
-                    );
-                  }}
-                  placeholder="50000"
-                  className="input-premium"
-                />
-              </div>
-            </div>
-          </motion.div>
+              </motion.div>
+            )}
+          </div>
         </CardContent>
       </Card>
     </motion.div>

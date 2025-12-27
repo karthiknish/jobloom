@@ -20,8 +20,7 @@ export type CareerToolsSection =
   | "ai-generator"
   | "manual-builder" 
   | "import"
-  | "analyze"
-  | "history"
+  | "cv-optimizer"
   | "cover-letter";
 
 interface NavItem {
@@ -38,8 +37,7 @@ const navItems: NavItem[] = [
   { id: "manual-builder", label: "Manual Builder", icon: <PenLine className="h-4 w-4" />, group: "Build", description: "Build step by step" },
   { id: "import", label: "Import Resume", icon: <Upload className="h-4 w-4" />, group: "Build", description: "Import from file" },
   // Analyze group
-  { id: "analyze", label: "Analyze CV", icon: <Search className="h-4 w-4" />, description: "Get ATS score & feedback" },
-  { id: "history", label: "History", icon: <History className="h-4 w-4" />, description: "View past analyses" },
+  { id: "cv-optimizer", label: "CV Optimizer", icon: <Search className="h-4 w-4" />, description: "ATS score & history" },
   // Cover Letter
   { id: "cover-letter", label: "Cover Letter", icon: <FileText className="h-4 w-4" />, description: "AI-powered letters" },
 ];

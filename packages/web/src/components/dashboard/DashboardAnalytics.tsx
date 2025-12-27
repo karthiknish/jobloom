@@ -12,6 +12,7 @@ import { FeatureGate } from "@/components/UpgradePrompt";
 import { useSubscription } from "@/providers/subscription-provider";
 import { TrendingUp, MapPin, CheckCircle, BarChart3, DollarSign } from "lucide-react";
 import { CvAnalysisHistory } from "@/components/CvAnalysisHistory";
+import { EmptyState, EmptyStateInline } from "@/components/ui/EmptyState";
 import { GoalsSettingsModal } from "@/components/dashboard/GoalsSettingsModal";
 import { ProgressReportModal } from "@/components/dashboard/ProgressReportModal";
 import { WeeklySummaryModal } from "@/components/dashboard/WeeklySummaryModal";
@@ -471,8 +472,11 @@ export function DashboardAnalytics({
                 </div>
               ))}
               {jobTypeSuccess.length === 0 && (
-                <div className="col-span-full text-center py-8 text-muted-foreground italic">
-                  Apply to more jobs to see performance by type
+                <div className="col-span-full">
+                  <EmptyStateInline 
+                    icon={BarChart3} 
+                    message="Apply to more jobs to see performance by type." 
+                  />
                 </div>
               )}
             </div>
@@ -541,10 +545,14 @@ export function DashboardAnalytics({
                 </div>
               </div>
             ) : (
-              <div className="text-center py-12 bg-muted/20 rounded-xl border border-dashed">
-                <DollarSign className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
-                <p className="text-sm text-muted-foreground">Add salary information to your jobs to see analytics</p>
-              </div>
+              <EmptyStateInline 
+                icon={DollarSign} 
+                message="Add salary information to your jobs to see analytics." 
+                action={{
+                  label: "Go to Jobs",
+                  onClick: () => window.location.href = '#jobs'
+                }}
+              />
             )}
           </CardContent>
         </Card>

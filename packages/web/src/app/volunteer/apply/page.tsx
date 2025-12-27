@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import toast from "react-hot-toast";
+import { showSuccess, showError } from "@/components/ui/Toast";
 import Link from "next/link";
 import { useApiMutation } from "@/hooks/useApi";
 import { contactApi } from "@/utils/api/contact";
@@ -66,18 +66,18 @@ export default function VolunteerApplyPage() {
     
     // Validation
     if (!formData.name.trim() || !formData.email.trim() || !formData.skills || !formData.motivation.trim()) {
-      toast.error("Please fill in all required fields.");
+      showError("Please fill in all required fields.");
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
-      toast.error("Please enter a valid email address.");
+      showError("Please enter a valid email address.");
       return;
     }
 
     if (formData.motivation.trim().length < 50) {
-      toast.error("Please write at least 50 characters about your motivation.");
+      showError("Please write at least 50 characters about your motivation.");
       return;
     }
 
@@ -106,7 +106,7 @@ ${formData.motivation}
         message 
       });
       
-      toast.success("Application submitted! We'll be in touch within 48 hours.");
+      showSuccess("Application submitted! We'll be in touch within 48 hours.");
       setFormData({
         name: "",
         email: "",
@@ -118,7 +118,7 @@ ${formData.motivation}
       });
     } catch (err: any) {
       console.error("Volunteer application error:", err);
-      toast.error("Failed to submit application. Please try again later.");
+      showError("Failed to submit application. Please try again later.");
     } finally {
       setLoading(false);
     }
@@ -147,7 +147,7 @@ ${formData.motivation}
           <span>Back to Volunteer Program</span>
         </Link>
 
-        <Card className="card-premium-elevated border-0 bg-surface p-8">
+        <Card variant="premium-elevated" className="border-0 bg-surface p-8">
           <CardHeader className="space-y-4 text-center pb-8">
             <motion.div
               initial={{ scale: 0 }}
@@ -329,7 +329,8 @@ ${formData.motivation}
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="btn-premium w-full h-12 font-bold text-base"
+                  variant="premium"
+                  className="w-full h-12 text-base"
                   size="lg"
                 >
                   {loading ? (

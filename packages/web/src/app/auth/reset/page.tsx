@@ -168,7 +168,7 @@ export default function ResetPasswordPage() {
         transition={{ duration: 0.6 }}
         className="w-full max-w-md sm:max-w-lg space-y-8 relative z-10"
       >
-        <Card className="card-premium-elevated border-0 bg-surface p-8">
+        <Card variant="premium-elevated" className="border-0 bg-surface p-8">
           <CardHeader className="space-y-4 text-center pb-8">
             <motion.div
               initial={{ scale: 0 }}
@@ -233,7 +233,9 @@ export default function ResetPasswordPage() {
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                   <Button 
                     type="submit" 
-                    className="btn-premium w-full h-12 font-bold gradient-primary hover:shadow-premium-xl text-base" 
+                    variant="premium"
+                    size="xl"
+                    className="w-full" 
                     disabled={loading || requestSuccess}
                   >
                     {loading ? (
@@ -352,7 +354,9 @@ export default function ResetPasswordPage() {
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                   <Button 
                     type="submit" 
-                    className="btn-premium w-full h-12 font-bold gradient-primary hover:shadow-premium-xl text-base" 
+                    variant="premium"
+                    size="xl"
+                    className="w-full" 
                     disabled={loading}
                   >
                     {loading ? (
@@ -399,7 +403,8 @@ export default function ResetPasswordPage() {
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                   <Button 
                     onClick={() => router.push("/sign-in")} 
-                    className="btn-premium w-full sm:w-auto min-w-[200px] font-bold gradient-primary hover:shadow-premium-xl"
+                    variant="premium"
+                    className="w-full sm:w-auto min-w-[200px]"
                   >
                     Go to sign in
                   </Button>
@@ -425,8 +430,9 @@ export default function ResetPasswordPage() {
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                   <Button 
                     onClick={() => router.replace("/auth/forgot")} 
-                    className="btn-premium w-full sm:w-auto min-w-[200px] bg-surface border-2 hover:bg-muted/20 hover:border-primary/30 font-semibold text-base shadow-premium" 
                     variant="outline"
+                    size="xl"
+                    className="w-full sm:w-auto min-w-[200px]" 
                   >
                     Request a new link
                   </Button>
@@ -452,7 +458,8 @@ export default function ResetPasswordPage() {
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                   <Button 
                     onClick={() => router.replace("/auth/forgot")} 
-                    className="btn-premium w-full sm:w-auto min-w-[200px] font-bold gradient-primary hover:shadow-premium-xl"
+                    variant="premium"
+                    className="w-full sm:w-auto min-w-[200px]"
                   >
                     Send me a new link
                   </Button>

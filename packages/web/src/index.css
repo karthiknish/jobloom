@@ -224,26 +224,7 @@ body {
   transform: translateY(0);
 }
 
-/* Premium card styles */
-.card-premium {
-  @apply rounded-2xl border border-border bg-card p-6 shadow-premium;
-  transition: all var(--motion-duration-medium) var(--motion-ease-out);
-}
-
-.card-premium:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-premium-lg);
-}
-
-.card-premium-elevated {
-  @apply rounded-2xl border border-outline bg-surface p-6 shadow-premium-lg;
-  transition: all var(--motion-duration-medium) var(--motion-ease-out);
-}
-
-.card-premium-elevated:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-premium-xl);
-}
+/* Premium card styles moved to Card component variants */
 
 /* Smooth scrolling */
 .smooth-scroll {

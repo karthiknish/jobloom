@@ -17,6 +17,12 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -43,9 +49,11 @@ import {
   Download,
   FileSpreadsheet,
   ArrowRight,
-  Sparkles
+  Sparkles,
+  Layers
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
 import { extensionAuthBridge } from "@/lib/extensionAuthBridge";
 import Link from "next/link";
 import { CHROME_EXTENSION_URL, isExternalUrl } from "@/config/links";
@@ -429,6 +437,7 @@ export function JobImportModal({
   };
 
   return (
+    <TooltipProvider delayDuration={300}>
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0">
         <DialogHeader className="p-6 pb-4 bg-gradient-to-r from-emerald-50 to-teal-50 border-b border-border/50">
@@ -439,49 +448,74 @@ export function JobImportModal({
             Import Jobs to Dashboard
           </DialogTitle>
           <DialogDescription className="text-muted-foreground mt-1">
-            Add jobs from your browser extension or CSV file
+            Add jobs from your browser extension or CSV file. 
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button className="ml-1 text-emerald-600 hover:underline inline-flex items-center gap-1">
+                  How it works <Sparkles className="h-3 w-3" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                <p>Use our Chrome extension to save jobs directly from Job Boards, or upload a spreadsheet of your existing applications.</p>
+              </TooltipContent>
+            </Tooltip>
           </DialogDescription>
         </DialogHeader>
 
         <div className="p-6 space-y-6">
           {/* Import Method Selection */}
-          <div className="space-y-3">
-            <Label className="text-sm font-semibold text-foreground">Choose Import Method</Label>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-bold text-foreground uppercase tracking-widest flex items-center gap-2">
+                <Layers className="h-4 w-4 text-emerald-600" />
+                Select Import Method
+              </Label>
+              <Badge variant="outline" className="text-[10px] font-bold text-emerald-600 bg-emerald-50 border-emerald-200 uppercase tracking-tighter">
+                Most Popular: Extension
+              </Badge>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {/* Extension Import */}
               <button
                 type="button"
                 onClick={() => setImportMethod("extension")}
-                className={`motion-card relative p-4 rounded-xl border-2 motion-control text-left ${
+                aria-label="Import jobs from browser extension"
+                aria-pressed={importMethod === "extension"}
+                className={cn(
+                  "relative p-5 rounded-2xl border-2 transition-all duration-300 text-left group overflow-hidden",
                   importMethod === "extension"
-                    ? "border-emerald-500 bg-emerald-50 shadow-md"
-                    : "border-border hover:border-emerald-200 hover:bg-emerald-50/50"
-                }`}
-              >
-                {importMethod === "extension" && (
-                  <div className="absolute -top-1 -right-1">
-                    <CheckCircle className="h-5 w-5 text-emerald-600 fill-white" />
-                  </div>
+                    ? "border-emerald-500 bg-emerald-50 shadow-lg shadow-emerald-500/10 ring-4 ring-emerald-500/5"
+                    : "border-border hover:border-emerald-400/50 hover:bg-emerald-50/30 hover:shadow-md"
                 )}
-                <div className="flex flex-col items-center gap-2">
-                  <div className={`p-2.5 rounded-lg ${
-                    importMethod === "extension"
-                      ? "bg-emerald-100"
-                      : "bg-muted"
-                  }`}>
-                    <Chrome className={`h-5 w-5 ${
-                      importMethod === "extension" ? "text-emerald-600" : "text-muted-foreground"
-                    }`} />
+              >
+                {/* Recommended Ribbon */}
+                <div className="absolute top-0 right-0 overflow-hidden w-16 h-16 pointer-events-none">
+                  <div className="absolute top-2 -right-4 bg-emerald-500 text-white text-[8px] font-black uppercase py-1 px-5 rotate-45 shadow-sm">
+                    BEST
                   </div>
-                  <span className={`font-medium text-sm ${
-                    importMethod === "extension" ? "text-emerald-700" : "text-foreground"
-                  }`}>Extension</span>
-                  <span className="text-xs text-muted-foreground text-center">Saved jobs</span>
+                </div>
+
+                <div className="flex flex-col items-center gap-3 text-center">
+                  <div className={cn(
+                    "p-3 rounded-2xl transition-transform duration-300 group-hover:scale-110",
+                    importMethod === "extension" ? "bg-emerald-500 text-white shadow-emerald-500/30 shadow-lg" : "bg-muted text-muted-foreground"
+                  )}>
+                    <Chrome className="h-6 w-6" />
+                  </div>
+                  <div className="space-y-1">
+                    <span className={cn(
+                      "block font-bold text-sm",
+                      importMethod === "extension" ? "text-emerald-900" : "text-foreground"
+                    )}>Extension</span>
+                    <p className="text-[10px] text-muted-foreground leading-tight font-medium">Auto-sync from job sites as you browse</p>
+                  </div>
                 </div>
                 {isExtensionInstalled && (
-                  <Badge className="absolute top-2 left-2 text-[10px] bg-green-500 hover:bg-green-500 text-white px-1.5 py-0">
-                    Active
-                  </Badge>
+                  <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 whitespace-nowrap">
+                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                    <span className="text-[8px] font-black text-green-700 uppercase">Live Detection</span>
+                  </div>
                 )}
               </button>
 
@@ -489,31 +523,29 @@ export function JobImportModal({
               <button
                 type="button"
                 onClick={() => setImportMethod("csv")}
-                className={`motion-card relative p-4 rounded-xl border-2 motion-control text-left ${
+                aria-label="Import jobs from CSV file"
+                aria-pressed={importMethod === "csv"}
+                className={cn(
+                  "relative p-5 rounded-2xl border-2 transition-all duration-300 text-left group",
                   importMethod === "csv"
-                    ? "border-emerald-500 bg-emerald-50 shadow-md"
-                    : "border-border hover:border-emerald-200 hover:bg-emerald-50/50"
-                }`}
-              >
-                {importMethod === "csv" && (
-                  <div className="absolute -top-1 -right-1">
-                    <CheckCircle className="h-5 w-5 text-emerald-600 fill-white" />
-                  </div>
+                    ? "border-emerald-500 bg-emerald-50 shadow-lg shadow-emerald-500/10 ring-4 ring-emerald-500/5"
+                    : "border-border hover:border-emerald-400/50 hover:bg-emerald-50/30 hover:shadow-md"
                 )}
-                <div className="flex flex-col items-center gap-2">
-                  <div className={`p-2.5 rounded-lg ${
-                    importMethod === "csv"
-                      ? "bg-emerald-100"
-                      : "bg-muted"
-                  }`}>
-                    <FileSpreadsheet className={`h-5 w-5 ${
-                      importMethod === "csv" ? "text-emerald-600" : "text-muted-foreground"
-                    }`} />
+              >
+                <div className="flex flex-col items-center gap-3 text-center">
+                  <div className={cn(
+                    "p-3 rounded-2xl transition-transform duration-300 group-hover:scale-110",
+                    importMethod === "csv" ? "bg-emerald-500 text-white shadow-emerald-500/30 shadow-lg" : "bg-muted text-muted-foreground"
+                  )}>
+                    <FileSpreadsheet className="h-6 w-6" />
                   </div>
-                  <span className={`font-medium text-sm ${
-                    importMethod === "csv" ? "text-emerald-700" : "text-foreground"
-                  }`}>CSV File</span>
-                  <span className="text-xs text-muted-foreground text-center">Spreadsheet</span>
+                  <div className="space-y-1">
+                    <span className={cn(
+                      "block font-bold text-sm",
+                      importMethod === "csv" ? "text-emerald-900" : "text-foreground"
+                    )}>CSV Upload</span>
+                    <p className="text-[10px] text-muted-foreground leading-tight font-medium">Bulk import your existing database</p>
+                  </div>
                 </div>
               </button>
 
@@ -521,31 +553,29 @@ export function JobImportModal({
               <button
                 type="button"
                 onClick={() => setImportMethod("url")}
-                className={`motion-card relative p-4 rounded-xl border-2 motion-control text-left ${
+                aria-label="Import job from URL"
+                aria-pressed={importMethod === "url"}
+                className={cn(
+                  "relative p-5 rounded-2xl border-2 transition-all duration-300 text-left group",
                   importMethod === "url"
-                    ? "border-emerald-500 bg-emerald-50 shadow-md"
-                    : "border-border hover:border-emerald-200 hover:bg-emerald-50/50"
-                }`}
-              >
-                {importMethod === "url" && (
-                  <div className="absolute -top-1 -right-1">
-                    <CheckCircle className="h-5 w-5 text-emerald-600 fill-white" />
-                  </div>
+                    ? "border-emerald-500 bg-emerald-50 shadow-lg shadow-emerald-500/10 ring-4 ring-emerald-500/5"
+                    : "border-border hover:border-emerald-400/50 hover:bg-emerald-50/30 hover:shadow-md"
                 )}
-                <div className="flex flex-col items-center gap-2">
-                  <div className={`p-2.5 rounded-lg ${
-                    importMethod === "url"
-                      ? "bg-emerald-100"
-                      : "bg-muted"
-                  }`}>
-                    <Globe className={`h-5 w-5 ${
-                      importMethod === "url" ? "text-emerald-600" : "text-muted-foreground"
-                    }`} />
+              >
+                <div className="flex flex-col items-center gap-3 text-center">
+                  <div className={cn(
+                    "p-3 rounded-2xl transition-transform duration-300 group-hover:scale-110",
+                    importMethod === "url" ? "bg-emerald-500 text-white shadow-emerald-500/30 shadow-lg" : "bg-muted text-muted-foreground"
+                  )}>
+                    <Globe className="h-6 w-6" />
                   </div>
-                  <span className={`font-medium text-sm ${
-                    importMethod === "url" ? "text-emerald-700" : "text-foreground"
-                  }`}>Job URL</span>
-                  <span className="text-xs text-muted-foreground text-center">Paste link</span>
+                  <div className="space-y-1">
+                    <span className={cn(
+                      "block font-bold text-sm",
+                      importMethod === "url" ? "text-emerald-900" : "text-foreground"
+                    )}>Job Link</span>
+                    <p className="text-[10px] text-muted-foreground leading-tight font-medium">Extract details from any job listing</p>
+                  </div>
                 </div>
               </button>
             </div>
@@ -842,80 +872,109 @@ export function JobImportModal({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="space-y-4"
+                className="space-y-6"
               >
                 {!parsedJob ? (
                   <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="job-url">Paste Job Posting URL</Label>
+                    <div className="space-y-3">
+                      <Label htmlFor="job-url" className="text-sm font-bold text-foreground">Paste Job Listing URL</Label>
                       <div className="flex gap-2">
-                        <Input
-                          id="job-url"
-                          placeholder="https://linkedin.com/jobs/view/..."
-                          value={jobUrl}
-                          onChange={(e) => setJobUrl(e.target.value)}
-                          className="flex-1"
-                        />
+                        <div className="relative flex-1">
+                          <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            id="job-url"
+                            value={jobUrl}
+                            onChange={(e) => setJobUrl(e.target.value)}
+                            placeholder="https://linkedin.com/jobs/view/..."
+                            className="pl-10 h-11 rounded-xl border-2 focus-visible:ring-emerald-500/20"
+                          />
+                        </div>
                         <Button 
                           onClick={handleUrlParse} 
-                          disabled={isParsingUrl || !jobUrl}
-                          className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                          disabled={!jobUrl || isParsingUrl}
+                          className="h-11 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white gap-2 shadow-lg shadow-emerald-600/20"
                         >
-                          {isParsingUrl ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
-                          {isParsingUrl ? "Parsing..." : "Parse"}
+                          {isParsingUrl ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                          Parse
                         </Button>
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        We&apos;ll use AI to extract job details directly from the page.
+                      <p className="text-[10px] text-muted-foreground italic px-1">
+                        We&apos;ll use AI to extract title, company, and salary directly from the link.
+                      </p>
+                    </div>
+                    <div className="py-8 text-center rounded-2xl bg-muted/20 border border-dashed border-border group hover:border-emerald-300 transition-colors">
+                      <Globe className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3 group-hover:text-emerald-500 transition-colors" />
+                      <p className="text-xs text-muted-foreground font-medium max-w-[240px] mx-auto leading-relaxed">
+                        Supports LinkedIn, Indeed, Glassdoor, and 50+ other job platforms.
                       </p>
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200">
-                      <div className="flex items-start justify-between mb-4">
-                        <div>
-                          <h3 className="font-bold text-emerald-900">{parsedJob.title}</h3>
-                          <p className="text-sm text-emerald-700">{parsedJob.company} • {parsedJob.location}</p>
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="p-6 rounded-2xl border-2 border-emerald-100 bg-emerald-50/30 space-y-5"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1.5 bg-emerald-100 rounded-lg">
+                          <CheckCircle className="h-4 w-4 text-emerald-600" />
                         </div>
-                        <Button variant="ghost" size="sm" onClick={() => setParsedJob(null)}>
-                          Change URL
-                        </Button>
+                        <h4 className="font-bold text-sm text-emerald-900 uppercase tracking-tight">Parsed Successfully</h4>
                       </div>
-                      
-                      <div className="grid grid-cols-2 gap-4 text-sm mb-4">
-                        <div>
-                          <span className="text-muted-foreground block">Salary</span>
-                          <span className="font-medium">{parsedJob.salary || "Not specified"}</span>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground block">Job Type</span>
-                          <span className="font-medium">{parsedJob.jobType || "Not specified"}</span>
-                        </div>
-                      </div>
+                      <Badge variant="outline" className="bg-white border-emerald-200 text-emerald-700 text-[10px] font-bold">
+                        AI Result
+                      </Badge>
+                    </div>
 
-                      <div className="space-y-2">
-                        <span className="text-muted-foreground text-sm block">Description Preview</span>
-                        <p className="text-xs text-emerald-800 line-clamp-3">
-                          {parsedJob.description}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      <div className="space-y-1">
+                        <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest px-0.5">Job Title</p>
+                        <p className="text-sm font-bold text-foreground truncate bg-white/50 p-2 rounded-lg border border-emerald-100/50">{parsedJob.title || "Not found"}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest px-0.5">Company</p>
+                        <p className="text-sm font-bold text-foreground truncate bg-white/50 p-2 rounded-lg border border-emerald-100/50">{parsedJob.company || "Not found"}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest px-0.5">Location</p>
+                        <p className="text-sm font-bold text-foreground truncate bg-white/50 p-2 rounded-lg border border-emerald-100/50">{parsedJob.location || "Remote"}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest px-0.5">Salary</p>
+                        <p className="text-sm font-bold text-emerald-700 truncate bg-white/50 p-2 rounded-lg border border-emerald-100/50">{parsedJob.salary || "Competitive"}</p>
+                      </div>
+                    </div>
+
+                    {parsedJob.description && (
+                      <div className="space-y-1">
+                        <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest px-0.5">Description Extract</p>
+                        <p className="text-xs text-muted-foreground line-clamp-2 bg-white/50 p-2 rounded-lg border border-emerald-100/50 leading-relaxed italic">
+                          &quot;{parsedJob.description}&quot;
                         </p>
                       </div>
-                    </div>
+                    )}
 
-                    <div className="flex justify-end gap-3">
-                      <Button variant="outline" onClick={() => setParsedJob(null)}>
-                        Back
+                    <div className="pt-4 border-t border-emerald-100 flex justify-end gap-3">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => setParsedJob(null)}
+                        className="text-xs font-bold hover:bg-emerald-100/50 hover:text-emerald-700"
+                      >
+                        Try Different URL
                       </Button>
-                      <Button
+                      <Button 
+                        size="sm" 
                         onClick={handleSaveParsedJob}
                         disabled={isImporting}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                        className="px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs h-10 shadow-lg shadow-emerald-600/10"
                       >
-                        {isImporting ? <RefreshCw className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle className="h-4 w-4 mr-2" />}
-                        Save to Board
+                        {isImporting ? <RefreshCw className="h-4 w-4 animate-spin mr-2" /> : <Download className="h-4 w-4 mr-2" />}
+                        Confirm & Save Job
                       </Button>
                     </div>
-                  </div>
+                  </motion.div>
                 )}
               </motion.div>
             )}
@@ -923,5 +982,6 @@ export function JobImportModal({
         </div>
       </DialogContent>
     </Dialog>
+    </TooltipProvider>
   );
 }

@@ -9,8 +9,8 @@ interface ToastHook {
   error: (message: string, description?: string) => void;
   info: (message: string, description?: string) => void;
   warning: (message: string, description?: string) => void;
-  loading: (message: string) => string;
-  dismiss: (toastId: string) => void;
+  loading: (message: string) => string | number;
+  dismiss: (toastId: string | number) => void;
 }
 
 export function useToast(): ToastHook {

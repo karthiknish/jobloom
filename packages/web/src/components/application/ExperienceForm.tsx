@@ -11,6 +11,34 @@ import { Badge } from "@/components/ui/badge";
 import { ResumeData } from "./types";
 import { generateResumeId } from "./utils";
 import { cn } from "@/lib/utils";
+import * as z from "zod";
+import { useForm, useFieldArray, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  FormDescription,
+} from "@/components/ui/form";
+
+const experienceSchema = z.object({
+  experience: z.array(z.object({
+    id: z.string(),
+    company: z.string().min(1, "Company is required"),
+    position: z.string().min(1, "Position is required"),
+    location: z.string(),
+    startDate: z.string().min(1, "Start date is required"),
+    endDate: z.string(),
+    current: z.boolean(),
+    description: z.string().min(1, "Description is required"),
+    achievements: z.array(z.string()).min(1, "At least one achievement is required"),
+  }))
+});
+
+type ExperienceFormValues = z.infer<typeof experienceSchema>;
 
 interface ExperienceFormProps {
   data: ResumeData['experience'];
@@ -18,8 +46,39 @@ interface ExperienceFormProps {
 }
 
 export function ExperienceForm({ data, onChange }: ExperienceFormProps) {
+  const form = useForm<ExperienceFormValues>({
+    resolver: zodResolver(experienceSchema),
+    defaultValues: {
+      experience: data,
+    },
+    mode: "onChange",
+  });
+
+  const { fields, append, remove, update } = useFieldArray({
+    control: form.control,
+    name: "experience",
+  });
+
+  const watchFieldArray = useWatch({
+    control: form.control,
+    name: "experience",
+  });
+
+  React.useEffect(() => {
+    // Check if external data is different from internal state to avoid loops
+    if (JSON.stringify(data) !== JSON.stringify(watchFieldArray)) {
+      form.reset({ experience: data });
+    }
+  }, [data]);
+
+  React.useEffect(() => {
+    // Only call onChange if the data has actually changed
+    // and we're not in the middle of a reset
+    onChange(watchFieldArray as ResumeData['experience']);
+  }, [watchFieldArray, onChange]);
+
   const addExperience = () => {
-    const newExperience = {
+    append({
       id: generateResumeId(),
       company: "",
       position: "",
@@ -29,48 +88,45 @@ export function ExperienceForm({ data, onChange }: ExperienceFormProps) {
       current: false,
       description: "",
       achievements: [""]
-    };
-    onChange([...data, newExperience]);
-  };
-
-  const updateExperience = (index: number, field: any, value: any) => {
-    const updated = [...data];
-    updated[index] = { ...updated[index], [field]: value };
-    onChange(updated);
+    });
   };
 
   const removeExperience = (index: number) => {
-    onChange(data.filter((_, i) => i !== index));
+    remove(index);
   };
 
   const addAchievement = (expIndex: number) => {
-    const updated = [...data];
-    updated[expIndex].achievements.push("");
-    onChange(updated);
+    const experienceItem = fields[expIndex];
+    // This is a bit tricky since achievements is a sub-array not managed by useFieldArray directly here
+    // But we can update the whole object
+    const currentAchievements = form.getValues(`experience.${expIndex}.achievements`);
+    form.setValue(`experience.${expIndex}.achievements`, [...currentAchievements, ""], { shouldDirty: true });
   };
 
   const updateAchievement = (expIndex: number, achIndex: number, value: string) => {
-    const updated = [...data];
-    updated[expIndex].achievements[achIndex] = value;
-    onChange(updated);
+    const currentAchievements = form.getValues(`experience.${expIndex}.achievements`);
+    const updated = [...currentAchievements];
+    updated[achIndex] = value;
+    form.setValue(`experience.${expIndex}.achievements`, updated, { shouldDirty: true });
   };
 
   const removeAchievement = (expIndex: number, achIndex: number) => {
-    const updated = [...data];
-    updated[expIndex].achievements = updated[expIndex].achievements.filter((_, i) => i !== achIndex);
-    onChange(updated);
+    const currentAchievements = form.getValues(`experience.${expIndex}.achievements`);
+    const updated = currentAchievements.filter((_, i) => i !== achIndex);
+    form.setValue(`experience.${expIndex}.achievements`, updated, { shouldDirty: true });
   };
 
   // Calculate experience completeness
-  const getExperienceCompleteness = (exp: ResumeData['experience'][0]) => {
+  const getExperienceCompleteness = (exp: any) => {
     const fields = [exp.position, exp.company, exp.startDate, exp.description];
-    const filledFields = fields.filter(f => f && f.trim().length > 0).length;
-    const hasAchievements = exp.achievements.some(a => a.trim().length > 0);
+    const filledFields = fields.filter((f: any) => f && f.trim().length > 0).length;
+    const hasAchievements = exp.achievements.some((a: any) => a.trim().length > 0);
     return Math.round(((filledFields / fields.length) * 80) + (hasAchievements ? 20 : 0));
   };
 
   return (
-    <div className="space-y-6">
+    <Form {...form}>
+      <div className="space-y-6">
       {/* Header with tips */}
       {data.length === 0 && (
         <div className="p-6 border-2 border-dashed border-muted-foreground/25 rounded-xl text-center space-y-3">
@@ -88,7 +144,7 @@ export function ExperienceForm({ data, onChange }: ExperienceFormProps) {
         </div>
       )}
 
-      {data.map((exp, index) => {
+      {fields.map((exp, index) => {
         const completeness = getExperienceCompleteness(exp);
         return (
           <div
@@ -99,7 +155,7 @@ export function ExperienceForm({ data, onChange }: ExperienceFormProps) {
               exp.current && "ring-2 ring-ring border-primary/30"
             )}
           >
-            {/* Card Header */}
+            {/* Card Header Logic with completeness display */}
             <div className="bg-gradient-to-r from-muted/50 to-muted/30 px-6 py-4 border-b">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -151,109 +207,153 @@ export function ExperienceForm({ data, onChange }: ExperienceFormProps) {
               </div>
             </div>
 
-            {/* Card Content */}
+            {/* Card Content with FormFields */}
             <div className="p-6 space-y-5">
-              {/* Position & Company */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor={`position-${index}`} className="flex items-center gap-2">
-                    <Briefcase className="h-3.5 w-3.5 text-muted-foreground" />
-                    Position <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id={`position-${index}`}
-                    value={exp.position}
-                    onChange={(e) => updateExperience(index, 'position', e.target.value)}
-                    placeholder="Software Engineer"
-                    className="bg-background"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor={`company-${index}`} className="flex items-center gap-2">
-                    <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-                    Company <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id={`company-${index}`}
-                    value={exp.company}
-                    onChange={(e) => updateExperience(index, 'company', e.target.value)}
-                    placeholder="Tech Company Inc."
-                    className="bg-background"
-                  />
-                </div>
+                <FormField
+                  control={form.control}
+                  name={`experience.${index}.position`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2">
+                        <Briefcase className="h-3.5 w-3.5 text-muted-foreground" />
+                        Position <span className="text-red-500">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="Software Engineer"
+                          className="bg-background"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name={`experience.${index}.company`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2">
+                        <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                        Company <span className="text-red-500">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="Tech Company Inc."
+                          className="bg-background"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
-              {/* Location & Dates */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor={`location-${index}`} className="flex items-center gap-2">
-                    <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-                    Location
-                  </Label>
-                  <Input
-                    id={`location-${index}`}
-                    value={exp.location}
-                    onChange={(e) => updateExperience(index, 'location', e.target.value)}
-                    placeholder="San Francisco, CA"
-                    className="bg-background"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor={`startDate-${index}`} className="flex items-center gap-2">
-                    <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                    Start Date <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id={`startDate-${index}`}
-                    value={exp.startDate}
-                    onChange={(e) => updateExperience(index, 'startDate', e.target.value)}
-                    placeholder="Jan 2020"
-                    className="bg-background"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor={`endDate-${index}`} className="flex items-center gap-2">
-                    <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                    End Date
-                  </Label>
-                  <Input
-                    id={`endDate-${index}`}
-                    value={exp.endDate}
-                    onChange={(e) => updateExperience(index, 'endDate', e.target.value)}
-                    placeholder={exp.current ? "Present" : "Dec 2022"}
-                    disabled={exp.current}
-                    className={cn("bg-background", exp.current && "opacity-50")}
-                  />
-                </div>
-              </div>
-
-              {/* Current Position Toggle */}
-              <div className="flex items-center space-x-3 p-3 bg-muted/30 rounded-lg border">
-                <Switch
-                  id={`current-${index}`}
-                  checked={exp.current}
-                  onCheckedChange={(checked) => updateExperience(index, 'current', checked)}
+                <FormField
+                  control={form.control}
+                  name={`experience.${index}.location`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2">
+                        <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                        Location
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="San Francisco, CA"
+                          className="bg-background"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-                <Label htmlFor={`current-${index}`} className="flex items-center gap-2 cursor-pointer">
-                  <Sparkles className="h-4 w-4 text-primary" />
-                  I currently work here
-                </Label>
-              </div>
-
-              {/* Job Description */}
-              <div className="space-y-2">
-                <Label htmlFor={`description-${index}`}>Job Description</Label>
-                <Textarea
-                  id={`description-${index}`}
-                  value={exp.description}
-                  onChange={(e) => updateExperience(index, 'description', e.target.value)}
-                  placeholder="Describe your role, responsibilities, and the impact you made..."
-                  rows={3}
-                  className="bg-background resize-none"
+                <FormField
+                  control={form.control}
+                  name={`experience.${index}.startDate`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2">
+                        <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                        Start Date <span className="text-red-500">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="Jan 2020"
+                          className="bg-background"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name={`experience.${index}.endDate`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2">
+                        <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                        End Date
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder={exp.current ? "Present" : "Dec 2022"}
+                          disabled={exp.current}
+                          className={cn("bg-background", exp.current && "opacity-50")}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
               </div>
 
-              {/* Key Achievements */}
+              <FormField
+                control={form.control}
+                name={`experience.${index}.current`}
+                render={({ field }) => (
+                  <FormItem className="flex items-center space-x-3 p-3 bg-muted/30 rounded-lg border">
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormLabel className="flex items-center gap-2 cursor-pointer pb-2">
+                      <Sparkles className="h-4 w-4 text-primary" />
+                      I currently work here
+                    </FormLabel>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name={`experience.${index}.description`}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Job Description</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        {...field}
+                        placeholder="Describe your role, responsibilities, and the impact you made..."
+                        rows={3}
+                        className="bg-background resize-none"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <Label className="flex items-center gap-2">
@@ -272,7 +372,7 @@ export function ExperienceForm({ data, onChange }: ExperienceFormProps) {
                 </div>
 
                 <div className="space-y-2">
-                  {exp.achievements.map((achievement, achIndex) => (
+                  {exp.achievements.map((achievement: string, achIndex: number) => (
                     <div key={achIndex} className="flex gap-2 items-start">
                       <div className="w-6 h-6 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1.5">
                         <span className="text-xs font-medium text-amber-700">
@@ -319,11 +419,12 @@ export function ExperienceForm({ data, onChange }: ExperienceFormProps) {
         </Button>
       )}
 
-      {data.length > 0 && (
+      {fields.length > 0 && (
         <p className="text-xs text-center text-muted-foreground">
           List experiences in reverse chronological order (most recent first)
         </p>
       )}
     </div>
+    </Form>
   );
 }

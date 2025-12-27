@@ -13,8 +13,7 @@
 
 import { post } from '../apiClient';
 import { fetchSponsorRecord } from '../sponsorship/lookup';
-import { isLikelyPlaceholderCompany, normalizeCompanyName } from '../utils/companyName';
-import { normalizeJobUrl, extractJobIdentifier } from '../utils/urlNormalizer';
+import { isLikelyPlaceholderCompany, normalizeCompanyName, normalizeJobUrl, extractJobIdentifier } from '@hireall/shared';
 
 // ============================================================================
 // Types and Interfaces

@@ -41,13 +41,7 @@ import {
   Archive,
 } from "lucide-react";
 import { useRestoreFocus } from "@/hooks/useRestoreFocus";
-
-export type ApplicationStatus = 
-  | "saved"
-  | "applied"
-  | "offered"
-  | "rejected"
-  | "withdrawn";
+import { ApplicationStatus } from "@/types/dashboard";
 
 interface BulkActionsBarProps {
   selectedCount: number;
@@ -131,10 +125,10 @@ export function BulkActionsBar({
                 className="data-[state=indeterminate]:bg-primary/50"
               />
               <span className="text-sm font-medium text-foreground">
-                {selectedCount} of {totalCount} selected
+                {isLoading ? "Processing..." : `${selectedCount} of ${totalCount} selected`}
               </span>
               <span className="text-xs text-muted-foreground hidden sm:inline">
-                — Use actions below
+                {isLoading ? "Please wait while we update your applications." : "— Use actions below"}
               </span>
             </div>
 

@@ -24,20 +24,16 @@ import { useRouter } from "next/navigation";
 import { getAuth, EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "firebase/auth";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { settingsApi } from "@/utils/api/settings";
+import { useFormContext } from "react-hook-form";
+import { FormField, FormItem, FormControl } from "@/components/ui/form";
 
 interface SecuritySettingsProps {
-  formData: {
-    security: {
-      currentPassword: string;
-      newPassword: string;
-      confirmPassword: string;
-    };
-  };
-  onInputChange: (section: string, field: string, value: any) => void;
   user: any;
 }
 
-export function SecuritySettings({ formData, onInputChange, user }: SecuritySettingsProps) {
+export function SecuritySettings({ user }: SecuritySettingsProps) {
+  const { control, watch, setValue } = useFormContext();
+  const formData = watch();
   const toast = useToast();
   const router = useRouter();
   const { signOut } = useFirebaseAuth();
@@ -133,9 +129,9 @@ export function SecuritySettings({ formData, onInputChange, user }: SecuritySett
         "Your password has been updated successfully."
       );
       
-      onInputChange("security", "currentPassword", "");
-      onInputChange("security", "newPassword", "");
-      onInputChange("security", "confirmPassword", "");
+      setValue("security.currentPassword", "");
+      setValue("security.newPassword", "");
+      setValue("security.confirmPassword", "");
     } catch (error: any) {
       console.error("Password change error:", error);
       let errorMessage = "Failed to update password. Please try again.";
@@ -233,7 +229,7 @@ export function SecuritySettings({ formData, onInputChange, user }: SecuritySett
       transition={{ duration: 0.6, delay: 0.2 }}
       className="space-y-6"
     >
-      <Card className="card-premium-elevated border-0 bg-surface">
+      <Card variant="premium" className="elevated border-0 bg-surface">
         <CardHeader>
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -257,53 +253,72 @@ export function SecuritySettings({ formData, onInputChange, user }: SecuritySett
               Change Password
             </h3>
             <div className="space-y-4">
-              <div className="space-y-3">
-                <Label htmlFor="currentPassword" className="text-sm font-semibold text-foreground">
-                  Current Password
-                </Label>
-                <Input
-                  id="currentPassword"
-                  type="password"
-                  value={formData.security.currentPassword}
-                  onChange={(e) => onInputChange("security", "currentPassword", e.target.value)}
-                  placeholder="Enter current password"
-                  className="input-premium"
-                />
-              </div>
+              <FormField
+                control={control}
+                name="security.currentPassword"
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <Label className="text-sm font-semibold text-foreground">
+                      Current Password
+                    </Label>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="password"
+                        placeholder="Enter current password"
+                        className="input-premium"
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
 
-              <div className="space-y-3">
-                <Label htmlFor="newPassword" className="text-sm font-semibold text-foreground">
-                  New Password
-                </Label>
-                <Input
-                  id="newPassword"
-                  type="password"
-                  value={formData.security.newPassword}
-                  onChange={(e) => onInputChange("security", "newPassword", e.target.value)}
-                  placeholder="Enter new password"
-                  className="input-premium"
-                />
-              </div>
+              <FormField
+                control={control}
+                name="security.newPassword"
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <Label className="text-sm font-semibold text-foreground">
+                      New Password
+                    </Label>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="password"
+                        placeholder="Enter new password"
+                        className="input-premium"
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
 
-              <div className="space-y-3">
-                <Label htmlFor="confirmPassword" className="text-sm font-semibold text-foreground">
-                  Confirm New Password
-                </Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  value={formData.security.confirmPassword}
-                  onChange={(e) => onInputChange("security", "confirmPassword", e.target.value)}
-                  placeholder="Confirm new password"
-                  className="input-premium"
-                />
-              </div>
+              <FormField
+                control={control}
+                name="security.confirmPassword"
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <Label className="text-sm font-semibold text-foreground">
+                      Confirm New Password
+                    </Label>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="password"
+                        placeholder="Confirm new password"
+                        className="input-premium"
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
 
               <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                 <Button
                   onClick={handlePasswordChange}
                   disabled={isLoading}
-                  className="btn-premium gradient-primary font-semibold"
+                  variant="premium"
+                  className="font-semibold"
                 >
                   {isLoading ? (
                     <>
@@ -341,10 +356,10 @@ export function SecuritySettings({ formData, onInputChange, user }: SecuritySett
               <div className="flex flex-col sm:flex-row gap-4">
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                   <Button
-                    variant="outline"
+                    variant="premium"
                     onClick={handleDataExport}
                     disabled={isLoading}
-                    className="btn-premium font-semibold"
+                    className="font-semibold bg-surface text-foreground border-2 hover:bg-muted/20 hover:border-sidebar-primary/30"
                   >
                     <Download className="h-4 w-4 mr-2" />
                     {isLoading ? "Exporting..." : "Export Data"}
@@ -365,9 +380,9 @@ export function SecuritySettings({ formData, onInputChange, user }: SecuritySett
                   >
                     <AlertDialogTrigger asChild>
                       <Button
-                        variant="outline"
                         disabled={isLoading}
-                        className="btn-premium font-semibold border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                        variant="premium"
+                        className="font-semibold border-destructive text-destructive hover:bg-destructive hover:text-white bg-transparent"
                       >
                         <Trash2 className="h-4 w-4 mr-2" />
                         Delete Account
@@ -451,10 +466,10 @@ export function SecuritySettings({ formData, onInputChange, user }: SecuritySett
 
               <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                 <Button
-                  variant="outline"
                   onClick={handleLogout}
                   disabled={isLoading}
-                  className="btn-premium font-semibold border-orange-500 text-orange-600 hover:bg-orange-50 hover:border-orange-600"
+                  variant="premium"
+                  className="font-semibold border-orange-500 text-orange-600 hover:bg-orange-50 hover:border-orange-600 bg-transparent"
                 >
                   <LogOut className="h-4 w-4 mr-2" />
                   {isLoading ? "Signing Out..." : "Sign Out"}

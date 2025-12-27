@@ -4,43 +4,32 @@ import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"
 
-/**
- * Button Hierarchy:
- * - default (Primary): Main actions, solid bg, one per section
- * - secondary: Alternative actions, muted bg
- * - outline: Less emphasis, border only
- * - ghost: Minimal, no visible styling until hover (tertiary)
- * - link: Inline text actions
- * - destructive: Dangerous/irreversible actions
- * - premium: CTAs with gradient and elevation
- */
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background motion-control focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        // Primary: Main call-to-action, solid background
-        default: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm hover:shadow",
-        // Secondary: Alternative action, muted styling
-        secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80 shadow-sm",
-        // Outline: Less emphasis, border only
-        outline:
-          "border border-input bg-background hover:bg-accent hover:text-accent-foreground hover:border-accent",
-        // Ghost/Tertiary: Minimal styling, icon buttons
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        // Link: Inline text actions
-        link: "text-primary underline-offset-4 hover:underline",
-        // Destructive: Dangerous actions (delete, remove)
+        default: "bg-primary text-primary-foreground hover:bg-primary/90",
         destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm hover:shadow",
-        // Premium: CTAs with gradient and elevation effect
-        premium: "bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground shadow-md hover:shadow-lg transform hover:-translate-y-0.5",
+          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+        outline:
+          "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+        secondary:
+          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        ghost: "hover:bg-accent hover:text-accent-foreground",
+        link: "text-primary underline-offset-4 hover:underline",
+        premium: "btn-premium gradient-primary hover:shadow-premium-xl transition-premium text-white font-bold",
+        "gradient-premium": "btn-premium gradient-premium hover:shadow-premium-xl transition-premium text-white font-bold",
+        "gradient-secondary": "btn-premium gradient-secondary hover:shadow-premium-lg transition-premium text-foreground font-bold",
+        motion: "motion-button transition-all duration-300",
       },
       size: {
         default: "h-10 px-4 py-2",
+        xs: "h-8 rounded-md px-3 text-xs",
         sm: "h-9 rounded-md px-3",
         lg: "h-11 rounded-md px-8",
+        xl: "h-12 rounded-lg px-10 text-base",
+        "2xl": "h-14 rounded-xl px-12 text-lg",
         icon: "h-10 w-10",
       },
     },
@@ -55,37 +44,17 @@ export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean
-  /** Screen reader text for icon-only buttons */
-  srText?: string
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, srText, children, ...props }, ref) => {
+  ({ className, variant, size, asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : "button"
-    
-    // When asChild is true, Slot requires a single child element
-    // Don't add srText in that case - the consumer should handle it
-    if (asChild) {
-      return (
-        <Comp
-          className={cn(buttonVariants({ variant, size, className }))}
-          ref={ref}
-          {...props}
-        >
-          {children}
-        </Comp>
-      )
-    }
-    
     return (
       <Comp
         className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
         {...props}
-      >
-        {children}
-        {srText && <span className="sr-only">{srText}</span>}
-      </Comp>
+      />
     )
   }
 )

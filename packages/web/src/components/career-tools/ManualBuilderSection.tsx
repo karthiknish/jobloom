@@ -45,14 +45,10 @@ export function ManualBuilderSection({ state, tabsListClassName, tabsTriggerClas
     updateAdvancedPersonalInfo,
     updateAdvancedExperience,
     updateAdvancedSkills,
+    updateAdvancedEducation,
+    updateAdvancedProjects,
     educationItems,
-    addEducation,
-    removeEducation,
-    updateEducation,
     projectItems,
-    addProject,
-    removeProject,
-    updateProject,
   } = state;
 
   return (
@@ -279,10 +275,8 @@ export function ManualBuilderSection({ state, tabsListClassName, tabsTriggerClas
               </CardHeader>
               <CardContent className="space-y-4">
                 <EducationSection
-                  items={educationItems as any}
-                  add={addEducation}
-                  remove={removeEducation}
-                  update={updateEducation}
+                  data={educationItems as any}
+                  onChange={updateAdvancedEducation}
                 />
                 <div className="flex justify-between mt-6 pt-4 border-t">
                   <Button variant="outline" onClick={() => setActiveBuilderTab("experience")}>
@@ -331,10 +325,8 @@ export function ManualBuilderSection({ state, tabsListClassName, tabsTriggerClas
               </CardHeader>
               <CardContent className="space-y-4">
                 <ProjectsSection
-                  items={projectItems as any}
-                  add={addProject}
-                  remove={removeProject}
-                  update={updateProject}
+                  data={projectItems as any}
+                  onChange={updateAdvancedProjects}
                 />
                 <div className="flex flex-col-reverse sm:flex-row sm:justify-between gap-2 mt-6 pt-4 border-t">
                   <Button variant="outline" onClick={() => setActiveBuilderTab("skills")}>

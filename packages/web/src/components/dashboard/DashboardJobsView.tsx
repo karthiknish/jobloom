@@ -2,13 +2,13 @@
 
 import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Application } from "@/types/dashboard";
+
+import dynamic from "next/dynamic";
+import { Application, ApplicationStatus } from "@/types/dashboard";
 import { JobList } from "@/components/dashboard/JobList";
 import { KanbanBoard, type KanbanStatus } from "@/components/dashboard/KanbanBoard";
 import { DashboardFilters } from "@/components/dashboard/DashboardFilters";
-import { BulkActionsBar, ApplicationStatus } from "@/components/dashboard/BulkActionsBar";
 import { ExportOptionsDropdown } from "@/components/dashboard/ExportOptionsDropdown";
-import { KeyboardShortcutsDialog } from "@/components/dashboard/KeyboardShortcutsDialog";
 import { useBulkSelection } from "@/hooks/useBulkSelection";
 import { useKeyboardShortcuts, createDashboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,10 @@ import { Badge } from "@/components/ui/badge";
 import { LayoutList, LayoutGrid, Briefcase, Keyboard } from "lucide-react";
 import { filterApplications, getUniqueCompanies } from "@/utils/dashboard";
 import { slideInUp } from "@/styles/animations";
+
+const BulkActionsBar = dynamic(() => import("@/components/dashboard/BulkActionsBar").then(mod => mod.BulkActionsBar), { ssr: false });
+const JobImportModal = dynamic(() => import("@/components/dashboard/JobImportModal").then(mod => mod.JobImportModal), { ssr: false });
+const KeyboardShortcutsDialog = dynamic(() => import("@/components/dashboard/KeyboardShortcutsDialog").then(mod => mod.KeyboardShortcutsDialog), { ssr: false });
 
 interface DashboardJobsViewProps {
   applications: Application[];

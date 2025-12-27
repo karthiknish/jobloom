@@ -77,6 +77,7 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted, onResum
   const [upgradePromptVisible, setUpgradePromptVisible] = useState(false);
   const [limitInfo, setLimitInfo] = useState<any>(null);
   const [showRealTimeFeedback, setShowRealTimeFeedback] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
   const [sampleResume, setSampleResume] = useState<ResumeData | null>(null);
   const [uploadLimits, setUploadLimits] = useState<UploadLimits>({
     maxSize: 2 * 1024 * 1024, // 2MB default
@@ -142,8 +143,14 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted, onResum
       return;
     }
 
-  setUploading(true);
-  onUploadStarted?.();
+    setUploading(true);
+    setCurrentStep(1);
+    onUploadStarted?.();
+
+    // Simulate progress steps if it's taking a while
+    const stepInterval = setInterval(() => {
+      setCurrentStep(prev => (prev < 4 ? prev + 1 : prev));
+    }, 2000);
 
     try {
       const result = await cvEvaluatorApi.uploadCv(file, {
@@ -190,6 +197,7 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted, onResum
         analytics.logError("cv_upload_failed", error.message || "unknown_error", { fileType: file?.type, fileSize: file?.size });
       }
     } finally {
+      clearInterval(stepInterval);
       setUploading(false);
     }
   };
@@ -525,10 +533,10 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted, onResum
 
               {/* Progress Steps */}
               <div className="space-y-3 text-left">
-                <AnalysisStep step={1} label="Uploading document" active={true} />
-                <AnalysisStep step={2} label="Extracting content" active={true} />
-                <AnalysisStep step={3} label="Analyzing structure" active={true} />
-                <AnalysisStep step={4} label="Generating insights" active={true} />
+                <AnalysisStep step={1} label="Uploading document" active={currentStep === 1} />
+                <AnalysisStep step={2} label="Extracting content" active={currentStep === 2} />
+                <AnalysisStep step={3} label="Analyzing structure" active={currentStep === 3} />
+                <AnalysisStep step={4} label="Generating insights" active={currentStep === 4} />
               </div>
 
               {/* Animated Progress Bar */}

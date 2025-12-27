@@ -69,6 +69,7 @@ interface TourContextType {
   hasCompletedTour: (tourId: string) => boolean;
   markTourComplete: (tourId: string) => void;
   shouldShowTour: (tourId: string) => boolean;
+  resetTour: (tourId: string) => void;
 }
 
 const TourContext = createContext<TourContextType | undefined>(undefined);
@@ -81,7 +82,6 @@ export function useTourContext() {
   return context;
 }
 
-// Custom content component for tour steps
 function TourContent({ 
   content, 
   currentStep, 
@@ -89,6 +89,7 @@ function TourContent({
   setIsOpen, 
   setCurrentStep,
   onComplete,
+  onSkip,
 }: {
   content: string;
   currentStep: number;
@@ -96,6 +97,7 @@ function TourContent({
   setIsOpen: (open: boolean) => void;
   setCurrentStep: (step: number | ((s: number) => number)) => void;
   onComplete: () => void;
+  onSkip: () => void;
 }) {
   // Parse pipe-separated format: "Title|Body"
   const [title, body] = typeof content === 'string' && content.includes('|')
@@ -127,7 +129,19 @@ function TourContent({
         </div>
         
         <div className="flex items-center gap-2">
-          {!isFirst && (
+          {isFirst ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                onSkip();
+                setIsOpen(false);
+              }}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              Skip
+            </Button>
+          ) : (
             <Button
               variant="ghost"
               size="sm"
@@ -145,7 +159,7 @@ function TourContent({
                 onComplete();
                 setIsOpen(false);
               }}
-              className="gap-1"
+              className="gap-1 shadow-md"
             >
               <Check className="h-4 w-4" />
               Done
@@ -154,7 +168,7 @@ function TourContent({
             <Button
               size="sm"
               onClick={() => setCurrentStep((s) => s + 1)}
-              className="gap-1"
+              className="gap-1 shadow-md"
             >
               Next
               <ArrowRight className="h-4 w-4" />
@@ -240,12 +254,30 @@ export function OnboardingTourProvider({ children }: { children: React.ReactNode
     setActiveTour(filterStepsForPage(CV_EVALUATOR_TOUR_STEPS));
   }, [filterStepsForPage]);
 
+  const resetTour = useCallback(async (tourId: string) => {
+    if (tourId === "dashboard") {
+      onboarding.saveState({ hasCompletedDashboardTour: false });
+    } else if (tourId === "cv_evaluator") {
+      onboarding.saveState({ hasCompletedCvTour: false });
+    }
+
+    setCompletedTours((prev) => {
+      const next = new Set(prev);
+      next.delete(tourId);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("hireall:completed_tours", JSON.stringify([...next]));
+      }
+      return next;
+    });
+  }, [onboarding]);
+
   const contextValue: TourContextType = {
     startDashboardTour,
     startCvEvaluatorTour,
     hasCompletedTour,
     markTourComplete,
     shouldShowTour,
+    resetTour,
   };
 
   return (
@@ -287,6 +319,7 @@ export function OnboardingTourProvider({ children }: { children: React.ReactNode
               setIsOpen={setIsOpen}
               setCurrentStep={setCurrentStep}
               onComplete={() => markTourComplete(activeTourId)}
+              onSkip={() => setIsOpen(false)}
             />
           </div>
         )}
@@ -305,12 +338,12 @@ export function OnboardingTourProvider({ children }: { children: React.ReactNode
 // Hook to trigger tour from anywhere
 export function useTourTrigger() {
   const tour = useTour();
-  const { markTourComplete, startDashboardTour, startCvEvaluatorTour } = useTourContext();
+  const { markTourComplete, startDashboardTour, startCvEvaluatorTour, resetTour } = useTourContext();
 
   const startTour = useCallback((tourId: string) => {
-    if (tourId === TOUR_IDS.dashboard) {
+    if (tourId === "dashboard") {
       startDashboardTour();
-    } else if (tourId === TOUR_IDS.cvEvaluator) {
+    } else if (tourId === "cv_evaluator") {
       startCvEvaluatorTour();
     }
     tour.setIsOpen(true);
@@ -324,6 +357,7 @@ export function useTourTrigger() {
   return {
     startTour,
     endTour,
+    resetTour,
     isOpen: tour.isOpen,
     setIsOpen: tour.setIsOpen,
     currentStep: tour.currentStep,

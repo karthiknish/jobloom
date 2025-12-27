@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { motion } from "framer-motion";
 
@@ -14,7 +15,6 @@ import { JobDetailsModal } from "@/components/dashboard/JobDetailsModal";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
-import { DraggableDashboard } from "@/components/dashboard/DraggableDashboard";
 import { useDashboardLayout } from "@/hooks/useDashboardLayout";
 import { useApplicationManagement } from "@/hooks/useApplicationManagement";
 import { useJobManagement } from "@/hooks/useJobManagement";
@@ -33,9 +33,7 @@ import { settingsApi } from "@/utils/api/settings";
 import { useSubscription } from "@/providers/subscription-provider";
 import { PremiumUpgradeBanner } from "@/components/dashboard/PremiumUpgradeBanner";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import { DashboardAnalytics } from "@/components/dashboard/DashboardAnalytics";
 import { DashboardEmptyState } from "@/components/dashboard/DashboardEmptyState";
-import { DashboardJobsView } from "@/components/dashboard/DashboardJobsView";
 import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeletons";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
@@ -49,6 +47,22 @@ import { useTourContext } from "@/providers/onboarding-tour-provider";
 import { WelcomeDialog } from "@/components/onboarding/WelcomeDialog";
 import { UpgradeIntentDetail } from "@/utils/upgradeIntent";
 import { analytics } from "@/firebase/analytics";
+
+// Dynamically import heavy components for code-splitting
+const DraggableDashboard = dynamic(
+  () => import("@/components/dashboard/DraggableDashboard").then(mod => ({ default: mod.DraggableDashboard })),
+  { ssr: false, loading: () => <DashboardSkeleton /> }
+);
+
+const DashboardAnalytics = dynamic(
+  () => import("@/components/dashboard/DashboardAnalytics").then(mod => ({ default: mod.DashboardAnalytics })),
+  { ssr: false, loading: () => <DashboardSkeleton /> }
+);
+
+const DashboardJobsView = dynamic(
+  () => import("@/components/dashboard/DashboardJobsView").then(mod => ({ default: mod.DashboardJobsView })),
+  { ssr: false, loading: () => <DashboardSkeleton /> }
+);
 
 
 

@@ -13,20 +13,23 @@ import { LoadingPage } from "@/components/ui/loading";
 import { FeatureGate } from "@/components/UpgradePrompt";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { NetworkError } from "@/components/ui/error-display";
-import { AIResumeGenerator } from "@/components/application/AIResumeGenerator";
-import { AICoverLetterGenerator } from "@/components/application/AICoverLetterGenerator";
-import { CvUploadSection } from "@/components/cv-evaluator/CvUploadSection";
-import { CvAnalysisHistory } from "@/components/CvAnalysisHistory";
-import { CvImprovementTracker } from "@/components/CvImprovementTracker";
-import { CvStatsOverview } from "@/components/cv-evaluator";
+import { Skeleton, SkeletonButton, SkeletonText, SkeletonCard } from "@/components/ui/loading-skeleton";
 import { 
   CareerToolsSidebar, 
-  ManualBuilderSection, 
   useCareerToolsState,
   ResumeWizard
 } from "@/components/career-tools";
+
+const AIResumeGenerator = dynamic(() => import("@/components/application/AIResumeGenerator").then(mod => mod.AIResumeGenerator), { ssr: false, loading: () => <SkeletonCard /> });
+const AICoverLetterGenerator = dynamic(() => import("@/components/application/AICoverLetterGenerator").then(mod => mod.AICoverLetterGenerator), { ssr: false, loading: () => <SkeletonCard /> });
+const CvUploadSection = dynamic(() => import("@/components/cv-evaluator/CvUploadSection").then(mod => mod.CvUploadSection), { ssr: false, loading: () => <SkeletonCard /> });
+const CvAnalysisHistory = dynamic(() => import("@/components/CvAnalysisHistory").then(mod => mod.CvAnalysisHistory), { ssr: false, loading: () => <SkeletonCard /> });
+const CvImprovementTracker = dynamic(() => import("@/components/CvImprovementTracker").then(mod => mod.CvImprovementTracker), { ssr: false, loading: () => <SkeletonCard /> });
+const CvStatsOverview = dynamic(() => import("@/components/cv-evaluator").then(mod => mod.CvStatsOverview), { ssr: false, loading: () => <Skeleton className="h-20 w-full" /> });
+const ManualBuilderSection = dynamic(() => import("@/components/career-tools/ManualBuilderSection").then(mod => mod.ManualBuilderSection), { ssr: false, loading: () => <SkeletonCard /> });
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Skeleton, SkeletonButton, SkeletonText, SkeletonCard } from "@/components/ui/loading-skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Search, History as HistoryIcon, LayoutDashboard, Sparkles as SparklesIcon } from "lucide-react";
 
 const dashboardTabsListClassName =
   "bg-background/80 backdrop-blur-sm p-1 rounded-xl border border-border/50 shadow-sm w-full flex flex-wrap gap-1 h-auto sm:inline-flex sm:w-auto sm:flex-nowrap";
@@ -123,7 +126,7 @@ export default function CareerToolsPage() {
       !onboarding.hasCompletedCvTour &&
       user &&
       !authLoading &&
-      activeSection === "analyze"
+      activeSection === "cv-optimizer"
     ) {
       const timer = setTimeout(() => {
         tour.startCvEvaluatorTour();
@@ -156,7 +159,7 @@ export default function CareerToolsPage() {
     );
   }
 
-  // Render content based on active section
+// Render content based on active section
   const renderContent = () => {
     if (dataError) {
       return <NetworkError error={dataError} onRetry={() => refresh()} />;
@@ -188,44 +191,55 @@ export default function CareerToolsPage() {
             <ResumeImporter onImport={handleResumeImport} />
           </div>
         );
-      case "analyze":
+      case "cv-optimizer":
         return (
           <div className="space-y-6">
             <CvStatsOverview cvStats={cvStats || undefined} loading={loadingData} />
-            <CvUploadSection
-              userId={user?.uid || ''}
-              onUploadStarted={() => {
-                // Ensure the latest server-side record shows up once created
-                refresh();
-              }}
-              onUploadSuccess={() => {
-                // Pull the latest analyses and take the user to History
-                refresh();
-                setActiveSection("history");
-              }}
-              onResumeUpdate={handleResumeUpdate}
-              currentResume={currentResume}
-              currentAtsScore={currentAtsScore}
-              setCurrentAtsScore={setCurrentAtsScore}
-            />
-          </div>
-        );
-      case "history":
-        return (
-          <div className="space-y-6" data-tour="cv-analysis">
-            <CvStatsOverview cvStats={cvStats || undefined} loading={loadingData} />
-            {loadingData ? (
-              <div className="space-y-4">
-                {[1, 2, 3].map((index) => (
-                  <SkeletonCard key={index} />
-                ))}
-              </div>
-            ) : (
-              <>
-                <CvAnalysisHistory analyses={cvAnalyses ?? []} />
-                <CvImprovementTracker analyses={cvAnalyses ?? []} />
-              </>
-            )}
+            
+            <Tabs defaultValue="analyze" className="w-full">
+              <TabsList className="mb-6">
+                <TabsTrigger value="analyze" className="flex items-center gap-2">
+                  <Search className="h-4 w-4" />
+                  Analyze New CV
+                </TabsTrigger>
+                <TabsTrigger value="history" className="flex items-center gap-2">
+                  <HistoryIcon className="h-4 w-4" />
+                  Analysis History
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="analyze" className="space-y-6">
+                <CvUploadSection
+                  userId={user?.uid || ''}
+                  onUploadStarted={() => {
+                    refresh();
+                  }}
+                  onUploadSuccess={() => {
+                    refresh();
+                    // Optionally switch to history tab here if needed
+                  }}
+                  onResumeUpdate={handleResumeUpdate}
+                  currentResume={currentResume}
+                  currentAtsScore={currentAtsScore}
+                  setCurrentAtsScore={setCurrentAtsScore}
+                />
+              </TabsContent>
+              
+              <TabsContent value="history" className="space-y-6">
+                {loadingData ? (
+                  <div className="space-y-4">
+                    {[1, 2, 3].map((index) => (
+                      <SkeletonCard key={index} />
+                    ))}
+                  </div>
+                ) : (
+                  <>
+                    <CvAnalysisHistory analyses={cvAnalyses ?? []} />
+                    <CvImprovementTracker analyses={cvAnalyses ?? []} />
+                  </>
+                )}
+              </TabsContent>
+            </Tabs>
           </div>
         );
       case "cover-letter":

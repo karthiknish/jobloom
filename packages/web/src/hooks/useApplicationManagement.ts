@@ -1,20 +1,9 @@
 import { useState } from "react";
 import { dashboardApi } from "@/utils/api/dashboard";
-import { showSuccess, showError } from "@/components/ui/Toast";
+import { showSuccess, showError, showUndoableSuccess } from "@/components/ui/Toast";
 import { useOnboardingState } from "@/hooks/useOnboardingState";
 
-interface Application {
-  _id: string;
-  jobId: string;
-  userId: string;
-  status: string;
-  appliedDate?: number;
-  notes?: string;
-  followUpDate?: number;
-  createdAt: number;
-  updatedAt: number;
-  job?: any;
-}
+import { Application } from "@/types/dashboard";
 
 export function useApplicationManagement(onRefetchApplications: () => void) {
   const onboarding = useOnboardingState();
@@ -31,18 +20,23 @@ export function useApplicationManagement(onRefetchApplications: () => void) {
     setSelectedApplication(application);
   };
 
-  const handleDeleteApplication = async (applicationId: string) => {
-    if (!confirm("Are you sure you want to delete this application?")) {
-      return;
-    }
-
+  const handleDeleteApplication = async (applicationId: string, applicationTitle?: string) => {
     try {
+      // Soft delete the application
       await dashboardApi.deleteApplication(applicationId);
       await onRefetchApplications();
-      showSuccess("Application removed", "The application has been successfully removed from your dashboard.");
+      
+      // Show undo toast
+      showUndoableSuccess("Application removed", {
+        description: applicationTitle ? `"${applicationTitle}" has been moved to trash.` : "The application has been removed.",
+        onUndo: async () => {
+          await dashboardApi.restoreApplication(applicationId);
+          await onRefetchApplications();
+        },
+      });
     } catch (error) {
       console.error("Error deleting application:", error);
-      showError("Unable to delete application", "Please try again in a moment. If this issue continues, your application data is safely stored and you can try again later.");
+      showError("Unable to delete application", "Please try again in a moment.");
     }
   };
 

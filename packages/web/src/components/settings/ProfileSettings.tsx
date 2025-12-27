@@ -6,29 +6,23 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useFormContext } from "react-hook-form";
+import { FormField, FormItem, FormControl, FormMessage } from "@/components/ui/form";
 
 interface ProfileSettingsProps {
-  formData: {
-    profile: {
-      firstName: string;
-      lastName: string;
-      email: string;
-      phone: string;
-      avatar: string;
-    };
-  };
-  onInputChange: (section: string, field: string, value: any) => void;
   firebaseUser: any;
 }
 
-export function ProfileSettings({ formData, onInputChange, firebaseUser }: ProfileSettingsProps) {
+export function ProfileSettings({ firebaseUser }: ProfileSettingsProps) {
+  const { control, watch } = useFormContext();
+  const formData = watch();
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, delay: 0.2 }}
     >
-      <Card className="card-premium-elevated border-0 bg-surface">
+      <Card variant="premium" className="elevated border-0 bg-surface">
         <CardHeader>
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -70,71 +64,97 @@ export function ProfileSettings({ formData, onInputChange, firebaseUser }: Profi
             transition={{ duration: 0.6, delay: 0.5 }}
             className="grid grid-cols-1 md:grid-cols-2 gap-6"
           >
-            <div className="space-y-3">
-              <Label htmlFor="firstName" className="text-sm font-semibold text-foreground">
-                First Name
-              </Label>
-              <Input
-                id="firstName"
-                type="text"
-                value={formData.profile.firstName}
-                onChange={(e) => onInputChange("profile", "firstName", e.target.value)}
-                placeholder="First name"
-                className="input-premium"
-              />
-            </div>
-
-            <div className="space-y-3">
-              <Label htmlFor="lastName" className="text-sm font-semibold text-foreground">
-                Last Name
-              </Label>
-              <Input
-                id="lastName"
-                type="text"
-                value={formData.profile.lastName}
-                onChange={(e) => onInputChange("profile", "lastName", e.target.value)}
-                placeholder="Last name"
-                className="input-premium"
-              />
-            </div>
-
-            <div className="space-y-3">
-              <Label htmlFor="email" className="text-sm font-semibold text-foreground">
-                Email
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.profile.email}
-                onChange={(e) => onInputChange("profile", "email", e.target.value)}
-                placeholder="Email address"
-                className="input-premium"
-                disabled={!!firebaseUser?.email}
-              />
-              {firebaseUser?.email && (
-                <p className="text-sm text-muted-foreground">
-                  Email cannot be changed. Contact support if needed.
-                </p>
+            <FormField
+              control={control}
+              name="profile.firstName"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <Label className="text-sm font-semibold text-foreground">
+                    First Name
+                  </Label>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      placeholder="First name"
+                      className="input-premium"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
               )}
-            </div>
+            />
 
-            <div className="space-y-3">
-              <Label htmlFor="phone" className="text-sm font-semibold text-foreground">
-                Phone
-              </Label>
-              <Input
-                id="phone"
-                type="tel"
-                value={formData.profile.phone}
-                onChange={(e) => onInputChange("profile", "phone", e.target.value)}
-                placeholder="Phone number"
-                className="input-premium"
-                disabled
-              />
-              <p className="text-sm text-muted-foreground">
-                Phone number cannot be changed here.
-              </p>
-            </div>
+            <FormField
+              control={control}
+              name="profile.lastName"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <Label className="text-sm font-semibold text-foreground">
+                    Last Name
+                  </Label>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      placeholder="Last name"
+                      className="input-premium"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={control}
+              name="profile.email"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <Label className="text-sm font-semibold text-foreground">
+                    Email
+                  </Label>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      type="email"
+                      placeholder="Email address"
+                      className="input-premium"
+                      disabled={!!firebaseUser?.email}
+                    />
+                  </FormControl>
+                  {firebaseUser?.email && (
+                    <p className="text-sm text-muted-foreground">
+                      Email cannot be changed. Contact support if needed.
+                    </p>
+                  )}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={control}
+              name="profile.phone"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <Label className="text-sm font-semibold text-foreground">
+                    Phone
+                  </Label>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      type="tel"
+                      placeholder="Phone number"
+                      className="input-premium"
+                      disabled
+                    />
+                  </FormControl>
+                  <p className="text-sm text-muted-foreground">
+                    Phone number cannot be changed here.
+                  </p>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </motion.div>
         </CardContent>
       </Card>

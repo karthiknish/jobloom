@@ -17,6 +17,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScoreBadge, getScoreBadgeVariant, getScoreBadgeLabel } from "@/components/ui/StatusBadge";
 import { getCvAnalysisTitle } from "@/utils/cvAnalysisTitle";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 interface CvAnalysisHistoryProps {
   analyses: CvAnalysis[];
@@ -205,44 +206,54 @@ export function CvAnalysisHistory({ analyses, optimistic }: CvAnalysisHistoryPro
     );
   }
 
+// ... inside the component ...
+
   if (!filteredAnalyses || filteredAnalyses.length === 0) {
     const realAnalyses = analyses || [];
     const hasOriginalAnalyses = (realAnalyses && realAnalyses.length > 0) || !!optimistic;
     const hasOptimisticOnly = !realAnalyses.length && !!optimistic;
+    
     return (
-        <div className="text-center py-12">
-        <div className="text-muted-foreground mb-4">
-          {hasOriginalAnalyses ? <Search className="h-12 w-12 mx-auto" /> : <FileText className="h-12 w-12 mx-auto" />}
-        </div>
-        <h3 className="text-lg font-medium text-foreground mb-2">
-          {hasOriginalAnalyses
+      <EmptyState
+        icon={hasOriginalAnalyses ? Search : FileText}
+        title={
+          hasOriginalAnalyses
             ? hasOptimisticOnly
               ? "Preparing first analysis..."
               : "No analyses match your filters"
-            : "No CV analyses yet"}
-        </h3>
-        <p className="text-muted-foreground mb-6">
-          {hasOriginalAnalyses
+            : "No CV analyses yet"
+        }
+        description={
+          hasOriginalAnalyses
             ? hasOptimisticOnly
               ? "Your CV is being processed. This will update automatically."
               : "Try adjusting your search criteria or clearing filters to see more results."
-            : "Upload your first CV to get started with AI-powered analysis and feedback."}
-        </p>
+            : "Upload your first CV to get started with AI-powered analysis and feedback."
+        }
+        primaryAction={!hasOriginalAnalyses ? {
+          label: "Analyze New CV",
+          onClick: () => {
+            // This would normally scroll the user back to the upload section 
+            // but in the unified view they are just tabs.
+            // Since we don't have direct access to the tab state here, 
+            // we'll let the user switch tabs themselves or provide a hint.
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          },
+          icon: Sparkles
+        } : undefined}
+      >
         {!hasOriginalAnalyses && (
-          <div className="text-sm text-muted-foreground">
-            <p className="mb-2 flex items-center gap-2">
-              <Sparkles className="h-3 w-3" />
-              Get detailed insights about your CV:
-            </p>
-            <ul className="text-left space-y-1">
-              <li>• ATS compatibility scores</li>
-              <li>• Keyword optimization suggestions</li>
-              <li>• Skills and experience analysis</li>
-              <li>• Professional summary improvements</li>
+          <div className="text-sm text-muted-foreground mt-4">
+            <p className="mb-2 font-medium">Get detailed insights about your CV:</p>
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-left">
+              <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-primary" /> ATS compatibility scores</li>
+              <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-primary" /> Keyword optimization</li>
+              <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-primary" /> Skills analysis</li>
+              <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-primary" /> Summary improvements</li>
             </ul>
           </div>
         )}
-      </div>
+      </EmptyState>
     );
   }
 

@@ -59,7 +59,7 @@ export default function NotFound() {
           transition={{ delay: 0.6, duration: 0.6 }}
           className="flex flex-col sm:flex-row gap-4 justify-center items-center"
         >
-          <Button asChild size="lg" className="btn-premium h-12 px-8 font-semibold gradient-primary hover:shadow-premium-xl min-w-[160px]">
+          <Button asChild variant="premium" size="xl" className="min-w-[160px]">
             <Link href="/">
               <Home className="mr-2 h-5 w-5" />
               Go Home

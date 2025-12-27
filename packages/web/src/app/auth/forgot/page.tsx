@@ -74,7 +74,7 @@ export default function ForgotPasswordPage() {
         transition={{ duration: 0.6 }}
         className="w-full max-w-md sm:max-w-lg space-y-8 relative z-10"
       >
-        <Card className="card-premium-elevated border-0 bg-surface p-8">
+        <Card variant="premium-elevated" className="border-0 bg-surface p-8">
           <CardHeader className="space-y-4 text-center pb-8">
             <motion.div
               initial={{ scale: 0 }}
@@ -138,7 +138,8 @@ export default function ForgotPasswordPage() {
               <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                 <Button 
                   type="submit" 
-                  className="btn-premium w-full h-12 font-bold gradient-primary hover:shadow-premium-xl text-base" 
+                  variant="premium"
+                  className="w-full h-12 text-base" 
                   disabled={loading || sent}
                 >
                   {loading ? (

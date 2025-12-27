@@ -5,6 +5,7 @@ import { Briefcase, Building, MapPin, TrendingUp, Zap } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { 
   Tooltip,
   TooltipContent,
@@ -29,9 +30,25 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
   // Early return if stats is not available
   if (!stats) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
+      <div className="text-center py-8 text-muted-foreground italic">
         Loading statistics...
       </div>
+    );
+  }
+
+  if (stats.totalJobs === 0 && stats.totalApplications === 0) {
+    return (
+      <EmptyState
+        icon={TrendingUp}
+        title="No Statistics Yet"
+        description="Add some job applications to see your metrics and insights come to life."
+        size="lg"
+        primaryAction={{
+          label: "Add Your First Job",
+          onClick: () => (document.querySelector('[data-tour="add-job-btn"]') as HTMLButtonElement)?.click(),
+          icon: Zap
+        }}
+      />
     );
   }
 

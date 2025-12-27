@@ -265,7 +265,7 @@ function SignUpInner() {
         className="w-full max-w-md sm:max-w-lg space-y-8 relative z-10"
       >
 
-        <Card className="card-premium-elevated border-0 bg-surface p-8">
+        <Card variant="premium-elevated" className="border-0 bg-surface p-8">
           <CardHeader className="space-y-4 text-center pb-8">
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
@@ -457,9 +457,10 @@ function SignUpInner() {
               <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                 <Button
                   type="submit"
-                  className="btn-premium w-full h-12 font-bold gradient-primary hover:shadow-premium-xl text-base"
+                  variant="premium"
+                  size="xl"
+                  className="w-full"
                   disabled={loading}
-                  size="lg"
                 >
                   {loading ? (
                     <motion.div
@@ -493,13 +494,13 @@ function SignUpInner() {
             </div>
 
             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <Button
-                variant="outline"
-                onClick={handleGoogle}
-                className="btn-premium w-full h-12 bg-surface border-2 hover:bg-muted/20 hover:border-primary/30 font-semibold text-base shadow-premium hover:shadow-premium-lg"
-                disabled={loading}
-                size="lg"
-              >
+                <Button
+                  variant="gradient-secondary"
+                  onClick={handleGoogle}
+                  size="xl"
+                  className="w-full"
+                  disabled={loading}
+                >
                 <Chrome className="mr-2 h-5 w-5" />
                 Continue with Google
               </Button>

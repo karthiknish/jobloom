@@ -5,6 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Info } from "lucide-react";
 
 interface DashboardFiltersProps {
   searchTerm: string;
@@ -29,28 +36,51 @@ export function DashboardFilters({
   filteredApplicationsCount,
   totalApplicationsCount,
 }: DashboardFiltersProps) {
+  const [localSearchTerm, setLocalSearchTerm] = React.useState(searchTerm);
+
+  React.useEffect(() => {
+    setLocalSearchTerm(searchTerm);
+  }, [searchTerm]);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchTerm(localSearchTerm);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [localSearchTerm, setSearchTerm]);
   return (
+    <TooltipProvider delayDuration={300}>
     <Card>
       <CardHeader>
         <CardTitle className="text-lg">Advanced Filters</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Search */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">Search</label>
+            <label className="text-sm font-medium" htmlFor="search-jobs">Search</label>
             <Input
+              id="search-jobs"
               placeholder="Job title, company, location..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              value={localSearchTerm}
+              onChange={(e) => setLocalSearchTerm(e.target.value)}
+              aria-label="Search jobs by title, company or location"
             />
           </div>
 
-          {/* Status Filter */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">Status</label>
+            <div className="flex items-center gap-1.5">
+              <label className="text-sm font-medium" htmlFor="status-filter">Status</label>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Filter jobs by their current progress in your application funnel.</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger>
+              <SelectTrigger id="status-filter" aria-label="Filter by status">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -64,11 +94,20 @@ export function DashboardFilters({
             </Select>
           </div>
 
-          {/* Company Filter */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">Company</label>
+            <div className="flex items-center gap-1.5">
+              <label className="text-sm font-medium" htmlFor="company-filter">Company</label>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Filter jobs by the company name.</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
             <Select value={companyFilter} onValueChange={setCompanyFilter}>
-              <SelectTrigger>
+              <SelectTrigger id="company-filter" aria-label="Filter by company">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -145,5 +184,6 @@ export function DashboardFilters({
         </div>
       </CardContent>
     </Card>
+    </TooltipProvider>
   );
 }

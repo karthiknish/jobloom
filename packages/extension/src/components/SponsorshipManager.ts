@@ -10,10 +10,10 @@ import {
   UK_HOURLY_RATES,
   UK_THRESHOLD_INFO,
   UK_RQF_LEVELS,
-  UkThresholdType,
   getApplicableThreshold,
   formatSalaryGBP,
-} from "../ukVisaConstants";
+} from "@hireall/shared";
+import type { UkThresholdType } from "@hireall/shared";
 
 // ============ RETRY UTILITIES ============
 const MAX_RETRIES = 2;

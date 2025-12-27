@@ -7,7 +7,7 @@
 
 import { extractLinkedInJob } from "../job-tracker/jobExtractor";
 import type { JobData } from "../job-tracker/types";
-import { isLikelyPlaceholderCompany, normalizeCompanyName } from "../utils/companyName";
+import { isLikelyPlaceholderCompany, normalizeCompanyName } from "@hireall/shared";
 
 export type { JobData } from "../job-tracker/types";
 

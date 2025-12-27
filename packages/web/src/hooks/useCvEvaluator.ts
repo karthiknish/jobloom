@@ -8,7 +8,7 @@ import { useEnhancedApi } from './useEnhancedApi';
 import { CvAnalysis, CvStats } from '@/types/api';
 import { cvEvaluatorApi } from '@/utils/api/cvEvaluator';
 import { FrontendApiError, apiClient } from '@/lib/api/client';
-import { toast } from 'react-hot-toast';
+import { showSuccess, showError } from '@/components/ui/Toast';
 
 interface UseCvEvaluatorOptions {
   userId?: string;
@@ -38,7 +38,7 @@ export function useCvEvaluator(options: UseCvEvaluatorOptions = {}) {
       immediate: !!userId,
       onError: (error) => {
         if (showNotifications) {
-          toast.error('Failed to load CV analyses');
+          showError('Failed to load CV analyses');
         }
         onError?.(error);
       },
@@ -64,7 +64,7 @@ export function useCvEvaluator(options: UseCvEvaluatorOptions = {}) {
       immediate: !!userId,
       onError: (error) => {
         if (showNotifications) {
-          toast.error('Failed to load CV statistics');
+          showError('Failed to load CV statistics');
         }
         onError?.(error);
       },
@@ -98,13 +98,13 @@ export function useCvEvaluator(options: UseCvEvaluatorOptions = {}) {
       showGlobalError: true,
       onError: (error) => {
         if (showNotifications) {
-          toast.error('CV upload failed');
+          showError('CV upload failed');
         }
         onError?.(error);
       },
       onSuccess: (result) => {
         if (showNotifications) {
-          toast.success('CV uploaded successfully! Analysis in progress...');
+          showSuccess('CV uploaded successfully! Analysis in progress...');
         }
         
         // Refresh analyses after successful upload
@@ -122,7 +122,7 @@ export function useCvEvaluator(options: UseCvEvaluatorOptions = {}) {
       await cvEvaluatorApi.deleteCvAnalysis(analysisId);
       
       if (showNotifications) {
-        toast.success('CV analysis deleted');
+        showSuccess('CV analysis deleted');
       }
       
       // Refresh data
@@ -132,7 +132,7 @@ export function useCvEvaluator(options: UseCvEvaluatorOptions = {}) {
       return true;
     } catch (error) {
       if (showNotifications) {
-        toast.error('Failed to delete CV analysis');
+        showError('Failed to delete CV analysis');
       }
       onError?.(error as FrontendApiError);
       return false;

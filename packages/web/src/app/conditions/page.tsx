@@ -76,7 +76,7 @@ export default function ConditionsPage() {
           transition={{ delay: 0.8, duration: 0.6 }}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12"
         >
-          <Card className="card-premium-elevated border-0 bg-surface text-center hover:scale-105 transition-transform duration-300">
+          <Card variant="premium-elevated" className="border-0 bg-surface text-center hover:scale-105 transition-transform duration-300">
             <CardContent className="p-6">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary mb-4">
                 <Users className="h-6 w-6" />
@@ -87,7 +87,7 @@ export default function ConditionsPage() {
               </p>
             </CardContent>
           </Card>
-          <Card className="card-premium-elevated border-0 bg-surface text-center hover:scale-105 transition-transform duration-300">
+          <Card variant="premium-elevated" className="border-0 bg-surface text-center hover:scale-105 transition-transform duration-300">
             <CardContent className="p-6">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary mb-4">
                 <Shield className="h-6 w-6" />
@@ -98,7 +98,7 @@ export default function ConditionsPage() {
               </p>
             </CardContent>
           </Card>
-          <Card className="card-premium-elevated border-0 bg-surface text-center hover:scale-105 transition-transform duration-300">
+          <Card variant="premium-elevated" className="border-0 bg-surface text-center hover:scale-105 transition-transform duration-300">
             <CardContent className="p-6">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary mb-4">
                 <CheckCircle className="h-6 w-6" />
@@ -109,7 +109,7 @@ export default function ConditionsPage() {
               </p>
             </CardContent>
           </Card>
-          <Card className="card-premium-elevated border-0 bg-surface text-center hover:scale-105 transition-transform duration-300">
+          <Card variant="premium-elevated" className="border-0 bg-surface text-center hover:scale-105 transition-transform duration-300">
             <CardContent className="p-6">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary mb-4">
                 <MessageSquare className="h-6 w-6" />
@@ -150,7 +150,7 @@ export default function ConditionsPage() {
           transition={{ delay: 1.2, duration: 0.6 }}
           className="max-w-4xl mx-auto"
         >
-          <Card className="card-premium-elevated border-0 bg-surface overflow-hidden">
+          <Card variant="premium-elevated" className="border-0 bg-surface overflow-hidden">
             <CardContent className="p-8 sm:p-12">
               <div className="prose prose-lg max-w-none">
                 <div className="grid gap-12">
