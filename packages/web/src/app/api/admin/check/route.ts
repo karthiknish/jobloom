@@ -4,6 +4,7 @@ import { isUserAdmin } from "@/firebase/admin";
 // GET /api/admin/check - Check if current user is admin
 export const GET = withApi({
   auth: "required",
+  rateLimit: "admin",
 }, async ({ user }) => {
   const isAdmin = await isUserAdmin(user!.uid);
 

@@ -9,7 +9,7 @@
 export const ROLE_KEYWORDS: Record<string, string[]> = {
   'software-engineer': [
     'javascript', 'typescript', 'python', 'java', 'react', 'node.js', 'angular', 'vue',
-    'api', 'rest', 'graphql', 'database', 'sql', 'nosql', 'git', 'agile', 'scrum',
+    'api', 'rest', 'graphql', 'database', 'sql', 'nosql', 'version control', 'agile', 'scrum',
     'testing', 'debugging', 'ci/cd', 'docker', 'kubernetes', 'aws', 'azure', 'gcp',
     'algorithms', 'data structures', 'design patterns', 'microservices', 'system design'
   ],
@@ -45,7 +45,7 @@ export const ROLE_KEYWORDS: Record<string, string[]> = {
   ],
   'devops-engineer': [
     'aws', 'azure', 'gcp', 'docker', 'kubernetes', 'terraform', 'ansible', 'jenkins',
-    'github actions', 'gitlab ci', 'monitoring', 'prometheus', 'grafana', 'elk stack',
+    'cicd', 'gitlab ci', 'monitoring', 'prometheus', 'grafana', 'elk stack',
     'linux', 'bash', 'python', 'infrastructure as code', 'security', 'networking',
     'load balancing', 'high availability', 'disaster recovery', 'sre'
   ],
@@ -54,6 +54,56 @@ export const ROLE_KEYWORDS: Record<string, string[]> = {
     'budget management', 'scheduling', 'agile', 'waterfall', 'scrum', 'kanban',
     'jira', 'ms project', 'asana', 'communication', 'leadership', 'problem solving',
     'vendor management', 'pmp', 'prince2', 'cross-functional teams'
+  ],
+  'sales-manager': [
+    'sales strategy', 'revenue growth', 'pipeline management', 'crm', 'salesforce',
+    'lead generation', 'customer acquisition', 'negotiation', 'closing', 'forecasting',
+    'market expansion', 'account management', 'b2b sales', 'presentation', 'leadership'
+  ],
+  'marketing-manager': [
+    'digital marketing', 'brand strategy', 'content marketing', 'seo', 'sem', 'social media',
+    'email campaigns', 'market research', 'analytics', 'roi', 'product launch',
+    'public relations', 'copywriting', 'advertising', 'campaign management'
+  ],
+  'hr-manager': [
+    'talent acquisition', 'recruitment', 'employee relations', 'onboarding', 'performance management',
+    'compliance', 'benefits administration', 'hris', 'training', 'development',
+    'organizational culture', 'succession planning', 'conflict resolution', 'labor laws'
+  ],
+  'financial-analyst': [
+    'financial modeling', 'forecasting', 'budgeting', 'variance analysis', 'data analysis',
+    'reporting', 'valuation', 'excel', 'investments', 'risk assessment', 'compliance',
+    'gaap', 'financial statements', 'accounting', 'auditing'
+  ],
+  'nurse': [
+    'patient care', 'clinical assessment', 'medical records', 'patient education', 'medication administration',
+    'triage', 'emergency care', 'infection control', 'hipaa', 'life support', 'vital signs',
+    'care planning', 'diagnostic tests', 'nursing theory', 'compassionate care'
+  ],
+  'teacher': [
+    'curriculum development', 'lesson planning', 'classroom management', 'student assessment',
+    'educational technology', 'differentiated instruction', 'special education', 'parent communication',
+    'pedagogy', 'literacy', 'stem', 'early childhood', 'behavior management', 'standardized testing'
+  ],
+  'legal-counsel': [
+    'legal research', 'contract negotiation', 'corporate law', 'compliance', 'litigation',
+    'intellectual property', 'risk mitigation', 'regulatory affairs', 'drafting', 'policy',
+    'due diligence', 'employment law', 'arbitration', 'legal advice'
+  ],
+  'customer-success-manager': [
+    'customer retention', 'onboarding', 'customer relationship management', 'upselling',
+    'churn reduction', 'customer satisfaction', 'nps', 'user adoption', 'product training',
+    'strategic planning', 'account health', 'advocacy', 'feedback loop'
+  ],
+  'operations-manager': [
+    'process improvement', 'supply chain', 'logistics', 'inventory management',
+    'operational efficiency', 'facilities management', 'quality control', 'lean', 'six sigma',
+    'procurement', 'vendor relations', 'budgeting', 'workflow optimization'
+  ],
+  'business-analyst': [
+    'requirements gathering', 'process mapping', 'brd', 'frd', 'data analysis',
+    'sql', 'tableau', 'bi tools', 'stakeholder management', 'user stories',
+    'gap analysis', 'solution design', 'agile', 'waterfall', 'documentation'
   ],
 };
 
@@ -85,6 +135,64 @@ export const INDUSTRY_KEYWORDS: Record<string, Record<string, string[]>> = {
     analytics: ['google analytics', 'attribution', 'roi', 'cac', 'ltv', 'conversion'],
     tools: ['hubspot', 'salesforce', 'marketo', 'mailchimp', 'segment'],
   },
+  education: {
+    general: ['k-12', 'higher education', 'edtech', 'curriculum', 'pedagogy', 'e-learning'],
+    administration: ['student affairs', 'admissions', 'accreditation', 'enrollment management'],
+    instruction: ['differentiated instruction', 'professional development', 'classroom technology'],
+  },
+  manufacturing: {
+    general: ['supply chain', 'logistics', 'lean manufacturing', 'six sigma', 'quality control'],
+    operations: ['inventory management', 'procurement', 'erp', 'automation', 'safety'],
+  },
+  government: {
+    general: ['public policy', 'civic engagement', 'regulatory compliance', 'public safety', 'urban planning'],
+    operations: ['grant writing', 'procurement', 'interagency coordination', 'public relations'],
+  },
+};
+
+// Industry-specific technical concepts (high-value keywords)
+export const INDUSTRY_TECHNICAL_KEYWORDS: Record<string, string[]> = {
+  technology: [
+    'javascript', 'python', 'java', 'react', 'node', 'sql', 'aws', 'docker',
+    'kubernetes', 'typescript', 'api', 'rest', 'graphql', 'version control', 'agile',
+    'scrum', 'ci', 'cd', 'database', 'cloud', 'microservices'
+  ],
+  finance: [
+    'gaap', 'ifrs', 'valuation', 'financial modeling', 'forecasting', 'auditing',
+    'risk assessment', 'derivatives', 'equity', 'fixed income', 'compliance',
+    'asset management', 'basel iii', 'sox', 'aml', 'kyc'
+  ],
+  healthcare: [
+    'hipaa', 'ehr', 'emr', 'clinical trials', 'patient safety', 'diagnostic',
+    'pharmacology', 'icu', 'triage', 'medical coding', 'icd-10', 'nursing care',
+    'telemedicine', 'biotechnology', 'pathology', 'cpr', 'vital signs', 'patient care',
+    'clinical assessment', 'medication administration'
+  ],
+  marketing: [
+    'seo', 'sem', 'ppc', 'crm', 'marketing automation', 'conversion optimization',
+    'ab testing', 'content strategy', 'brand management', 'affiliate marketing',
+    'email marketing', 'google analytics', 'social media strategy'
+  ],
+  sales: [
+    'salesforce', 'crm', 'pipeline management', 'lead generation', 'b2b', 'b2c',
+    'saas sales', 'solution selling', 'account management', 'revenue operations',
+    'negotiation', 'closing'
+  ],
+  hr: [
+    'ats', 'hris', 'shrm', 'employee relations', 'talent acquisition', 'succession planning',
+    'performance management', 'compensation', 'benefits', 'labor law', 'onboarding',
+    'workforce planning'
+  ],
+  education: [
+    'curriculum design', 'iep', 'differentiated instruction', 'pedagogy', 'stem',
+    'edtech', 'canvas', 'blackboard', 'standardized testing', 'classroom management',
+    'esl', 'literacy specialist'
+  ],
+  legal: [
+    'litigation', 'corporate law', 'due diligence', 'legal research', 'lexisnexis',
+    'westlaw', 'contract law', 'intellectual property', 'compliance', 'regulatory',
+    'arbitration', 'mediation'
+  ],
 };
 
 // Action verbs by category
@@ -123,10 +231,10 @@ export const ACTION_VERBS: Record<string, string[]> = {
 // Impact metrics patterns
 export const IMPACT_PATTERNS: RegExp[] = [
   /(\$|£|€)\s*\d+(\.\d+)?[kmb]?\b/gi,
-  /\d+(\.\d+)?%\s*(growth|increase|decrease|reduction|improvement|boost)/gi,
-  /\b\d+\s*(users|customers|clients|employees|team members|projects)/gi,
-  /(reduced|increased|improved|grew|saved|generated|delivered).*\d+/gi,
-  /\d+\s*(million|billion|thousand|hundred)\b/gi,
+  /\d+(\.\d+)?[\+]?%\s*(growth|increase|decrease|reduction|improvement|boost|efficiency|roi|retention)/gi,
+  /\b\d+[\+]?\s*(users|customers|clients|employees|team members|projects|patients|students|accounts|transactions)/gi,
+  /(reduced|increased|improved|grew|saved|generated|delivered|optimized|accelerated).*\d+/gi,
+  /\d+[\+]?\s*(million|billion|thousand|hundred)\b/gi,
   /\bx\d+\s*(faster|better|more efficient)/gi,
   /\b\d+(\.\d+)?x\s*(increase|growth|improvement)/gi,
   /\btop\s*\d+%/gi,

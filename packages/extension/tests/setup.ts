@@ -8,13 +8,18 @@
       addListener: jest.fn(),
       removeListener: jest.fn(),
       hasListener: jest.fn(),
-      getRules: jest.fn(),
-      addRules: jest.fn(),
-      removeRules: jest.fn(),
-      hasListeners: jest.fn()
+    },
+    onInstalled: {
+      addListener: jest.fn(),
+      removeListener: jest.fn(),
+      hasListener: jest.fn(),
+    },
+    onStartup: {
+      addListener: jest.fn(),
     },
     getURL: jest.fn((path: string) => `chrome-extension://test/${path}`),
-    id: 'test-extension-id'
+    id: 'test-extension-id',
+    lastError: null
   },
   storage: {
     sync: {
@@ -53,6 +58,10 @@
     sendMessage: jest.fn(),
     create: jest.fn(),
     update: jest.fn()
+  },
+  action: {
+    setBadgeText: jest.fn().mockImplementation(() => Promise.resolve()),
+    setBadgeBackgroundColor: jest.fn().mockImplementation(() => Promise.resolve()),
   }
 };
 

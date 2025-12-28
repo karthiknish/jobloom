@@ -167,7 +167,7 @@ export function manualKeywordExtraction(jobDescription: string, userSkills: stri
   const commonKeywords = [
     'leadership', 'communication', 'teamwork', 'problem-solving', 'analytical',
     'javascript', 'python', 'react', 'node.js', 'aws', 'docker', 'kubernetes',
-    'agile', 'scrum', 'git', 'sql', 'nosql', 'mongodb', 'postgresql'
+    'agile', 'scrum', 'sql', 'nosql', 'mongodb', 'postgresql'
   ];
 
   const jobDescLower = jobDescription.toLowerCase();

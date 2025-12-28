@@ -49,6 +49,8 @@ import {
   getRateLimitConfig, 
   type RateLimitResult 
 } from "@/lib/rateLimiter";
+import { validateCsrf } from "@/lib/security/csrf";
+import { SecurityLogger } from "@/utils/security";
 import { ERROR_CODES, ERROR_MESSAGES, ERROR_STATUS_MAP } from "./errorCodes";
 import {
   ValidationError,
@@ -136,6 +138,9 @@ export interface ApiOptions<
     allowMethods?: string;
     allowHeaders?: string;
   };
+
+  /** Whether to skip CSRF validation for this route (e.g. for webhooks) */
+  skipCsrf?: boolean;
 
   /** 
    * Optional handler for single-argument usage.
@@ -423,6 +428,7 @@ export function withApi<
     applyGeneralRateLimit = true,
     corsOptions,
     handler: optionsHandler,
+    skipCsrf = false,
   } = options;
 
   const actualHandler = handler || (optionsHandler as ApiHandler<
@@ -495,7 +501,36 @@ export function withApi<
         }
       }
 
-      // 2. Rate Limiting
+      // 2. CSRF Protection
+      if (!skipCsrf && !isExtension && ["POST", "PUT", "PATCH", "DELETE"].includes(request.method)) {
+        try {
+          validateCsrf(request);
+        } catch (csrfError) {
+          SecurityLogger.logSecurityEvent({
+            type: 'suspicious_request',
+            ip: getClientIdentifier(request),
+            userId: user?.uid,
+            severity: 'high',
+            details: {
+              reason: 'csrf_validation_failed',
+              error: csrfError instanceof Error ? csrfError.message : String(csrfError),
+              method: request.method,
+              url: request.url
+            }
+          });
+
+          return respond(
+            createApiErrorResponse(
+              ERROR_CODES.FORBIDDEN,
+              "Security validation failed: CSRF token missing or invalid",
+              requestId
+            ),
+            403
+          );
+        }
+      }
+
+      // 3. Rate Limiting
       let rateLimitResult: RateLimitResult | undefined;
       
       const rateLimitKey = rateLimit || (applyGeneralRateLimit ? 'general' : undefined);
@@ -511,7 +546,19 @@ export function withApi<
           rateLimitConfig
         );
 
-        if (!rateLimitResult.allowed) {
+        if (rateLimitResult && !rateLimitResult.allowed) {
+          SecurityLogger.logSecurityEvent({
+            type: 'rate_limit_exceeded',
+            ip: getClientIdentifier(request),
+            userId: user?.uid,
+            severity: 'medium',
+            details: {
+              endpoint: rateLimitKey,
+              remaining: 0,
+              resetIn: rateLimitResult.resetIn
+            }
+          });
+
           const headers: Record<string, string> = {};
           if (includeRateLimitHeaders) {
             headers["X-RateLimit-Remaining"] = "0";
@@ -532,7 +579,7 @@ export function withApi<
         }
       }
 
-      // 3. Parse and validate query parameters
+      // 4. Parse and validate query parameters
       let query: z.infer<TQuerySchema> = {} as z.infer<TQuerySchema>;
       if (querySchema) {
         try {
@@ -557,7 +604,7 @@ export function withApi<
         }
       }
 
-      // 4. Parse and validate request body
+      // 5. Parse and validate request body
       let body: z.infer<TBodySchema> = undefined as z.infer<TBodySchema>;
       if (bodySchema && ["POST", "PUT", "PATCH"].includes(request.method)) {
         try {
@@ -595,7 +642,7 @@ export function withApi<
         }
       }
 
-      // 5. Resolve and validate route params
+      // 6. Resolve and validate route params
       let params: z.infer<TParamsSchema> = (routeContext?.params 
         ? await routeContext.params 
         : {}) as z.infer<TParamsSchema>;
@@ -623,7 +670,7 @@ export function withApi<
         }
       }
 
-      // 6. Execute handler
+      // 7. Execute handler
       const context: ApiContext<
         z.infer<TBodySchema>,
         z.infer<TQuerySchema>,
@@ -642,7 +689,7 @@ export function withApi<
 
       const result = await actualHandler(context);
 
-      // 7. Format response
+      // 8. Format response
       if (result instanceof NextResponse) {
         // Handler returned a raw NextResponse, apply CORS
         return applyCorsHeaders(result, request, corsOptions);

@@ -204,6 +204,7 @@ async function handleCustomerUpdated(customer: Stripe.Customer) {
 
 export const POST = withApi({
   auth: "none",
+  skipCsrf: true,
 }, async ({ request }) => {
   const signature = request.headers.get("stripe-signature");
   if (!signature) {

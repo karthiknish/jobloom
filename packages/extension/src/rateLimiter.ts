@@ -27,6 +27,26 @@ export interface RateLimitState {
   resetTime: number;
   lastRequest: number;
   violations?: number;
+  lockedUntil?: number;
+  requests: number[];
+}
+
+const ABUSE_VIOLATION_THRESHOLD = 5;
+const ABUSE_LOCK_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+const BURST_WINDOW_MS = 5000; // 5 seconds
+const BURST_THRESHOLD_MULTIPLIER = 0.5; // Max 50% of allowed requests in burst window
+
+/**
+ * Record a violation and check for lockout
+ */
+function recordViolation(state: RateLimitState, endpoint: string): void {
+  const now = Date.now();
+  state.violations = (state.violations || 0) + 1;
+  
+  if (state.violations >= ABUSE_VIOLATION_THRESHOLD) {
+    state.lockedUntil = now + ABUSE_LOCK_WINDOW_MS;
+    console.warn(`[RateLimiter] Abuse detected for ${endpoint}. Local lockout enabled.`);
+  }
 }
 
 export interface RateLimitResult {
@@ -58,12 +78,17 @@ export const TIERED_RATE_LIMITS: Record<string, UserTierLimits> = {
     premium: { maxRequests: 30, windowMs: 60000 },
     admin: { maxRequests: 60, windowMs: 60000 },
   },
+  'jobs': {
+    free: { maxRequests: 20, windowMs: 60000 },
+    premium: { maxRequests: 100, windowMs: 60000 },
+    admin: { maxRequests: 200, windowMs: 60000 },
+  },
 
   // Sponsor lookups (core feature)
   'sponsor-lookup': {
-    free: { maxRequests: 50, windowMs: 60000 },    // 50 lookups per minute for free users (increased from 15)
-    premium: { maxRequests: 200, windowMs: 60000 }, // 200 lookups per minute for premium users (increased from 100)
-    admin: { maxRequests: 1000, windowMs: 60000 },  // 1000 lookups per minute for admins (increased from 500)
+    free: { maxRequests: 50, windowMs: 60000 },    // 50 lookups per minute for free users
+    premium: { maxRequests: 200, windowMs: 60000 },  // 200 lookups per minute for premium users
+    admin: { maxRequests: 1000, windowMs: 60000 },    // 1000 lookups per minute for admins
   },
   'sponsor-batch': {
     free: { maxRequests: 2, windowMs: 60000 },
@@ -87,6 +112,30 @@ export const TIERED_RATE_LIMITS: Record<string, UserTierLimits> = {
     premium: { maxRequests: 10, windowMs: 60000 },
     admin: { maxRequests: 20, windowMs: 60000 },
   },
+  'subscription': {
+    free: { maxRequests: 2, windowMs: 60000 },
+    premium: { maxRequests: 10, windowMs: 60000 },
+    admin: { maxRequests: 20, windowMs: 60000 },
+  },
+
+  // CV operations
+  'cv-analysis': {
+    free: { maxRequests: 10, windowMs: 60000 },
+    premium: { maxRequests: 50, windowMs: 60000 },
+    admin: { maxRequests: 150, windowMs: 60000 },
+  },
+  'cv-upload': {
+    free: { maxRequests: 3, windowMs: 60000 },
+    premium: { maxRequests: 20, windowMs: 60000 },
+    admin: { maxRequests: 50, windowMs: 60000 },
+  },
+
+  // Application operations
+  'applications': {
+    free: { maxRequests: 15, windowMs: 60000 },
+    premium: { maxRequests: 100, windowMs: 60000 },
+    admin: { maxRequests: 200, windowMs: 60000 },
+  },
 
   // General API calls
   'general': {
@@ -94,21 +143,81 @@ export const TIERED_RATE_LIMITS: Record<string, UserTierLimits> = {
     premium: { maxRequests: 200, windowMs: 60000 },
     admin: { maxRequests: 500, windowMs: 60000 },
   },
+  
+  // Admin operations
+  'admin': {
+    free: { maxRequests: 1, windowMs: 60000 },
+    premium: { maxRequests: 10, windowMs: 60000 },
+    admin: { maxRequests: 50, windowMs: 60000 },
+  },
+  'addSponsoredCompany': {
+    free: { maxRequests: 1, windowMs: 60000 },
+    premium: { maxRequests: 5, windowMs: 60000 },
+    admin: { maxRequests: 20, windowMs: 60000 },
+  },
+  'blog-admin': {
+    free: { maxRequests: 10, windowMs: 60000 },
+    premium: { maxRequests: 120, windowMs: 60000 },
+    admin: { maxRequests: 300, windowMs: 60000 },
+  },
+
+  // AI operations
+  'ai-generation': {
+    free: { maxRequests: 5, windowMs: 60000 },
+    premium: { maxRequests: 20, windowMs: 60000 },
+    admin: { maxRequests: 50, windowMs: 60000 },
+  },
+  'ai-cover-letter': {
+    free: { maxRequests: 3, windowMs: 60000 },
+    premium: { maxRequests: 15, windowMs: 60000 },
+    admin: { maxRequests: 30, windowMs: 60000 },
+  },
+  'ai-resume': {
+    free: { maxRequests: 3, windowMs: 60000 },
+    premium: { maxRequests: 15, windowMs: 60000 },
+    admin: { maxRequests: 30, windowMs: 60000 },
+  },
+  'ai-editor': {
+    free: { maxRequests: 5, windowMs: 60000 },
+    premium: { maxRequests: 20, windowMs: 60000 },
+    admin: { maxRequests: 40, windowMs: 60000 },
+  },
+  'ai-job-summary': {
+    free: { maxRequests: 3, windowMs: 60000 },
+    premium: { maxRequests: 15, windowMs: 60000 },
+    admin: { maxRequests: 30, windowMs: 60000 },
+  },
+
 };
 
 // Default rate limits for backward compatibility
 export const RATE_LIMITS: Record<string, RateLimitConfig> = {
   'job-add': { maxRequests: 30, windowMs: 60000 },
   'job-sync': { maxRequests: 20, windowMs: 60000 },
+  'jobs': { maxRequests: 50, windowMs: 60000 },
   'sponsor-lookup': { maxRequests: 50, windowMs: 60000 },
   'sponsor-batch': { maxRequests: 10, windowMs: 60000 },
   'user-settings': { maxRequests: 10, windowMs: 60000 },
   'user-profile': { maxRequests: 5, windowMs: 60000 },
+  'subscription': { maxRequests: 5, windowMs: 60000 },
+  'cv-analysis': { maxRequests: 20, windowMs: 60000 },
+  'cv-upload': { maxRequests: 10, windowMs: 60000 },
+  'applications': { maxRequests: 50, windowMs: 60000 },
   'general': { maxRequests: 100, windowMs: 60000 },
+  'admin': { maxRequests: 5, windowMs: 60000 },
+  'addSponsoredCompany': { maxRequests: 5, windowMs: 60000 },
+  'blog-admin': { maxRequests: 150, windowMs: 60000 },
 };
 
 // Global rate limiting state
 const rateLimitState = new Map<string, RateLimitState>();
+
+/**
+ * Reset all rate limit states (primarily for testing)
+ */
+export function resetRateLimitState(): void {
+  rateLimitState.clear();
+}
 let cleanupIntervalId: ReturnType<typeof setInterval> | null = null;
 
 // Subscription status fetch de-dupe/cache to avoid spamming the backend
@@ -244,7 +353,7 @@ async function getCurrentUserTierWithTimeout(timeoutMs: number): Promise<UserTie
 }
 
 // Get current user tier from storage or server
-async function getCurrentUserTier(): Promise<UserTier> {
+export async function getCurrentUserTier(): Promise<UserTier> {
   const now = Date.now();
 
   // Return cached tier if still valid
@@ -367,7 +476,58 @@ export async function checkRateLimit(
   endpoint: string,
   config?: Partial<RateLimitConfig>
 ): Promise<{ allowed: boolean; resetIn?: number; remaining?: number; retryAfter?: number }> {
-  // Defer entirely to server-side rate limiting for a single source of truth.
+  const now = Date.now();
+  const userTier = await getCurrentUserTier();
+  const rateLimitConfig = resolveRateLimitConfig(endpoint, config, userTier);
+  
+  // Get or initialize local state
+  let state = rateLimitState.get(endpoint);
+  if (!state) {
+    state = {
+      count: 0,
+      resetTime: now + rateLimitConfig.windowMs,
+      lastRequest: now,
+      requests: [],
+      violations: 0,
+    };
+    rateLimitState.set(endpoint, state);
+  }
+
+  // 1. Check local lockout
+  if (state.lockedUntil && now < state.lockedUntil) {
+    const resetIn = state.lockedUntil - now;
+    return {
+      allowed: false,
+      resetIn,
+      remaining: 0,
+      retryAfter: Math.ceil(resetIn / 1000),
+    };
+  }
+
+  // 2. Local sliding window & burst check
+  const windowStart = now - rateLimitConfig.windowMs;
+  state.requests = state.requests.filter(ts => ts > windowStart);
+  
+  const burstWindowStart = now - BURST_WINDOW_MS;
+  const burstCount = state.requests.filter(ts => ts > burstWindowStart).length;
+  const burstLimit = Math.ceil(rateLimitConfig.maxRequests * BURST_THRESHOLD_MULTIPLIER);
+  
+  const isBurstExceeded = burstCount >= burstLimit;
+  const isLimitExceeded = state.requests.length >= rateLimitConfig.maxRequests;
+
+  if (isLimitExceeded || isBurstExceeded) {
+    recordViolation(state, endpoint);
+
+    const resetIn = isBurstExceeded ? BURST_WINDOW_MS : rateLimitConfig.windowMs;
+    return {
+      allowed: false,
+      resetIn,
+      remaining: 0,
+      retryAfter: Math.ceil(resetIn / 1000),
+    };
+  }
+
+  // 3. Defer to server-side rate limiting for final confirmation
   try {
     const serverCheck = await post<RateLimitResult>('/api/rate-limit-check', { endpoint }, true, {
       retryCount: 0,
@@ -375,6 +535,11 @@ export async function checkRateLimit(
     });
 
     if (serverCheck && serverCheck.allowed) {
+      // Record successful request in local sliding window
+      state.requests.push(now);
+      state.count = state.requests.length;
+      state.lastRequest = now;
+      
       return {
         allowed: true,
         resetIn: serverCheck.resetIn,
@@ -383,6 +548,9 @@ export async function checkRateLimit(
       };
     }
 
+    // Server says no - record violation locally too
+    recordViolation(state, endpoint);
+    
     return {
       allowed: false,
       resetIn: serverCheck?.resetIn,
@@ -390,13 +558,20 @@ export async function checkRateLimit(
       retryAfter: serverCheck?.retryAfter ?? 60,
     };
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.warn('Rate limit server check failed; denying request to maintain parity', { endpoint, message });
+    // If server is down, we allow the request based on local check ONLY
+    // provided we haven't hit local limits (which we already checked above).
+    // This provides resilience.
+    console.warn('Rate limit server check failed; falling back to local state', { endpoint });
+    
+    state.requests.push(now);
+    state.count = state.requests.length;
+    state.lastRequest = now;
+    
     return {
-      allowed: false,
-      resetIn: 60000,
-      remaining: 0,
-      retryAfter: 60,
+      allowed: true,
+      resetIn: rateLimitConfig.windowMs,
+      remaining: rateLimitConfig.maxRequests - state.requests.length,
+      retryAfter: 0,
     };
   }
 }

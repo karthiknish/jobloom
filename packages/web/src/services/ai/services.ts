@@ -9,8 +9,6 @@ import {
   createCoverLetterPrompt,
   createResumeAnalysisPrompt,
   createResumeGenerationPrompt,
-  createATSScorePrompt,
-  createImprovementsPrompt,
   createKeywordExtractionPrompt,
   createCompanyInsightsPrompt,
   createJobSummaryPrompt,
@@ -67,14 +65,11 @@ export async function generateCoverLetter(request: CoverLetterRequest): Promise<
     });
 
     // ATS scoring and improvements are now handled by the unified service in the API route
-    const atsScore = 80;
-    const improvements: string[] = [];
-
     return {
       content,
-      atsScore,
+      atsScore: 0, // Placeholder, calculated via unified service in API route
       keywords: keywords.slice(0, 8),
-      improvements,
+      improvements: [], // Placeholder, calculated via unified service in API route
       wordCount: content.split(/\s+/).length,
       deepResearch,
       researchInsights

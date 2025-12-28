@@ -274,63 +274,7 @@ Return ONLY the JSON object.
 `;
 }
 
-/**
- * Create ATS score calculation prompt
- */
-export function createATSScorePrompt(content: string, keywords: string[], jobDescription: string): string {
-  return `
-Analyze this cover letter for ATS (Applicant Tracking System) compatibility and provide a score from 0-100.
 
-Cover Letter:
-${content}
-
-Target Keywords: ${keywords.join(', ')}
-
-Job Description:
-${jobDescription}
-
-Evaluate based on:
-1. Keyword matching (30 points)
-2. Natural language flow (20 points)
-3. Length appropriateness (15 points)
-4. Structure and formatting (15 points)
-5. Relevance to job requirements (20 points)
-
-Return only a number between 0-100 representing the ATS compatibility score.
-`;
-}
-
-/**
- * Create improvements prompt
- */
-export function createImprovementsPrompt(
-  content: string,
-  keywords: string[],
-  atsScore: number,
-  deepResearch: boolean
-): string {
-  return `
-Analyze this cover letter and provide 3-5 specific, actionable improvement suggestions.
-
-Cover Letter:
-${content}
-
-Current ATS Score: ${atsScore}/100
-Target Keywords: ${keywords.join(', ')}
-Deep Research Used: ${deepResearch}
-
-Focus on:
-1. Keyword optimization for ATS
-2. Content relevance and impact
-3. Structure and readability
-4. Company-specific personalization
-5. Quantifiable achievements
-
-Return suggestions as a JSON array of strings.
-
-Example: ["Add more quantifiable achievements with specific metrics", "Incorporate additional job-specific keywords naturally"]
-`;
-}
 
 /**
  * Create keyword extraction prompt

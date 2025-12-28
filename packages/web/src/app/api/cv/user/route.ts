@@ -4,6 +4,7 @@ import { withApi } from "@/lib/api/withApi";
 // POST /api/cv/user - ensure user doc exists & return minimal user record
 export const POST = withApi({
   auth: 'required',
+  rateLimit: 'user-profile',
 }, async ({ user }) => {
   const db = getAdminDb();
   const ref = db.collection("users").doc(user!.uid);
@@ -24,6 +25,7 @@ export const POST = withApi({
 // GET /api/cv/user - fetch current user doc
 export const GET = withApi({
   auth: 'required',
+  rateLimit: 'user-profile',
 }, async ({ user }) => {
   const db = getAdminDb();
   const ref = db.collection("users").doc(user!.uid);

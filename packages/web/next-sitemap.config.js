@@ -8,8 +8,10 @@ module.exports = {
   exclude: [
     '/api',
     '/api/*',
+    '/api/**',
     '/admin',
     '/admin/*',
+    '/admin/**',
     '/dashboard',
     '/dashboard/*',
     '/settings',

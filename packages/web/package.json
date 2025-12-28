@@ -15,6 +15,8 @@
     "vercel-build": "cd ../shared && npm run build && cd ../web && next build",
     "migrate-data": "node migrate-to-firestore.js",
     "test": "playwright test",
+    "test:unit": "jest",
+    "test:unit:watch": "jest --watch",
     "test:ui": "playwright test --ui",
     "test:headed": "playwright test --headed",
     "test:debug": "playwright test --debug",

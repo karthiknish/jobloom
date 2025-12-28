@@ -19,6 +19,7 @@ import {
   getKeywordsForRole,
   getKeywordsForIndustry,
   normalizeKeyword,
+  INDUSTRY_TECHNICAL_KEYWORDS,
 } from '@/lib/ats/keywords';
 
 // ============================================================================
@@ -83,7 +84,7 @@ export function scoreUnified(
   const sentences = normalizedText.split(/[.!?]+/).filter(s => s.trim().length > 0);
 
   // Calculate detailed metrics
-  const metrics = calculateDetailedMetrics(normalizedText, words, sentences, type);
+  const metrics = calculateDetailedMetrics(normalizedText, words, sentences, type, options.industry);
 
   // Calculate score breakdown
   const breakdown = calculateBreakdown(normalizedText, metrics, options, type);
@@ -139,7 +140,8 @@ function calculateDetailedMetrics(
   text: string,
   words: string[],
   sentences: string[],
-  type: 'resume' | 'cover-letter'
+  type: 'resume' | 'cover-letter',
+  industry?: string
 ): AtsDetailedMetrics {
   const wordCount = words.length;
   const sentenceCount = sentences.length;
@@ -151,8 +153,12 @@ function calculateDetailedMetrics(
     actionVerbList.some((verb: string) => normalizeKeyword(verb) === w)
   ).length;
 
-  // Count technical keywords
-  const technicalKeywordCount = countTechnicalKeywords(words);
+  // Sections analysis
+  const { found, missing } = analyzeSections(text, type);
+
+  // Count technical keywords (industry-aware)
+  // Now includes tech keywords as baseline and detects multi-industry terms
+  const technicalKeywordCount = countTechnicalKeywords(text, type, industriesFromText(text));
 
   // Count soft skills
   const softSkillCount = words.filter(w =>
@@ -162,9 +168,6 @@ function calculateDetailedMetrics(
   // Count impact statements (numbers, percentages, metrics)
   const impactStatementCount = countImpactStatements(text);
   const quantifiedAchievements = countQuantifiedAchievements(text);
-
-  // Sections analysis
-  const { found, missing } = analyzeSections(text, type);
 
   // Keyword density
   const keywordDensity = calculateKeywordDensity(words);
@@ -188,13 +191,38 @@ function calculateDetailedMetrics(
   };
 }
 
-function countTechnicalKeywords(words: string[]): number {
-  const techKeywords = new Set([
-    'javascript', 'typescript', 'python', 'java', 'react', 'node', 'sql', 'aws',
-    'docker', 'kubernetes', 'git', 'agile', 'scrum', 'api', 'rest', 'graphql',
-    'database', 'html', 'css', 'cloud', 'devops', 'ci/cd', 'testing', 'analytics'
-  ]);
-  return words.filter(w => techKeywords.has(w)).length;
+function industriesFromText(text: string): string[] {
+  const textLower = text.toLowerCase();
+  const industries = new Set<string>();
+  
+  if (textLower.includes('patient') || textLower.includes('clinic') || textLower.includes('hipaa')) industries.add('healthcare');
+  if (textLower.includes('financial') || textLower.includes('invest') || textLower.includes('gaap') || textLower.includes('audit')) industries.add('finance');
+  if (textLower.includes('curriculum') || textLower.includes('student') || textLower.includes('teach')) industries.add('education');
+  if (textLower.includes('marketing') || textLower.includes('campaign') || textLower.includes('seo')) industries.add('marketing');
+  if (textLower.includes('legal') || textLower.includes('contract')) industries.add('legal');
+  if (textLower.includes('sales') || textLower.includes('pipeline')) industries.add('sales');
+  
+  if (industries.size === 0) industries.add('technology');
+  return Array.from(industries);
+}
+
+function countTechnicalKeywords(text: string, type: string, industries: string[]): number {
+  const allTerms = new Set<string>(INDUSTRY_TECHNICAL_KEYWORDS.technology);
+  
+  for (const industry of industries) {
+    const terms = INDUSTRY_TECHNICAL_KEYWORDS[industry] || [];
+    terms.forEach(term => allTerms.add(term));
+  }
+  
+  let count = 0;
+  for (const term of allTerms) {
+    const lowerTerm = term.toLowerCase();
+    const regex = new RegExp(`\\b${lowerTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+    if (regex.test(text)) {
+      count++;
+    }
+  }
+  return count;
 }
 
 function countImpactStatements(text: string): number {
@@ -220,7 +248,7 @@ function analyzeSections(text: string, type: 'resume' | 'cover-letter'): { found
   
   if (type === 'resume') {
     const resumeSections = [
-      { id: 'contact', patterns: ['email', 'phone', '@', 'linkedin'] },
+      { id: 'contact', patterns: ['email', 'phone', '@'] },
       { id: 'summary', patterns: ['summary', 'objective', 'profile', 'about'] },
       { id: 'experience', patterns: ['experience', 'work history', 'employment'] },
       { id: 'education', patterns: ['education', 'degree', 'university', 'college'] },
@@ -228,10 +256,23 @@ function analyzeSections(text: string, type: 'resume' | 'cover-letter'): { found
     ];
     
     const found = resumeSections
-      .filter(s => s.patterns.some(p => textLower.includes(p)))
+      .filter(s => {
+        // More robust section detection:
+        // 1. Check for standalone headers (uppercase or followed by newline/colon)
+        // 2. Check for keywords in proximity to potential section boundaries
+        return s.patterns.some(p => {
+          // Contact info often isn't a standalone header
+          if (s.id === 'contact') return textLower.includes(p);
+          
+          // Strict header detection for other sections: At start of line, potentially preceded by whitespace, 
+          // followed by colon or newline. Case insensitive here but headers are usually uppercase.
+          const regex = new RegExp(`(^|\\n)\\s*${p}\\b[:\\s]*(\\n|$)`, 'i');
+          return regex.test(textLower);
+        });
+      })
       .map(s => s.id);
     const missing = resumeSections
-      .filter(s => !s.patterns.some(p => textLower.includes(p)))
+      .filter(s => !found.includes(s.id))
       .map(s => s.id);
     
     return { found, missing };
@@ -285,7 +326,7 @@ function calculateBreakdown(
   return {
     structure: calculateStructureScore(metrics, type),
     content: calculateContentScore(metrics),
-    keywords: calculateKeywordScore(text, options),
+    keywords: calculateKeywordScore(text, metrics, options),
     formatting: calculateFormattingScore(text),
     readability: calculateReadabilityScore(metrics),
     impact: calculateImpactScore(metrics),
@@ -296,14 +337,16 @@ function calculateStructureScore(metrics: AtsDetailedMetrics, type: 'resume' | '
   const expectedSections = type === 'resume' ? 5 : 4;
   const sectionScore = (metrics.sectionsFound.length / expectedSections) * 100;
   
-  // Word count scoring
-  let lengthScore = 50;
+  // Word count scoring (more gradual)
+  let lengthScore = 40;
   if (type === 'resume') {
-    if (metrics.wordCount >= 300 && metrics.wordCount <= 700) lengthScore = 100;
-    else if (metrics.wordCount >= 200 && metrics.wordCount <= 900) lengthScore = 75;
+    if (metrics.wordCount >= 300 && metrics.wordCount <= 800) lengthScore = 100;
+    else if (metrics.wordCount >= 200 && metrics.wordCount <= 1000) lengthScore = 85;
+    else if (metrics.wordCount >= 100 && metrics.wordCount <= 1200) lengthScore = 70;
   } else {
     if (metrics.wordCount >= 200 && metrics.wordCount <= 400) lengthScore = 100;
-    else if (metrics.wordCount >= 150 && metrics.wordCount <= 500) lengthScore = 75;
+    else if (metrics.wordCount >= 150 && metrics.wordCount <= 600) lengthScore = 80;
+    else if (metrics.wordCount >= 100) lengthScore = 60;
   }
   
   return Math.min(100, Math.round((sectionScore + lengthScore) / 2));
@@ -317,26 +360,38 @@ function calculateContentScore(metrics: AtsDetailedMetrics): number {
   else if (metrics.actionVerbCount >= 5) score += 15;
   else if (metrics.actionVerbCount >= 2) score += 8;
   
-  // Technical keywords
+  // Technical keywords (weight reduced from 25 to 15)
   if (metrics.technicalKeywordCount >= 8) score += 15;
   else if (metrics.technicalKeywordCount >= 4) score += 10;
   
-  // Soft skills
-  if (metrics.softSkillCount >= 3) score += 10;
+  // Soft skills (weight increased)
+  if (metrics.softSkillCount >= 5) score += 15;
+  else if (metrics.softSkillCount >= 3) score += 10;
   
   return Math.min(100, score);
 }
 
-function calculateKeywordScore(text: string, options: TextScoringOptions): number {
+function calculateKeywordScore(text: string, metrics: AtsDetailedMetrics, options: TextScoringOptions): number {
   const targetKeywords = getTargetKeywords(options);
-  if (targetKeywords.length === 0) return 70; // No target, assume decent
   
-  const textLower = text.toLowerCase();
-  const matchCount = targetKeywords.filter(kw => 
-    textLower.includes(normalizeKeyword(kw))
-  ).length;
+  // If keywords provided in options (JD scan), use strict matching
+  if (targetKeywords.length > 0) {
+    const textLower = text.toLowerCase();
+    const matchCount = targetKeywords.filter(kw => {
+      const normalized = normalizeKeyword(kw);
+      return textLower.includes(normalized);
+    }).length;
+    
+    return Math.min(100, Math.round((matchCount / targetKeywords.length) * 100));
+  }
   
-  return Math.min(100, Math.round((matchCount / targetKeywords.length) * 100));
+  // Industry-blind matching (Generous fallback for general scans)
+  // Use technical keywords and soft skills as a proxy
+  let score = 60; 
+  score += Math.min(25, metrics.technicalKeywordCount * 4);
+  score += Math.min(15, metrics.softSkillCount * 3);
+  
+  return Math.min(100, score);
 }
 
 function calculateFormattingScore(text: string): number {
@@ -362,20 +417,23 @@ function calculateFormattingScore(text: string): number {
 }
 
 function calculateReadabilityScore(metrics: AtsDetailedMetrics): number {
-  // Target reading grade 8-12 for professional documents
+  // Target reading grade 8-14 for professional documents
+  // Be more lenient on the upper end for technical documents
   const grade = metrics.readabilityGrade;
-  if (grade >= 8 && grade <= 12) return 100;
-  if (grade >= 6 && grade <= 14) return 80;
-  if (grade >= 4 && grade <= 16) return 60;
-  return 40;
+  if (grade >= 8 && grade <= 14) return 100;
+  if (grade >= 6 && grade <= 18) return 85;
+  if (grade >= 4 && grade <= 20) return 70;
+  return 50;
 }
 
 function calculateImpactScore(metrics: AtsDetailedMetrics): number {
   let score = 40;
   
-  // Quantified achievements are key
-  if (metrics.quantifiedAchievements >= 3) score += 30;
-  if (metrics.quantifiedAchievements >= 6) score += 20;
+  // Quantified achievements are key (slightly more sensitive)
+  if (metrics.quantifiedAchievements >= 3) score += 35;
+  else if (metrics.quantifiedAchievements >= 1) score += 20;
+  
+  if (metrics.quantifiedAchievements >= 6) score += 15;
   
   // Impact statements
   if (metrics.impactStatementCount >= 3) score += 10;

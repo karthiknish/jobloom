@@ -58,7 +58,7 @@ const DATE_PATTERNS = [
 // Contact info patterns
 const CONTACT_PATTERNS = {
   email: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g,
-  phone: /(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g,
+  phone: /(?:\+?\d{1,3}[-.\s]?)?\(?\d{2,5}\)?[-.\s]?\d{3,4}[-.\s]?\d{3,7}/g,
   linkedin: /(?:linkedin\.com\/in\/|@)([a-zA-Z0-9_-]+)/gi,
   github: /(?:github\.com\/|@)([a-zA-Z0-9_-]+)/gi,
   website: /(?:https?:\/\/)?(?:www\.)?([a-zA-Z0-9_-]+\.[a-zA-Z]{2,}(?:\/[^\s]*)?)/gi,
@@ -338,21 +338,42 @@ function parseExperienceSection(content: string): ParsedExperience[] {
       achievements: [],
     };
     
-    // First line usually has title or company
+    // First line usually has title and company
     const firstLine = lines[0].trim();
-    const secondLine = lines[1]?.trim() || '';
     
-    // Check for date to identify format
-    const hasDateInFirst = DATE_PATTERNS.some(p => p.test(firstLine));
-    
-    if (hasDateInFirst) {
-      // Date in first line, so title/company is second
-      experience.title = secondLine;
-      experience.company = firstLine.replace(/\d{4}.*$/, '').trim();
+    // Check if both company and title are in the first line (e.g., Company | Title)
+    const separators = /[|•●]| - /;
+    if (separators.test(firstLine)) {
+      const parts = firstLine.split(separators).map(p => p.trim());
+      // Date usually at the end of the line
+      const cleanParts = parts.map(p => p.replace(DATE_PATTERNS[3], '').replace(DATE_PATTERNS[2], '').trim()).filter(p => p);
+      
+      if (cleanParts.length >= 2) {
+        // Simple heuristic: which one looks more like a company?
+        // For now, assume Title | Company or Company | Title
+        experience.title = cleanParts[1];
+        experience.company = cleanParts[0];
+      } else {
+        experience.title = cleanParts[0] || '';
+      }
     } else {
-      // Title usually first, company second (or combined)
-      experience.title = firstLine;
-      experience.company = secondLine;
+      const secondLine = lines[1]?.trim() || '';
+      // Check for date to identify format
+      const hasDateInFirst = DATE_PATTERNS.some(p => p.test(firstLine));
+      
+      if (hasDateInFirst) {
+        // Date in first line, company/title might be second or also in first
+        experience.company = firstLine.replace(/\d{4}.*$/, '').trim();
+        experience.title = secondLine;
+      } else {
+        experience.title = firstLine;
+        experience.company = secondLine;
+      }
+    }
+    
+    // Safety check: if title or company looks like a bullet point, it's probably not a title/company
+    if (experience.title.startsWith('-') || experience.title.startsWith('•')) {
+      experience.title = firstLine; // Fallback
     }
     
     // Check for current position
