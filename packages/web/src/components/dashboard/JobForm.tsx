@@ -309,7 +309,14 @@ export function JobForm({ onSubmit, onCancel, initialData, isEditing = false }: 
                       Job Title <span className="text-red-500">*</span>
                     </FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="e.g., Software Engineer" className="input-premium" />
+                      <Input 
+                        {...field} 
+                        placeholder="e.g., Software Engineer" 
+                        className="input-premium"
+                        autoComplete="organization-title"
+                        inputMode="text"
+                        enterKeyHint="next"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -326,7 +333,14 @@ export function JobForm({ onSubmit, onCancel, initialData, isEditing = false }: 
                       Company <span className="text-red-500">*</span>
                     </FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="e.g., Google" className="input-premium" />
+                      <Input 
+                        {...field} 
+                        placeholder="e.g., Google" 
+                        className="input-premium"
+                        autoComplete="organization"
+                        inputMode="text"
+                        enterKeyHint="next"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -343,7 +357,14 @@ export function JobForm({ onSubmit, onCancel, initialData, isEditing = false }: 
                       Location
                     </FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="e.g., San Francisco, CA or Remote" className="input-premium" />
+                      <Input 
+                        {...field} 
+                        placeholder="e.g., San Francisco, CA or Remote" 
+                        className="input-premium"
+                        autoComplete="country-name"
+                        inputMode="text"
+                        enterKeyHint="next"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -360,7 +381,13 @@ export function JobForm({ onSubmit, onCancel, initialData, isEditing = false }: 
                       Salary
                     </FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="e.g., £120,000 - £150,000" className="input-premium" />
+                      <Input 
+                        {...field} 
+                        placeholder="e.g., £120,000 - £150,000" 
+                        className="input-premium"
+                        inputMode="text"
+                        enterKeyHint="next"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -378,7 +405,15 @@ export function JobForm({ onSubmit, onCancel, initialData, isEditing = false }: 
                     Job URL
                   </FormLabel>
                   <FormControl>
-                    <Input {...field} type="url" placeholder="https://company.com/jobs/123" className="input-premium" />
+                    <Input 
+                      {...field} 
+                      type="url" 
+                      placeholder="https://company.com/jobs/123" 
+                      className="input-premium"
+                      autoComplete="url"
+                      inputMode="url"
+                      enterKeyHint="next"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

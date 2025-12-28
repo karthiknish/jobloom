@@ -30,6 +30,12 @@ const CvStatsOverview = dynamic(() => import("@/components/cv-evaluator").then(m
 const ManualBuilderSection = dynamic(() => import("@/components/career-tools/ManualBuilderSection").then(mod => mod.ManualBuilderSection), { ssr: false, loading: () => <SkeletonCard /> });
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from "@/components/ui/select";
 import { Search, History as HistoryIcon, LayoutDashboard, Sparkles as SparklesIcon } from "lucide-react";
 
 const dashboardTabsListClassName =
@@ -55,6 +61,111 @@ function ResumeImporterSkeleton() {
           </div>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+// CV Optimizer Section with mobile dropdown for tabs
+interface CVOptimizerSectionProps {
+  user: { uid: string } | null;
+  loadingData: boolean;
+  cvAnalyses: any[] | null;
+  refresh: () => void;
+  handleResumeUpdate: (resume: any) => void;
+  currentResume: any;
+  currentAtsScore: any;
+  setCurrentAtsScore: (score: any) => void;
+}
+
+function CVOptimizerSection({
+  user,
+  loadingData,
+  cvAnalyses,
+  refresh,
+  handleResumeUpdate,
+  currentResume,
+  currentAtsScore,
+  setCurrentAtsScore,
+}: CVOptimizerSectionProps) {
+  const [cvTab, setCvTab] = useState("analyze");
+  
+  return (
+    <div className="space-y-6">
+      <Tabs value={cvTab} onValueChange={setCvTab} className="w-full">
+        {/* Mobile Dropdown */}
+        <div className="sm:hidden mb-6">
+          <Select value={cvTab} onValueChange={setCvTab}>
+            <SelectTrigger className="w-full h-12 bg-white border-border/50 shadow-md rounded-xl px-4">
+              <div className="flex items-center gap-2">
+                {cvTab === "analyze" ? (
+                  <Search className="h-4 w-4 text-primary" />
+                ) : (
+                  <HistoryIcon className="h-4 w-4 text-primary" />
+                )}
+                <span className="text-sm font-bold text-foreground">
+                  {cvTab === "analyze" ? "Analyze New CV" : "Analysis History"}
+                </span>
+              </div>
+            </SelectTrigger>
+            <SelectContent className="rounded-xl border-border/50 shadow-2xl">
+              <SelectItem value="analyze" className="py-3">
+                <div className="flex items-center gap-2">
+                  <Search className="h-4 w-4" />
+                  <span className="font-medium">Analyze New CV</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="history" className="py-3">
+                <div className="flex items-center gap-2">
+                  <HistoryIcon className="h-4 w-4" />
+                  <span className="font-medium">Analysis History</span>
+                </div>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {/* Desktop Tabs */}
+        <TabsList className="hidden sm:inline-flex mb-6">
+          <TabsTrigger value="analyze" className="flex items-center gap-2">
+            <Search className="h-4 w-4" />
+            Analyze New CV
+          </TabsTrigger>
+          <TabsTrigger value="history" className="flex items-center gap-2">
+            <HistoryIcon className="h-4 w-4" />
+            Analysis History
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="analyze" className="space-y-6">
+          <CvUploadSection
+            userId={user?.uid || ''}
+            onUploadStarted={() => {
+              refresh();
+            }}
+            onUploadSuccess={() => {
+              refresh();
+            }}
+            onResumeUpdate={handleResumeUpdate}
+            currentResume={currentResume}
+            currentAtsScore={currentAtsScore}
+            setCurrentAtsScore={setCurrentAtsScore}
+          />
+        </TabsContent>
+        
+        <TabsContent value="history" className="space-y-6">
+          {loadingData ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map((index) => (
+                <SkeletonCard key={index} />
+              ))}
+            </div>
+          ) : (
+            <>
+              <CvAnalysisHistory analyses={cvAnalyses ?? []} />
+              <CvImprovementTracker analyses={cvAnalyses ?? []} />
+            </>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
@@ -183,52 +294,16 @@ export default function CareerToolsPage() {
         return <ResumeImporter onImport={handleResumeImport} />;
       case "cv-optimizer":
         return (
-          <div className="space-y-6">
-            <Tabs defaultValue="analyze" className="w-full">
-              <TabsList className="mb-6">
-                <TabsTrigger value="analyze" className="flex items-center gap-2">
-                  <Search className="h-4 w-4" />
-                  Analyze New CV
-                </TabsTrigger>
-                <TabsTrigger value="history" className="flex items-center gap-2">
-                  <HistoryIcon className="h-4 w-4" />
-                  Analysis History
-                </TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="analyze" className="space-y-6">
-                <CvUploadSection
-                  userId={user?.uid || ''}
-                  onUploadStarted={() => {
-                    refresh();
-                  }}
-                  onUploadSuccess={() => {
-                    refresh();
-                    // Optionally switch to history tab here if needed
-                  }}
-                  onResumeUpdate={handleResumeUpdate}
-                  currentResume={currentResume}
-                  currentAtsScore={currentAtsScore}
-                  setCurrentAtsScore={setCurrentAtsScore}
-                />
-              </TabsContent>
-              
-              <TabsContent value="history" className="space-y-6">
-                {loadingData ? (
-                  <div className="space-y-4">
-                    {[1, 2, 3].map((index) => (
-                      <SkeletonCard key={index} />
-                    ))}
-                  </div>
-                ) : (
-                  <>
-                    <CvAnalysisHistory analyses={cvAnalyses ?? []} />
-                    <CvImprovementTracker analyses={cvAnalyses ?? []} />
-                  </>
-                )}
-              </TabsContent>
-            </Tabs>
-          </div>
+          <CVOptimizerSection
+            user={user}
+            loadingData={loadingData}
+            cvAnalyses={cvAnalyses}
+            refresh={refresh}
+            handleResumeUpdate={handleResumeUpdate}
+            currentResume={currentResume}
+            currentAtsScore={currentAtsScore}
+            setCurrentAtsScore={setCurrentAtsScore}
+          />
         );
       case "cover-letter":
         return <AICoverLetterGenerator />;

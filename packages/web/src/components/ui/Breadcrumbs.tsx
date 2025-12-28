@@ -85,7 +85,7 @@ export function Breadcrumbs({
     <nav
       aria-label="Breadcrumb"
       className={cn(
-        "flex items-center text-sm text-muted-foreground",
+        "hidden md:flex items-center text-sm text-muted-foreground",
         className
       )}
     >

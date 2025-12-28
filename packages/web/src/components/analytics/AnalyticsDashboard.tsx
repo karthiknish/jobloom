@@ -24,6 +24,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAnalytics } from "@/providers/analytics-provider";
@@ -148,10 +155,18 @@ const itemVariants = {
   }
 };
 
+const ANALYTICS_TABS = [
+  { id: "overview", label: "Overview" },
+  { id: "engagement", label: "Engagement" },
+  { id: "conversions", label: "Conversions" },
+  { id: "performance", label: "Performance" },
+];
+
 export function AnalyticsDashboard() {
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("overview");
   const { trackPageView } = useAnalytics();
   const { toast } = useToast();
 
@@ -374,8 +389,26 @@ export function AnalyticsDashboard() {
       </div>
 
       {/* Detailed Analytics */}
-      <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:w-[400px]">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        {/* Mobile Dropdown */}
+        <div className="sm:hidden">
+          <Select value={activeTab} onValueChange={setActiveTab}>
+            <SelectTrigger className="w-full h-12 bg-white border-border/50 shadow-md rounded-xl px-4">
+              <span className="text-sm font-bold text-foreground">
+                {ANALYTICS_TABS.find(t => t.id === activeTab)?.label || "Select Tab"}
+              </span>
+            </SelectTrigger>
+            <SelectContent className="rounded-xl border-border/50 shadow-2xl">
+              {ANALYTICS_TABS.map((tab) => (
+                <SelectItem key={tab.id} value={tab.id} className="py-3">
+                  <span className="font-medium">{tab.label}</span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        {/* Desktop Tabs */}
+        <TabsList className="hidden sm:grid w-full grid-cols-4 lg:w-[400px]">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="engagement">Engagement</TabsTrigger>
           <TabsTrigger value="conversions">Conversions</TabsTrigger>

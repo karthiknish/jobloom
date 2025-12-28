@@ -47,6 +47,9 @@ import { useTourContext } from "@/providers/onboarding-tour-provider";
 import { WelcomeDialog } from "@/components/onboarding/WelcomeDialog";
 import { UpgradeIntentDetail } from "@/utils/upgradeIntent";
 import { analytics } from "@/firebase/analytics";
+import { PullToRefresh } from "@/components/ui/PullToRefresh";
+import { useIsMobile } from "@/hooks/useMediaQuery";
+import { MobileFAB } from "@/components/dashboard/MobileFAB";
 
 // Dynamically import heavy components for code-splitting
 const DraggableDashboard = dynamic(
@@ -70,6 +73,7 @@ const DashboardJobsView = dynamic(
 export function Dashboard() {
   const { user, loading } = useFirebaseAuth();
   const { plan } = useSubscription();
+  const isMobile = useIsMobile();
   const [upgradeFeature, setUpgradeFeature] = useState<string | undefined>("applicationsPerMonth");
   const [upgradeTitle, setUpgradeTitle] = useState("Application Limit Reached");
   const [upgradeDescription, setUpgradeDescription] = useState(
@@ -332,6 +336,17 @@ export function Dashboard() {
         <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
           {/* Breadcrumbs for navigation */}
           <Breadcrumbs className="mb-4" />
+
+          {/* PullToRefresh wrapper for mobile */}
+          <PullToRefresh
+            onRefresh={async () => {
+              await Promise.all([
+                refetchApplications(),
+                refetchJobStats(),
+              ]);
+            }}
+            enabled={isMobile}
+          >
         {/* Premium Upgrade Banner for Free Users */}
         {plan === "free" && <PremiumUpgradeBanner className="mb-6" />}
 
@@ -478,6 +493,7 @@ export function Dashboard() {
             )}
           </div>
         </div>
+        </PullToRefresh>
 
         {/* Modals */}
         <Dialog
@@ -546,6 +562,14 @@ export function Dashboard() {
         </Dialog>
 
         <WelcomeDialog />
+
+        {/* Mobile FAB for adding jobs */}
+        {isMobile && (
+          <MobileFAB
+            onClick={() => setShowJobForm(true)}
+            label="Add Job"
+          />
+        )}
       </div>
       </div>
     </div>

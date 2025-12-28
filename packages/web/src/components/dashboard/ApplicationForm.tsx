@@ -24,6 +24,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
 import { Job, Application } from "@/types/dashboard";
+import { DatePicker } from "@/components/ui/date-picker";
 
 interface ApplicationFormValues {
   status: "interested" | "applied" | "offered" | "rejected" | "withdrawn";
@@ -259,10 +260,18 @@ export function ApplicationForm({
                 control={form.control}
                 name="appliedDate"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="flex flex-col">
                     <FormLabel>Applied Date</FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} />
+                      <DatePicker
+                        date={field.value ? new Date(field.value) : undefined}
+                        onDateChange={(date) => {
+                          field.onChange(date ? format(date, "yyyy-MM-dd") : "");
+                        }}
+                        placeholder="Select date"
+                        clearable
+                        toDate={new Date()}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -275,10 +284,18 @@ export function ApplicationForm({
               control={form.control}
               name="followUpDate"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="flex flex-col">
                   <FormLabel>Follow-up Date</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <DatePicker
+                      date={field.value ? new Date(field.value) : undefined}
+                      onDateChange={(date) => {
+                        field.onChange(date ? format(date, "yyyy-MM-dd") : "");
+                      }}
+                      placeholder="Select follow-up date"
+                      clearable
+                      fromDate={new Date()}
+                    />
                   </FormControl>
                   <FormDescription>When do you plan to follow up?</FormDescription>
                   <FormMessage />

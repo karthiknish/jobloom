@@ -88,6 +88,12 @@ const statusConfig: Record<string, { color: string; bg: string; icon: React.Reac
   },
 };
 
+const JOB_DETAIL_TABS = [
+  { id: "overview", label: "Overview", icon: Info },
+  { id: "details", label: "Details", icon: ListChecks },
+  { id: "activity", label: "Activity", icon: Activity },
+];
+
 export function JobDetailsModal({
   application,
   open,
@@ -111,6 +117,7 @@ export function JobDetailsModal({
 
   const [localStatus, setLocalStatus] = useState<string>(application?.status || "interested");
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
 
   useEffect(() => {
     if (application) {
@@ -208,8 +215,36 @@ export function JobDetailsModal({
             </DialogHeader>
 
             {/* Tabs for Content Organization */}
-            <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 h-12 bg-muted/30 p-1 rounded-xl">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              {/* Mobile Dropdown */}
+              <div className="sm:hidden mb-4">
+                <Select value={activeTab} onValueChange={setActiveTab}>
+                  <SelectTrigger className="w-full h-12 bg-muted/30 border-border/50 shadow-sm rounded-xl px-4">
+                    <div className="flex items-center gap-2">
+                      {JOB_DETAIL_TABS.find(t => t.id === activeTab)?.icon && (
+                        React.createElement(JOB_DETAIL_TABS.find(t => t.id === activeTab)!.icon, {
+                          className: "h-4 w-4 text-primary"
+                        })
+                      )}
+                      <span className="text-sm font-semibold text-foreground">
+                        {JOB_DETAIL_TABS.find(t => t.id === activeTab)?.label || "Select Tab"}
+                      </span>
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl border-border/50 shadow-2xl">
+                    {JOB_DETAIL_TABS.map((tab) => (
+                      <SelectItem key={tab.id} value={tab.id} className="py-3">
+                        <div className="flex items-center gap-2">
+                          <tab.icon className="h-4 w-4" />
+                          <span className="font-medium">{tab.label}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {/* Desktop Tabs */}
+              <TabsList className="hidden sm:grid w-full grid-cols-3 h-12 bg-muted/30 p-1 rounded-xl">
                 <TabsTrigger 
                   value="overview" 
                   className="gap-2 text-sm font-semibold transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-primary rounded-lg"

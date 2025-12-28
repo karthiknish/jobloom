@@ -31,6 +31,14 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  Menubar,
+  MenubarContent,
+  MenubarItem,
+  MenubarMenu,
+  MenubarSeparator,
+  MenubarTrigger,
+} from "@/components/ui/menubar";
 import { GlobalSearch } from "@/components/GlobalSearch";
 import { KeyboardShortcutsDialog } from "@/components/dashboard/KeyboardShortcutsDialog";
 import { createDashboardShortcuts } from "@/hooks/useKeyboardShortcuts";
@@ -119,29 +127,38 @@ export default function Header() {
   }, [signOut, toast]);
 
   const NavItems = () => (
-    <>
+    <Menubar className="border-none bg-transparent h-auto p-0 space-x-1">
       {visibleMainLinks.map((link) => (
-        <Link
-          key={link.href}
-          href={link.href}
-          className="text-muted-foreground hover:text-foreground transition-colors text-sm font-medium w-fit text-center py-2 flex"
-          onClick={() => setIsMobileMenuOpen(false)}
-        >
-          {link.label}
-        </Link>
+        <MenubarMenu key={link.href}>
+          <MenubarTrigger asChild className="font-medium text-sm cursor-pointer">
+            <Link
+              href={link.href}
+              className="text-muted-foreground hover:text-foreground transition-colors px-3 py-2"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              {link.label}
+            </Link>
+          </MenubarTrigger>
+        </MenubarMenu>
       ))}
 
-      {visibleAdminLinks.map((link) => (
-        <Link
-          key={link.href}
-          href={link.href}
-          className="text-muted-foreground hover:text-foreground transition-colors text-sm font-medium w-fit text-center py-2 flex"
-          onClick={() => setIsMobileMenuOpen(false)}
-        >
-          {link.label}
-        </Link>
-      ))}
-    </>
+      {visibleAdminLinks.length > 0 && (
+        <MenubarMenu>
+          <MenubarTrigger className="font-medium text-sm text-muted-foreground hover:text-foreground">
+            Admin
+          </MenubarTrigger>
+          <MenubarContent>
+            {visibleAdminLinks.map((link) => (
+              <MenubarItem key={link.href} asChild>
+                <Link href={link.href}>
+                  {link.label}
+                </Link>
+              </MenubarItem>
+            ))}
+          </MenubarContent>
+        </MenubarMenu>
+      )}
+    </Menubar>
   );
 
   const AuthButtons = () => {

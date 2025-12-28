@@ -99,9 +99,9 @@ export function SettingsTabs({
                 })
               )}
               <div className="flex flex-col items-start overflow-hidden">
-                <div className="text-sm font-bold text-foreground">
-                  <SelectValue />
-                </div>
+                <span className="text-sm font-bold text-foreground">
+                  {activeTabLabel}
+                </span>
                 {showDescriptions && (
                   <span className="text-[10px] text-muted-foreground truncate w-full">
                     {SETTINGS_TABS.find(t => t.id === activeTab)?.description}

@@ -27,6 +27,12 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from "@/components/ui/select";
+import {
   Accordion,
   AccordionContent,
   AccordionItem,
@@ -119,6 +125,12 @@ const FAQ_CATEGORIES = [
   },
 ];
 
+const HELP_TABS = [
+  { id: "faq", label: "FAQs" },
+  { id: "guides", label: "Quick Guides" },
+  { id: "contact", label: "Contact" },
+];
+
 const QUICK_LINKS = [
   { label: "Documentation", url: "/docs", icon: Book },
   { label: "Contact Support", url: "/support", icon: Mail },
@@ -162,7 +174,25 @@ export function HelpCenter({ open, onOpenChange }: HelpCenterProps) {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1">
           <div className="px-4 border-b">
-            <TabsList className="w-full justify-start h-12 bg-transparent p-0 gap-4">
+            {/* Mobile Dropdown */}
+            <div className="sm:hidden py-2">
+              <Select value={activeTab} onValueChange={setActiveTab}>
+                <SelectTrigger className="w-full h-10 bg-white border-border/50 shadow-sm rounded-lg px-4">
+                  <span className="text-sm font-medium text-foreground">
+                    {HELP_TABS.find(t => t.id === activeTab)?.label || "Select Tab"}
+                  </span>
+                </SelectTrigger>
+                <SelectContent className="rounded-xl border-border/50 shadow-2xl">
+                  {HELP_TABS.map((tab) => (
+                    <SelectItem key={tab.id} value={tab.id} className="py-2">
+                      <span className="font-medium">{tab.label}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {/* Desktop Tabs */}
+            <TabsList className="hidden sm:flex w-full justify-start h-12 bg-transparent p-0 gap-4">
               <TabsTrigger
                 value="faq"
                 className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-0"

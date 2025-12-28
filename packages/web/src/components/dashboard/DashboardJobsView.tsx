@@ -16,10 +16,14 @@ import { Badge } from "@/components/ui/badge";
 import { LayoutList, LayoutGrid, Briefcase, Keyboard } from "lucide-react";
 import { filterApplications, getUniqueCompanies } from "@/utils/dashboard";
 import { slideInUp } from "@/styles/animations";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 const BulkActionsBar = dynamic(() => import("@/components/dashboard/BulkActionsBar").then(mod => mod.BulkActionsBar), { ssr: false });
 const JobImportModal = dynamic(() => import("@/components/dashboard/JobImportModal").then(mod => mod.JobImportModal), { ssr: false });
 const KeyboardShortcutsDialog = dynamic(() => import("@/components/dashboard/KeyboardShortcutsDialog").then(mod => mod.KeyboardShortcutsDialog), { ssr: false });
+
+import { useIsMobile } from "@/hooks/useMediaQuery";
+import { JobCardMobile } from "@/components/dashboard/JobCardMobile";
 
 interface DashboardJobsViewProps {
   applications: Application[];
@@ -56,6 +60,9 @@ export function DashboardJobsView({
   onAddJob,
   onImport,
 }: DashboardJobsViewProps) {
+  // Check if mobile
+  const isMobile = useIsMobile();
+  
   // Ensure applications is always an array
   const safeApplications = Array.isArray(applications) ? applications : [];
 
@@ -319,30 +326,29 @@ export function DashboardJobsView({
           {/* View Toggle & Export Actions */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-3 bg-muted/50 rounded-xl border border-border/50">
             {/* View Mode Toggle */}
-            <div className="flex items-center gap-2 bg-background p-1 rounded-lg border border-border/50 shadow-sm">
-              <button
-                onClick={() => setBoardMode("list")}
-                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md motion-control ${
-                  boardMode === "list"
-                    ? "bg-primary text-primary-foreground shadow-md"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                }`}
+            <ToggleGroup 
+              type="single" 
+              value={boardMode} 
+              onValueChange={(value) => value && setBoardMode(value as "list" | "kanban")}
+              className="bg-background p-1 rounded-lg border border-border/50 shadow-sm"
+            >
+              <ToggleGroupItem 
+                value="list" 
+                aria-label="List view"
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:shadow-md"
               >
                 <LayoutList className="h-4 w-4" />
                 List
-              </button>
-              <button
-                onClick={() => setBoardMode("kanban")}
-                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md motion-control ${
-                  boardMode === "kanban"
-                    ? "bg-primary text-primary-foreground shadow-md"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                }`}
+              </ToggleGroupItem>
+              <ToggleGroupItem 
+                value="kanban" 
+                aria-label="Kanban view"
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:shadow-md"
               >
                 <LayoutGrid className="h-4 w-4" />
                 Kanban
-              </button>
-            </div>
+              </ToggleGroupItem>
+            </ToggleGroup>
 
             {/* Results Count */}
             <Badge variant="secondary" className="text-sm font-medium px-3 py-1.5">
@@ -383,7 +389,26 @@ export function DashboardJobsView({
                 await saveKanbanMove(draggedId, targetStatus, beforeId);
               }}
             />
+          ) : isMobile ? (
+            /* Mobile: Use swipeable cards */
+            <div className="space-y-3">
+              {filteredApplications.map((application) => (
+                <JobCardMobile
+                  key={application._id}
+                  application={application}
+                  onEdit={onEditApplication}
+                  onDelete={onDeleteApplication}
+                  onView={onViewApplication}
+                />
+              ))}
+              {filteredApplications.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  No jobs match your filters
+                </div>
+              )}
+            </div>
           ) : (
+            /* Desktop: Use JobList table */
             <JobList
               applications={filteredApplications}
               onEditApplication={onEditApplication}

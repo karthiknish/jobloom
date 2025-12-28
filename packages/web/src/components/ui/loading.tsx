@@ -2,11 +2,12 @@
 
 import * as React from "react";
 import { Loader2, RefreshCw } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 
 interface LoadingProps extends React.HTMLAttributes<HTMLDivElement> {
   size?: "sm" | "default" | "lg" | "xl";
-  variant?: "spinner" | "refresh" | "dots";
+  variant?: "spinner" | "refresh" | "dots" | "native";
   label?: string;
   inline?: boolean;
 }
@@ -19,6 +20,31 @@ const LoadingSpinner = React.forwardRef<HTMLDivElement, LoadingProps>(
       lg: "h-8 w-8",
       xl: "h-12 w-12",
     };
+
+    // Native shadcn spinner variant
+    if (variant === "native") {
+      return (
+        <div
+          ref={ref}
+          className={cn(
+            inline ? "inline-flex" : "flex flex-col",
+            "items-center justify-center gap-2",
+            className
+          )}
+          {...props}
+        >
+          <Spinner className={cn(sizeClasses[size])} />
+          {label && (
+            <span className={cn(
+              "text-muted-foreground font-medium",
+              inline ? "text-xs ml-1.5" : "text-sm"
+            )}>
+              {label}
+            </span>
+          )}
+        </div>
+      );
+    }
 
     const Icon = variant === "refresh" ? RefreshCw : Loader2;
 
