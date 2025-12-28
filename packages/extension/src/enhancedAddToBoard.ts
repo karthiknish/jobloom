@@ -1,36 +1,42 @@
 // Enhanced add to board functionality with improved job extraction and SOC matching
 import { get, post, put } from "./apiClient";
 import { safeChromeStorageGet } from "./utils/safeStorage";
-import { UnifiedJobParser, type JobData as EnhancedJobData, type SocCodeMatch } from "./parsers";
+import { UnifiedJobParser, type SocCodeMatch } from "./parsers";
 import { 
   normalizeJobUrl, 
   extractJobIdentifier, 
   normalizeCompanyName, 
   isLikelyPlaceholderCompany,
   type Job,
+  type JobData,
+  type SalaryInfo,
   type CreateJobResponse,
   type KanbanStatus 
 } from "@hireall/shared";
 import { SponsorshipManager } from "./components/SponsorshipManager";
 
-/**
- * Extension-specific job board entry that extends the shared Job type.
- * Adds fields needed for local storage and UI state.
- */
-interface JobBoardEntry extends Omit<Job, '_id' | 'userId' | 'source' | 'dateFound' | 'likelySocCode'> {
+interface JobBoardEntry extends Omit<Job, '_id' | 'userId' | 'source' | 'dateFound' | 'likelySocCode' | 'jobIdentifier'> {
   id: string;
   dateAdded: string;
   status: KanbanStatus;
   notes: string;
+  jobIdentifier: string;
   /** SOC code mapped from likelySocCode for local use */
   socCode?: string;
   /** Industry alias for department */
   industry?: string;
 }
 
+/**
+ * Helper to check if salary is structured SalaryInfo
+ */
+function isSalaryInfo(salary: any): salary is SalaryInfo {
+  return salary !== null && typeof salary === 'object' && 'currency' in salary;
+}
+
 interface PendingJob {
   id: string;
-  jobData: EnhancedJobData;
+  jobData: JobData;
   status: KanbanStatus;
   timestamp: number;
   retryCount: number;
@@ -38,7 +44,7 @@ interface PendingJob {
 
 export class EnhancedJobBoardManager {
   private static instance: EnhancedJobBoardManager;
-  private cache = new Map<string, EnhancedJobData>();
+  private cache = new Map<string, JobData>();
   private socCodeCache = new Map<string, SocCodeMatch>();
   private isSyncing = false;
 
@@ -62,13 +68,14 @@ export class EnhancedJobBoardManager {
   }
 
   // Enhanced job extraction with SOC matching
-  async extractAndAnalyzeJob(document: Document, url: string): Promise<EnhancedJobData | null> {
+  async extractAndAnalyzeJob(document: Document, url: string): Promise<JobData | null> {
     try {
       // Check cache first
       if (this.cache.has(url)) {
         return this.cache.get(url)!;
       }
 
+      const normalizedUrl = normalizeJobUrl(url || "");
       // Extract job data using enhanced parser
       const jobData = await UnifiedJobParser.extractJobFromPage(document, url);
       if (!jobData) {
@@ -84,7 +91,9 @@ export class EnhancedJobBoardManager {
         jobData.socMatch = socMatch;
         
         // Cache SOC match
-        this.socCodeCache.set(jobData.normalizedTitle, socMatch);
+        if (jobData.normalizedTitle) {
+          this.socCodeCache.set(jobData.normalizedTitle, socMatch);
+        }
       }
 
       // Cache the extracted data
@@ -94,7 +103,7 @@ export class EnhancedJobBoardManager {
         title: jobData.title,
         socCode: jobData.socCode,
         confidence: jobData.socMatch?.confidence,
-        skills: jobData.skills.length,
+        skills: jobData.skills?.length || 0,
         department: jobData.department
       });
 
@@ -106,7 +115,7 @@ export class EnhancedJobBoardManager {
   }
 
   // Match SOC code using server-side fuzzy matching
-  private async matchSocCodeOnServer(jobData: EnhancedJobData): Promise<SocCodeMatch | null> {
+  private async matchSocCodeOnServer(jobData: JobData): Promise<SocCodeMatch | null> {
     try {
       const response = await post<any>("/api/soc-codes/match", {
         title: jobData.title,
@@ -127,7 +136,7 @@ export class EnhancedJobBoardManager {
   }
 
   // Queue job for offline/retry processing
-  private async queueJob(jobData: EnhancedJobData, status: KanbanStatus): Promise<void> {
+  private async queueJob(jobData: JobData, status: KanbanStatus): Promise<void> {
     try {
       const { pendingJobs } = await safeChromeStorageGet("local", ["pendingJobs"], { pendingJobs: [] as PendingJob[] }, "enhancedAddToBoard");
       
@@ -192,7 +201,7 @@ export class EnhancedJobBoardManager {
   }
 
   // Enhanced add to board with better data extraction
-  async addToBoard(jobData: EnhancedJobData, status: KanbanStatus = "interested", isRetry = false): Promise<JobBoardEntry | null> {
+  async addToBoard(jobData: JobData, status: KanbanStatus = "interested", isRetry = false): Promise<JobBoardEntry | null> {
     try {
       const userId = await this.getUserId();
       if (!userId) {
@@ -203,8 +212,8 @@ export class EnhancedJobBoardManager {
       console.log('[HireAll] User authenticated:', { userId });
 
       // Check if job already exists
-      const normalizedUrl = normalizeJobUrl(jobData.url);
-      const jobIdentifier = extractJobIdentifier(jobData.url);
+      const normalizedUrl = normalizeJobUrl(jobData.url || "");
+      const jobIdentifier = extractJobIdentifier(jobData.url || "");
       const existingJob = await this.checkJobExists(normalizedUrl, userId, jobIdentifier);
       if (existingJob) {
         console.log("Job already exists in board:", existingJob.id);
@@ -242,8 +251,10 @@ export class EnhancedJobBoardManager {
         normalizedUrl,
         jobIdentifier,
         description: jobData.description,
-        salary: jobData.salary?.original || jobData.salary?.min?.toString(),
-        salaryRange: jobData.salary ? {
+        salary: isSalaryInfo(jobData.salary) 
+                ? (jobData.salary.original || jobData.salary.min?.toString()) 
+                : jobData.salary,
+        salaryRange: isSalaryInfo(jobData.salary) ? {
           min: jobData.salary.min,
           max: jobData.salary.max,
           currency: jobData.salary.currency,
@@ -335,6 +346,7 @@ export class EnhancedJobBoardManager {
         applicationDeadline: jobData.applicationDeadline,
         isSponsored: jobData.isSponsored,
         sponsorshipType: jobData.sponsorshipType,
+        jobIdentifier: jobIdentifier,
         socCode: jobData.socCode,
         socMatchConfidence: jobData.socMatch?.confidence,
         department: jobData.department,
@@ -381,7 +393,8 @@ export class EnhancedJobBoardManager {
           dateAdded: new Date().toISOString(),
           status: status,
           notes: "Queued for sync",
-          salary: jobData.salary?.original,
+          jobIdentifier: extractJobIdentifier(jobData.url || ""),
+          salary: isSalaryInfo(jobData.salary) ? jobData.salary.original : jobData.salary,
           description: jobData.description,
           skills: jobData.skills,
           isSponsored: jobData.isSponsored,
@@ -396,7 +409,7 @@ export class EnhancedJobBoardManager {
   }
 
   // Generate intelligent notes based on job analysis
-  private generateJobNotes(jobData: EnhancedJobData): string {
+  private generateJobNotes(jobData: JobData): string {
     const notes: string[] = [];
 
     // Add SOC code information
@@ -420,7 +433,7 @@ export class EnhancedJobBoardManager {
     }
 
     // Add key skills summary
-    if (jobData.skills.length > 0) {
+    if (jobData.skills && jobData.skills.length > 0) {
       notes.push(`Key skills: ${jobData.skills.slice(0, 5).join(", ")}`);
     }
 
@@ -430,13 +443,14 @@ export class EnhancedJobBoardManager {
     }
 
     // Add extracted keywords
-    if (jobData.extractedKeywords.length > 0) {
+    if (jobData.extractedKeywords && jobData.extractedKeywords.length > 0) {
       notes.push(`Keywords: ${jobData.extractedKeywords.slice(0, 5).join(", ")}`);
     }
 
     // Add salary information
     if (jobData.salary) {
-      notes.push(`Salary: ${jobData.salary.original}`);
+      const salaryText = isSalaryInfo(jobData.salary) ? jobData.salary.original : jobData.salary;
+      notes.push(`Salary: ${salaryText}`);
     }
 
     return notes.join(" | ");
@@ -499,7 +513,8 @@ export class EnhancedJobBoardManager {
       department: jobData.department,
       seniority: jobData.seniority,
       employmentType: jobData.employmentType,
-      locationType: jobData.locationType
+      locationType: jobData.locationType,
+      jobIdentifier: jobData.jobIdentifier
     };
   }
 

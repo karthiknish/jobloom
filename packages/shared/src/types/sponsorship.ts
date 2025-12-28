@@ -29,3 +29,28 @@ export interface CompanySponsorshipResult {
   source: string;
   matchedName?: string;
 }
+
+export interface SponsorLookupResult {
+  id?: string;
+  name: string;
+  company: string;
+  city?: string;
+  route?: string;
+  typeRating?: string;
+  sponsorshipType?: string;
+  isActive: boolean;
+  eligibleForSponsorship: boolean;
+  isLicensedSponsor: boolean;
+  isSkilledWorker: boolean;
+  lastUpdated?: string | number | null;
+  source?: string;
+  raw?: any;
+  matchConfidence?: number;
+  nameMatch?: 'exact' | 'partial' | 'fuzzy' | 'none';
+  locationMatch?: 'exact' | 'partial' | 'none' | 'not_provided';
+}
+
+export interface SponsorLookupOptions {
+  city?: string;
+  location?: string;
+}

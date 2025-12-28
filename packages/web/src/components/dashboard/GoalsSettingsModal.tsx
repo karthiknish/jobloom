@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Target, Briefcase, Star, TrendingUp, Save, RotateCcw } from "lucide-react";
 import { useRestoreFocus } from "@/hooks/useRestoreFocus";
+import { ANALYTICS_GOALS } from "@hireall/shared";
 
 interface GoalsSettingsModalProps {
   open: boolean;
@@ -33,8 +34,8 @@ interface GoalsSettingsModalProps {
 }
 
 const DEFAULT_GOALS = {
-  weeklyApplications: 10,
-  responseRate: 20,
+  weeklyApplications: ANALYTICS_GOALS.weeklyApplications,
+  responseRate: ANALYTICS_GOALS.responseRate,
 };
 
 export function GoalsSettingsModal({
@@ -64,9 +65,9 @@ export function GoalsSettingsModal({
   };
 
   const goalPresets = [
-    { name: "Casual", weeklyApplications: 5, responseRate: 15 },
-    { name: "Active", weeklyApplications: 10, responseRate: 20 },
-    { name: "Aggressive", weeklyApplications: 20, responseRate: 25 },
+    { name: "Casual", weeklyApplications: Math.floor(ANALYTICS_GOALS.weeklyApplications / 2), responseRate: ANALYTICS_GOALS.responseRate - 5 },
+    { name: "Active", weeklyApplications: ANALYTICS_GOALS.weeklyApplications, responseRate: ANALYTICS_GOALS.responseRate },
+    { name: "Aggressive", weeklyApplications: ANALYTICS_GOALS.weeklyApplications * 2, responseRate: ANALYTICS_GOALS.responseRate + 5 },
   ];
 
   return (

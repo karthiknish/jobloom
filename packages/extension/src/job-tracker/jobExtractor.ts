@@ -1,3 +1,4 @@
+import { extractJobIdentifier } from "@hireall/shared";
 import type { JobData } from "./types";
 
 export function extractLinkedInJob(element: Element): JobData {
@@ -147,16 +148,15 @@ export function extractLinkedInJob(element: Element): JobData {
     postedDate: normalizePostedDate(postedDateRaw),
     source: "linkedin",
     jobId: extractJobId(url),
-    metadata: {
-      remote: remoteFlag,
-      seniority,
-      applicantCount,
-      easyApply,
-      workplaceType,
-      companyLogo,
-    },
+    jobIdentifier: extractJobIdentifier(url),
     isSponsored: detectSponsored(element),
     dateFound: new Date().toISOString(),
+    seniority,
+    applicantCount,
+    easyApply,
+    locationType: workplaceType, // Map workplaceType to locationType
+    companyLogo,
+    extractionMethod: "normal",
   };
 }
 

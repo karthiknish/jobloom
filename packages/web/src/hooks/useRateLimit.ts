@@ -2,7 +2,8 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { showError } from '@/components/ui/Toast';
-import { ClientRateLimiter, RateLimitConfig, RATE_LIMITS } from '../lib/rateLimiter';
+import { ClientRateLimiter, RateLimitConfig } from '../lib/rateLimiter';
+import { RATE_LIMITS } from '@hireall/shared';
 
 const DEFAULT_CONFIG: RateLimitConfig = {
   maxRequests: 100,

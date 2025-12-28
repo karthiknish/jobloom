@@ -60,7 +60,11 @@ export class JobsService {
       ...doc.data()
     } as Job));
 
-    return jobs.sort((a, b) => (b.dateFound ?? 0) - (a.dateFound ?? 0));
+    return jobs.sort((a, b) => {
+      const dateA = typeof a.dateFound === 'string' ? new Date(a.dateFound).getTime() : (a.dateFound ?? 0);
+      const dateB = typeof b.dateFound === 'string' ? new Date(b.dateFound).getTime() : (b.dateFound ?? 0);
+      return dateB - dateA;
+    });
   }
 
   /**

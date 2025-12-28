@@ -2,6 +2,32 @@
  * Job-related types
  */
 
+export type JobSite = 'linkedin' | 'indeed' | 'reed' | 'totaljobs' | 'cvlibrary' | 'glassdoor' | 'generic' | 'unknown';
+
+export interface SalaryInfo {
+  min?: number;
+  max?: number;
+  currency: string;
+  period: string;
+  original: string;
+}
+
+export interface VisaSponsorshipInfo {
+  mentioned: boolean;
+  available: boolean;
+  type?: string;
+  requirements?: string[];
+}
+
+export interface SocCodeMatch {
+  code: string;
+  title: string;
+  confidence: number;
+  matchedKeywords: string[];
+  relatedTitles: string[];
+  eligibility: string;
+}
+
 // Re-declare KanbanStatus locally to avoid circular import with application.ts
 type KanbanStatus =
   | "interested"
@@ -28,20 +54,27 @@ export interface Job {
   url?: string;
   /** Full job description */
   description?: string;
-  /** Raw salary string */
-  salary?: string;
-  /** Structured salary range information */
+  /** Source of the job posting (e.g., LinkedIn, Indeed) */
+  source: JobSite | string;
+  /** Structured salary info from parser or raw salary string */
+  salary?: string | SalaryInfo | null;
+  /** Structured salary range information (legacy/simplified) */
   salaryRange?: {
     min?: number;
     max?: number;
     currency?: string;
+    period?: string;
   } | null;
+  /** Legacy jobId used in the extension */
+  jobId?: string;
   /** Required skills */
   skills?: string[];
   /** Specific job requirements */
   requirements?: string[];
   /** Employee benefits */
   benefits?: string[];
+  /** Required qualifications */
+  qualifications?: string[];
   /** Type of job (Full-time, Contract, etc.) */
   jobType?: string;
   /** Required experience level */
@@ -62,14 +95,16 @@ export interface Job {
   isRecruitmentAgency?: boolean;
   /** Type of sponsorship offered */
   sponsorshipType?: string;
-  /** Source of the job posting (e.g., LinkedIn, Indeed) */
-  source: string;
   /** Timestamp when the job was found */
-  dateFound: number;
+  dateFound: number | string;
   /** Standardized SOC code for the role */
   likelySocCode?: string;
+  /** Legacy SOC code field used in some components */
+  socCode?: string;
   /** Confidence score for the SOC code match */
   socMatchConfidence?: number;
+  /** Complete SOC match details if available */
+  socMatch?: SocCodeMatch;
   /** Company department */
   department?: string;
   /** Level of seniority */
@@ -80,6 +115,14 @@ export interface Job {
   locationType?: string;
   /** Keywords extracted from the description */
   extractedKeywords?: string[];
+  /** Normalized title for matching */
+  normalizedTitle?: string;
+  /** URL that has been cleaned of tracking parameters */
+  normalizedUrl?: string;
+  /** Unique identifier for the job on its source site */
+  jobIdentifier: string;
+  /** Detailed visa sponsorship info */
+  visaSponsorship?: VisaSponsorshipInfo;
   /** Legacy status field */
   status?: KanbanStatus;
   /** Legacy notes field */
@@ -90,7 +133,23 @@ export interface Job {
   createdAt?: number;
   /** Timestamp when last updated */
   updatedAt?: number;
+  /** Number of applicants for this job */
+  applicantCount?: number;
+  /** Whether job has LinkedIn Easy Apply */
+  easyApply?: boolean;
+  /** Company logo URL */
+  companyLogo?: string;
+  /** Method used for extraction (normal, fallback, empty) */
+  extractionMethod?: string;
+  /** True if site is not supported */
+  unsupportedSite?: boolean;
 }
+
+/**
+ * Represents job data extracted or manually entered before being persisted.
+ * Excludes backend-specific fields like _id and userId.
+ */
+export type JobData = Omit<Job, "_id" | "userId">;
 
 /**
  * Statistics for the jobs and applications dashboard.

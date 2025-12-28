@@ -7,7 +7,7 @@
 
 import { extractLinkedInJob } from "../job-tracker/jobExtractor";
 import type { JobData } from "../job-tracker/types";
-import { isLikelyPlaceholderCompany, normalizeCompanyName } from "@hireall/shared";
+import { isLikelyPlaceholderCompany, normalizeCompanyName, extractJobIdentifier } from "@hireall/shared";
 
 export type { JobData } from "../job-tracker/types";
 
@@ -427,10 +427,9 @@ function createFallbackJobData(element: Element): JobData {
     source: "linkedin",
     dateFound: new Date().toISOString(),
     isSponsored: false,
-    metadata: {
-      remote: false,
-      extractionMethod: "fallback",
-    },
+    remoteWork: false,
+    extractionMethod: "fallback",
+    jobIdentifier: extractJobIdentifier(window.location.href),
   };
 }
 
@@ -446,11 +445,10 @@ function createEmptyJobData(source: string): JobData {
     source,
     dateFound: new Date().toISOString(),
     isSponsored: false,
-    metadata: {
-      remote: false,
-      extractionMethod: "empty",
-      unsupportedSite: true,
-    },
+    remoteWork: false,
+    extractionMethod: "empty",
+    unsupportedSite: true,
+    jobIdentifier: extractJobIdentifier(window.location.href),
   };
 }
 

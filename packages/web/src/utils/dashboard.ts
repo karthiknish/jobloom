@@ -1,4 +1,5 @@
-import { Application } from '@/types/dashboard';
+import { Application, SalaryInfo } from '@/types/dashboard';
+import { GREETING_CONFIG } from '@hireall/shared';
 
 export function calculateResponseRate(applications: Application[]): number {
   if (applications.length === 0) return 0;
@@ -162,7 +163,11 @@ export function calculateSalaryGrowth(applications: Application[]) {
 
   const getSalaryValue = (app: Application): number => {
     if (app.job?.salaryRange?.min) return app.job.salaryRange.min;
-    const match = app.job?.salary?.match(/\d+/g);
+    
+    const salary = app.job?.salary;
+    const salaryStr = typeof salary === 'string' ? salary : (salary ? salary.original : '');
+    
+    const match = salaryStr.match(/\d+/g);
     return match ? parseInt(match.join('')) : 0;
   };
 
@@ -191,7 +196,10 @@ export function calculateSalaryMetrics(applications: Application[]) {
       if (app.job?.salaryRange?.max) return app.job.salaryRange.max;
       
       // Try to parse from string
-      const match = app.job?.salary?.replace(/,/g, '').match(/\d+/g);
+      const salary = app.job?.salary;
+      const salaryStr = typeof salary === 'string' ? salary : (salary ? salary.original : '');
+      const match = salaryStr.replace(/,/g, '').match(/\d+/g);
+      
       if (match && match.length >= 2) {
         return (parseInt(match[0]) + parseInt(match[1])) / 2;
       } else if (match && match.length === 1) {
@@ -237,9 +245,9 @@ export function formatApplicationDate(timestamp: number): string {
 
 export function getGreeting(): string {
   const hour = new Date().getHours();
-  if (hour < 12) return "Good morning";
-  if (hour < 18) return "Good afternoon";
-  return "Good evening";
+  if (hour >= GREETING_CONFIG.morning.start && hour < GREETING_CONFIG.morning.end) return GREETING_CONFIG.morning.greeting;
+  if (hour >= GREETING_CONFIG.afternoon.start && hour < GREETING_CONFIG.afternoon.end) return GREETING_CONFIG.afternoon.greeting;
+  return GREETING_CONFIG.evening.greeting;
 }
 
 export function filterApplications(applications: Application[], searchTerm: string, statusFilter: string, companyFilter: string): Application[] {
@@ -260,4 +268,9 @@ export function getUniqueCompanies(applications: Application[]): string[] {
     .map((app) => app.job?.company)
     .filter((company): company is string => !!company);
   return Array.from(new Set(companies)).sort();
+}
+
+export function getSalaryDisplay(salary: string | SalaryInfo | null | undefined): string {
+  if (!salary) return "";
+  return typeof salary === 'string' ? salary : salary.original;
 }

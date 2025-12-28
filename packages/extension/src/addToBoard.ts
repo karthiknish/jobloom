@@ -11,35 +11,10 @@
 // Re-export EnhancedJobBoardManager as the primary export
 export { EnhancedJobBoardManager } from "./enhancedAddToBoard";
 
+import { KanbanStatus } from "@hireall/shared";
+
 // Legacy type exports for backwards compatibility
-export interface JobData {
-  title: string;
-  company: string;
-  location: string;
-  url: string;
-  description?: string;
-  salary?: string;
-  salaryRange?: {
-    min?: number;
-    max?: number;
-    currency?: string;
-    period?: string;
-  };
-  skills?: string[];
-  requirements?: string[];
-  benefits?: string[];
-  jobType?: string;
-  experienceLevel?: string;
-  remoteWork?: boolean;
-  companySize?: string;
-  industry?: string;
-  postedDate?: string;
-  applicationDeadline?: string;
-  isSponsored: boolean;
-  sponsorshipType?: string;
-  dateFound: string;
-  source: string;
-}
+import { JobData } from "./job-tracker/types";
 
 export interface JobBoardEntry {
   id: string;
@@ -48,7 +23,8 @@ export interface JobBoardEntry {
   location: string;
   url: string;
   dateAdded: string;
-  status: "interested" | "applied" | "rejected" | "offered" | "withdrawn";
+  status: KanbanStatus;
+  jobIdentifier: string;
   notes: string;
   salary?: string;
   skills?: string[];

@@ -51,6 +51,7 @@ import { EmailHistory } from "./EmailHistory";
 import { UkVisaBadge } from "./UkVisaBadge";
 import { dashboardApi } from "@/utils/api/dashboard";
 import { cn } from "@/lib/utils";
+import { getSalaryDisplay } from "@/utils/dashboard";
 
 interface JobDetailsModalProps {
   application: Application | null;
@@ -377,7 +378,7 @@ export function JobDetailsModal({
                       <div>
                         <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Salary</p>
                         <p className="font-bold text-green-700 leading-tight">
-                          {job.salary}
+                          {getSalaryDisplay(job.salary)}
                         </p>
                       </div>
                     </motion.div>

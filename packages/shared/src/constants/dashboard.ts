@@ -49,5 +49,5 @@ export const GREETING_CONFIG = {
 
 export const ANALYTICS_GOALS = {
   weeklyApplications: 10,
-  responseRate: 30,
+  responseRate: 20,
 } as const;

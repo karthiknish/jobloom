@@ -59,6 +59,7 @@ import Link from "next/link";
 import { CHROME_EXTENSION_URL, isExternalUrl } from "@/config/links";
 import { useRestoreFocus } from "@/hooks/useRestoreFocus";
 import { useBulkSelection } from "@/hooks/useBulkSelection";
+import { getSalaryDisplay } from "@/utils/dashboard";
 
 interface JobImportModalProps {
   isOpen: boolean;
@@ -718,7 +719,7 @@ export function JobImportModal({
                                   <div className="flex-1 min-w-0">
                                     <p className="font-medium text-sm truncate">{job.title}</p>
                                     <p className="text-xs text-muted-foreground truncate">
-                                      {job.company} • {job.location}
+                                      {job.company} • {job.location} {job.salary && `• ${getSalaryDisplay(job.salary)}`}
                                     </p>
                                     <div className="flex items-center gap-2 mt-1">
                                       {job.source && (
@@ -942,7 +943,7 @@ export function JobImportModal({
                       </div>
                       <div className="space-y-1">
                         <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest px-0.5">Salary</p>
-                        <p className="text-sm font-bold text-emerald-700 truncate bg-white/50 p-2 rounded-lg border border-emerald-100/50">{parsedJob.salary || "Competitive"}</p>
+                        <p className="text-sm font-bold text-emerald-700 truncate bg-white/50 p-2 rounded-lg border border-emerald-100/50">{getSalaryDisplay(parsedJob.salary) || "Competitive"}</p>
                       </div>
                     </div>
 

@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Application } from "@/types/dashboard";
 import { CvAnalysis } from "@/types/api";
 import { JobStats } from "@/types/dashboard";
+import { ANALYTICS_GOALS } from "@hireall/shared";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -59,9 +60,12 @@ export function DashboardAnalytics({
   const [showWeeklySummaryModal, setShowWeeklySummaryModal] = useState(false);
   
   // Goals state
-  const [goals, setGoals] = useState({
-    weeklyApplications: 10,
-    responseRate: 20,
+  const [goals, setGoals] = useState<{
+    weeklyApplications: number;
+    responseRate: number;
+  }>({
+    weeklyApplications: ANALYTICS_GOALS.weeklyApplications,
+    responseRate: ANALYTICS_GOALS.responseRate,
   });
 
   // Load goals from Firestore-backed preferences, with localStorage fallback + migration

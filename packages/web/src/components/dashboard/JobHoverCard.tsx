@@ -22,6 +22,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { Application } from "@/utils/api/dashboard";
+import { getSalaryDisplay } from "@/utils/dashboard";
 
 interface JobHoverCardProps {
   application: Application;
@@ -100,7 +101,7 @@ export const JobHoverCard = React.memo(function JobHoverCard({
             {application.job?.salary && (
               <div className="flex items-center gap-2 text-sm">
                 <DollarSign className="h-3 w-3 text-muted-foreground" />
-                <span className="font-medium">{application.job.salary}</span>
+                <span className="font-medium">{getSalaryDisplay(application.job.salary)}</span>
               </div>
             )}
 

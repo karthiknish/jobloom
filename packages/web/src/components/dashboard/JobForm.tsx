@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { motion, AnimatePresence } from "framer-motion";
@@ -32,8 +32,10 @@ import {
   readAndMigrateJsonFromStorage,
   writeJsonToStorage,
 } from "@/constants/storageKeys";
+import { extractJobIdentifier } from "@hireall/shared";
 
 import { Job } from "@/types/dashboard";
+import { getSalaryDisplay } from "@/utils/dashboard";
 
 const jobSchema = z.object({
   title: z.string().min(1, "Job title is required").max(200, "Title must be less than 200 characters"),
@@ -49,7 +51,19 @@ const jobSchema = z.object({
   experienceLevel: z.string().default(""),
 });
 
-type JobFormValues = z.infer<typeof jobSchema>;
+type JobFormValues = {
+  title: string;
+  company: string;
+  location: string;
+  url: string;
+  description: string;
+  salary: string;
+  isSponsored: boolean;
+  isRecruitmentAgency: boolean;
+  source: string;
+  jobType: string;
+  experienceLevel: string;
+};
 
 interface JobFormProps {
   onSubmit: (data: Job) => Promise<void>;
@@ -97,7 +111,7 @@ export function JobForm({ onSubmit, onCancel, initialData, isEditing = false }: 
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const form = useForm<JobFormValues>({
+  const form: any = useForm<JobFormValues>({
     resolver: zodResolver(jobSchema) as any,
     defaultValues: {
       title: initialData?.title || "",
@@ -105,7 +119,7 @@ export function JobForm({ onSubmit, onCancel, initialData, isEditing = false }: 
       location: initialData?.location || "",
       url: initialData?.url || "",
       description: initialData?.description || "",
-      salary: initialData?.salary || "",
+      salary: getSalaryDisplay(initialData?.salary) || "",
       isSponsored: initialData?.isSponsored || false,
       isRecruitmentAgency: initialData?.isRecruitmentAgency || false,
       source: initialData?.source || "manual",
@@ -127,7 +141,17 @@ export function JobForm({ onSubmit, onCancel, initialData, isEditing = false }: 
         if (draft.title || draft.company || draft.description) {
           form.reset({
             ...form.getValues(),
-            ...draft,
+            title: draft.title || "",
+            company: draft.company || "",
+            location: draft.location || "",
+            url: draft.url || "",
+            description: draft.description || "",
+            salary: typeof draft.salary === 'string' ? draft.salary : (draft.salary?.original || ""),
+            isSponsored: draft.isSponsored || false,
+            isRecruitmentAgency: draft.isRecruitmentAgency || false,
+            source: draft.source || "manual",
+            jobType: draft.jobType || "",
+            experienceLevel: draft.experienceLevel || "",
           });
           setHasDraft(true);
         }
@@ -181,12 +205,22 @@ export function JobForm({ onSubmit, onCancel, initialData, isEditing = false }: 
 
     try {
       const payload: Job = {
-        ...(initialData as Job),
-        ...values,
         _id: initialData?._id || "",
         userId: initialData?.userId || "",
+        title: values.title,
+        company: values.company,
+        location: values.location,
+        url: values.url,
+        description: values.description,
+        salary: values.salary,
+        isSponsored: values.isSponsored,
+        isRecruitmentAgency: values.isRecruitmentAgency,
+        source: values.source,
+        jobType: values.jobType,
+        experienceLevel: values.experienceLevel,
         dateFound: initialData?.dateFound || Date.now(),
-      };
+        jobIdentifier: initialData?.jobIdentifier || (values.url ? extractJobIdentifier(values.url) : `manual:${values.company}-${values.title}-${Date.now()}`),
+      } as any;
 
       await onSubmit(payload);
       setSubmitStatus("success");

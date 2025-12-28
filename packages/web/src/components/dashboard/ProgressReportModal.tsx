@@ -33,6 +33,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Application } from "@/types/dashboard";
 import { useRestoreFocus } from "@/hooks/useRestoreFocus";
+import { ANALYTICS_GOALS } from "@hireall/shared";
 
 interface ProgressReportModalProps {
   open: boolean;
@@ -48,7 +49,10 @@ export function ProgressReportModal({
   open,
   onOpenChange,
   applications = [],
-  goals = { weeklyApplications: 10, responseRate: 20 },
+  goals = { 
+    weeklyApplications: ANALYTICS_GOALS.weeklyApplications, 
+    responseRate: ANALYTICS_GOALS.responseRate 
+  },
 }: ProgressReportModalProps) {
   useRestoreFocus(open);
   const [editableGoals, setEditableGoals] = useState(goals);

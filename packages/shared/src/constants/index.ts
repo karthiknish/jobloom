@@ -21,3 +21,6 @@ export {
   GREETING_CONFIG,
   ANALYTICS_GOALS,
 } from './dashboard';
+
+export * from './animations';
+export * from './notifications';

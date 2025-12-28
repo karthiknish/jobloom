@@ -12,6 +12,7 @@ import {
   UK_RQF_LEVELS,
   getApplicableThreshold,
   formatSalaryGBP,
+  type SalaryInfo,
 } from "@hireall/shared";
 import type { UkThresholdType } from "@hireall/shared";
 
@@ -203,6 +204,13 @@ export interface SponsorshipRecord {
   ukEligibility?: UkEligibilityAssessment;
 }
 
+/**
+ * Helper to check if salary is structured SalaryInfo
+ */
+function isSalaryInfo(salary: any): salary is SalaryInfo {
+  return salary !== null && typeof salary === 'object' && 'currency' in salary;
+}
+
 export class SponsorshipManager {
   static async fetchSponsorRecord(
     company: string,
@@ -331,7 +339,8 @@ export class SponsorshipManager {
 
     if (jobDescription.salary) {
       enhanced.salary = jobDescription.salary;
-      const relevantSalary = jobDescription.salary.min ?? jobDescription.salary.max;
+      const salaryInfo = jobDescription.salary;
+      const relevantSalary = isSalaryInfo(salaryInfo) ? (salaryInfo.min ?? salaryInfo.max) : undefined;
 
       if (typeof relevantSalary === "number") {
         const thresholdResult = jobDescription.socCode
@@ -530,7 +539,8 @@ export class SponsorshipManager {
     let eligible = true;
 
     const socCode = jobDescription.socCode;
-    const offeredSalary = jobDescription.salary?.min ?? jobDescription.salary?.max;
+    const salaryInfo = jobDescription.salary;
+    const offeredSalary = isSalaryInfo(salaryInfo) ? (salaryInfo.min ?? salaryInfo.max) : undefined;
 
     // Determine if user qualifies for any discounts
     const isNewEntrant = userCriteria?.ageCategory === 'under26' || 

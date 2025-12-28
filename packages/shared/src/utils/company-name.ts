@@ -28,7 +28,7 @@ export function stripLegalSuffixes(name: string): string {
 
   // Strip a single trailing legal suffix (conservative; keep main name intact).
   text = text.replace(
-    /\s+(?:inc\.?|incorporated|ltd\.?|limited|llc|llp|lp|plc|gmbh|ag|s\.a\.?|sa|bv|b\.v\.?|pte\.?\s*ltd\.?|pty\.?\s*ltd\.?)$/i,
+    /\s+(?:inc\.?|incorporated|ltd\.?|limited|llc|llp|lp|plc|gmbh|ag|s\.a\.?|sa|bv|b\.v\.?|pte\.?\s*ltd\.?|pty\.?\s*ltd\.?|corp\.?|corporation|group|uk|international|private|pvt)$/i,
     ""
   );
 

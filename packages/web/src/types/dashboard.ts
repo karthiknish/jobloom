@@ -5,7 +5,8 @@ import {
   SavedView, 
   KanbanStatus, 
   DashboardView, 
-  BoardMode 
+  BoardMode,
+  SalaryInfo
 } from "@hireall/shared";
 
 export type ApplicationStatus = 
@@ -22,5 +23,6 @@ export type {
   SavedView, 
   KanbanStatus, 
   DashboardView, 
-  BoardMode 
+  BoardMode,
+  SalaryInfo
 };

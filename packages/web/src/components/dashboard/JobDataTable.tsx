@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { format } from "date-fns";
 import type { ColumnDef, Row } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
+import { getSalaryDisplay } from "@/utils/dashboard";
 import { ApplicationStatusBadge } from "@/components/ui/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -147,10 +148,11 @@ export function JobDataTable({
       cell: ({ row }) => {
         const salary = row.original.job?.salary;
         if (!salary) return <span className="text-muted-foreground text-sm">-</span>;
+        
         return (
           <div className="flex items-center gap-1">
             <DollarSign className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium">{salary}</span>
+            <span className="text-sm font-medium">{getSalaryDisplay(salary)}</span>
           </div>
         );
       },

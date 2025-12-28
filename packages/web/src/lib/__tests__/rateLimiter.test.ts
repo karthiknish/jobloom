@@ -1,4 +1,5 @@
-import { ClientRateLimiter, checkServerRateLimit, TIERED_RATE_LIMITS } from '../rateLimiter';
+import { ClientRateLimiter, checkServerRateLimit } from '../rateLimiter';
+import { TIERED_RATE_LIMITS } from '@hireall/shared';
 import { safeLocalStorageGet, safeLocalStorageSet } from '@/utils/safeBrowserStorage';
 import { SecurityLogger } from '@/utils/security';
 

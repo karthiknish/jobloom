@@ -8,7 +8,7 @@ import {
 } from "./SponsorshipManager";
 import { EnhancedJobBoardManager } from "../enhancedAddToBoard";
 import { UnifiedJobParser, type JobData as EnhancedJobData } from "../parsers";
-import { isLikelyPlaceholderCompany, normalizeCompanyName } from "@hireall/shared";
+import { isLikelyPlaceholderCompany, normalizeCompanyName, type SalaryInfo } from "@hireall/shared";
 import { QuickNotes } from "./QuickNotes";
 import { JobEditModal } from "./JobEditModal";
 
@@ -28,6 +28,13 @@ export interface SponsorshipCheckResult {
 interface HighlightEntry {
   card: Element;
   badge: HTMLElement;
+}
+
+/**
+ * Helper to check if salary is structured SalaryInfo
+ */
+function isSalaryInfo(salary: any): salary is SalaryInfo {
+  return salary !== null && typeof salary === 'object' && 'currency' in salary;
 }
 
 export class JobTracker {
@@ -62,11 +69,13 @@ export class JobTracker {
     if (jobContext?.socCode) {
       parts.push(jobContext.socCode);
     }
-    if (typeof jobContext?.salary?.min === "number") {
-      parts.push(`min:${jobContext.salary.min}`);
-    }
-    if (typeof jobContext?.salary?.max === "number" && jobContext.salary.max !== jobContext.salary?.min) {
-      parts.push(`max:${jobContext.salary.max}`);
+    if (isSalaryInfo(jobContext?.salary)) {
+      if (typeof jobContext.salary.min === "number") {
+        parts.push(`min:${jobContext.salary.min}`);
+      }
+      if (typeof jobContext.salary.max === "number" && jobContext.salary.max !== jobContext.salary.min) {
+        parts.push(`max:${jobContext.salary.max}`);
+      }
     }
     return parts.join("|");
   }
@@ -646,7 +655,7 @@ export class JobTracker {
           title: jobData.title,
           company: jobData.company,
           location: jobData.location,
-          salary: jobData.salary?.original || "",
+          salary: isSalaryInfo(jobData.salary) ? (jobData.salary.original || "") : (jobData.salary || ""),
           status: "interested",
         },
         (updatedData) => {

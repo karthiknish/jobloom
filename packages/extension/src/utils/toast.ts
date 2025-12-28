@@ -1,13 +1,7 @@
+import { NotificationOptions as ToastOptions } from "@hireall/shared";
 import { createSVGString } from "./icons";
 
-export interface ToastOptions {
-  type?: "success" | "info" | "warning" | "error";
-  duration?: number;
-  action?: {
-    text: string;
-    handler: () => void;
-  };
-}
+export type { ToastOptions };
 
 export function showToast(
   message: string,
@@ -36,7 +30,7 @@ export function showToast(
       ? createSVGString("xCircle")
       : createSVGString("bell");
       
-  const actionHtml = action ? `<button class="toast-action" data-action="true">${action.text}</button>` : '';
+  const actionHtml = action ? `<button class="toast-action" data-action="true">${action.label}</button>` : '';
   
   el.innerHTML = `
     <span class="icon">${icon}</span>
@@ -55,7 +49,7 @@ export function showToast(
   
   if (action) {
     el.querySelector(".toast-action")?.addEventListener("click", () => {
-      action.handler();
+      action.onClick();
       remove();
     });
   }

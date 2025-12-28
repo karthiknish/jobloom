@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { Application } from "@/types/dashboard";
 import { useRestoreFocus } from "@/hooks/useRestoreFocus";
+import { ANALYTICS_GOALS } from "@hireall/shared";
 
 interface WeeklySummaryModalProps {
   open: boolean;
@@ -145,7 +146,7 @@ export function WeeklySummaryModal({
   if (thisWeekStats.offered > 0) {
     highlights.push({ icon: <CheckCircle2 className="h-4 w-4 text-green-600" />, text: `${thisWeekStats.offered} offer${thisWeekStats.offered > 1 ? 's' : ''} received!`, type: "success" });
   }
-  if (thisWeekStats.added >= 10) {
+  if (thisWeekStats.added >= ANALYTICS_GOALS.weeklyApplications) {
     highlights.push({ icon: <Sparkles className="h-4 w-4 text-amber-600" />, text: `Great week! ${thisWeekStats.added} applications added`, type: "highlight" });
   }
   if (change > 0) {
@@ -331,7 +332,7 @@ export function WeeklySummaryModal({
             <div className="text-center py-4 text-sm text-muted-foreground">
               {thisWeekStats.added === 0 ? (
                 <p>No applications this week yet. Keep pushing!</p>
-              ) : thisWeekStats.added >= 10 ? (
+              ) : thisWeekStats.added >= ANALYTICS_GOALS.weeklyApplications ? (
                 <p>Amazing progress! Keep the momentum going!</p>
               ) : (
                 <p>Good work! Stay consistent for best results.</p>

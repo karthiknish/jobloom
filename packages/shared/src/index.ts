@@ -25,10 +25,15 @@ export type {
   ApiResponse,
   // Job types
   Job,
+  JobData,
   JobStats,
   CreateJobRequest,
   CreateJobResponse,
   UpdateJobRequest,
+  JobSite,
+  SalaryInfo,
+  VisaSponsorshipInfo,
+  SocCodeMatch,
   // Application types
   KanbanStatus,
   DashboardView,
@@ -51,6 +56,8 @@ export type {
   SponsoredCompany,
   SponsorshipStats,
   CompanySponsorshipResult,
+  SponsorLookupResult,
+  SponsorLookupOptions,
   // Blog types
   BlogPost,
   BlogCategory,
@@ -60,6 +67,15 @@ export type {
   // Activity types
   ActivityLog,
   Notification,
+  // Notification types
+  NotificationType,
+  NotificationAction,
+  NotificationOptions,
+  // Communication types
+  ExtensionMessageType,
+  ExtensionMessage,
+  SaveJobRequest,
+  AuthStateMessage,
 } from './types';
 
 // ============================================
@@ -80,6 +96,16 @@ export {
   STATUS_BADGE_CONFIG,
   GREETING_CONFIG,
   ANALYTICS_GOALS,
+  // Notification constants
+  NOTIFICATION_MESSAGES,
+  // Animation constants
+  DURATIONS,
+  EASING,
+  KEYFRAMES,
+  ANIMATIONS,
+  CSS_CLASSES,
+  PRESETS,
+  createTransition,
 } from './constants';
 
 // ============================================
@@ -118,3 +144,17 @@ export {
   normalizeJobUrl,
   extractJobIdentifier,
 } from './utils';
+
+// ============================================
+// Rate Limiter
+// ============================================
+export {
+  TIERED_RATE_LIMITS,
+  RATE_LIMITS,
+} from './rate-limiter';
+
+export type {
+  RateLimitConfig,
+  UserTierLimits,
+  RateLimits,
+} from './rate-limiter';

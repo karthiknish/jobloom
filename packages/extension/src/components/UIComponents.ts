@@ -1,6 +1,4 @@
-export type ToastType = "success" | "info" | "warning" | "error";
-
-import { DURATIONS, EASING, createTransition } from "../animations";
+import { NotificationType as ToastType, DURATIONS, EASING } from "@hireall/shared";
 
 const ICON_PATHS: Record<string, string> = {
   target: '<circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" />',

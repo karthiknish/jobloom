@@ -66,7 +66,9 @@ function assessUkVisaEligibility(
   }
 
   // Check salary
-  const salary = job.salaryRange?.min || (job.salary ? parseSalary(job.salary) : undefined);
+  const salaryVal = job.salary;
+  const salaryStr = typeof salaryVal === 'string' ? salaryVal : (salaryVal ? salaryVal.original : '');
+  const salary = job.salaryRange?.min || (salaryStr ? parseSalary(salaryStr) : undefined);
   
   if (salary !== undefined) {
     if (salary >= applicableThreshold) {

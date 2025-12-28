@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { QueryDocumentSnapshot } from "firebase-admin/firestore";
 import { withApi, OPTIONS } from "@/lib/api/withApi";
 import { getAdminDb } from "@/firebase/admin";
+import { stripLegalSuffixes as normalizeCompanyName } from "@hireall/shared";
 
 // Re-export OPTIONS for CORS preflight
 export { OPTIONS };
@@ -21,16 +22,7 @@ const sponsorCheckSchema = z.object({
 // HELPER FUNCTIONS
 // ============================================================================
 
-function normalizeCompanyName(name: string): string {
-  return name
-    .toLowerCase()
-    .trim()
-    .replace(/\s+(ltd|limited|plc|llc|inc|corp|corporation|group|uk|international)\.?$/gi, '')
-    .replace(/\s+(private|pvt)\.?\s*(ltd|limited)?\.?$/gi, '')
-    .replace(/[^\w\s]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
+
 
 function calculateSimilarity(str1: string, str2: string): number {
   const s1 = str1.toLowerCase();

@@ -17,10 +17,15 @@ export type {
 // Job types
 export type {
   Job,
+  JobData,
   JobStats,
   CreateJobRequest,
   CreateJobResponse,
   UpdateJobRequest,
+  JobSite,
+  SalaryInfo,
+  VisaSponsorshipInfo,
+  SocCodeMatch,
 } from './job';
 
 // Application types
@@ -55,6 +60,8 @@ export type {
   SponsoredCompany,
   SponsorshipStats,
   CompanySponsorshipResult,
+  SponsorLookupResult,
+  SponsorLookupOptions,
 } from './sponsorship';
 
 // Blog types
@@ -74,3 +81,9 @@ export type {
   ActivityLog,
   Notification,
 } from './activity';
+
+// Notification types
+export * from './notifications';
+
+// Communication types
+export * from './communication';

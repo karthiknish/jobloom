@@ -54,6 +54,7 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { JobDataTable } from "./JobDataTable";
+import { getSalaryDisplay } from "@/utils/dashboard";
 
 interface JobListProps {
   applications: Application[];
@@ -145,7 +146,7 @@ export function JobList({
     filtered.sort((a, b) => {
       switch (sortBy) {
         case "dateFound":
-          return (b.job?.dateFound || 0) - (a.job?.dateFound || 0);
+          return (Number(b.job?.dateFound) || 0) - (Number(a.job?.dateFound) || 0);
         case "company":
           return (a.job?.company || "").localeCompare(b.job?.company || "");
         case "title":

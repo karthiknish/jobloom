@@ -13,85 +13,25 @@
 
 import { post } from '../apiClient';
 import { fetchSponsorRecord } from '../sponsorship/lookup';
-import { isLikelyPlaceholderCompany, normalizeCompanyName, normalizeJobUrl, extractJobIdentifier } from '@hireall/shared';
+import { 
+  isLikelyPlaceholderCompany, 
+  normalizeCompanyName, 
+  normalizeJobUrl, 
+  extractJobIdentifier,
+  JobSite,
+  SalaryInfo,
+  VisaSponsorshipInfo,
+  SocCodeMatch,
+  JobData
+} from '@hireall/shared';
 
 // ============================================================================
 // Types and Interfaces
 // ============================================================================
 
-export type JobSite = 'linkedin' | 'indeed' | 'reed' | 'totaljobs' | 'cvlibrary' | 'glassdoor' | 'generic' | 'unknown';
-
-export interface SalaryInfo {
-  min?: number;
-  max?: number;
-  currency: string;
-  period: string;
-  original: string;
-}
-
-export interface VisaSponsorshipInfo {
-  mentioned: boolean;
-  available: boolean;
-  type?: string;
-  requirements?: string[];
-}
-
-export interface SocCodeMatch {
-  code: string;
-  title: string;
-  confidence: number;
-  matchedKeywords: string[];
-  relatedTitles: string[];
-  eligibility: string;
-}
-
-export interface JobData {
-  // Core fields
-  title: string;
-  company: string;
-  location: string;
-  url: string;
-  normalizedUrl: string;
-  jobIdentifier: string;
-  description: string;
-  
-  // Structured data
-  salary: SalaryInfo | null;
-  skills: string[];
-  requirements: string[];
-  benefits: string[];
-  qualifications: string[];
-  
-  // Job classification
-  jobType: string;
-  experienceLevel: string;
-  seniority: string;
-  department: string;
-  employmentType: string;
-  locationType: string;
-  remoteWork: boolean;
-  
-  // Company info
-  companySize: string;
-  industry: string;
-  
-  // Dates
-  postedDate: string;
-  applicationDeadline: string;
-  dateFound: string;
-  
-  // UK-specific
-  isSponsored: boolean;
-  sponsorshipType: string;
-  visaSponsorship: VisaSponsorshipInfo;
-  socCode?: string;
-  socMatch?: SocCodeMatch;
-  
-  // Metadata
-  source: JobSite;
-  normalizedTitle: string;
-  extractedKeywords: string[];
-}
+// JobSite, SalaryInfo, VisaSponsorshipInfo, SocCodeMatch, and JobData 
+// are now imported from @hireall/shared.
+export type { JobSite, SalaryInfo, VisaSponsorshipInfo, SocCodeMatch, JobData };
 
 // ============================================================================
 // Site Configuration
@@ -552,7 +492,6 @@ export class UnifiedJobParser {
       skills: this.extractSkills(rawData.description),
       requirements: this.extractRequirements(rawData.description),
       benefits: this.extractBenefits(rawData.description),
-      qualifications: this.extractQualifications(rawData.description),
       jobType: this.extractJobType(rawData.description),
       experienceLevel: this.extractExperienceLevel(rawData.description),
       seniority,
@@ -564,14 +503,13 @@ export class UnifiedJobParser {
       industry: '',
       postedDate: '',
       applicationDeadline: '',
-      dateFound: now,
-      isSponsored,
-      sponsorshipType,
-      visaSponsorship,
-      source: site,
+      extractedKeywords: keywords || [],
+      socCode: undefined, 
+      socMatch: undefined,
       normalizedTitle: normalized,
-      extractedKeywords: keywords,
-    };
+      visaSponsorship,
+      qualifications: this.extractQualifications(rawData.description),
+    } as JobData;
   }
 
   /**

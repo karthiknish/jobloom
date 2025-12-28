@@ -24,6 +24,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
 import { Job, Application } from "@/types/dashboard";
+import { getSalaryDisplay } from "@/utils/dashboard";
 import { DatePicker } from "@/components/ui/date-picker";
 
 interface ApplicationFormValues {
@@ -142,8 +143,8 @@ export function ApplicationForm({
                 {/* Additional Details */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
                   {application.job.salary && (
-                    <div>
-                      <span className="font-medium">Salary:</span> {application.job.salary}
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">Salary:</span> {getSalaryDisplay(application.job.salary)}
                     </div>
                   )}
                   {application.job.jobType && (
