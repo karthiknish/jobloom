@@ -141,7 +141,7 @@ export function DashboardEmptyState({
             </div>
             <div>
               <div className="font-medium text-sm text-foreground group-hover:text-primary transition-colors">
-                Upload Your CV
+                Upload Your resume
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
                 Get ATS score & tips

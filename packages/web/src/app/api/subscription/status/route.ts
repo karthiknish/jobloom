@@ -80,7 +80,7 @@ export const GET = withApi({
   let cvAnalysesCount = 0;
   let applicationsCount = 0;
 
-  // CV analyses usage
+  // Resume analyses usage
   try {
     const cvAnalysesQuery = await db.collection("cvAnalyses")
       .where("userId", "==", userId)

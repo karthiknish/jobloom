@@ -31,7 +31,7 @@ export function CvEvaluatorHero({ showAdvanced, setShowAdvanced }: CvEvaluatorHe
               <div className="space-y-2">
                 <h1 className="text-4xl sm:text-5xl font-bold text-white tracking-tight">CV Evaluator Pro</h1>
                 <p className="text-lg sm:text-xl text-primary-foreground/90 max-w-2xl leading-relaxed">
-                  AI-powered CV analysis and optimization with advanced ATS scoring
+                  AI-powered Resume analysis and optimization with advanced ATS scoring
                 </p>
               </div>
               <div className="flex gap-3 sm:gap-4">
@@ -61,7 +61,7 @@ export function CvEvaluatorHero({ showAdvanced, setShowAdvanced }: CvEvaluatorHe
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-2xl font-bold text-gray-900">Analysis Dashboard</h2>
-              <p className="text-gray-600">Upload and analyze your CV with AI</p>
+              <p className="text-gray-600">Upload and analyze your resume with AI</p>
             </div>
           </div>
         </div>

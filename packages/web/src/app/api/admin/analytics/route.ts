@@ -83,7 +83,7 @@ export const GET = withApi({
     statusBreakdown[status] = (statusBreakdown[status] || 0) + 1;
   });
 
-  // Fetch CV analyses
+  // Fetch Resume analyses
   const cvAnalysesSnapshot = await db.collection("cvAnalyses").get();
   const totalCvAnalyses = cvAnalysesSnapshot.size;
 

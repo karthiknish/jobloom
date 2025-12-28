@@ -139,7 +139,7 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted, onResum
     e.preventDefault();
 
     if (!file) {
-      showWarning("Select a CV file to upload");
+      showWarning("Select a resume file to upload");
       return;
     }
 
@@ -162,8 +162,8 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted, onResum
       analytics.logCvUploaded(result.analysisId || file.name, file.size, file.type);
 
       showSuccess(
-        "CV uploaded successfully",
-        "Our AI is analyzing your CV. You'll receive detailed feedback shortly."
+        "Resume uploaded successfully",
+        "Our AI is analyzing your resume. You'll receive detailed feedback shortly."
       );
       setFile(null);
       setTargetRole("");
@@ -174,7 +174,7 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted, onResum
       ) as HTMLInputElement;
       if (fileInput) fileInput.value = "";
       if (result.analysisId) {
-        // Mark CV uploaded for onboarding tracking
+        // Mark Resume uploaded for onboarding tracking
         if (!onboarding.hasUploadedCv) {
           onboarding.markCvUploaded();
         }
@@ -312,9 +312,9 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted, onResum
     >
       <Card className="shadow-sm border-border">
         <CardHeader className="pb-4">
-          <CardTitle className="text-lg">Upload Your CV for Analysis</CardTitle>
+          <CardTitle className="text-lg">Upload Your resume for Analysis</CardTitle>
           <CardDescription className="text-base">
-            Get AI-powered insights to improve your CV. Supported formats: PDF,
+            Get AI-powered insights to improve your resume. Supported formats: PDF,
             TXT (max {uploadLimits.maxSizeMB}MB)
           </CardDescription>
         </CardHeader>
@@ -347,7 +347,7 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted, onResum
                   <span className="mt-2 block text-base font-medium text-foreground">
                     {file
                       ? file.name
-                      : "Drop your CV here or click to browse"}
+                      : "Drop your resume here or click to browse"}
                   </span>
                   <Input
                     id="file-upload"
@@ -449,7 +449,7 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted, onResum
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
                   <span>
-                    Ensure your CV has clear sections (Experience, Skills,
+                    Ensure your resume has clear sections (Experience, Skills,
                     Education)
                   </span>
                 </li>
@@ -524,7 +524,7 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted, onResum
 
               <div>
                 <h3 className="text-xl font-semibold text-foreground mb-2">
-                  Analyzing Your CV
+                  Analyzing Your resume
                 </h3>
                 <p className="text-muted-foreground text-sm">
                   Our AI is reviewing your resume for optimization opportunities

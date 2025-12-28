@@ -54,7 +54,7 @@ export const GET = withApi({
     ...doc.data()
   }));
 
-  // Get CV analyses
+  // Get Resume analyses
   const cvAnalysesSnapshot = await db.collection('cvAnalyses')
     .where('userId', '==', userId)
     .get();

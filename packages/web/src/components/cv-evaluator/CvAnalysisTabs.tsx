@@ -61,7 +61,7 @@ export function CvAnalysisTabs({
           transition={{ duration: 0.3 }}
         >
           <div className="text-center py-12">
-            <p className="text-gray-500">Upload a CV first to see analysis results</p>
+            <p className="text-gray-500">Upload a resume first to see analysis results</p>
           </div>
         </motion.div>
       </TabContent>

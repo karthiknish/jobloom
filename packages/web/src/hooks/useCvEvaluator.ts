@@ -20,7 +20,7 @@ interface UseCvEvaluatorOptions {
 export function useCvEvaluator(options: UseCvEvaluatorOptions = {}) {
   const { userId, showNotifications = true, onError, onSuccess } = options;
 
-  // Get user's CV analyses
+  // Get user's Resume analyses
   const {
     data: analyses,
     loading: loadingAnalyses,
@@ -38,7 +38,7 @@ export function useCvEvaluator(options: UseCvEvaluatorOptions = {}) {
       immediate: !!userId,
       onError: (error) => {
         if (showNotifications) {
-          showError('Failed to load CV analyses');
+          showError('Failed to load Resume analyses');
         }
         onError?.(error);
       },
@@ -104,7 +104,7 @@ export function useCvEvaluator(options: UseCvEvaluatorOptions = {}) {
       },
       onSuccess: (result) => {
         if (showNotifications) {
-          showSuccess('CV uploaded successfully! Analysis in progress...');
+          showSuccess('Resume uploaded successfully! Analysis in progress...');
         }
         
         // Refresh analyses after successful upload
@@ -116,13 +116,13 @@ export function useCvEvaluator(options: UseCvEvaluatorOptions = {}) {
     }
   );
 
-  // Delete CV analysis
+  // Delete Resume analysis
   const deleteAnalysis = useCallback(async (analysisId: string) => {
     try {
       await cvEvaluatorApi.deleteCvAnalysis(analysisId);
       
       if (showNotifications) {
-        showSuccess('CV analysis deleted');
+        showSuccess('Resume analysis deleted');
       }
       
       // Refresh data
@@ -132,7 +132,7 @@ export function useCvEvaluator(options: UseCvEvaluatorOptions = {}) {
       return true;
     } catch (error) {
       if (showNotifications) {
-        showError('Failed to delete CV analysis');
+        showError('Failed to delete Resume analysis');
       }
       onError?.(error as FrontendApiError);
       return false;

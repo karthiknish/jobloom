@@ -27,7 +27,7 @@ const defaultLabels: Record<string, string> = {
   admin: "Admin",
   blog: "Blog",
   upgrade: "Upgrade",
-  "cv-evaluator": "CV Evaluator",
+  "cv-evaluator": "Resume Evaluator",
   application: "Application",
 };
 

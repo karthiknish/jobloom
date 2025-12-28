@@ -230,7 +230,7 @@ export default function CareerToolsPage() {
     }
   }, [onboarding.isLoaded, onboarding.isNewUser, user, authLoading]);
 
-  // Auto-start CV evaluator tour for new users
+  // Auto-start Resume evaluator tour for new users
   useEffect(() => {
     if (
       onboarding.isLoaded &&
@@ -337,7 +337,7 @@ export default function CareerToolsPage() {
               <div className="space-y-2">
                 <h1 className="text-3xl sm:text-4xl font-bold text-primary-foreground tracking-tight">Career Tools</h1>
                 <p className="text-base sm:text-lg text-primary-foreground/90 max-w-2xl leading-relaxed">
-                  Build professional resumes, generate cover letters, and optimize your CV with AI-powered tools
+                  Build professional resumes, generate cover letters, and optimize your resume with AI-powered tools
                 </p>
               </div>
               {showManualResumeActions ? (

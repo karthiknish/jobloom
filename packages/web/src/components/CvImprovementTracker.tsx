@@ -100,7 +100,7 @@ export function CvImprovementTracker({ analyses, onViewAnalysis }: CvImprovement
           <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-medium mb-2">Improvement Tracking</h3>
           <p className="text-muted-foreground">
-            Upload at least 2 CV analyses to track your improvement over time.
+            Upload at least 2 Resume analyses to track your improvement over time.
           </p>
         </CardContent>
       </Card>
@@ -158,7 +158,7 @@ export function CvImprovementTracker({ analyses, onViewAnalysis }: CvImprovement
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="flex items-center">
             <TrendingUp className="h-5 w-5 mr-2" />
-            Your CV Improvement Journey
+            Your resume Improvement Journey
           </CardTitle>
           <Button variant="outline" size="sm" onClick={exportToCSV} className="gap-2">
             <Download className="h-4 w-4" />
@@ -401,7 +401,7 @@ export function CvImprovementTracker({ analyses, onViewAnalysis }: CvImprovement
             {overallImprovement > 5 && (
               <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
                 <p className="text-sm text-green-800">
-                  Excellent progress! Your CV has improved significantly.
+                  Excellent progress! Your resume has improved significantly.
                   Keep up the great work!
                 </p>
               </div>

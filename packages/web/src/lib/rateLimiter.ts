@@ -96,8 +96,8 @@ export const TIERED_RATE_LIMITS: Record<string, UserTierLimits> = {
 
   // CV operations
   'cv-analysis': {
-    free: { maxRequests: 10, windowMs: 60000 },      // 10 CV analyses per minute for free users (includes reads)
-    premium: { maxRequests: 50, windowMs: 60000 },   // 50 CV analyses per minute for premium users
+    free: { maxRequests: 10, windowMs: 60000 },      // 10 Resume analyses per minute for free users (includes reads)
+    premium: { maxRequests: 50, windowMs: 60000 },   // 50 Resume analyses per minute for premium users
     admin: { maxRequests: 150, windowMs: 60000 },
   },
   'cv-upload': {

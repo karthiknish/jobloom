@@ -14,7 +14,7 @@ const faqs = [
   },
   {
     q: "Is Hireall free to use?",
-    a: "Yes! Hireall offers a generous free tier that includes sponsored job detection, basic application tracking, and the Chrome extension. Premium features like advanced analytics and unlimited CV evaluations are available in our paid plans.",
+    a: "Yes! Hireall offers a generous free tier that includes sponsored job detection, basic application tracking, and the Chrome extension. Premium features like advanced analytics and unlimited Resume evaluations are available in our paid plans.",
   },
   {
     q: "Which job sites does Hireall work with?",

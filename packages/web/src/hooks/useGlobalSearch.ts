@@ -29,7 +29,7 @@ const MAX_RECENT_SEARCHES = 5;
 // Quick navigation pages
 const QUICK_PAGES: SearchResult[] = [
   { id: "dashboard", type: "page", title: "Dashboard", subtitle: "View your job applications", href: "/dashboard" },
-  { id: "career-tools", type: "page", title: "Career Tools", subtitle: "Resume builder & CV evaluator", href: "/career-tools" },
+  { id: "career-tools", type: "page", title: "Career Tools", subtitle: "Resume builder & Resume evaluator", href: "/career-tools" },
   { id: "settings", type: "page", title: "Settings", subtitle: "Manage your account", href: "/settings" },
   { id: "upgrade", type: "page", title: "Upgrade to Premium", subtitle: "Unlock all features", href: "/upgrade" },
 ];
@@ -69,7 +69,7 @@ export function useGlobalSearch() {
     { immediate: !!userRecord }
   );
 
-  // Fetch CV analyses for search
+  // Fetch Resume analyses for search
   const { data: cvAnalyses } = useEnhancedApi(
     () => cvEvaluatorApi.getCvAnalysesByUser(userRecord!._id),
     { immediate: !!userRecord }
@@ -117,7 +117,7 @@ export function useGlobalSearch() {
       }
     }
 
-    // Search CV analyses
+    // Search Resume analyses
     if (cvAnalyses && cvAnalyses.length > 0) {
       const cvResults: SearchResult[] = cvAnalyses
         .filter((analysis: any) => {
@@ -131,14 +131,14 @@ export function useGlobalSearch() {
         .map((analysis: any) => ({
           id: analysis._id || analysis.id,
           type: "cv-analysis" as const,
-          title: analysis.fileName || "CV Analysis",
+          title: analysis.fileName || "Resume Analysis",
           subtitle: `Score: ${analysis.overallScore || analysis.score || "N/A"}%`,
           href: "/career-tools",
           score: analysis.overallScore || analysis.score,
         }));
 
       if (cvResults.length > 0) {
-        categories.push({ label: "CV Analyses", results: cvResults });
+        categories.push({ label: "Resume Analyses", results: cvResults });
       }
     }
 

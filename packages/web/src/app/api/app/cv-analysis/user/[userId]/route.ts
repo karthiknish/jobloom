@@ -48,7 +48,7 @@ const toMillis = (value: unknown): number => {
   return Date.now();
 };
 
-// GET /api/app/cv-analysis/user/[userId] - Get CV analyses for a user
+// GET /api/app/cv-analysis/user/[userId] - Get Resume analyses for a user
 export const GET = withApi({
   auth: 'required',
   paramsSchema: cvParamsSchema,
@@ -57,14 +57,14 @@ export const GET = withApi({
   
   if (user!.uid !== userId && !user!.isAdmin) {
     throw new AuthorizationError(
-      "Access denied. You can only access your own CV analyses.",
+      "Access denied. You can only access your own Resume analyses.",
       "FORBIDDEN"
     );
   }
 
   const db = getAdminDb();
   
-  // Fetch CV analyses from Firestore
+  // Fetch Resume analyses from Firestore
   const analysesRef = db
     .collection("cvAnalyses")
     .where("userId", "==", userId);
@@ -99,7 +99,7 @@ export const GET = withApi({
   return analyses.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 });
 
-// DELETE /api/app/cv-analysis/user/[userId] - Delete a CV analysis
+// DELETE /api/app/cv-analysis/user/[userId] - Delete a Resume analysis
 export const DELETE = withApi({
   auth: 'required',
   paramsSchema: cvParamsSchema,
@@ -110,7 +110,7 @@ export const DELETE = withApi({
   
   if (user!.uid !== userId && !user!.isAdmin) {
     throw new AuthorizationError(
-      "Access denied. You can only delete your own CV analyses.",
+      "Access denied. You can only delete your own Resume analyses.",
       "FORBIDDEN"
     );
   }

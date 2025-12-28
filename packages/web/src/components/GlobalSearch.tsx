@@ -53,7 +53,7 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
   return (
     <CommandDialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <CommandInput
-        placeholder="Search jobs, CV analyses, or navigate..."
+        placeholder="Search jobs, Resume analyses, or navigate..."
         value={query}
         onValueChange={setQuery}
       />
@@ -122,7 +122,7 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
         {/* Empty state when no query and no recent searches */}
         {!query && recentSearches.length === 0 && searchResults.length === 0 && (
           <div className="py-8 px-4 text-center text-muted-foreground/60 text-xs">
-            Start typing to search across your jobs and CV analyses
+            Start typing to search across your jobs and Resume analyses
           </div>
         )}
       </CommandList>

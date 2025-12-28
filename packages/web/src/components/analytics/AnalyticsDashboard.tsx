@@ -322,9 +322,9 @@ export function AnalyticsDashboard() {
           colorClass="bg-amber-100 text-amber-600"
         />
         <MetricCard
-          label="CV Analyses"
+          label="Resume Analyses"
           value={formatNumber(analyticsData.platform.cvAnalyses)}
-          description="Total CV evaluations"
+          description="Total Resume evaluations"
           trend="up"
           trendValue={0}
           icon={FileText}
@@ -551,7 +551,7 @@ export function AnalyticsDashboard() {
                   
                   {[
                     { step: 'Active Users', rate: analyticsData.users.activeRate, description: 'Active in last 7 days', count: analyticsData.users.activeLast7Days },
-                    { step: 'CV Analyzed', rate: analyticsData.users.total > 0 ? Math.round((analyticsData.platform.cvAnalyses / analyticsData.users.total) * 100) : 0, description: 'Used CV evaluator', count: analyticsData.platform.cvAnalyses },
+                    { step: 'CV Analyzed', rate: analyticsData.users.total > 0 ? Math.round((analyticsData.platform.cvAnalyses / analyticsData.users.total) * 100) : 0, description: 'Used Resume evaluator', count: analyticsData.platform.cvAnalyses },
                     { step: 'Jobs Saved', rate: analyticsData.users.total > 0 ? Math.round((analyticsData.platform.jobsSaved / analyticsData.users.total) * 100) : 0, description: 'Saved job listings', count: analyticsData.platform.jobsSaved },
                     { step: 'Premium', rate: analyticsData.users.conversionRate, description: 'Upgraded to premium', count: analyticsData.users.premium },
                   ].map((stage, index) => (

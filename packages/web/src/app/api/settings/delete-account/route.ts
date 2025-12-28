@@ -43,7 +43,7 @@ export const POST = withApi({
   const deletionPromises = [];
   const bucket = getStorageBucket();
 
-  // 1. Delete CV analyses and files
+  // 1. Delete Resume analyses and files
   const cvAnalysesSnapshot = await db.collection('cvAnalyses').where('userId', '==', userId).get();
   for (const doc of cvAnalysesSnapshot.docs) {
     const analysisData = doc.data();

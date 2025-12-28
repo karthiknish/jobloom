@@ -7,7 +7,7 @@ const statsParamsSchema = z.object({
   userId: z.string(),
 });
 
-// GET /api/app/cv-analysis/stats/[userId] - Get CV analysis stats for a user
+// GET /api/app/cv-analysis/stats/[userId] - Get Resume analysis stats for a user
 export const GET = withApi({
   auth: 'required',
   paramsSchema: statsParamsSchema,
@@ -16,14 +16,14 @@ export const GET = withApi({
   
   if (user!.uid !== userId && !user!.isAdmin) {
     throw new AuthorizationError(
-      "Access denied. You can only access your own CV analysis stats.",
+      "Access denied. You can only access your own Resume analysis stats.",
       "FORBIDDEN"
     );
   }
 
   const db = getAdminDb();
   
-  // Fetch CV analyses from Firestore
+  // Fetch Resume analyses from Firestore
   const analysesRef = db
     .collection("cvAnalyses")
     .where("userId", "==", userId);

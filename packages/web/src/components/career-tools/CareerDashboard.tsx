@@ -145,7 +145,7 @@ export function CareerDashboard({ state, onSectionChange }: CareerDashboardProps
               <Zap className="h-4 w-4 text-amber-500" />
               Keyword Optimization
             </CardTitle>
-            <CardDescription>Relevant keywords detected in your CVs</CardDescription>
+            <CardDescription>Relevant keywords detected in your resumes</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-48 flex items-center justify-center bg-muted/20 rounded-xl p-4">
@@ -199,7 +199,7 @@ export function CareerDashboard({ state, onSectionChange }: CareerDashboardProps
                 ))
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
-                  No analyses yet. Start by optimizing your CV!
+                  No analyses yet. Start by optimizing your resume!
                 </div>
               )}
             </div>

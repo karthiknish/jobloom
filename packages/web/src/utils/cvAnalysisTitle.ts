@@ -12,5 +12,5 @@ export function getCvAnalysisTitle(analysis: Partial<CvAnalysis> & Record<string
     if (trimmed) return trimmed;
   }
 
-  return "CV Analysis";
+  return "Resume Analysis";
 }

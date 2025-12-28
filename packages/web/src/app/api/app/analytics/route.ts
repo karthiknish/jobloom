@@ -67,7 +67,7 @@ export const GET = withApi({
   const contactsCountSnapshot = await db.collection("contacts").count().get();
   const totalContacts = contactsCountSnapshot.data().count;
 
-  // Fetch CV analyses count
+  // Fetch Resume analyses count
   let totalCvAnalyses = 0;
   try {
     const cvAnalysesSnapshot = await db.collection("cvAnalyses").count().get();

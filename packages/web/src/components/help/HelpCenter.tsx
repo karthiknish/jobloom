@@ -68,12 +68,12 @@ const FAQ_CATEGORIES = [
   },
   {
     id: "cv-tools",
-    title: "CV & Resume Tools",
+    title: "Resume Tools",
     icon: FileText,
     items: [
       {
-        question: "How does CV analysis work?",
-        answer: "Upload your CV and our AI analyzes it for ATS compatibility, keyword optimization, and overall effectiveness. You'll get a score and specific suggestions for improvement.",
+        question: "How does Resume analysis work?",
+        answer: "Upload your resume and our AI analyzes it for ATS compatibility, keyword optimization, and overall effectiveness. You'll get a score and specific suggestions for improvement.",
       },
       {
         question: "Can I generate tailored resumes?",
@@ -81,7 +81,7 @@ const FAQ_CATEGORIES = [
       },
       {
         question: "What file formats are supported?",
-        answer: "We support PDF, DOCX, and DOC files for CV analysis. For best results, we recommend using PDF format.",
+        answer: "We support PDF, DOCX, and DOC files for Resume analysis. For best results, we recommend using PDF format.",
       },
     ],
   },
@@ -118,8 +118,8 @@ const FAQ_CATEGORIES = [
         answer: "The Weekly Summary shows your job search activity for the past week, including applications submitted, responses received, and top companies you applied to.",
       },
       {
-        question: "How is my CV score calculated?",
-        answer: "Your CV score is based on ATS compatibility, keyword relevance, formatting, and content quality. Higher scores indicate better chances of passing automated screening systems.",
+        question: "How is my Resume score calculated?",
+        answer: "Your Resume score is based on ATS compatibility, keyword relevance, formatting, and content quality. Higher scores indicate better chances of passing automated screening systems.",
       },
     ],
   },
@@ -259,7 +259,7 @@ export function HelpCenter({ open, onOpenChange }: HelpCenterProps) {
               <div className="grid grid-cols-2 gap-3">
                 {[
                   { title: "Import Your First Job", description: "Learn how to add jobs to your tracker", time: "2 min" },
-                  { title: "Optimize Your CV", description: "Get your CV ready for ATS systems", time: "5 min" },
+                  { title: "Optimize Your resume", description: "Get your resume ready for ATS systems", time: "5 min" },
                   { title: "Use the Kanban Board", description: "Master the visual job tracking", time: "3 min" },
                   { title: "Generate Cover Letters", description: "Create tailored cover letters with AI", time: "4 min" },
                   { title: "Set Up Reminders", description: "Never miss a follow-up again", time: "2 min" },

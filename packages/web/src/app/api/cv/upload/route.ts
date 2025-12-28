@@ -176,7 +176,7 @@ async function checkSubscriptionLimits(
       }
     }
 
-    // Count current month's CV analyses
+    // Count current month's Resume analyses
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
@@ -277,7 +277,7 @@ export const POST = withApi({
   const limitCheck = await checkSubscriptionLimits(userId);
   if (!limitCheck.allowed) {
     throw new RateLimitError(
-      `CV analysis limit reached. You've used ${limitCheck.currentUsage} of ${limitCheck.limit} analyses this month.`,
+      `Resume analysis limit reached. You've used ${limitCheck.currentUsage} of ${limitCheck.limit} analyses this month.`,
       3600 // 1 hour retry after
     );
   }
@@ -333,7 +333,7 @@ export const POST = withApi({
     },
   });
 
-  // Create CV analysis record in Firestore
+  // Create Resume analysis record in Firestore
   const db = getAdminDb();
   const cvAnalysisRef = db.collection("cvAnalyses").doc();
   const cvAnalysisData = {
@@ -361,7 +361,7 @@ export const POST = withApi({
 
   await cvAnalysisRef.set(cvAnalysisData);
 
-  // Trigger CV analysis asynchronously
+  // Trigger Resume analysis asynchronously
   performCvAnalysis(
     cvAnalysisRef.id,
     buffer,
@@ -375,12 +375,12 @@ export const POST = withApi({
   return {
     success: true,
     analysisId: cvAnalysisRef.id,
-    message: "CV uploaded successfully. Analysis in progress...",
+    message: "Resume uploaded successfully. Analysis in progress...",
   };
 });
 
 
-// Gemini-backed CV analysis pipeline
+// Gemini-backed Resume analysis pipeline
 async function performCvAnalysis(
   analysisId: string,
   fileBuffer: Buffer,
@@ -430,7 +430,7 @@ async function performCvAnalysis(
       processingDurationMs: Date.now() - startedAt,
     });
   } catch (error) {
-    console.error("Error performing CV analysis:", error);
+    console.error("Error performing Resume analysis:", error);
     await db.collection("cvAnalyses").doc(analysisId).update({
       analysisStatus: "failed",
       errorMessage: "Analysis failed due to technical error",
@@ -583,7 +583,7 @@ function combineAnalysisResults(
   };
 }
 
-// Mock CV analysis with deterministic ATS scoring backed by shared evaluator
+// Mock Resume analysis with deterministic ATS scoring backed by shared evaluator
 async function analyzeCvText(
   text: string,
   targetRole: string | null,

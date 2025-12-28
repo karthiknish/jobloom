@@ -59,7 +59,7 @@ export function PremiumUpgradeBanner({ className = "", compact = false }: Premiu
                 <div className="min-w-0">
                   <h3 className="font-semibold text-foreground">Unlock Premium Features</h3>
                   <p className="text-sm text-muted-foreground">
-                    Get unlimited CV analyses, advanced analytics, and priority support
+                    Get unlimited Resume analyses, advanced analytics, and priority support
                   </p>
                 </div>
               </div>

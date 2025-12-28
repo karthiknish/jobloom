@@ -182,17 +182,17 @@ const SEO_RULES: SeoRule[] = [
     meta: {
       title: "AI Career Tools | HireAll",
       description:
-        "Access AI-powered CV analysis, cover letter generation, resume building, and ATS optimization tools to supercharge your job search.",
-      keywords: "career tools, AI resume, CV analyzer, cover letter generator, ATS score, job search tools",
+        "Access AI-powered Resume analysis, cover letter generation, resume building, and ATS optimization tools to supercharge your job search.",
+      keywords: "career tools, AI resume, Resume analyzer, cover letter generator, ATS score, job search tools",
     },
   },
   {
     pattern: /^\/cv-evaluator$/,
     meta: {
-      title: "CV Evaluator | HireAll",
+      title: "Resume Evaluator | HireAll",
       description:
-        "Upload your CV and get instant ATS compatibility analysis, keyword optimization suggestions, and actionable improvement tips.",
-      keywords: "CV evaluator, resume checker, ATS scanner, resume analysis, CV optimization",
+        "Upload your resume and get instant ATS compatibility analysis, keyword optimization suggestions, and actionable improvement tips.",
+      keywords: "Resume evaluator, resume checker, ATS scanner, resume analysis, Resume optimization",
     },
   },
   {

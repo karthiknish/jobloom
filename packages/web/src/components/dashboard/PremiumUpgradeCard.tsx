@@ -20,7 +20,7 @@ interface PremiumUpgradeCardProps {
 const featureMessages: Record<string, { title: string; description: string; icon: React.ReactNode }> = {
   cvAnalysis: {
     title: "Unlimited CV Analysis",
-    description: "Get unlimited AI-powered CV reviews and ATS optimization tips",
+    description: "Get unlimited AI-powered Resume reviews and ATS optimization tips",
     icon: <FileText className="h-5 w-5" />,
   },
   analytics: {
@@ -211,7 +211,7 @@ export function PremiumUpgradeCard({
                   </Badge>
                 </div>
                 <p className="text-muted-foreground text-sm mb-3">
-                  Get unlimited CV analyses, advanced analytics, priority support, and more to accelerate your job search.
+                  Get unlimited Resume analyses, advanced analytics, priority support, and more to accelerate your job search.
                 </p>
                 <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1">

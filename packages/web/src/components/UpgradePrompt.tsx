@@ -81,7 +81,7 @@ export function UpgradePrompt({ feature, variant = "default" }: UpgradePromptPro
         return {
           title: "Unlock Unlimited CV Analysis",
           description:
-            "Get detailed insights into your resume with unlimited CV analyses and personalized improvement suggestions.",
+            "Get detailed insights into your resume with unlimited Resume analyses and personalized improvement suggestions.",
           highlightFeatures: [
             {
               title: "Unlimited CV Analyses",

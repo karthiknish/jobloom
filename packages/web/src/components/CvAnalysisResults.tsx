@@ -67,7 +67,7 @@ export function CvAnalysisResults({ analysis }: CvAnalysisResultsProps) {
                   ATS Optimization Recommended
                 </h4>
                 <p className="text-sm text-amber-700">
-                  Your CV scores {analysis.atsCompatibility.score}/100 on ATS compatibility. 
+                  Your Resume scores {analysis.atsCompatibility.score}/100 on ATS compatibility. 
                   Review the breakdown below for specific improvements to increase your chances 
                   of passing automated screening systems.
                 </p>
@@ -267,7 +267,7 @@ export function CvAnalysisResults({ analysis }: CvAnalysisResultsProps) {
                     Pro Tip: ATS Optimization
                   </h5>
                   <p className="text-sm text-blue-700 leading-relaxed">
-                    Incorporate the missing keywords naturally throughout your CV, 
+                    Incorporate the missing keywords naturally throughout your resume, 
                     especially in job descriptions and skills. Avoid keyword stuffing 
                     — recruiters notice! Focus on authentic, impactful language.
                   </p>
@@ -462,7 +462,7 @@ export function CvAnalysisResults({ analysis }: CvAnalysisResultsProps) {
               </h5>
               <ul className="text-sm text-yellow-800 space-y-1">
                 <li>
-                  • Incorporate missing keywords naturally throughout your CV
+                  • Incorporate missing keywords naturally throughout your resume
                 </li>
                 <li>
                   • Place important keywords in job titles and section headings

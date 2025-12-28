@@ -221,12 +221,12 @@ export function CvAnalysisHistory({ analyses, optimistic }: CvAnalysisHistoryPro
             ? hasOptimisticOnly
               ? "Preparing first analysis..."
               : "No analyses match your filters"
-            : "No CV analyses yet"
+            : "No Resume analyses yet"
         }
         description={
           hasOriginalAnalyses
             ? hasOptimisticOnly
-              ? "Your CV is being processed. This will update automatically."
+              ? "Your resume is being processed. This will update automatically."
               : "Try adjusting your search criteria or clearing filters to see more results."
             : "Upload your first CV to get started with AI-powered analysis and feedback."
         }
@@ -244,7 +244,7 @@ export function CvAnalysisHistory({ analyses, optimistic }: CvAnalysisHistoryPro
       >
         {!hasOriginalAnalyses && (
           <div className="text-sm text-muted-foreground mt-4">
-            <p className="mb-2 font-medium">Get detailed insights about your CV:</p>
+            <p className="mb-2 font-medium">Get detailed insights about your resume:</p>
             <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-left">
               <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-primary" /> ATS compatibility scores</li>
               <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-primary" /> Keyword optimization</li>
@@ -413,7 +413,7 @@ export function CvAnalysisHistory({ analyses, optimistic }: CvAnalysisHistoryPro
                 {analysis.analysisStatus === "processing" && (
                   <div className="mt-4">
                     <div className="flex items-center">
-                      <LoadingSpinner inline size="sm" label="Analyzing your CV..." />
+                      <LoadingSpinner inline size="sm" label="Analyzing your resume..." />
                     </div>
                     <div className="mt-2 bg-muted rounded-full h-2">
                       <div

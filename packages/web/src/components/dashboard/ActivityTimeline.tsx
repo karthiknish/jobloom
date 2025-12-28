@@ -43,7 +43,7 @@ const ACTION_CONFIG: Record<string, { icon: React.ElementType; label: string; co
   restored: { icon: RotateCcw, label: "Restored", color: "text-purple-600 bg-purple-100" },
   status_changed: { icon: ArrowRight, label: "Status Changed", color: "text-amber-600 bg-amber-100" },
   note_added: { icon: StickyNote, label: "Note Added", color: "text-cyan-600 bg-cyan-100" },
-  cv_analyzed: { icon: FileText, label: "CV Analyzed", color: "text-indigo-600 bg-indigo-100" },
+  cv_analyzed: { icon: FileText, label: "Resume Analyzed", color: "text-indigo-600 bg-indigo-100" },
   cover_letter_generated: { icon: Award, label: "Cover Letter", color: "text-pink-600 bg-pink-100" },
 };
 
@@ -100,7 +100,7 @@ export function ActivityTimeline({ className, limit = 20, showFilters = true }: 
                 <SelectContent>
                   <SelectItem value="all">All Activities</SelectItem>
                   <SelectItem value="application">Applications</SelectItem>
-                  <SelectItem value="cv">CV Analysis</SelectItem>
+                  <SelectItem value="resume">CV Analysis</SelectItem>
                   <SelectItem value="cover_letter">Cover Letters</SelectItem>
                 </SelectContent>
               </Select>

@@ -113,7 +113,7 @@ function UpgradeSuccessContent() {
                   <ul className="space-y-2">
                     <li className="flex items-center gap-2">
                       <CheckCircle className="h-4 w-4 text-green-500" />
-                      Unlimited CV analyses
+                      Unlimited Resume analyses
                     </li>
                     <li className="flex items-center gap-2">
                       <CheckCircle className="h-4 w-4 text-green-500" />

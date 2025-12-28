@@ -24,7 +24,7 @@ export const UPLOAD_LIMITS = {
     maxSizeMB: 2,
     allowedTypes: ['application/pdf', 'text/plain'],
     allowedExtensions: ['pdf', 'txt'],
-    description: 'CV files for AI analysis (2MB limit)'
+    description: 'Resume files for AI analysis (2MB limit)'
   } as UploadLimitConfig,
 
   /**

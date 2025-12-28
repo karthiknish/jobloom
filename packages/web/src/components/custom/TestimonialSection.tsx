@@ -18,7 +18,7 @@ const testimonials = [
     role: "Data Analyst",
     company: "Amazon",
     avatar: "/testimonials/priya.svg",
-    content: "The sponsored job detection is genius. I finally stopped wasting time on irrelevant listings. The CV evaluator helped me improve my resume by 40 points!",
+    content: "The sponsored job detection is genius. I finally stopped wasting time on irrelevant listings. The Resume evaluator helped me improve my resume by 40 points!",
     rating: 5,
   },
   {

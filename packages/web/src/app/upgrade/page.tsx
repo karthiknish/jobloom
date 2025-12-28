@@ -83,7 +83,7 @@ export default function UpgradePage() {
       price: 0,
       description: "Essential tools to start your job search journey.",
       features: [
-        "3 CV analyses per month",
+        "3 Resume analyses per month",
         "50 job applications",
         "CSV export",
         "Basic dashboard",
@@ -102,7 +102,7 @@ export default function UpgradePage() {
       price: 5.99,
       description: "Everything you need to accelerate your job search.",
       features: [
-        "Unlimited CV analyses",
+        "Unlimited Resume analyses",
         "Unlimited job applications",
         "Advanced analytics & insights",
         "CSV, JSON & PDF exports",
@@ -167,7 +167,7 @@ export default function UpgradePage() {
             transition={{ delay: 0.4, duration: 0.6 }}
             className="mt-6 max-w-2xl mx-auto text-xl text-muted-foreground"
           >
-            Unlock unlimited CV analyses, advanced analytics, and priority
+            Unlock unlimited Resume analyses, advanced analytics, and priority
             support to supercharge your job search.
           </motion.p>
         </div>

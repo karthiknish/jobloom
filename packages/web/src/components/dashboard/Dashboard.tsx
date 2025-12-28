@@ -182,7 +182,7 @@ export function Dashboard() {
     { immediate: !!userRecord }
   );
 
-  // Fetch CV analyses
+  // Fetch Resume analyses
   const { data: cvAnalyses } = useEnhancedApi(
     () => cvEvaluatorApi.getCvAnalysesByUser(userRecord!._id),
     { immediate: !!userRecord }

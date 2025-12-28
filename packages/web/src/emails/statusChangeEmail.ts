@@ -34,7 +34,7 @@ const STATUS_MESSAGES: Record<ApplicationStatus, string> = {
 const STATUS_TIPS: Record<ApplicationStatus, string[]> = {
   saved: [
     "Review the job description carefully",
-    "Tailor your CV to match key requirements",
+    "Tailor your resume to match key requirements",
     "Research the company before applying"
   ],
   applied: [

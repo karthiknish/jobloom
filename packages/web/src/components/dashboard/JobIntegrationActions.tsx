@@ -203,7 +203,7 @@ export function JobIntegrationActions({
                   )}
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Get CV match score</TooltipContent>
+              <TooltipContent>Get Resume match score</TooltipContent>
             </Tooltip>
           )}
         </div>
@@ -272,7 +272,7 @@ export function JobIntegrationActions({
           <DialogHeader>
             <DialogTitle>CV Match Score</DialogTitle>
             <DialogDescription>
-              How well your CV matches {application.job?.title} at {application.job?.company}
+              How well your Resume matches {application.job?.title} at {application.job?.company}
             </DialogDescription>
           </DialogHeader>
 
@@ -296,7 +296,7 @@ export function JobIntegrationActions({
                       ? "Great match!"
                       : matchScore.score >= 60
                       ? "Good match with room to improve"
-                      : "Consider improving your CV"}
+                      : "Consider improving your resume"}
                   </span>
                 </div>
               </div>

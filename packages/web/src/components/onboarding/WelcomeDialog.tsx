@@ -85,7 +85,7 @@ export function WelcomeDialog({ onStartTour, onSkip }: WelcomeDialogProps) {
     },
     {
       icon: FileText,
-      title: "CV Evaluator",
+      title: "Resume Evaluator",
       description: "AI-powered resume feedback and optimization",
       color: "text-purple-500",
       bgColor: "bg-purple-100",

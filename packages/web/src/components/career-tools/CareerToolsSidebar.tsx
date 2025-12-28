@@ -41,7 +41,7 @@ const navItems: NavItem[] = [
   { id: "manual-builder", label: "Manual Builder", icon: <PenLine className="h-4 w-4" />, group: "Build", description: "Build step by step" },
   { id: "import", label: "Import Resume", icon: <Upload className="h-4 w-4" />, group: "Build", description: "Import from file" },
   // Analyze group
-  { id: "cv-optimizer", label: "CV Optimizer", icon: <Search className="h-4 w-4" />, description: "ATS score & history" },
+  { id: "cv-optimizer", label: "Resume Optimizer", icon: <Search className="h-4 w-4" />, description: "ATS score & history" },
   // Cover Letter
   { id: "cover-letter", label: "Cover Letter", icon: <FileText className="h-4 w-4" />, description: "AI-powered letters" },
 ];

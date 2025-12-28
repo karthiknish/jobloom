@@ -3,14 +3,14 @@ import { CvAnalysis } from "@/types/api";
 
 export class CvService {
   /**
-   * Fetch all CV analyses for a user
+   * Fetch all Resume analyses for a user
    */
   async getUserAnalyses(userId: string): Promise<CvAnalysis[]> {
     return apiClient.get<CvAnalysis[]>(`/app/cv-analysis/user/${userId}`);
   }
 
   /**
-   * Fetch statistics for CV analyses
+   * Fetch statistics for Resume analyses
    */
   async getAnalysisStats(userId: string): Promise<{
     totalAnalyses: number;

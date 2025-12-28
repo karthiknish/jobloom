@@ -53,7 +53,7 @@ export function CvComparison({ analyses, onBack }: CvComparisonProps) {
 
   const startComparison = () => {
     if (selectedAnalysisData.length < 2) {
-      showSuccess("Please select at least 2 CV analyses to compare");
+      showSuccess("Please select at least 2 Resume analyses to compare");
       return;
     }
     setCurrentView("comparison");

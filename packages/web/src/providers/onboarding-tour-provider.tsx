@@ -37,7 +37,7 @@ export const DASHBOARD_TOUR_STEPS: StepType[] = [
   },
   {
     selector: '[data-tour="cv-evaluator"]',
-    content: "Optimize Your CV|Use our AI-powered CV Evaluator to get feedback and improve your resume for better results.",
+    content: "Optimize Your resume|Use our AI-powered CV Evaluator to get feedback and improve your resume for better results.",
     position: "center",
   },
   {
@@ -50,7 +50,7 @@ export const DASHBOARD_TOUR_STEPS: StepType[] = [
 export const CV_EVALUATOR_TOUR_STEPS: StepType[] = [
   {
     selector: '[data-tour="cv-upload"]',
-    content: "Upload Your CV|Upload your resume in PDF or DOCX format. Our AI will analyze it for improvements.",
+    content: "Upload Your resume|Upload your resume in PDF or DOCX format. Our AI will analyze it for improvements.",
   },
   {
     selector: '[data-tour="cv-analysis"]',
@@ -58,7 +58,7 @@ export const CV_EVALUATOR_TOUR_STEPS: StepType[] = [
   },
   {
     selector: '[data-tour="cv-score"]',
-    content: "Your CV Score|See your overall score and specific areas for improvement.",
+    content: "Your resume Score|See your overall score and specific areas for improvement.",
   },
 ];
 

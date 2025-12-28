@@ -88,9 +88,9 @@ export const helpTexts = {
   sponsorshipType: "The type of visa sponsorship offered: Skilled Worker, Global Talent, or other routes.",
   
   // ATS Analysis
-  atsScore: "Application Tracking System compatibility score. Higher scores mean your CV is more likely to pass automated screening.",
-  keywordMatch: "Keywords from job descriptions that match your CV. More matches = better visibility to recruiters.",
-  formatScore: "How well your CV format works with ATS parsers. Clean, simple formats score higher.",
+  atsScore: "Application Tracking System compatibility score. Higher scores mean your resume is more likely to pass automated screening.",
+  keywordMatch: "Keywords from job descriptions that match your resume. More matches = better visibility to recruiters.",
+  formatScore: "How well your resume format works with ATS parsers. Clean, simple formats score higher.",
   
   // Resume Builder
   resumeScore: "Overall quality score based on completeness, content strength, and ATS compatibility.",

@@ -279,7 +279,7 @@ export function useOnboardingState() {
     },
     {
       id: "cv-upload",
-      title: "Upload your CV",
+      title: "Upload your resume",
       description: "Get AI-powered feedback",
       completed: state.hasUploadedCv,
       href: "/cv-evaluator",
