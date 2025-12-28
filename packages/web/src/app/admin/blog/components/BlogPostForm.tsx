@@ -17,11 +17,14 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { TiptapEditor } from "@/components/TiptapEditor";
 import { ImageSelector } from "@/components/admin/ImageSelector";
+import { Sparkles, Loader2 } from "lucide-react";
+import { showError, showSuccess } from "@/components/ui/Toast";
 
 export interface CreatePostData {
   title: string;
@@ -80,6 +83,14 @@ export function BlogPostForm({
   const [formData, setFormData] = useState<CreatePostData>(emptyData);
   const [tagsInput, setTagsInput] = useState("");
   const [isImageSelectorOpen, setIsImageSelectorOpen] = useState(false);
+  
+  // AI Agent Mode state
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+  const [isAiGenerating, setIsAiGenerating] = useState(false);
+  const [aiTopic, setAiTopic] = useState("");
+  const [aiTone, setAiTone] = useState<"professional" | "casual" | "technical" | "inspirational">("professional");
+  const [aiLength, setAiLength] = useState<"short" | "medium" | "long">("medium");
+  const [aiContext, setAiContext] = useState("");
 
   useEffect(() => {
     if (initialData) {
@@ -144,13 +155,74 @@ export function BlogPostForm({
     setIsImageSelectorOpen(false);
   };
 
+  // AI Agent Mode handler
+  const handleAiGenerate = async () => {
+    if (!aiTopic.trim()) {
+      showError("Please enter a topic");
+      return;
+    }
+
+    setIsAiGenerating(true);
+    try {
+      const response = await fetch("/api/ai/blog-generator", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          topic: aiTopic,
+          tone: aiTone,
+          length: aiLength,
+          additionalContext: aiContext,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error?.message || "Failed to generate content");
+      }
+
+      const result = await response.json();
+      const data = result.data;
+
+      // Auto-fill form fields
+      setFormData({
+        ...formData,
+        title: data.title || "",
+        excerpt: data.excerpt || "",
+        content: data.content || "",
+        category: data.category || "",
+        status: "draft",
+      });
+      setTagsInput(Array.isArray(data.tags) ? data.tags.join(", ") : "");
+
+      showSuccess("Blog post generated!", "Review and edit the content before publishing.");
+      setIsAiModalOpen(false);
+      setAiTopic("");
+      setAiContext("");
+    } catch (error: any) {
+      showError("Generation failed", error.message || "Please try again");
+    } finally {
+      setIsAiGenerating(false);
+    }
+  };
+
   return (
     <>
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-        {description ? (
-          <p className="text-sm text-muted-foreground">{description}</p>
-        ) : null}
+      <div className="flex items-center justify-between">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+          {description ? (
+            <p className="text-sm text-muted-foreground">{description}</p>
+          ) : null}
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setIsAiModalOpen(true)}
+          className="gap-2 bg-gradient-to-r from-violet-500/10 to-purple-500/10 border-violet-500/30 hover:border-violet-500/50 text-violet-700"
+        >
+          <Sparkles className="h-4 w-4" />
+          AI Agent Mode
+        </Button>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -296,6 +368,96 @@ export function BlogPostForm({
             onImageSelect={handleImageSelect}
             onClose={() => setIsImageSelectorOpen(false)}
           />
+        </DialogContent>
+      </Dialog>
+
+      {/* AI Agent Mode Dialog */}
+      <Dialog open={isAiModalOpen} onOpenChange={setIsAiModalOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-violet-500" />
+              AI Agent Mode
+            </DialogTitle>
+            <DialogDescription>
+              Describe what you want to write about and AI will generate the entire blog post.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="ai-topic">Topic *</Label>
+              <Input
+                id="ai-topic"
+                value={aiTopic}
+                onChange={(e) => setAiTopic(e.target.value)}
+                placeholder="e.g., Tips for acing remote job interviews"
+                disabled={isAiGenerating}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Tone</Label>
+                <Select value={aiTone} onValueChange={(v: any) => setAiTone(v)} disabled={isAiGenerating}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="professional">Professional</SelectItem>
+                    <SelectItem value="casual">Casual</SelectItem>
+                    <SelectItem value="technical">Technical</SelectItem>
+                    <SelectItem value="inspirational">Inspirational</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Length</Label>
+                <Select value={aiLength} onValueChange={(v: any) => setAiLength(v)} disabled={isAiGenerating}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="short">Short (~500 words)</SelectItem>
+                    <SelectItem value="medium">Medium (~800 words)</SelectItem>
+                    <SelectItem value="long">Long (~1200 words)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="ai-context">Additional Context (optional)</Label>
+              <Textarea
+                id="ai-context"
+                value={aiContext}
+                onChange={(e) => setAiContext(e.target.value)}
+                placeholder="Any specific points to include, target audience, keywords..."
+                rows={3}
+                disabled={isAiGenerating}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAiModalOpen(false)} disabled={isAiGenerating}>
+              Cancel
+            </Button>
+            <Button onClick={handleAiGenerate} disabled={isAiGenerating || !aiTopic.trim()}>
+              {isAiGenerating ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Generate Blog Post
+                </>
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>

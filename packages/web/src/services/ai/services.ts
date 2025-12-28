@@ -22,7 +22,6 @@ import {
   parseResumeGenerationResponse,
   getFallbackResumeGeneration,
   manualKeywordExtraction,
-  calculateFallbackATSScore,
 } from './parsers';
 import type {
   CoverLetterRequest,
@@ -67,20 +66,9 @@ export async function generateCoverLetter(request: CoverLetterRequest): Promise<
       operation: 'Cover letter generation'
     });
 
-    let atsScore = 75;
-    try {
-      atsScore = await calculateATSScore(content, keywords, jobDescription);
-    } catch (error) {
-      console.warn('[Cover Letter] ATS scoring failed, using default:', error);
-    }
-
-    let improvements: string[] = [];
-    try {
-      improvements = await generateImprovements(content, keywords, atsScore, deepResearch);
-    } catch (error) {
-      console.warn('[Cover Letter] Improvements generation failed:', error);
-      improvements = ['Review for keyword optimization', 'Add quantifiable achievements'];
-    }
+    // ATS scoring and improvements are now handled by the unified service in the API route
+    const atsScore = 80;
+    const improvements: string[] = [];
 
     return {
       content,
@@ -276,52 +264,7 @@ async function analyzeCompanyInsights(jobDescription: string, companyName: strin
   }
 }
 
-async function calculateATSScore(content: string, keywords: string[], jobDescription: string): Promise<number> {
-  try {
-    const prompt = createATSScorePrompt(content, keywords, jobDescription);
-    const model = getModel();
-    const result = await model.generateContent(prompt);
-    const response = result.response.text().trim();
-    const score = parseInt(response.match(/\d+/)?.[0] || '75');
-    return Math.max(0, Math.min(100, score));
-  } catch (error) {
-    console.error('ATS scoring error:', error);
-    return calculateFallbackATSScore(content, keywords);
-  }
-}
-
-async function generateImprovements(
-  content: string,
-  keywords: string[],
-  atsScore: number,
-  deepResearch: boolean
-): Promise<string[]> {
-  try {
-    const prompt = createImprovementsPrompt(content, keywords, atsScore, deepResearch);
-    const model = getModel();
-    const result = await model.generateContent(prompt);
-    const response = result.response.text().trim();
-
-    try {
-      const suggestions = JSON.parse(response);
-      return Array.isArray(suggestions) ? suggestions : [];
-    } catch {
-      return [
-        'Add specific quantifiable achievements',
-        'Include more company-specific keywords',
-        'Strengthen the opening statement',
-        'Add relevant industry terminology'
-      ];
-    }
-  } catch (error) {
-    console.error('Improvement generation error:', error);
-    return [
-      'Add specific quantifiable achievements',
-      'Include more company-specific keywords',
-      'Strengthen the opening statement'
-    ];
-  }
-}
+// End of helper functions
 
 // ============ JOB SUMMARY ============
 

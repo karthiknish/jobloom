@@ -20,6 +20,7 @@ import {
   type ResumeGenerationRequest,
   type ResumeGenerationResult,
 } from "@/services/ai/geminiService";
+import { scoreResume } from "@/services/ats";
 
 // Export OPTIONS for CORS preflight
 export { OPTIONS };
@@ -63,6 +64,8 @@ interface ResumeApiResponse {
   suggestions: string[];
   wordCount: number;
   generatedAt: string;
+  breakdown?: any;
+  detailedMetrics?: any;
   source?: "gemini" | "fallback" | "mock";
 }
 
@@ -173,32 +176,25 @@ function buildResumeResponse(
     });
 
   const normalizedContent = content.replace(/\n{3,}/g, "\n\n");
-  const atsScore = calculateResumeATSScore(
-    normalizedContent,
-    request.skills,
-    request.jobTitle,
-    request.industry
-  );
-  const keywords = extractResumeKeywords(
-    normalizedContent,
-    request.jobTitle,
-    request.industry,
-    request.skills
-  );
-  const suggestions = generateResumeSuggestions(
-    normalizedContent,
-    atsScore,
-    request.skills
-  );
+  
+  // Use the new unified ATS scoring service
+  const atsEvaluation = scoreResume(normalizedContent, {
+    targetRole: request.jobTitle,
+    industry: request.industry,
+    skills: request.skills
+  });
+
   const wordCount = normalizedContent.split(/\s+/).filter(Boolean).length;
   const generatedAt = new Date().toISOString();
 
   const response: ResumeApiResponse = {
     content: normalizedContent,
     sections: { summary, experience, skills, education },
-    atsScore,
-    keywords,
-    suggestions,
+    atsScore: atsEvaluation.score,
+    keywords: atsEvaluation.matchedKeywords,
+    suggestions: atsEvaluation.recommendations.high,
+    breakdown: atsEvaluation.breakdown,
+    detailedMetrics: atsEvaluation.detailedMetrics,
     wordCount,
     generatedAt,
   };
@@ -317,80 +313,4 @@ To obtain a challenging position where I can utilize my skills and experience to
   return content;
 }
 
-function calculateResumeATSScore(
-  content: string, 
-  skills: string[], 
-  jobTitle: string, 
-  industry: string
-): number {
-  let score = 50;
-  const contentLower = content.toLowerCase();
-  const jobTitleWords = jobTitle.toLowerCase().split(' ');
-
-  jobTitleWords.forEach(word => {
-    if (contentLower.includes(word)) score += 5;
-  });
-
-  if (contentLower.includes(industry.toLowerCase())) score += 10;
-
-  skills.forEach(skill => {
-    if (contentLower.includes(skill.toLowerCase())) score += 3;
-  });
-
-  if (content.includes('PROFESSIONAL SUMMARY') || content.includes('OBJECTIVE')) score += 10;
-  if (content.includes('EXPERIENCE')) score += 10;
-  if (content.includes('SKILLS')) score += 10;
-  if (content.includes('EDUCATION')) score += 5;
-
-  const wordCount = content.split(/\s+/).length;
-  if (wordCount >= 300 && wordCount <= 600) score += 10;
-  else if (wordCount >= 200 && wordCount <= 800) score += 5;
-
-  return Math.min(score, 100);
-}
-
-function extractResumeKeywords(
-  content: string, 
-  jobTitle: string, 
-  industry: string, 
-  skills: string[]
-): string[] {
-  const commonKeywords = [
-    "leadership", "communication", "teamwork", "problem-solving", "analytical",
-    "project management", "collaboration", "initiative", "adaptability"
-  ];
-
-  const contentLower = content.toLowerCase();
-  const foundKeywords = [
-    ...commonKeywords.filter(keyword => contentLower.includes(keyword)),
-    ...jobTitle.toLowerCase().split(' ').filter(word => contentLower.includes(word)),
-    ...skills.map(s => s.toLowerCase()).filter(skill => contentLower.includes(skill))
-  ];
-
-  return Array.from(new Set(foundKeywords)).slice(0, 12);
-}
-
-function generateResumeSuggestions(
-  content: string, 
-  atsScore: number, 
-  skills: string[]
-): string[] {
-  const suggestions: string[] = [];
-
-  if (atsScore < 70) {
-    suggestions.push("Add more relevant keywords from job descriptions to improve ATS compatibility");
-  }
-
-  if (skills.length < 5) {
-    suggestions.push("Expand your skills section with more relevant technical and soft skills");
-  }
-
-  const wordCount = content.split(/\s+/).length;
-  if (wordCount < 200) {
-    suggestions.push("Expand your resume to provide more detail about your experience");
-  } else if (wordCount > 800) {
-    suggestions.push("Consider making your resume more concise (aim for 300-600 words)");
-  }
-
-  return suggestions.slice(0, 4);
-}
+// End of resume API route helper functions

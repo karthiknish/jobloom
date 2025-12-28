@@ -6,6 +6,14 @@
 
 import { AtsIssue, StandardSection } from './types';
 
+// Standard cover letter sections
+export const COVER_LETTER_SECTIONS: StandardSection[] = [
+  { id: 'greeting', names: ['dear', 'hi ', 'hello', 'to whom', 'greetings'], required: true },
+  { id: 'opener', names: ['i am writing', 'i\'m writing', 'i am excited', 'i\'m excited', 'please accept'], required: true },
+  { id: 'body', names: ['experience', 'skills', 'achieved', 'led', 'managed', 'background', 'contribute'], required: true },
+  { id: 'closing', names: ['sincerely', 'regards', 'thank you', 'best', 'faithfully', 'looking forward'], required: true },
+];
+
 // Standard resume sections ATS expects
 export const STANDARD_SECTIONS: StandardSection[] = [
   { id: 'contact', names: ['contact', 'contact information', 'contact details'], required: true },

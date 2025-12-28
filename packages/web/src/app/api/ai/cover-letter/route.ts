@@ -7,6 +7,7 @@ import {
 } from "@/services/ai/geminiService";
 import { ERROR_CODES } from "@/lib/api/errorCodes";
 import { AuthorizationError } from "@/lib/api/errorResponse";
+import { scoreCoverLetter } from "@/services/ats";
 
 export const runtime = "nodejs";
 
@@ -38,6 +39,8 @@ interface CoverLetterApiResponse {
   improvements: string[];
   tone: CoverLetterTone;
   wordCount: number;
+  breakdown?: any;
+  detailedMetrics?: any;
   deepResearch?: boolean;
   researchInsights?: string[];
   source?: "gemini" | "fallback" | "mock";
@@ -165,25 +168,25 @@ function buildCoverLetterResponse(
   }
 
   const normalizedContent = content.replace(/\n{3,}/g, '\n\n');
-  const keywords = Array.isArray(result.keywords)
-    ? result.keywords.slice(0, 15)
-    : fallback?.keywords ?? [];
-  const improvements = Array.isArray(result.improvements)
-    ? result.improvements.slice(0, 10)
-    : fallback?.improvements ?? [];
-  const rawScore = Number.isFinite(result.atsScore)
-    ? Number(result.atsScore)
-    : fallback?.atsScore ?? 75;
-  const atsScore = Math.min(100, Math.max(0, Math.round(rawScore)));
+  
+  // Use the new unified ATS scoring service
+  const atsEvaluation = scoreCoverLetter(normalizedContent, {
+    targetRole: request.jobTitle,
+    industry: request.industry,
+    skills: request.skills
+  });
+
   const wordCount = normalizedContent.split(/\s+/).filter(Boolean).length;
   const deepResearch = result.deepResearch ?? fallback?.deepResearch ?? request.deepResearch;
   const researchInsights = (result.researchInsights ?? fallback?.researchInsights ?? []).slice(0, 5);
 
   return {
     content: normalizedContent,
-    atsScore,
-    keywords,
-    improvements,
+    atsScore: atsEvaluation.score,
+    keywords: atsEvaluation.matchedKeywords,
+    improvements: atsEvaluation.recommendations.high,
+    breakdown: atsEvaluation.breakdown,
+    detailedMetrics: atsEvaluation.detailedMetrics,
     tone: request.tone,
     wordCount,
     deepResearch,

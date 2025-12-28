@@ -182,27 +182,4 @@ export function manualKeywordExtraction(jobDescription: string, userSkills: stri
   return [...new Set([...foundKeywords, ...matchingSkills])].slice(0, 12);
 }
 
-/**
- * Fallback ATS scoring
- */
-export function calculateFallbackATSScore(content: string, keywords: string[]): number {
-  let score = 50;
-
-  const contentWords = content.toLowerCase().split(/\s+/);
-  const matchedKeywords = keywords.filter(keyword =>
-    contentWords.some(word => word.toLowerCase().includes(keyword.toLowerCase()))
-  );
-
-  score += (matchedKeywords.length / keywords.length) * 30;
-
-  const wordCount = content.split(' ').length;
-  if (wordCount >= 200 && wordCount <= 400) {
-    score += 10;
-  }
-
-  if (content.includes('Dear') && content.includes('Best regards')) {
-    score += 10;
-  }
-
-  return Math.min(100, Math.round(score));
-}
+// End of parsers.ts

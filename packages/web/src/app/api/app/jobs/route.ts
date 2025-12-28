@@ -2,7 +2,7 @@ import { z } from "zod";
 import { FieldValue } from "firebase-admin/firestore";
 import { withApi, OPTIONS } from "@/lib/api/withApi";
 import { getAdminDb } from "@/firebase/admin";
-import { normalizeJobUrl, extractJobIdentifier } from "@/lib/utils/urlNormalizer";
+import { normalizeJobUrl, extractJobIdentifier } from "@hireall/shared";
 import { AuthorizationError, ValidationError } from "@/lib/api/errorResponse";
 import { ERROR_CODES } from "@/lib/api/errorCodes";
 
