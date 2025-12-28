@@ -7,11 +7,17 @@ import {
   RefreshCw,
   Eye,
   Zap,
-  Star,
   Download,
   Loader2,
-  Trash2,
+  Palette,
 } from "lucide-react";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -20,7 +26,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { showSuccess, showError } from "@/components/ui/Toast";
@@ -165,7 +170,17 @@ export const CoverLetterGenerator: React.FC<CoverLetterGeneratorProps> = ({
   };
 
   const handleDownloadPDF = async () => {
-    if (!letter) return;
+    if (!letter) {
+      showError("No content to export");
+      return;
+    }
+
+    const validation = PDFGenerator.validateContent(letter);
+    if (!validation.valid) {
+      showError(validation.errors[0]);
+      return;
+    }
+
     setDownloadingPDF(true);
     try {
       const metadata = {
@@ -173,11 +188,24 @@ export const CoverLetterGenerator: React.FC<CoverLetterGeneratorProps> = ({
         jobTitle: formData.jobTitle,
         companyName: formData.companyName,
         date: new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
+        email: resumeData.personalInfo?.email || "",
+        phone: resumeData.personalInfo?.phone || "",
+        location: resumeData.personalInfo?.location || "",
+        recipientTitle: formData.hiringManager || "Hiring Manager",
       };
-      await PDFGenerator.generateAndDownloadCoverLetter(letter, metadata);
-      showSuccess("PDF downloaded!");
+
+      const pdfOptions = {
+        template: formData.template,
+        colorScheme: formData.colorScheme,
+        fontSize: 12,
+        font: 'helvetica' as const,
+      };
+
+      await PDFGenerator.generateAndDownloadCoverLetter(letter, metadata, undefined, pdfOptions);
+      showSuccess("Professional PDF downloaded!");
     } catch (e) {
-      showError("PDF download failed");
+      console.error("PDF download failed:", e);
+      showError("PDF download failed. Please try again.");
     } finally {
       setDownloadingPDF(false);
     }
@@ -218,6 +246,33 @@ export const CoverLetterGenerator: React.FC<CoverLetterGeneratorProps> = ({
             selectedTemplate={formData.template}
             onTemplateSelect={(t) => updateField("template", t)}
           />
+
+          <div className="mt-6 pt-6 border-t border-gray-100">
+            <div className="flex items-center gap-2 mb-4">
+              <Palette className="h-4 w-4 text-primary" />
+              <h4 className="text-sm font-bold text-gray-700 uppercase tracking-wider">Accent Color Scheme</h4>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Select 
+                value={formData.colorScheme} 
+                onValueChange={(val: any) => updateField("colorScheme", val)}
+              >
+                <SelectTrigger className="w-full bg-white border-gray-200">
+                  <SelectValue placeholder="Select a color scheme" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="hireall">Hireall (Teal)</SelectItem>
+                  <SelectItem value="blue">Professional Blue</SelectItem>
+                  <SelectItem value="gray">Sleek Gray</SelectItem>
+                  <SelectItem value="green">Nature Green</SelectItem>
+                  <SelectItem value="purple">Creative Purple</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-[10px] text-gray-400 mt-2 md:col-span-2 lg:col-span-3">
+                This color will be used for headers and accents in your PDF.
+              </p>
+            </div>
+          </div>
         </section>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">

@@ -349,10 +349,25 @@ function parseExperienceSection(content: string): ParsedExperience[] {
       const cleanParts = parts.map(p => p.replace(DATE_PATTERNS[3], '').replace(DATE_PATTERNS[2], '').trim()).filter(p => p);
       
       if (cleanParts.length >= 2) {
-        // Simple heuristic: which one looks more like a company?
-        // For now, assume Title | Company or Company | Title
-        experience.title = cleanParts[1];
-        experience.company = cleanParts[0];
+        // Heuristic: identify company based on common suffixes or position
+        const companySuffixes = ['inc', 'corp', 'llc', 'ltd', 'company', 'solutions', 'systems', 'tech', 'technologies'];
+        const p0Lower = cleanParts[0].toLowerCase();
+        const p1Lower = cleanParts[1].toLowerCase();
+        
+        const isP0Company = companySuffixes.some(s => p0Lower.includes(s));
+        const isP1Company = companySuffixes.some(s => p1Lower.includes(s));
+
+        if (isP0Company && !isP1Company) {
+          experience.company = cleanParts[0];
+          experience.title = cleanParts[1];
+        } else if (isP1Company && !isP0Company) {
+          experience.company = cleanParts[1];
+          experience.title = cleanParts[0];
+        } else {
+          // Default to Title | Company as it's more common in resumes
+          experience.title = cleanParts[0];
+          experience.company = cleanParts[1];
+        }
       } else {
         experience.title = cleanParts[0] || '';
       }

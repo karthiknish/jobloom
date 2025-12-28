@@ -357,10 +357,6 @@ async function cacheSessionClaims(token: string, claims: VerifiedSessionClaims):
   });
 }
 
-// Import Firebase Admin for session verification
-// Note: This would require server-side Firebase Admin SDK to be available
-// For now, we'll implement a fallback that checks if session exists in our session store
-
 async function verifySessionCookieToken(token: string): Promise<VerifiedSessionClaims | null> {
   const cached = await getCachedSessionClaims(token);
   if (cached) {

@@ -76,4 +76,5 @@ export const DEFAULT_LETTER_DATA: CoverLetterData = {
   customClosing: "",
   tone: "professional",
   template: "modern",
+  colorScheme: "hireall",
 };

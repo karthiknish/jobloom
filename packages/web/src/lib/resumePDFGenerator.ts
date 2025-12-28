@@ -1299,6 +1299,108 @@ export class ResumePDFGenerator {
   }
 
   /**
+   * Generate a resume PDF from raw text (used for edited resumes)
+   */
+  static async generateRawResumePDF(
+    content: string,
+    metadata: ResumeMetadata,
+    options: ResumePDFOptions = {}
+  ): Promise<Blob> {
+    const opts = { ...this.DEFAULT_OPTIONS, ...options };
+    
+    // Create new PDF document
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    // Page dimensions
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const contentWidth = pageWidth - (opts.margin! * 2);
+    const lineHeight = opts.fontSize! * opts.lineHeight! * 0.3527;
+
+    pdf.setFont(opts.font!, 'normal');
+    pdf.setFontSize(opts.fontSize!);
+
+    let currentY = opts.margin!;
+
+    // Add a simple header for raw version
+    const colors = getColorScheme(opts.colorScheme);
+    applyTextColor(pdf, colors.primary);
+    pdf.setFont(opts.font!, 'bold');
+    pdf.setFontSize(22);
+    pdf.text(metadata.candidateName, opts.margin!, currentY);
+    currentY += 12;
+
+    // Content
+    applyTextColor(pdf, colors.text);
+    pdf.setFont(opts.font!, 'normal');
+    pdf.setFontSize(opts.fontSize!);
+
+    // Split content into paragraphs
+    const paragraphs = content.split('\n');
+    
+    for (const line of paragraphs) {
+      if (!line.trim() && line !== '') {
+        currentY += lineHeight * 0.5;
+        continue;
+      }
+
+      const wrappedLines = pdf.splitTextToSize(line, contentWidth);
+      
+      for (const wrappedLine of wrappedLines) {
+        if (currentY > pageHeight - opts.margin! - 10) {
+          pdf.addPage();
+          currentY = opts.margin!;
+        }
+        pdf.text(wrappedLine, opts.margin!, currentY);
+        currentY += lineHeight;
+      }
+    }
+
+    return new Blob([pdf.output('blob')], { type: 'application/pdf' });
+  }
+
+  /**
+   * Generate and download raw resume PDF
+   */
+  static async generateAndDownloadRawResume(
+    content: string,
+    metadata: ResumeMetadata,
+    options?: ResumePDFOptions
+  ): Promise<void> {
+    try {
+      const pdfBlob = await this.generateRawResumePDF(content, metadata, options);
+      const filename = `${metadata.candidateName.replace(/\s+/g, '_')}_Resume_Edited_${new Date().toISOString().split('T')[0]}.pdf`;
+      this.downloadResumePDF(pdfBlob, filename);
+    } catch (error) {
+      console.error('Raw Resume PDF generation failed:', error);
+      throw new Error('Failed to generate raw resume PDF');
+    }
+  }
+
+  /**
+   * Preview raw resume PDF
+   */
+  static async previewRawResumePDF(
+    content: string,
+    metadata: ResumeMetadata,
+    options?: ResumePDFOptions
+  ): Promise<void> {
+    try {
+      const pdfBlob = await this.generateRawResumePDF(content, metadata, options);
+      const url = URL.createObjectURL(pdfBlob);
+      window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch (error) {
+      console.error('Raw Resume PDF preview failed:', error);
+      throw new Error('Failed to generate raw resume PDF preview');
+    }
+  }
+
+  /**
    * Validate resume data for PDF generation
    */
   static validateResumeData(resumeData: ResumeData): { valid: boolean; errors: string[] } {

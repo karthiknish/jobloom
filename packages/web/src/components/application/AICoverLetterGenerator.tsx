@@ -114,21 +114,22 @@ export function AICoverLetterGenerator() {
 
     if (plan === "free" && !isAdmin) {
       const mockLetter: GeneratedCoverLetter = {
-        content: `Dear Hiring Manager,\n\nI am writing to express my strong interest in the ${formData.jobTitle} position at ${formData.companyName}. With my background and skills, I am confident that I would be a valuable addition to your team.\n\n${formData.jobDescription.slice(0, 200)}... [This is a demo version]\n\n${formData.skills.length > 0 ? `My key skills include: ${formData.skills.join(", ")}.` : ""}\n\nI am excited about the opportunity to contribute to ${formData.companyName} and would welcome the chance to discuss how my experience aligns with your needs.\n\nThank you for your consideration.\n\nSincerely,\n[Your Name]`,
+        content: `Dear Hiring Manager,\n\nI am writing to express my enthusiastic interest in the ${formData.jobTitle} position at ${formData.companyName}, as advertised. With a strong professional background and a proven track record of delivering exceptional results, I am confident that my skills and experiences make me an ideal candidate for this role.\n\nIn my previous experience, I have consistently demonstrated a commitment to excellence and a passion for ${formData.skills.slice(0, 3).join(", ") || "professional growth"}. I was particularly drawn to ${formData.companyName} because of its reputation for innovation and its dedication to ${deepResearch ? "market-leading products" : "excellence"}. I am eager to bring my unique perspective and technical proficiency to your team.\n\nMy key strengths include:\n${formData.skills.map(skill => `• ${skill}`).join("\n") || "• Strategic problem-solving\n• Collaborative teamwork\n• Results-driven approach"}\n\nI am excited about the possibility of contributing to ${formData.companyName} and would welcome the opportunity to discuss my qualifications with you in more detail. Thank you for your time and consideration.\n\nSincerely,\n\n${user?.displayName || "[Your Name]"}`,
         atsScore: 85,
-        keywords: ["leadership", "communication", "problem-solving", "teamwork"],
+        keywords: ["strategic", "collaborative", "results-driven", "innovative"],
         improvements: [
-          "Add specific quantifiable achievements",
-          "Include more company-specific keywords",
-          "Strengthen the opening statement",
+          "Include a specific project that matches the job requirements",
+          "Quantify your achievements with numbers or percentages",
+          "Custom-tailor the opening sentence to current company news",
         ],
         tone: formData.tone,
-        wordCount: 250,
+        wordCount: 280,
         deepResearch,
         researchInsights: deepResearch
           ? [
-              `Highlight how ${formData.companyName}'s culture aligns with your values`,
-              "Reference a recent company initiative to show research",
+              `Highlight how ${formData.companyName}'s mission aligns with your personal values`,
+              "Mention a recent industry award the company received",
+              "Reference their recent expansion into new markets",
             ]
           : [],
       };

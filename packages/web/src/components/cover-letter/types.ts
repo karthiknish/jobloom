@@ -17,6 +17,7 @@ export interface CoverLetterData {
   customClosing?: string;
   tone: CoverLetterTone;
   template: CoverLetterTemplate;
+  colorScheme: "hireall" | "blue" | "gray" | "green" | "purple";
 }
 
 export interface CoverLetterGeneratorProps {

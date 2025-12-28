@@ -359,7 +359,8 @@ export function DashboardJobsView({
             <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
               {/* Enhanced Export */}
               <ExportOptionsDropdown
-                applications={filteredApplications}
+                allApplications={safeApplications}
+                filteredApplications={filteredApplications}
                 selectedIds={bulkSelection.selectedArray}
               />
               

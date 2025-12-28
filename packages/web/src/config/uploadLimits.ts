@@ -54,8 +54,7 @@ export function getUploadLimitsForPlan(plan: string = 'free'): UploadLimits {
  */
 export async function getUploadLimitsForUser(userId: string): Promise<UploadLimits> {
   try {
-    // This would typically check the user's subscription in the database
-    // For now, we'll return a basic implementation
+    // Check the user's subscription in the database to determine limits
     const { getAdminDb } = await import('@/firebase/admin');
     const db = getAdminDb();
     

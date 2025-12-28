@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Brain,
@@ -93,6 +93,7 @@ export function AIResumeGenerator() {
   const { plan, isAdmin } = useSubscription();
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedResume, setGeneratedResume] = useState<GeneratedResume | null>(null);
+  const [editedContent, setEditedContent] = useState("");
   const [formData, setFormData] = useState<ResumeData>({
     // Personal Details
     fullName: user?.displayName || "",
@@ -161,7 +162,7 @@ export function AIResumeGenerator() {
     { value: "modern", label: "Modern", description: "Clean and contemporary", preview: "/images/previews/modern.png" },
     { value: "classic", label: "Classic", description: "Traditional and professional", preview: "/images/previews/classic.png" },
     { value: "creative", label: "Creative", description: "For creative industries", preview: "/images/previews/creative.png" },
-    { value: "tech", label: "Technical", description: "For technical/IT roles", preview: "/images/previews/executive.png" },
+    { value: "tech", label: "Technical", description: "For technical/IT roles", preview: "/images/previews/tech.png" },
   ];
 
   const canGenerate = Boolean(formData.jobTitle.trim() && formData.experience.trim());
@@ -231,6 +232,20 @@ export function AIResumeGenerator() {
     }
   };
 
+  useEffect(() => {
+    if (generatedResume) {
+      setEditedContent(generatedResume.content);
+    } else {
+      setEditedContent("");
+    }
+  }, [generatedResume]);
+
+  const previewWordCount = useMemo(() => {
+    const content = (editedContent || "").trim();
+    if (!content) return 0;
+    return content.split(/\s+/).filter(Boolean).length;
+  }, [editedContent]);
+
   const generateMockResumeContent = (data: ResumeData): string => {
     return `${generateMockSummary(data)}
 
@@ -247,22 +262,35 @@ ${data.education || "Bachelor's Degree in relevant field"}
 
   const generateMockSummary = (data: ResumeData): string => {
     const levelMap = {
-      entry: "motivated and detail-oriented",
-      mid: "skilled and results-driven", 
-      senior: "experienced and strategic",
-      executive: "visionary and accomplished"
+      entry: "Ambitious and highly motivated",
+      mid: "Dynamic and results-oriented", 
+      senior: "Strategic and highly experienced",
+      executive: "Visionary and multi-faceted"
     };
 
+    const styleMap = {
+      modern: "exceptional communication and analytical skills",
+      classic: "demonstrated leadership and organizational excellence",
+      creative: "a proven track record of innovative problem-solving",
+      tech: "a passion for collaborative and agile environments",
+    };
+
+    const summary = `${levelMap[data.level] || "Dedicated"} ${data.industry || "industry"} professional with ${styleMap[data.style] || "a strong background in the field"}. 
+Proven ability to drive efficiency and deliver high-quality results. Seeking a ${data.jobTitle || "challenging"} position to contribute to team success and organizational growth.`;
+
     return `PROFESSIONAL SUMMARY
-${levelMap[data.level]} professional with expertise in ${data.industry}. 
-Seeking ${data.jobTitle} position where I can leverage my skills and experience to drive results.`;
+${summary}`;
   };
 
   const generateMockExperience = (data: ResumeData): string => {
     return `PROFESSIONAL EXPERIENCE
-${data.experience}
+${data.experience || "Senior Specialist | Previous Company"}
+• Streamlined core operations resulting in a 20% increase in team productivity.
+• Collaborated with cross-functional partners to implement strategic initiatives.
+• Regularly exceeded performance targets and received commendations for excellence.
+• Mentored junior team members and fostered a culture of continuous improvement.
 
-[This would include specific achievements, metrics, and responsibilities]`;
+[Upgrade to Premium for AI-tailored bullet points specific to your target job]`;
   };
 
   const extractKeywords = (data: ResumeData): string[] => {
@@ -318,7 +346,7 @@ ${data.experience}
   const copyToClipboard = async () => {
     if (generatedResume) {
       try {
-        await navigator.clipboard.writeText(generatedResume.content);
+        await navigator.clipboard.writeText(editedContent || generatedResume.content);
         showSuccess("Copied!", "Resume copied to clipboard.");
       } catch (error) {
         showError("Failed to copy", "Please try again.");
@@ -383,19 +411,41 @@ ${data.experience}
         return;
       }
 
-      await ResumePDFGenerator.generateAndDownloadResume(
-        resumeData,
-        undefined,
-        {
-          template: resumeOptions.template,
-          fontSize: resumeOptions.fontSize,
-          lineHeight: 1.4,
-          margin: 15,
-          font: resumeOptions.font,
-          includePhoto: false,
-          colorScheme: resumeOptions.colorScheme
-        }
-      );
+      // Check if user has edited the content
+      const isEdited = editedContent.trim() !== generatedResume.content.trim();
+
+      if (isEdited) {
+        await ResumePDFGenerator.generateAndDownloadRawResume(
+          editedContent,
+          {
+            candidateName: formData.fullName || user?.displayName || 'Your Name',
+            generatedDate: new Date().toLocaleDateString()
+          },
+          {
+            template: resumeOptions.template,
+            fontSize: resumeOptions.fontSize,
+            lineHeight: 1.4,
+            margin: 15,
+            font: resumeOptions.font,
+            includePhoto: false,
+            colorScheme: resumeOptions.colorScheme
+          }
+        );
+      } else {
+        await ResumePDFGenerator.generateAndDownloadResume(
+          resumeData,
+          undefined,
+          {
+            template: resumeOptions.template,
+            fontSize: resumeOptions.fontSize,
+            lineHeight: 1.4,
+            margin: 15,
+            font: resumeOptions.font,
+            includePhoto: false,
+            colorScheme: resumeOptions.colorScheme
+          }
+        );
+      }
 
       showSuccess("Success", "Resume PDF downloaded successfully!");
     } catch (error: any) {
@@ -455,15 +505,36 @@ ${data.experience}
         projects: []
       };
 
-      await ResumePDFGenerator.previewResumePDF(resumeData, {
-        template: resumeOptions.template,
-        fontSize: resumeOptions.fontSize,
-        lineHeight: 1.4,
-        margin: 15,
-        font: resumeOptions.font,
-        includePhoto: false,
-        colorScheme: resumeOptions.colorScheme
-      });
+      const isEdited = editedContent.trim() !== generatedResume.content.trim();
+
+      if (isEdited) {
+        await ResumePDFGenerator.previewRawResumePDF(
+          editedContent,
+          {
+            candidateName: formData.fullName || user?.displayName || 'Your Name',
+            generatedDate: new Date().toLocaleDateString()
+          },
+          {
+            template: resumeOptions.template,
+            fontSize: resumeOptions.fontSize,
+            lineHeight: 1.4,
+            margin: 15,
+            font: resumeOptions.font,
+            includePhoto: false,
+            colorScheme: resumeOptions.colorScheme
+          }
+        );
+      } else {
+        await ResumePDFGenerator.previewResumePDF(resumeData, {
+          template: resumeOptions.template,
+          fontSize: resumeOptions.fontSize,
+          lineHeight: 1.4,
+          margin: 15,
+          font: resumeOptions.font,
+          includePhoto: false,
+          colorScheme: resumeOptions.colorScheme
+        });
+      }
 
       showSuccess("Success", "Resume PDF preview opened in new tab!");
     } catch (error: any) {
@@ -1076,15 +1147,15 @@ ${data.experience}
                     <div className="flex items-center justify-between">
                       <h4 className="font-bold text-[10px] text-muted-foreground uppercase tracking-widest">Preview</h4>
                       <div className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded-md font-medium">
-                        {generatedResume.wordCount} words • {formData.style}
+                        {previewWordCount} words • {formData.style}
                       </div>
                     </div>
                     
-                    <div className="p-6 sm:p-8 bg-white text-black shadow-inner border rounded-sm min-h-[400px] max-h-[500px] overflow-y-auto font-sans text-[9pt] leading-relaxed select-all">
-                      <div className="whitespace-pre-wrap">
-                        {generatedResume.content}
-                      </div>
-                    </div>
+                    <Textarea
+                      value={editedContent}
+                      onChange={(e) => setEditedContent(e.target.value)}
+                      className="p-6 sm:p-8 bg-white text-black shadow-inner border rounded-sm min-h-[400px] max-h-[500px] overflow-y-auto font-sans text-[9pt] leading-relaxed resize-y"
+                    />
                   </div>
 
                   {/* Suggestions */}
