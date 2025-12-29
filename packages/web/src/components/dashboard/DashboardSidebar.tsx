@@ -29,7 +29,7 @@ interface NavItem {
 
 interface DashboardSidebarProps {
   activeSection: DashboardSection;
-  onSectionChange: (section: DashboardSection) => void;
+  onSectionChange: (section: Exclude<DashboardSection, "extension">) => void;
   jobsCount?: number;
   className?: string;
 }
