@@ -3,7 +3,7 @@ import { COLORS } from "../styles/colors";
 
 export const STATUS_CHANGE_SUBJECT = "Your application status has been updated";
 
-type ApplicationStatus = "saved" | "applied" | "offered" | "rejected" | "withdrawn";
+type ApplicationStatus = "interested" | "applied" | "interviewing" | "offered" | "rejected" | "withdrawn";
 
 interface StatusChangeEmailProps {
   userName?: string | null;
@@ -16,23 +16,25 @@ interface StatusChangeEmailProps {
 }
 
 const STATUS_LABELS: Record<ApplicationStatus, string> = {
-  saved: "Saved",
+  interested: "Interested",
   applied: "Applied",
+  interviewing: "Interviewing",
   offered: "Offered",
   rejected: "Not Selected",
   withdrawn: "Withdrawn",
 };
 
 const STATUS_MESSAGES: Record<ApplicationStatus, string> = {
-  saved: "You've saved this job to review later.",
+  interested: "You've saved this job to review later.",
   applied: "Great job! You've submitted your application.",
+  interviewing: "Exciting news! You've been invited to an interview.",
   offered: "Amazing news! You've received an offer!",
   rejected: "Unfortunately, this application didn't work out this time.",
   withdrawn: "You've withdrawn your application for this role.",
 };
 
 const STATUS_TIPS: Record<ApplicationStatus, string[]> = {
-  saved: [
+  interested: [
     "Review the job description carefully",
     "Tailor your resume to match key requirements",
     "Research the company before applying"
@@ -41,6 +43,11 @@ const STATUS_TIPS: Record<ApplicationStatus, string[]> = {
     "Follow up if you haven't heard back in 1-2 weeks",
     "Continue applying to other positions",
     "Prepare for potential next steps"
+  ],
+  interviewing: [
+    "Research the interviewers if possible",
+    "Prepare answers for common interview questions",
+    "Have examples of your experience ready"
   ],
   offered: [
     "Review the offer details carefully",

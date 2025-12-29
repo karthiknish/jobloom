@@ -82,6 +82,13 @@ export type {
   Notification,
 } from './activity';
 
+// Feedback types
+export type {
+  FeedbackSentiment,
+  AiFeedback,
+  CreateAiFeedbackRequest,
+} from './feedback';
+
 // Notification types
 export * from './notifications';
 

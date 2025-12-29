@@ -47,7 +47,8 @@ export function PasswordInput({
   ...props
 }: PasswordInputProps) {
   const [isVisible, setIsVisible] = useState(defaultVisible);
-  const inputId = id || `password-${React.useId()}`;
+  const generatedId = React.useId();
+  const inputId = id || `password-${generatedId}`;
   const helpId = `${inputId}-help`;
   const errorId = `${inputId}-error`;
 

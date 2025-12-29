@@ -14,6 +14,7 @@ import { BlogFilters } from "./BlogFilters";
 import { BlogTable } from "./BlogTable";
 import { BlogPagination } from "./BlogPagination";
 import { BulkActions } from "./BulkActions";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import type { BlogPost } from "@/types/api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
@@ -82,6 +83,19 @@ export function BlogManagement() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(10);
   const [selectedPosts, setSelectedPosts] = useState<string[]>([]);
+
+  // Confirm Dialog State
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: "",
+    description: "",
+    onConfirm: () => {},
+  });
 
   // Check admin access
   useEffect(() => {
@@ -170,15 +184,20 @@ export function BlogManagement() {
   };
 
   const handleDeletePost = async (postId: string) => {
-    if (confirm("Are you sure you want to delete this post?")) {
-      try {
-        await deletePostMutation.mutate(postId);
-        showSuccess("Post deleted successfully");
-        refetchPosts();
-      } catch (error) {
-        showError("Failed to delete post");
-      }
-    }
+    setConfirmDialog({
+      isOpen: true,
+      title: "Delete Blog Post",
+      description: "Are you sure you want to delete this post? This action cannot be undone.",
+      onConfirm: async () => {
+        try {
+          await deletePostMutation.mutate(postId);
+          showSuccess("Post deleted successfully");
+          refetchPosts();
+        } catch (error) {
+          showError("Failed to delete post");
+        }
+      },
+    });
   };
 
   const handleViewPost = (post: BlogPost) => {
@@ -186,18 +205,23 @@ export function BlogManagement() {
   };
 
   const handleBulkDelete = async () => {
-    if (confirm(`Are you sure you want to delete ${selectedPosts.length} posts?`)) {
-      try {
-        await Promise.all(
-          selectedPosts.map((postId) => deletePostMutation.mutate(postId))
-        );
-        showSuccess("Posts deleted successfully");
-        setSelectedPosts([]);
-        refetchPosts();
-      } catch (error) {
-        showError("Failed to delete posts");
-      }
-    }
+    setConfirmDialog({
+      isOpen: true,
+      title: "Bulk Delete Posts",
+      description: `Are you sure you want to delete ${selectedPosts.length} posts? This action cannot be undone.`,
+      onConfirm: async () => {
+        try {
+          await Promise.all(
+            selectedPosts.map((postId) => deletePostMutation.mutate(postId))
+          );
+          showSuccess("Posts deleted successfully");
+          setSelectedPosts([]);
+          refetchPosts();
+        } catch (error) {
+          showError("Failed to delete posts");
+        }
+      },
+    });
   };
 
   const handleBulkArchive = async () => {
@@ -389,6 +413,14 @@ export function BlogManagement() {
         </Card>
       </motion.div>
 
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        onOpenChange={(isOpen) => setConfirmDialog(prev => ({ ...prev, isOpen }))}
+        title={confirmDialog.title}
+        description={confirmDialog.description}
+        onConfirm={confirmDialog.onConfirm}
+        variant="destructive"
+      />
     </motion.div>
     </AdminLayout>
   );

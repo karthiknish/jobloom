@@ -19,6 +19,14 @@ export interface AdminAnalyticsResponse {
   events?: {
     top?: Array<{ event: string; count: number }>;
   };
+  aiFeedback?: {
+    total: number;
+    positive: number;
+    negative: number;
+    sentimentScore: number;
+    thisWeek: number;
+    byType: Record<string, { total: number; positive: number; negative: number }>;
+  };
 }
 
 export const analyticsApi = {

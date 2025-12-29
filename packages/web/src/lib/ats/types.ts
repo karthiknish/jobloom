@@ -30,11 +30,17 @@ export interface AtsDetailedMetrics {
   readabilityGrade: number;
 }
 
+export interface AtsRecommendationItem {
+  id: string;
+  text: string;
+  metadata?: Record<string, any>;
+}
+
 // Prioritized recommendations
 export interface AtsRecommendations {
-  high: string[];    // Fix immediately
-  medium: string[];  // Should improve
-  low: string[];     // Nice to have
+  high: (string | AtsRecommendationItem)[];    // Fix immediately
+  medium: (string | AtsRecommendationItem)[];  // Should improve
+  low: (string | AtsRecommendationItem)[];     // Nice to have
 }
 
 // Complete ATS evaluation result
@@ -46,7 +52,7 @@ export interface AtsEvaluation {
   missingKeywords: string[];              // Suggested keywords to add
   strengths: string[];                    // What's good
   criticalIssues: string[];               // What must be fixed
-  improvements: string[];                 // General improvements
+  improvements: (string | AtsRecommendationItem)[];                 // General improvements
   recommendations: AtsRecommendations;    // Prioritized actions
 }
 
@@ -56,7 +62,7 @@ export interface ResumeScore {
   completeness: number;
   ats: number;
   impact: number;
-  suggestions: string[];
+  suggestions: (string | AtsRecommendationItem)[];
   breakdown?: AtsScoreBreakdown;
   detailedMetrics?: AtsDetailedMetrics;
   strengths?: string[];

@@ -121,7 +121,7 @@ export function JobDataTable({
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <Briefcase className="h-4 w-4 text-muted-foreground" />
-          <div className="max-w-[200px]">
+          <div className="max-w-[140px] sm:max-w-[200px] md:max-w-xs lg:max-w-md">
             <div className="font-medium truncate">{row.original.job?.title || "Untitled"}</div>
             <div className="text-sm text-muted-foreground">
               {row.original.job?.company || "Unknown company"}
@@ -189,7 +189,7 @@ export function JobDataTable({
         return (
           <div className="flex items-center gap-2">
             {getStatusIcon(status)}
-            <ApplicationStatusBadge status={status} />
+            <ApplicationStatusBadge status={status} className="capitalize" />
           </div>
         );
       },

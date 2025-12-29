@@ -4,14 +4,15 @@ import {
   JobStats, 
   SavedView, 
   KanbanStatus, 
-  DashboardView, 
+  DashboardView as SharedDashboardView, 
   BoardMode,
   SalaryInfo
 } from "@hireall/shared";
 
 export type ApplicationStatus = 
-  | "saved"
+  | "interested"
   | "applied"
+  | "interviewing"
   | "offered"
   | "rejected"
   | "withdrawn";
@@ -22,7 +23,8 @@ export type {
   JobStats, 
   SavedView, 
   KanbanStatus, 
-  DashboardView, 
   BoardMode,
   SalaryInfo
 };
+
+export type DashboardView = SharedDashboardView | "feedback";

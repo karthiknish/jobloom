@@ -11,9 +11,9 @@ export interface ActivityLog {
   /** User who performed the action */
   userId: string;
   /** Type of action performed */
-  action: 'created' | 'updated' | 'deleted' | 'restored' | 'status_changed' | 'note_added' | 'cv_analyzed' | 'cover_letter_generated';
+  action: 'created' | 'updated' | 'deleted' | 'restored' | 'status_changed' | 'note_added' | 'cv_analyzed' | 'cover_letter_generated' | 'feedback_given' | 'suggestion_implemented';
   /** Type of entity affected */
-  entityType: 'application' | 'job' | 'cv' | 'cover_letter' | 'resume';
+  entityType: 'application' | 'job' | 'cv' | 'cover_letter' | 'resume' | 'ai_feedback';
   /** ID of the affected entity */
   entityId: string;
   /** Display title of the entity */

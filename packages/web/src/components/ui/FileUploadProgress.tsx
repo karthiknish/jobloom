@@ -16,6 +16,7 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { Card, cardVariants } from "@/components/ui/card";
 
 export type FileUploadStatus = "idle" | "uploading" | "success" | "error";
 
@@ -88,11 +89,11 @@ export function FileUploadProgress({
   };
 
   return (
-    <div
+    <Card
       className={cn(
-        "rounded-lg border p-4",
+        "p-4 w-full max-w-2xl mx-auto shadow-sm transition-all duration-300",
         status === "error" ? "border-destructive/50 bg-destructive/5" : "border-border",
-        status === "success" ? "border-green-200 bg-green-50" : "",
+        status === "success" ? "border-green-200 bg-green-50 shadow-green-100/20" : "shadow-gray-100/20",
         className
       )}
     >
@@ -170,7 +171,7 @@ export function FileUploadProgress({
           )}
         </div>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -197,7 +198,8 @@ export function RetryableError({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        "rounded-lg border border-destructive/50 bg-destructive/5 p-4",
+        cardVariants(),
+        "p-4 w-full max-w-2xl mx-auto shadow-sm transition-all duration-300 border-destructive/50 bg-destructive/5",
         className
       )}
     >

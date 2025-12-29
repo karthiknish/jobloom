@@ -12,8 +12,9 @@ import type { CoverLetterRequest, ResumeGenerationRequest } from './types';
 export function createCoverLetterPrompt(data: CoverLetterRequest & {
   keywords: string[];
   researchInsights: string[];
+  learningPoints?: string[];
 }): string {
-  const { jobTitle, companyName, jobDescription, skills, experience, tone, length, keywords, deepResearch, researchInsights } = data;
+  const { jobTitle, companyName, jobDescription, skills, experience, tone, length, keywords, deepResearch, researchInsights, learningPoints = [] } = data;
 
   const lengthGuide = {
     concise: '200-250 words',
@@ -68,13 +69,15 @@ INSTRUCTIONS:
 7. Ensure the letter is ${lengthGuide[length]}
 
 Format as a professional cover letter with proper salutation and closing.
+
+${createLearningNote(learningPoints)}
 `;
 }
 
 /**
  * Create resume analysis prompt
  */
-export function createResumeAnalysisPrompt(resumeText: string, jobDescription?: string): string {
+export function createResumeAnalysisPrompt(resumeText: string, jobDescription?: string, learningPoints: string[] = []): string {
   return `
 Analyze this resume for ATS compatibility and job fit. Also, extract all information into a structured format.
 If this is a LinkedIn PDF export, pay special attention to the specific formatting LinkedIn uses.
@@ -168,13 +171,15 @@ Focus on:
 - Quantifiable achievements
 - Industry-specific terminology
 - ACCURATE extraction of all dates, companies, and roles.
+
+${createLearningNote(learningPoints)}
 `;
 }
 
 /**
  * Create resume generation prompt
  */
-export function createResumeGenerationPrompt(request: ResumeGenerationRequest): string {
+export function createResumeGenerationPrompt(request: ResumeGenerationRequest & { learningPoints?: string[] }): string {
   const {
     jobTitle,
     experience,
@@ -186,6 +191,7 @@ export function createResumeGenerationPrompt(request: ResumeGenerationRequest): 
     includeObjective,
     atsOptimization,
     aiEnhancement,
+    learningPoints = [],
   } = request;
 
   const styleGuide: Record<string, string> = {
@@ -247,7 +253,10 @@ Candidate context:
 - Education: ${education || 'Not specified'}
 - Experience highlights: ${experience || 'Not provided'}
 
-Ensure each section is complete. Provide the full resume body in the "content" field with appropriate headings (e.g., SUMMARY, EXPERIENCE, SKILLS, EDUCATION).`;
+Ensure each section is complete. Provide the full resume body in the "content" field with appropriate headings (e.g., SUMMARY, EXPERIENCE, SKILLS, EDUCATION).
+
+${createLearningNote(learningPoints)}
+`;
 }
 
 /**
@@ -316,3 +325,16 @@ Example: ["Emphasizes collaborative team environment with cross-functional proje
 `;
 }
 
+
+/**
+ * Helper to create a learning note from recent feedback
+ */
+export function createLearningNote(learningPoints: string[]): string {
+  if (!learningPoints || learningPoints.length === 0) return "";
+
+  return `
+LEARNING FROM RECENT FEEDBACK:
+Based on recent user feedback, please pay special attention to avoiding the following issues:
+${learningPoints.map(point => `- ${point}`).join('\n')}
+`;
+}

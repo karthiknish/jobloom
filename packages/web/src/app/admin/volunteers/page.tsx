@@ -25,6 +25,7 @@ import { useEnhancedApi } from "@/hooks/useEnhancedApi";
 import { adminApi } from "@/utils/api/admin";
 import { exportToCsv } from "@/utils/exportToCsv";
 import { AdminLayout } from "@/components/admin/AdminLayout";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { AdminAccessDenied } from "@/components/admin/AdminAccessDenied";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner, LoadingPage } from "@/components/ui/loading";
@@ -123,6 +124,19 @@ export default function AdminVolunteerDashboard() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedVolunteer, setSelectedVolunteer] = useState<ContactSubmission | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+
+  // Confirm Dialog State
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: "",
+    description: "",
+    onConfirm: () => {},
+  });
 
   const canFetchAdminData = isAdmin === true;
 
@@ -287,25 +301,28 @@ export default function AdminVolunteerDashboard() {
   };
 
   const handleDelete = async (volunteer: ContactSubmission) => {
-    if (!confirm(`Delete application from ${volunteer.name}? This cannot be undone.`)) {
-      return;
-    }
-
-    try {
-      await deleteContact({ contactId: volunteer._id });
-      toast({
-        title: "Deleted",
-        description: "Application deleted",
-      });
-      refetchContacts();
-    } catch (error) {
-      console.error("Failed to delete", error);
-      toast({
-        title: "Error",
-        description: "Unable to delete application",
-        variant: "destructive",
-      });
-    }
+    setConfirmDialog({
+      isOpen: true,
+      title: "Delete Application",
+      description: `Delete application from ${volunteer.name}? This cannot be undone.`,
+      onConfirm: async () => {
+        try {
+          await deleteContact({ contactId: volunteer._id });
+          toast({
+            title: "Deleted",
+            description: "Application deleted",
+          });
+          refetchContacts();
+        } catch (error) {
+          console.error("Failed to delete", error);
+          toast({
+            title: "Error",
+            description: "Unable to delete application",
+            variant: "destructive",
+          });
+        }
+      },
+    });
   };
 
   const handleEmailVolunteer = (volunteer: ContactSubmission) => {
@@ -698,6 +715,15 @@ export default function AdminVolunteerDashboard() {
             })()}
           </DialogContent>
         </Dialog>
+
+        <ConfirmDialog
+          isOpen={confirmDialog.isOpen}
+          onOpenChange={(isOpen) => setConfirmDialog(prev => ({ ...prev, isOpen }))}
+          title={confirmDialog.title}
+          description={confirmDialog.description}
+          onConfirm={confirmDialog.onConfirm}
+          variant="destructive"
+        />
       </div>
     </AdminLayout>
   );

@@ -192,7 +192,7 @@ function buildResumeResponse(
     sections: { summary, experience, skills, education },
     atsScore: atsEvaluation.score,
     keywords: atsEvaluation.matchedKeywords,
-    suggestions: atsEvaluation.recommendations.high,
+    suggestions: atsEvaluation.recommendations.high.map(imp => typeof imp === 'string' ? imp : imp.text),
     breakdown: atsEvaluation.breakdown,
     detailedMetrics: atsEvaluation.detailedMetrics,
     wordCount,

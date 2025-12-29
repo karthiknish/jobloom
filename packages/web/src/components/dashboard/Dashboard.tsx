@@ -50,6 +50,7 @@ import { analytics } from "@/firebase/analytics";
 import { PullToRefresh } from "@/components/ui/PullToRefresh";
 import { useIsMobile } from "@/hooks/useMediaQuery";
 import { MobileFAB } from "@/components/dashboard/MobileFAB";
+import { FeedbackHistory } from "@/components/dashboard/FeedbackHistory";
 
 // Dynamically import heavy components for code-splitting
 const DraggableDashboard = dynamic(
@@ -70,7 +71,11 @@ const DashboardJobsView = dynamic(
 
 
 
-export function Dashboard() {
+interface DashboardProps {
+  initialView?: DashboardView;
+}
+
+export function Dashboard({ initialView = "dashboard" }: DashboardProps) {
   const { user, loading } = useFirebaseAuth();
   const { plan } = useSubscription();
   const isMobile = useIsMobile();
@@ -80,7 +85,7 @@ export function Dashboard() {
     "You've reached your monthly limit of 50 job applications. Upgrade to Premium for unlimited applications."
   );
 
-  const [view, setView] = useState<DashboardView>("dashboard");
+  const [view, setView] = useState<DashboardView>(initialView);
   const [boardMode, setBoardMode] = useState<BoardMode>(() => {
     // Load from localStorage on initial render (fallback while API loads)
     if (typeof window !== 'undefined') {
@@ -430,6 +435,7 @@ export function Dashboard() {
                 size="sm" 
                 onClick={() => setShowReminderAlert(false)}
                 className="h-8 w-8 p-0 rounded-full"
+                aria-label="Close reminder alert"
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -490,6 +496,10 @@ export function Dashboard() {
                 onAddJob={() => setShowJobForm(true)}
                 onImport={() => setShowImportModal(true)}
               />
+            )}
+
+            {view === "feedback" && (
+              <FeedbackHistory />
             )}
           </div>
         </div>

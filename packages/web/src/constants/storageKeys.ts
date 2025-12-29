@@ -1,3 +1,5 @@
+import { safeParseJson, safeLocalStorageGet, safeLocalStorageSet, safeLocalStorageRemove } from "@hireall/shared";
+
 export const STORAGE_KEYS = {
   jobDraft: "hireall:draft:job",
   resumeData: "hireall:draft:resume",
@@ -10,35 +12,25 @@ export const LEGACY_STORAGE_KEYS = {
   goals: ["hireall-goals"],
 } as const;
 
-function safeParseJson<T>(raw: string): T | null {
-  try {
-    return JSON.parse(raw) as T;
-  } catch {
-    return null;
-  }
-}
-
 export function readAndMigrateJsonFromStorage<T>(
   primaryKey: string,
   legacyKeys: readonly string[] = []
 ): T | null {
-  if (typeof window === "undefined") return null;
-
-  const primaryRaw = window.localStorage.getItem(primaryKey);
+  const primaryRaw = safeLocalStorageGet(primaryKey);
   if (primaryRaw) {
     return safeParseJson<T>(primaryRaw);
   }
 
   for (const legacyKey of legacyKeys) {
-    const legacyRaw = window.localStorage.getItem(legacyKey);
+    const legacyRaw = safeLocalStorageGet(legacyKey);
     if (!legacyRaw) continue;
 
     const parsed = safeParseJson<T>(legacyRaw);
     if (parsed === null) continue;
 
     try {
-      window.localStorage.setItem(primaryKey, JSON.stringify(parsed));
-      window.localStorage.removeItem(legacyKey);
+      safeLocalStorageSet(primaryKey, JSON.stringify(parsed));
+      safeLocalStorageRemove(legacyKey);
     } catch {
       // Ignore migration errors; still return parsed value.
     }
@@ -54,10 +46,8 @@ export function writeJsonToStorage(
   value: unknown,
   legacyKeysToRemove: readonly string[] = []
 ) {
-  if (typeof window === "undefined") return;
-
-  window.localStorage.setItem(key, JSON.stringify(value));
+  safeLocalStorageSet(key, JSON.stringify(value));
   for (const legacyKey of legacyKeysToRemove) {
-    window.localStorage.removeItem(legacyKey);
+    safeLocalStorageRemove(legacyKey);
   }
 }

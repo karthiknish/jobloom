@@ -23,6 +23,7 @@ import {
   PanelLeft,
   Heart,
   Bug,
+  Brain,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
@@ -80,6 +81,11 @@ const sidebarItems = [
     title: "Analytics",
     href: "/admin/analytics",
     icon: BarChart3,
+  },
+  {
+    title: "AI Learning",
+    href: "/admin/learning",
+    icon: Brain,
   },
   {
     title: "Email Marketing",

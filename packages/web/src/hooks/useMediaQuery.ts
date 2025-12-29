@@ -47,7 +47,9 @@ export function useIsMobile(): boolean {
 }
 
 export function useIsTablet(): boolean {
-  return useMediaQuery("(min-width: 640px)") && !useMediaQuery("(min-width: 1024px)");
+  const isSmall = useMediaQuery("(min-width: 640px)");
+  const isLarge = useMediaQuery("(min-width: 1024px)");
+  return isSmall && !isLarge;
 }
 
 export function useIsDesktop(): boolean {

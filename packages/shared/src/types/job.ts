@@ -32,6 +32,7 @@ export interface SocCodeMatch {
 type KanbanStatus =
   | "interested"
   | "applied"
+  | "interviewing"
   | "offered"
   | "rejected"
   | "withdrawn";

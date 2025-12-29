@@ -278,7 +278,10 @@ export function JobForm({ onSubmit, onCancel, initialData, isEditing = false }: 
           
           {/* Draft indicator */}
           {hasDraft && !isEditing && (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div 
+              className="flex items-center gap-2 text-xs text-muted-foreground"
+              aria-live="polite"
+            >
               {isSavingDraft ? (
                 <>
                   <Loader2 className="h-3 w-3 animate-spin" />
@@ -305,7 +308,10 @@ export function JobForm({ onSubmit, onCancel, initialData, isEditing = false }: 
               exit={{ opacity: 0, height: 0 }}
               className="mb-4"
             >
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-red-50 text-red-700 border border-red-200">
+              <div 
+                className="flex items-center gap-2 p-3 rounded-lg bg-red-50 text-red-700 border border-red-200"
+                role="alert"
+              >
                 <AlertCircle className="h-4 w-4" />
                 <span className="text-sm">{formError}</span>
               </div>
@@ -322,7 +328,10 @@ export function JobForm({ onSubmit, onCancel, initialData, isEditing = false }: 
               exit={{ opacity: 0, height: 0 }}
               className="mb-4"
             >
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-success-soft text-success border border-success/20">
+              <div 
+                className="flex items-center gap-2 p-3 rounded-lg bg-success-soft text-success border border-success/20"
+                role="status"
+              >
                 <CheckCircle2 className="h-4 w-4" />
                 <span className="text-sm">Job added successfully!</span>
               </div>

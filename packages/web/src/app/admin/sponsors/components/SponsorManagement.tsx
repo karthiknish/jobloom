@@ -13,6 +13,7 @@ import { SponsorFilters } from "./SponsorFilters";
 import { SponsorTable } from "./SponsorTable";
 import { SponsorCharts } from "./SponsorCharts";
 import { CreateSponsorDialog, type CreateSponsorData } from "./CreateSponsorDialog";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { exportToCsv } from "@/utils/exportToCsv";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -43,6 +44,19 @@ export function SponsorManagement() {
   const [dialogMode, setDialogMode] = useState<'create' | 'edit' | 'view'>('create');
   const [isExporting, setIsExporting] = useState(false);
   const [isReady, setIsReady] = useState(false);
+
+  // Confirm Dialog State
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: "",
+    description: "",
+    onConfirm: () => {},
+  });
 
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -164,15 +178,20 @@ export function SponsorManagement() {
   };
 
   const handleDeleteSponsor = async (sponsorId: string) => {
-    if (confirm("Are you sure you want to delete this sponsor?")) {
-      try {
-        await deleteSponsorMutation.mutate(sponsorId);
-        showSuccess("Sponsor deleted successfully");
-        refetchSponsors();
-      } catch (error) {
-        showError("Failed to delete sponsor");
-      }
-    }
+    setConfirmDialog({
+      isOpen: true,
+      title: "Delete Sponsor",
+      description: "Are you sure you want to delete this sponsor? This action cannot be undone.",
+      onConfirm: async () => {
+        try {
+          await deleteSponsorMutation.mutate(sponsorId);
+          showSuccess("Sponsor deleted successfully");
+          refetchSponsors();
+        } catch (error) {
+          showError("Failed to delete sponsor");
+        }
+      },
+    });
   };
 
   const handleViewSponsor = (sponsor: Sponsor) => {
@@ -400,7 +419,6 @@ export function SponsorManagement() {
         </motion.div>
       )}
 
-      {/* Create/Edit/View Sponsor Dialog */}
       <CreateSponsorDialog
         open={isCreateDialogOpen}
         onOpenChange={(open) => {
@@ -423,6 +441,15 @@ export function SponsorManagement() {
           isActive: editingSponsor.isActive !== false
         } : undefined}
         mode={dialogMode}
+      />
+
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        onOpenChange={(isOpen) => setConfirmDialog(prev => ({ ...prev, isOpen }))}
+        title={confirmDialog.title}
+        description={confirmDialog.description}
+        onConfirm={confirmDialog.onConfirm}
+        variant="destructive"
       />
     </motion.div>
     </AdminLayout>

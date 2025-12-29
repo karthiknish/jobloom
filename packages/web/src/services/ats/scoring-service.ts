@@ -10,6 +10,7 @@ import {
   AtsDetailedMetrics,
   AtsRecommendations,
   AtsEvaluationOptions,
+  AtsRecommendationItem,
 } from '@/lib/ats/types';
 
 import {
@@ -38,7 +39,7 @@ export interface TextScoringResult {
   matchedKeywords: string[];
   missingKeywords: string[];
   strengths: string[];
-  improvements: string[];
+  improvements: (string | AtsRecommendationItem)[];
   recommendations: AtsRecommendations;
   detailedMetrics?: AtsDetailedMetrics;
 }
@@ -442,27 +443,44 @@ function calculateImpactScore(metrics: AtsDetailedMetrics): number {
 }
 
 function calculateOverallScore(breakdown: AtsScoreBreakdown, type: 'resume' | 'cover-letter'): number {
+  // Fetch potential adjustments based on learning points
+  // In a real scenario, this would be cached or fetched once per session
+  const adjustments = getScoringAdjustments(type);
+
   // Weight categories differently for resume vs cover letter
   if (type === 'resume') {
-    return Math.round(
-      breakdown.structure * 0.15 +
-      breakdown.content * 0.20 +
-      breakdown.keywords * 0.25 +
-      breakdown.formatting * 0.10 +
-      breakdown.readability * 0.10 +
-      breakdown.impact * 0.20
+    const score = Math.round(
+      breakdown.structure * (0.15 + (adjustments.structure || 0)) +
+      breakdown.content * (0.20 + (adjustments.content || 0)) +
+      breakdown.keywords * (0.25 + (adjustments.keywords || 0)) +
+      breakdown.formatting * (0.10 + (adjustments.formatting || 0)) +
+      breakdown.readability * (0.10 + (adjustments.readability || 0)) +
+      breakdown.impact * (0.20 + (adjustments.impact || 0))
     );
+    return Math.max(0, Math.min(100, score));
   }
   
   // Cover letter weights
-  return Math.round(
-    breakdown.structure * 0.15 +
-    breakdown.content * 0.25 +
-    breakdown.keywords * 0.20 +
-    breakdown.formatting * 0.10 +
-    breakdown.readability * 0.15 +
-    breakdown.impact * 0.15
+  const score = Math.round(
+    breakdown.structure * (0.15 + (adjustments.structure || 0)) +
+    breakdown.content * (0.25 + (adjustments.content || 0)) +
+    breakdown.keywords * (0.20 + (adjustments.keywords || 0)) +
+    breakdown.formatting * (0.10 + (adjustments.formatting || 0)) +
+    breakdown.readability * (0.15 + (adjustments.readability || 0)) +
+    breakdown.impact * (0.15 + (adjustments.impact || 0))
   );
+  return Math.max(0, Math.min(100, score));
+}
+
+/**
+ * Get scoring weight adjustments based on verified learning points
+ * This allows the system to auto-tune itself based on user feedback trends
+ */
+function getScoringAdjustments(type: string): Record<string, number> {
+  // This is a simplified version. In production, this would fetch from a 
+  // 'scoring_overrides' collection populated by the aggregation engine.
+  // For now, it's a placeholder for the mechanism.
+  return {};
 }
 
 function getTargetKeywords(options: TextScoringOptions): string[] {
@@ -520,35 +538,61 @@ function generateImprovements(
   metrics: AtsDetailedMetrics,
   breakdown: AtsScoreBreakdown,
   type: 'resume' | 'cover-letter'
-): string[] {
-  const improvements: string[] = [];
+): AtsRecommendationItem[] {
+  const improvements: AtsRecommendationItem[] = [];
   
   if (breakdown.structure < 70) {
-    improvements.push(`Add missing sections: ${metrics.sectionsMissing.join(', ')}`);
+    improvements.push({
+      id: 'missing_sections',
+      text: `Add missing sections: ${metrics.sectionsMissing.join(', ')}`,
+      metadata: { missing: metrics.sectionsMissing }
+    });
   }
   if (breakdown.keywords < 70) {
-    improvements.push('Include more relevant keywords from job descriptions');
+    improvements.push({
+      id: 'low_keyword_density',
+      text: 'Include more relevant keywords from job descriptions',
+    });
   }
   if (breakdown.impact < 70) {
-    improvements.push('Add quantified achievements (percentages, numbers, metrics)');
+    improvements.push({
+      id: 'low_impact',
+      text: 'Add quantified achievements (percentages, numbers, metrics)',
+    });
   }
   if (metrics.actionVerbCount < 5) {
-    improvements.push('Use more action verbs like "Led", "Achieved", "Developed"');
+    improvements.push({
+      id: 'few_action_verbs',
+      text: 'Use more action verbs like "Led", "Achieved", "Developed"',
+      metadata: { count: metrics.actionVerbCount }
+    });
   }
   if (breakdown.readability < 70) {
-    improvements.push('Improve readability with shorter sentences');
+    improvements.push({
+      id: 'low_readability',
+      text: 'Improve readability with shorter sentences',
+      metadata: { grade: metrics.readabilityGrade }
+    });
   }
   if (metrics.wordCount < 200) {
-    improvements.push('Expand content with more detail about experience');
+    improvements.push({
+      id: 'short_content',
+      text: 'Expand content with more detail about experience',
+      metadata: { count: metrics.wordCount }
+    });
   }
   if (metrics.wordCount > 800 && type === 'resume') {
-    improvements.push('Consider condensing to 1-2 pages (300-600 words)');
+    improvements.push({
+      id: 'long_content',
+      text: 'Consider condensing to 1-2 pages (300-600 words)',
+      metadata: { count: metrics.wordCount }
+    });
   }
   
-  return improvements.slice(0, 5);
+  return improvements;
 }
 
-function prioritizeRecommendations(improvements: string[]): AtsRecommendations {
+function prioritizeRecommendations(improvements: AtsRecommendationItem[]): AtsRecommendations {
   // Simple prioritization: first 2 are high, next 2 are medium, rest are low
   return {
     high: improvements.slice(0, 2),

@@ -69,14 +69,29 @@ export const POST = withApi({
   const subscriptionsSnapshot = await db.collection('subscriptions').where('userId', '==', userId).get();
   subscriptionsSnapshot.docs.forEach(doc => deletionPromises.push(doc.ref.delete()));
 
-  // 5. Delete subcollections
-  const subcollections = ['coverLetters', 'aiResumes'];
+  // 5. Delete AI Feedback history
+  const aiFeedbackSnapshot = await db.collection('ai_feedback').where('userId', '==', userId).get();
+  aiFeedbackSnapshot.docs.forEach(doc => deletionPromises.push(doc.ref.delete()));
+
+  // 6. Delete Email logs
+  const emailSendsSnapshot = await db.collection('emailSends').where('userId', '==', userId).get();
+  emailSendsSnapshot.docs.forEach(doc => deletionPromises.push(doc.ref.delete()));
+
+  // 7. Delete User Settings document
+  deletionPromises.push(db.collection('user_settings').doc(userId).delete());
+
+  // 8. Delete subcollections under the user document
+  const subcollections = ['coverLetters', 'aiResumes', 'notifications', 'cv_history'];
   for (const sub of subcollections) {
-    const snapshot = await db.collection('users').doc(userId).collection(sub).get();
-    snapshot.docs.forEach(doc => deletionPromises.push(doc.ref.delete()));
+    try {
+      const snapshot = await db.collection('users').doc(userId).collection(sub).get();
+      snapshot.docs.forEach(doc => deletionPromises.push(doc.ref.delete()));
+    } catch (e) {
+      console.warn(`Failed to access subcollection ${sub} for deletion:`, e);
+    }
   }
 
-  // 6. Delete user export files
+  // 9. Delete user export files
   if (bucket) {
     try {
       const [files] = await bucket.getFiles({ prefix: `user-exports/${userId}/` });
@@ -86,13 +101,13 @@ export const POST = withApi({
     }
   }
 
-  // 7. Delete user document
+  // 10. Delete user document
   deletionPromises.push(db.collection('users').doc(userId).delete());
 
   // Execute all deletions
   await Promise.allSettled(deletionPromises);
 
-  // 8. Delete Firebase Auth user
+  // 11. Delete Firebase Auth user
   try {
     await auth.deleteUser(userId);
     console.log(`Successfully deleted Firebase Auth user ${userId}`);

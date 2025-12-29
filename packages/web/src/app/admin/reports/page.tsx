@@ -26,6 +26,7 @@ import { useEnhancedApi, usePost, useDelete } from "@/hooks/useEnhancedApi";
 import { adminApi } from "@/utils/api/admin";
 import { exportToCsv } from "@/utils/exportToCsv";
 import { AdminLayout } from "@/components/admin/AdminLayout";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { AdminAccessDenied } from "@/components/admin/AdminAccessDenied";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner, LoadingPage } from "@/components/ui/loading";
@@ -122,6 +123,19 @@ export default function AdminReportsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedReport, setSelectedReport] = useState<ContactSubmission | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+
+  // Confirm Dialog State
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: "",
+    description: "",
+    onConfirm: () => {},
+  });
 
   const canFetchAdminData = isAdmin === true;
 
@@ -242,25 +256,28 @@ export default function AdminReportsPage() {
   };
 
   const handleDelete = async (report: ContactSubmission) => {
-    if (!confirm(`Delete this report from ${report.name}? This cannot be undone.`)) {
-      return;
-    }
-
-    try {
-      await deleteContact({ contactId: report._id });
-      toast({
-        title: "Deleted",
-        description: "Report deleted",
-      });
-      refetchContacts();
-    } catch (error) {
-      console.error("Failed to delete report", error);
-      toast({
-        title: "Error",
-        description: "Unable to delete report",
-        variant: "destructive",
-      });
-    }
+    setConfirmDialog({
+      isOpen: true,
+      title: "Delete Report",
+      description: `Delete this report from ${report.name}? This cannot be undone.`,
+      onConfirm: async () => {
+        try {
+          await deleteContact({ contactId: report._id });
+          toast({
+            title: "Deleted",
+            description: "Report deleted",
+          });
+          refetchContacts();
+        } catch (error) {
+          console.error("Failed to delete report", error);
+          toast({
+            title: "Error",
+            description: "Unable to delete report",
+            variant: "destructive",
+          });
+        }
+      },
+    });
   };
 
   const handleExport = () => {
@@ -628,6 +645,15 @@ export default function AdminReportsPage() {
             )}
           </DialogContent>
         </Dialog>
+
+        <ConfirmDialog
+          isOpen={confirmDialog.isOpen}
+          onOpenChange={(isOpen) => setConfirmDialog(prev => ({ ...prev, isOpen }))}
+          title={confirmDialog.title}
+          description={confirmDialog.description}
+          onConfirm={confirmDialog.onConfirm}
+          variant="destructive"
+        />
       </div>
     </AdminLayout>
   );

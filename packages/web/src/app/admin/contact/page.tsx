@@ -27,6 +27,7 @@ import { useEnhancedApi } from "@/hooks/useEnhancedApi";
 import { adminApi } from "@/utils/api/admin";
 import { exportToCsv } from "@/utils/exportToCsv";
 import { AdminLayout } from "@/components/admin/AdminLayout";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { AdminAccessDenied } from "@/components/admin/AdminAccessDenied";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner, LoadingPage } from "@/components/ui/loading";
@@ -97,6 +98,19 @@ export default function AdminContactDashboard() {
   const [selectedContact, setSelectedContact] = useState<ContactSubmission | null>(null);
   const [showContactDetails, setShowContactDetails] = useState(false);
   const [responseDraft, setResponseDraft] = useState("");
+
+  // Confirm Dialog State
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: "",
+    description: "",
+    onConfirm: () => {},
+  });
 
   const canFetchAdminData = isAdmin === true;
 
@@ -366,29 +380,28 @@ export default function AdminContactDashboard() {
   };
 
   const handleDeleteContact = async (contact: ContactSubmission) => {
-    if (
-      !confirm(
-        `Delete contact message from ${contact.name}? This cannot be undone.`
-      )
-    ) {
-      return;
-    }
-
-    try {
-      await deleteContact({ contactId: contact._id });
-      toast({
-        title: "Deleted",
-        description: "Contact submission deleted",
-      });
-      refetchContacts();
-    } catch (error) {
-      console.error("Failed to delete contact", error);
-      toast({
-        title: "Error",
-        description: "Unable to delete contact submission",
-        variant: "destructive",
-      });
-    }
+    setConfirmDialog({
+      isOpen: true,
+      title: "Delete Contact",
+      description: `Delete contact message from ${contact.name}? This cannot be undone.`,
+      onConfirm: async () => {
+        try {
+          await deleteContact({ contactId: contact._id });
+          toast({
+            title: "Deleted",
+            description: "Contact submission deleted",
+          });
+          refetchContacts();
+        } catch (error) {
+          console.error("Failed to delete contact", error);
+          toast({
+            title: "Error",
+            description: "Unable to delete contact submission",
+            variant: "destructive",
+          });
+        }
+      },
+    });
   };
 
   const handleOpenDetails = (contact: ContactSubmission) => {
@@ -859,6 +872,15 @@ export default function AdminContactDashboard() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        <ConfirmDialog
+          isOpen={confirmDialog.isOpen}
+          onOpenChange={(isOpen) => setConfirmDialog(prev => ({ ...prev, isOpen }))}
+          title={confirmDialog.title}
+          description={confirmDialog.description}
+          onConfirm={confirmDialog.onConfirm}
+          variant="destructive"
+        />
       </div>
     </AdminLayout>
   );

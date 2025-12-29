@@ -9,7 +9,7 @@ import { ERROR_CODES } from "@/lib/api/errorCodes";
 // Re-export OPTIONS for CORS preflight
 export { OPTIONS };
 
-type ApplicationStatus = "saved" | "applied" | "offered" | "rejected" | "withdrawn";
+type ApplicationStatus = "interested" | "applied" | "interviewing" | "offered" | "rejected" | "withdrawn";
 
 const BodySchema = z.object({
   applicationId: z.string().min(1),

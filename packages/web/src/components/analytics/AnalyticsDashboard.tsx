@@ -128,6 +128,14 @@ interface AnalyticsData {
     bounceRate: number;
     avgSessionDuration: number;
   };
+  aiFeedback: {
+    total: number;
+    positive: number;
+    negative: number;
+    sentimentScore: number;
+    thisWeek: number;
+    byType: Record<string, { total: number; positive: number; negative: number }>;
+  };
   topPages: Array<{ page: string; views: number }>;
   userActions: Array<{ action: string; count: number }>;
   timestamp: number;
@@ -159,6 +167,7 @@ const ANALYTICS_TABS = [
   { id: "overview", label: "Overview" },
   { id: "engagement", label: "Engagement" },
   { id: "conversions", label: "Conversions" },
+  { id: "ai-feedback", label: "AI Feedback" },
   { id: "performance", label: "Performance" },
 ];
 
@@ -206,6 +215,14 @@ export function AnalyticsDashboard() {
         engagement: {
           bounceRate: 0,
           avgSessionDuration: 0,
+        },
+        aiFeedback: {
+          total: rawData.aiFeedback?.total ?? 0,
+          positive: rawData.aiFeedback?.positive ?? 0,
+          negative: rawData.aiFeedback?.negative ?? 0,
+          sentimentScore: rawData.aiFeedback?.sentimentScore ?? 0,
+          thisWeek: rawData.aiFeedback?.thisWeek ?? 0,
+          byType: rawData.aiFeedback?.byType ?? {},
         },
         topPages: [],
         userActions: rawData.events?.top?.map((e: any) => ({
@@ -513,6 +530,81 @@ export function AnalyticsDashboard() {
                           {analyticsData.users.total > 0 ? ((action.count / analyticsData.users.total) * 100).toFixed(2) : 0}% of users
                         </div>
                       </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </TabsContent>
+
+        <TabsContent value="ai-feedback" className="space-y-6">
+          <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card className="border-gray-200 shadow-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-gray-900">
+                  <Activity className="h-5 w-5 text-primary" />
+                  Sentiment Breakdown
+                </CardTitle>
+                <CardDescription className="text-gray-500">Overall user sentiment for AI suggestions</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-8 py-4">
+                  <div className="flex items-center justify-around">
+                    <div className="text-center">
+                      <div className="text-4xl font-bold text-green-600">{analyticsData.aiFeedback.positive}</div>
+                      <div className="text-sm font-medium text-gray-500">Positive</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-5xl font-bold text-primary">{analyticsData.aiFeedback.sentimentScore}%</div>
+                      <div className="text-sm font-medium text-gray-500 italic">Score</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-4xl font-bold text-red-600">{analyticsData.aiFeedback.negative}</div>
+                      <div className="text-sm font-medium text-gray-500">Negative</div>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-xs text-gray-500 font-medium">
+                      <span className="text-red-500">Negative ({analyticsData.aiFeedback.negative})</span>
+                      <span className="text-green-500">Positive ({analyticsData.aiFeedback.positive})</span>
+                    </div>
+                    <div className="h-4 w-full rounded-full bg-red-100 overflow-hidden flex">
+                      <div 
+                        className="h-full bg-green-500 transition-all duration-500" 
+                        style={{ width: `${analyticsData.aiFeedback.sentimentScore}%` }} 
+                      />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-gray-200 shadow-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-gray-900">
+                  <Zap className="h-5 w-5 text-primary" />
+                  Problematic Areas
+                </CardTitle>
+                <CardDescription className="text-gray-500">Content types with highest negative feedback</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {Object.entries(analyticsData.aiFeedback.byType)
+                    .sort(([, a], [, b]) => b.negative - a.negative)
+                    .map(([type, stats]) => (
+                    <div key={type} className="space-y-2">
+                       <div className="flex items-center justify-between text-sm">
+                        <span className="capitalize font-medium text-gray-700">{type.replace(/_/g, ' ')}</span>
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs text-gray-500">{stats.total} total</span>
+                          <span className="text-red-600 font-bold">{stats.negative} negative</span>
+                        </div>
+                      </div>
+                      <Progress 
+                        value={(stats.negative / Math.max(stats.total, 1)) * 100} 
+                        className="h-1.5 bg-gray-100" 
+                      />
                     </div>
                   ))}
                 </div>

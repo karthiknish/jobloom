@@ -20,6 +20,9 @@ import {
   ShieldCheck,
   ShieldAlert,
   Clock3,
+  CheckCircle,
+  AlertCircle,
+  Plus,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 
@@ -75,6 +78,8 @@ import { showError, showSuccess, showWarning } from "@/components/ui/Toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { exportToCsv } from "@/utils/exportToCsv";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { CreateUserDialog } from "./components/CreateUserDialog";
 
 // Mirror of UserRecord (plus optional UI-only props) from adminApi
 interface User {
@@ -108,7 +113,23 @@ export default function AdminUserDashboardClient() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showUserDetails, setShowUserDetails] = useState(false);
   const [showCreateUser, setShowCreateUser] = useState(false);
+  const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create');
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Confirm Dialog State
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    onConfirm: () => void;
+    variant: "default" | "destructive";
+  }>({
+    isOpen: false,
+    title: "",
+    description: "",
+    onConfirm: () => {},
+    variant: "default",
+  });
 
   const canFetchAdminData = isAdmin === true;
 
@@ -150,6 +171,14 @@ export default function AdminUserDashboardClient() {
   const { mutate: deleteUser } = useApiMutation((userId: string) => {
     if (!userRecord?._id) return Promise.reject(new Error("No admin context id"));
     return adminApi.deleteUser(userId);
+  });
+
+  const { mutate: createUser, loading: isCreating } = useApiMutation((data: any) => {
+    return adminApi.users.createUser(data);
+  });
+
+  const { mutate: updateUser, loading: isUpdating } = useApiMutation(({ userId, data }: { userId: string, data: any }) => {
+    return adminApi.users.updateUser(userId, data);
   });
 
   // Filter users based on search and filters
@@ -324,6 +353,37 @@ export default function AdminUserDashboardClient() {
     }
   };
 
+  const handleCreateUser = async (data: any) => {
+    try {
+      if (dialogMode === 'create') {
+        await createUser(data);
+        showSuccess("User created successfully");
+      } else if (selectedUser) {
+        await updateUser({ userId: selectedUser._id, data });
+        showSuccess("User updated successfully");
+      }
+      setShowCreateUser(false);
+      setSelectedUser(null);
+      adminApi.invalidateCache("admin-users");
+      refetchUsers();
+      refetchStats();
+    } catch (error: any) {
+      showError(error.message || `Failed to ${dialogMode} user`);
+    }
+  };
+
+  const openCreateDialog = () => {
+    setDialogMode('create');
+    setSelectedUser(null);
+    setShowCreateUser(true);
+  };
+
+  const openEditDialog = (user: User) => {
+    setDialogMode('edit');
+    setSelectedUser(user);
+    setShowCreateUser(true);
+  };
+
   const handleSetAdmin = async (userId: string) => {
     try {
       await setAdminUser(userId);
@@ -337,31 +397,43 @@ export default function AdminUserDashboardClient() {
   };
 
   const handleRemoveAdmin = async (userId: string) => {
-    if (!confirm("Are you sure you want to remove admin privileges from this user?")) return;
-
-    try {
-      await removeAdminUser(userId);
-      showSuccess("Admin privileges removed");
-      adminApi.invalidateCache("admin-users");
-      refetchUsers();
-      refetchStats();
-    } catch (error) {
-      showError("Failed to remove admin privileges");
-    }
+    setConfirmDialog({
+      isOpen: true,
+      title: "Remove Admin Privileges",
+      description: "Are you sure you want to remove admin privileges from this user?",
+      variant: "destructive",
+      onConfirm: async () => {
+        try {
+          await removeAdminUser(userId);
+          showSuccess("Admin privileges removed");
+          adminApi.invalidateCache("admin-users");
+          refetchUsers();
+          refetchStats();
+        } catch (error) {
+          showError("Failed to remove admin privileges");
+        }
+      },
+    });
   };
 
   const handleDeleteUser = async (userId: string, userEmail: string) => {
-    if (!confirm(`Are you sure you want to delete user ${userEmail}? This action cannot be undone.`)) return;
-
-    try {
-      await deleteUser(userId);
-      showSuccess("User deleted successfully");
-      adminApi.invalidateCache("admin-users");
-      refetchUsers();
-      refetchStats();
-    } catch (error) {
-      showError("Failed to delete user");
-    }
+    setConfirmDialog({
+      isOpen: true,
+      title: "Delete User",
+      description: `Are you sure you want to delete user ${userEmail}? This action cannot be undone.`,
+      variant: "destructive",
+      onConfirm: async () => {
+        try {
+          await deleteUser(userId);
+          showSuccess("User deleted successfully");
+          adminApi.invalidateCache("admin-users");
+          refetchUsers();
+          refetchStats();
+        } catch (error) {
+          showError("Failed to delete user");
+        }
+      },
+    });
   };
 
   const getInitials = (name?: string, email?: string) => {
@@ -529,7 +601,7 @@ export default function AdminUserDashboardClient() {
               </div>
             </div>
 
-            <Button onClick={() => setShowCreateUser(true)} className="w-full sm:w-auto">
+            <Button onClick={openCreateDialog} className="w-full sm:w-auto">
               <UserPlus className="h-4 w-4 mr-2" />
               Add User
             </Button>
@@ -1038,6 +1110,12 @@ export default function AdminUserDashboardClient() {
                                 <Eye className="h-4 w-4 mr-2" />
                                 View Details
                               </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => openEditDialog(user)}
+                              >
+                                <Activity className="h-4 w-4 mr-2" />
+                                Edit User
+                              </DropdownMenuItem>
                               <DropdownMenuSeparator className="bg-gray-100" />
                               {user._id !== userRecord?._id && (
                                 <>
@@ -1160,6 +1238,29 @@ export default function AdminUserDashboardClient() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        <ConfirmDialog
+          isOpen={confirmDialog.isOpen}
+          onOpenChange={(isOpen) => setConfirmDialog(prev => ({ ...prev, isOpen }))}
+          title={confirmDialog.title}
+          description={confirmDialog.description}
+          onConfirm={confirmDialog.onConfirm}
+          variant={confirmDialog.variant}
+        />
+
+        <CreateUserDialog
+          open={showCreateUser}
+          onOpenChange={(open) => {
+            setShowCreateUser(open);
+            if (!open) {
+              setSelectedUser(null);
+            }
+          }}
+          onSubmit={handleCreateUser}
+          isSubmitting={isCreating || isUpdating}
+          initialData={selectedUser}
+          mode={dialogMode}
+        />
       </div>
     </AdminLayout>
   );

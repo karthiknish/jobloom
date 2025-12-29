@@ -50,6 +50,7 @@ export function KanbanBoard({
   const columns: KanbanStatus[] = [
     "interested",
     "applied",
+    "interviewing",
     "offered",
     "rejected",
     "withdrawn",
@@ -73,6 +74,7 @@ export function KanbanBoard({
     const map: Record<KanbanStatus, Application[]> = {
       interested: [],
       applied: [],
+      interviewing: [],
       offered: [],
       rejected: [],
       withdrawn: [],
@@ -133,6 +135,7 @@ export function KanbanBoard({
   const statusBadge: Record<KanbanStatus, React.ReactNode> = {
     interested: <ApplicationStatusBadge status="interested" />,
     applied: <ApplicationStatusBadge status="applied" />,
+    interviewing: <ApplicationStatusBadge status="interviewing" />,
     offered: <ApplicationStatusBadge status="offered" />,
     rejected: <ApplicationStatusBadge status="rejected" />,
     withdrawn: <ApplicationStatusBadge status="withdrawn" />,
@@ -141,6 +144,7 @@ export function KanbanBoard({
   const statusTooltips: Record<KanbanStatus, string> = {
     interested: "Jobs you're considering applying to",
     applied: "Applications you've submitted",
+    interviewing: "You've been invited for an interview!",
     offered: "You've received an offer!",
     rejected: "Applications that weren't successful",
     withdrawn: "Applications you chose to withdraw",

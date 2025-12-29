@@ -203,6 +203,30 @@ export function UpgradePrompt({ feature, variant = "default" }: UpgradePromptPro
             },
           ],
         };
+      case "jobs":
+        return {
+          title: "Unlimited Job Tracking",
+          description:
+            "Upgrade to track as many jobs as you need and unlock advanced automation tools for your career search.",
+          highlightFeatures: [
+            {
+              title: "Unlimited Job Slots",
+              description: "Track hundreds of applications without any limits",
+              icon: "database",
+            },
+            {
+              title: "Automation Tools",
+              description:
+                "Import jobs from any site automatically with our extension",
+              icon: "zap",
+            },
+            {
+              title: "Advanced CRM",
+              description: "Move applications through a visual pipeline in board view",
+              icon: "bar-chart",
+            },
+          ],
+        };
       default:
         return {
           title: "Unlock Premium Features",

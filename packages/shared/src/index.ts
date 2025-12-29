@@ -76,6 +76,10 @@ export type {
   ExtensionMessage,
   SaveJobRequest,
   AuthStateMessage,
+  // Feedback types
+  FeedbackSentiment,
+  AiFeedback,
+  CreateAiFeedbackRequest,
 } from './types';
 
 // ============================================
@@ -143,7 +147,26 @@ export {
   // URL utils
   normalizeJobUrl,
   extractJobIdentifier,
+  // Storage utils
+  safeParseJson,
+  isLocalStorageAvailable,
+  safeLocalStorageGet,
+  safeLocalStorageSet,
+  safeLocalStorageRemove,
 } from './utils';
+
+// ============================================
+// Auth Module
+// ============================================
+export {
+  AUTH_ERRORS,
+  sanitizeAuthMessage,
+  createAuthError,
+} from './auth';
+
+export type {
+  AuthError,
+} from './auth';
 
 // ============================================
 // Rate Limiter

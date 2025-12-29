@@ -100,7 +100,7 @@ export function getImprovementSuggestions(
   if (resume.projects.length === 0) suggestions.push('Add at least one project');
   if (evaluation.score < 70) suggestions.push('Improve ATS compatibility');
   
-  suggestions.push(...evaluation.improvements);
+  suggestions.push(...evaluation.improvements.map(imp => typeof imp === 'string' ? imp : imp.text));
   return Array.from(new Set(suggestions));
 }
 

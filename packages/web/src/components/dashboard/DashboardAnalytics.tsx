@@ -203,10 +203,11 @@ export function DashboardAnalytics({
                       {
                         interested: "bg-muted text-muted-foreground",
                         applied: "bg-sky-100 text-sky-800",
+                        interviewing: "bg-purple-100 text-purple-800",
                         offered: "bg-primary/20 text-primary",
                         rejected: "bg-red-100 text-red-800",
                         withdrawn: "bg-muted text-muted-foreground",
-                      }[application.status] ||
+                      }[application.status as string] ||
                       "bg-muted text-muted-foreground";
 
                     return (

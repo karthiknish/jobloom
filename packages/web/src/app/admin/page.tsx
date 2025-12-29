@@ -13,6 +13,7 @@ import {
   Activity,
   ArrowUpRight,
   ShieldCheck,
+  Brain,
 } from "lucide-react";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { AdminLayout } from "../../components/admin/AdminLayout";
@@ -37,6 +38,12 @@ type DashboardStats = {
   };
   inquiries: {
     pending: number;
+  };
+  aiFeedback: {
+    total: number;
+    newThisWeek: number;
+    sentimentScore: number;
+    verifiedLearningPoints: number;
   };
 };
 
@@ -201,9 +208,12 @@ export default function AdminPage() {
           </div>
           <div className="flex items-center gap-2">
             <Button asChild>
-              <Link href="/admin/users">Manage Users</Link>
+              <Link href="/admin/learning">AI Learning Hub</Link>
             </Button>
             <Button variant="outline" asChild>
+              <Link href="/admin/users">Manage Users</Link>
+            </Button>
+            <Button variant="ghost" asChild>
               <Link href="/">View Site</Link>
             </Button>
           </div>
@@ -279,16 +289,32 @@ export default function AdminPage() {
           </Card>
           <Card className="hover:bg-gray-50 transition-all duration-200 border-gray-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">Pending Inquiries</CardTitle>
-              <div className="h-8 w-8 rounded-lg bg-orange-50 flex items-center justify-center">
-                <MessageSquare className="h-4 w-4 text-orange-600" />
+              <CardTitle className="text-sm font-medium text-gray-600">AI Feedback</CardTitle>
+              <div className="h-8 w-8 rounded-lg bg-red-50 flex items-center justify-center">
+                <Activity className="h-4 w-4 text-red-600" />
               </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-foreground">
-                {statsLoading ? <Skeleton className="h-7 w-16" /> : (stats?.inquiries.pending ?? "--")}
+                {statsLoading ? <Skeleton className="h-7 w-16" /> : (`${stats?.aiFeedback.sentimentScore ?? 0}%`)}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">Requires attention</p>
+              {statsLoading ? (
+                <div className="mt-1">
+                  <Skeleton className="h-3 w-28" />
+                </div>
+              ) : (
+                <div className="flex flex-col gap-1 mt-1">
+                  <p className="text-xs text-muted-foreground">
+                    {`${stats?.aiFeedback.total ?? 0} total (${stats?.aiFeedback.newThisWeek ?? 0} new)`}
+                  </p>
+                  {stats?.aiFeedback.verifiedLearningPoints !== undefined && (
+                    <p className="text-[10px] text-purple-600 font-medium flex items-center gap-1">
+                      <Brain className="h-2.5 w-2.5" />
+                      {stats.aiFeedback.verifiedLearningPoints} verified insights
+                    </p>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         </motion.div>
@@ -355,6 +381,32 @@ export default function AdminPage() {
                     </div>
                     <p className="text-sm text-muted-foreground">
                       View and respond to contact form submissions.
+                    </p>
+                  </Link>
+
+                  <Link href="/admin/analytics" className="group block space-y-3 rounded-xl border border-gray-100 p-4 hover:bg-gray-50 hover:border-red-100 transition-all duration-200">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-100 text-red-600 group-hover:scale-105 transition-transform">
+                        <Activity className="h-5 w-5" />
+                      </div>
+                      <div className="font-semibold text-foreground">AI Feedback Analytics</div>
+                      <ArrowUpRight className="ml-auto h-4 w-4 text-gray-400 opacity-0 -translate-x-2 transition-all group-hover:opacity-100 group-hover:translate-x-0" />
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Analyze user feedback to improve AI suggestions and models.
+                    </p>
+                  </Link>
+
+                  <Link href="/admin/learning" className="group block space-y-3 rounded-xl border border-gray-100 p-4 hover:bg-gray-50 hover:border-purple-100 transition-all duration-200">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100 text-purple-600 group-hover:scale-105 transition-transform">
+                        <Brain className="h-5 w-5" />
+                      </div>
+                      <div className="font-semibold text-foreground">AI Learning Loop</div>
+                      <ArrowUpRight className="ml-auto h-4 w-4 text-gray-400 opacity-0 -translate-x-2 transition-all group-hover:opacity-100 group-hover:translate-x-0" />
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Review verified insights and model improvements from the learning loop.
                     </p>
                   </Link>
                 </div>

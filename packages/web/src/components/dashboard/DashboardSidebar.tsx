@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { BarChart3, LayoutDashboard, ListChecks, ChevronRight } from "lucide-react";
+import { MessageSquare, BarChart3, LayoutDashboard, ListChecks, ChevronRight, Chrome } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Sidebar,
@@ -18,7 +18,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
-export type DashboardSection = "dashboard" | "jobs" | "analytics";
+export type DashboardSection = "dashboard" | "jobs" | "analytics" | "feedback" | "extension";
 
 interface NavItem {
   id: DashboardSection;
@@ -64,6 +64,18 @@ function DashboardSidebarContent({
         icon: BarChart3,
         description: "Insights & trends",
       },
+      {
+        id: "feedback",
+        label: "Feedback",
+        icon: MessageSquare,
+        description: "AI learning history",
+      },
+      {
+        id: "extension",
+        label: "Extension",
+        icon: Chrome,
+        description: "Browser integration",
+      },
     ],
     [jobsCount]
   );
@@ -94,7 +106,11 @@ function DashboardSidebarContent({
                     <SidebarMenuButton
                       isActive={isActive}
                       onClick={() => {
-                        onSectionChange(item.id);
+                        if (item.id === "extension") {
+                          window.open("/extension/connect", "_blank");
+                        } else {
+                          onSectionChange(item.id);
+                        }
                         setOpenMobile(false);
                       }}
                       tooltip={item.label}
@@ -142,6 +158,8 @@ export function DashboardSidebar({
           variant="floating" 
           collapsible="icon"
           className="top-[calc(var(--header-height-desktop)+1rem)] h-[calc(100vh-var(--header-height-desktop)-2rem)]"
+          role="navigation"
+          aria-label="Dashboard Navigation"
         >
           <DashboardSidebarContent
             activeSection={activeSection}

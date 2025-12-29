@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, CheckCircle, AlertCircle, Clock } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+import { cardVariants } from "@/components/ui/card";
 
 export type OperationStatus = "idle" | "pending" | "progress" | "success" | "error";
 
@@ -90,12 +91,13 @@ export function OperationProgress({
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -10 }}
         className={cn(
-          "rounded-lg border p-4",
+          cardVariants(),
+          "p-4 w-full max-w-2xl mx-auto shadow-sm transition-all duration-300",
           status === "error" 
-            ? "border-destructive/50 bg-destructive/5" 
+            ? "border-destructive/50 bg-destructive/5 shadow-none" 
             : status === "success"
-            ? "border-green-200 bg-green-50"
-            : "border-border bg-muted/30",
+            ? "border-green-200 bg-green-50 shadow-green-100/20"
+            : "border-border bg-muted/30 shadow-gray-100/20",
           className
         )}
         role="status"

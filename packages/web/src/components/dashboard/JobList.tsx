@@ -238,7 +238,7 @@ export function JobList({
           <div className="flex items-center gap-4">
             <Label className="text-sm font-medium text-foreground">Sort by:</Label>
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-40 border-border">
+              <SelectTrigger className="w-full sm:w-40 border-border">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

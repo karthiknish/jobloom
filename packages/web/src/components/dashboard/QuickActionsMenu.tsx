@@ -51,8 +51,9 @@ import { Application } from "@/types/dashboard";
 import { useRestoreFocus } from "@/hooks/useRestoreFocus";
 
 export type ApplicationStatus = 
-  | "saved"
+  | "interested"
   | "applied"
+  | "interviewing"
   | "offered"
   | "rejected"
   | "withdrawn";
@@ -68,8 +69,9 @@ interface QuickActionsMenuProps {
 }
 
 const STATUS_OPTIONS: { value: ApplicationStatus; label: string; icon: React.ReactNode }[] = [
-  { value: "saved", label: "Saved", icon: <Clock className="h-4 w-4" /> },
+  { value: "interested", label: "Interested", icon: <Clock className="h-4 w-4" /> },
   { value: "applied", label: "Applied", icon: <Send className="h-4 w-4" /> },
+  { value: "interviewing", label: "Interviewing", icon: <UserCheck className="h-4 w-4" /> },
   { value: "offered", label: "Offered", icon: <CheckCircle className="h-4 w-4" /> },
   { value: "rejected", label: "Rejected", icon: <XCircle className="h-4 w-4" /> },
   { value: "withdrawn", label: "Withdrawn", icon: <Archive className="h-4 w-4" /> },

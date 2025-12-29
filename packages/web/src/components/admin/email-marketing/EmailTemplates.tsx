@@ -24,6 +24,7 @@ import {
   CheckCircle,
   AlertCircle,
 } from "lucide-react";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -61,6 +62,8 @@ export function EmailTemplates({
   useRestoreFocus(showTemplateDialog);
   useRestoreFocus(!!previewTemplate);
   const [activeTab, setActiveTab] = useState("templates");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [templateToDelete, setTemplateToDelete] = useState<string | null>(null);
 
   const [templateForm, setTemplateForm] = useState({
     name: "",
@@ -168,19 +171,25 @@ export function EmailTemplates({
     }
   };
 
-  const handleDeleteTemplate = async (templateId: string) => {
-    if (!confirm("Are you sure you want to delete this template?")) {
-      return;
-    }
+  const handleDeleteClick = (templateId: string) => {
+    setTemplateToDelete(templateId);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!templateToDelete) return;
 
     try {
-      await emailMarketingApi.deleteTemplate(templateId);
+      await emailMarketingApi.deleteTemplate(templateToDelete);
 
-      onTemplatesChange(templates.filter(t => t.id !== templateId));
+      onTemplatesChange(templates.filter(t => t.id !== templateToDelete));
       showSuccess("Template deleted successfully");
     } catch (error) {
       console.error('Error deleting template:', error);
       showError("Failed to delete template");
+    } finally {
+      setShowDeleteConfirm(false);
+      setTemplateToDelete(null);
     }
   };
 
@@ -394,6 +403,7 @@ export function EmailTemplates({
                       size="sm"
                       onClick={() => handleSendTest(template.id)}
                       className="border-gray-200 text-gray-700 hover:bg-gray-50"
+                      aria-label="Send test email"
                     >
                       <TestTube className="h-3 w-3" />
                     </Button>
@@ -402,6 +412,7 @@ export function EmailTemplates({
                       size="sm"
                       onClick={() => handleDuplicateTemplate(template)}
                       className="border-gray-200 text-gray-700 hover:bg-gray-50"
+                      aria-label="Duplicate template"
                     >
                       <Copy className="h-3 w-3" />
                     </Button>
@@ -410,14 +421,16 @@ export function EmailTemplates({
                       size="sm"
                       onClick={() => handleEditTemplate(template)}
                       className="border-gray-200 text-gray-700 hover:bg-gray-50"
+                      aria-label="Edit template"
                     >
                       <Edit className="h-3 w-3" />
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleDeleteTemplate(template.id)}
+                      onClick={() => handleDeleteClick(template.id)}
                       className="border-gray-200 text-red-600 hover:text-red-700 hover:bg-red-50"
+                      aria-label="Delete template"
                     >
                       <Trash2 className="h-3 w-3" />
                     </Button>
@@ -620,7 +633,17 @@ export function EmailTemplates({
             </div>
           )}
         </DialogContent>
-      </Dialog>
+       </Dialog>
+
+       <ConfirmDialog
+         isOpen={showDeleteConfirm}
+         onOpenChange={setShowDeleteConfirm}
+         onConfirm={handleConfirmDelete}
+         title="Delete Template"
+         description="Are you sure you want to delete this template? This action cannot be undone."
+         confirmText="Delete"
+         variant="destructive"
+       />
     </div>
   );
 }

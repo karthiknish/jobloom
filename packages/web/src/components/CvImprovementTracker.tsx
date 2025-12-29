@@ -93,6 +93,18 @@ export function CvImprovementTracker({ analyses, onViewAnalysis }: CvImprovement
     };
   }, [analyses]);
 
+  // Confetti celebration for newly achieved milestones
+  useEffect(() => {
+    if (improvementData?.milestones) {
+      improvementData.milestones.forEach(m => {
+        if (m.achieved && !celebratedMilestones.current.has(m.threshold)) {
+          celebratedMilestones.current.add(m.threshold);
+          confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+        }
+      });
+    }
+  }, [improvementData?.milestones]);
+
   if (!improvementData) {
     return (
       <Card>
@@ -140,16 +152,6 @@ export function CvImprovementTracker({ analyses, onViewAnalysis }: CvImprovement
     a.click();
     URL.revokeObjectURL(url);
   };
-
-  // Confetti celebration for newly achieved milestones
-  useEffect(() => {
-    milestones.forEach(m => {
-      if (m.achieved && !celebratedMilestones.current.has(m.threshold)) {
-        celebratedMilestones.current.add(m.threshold);
-        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-      }
-    });
-  }, [milestones]);
 
   return (
     <div className="space-y-6">

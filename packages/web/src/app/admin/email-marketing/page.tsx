@@ -12,6 +12,16 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { showSuccess, showError } from "@/components/ui/Toast";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
@@ -35,6 +45,8 @@ export default function EmailMarketingPage() {
   const [emailList, setEmailList] = useState<any[]>([]);
   const [emailListStats, setEmailListStats] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
+  const [showTestEmailDialog, setShowTestEmailDialog] = useState(false);
+  const [testEmailAddress, setTestEmailAddress] = useState("");
 
   // Fetch data
   useEffect(() => {
@@ -63,13 +75,12 @@ export default function EmailMarketingPage() {
     }
   };
 
-  const sendTestEmail = async () => {
-    const testEmail = prompt("Enter email address to send test email:");
-    if (!testEmail) return;
+  const handleSendTestEmail = async () => {
+    if (!testEmailAddress) return;
 
     try {
       await emailMarketingApi.sendTestEmail({
-        to: testEmail,
+        to: testEmailAddress,
         subject: "HireAll Email Marketing Test",
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -112,7 +123,9 @@ export default function EmailMarketingPage() {
         `
       });
 
-      showSuccess("Test email sent", `Test email sent to ${testEmail}`);
+      showSuccess("Test email sent", `Test email sent to ${testEmailAddress}`);
+      setShowTestEmailDialog(false);
+      setTestEmailAddress("");
     } catch (error: any) {
       showError("Test failed", error.message || "Unable to send test email.");
     }
@@ -197,7 +210,7 @@ export default function EmailMarketingPage() {
           <div className="flex gap-3">
             <Button
               variant="outline"
-              onClick={sendTestEmail}
+              onClick={() => setShowTestEmailDialog(true)}
             >
               <Mail className="h-4 w-4 mr-2" />
               Test Email
@@ -297,7 +310,7 @@ export default function EmailMarketingPage() {
               templates={templates}
               loading={loading}
               onTemplatesChange={setTemplates}
-              onSendTestEmail={sendTestEmail}
+              onSendTestEmail={() => setShowTestEmailDialog(true)}
             />
           </TabsContent>
 
@@ -320,6 +333,37 @@ export default function EmailMarketingPage() {
             />
           </TabsContent>
         </Tabs>
+
+        {/* Test Email Dialog */}
+        <Dialog open={showTestEmailDialog} onOpenChange={setShowTestEmailDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Send Test Email</DialogTitle>
+              <DialogDescription>
+                Enter an email address to receive a test email with the current configuration.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="test-email">Email Address</Label>
+                <Input
+                  id="test-email"
+                  placeholder="test@example.com"
+                  value={testEmailAddress}
+                  onChange={(e) => setTestEmailAddress(e.target.value)}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowTestEmailDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSendTestEmail} disabled={!testEmailAddress}>
+                Send Test
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminLayout>
   );

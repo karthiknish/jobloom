@@ -87,6 +87,33 @@ export const GET = withApi({
   const cvAnalysesSnapshot = await db.collection("cvAnalyses").get();
   const totalCvAnalyses = cvAnalysesSnapshot.size;
 
+  // Fetch AI Feedback
+  const feedbackSnapshot = await db.collection("ai_feedback").get();
+  const feedback = feedbackSnapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data() as any,
+  }));
+
+  const totalFeedback = feedback.length;
+  const positiveFeedback = feedback.filter(f => f.sentiment === 'positive').length;
+  const negativeFeedback = feedback.filter(f => f.sentiment === 'negative').length;
+  
+  const feedbackByType: Record<string, { total: number; positive: number; negative: number }> = {};
+  feedback.forEach(f => {
+    const type = f.contentType || 'unknown';
+    if (!feedbackByType[type]) {
+      feedbackByType[type] = { total: 0, positive: 0, negative: 0 };
+    }
+    feedbackByType[type].total++;
+    if (f.sentiment === 'positive') feedbackByType[type].positive++;
+    else feedbackByType[type].negative++;
+  });
+
+  const feedbackThisWeek = feedback.filter(f => {
+    const created = f.createdAt ? (typeof f.createdAt === 'number' ? new Date(f.createdAt) : f.createdAt.toDate?.() || new Date(f.createdAt)) : new Date(0);
+    return created >= weekAgo;
+  }).length;
+
   // Fetch recent events from analyticsEvents if exists
   let recentEvents: any[] = [];
   try {
@@ -159,6 +186,14 @@ export const GET = withApi({
     events: {
       top: topEvents,
       recentCount: recentEvents.length,
+    },
+    aiFeedback: {
+      total: totalFeedback,
+      positive: positiveFeedback,
+      negative: negativeFeedback,
+      sentimentScore: totalFeedback > 0 ? Math.round((positiveFeedback / totalFeedback) * 100) : 0,
+      thisWeek: feedbackThisWeek,
+      byType: feedbackByType,
     },
     timestamp: new Date().toISOString(),
   };

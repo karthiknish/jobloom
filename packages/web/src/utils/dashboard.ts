@@ -19,8 +19,10 @@ export function getStatusCounts(applications: Application[]) {
   const counts = {
     interested: 0,
     applied: 0,
+    interviewing: 0,
     offered: 0,
     rejected: 0,
+    withdrawn: 0,
   };
 
   applications.forEach((app) => {
@@ -71,14 +73,16 @@ export function calculateFunnelData(applications: Application[]) {
 
   const interested = applications.length;
   const applied = applications.filter(a => 
-    ['applied', 'offered', 'rejected'].includes(a.status)
+    ['applied', 'interviewing', 'offered', 'rejected'].includes(a.status)
   ).length;
   const offered = applications.filter(a => a.status === 'offered').length;
+  const interviewing = applications.filter(a => a.status === 'interviewing').length;
 
   return [
     { stage: 'Interested', count: interested, percentage: 100 },
     { stage: 'Applied', count: applied, percentage: calculatePercentage(applied, interested) },
-    { stage: 'Offered', count: offered, percentage: calculatePercentage(offered, applied) },
+    { stage: 'Interviewing', count: interviewing, percentage: calculatePercentage(interviewing, applied) },
+    { stage: 'Offered', count: offered, percentage: calculatePercentage(offered, interviewing || applied) },
   ];
 }
 
@@ -110,7 +114,7 @@ export function getResponseRateByCompany(applications: Application[]) {
       companyStats[company] = { total: 0, responded: 0 };
     }
     companyStats[company].total++;
-    if (['offered', 'rejected'].includes(app.status)) {
+    if (['interviewing', 'offered', 'rejected'].includes(app.status)) {
       companyStats[company].responded++;
     }
   });

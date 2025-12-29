@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils"
  * - flat: No shadow, just border (for nested cards)
  * - interactive: Hover effects for clickable cards
  */
-const cardVariants = cva(
+export const cardVariants = cva(
   "rounded-xl border bg-card text-card-foreground motion-surface",
   {
     variants: {
@@ -29,7 +29,7 @@ const cardVariants = cva(
   }
 )
 
-interface CardProps 
+export interface CardProps 
   extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof cardVariants> {}
 

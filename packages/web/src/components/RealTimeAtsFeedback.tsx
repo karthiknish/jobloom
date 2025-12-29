@@ -22,6 +22,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { calculateResumeScore } from "@/lib/ats";
 import type { ResumeScore } from "@/lib/ats";
 import type { ResumeData } from "@/types/resume";
+import { AiFeedbackButtons } from "./shared/AiFeedbackButtons";
+import { AtsRecommendationItem } from "@/lib/ats/types";
+import { useConversionTracking } from "@/hooks/useConversionTracking";
 
 
 interface RealTimeAtsFeedbackProps {
@@ -57,6 +60,7 @@ export function RealTimeAtsFeedback({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'details' | 'suggestions'>('overview');
+  const { trackSuggestionImplementation } = useConversionTracking();
 
   const analyzeResume = useCallback(() => {
     setIsAnalyzing(true);
@@ -394,6 +398,11 @@ export function RealTimeAtsFeedback({
                             <p className="text-xs mt-1 opacity-80">{item.suggestion}</p>
                           )}
                         </div>
+                        <AiFeedbackButtons 
+                          contentType="suggestion"
+                          contentId={item.id}
+                          context="real_time_ats_feedback_high"
+                        />
                         {item.field && onFieldChange && (
                           <Tooltip>
                             <TooltipTrigger asChild>
@@ -401,6 +410,13 @@ export function RealTimeAtsFeedback({
                                 variant="ghost"
                                 size="sm"
                                 className="h-6 w-6 p-0"
+                                onClick={() => {
+                                  onFieldChange?.(item.field!, item.suggestion!);
+                                  trackSuggestionImplementation(item.id, 'rule', {
+                                    message: item.message,
+                                    suggestion: item.suggestion
+                                  });
+                                }}
                               >
                                 <Zap className="h-3 w-3" />
                               </Button>
@@ -486,7 +502,13 @@ export function RealTimeAtsFeedback({
                         {recommendations.high.map((suggestion, index) => (
                           <div key={`high-${index}`} className="flex items-start gap-2 p-2 bg-red-50 rounded">
                             <AlertCircle className="h-4 w-4 text-red-600 mt-0.5" />
-                            <p className="text-sm">{suggestion}</p>
+                            <p className="text-sm flex-1">{typeof suggestion === 'string' ? suggestion : suggestion.text}</p>
+                            <AiFeedbackButtons 
+                              contentType="suggestion"
+                              contentId={typeof suggestion === 'string' ? `legacy-high-${index}` : suggestion.id}
+                              context="real_time_ats_feedback_tab_high"
+                              metadata={typeof suggestion === 'string' ? {} : suggestion.metadata}
+                            />
                           </div>
                         ))}
                       </div>
@@ -497,10 +519,16 @@ export function RealTimeAtsFeedback({
                     <div>
                       <h4 className="font-medium mb-2 text-yellow-600">Medium Priority</h4>
                       <div className="space-y-2">
-                        {recommendations.medium.map((suggestion, index) => (
+                        {recommendations.medium.map((suggestion: string | AtsRecommendationItem, index: number) => (
                           <div key={`medium-${index}`} className="flex items-start gap-2 p-2 bg-yellow-50 rounded">
                             <Info className="h-4 w-4 text-yellow-600 mt-0.5" />
-                            <p className="text-sm">{suggestion}</p>
+                            <p className="text-sm flex-1">{typeof suggestion === 'string' ? suggestion : suggestion.text}</p>
+                            <AiFeedbackButtons 
+                              contentType="suggestion"
+                              contentId={typeof suggestion === 'string' ? `legacy-medium-${index}` : suggestion.id}
+                              context="real_time_ats_feedback_tab_medium"
+                              metadata={typeof suggestion === 'string' ? {} : suggestion.metadata}
+                            />
                           </div>
                         ))}
                       </div>
@@ -511,10 +539,16 @@ export function RealTimeAtsFeedback({
                     <div>
                       <h4 className="font-medium mb-2 text-blue-600">Low Priority</h4>
                       <div className="space-y-2">
-                        {recommendations.low.map((suggestion, index) => (
+                        {recommendations.low.map((suggestion: string | AtsRecommendationItem, index: number) => (
                           <div key={`low-${index}`} className="flex items-start gap-2 p-2 bg-blue-50 rounded">
                             <Lightbulb className="h-4 w-4 text-blue-600 mt-0.5" />
-                            <p className="text-sm">{suggestion}</p>
+                            <p className="text-sm flex-1">{typeof suggestion === 'string' ? suggestion : suggestion.text}</p>
+                            <AiFeedbackButtons 
+                              contentType="suggestion"
+                              contentId={typeof suggestion === 'string' ? `legacy-low-${index}` : suggestion.id}
+                              context="real_time_ats_feedback_tab_low"
+                              metadata={typeof suggestion === 'string' ? {} : suggestion.metadata}
+                            />
                           </div>
                         ))}
                       </div>

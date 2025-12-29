@@ -22,6 +22,11 @@ type DashboardStatsResponse = {
   inquiries: {
     pending: number;
   };
+  aiFeedback: {
+    total: number;
+    newThisWeek: number;
+    sentimentScore: number;
+  };
   timestamp: string;
 };
 
@@ -158,6 +163,28 @@ export const GET = withApi({
     .get();
   const pendingInquiries = pendingInquiriesSnap.data().count;
 
+  // AI Feedback stats
+  const feedbackTotalSnap = await db.collection("ai_feedback").count().get();
+  const feedbackTotal = feedbackTotalSnap.data().count;
+
+  const feedbackNewThisWeekSnap = await db
+    .collection("ai_feedback")
+    .where("createdAt", ">=", nowMs - sevenDaysMs)
+    .count()
+    .get();
+  const feedbackNewThisWeek = feedbackNewThisWeekSnap.data().count;
+
+  // Calculate sentiment score (percentage of positive feedback)
+  let sentimentScore = 0;
+  if (feedbackTotal > 0) {
+    const positiveSnap = await db
+      .collection("ai_feedback")
+      .where("sentiment", "==", "positive")
+      .count()
+      .get();
+    sentimentScore = Math.round((positiveSnap.data().count / feedbackTotal) * 100);
+  }
+
   const response: DashboardStatsResponse = {
     users: {
       total: usersTotal,
@@ -183,6 +210,11 @@ export const GET = withApi({
     },
     inquiries: {
       pending: pendingInquiries,
+    },
+    aiFeedback: {
+      total: feedbackTotal,
+      newThisWeek: feedbackNewThisWeek,
+      sentimentScore,
     },
     timestamp: new Date().toISOString(),
   };

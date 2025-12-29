@@ -44,6 +44,8 @@ export function DashboardHeader({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className="bg-gradient-to-r from-primary via-primary/90 to-primary/80 shadow-xl relative z-10"
+      role="region"
+      aria-label="Dashboard Overview"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center py-8 gap-5">
@@ -128,6 +130,7 @@ export function DashboardHeader({
                     size="sm"
                     data-tour="import-jobs"
                     className="motion-button shadow-lg hover:shadow-xl bg-white text-primary hover:bg-white/90 border border-primary/10 gap-2 font-semibold"
+                    aria-label="Import jobs from extension"
                   >
                     <Chrome className="h-4 w-4" />
                     <span className="hidden sm:inline">Import from Extension</span>
@@ -148,6 +151,7 @@ export function DashboardHeader({
                     size="sm"
                     data-tour="add-job"
                     className="motion-button text-primary-foreground/90 hover:text-primary-foreground hover:bg-white/20 gap-2"
+                    aria-label="Add new job manually"
                   >
                     <FilePlus className="h-4 w-4" />
                     <span className="hidden sm:inline">Add Job</span>
@@ -166,6 +170,7 @@ export function DashboardHeader({
                     variant="ghost"
                     size="sm"
                     className="motion-button text-primary-foreground/70 hover:text-primary-foreground hover:bg-white/10 gap-2"
+                    aria-label="Track existing application"
                   >
                     <ClipboardList className="h-4 w-4" />
                     <span className="hidden md:inline">Track Application</span>

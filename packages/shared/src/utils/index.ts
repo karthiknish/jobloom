@@ -13,3 +13,11 @@ export {
   normalizeJobUrl,
   extractJobIdentifier,
 } from './url';
+
+export {
+  safeParseJson,
+  isLocalStorageAvailable,
+  safeLocalStorageGet,
+  safeLocalStorageSet,
+  safeLocalStorageRemove,
+} from './storage';

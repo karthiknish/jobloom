@@ -117,4 +117,21 @@ export const userApi = {
     // Use API endpoint to update admin status
     await apiClient.post(`/app/users/${userId}/admin`, { makeAdmin: false });
   },
+
+  createUser: async (userData: any): Promise<any> => {
+    // Verify admin access before creating user
+    await verifyAdminAccess();
+
+    const auth = getAuthClient();
+    if (!auth?.currentUser) {
+      throw new Error("Authentication required");
+    }
+
+    const token = await auth.currentUser.getIdToken();
+    return apiClient.post("/app/users", userData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
 };

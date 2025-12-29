@@ -12,6 +12,7 @@ import {
   createKeywordExtractionPrompt,
   createCompanyInsightsPrompt,
   createJobSummaryPrompt,
+  createLearningNote,
 } from './prompts';
 import {
   getFallbackCoverLetter,
@@ -54,9 +55,12 @@ export async function generateCoverLetter(request: CoverLetterRequest): Promise<
       }
     }
 
+    const learningPoints = await getRelevantLearningPoints('cover_letter');
+
     const prompt = createCoverLetterPrompt({
       jobTitle, companyName, jobDescription, skills, experience, tone, length,
-      keywords, deepResearch, researchInsights
+      keywords, deepResearch, researchInsights,
+      learningPoints
     });
 
     const content = await generateContentRobust(prompt, {
@@ -91,7 +95,8 @@ export async function analyzeResume(request: ResumeAnalysisRequest): Promise<Res
       return getFallbackResumeAnalysis('Resume text is too short for meaningful analysis');
     }
 
-    const prompt = createResumeAnalysisPrompt(resumeText, jobDescription);
+    const learningPoints = await getRelevantLearningPoints('resume');
+    const prompt = createResumeAnalysisPrompt(resumeText, jobDescription, learningPoints);
     const analysis = await generateContentRobust(prompt, {
       useCache: false,
       operation: 'Resume analysis'
@@ -108,7 +113,8 @@ export async function analyzeResume(request: ResumeAnalysisRequest): Promise<Res
 
 export async function generateResumeWithAI(request: ResumeGenerationRequest): Promise<ResumeGenerationResult> {
   try {
-    const prompt = createResumeGenerationPrompt(request);
+    const learningPoints = await getRelevantLearningPoints('resume');
+    const prompt = createResumeGenerationPrompt({ ...request, learningPoints });
     const raw = await generateContentRobust(prompt, {
       useCache: false,
       operation: 'Resume generation'
@@ -288,5 +294,32 @@ export async function summarizeJobDescription(jobDescription: string): Promise<J
       atsKeywords: [],
       salaryEstimate: "Not specified"
     };
+  }
+}
+
+// ============ LEARNING SYSTEM ============
+
+/**
+ * Fetch top verified learning points for a specific content type
+ */
+async function getRelevantLearningPoints(contentType: string): Promise<string[]> {
+  try {
+    const db = (await import('@/firebase/admin')).getAdminDb();
+    const snapshot = await db.collection("ai_learning_points")
+      .where("contentType", "==", contentType)
+      .where("status", "==", "verified")
+      .orderBy("occurrenceCount", "desc")
+      .limit(3)
+      .get();
+
+    if (snapshot.empty) return [];
+    
+    return snapshot.docs.map(doc => {
+      const data = doc.data();
+      return data.primaryIssue || data.recommendation;
+    }).filter(Boolean);
+  } catch (error) {
+    console.error('Error fetching learning points:', error);
+    return [];
   }
 }

@@ -3,6 +3,7 @@ import { doc, updateDoc, addDoc, collection, deleteDoc, getDocs, query, where, o
 import { blogApi } from "./blog";
 import { userApi } from "./users";
 import { sponsorApi } from "./sponsors";
+import { learningApi } from "./learning";
 import { verifyAdminAccess, clearAdminVerificationCache } from "./auth";
 import { clearUserAuthCache } from "@/lib/api/auth-cache";
 import { apiClient } from "@/lib/api/client";
@@ -261,9 +262,11 @@ export const adminApi = {
   },
 
   users: userApi,
+  learning: learningApi,
 };
 
 // Export individual APIs for direct import
 export { blogApi } from "./blog";
 export { userApi } from "./users";
 export { sponsorApi } from "./sponsors";
+export { learningApi } from "./learning";

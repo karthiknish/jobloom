@@ -10,6 +10,7 @@ import type { Job } from './job';
 export type KanbanStatus =
   | "interested"
   | "applied"
+  | "interviewing"
   | "offered"
   | "rejected"
   | "withdrawn";
@@ -21,7 +22,8 @@ export type DashboardView =
   | "dashboard"
   | "jobs"
   | "applications"
-  | "analytics";
+  | "analytics"
+  | "feedback";
 
 /**
  * Display modes for the board.

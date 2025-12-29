@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { motion } from "framer-motion";
-import { CheckCircle, ArrowRight, Sparkles, Target, Zap, Loader2, PlayCircle, Plus } from "lucide-react";
+import { CheckCircle, ArrowRight, Sparkles, Target, Zap, Loader2, PlayCircle, Plus, Chrome } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTourContext } from "@/providers/onboarding-tour-provider";
@@ -132,44 +132,57 @@ function WelcomeInner() {
               </div>
             </motion.div>
 
-            {/* Main CTAs */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.8, duration: 0.6 }}
-              className="space-y-4 pt-4"
-            >
-              {/* Primary CTA: Take the tour */}
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              {/* Main CTAs */}
+              <div className="space-y-4 pt-4">
+                {/* Primary CTA: Take the tour */}
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="flex-1 max-w-xs">
+                    <Button
+                      onClick={handleStartTour}
+                      variant="premium"
+                      size="xl"
+                      className="w-full"
+                    >
+                      <PlayCircle className="mr-2 h-5 w-5" />
+                      Take a Quick Tour
+                    </Button>
+                  </motion.div>
+                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="flex-1 max-w-xs">
+                    <Button
+                      onClick={handleGoToDashboard}
+                      variant="outline"
+                      size="xl"
+                      className="w-full font-semibold"
+                    >
+                      Skip to Dashboard
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                    </Button>
+                  </motion.div>
+                </div>
+
+                {/* Secondary CTAs for specific features */}
+                <div className="flex flex-wrap items-center justify-center gap-4 pt-4 border-t border-border/50">
                   <Button
-                    onClick={handleStartTour}
-                    variant="premium"
-                    size="2xl"
-                    className="w-full sm:w-auto"
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground hover:text-primary"
+                    onClick={() => router.push('/dashboard?view=jobs&action=add')}
                   >
-                    <PlayCircle className="mr-2 h-5 w-5" />
-                    Take a Quick Tour
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Your First Job
                   </Button>
-                </motion.div>
-                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  <span className="text-muted-foreground/30 hidden sm:inline">•</span>
                   <Button
-                    onClick={handleGoToDashboard}
-                    variant="outline"
-                    size="2xl"
-                    className="w-full sm:w-auto font-semibold"
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground hover:text-primary"
+                    onClick={() => router.push('/extension/connect')}
                   >
-                    Skip to Dashboard
-                    <ArrowRight className="ml-2 h-5 w-5" />
+                    <Chrome className="mr-2 h-4 w-4" />
+                    Install Extension
                   </Button>
-                </motion.div>
+                </div>
               </div>
-              
-              {/* Quick start hint */}
-              <p className="text-sm text-muted-foreground text-center">
-                The tour takes ~1 minute and helps you get the most out of Hireall
-              </p>
-            </motion.div>
           </CardContent>
         </Card>
       </motion.div>

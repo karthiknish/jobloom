@@ -51,16 +51,32 @@ export function useConversionTracking() {
   }, [trackFunnelStep]);
 
   // Track job application funnel
-  const trackApplicationFunnel = useCallback((step: 'viewed' | 'saved' | 'created' | 'applied' | 'offered', jobId?: string) => {
+  const trackApplicationFunnel = useCallback((step: 'viewed' | 'saved' | 'created' | 'applied' | 'interviewing' | 'offered', jobId?: string) => {
     const stepMap: Record<string, string> = {
       viewed: 'job_viewed',
       saved: 'job_saved',
       created: 'application_created',
       applied: 'status_applied',
+      interviewing: 'status_interviewing',
       offered: 'status_offered',
     };
     trackFunnelStep(CONVERSION_FUNNELS.JOB_APPLICATION.name, stepMap[step], { job_id: jobId });
   }, [trackFunnelStep]);
+
+  // Track the implementation of an AI suggestion
+  const trackSuggestionImplementation = useCallback((
+    id: string,
+    type: 'keyword' | 'rule' | 'formatting' | 'impact',
+    context?: Record<string, any>
+  ) => {
+    if (!isInitialized) return;
+    
+    trackEvent("ai_suggestion_implemented", {
+      suggestion_id: id,
+      suggestion_type: type,
+      ...context,
+    });
+  }, [trackEvent, isInitialized]);
 
   // Track CV evaluation funnel
   const trackCVFunnel = useCallback((step: 'page_viewed' | 'uploaded' | 'analyzed' | 'downloaded') => {
@@ -92,6 +108,7 @@ export function useConversionTracking() {
     trackApplicationFunnel,
     trackCVFunnel,
     trackActivation,
+    trackSuggestionImplementation,
   };
 }
 

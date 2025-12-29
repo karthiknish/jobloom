@@ -184,7 +184,7 @@ function buildCoverLetterResponse(
     content: normalizedContent,
     atsScore: atsEvaluation.score,
     keywords: atsEvaluation.matchedKeywords,
-    improvements: atsEvaluation.recommendations.high,
+    improvements: atsEvaluation.recommendations.high.map(imp => typeof imp === 'string' ? imp : imp.text),
     breakdown: atsEvaluation.breakdown,
     detailedMetrics: atsEvaluation.detailedMetrics,
     tone: request.tone,

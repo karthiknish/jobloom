@@ -56,8 +56,9 @@ interface BulkActionsBarProps {
 }
 
 const STATUS_OPTIONS: { value: ApplicationStatus; label: string; icon: React.ReactNode }[] = [
-  { value: "saved", label: "Saved", icon: <Clock className="h-4 w-4" /> },
+  { value: "interested", label: "Interested", icon: <Clock className="h-4 w-4" /> },
   { value: "applied", label: "Applied", icon: <Send className="h-4 w-4" /> },
+  { value: "interviewing", label: "Interviewing", icon: <UserCheck className="h-4 w-4" /> },
   { value: "offered", label: "Offered", icon: <CheckCircle className="h-4 w-4" /> },
   { value: "rejected", label: "Rejected", icon: <XCircle className="h-4 w-4" /> },
   { value: "withdrawn", label: "Withdrawn", icon: <Archive className="h-4 w-4" /> },
@@ -144,6 +145,7 @@ export function BulkActionsBar({
                       size="sm"
                       className="gap-2"
                       disabled={isLoading}
+                      aria-label="Change status of selected jobs"
                     >
                       <CheckSquare className="h-4 w-4" />
                       <span className="hidden sm:inline">Change Status</span>
@@ -179,6 +181,7 @@ export function BulkActionsBar({
                       size="sm"
                       className="gap-2"
                       disabled={isLoading}
+                      aria-label="Export selected jobs"
                     >
                       <Download className="h-4 w-4" />
                       <span className="hidden sm:inline">Export</span>
@@ -209,6 +212,7 @@ export function BulkActionsBar({
                   className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
                   onClick={() => setShowDeleteConfirm(true)}
                   disabled={isLoading}
+                  aria-label="Delete selected jobs"
                 >
                   <Trash2 className="h-4 w-4" />
                   <span className="hidden sm:inline">Delete</span>
@@ -229,6 +233,7 @@ export function BulkActionsBar({
                   size="sm"
                   className="gap-2"
                   onClick={onClearSelection}
+                  aria-label="Clear selection"
                 >
                   <X className="h-4 w-4" />
                   <span className="hidden sm:inline">Clear</span>

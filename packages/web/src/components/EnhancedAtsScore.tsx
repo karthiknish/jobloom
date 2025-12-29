@@ -17,6 +17,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import type { ResumeScore } from "@/lib/ats";
 import { cn } from "@/lib/utils";
+import { AiFeedbackButtons } from "./shared/AiFeedbackButtons";
+import { AtsRecommendationItem } from "@/lib/ats/types";
 
 interface EnhancedAtsScoreProps {
   score: ResumeScore;
@@ -145,9 +147,15 @@ export function EnhancedAtsScore({
           <div className="pt-2 border-t border-gray-100">
             <div className="flex items-start gap-2">
               <Sparkles className="w-3.5 h-3.5 text-amber-500 mt-0.5 flex-shrink-0" />
-              <p className="text-xs text-muted-foreground line-clamp-2">
-                {score.suggestions[0]}
+              <p className="text-xs text-muted-foreground line-clamp-2 flex-1">
+                {typeof score.suggestions[0] === 'string' ? score.suggestions[0] : score.suggestions[0].text}
               </p>
+              <AiFeedbackButtons 
+                contentType="suggestion"
+                contentId={typeof score.suggestions[0] === 'string' ? 'legacy' : score.suggestions[0].id}
+                context="enhanced_ats_score_compact"
+                metadata={typeof score.suggestions[0] === 'string' ? {} : score.suggestions[0].metadata}
+              />
             </div>
           </div>
         )}
@@ -364,7 +372,7 @@ export function EnhancedAtsScore({
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-2">
-                {score.suggestions.slice(0, 4).map((suggestion: string, index: number) => (
+                {score.suggestions.slice(0, 4).map((suggestion: string | AtsRecommendationItem, index: number) => (
                   <motion.div
                     key={index}
                     initial={animated ? { opacity: 0, y: 10 } : false}
@@ -373,7 +381,17 @@ export function EnhancedAtsScore({
                     className="flex items-start gap-2 p-2 rounded-lg bg-blue-50/50"
                   >
                     <Info className="w-3.5 h-3.5 text-blue-500 mt-0.5 flex-shrink-0" />
-                    <p className="text-xs text-blue-700">{suggestion}</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-blue-700">
+                        {typeof suggestion === 'string' ? suggestion : suggestion.text}
+                      </p>
+                    </div>
+                    <AiFeedbackButtons 
+                      contentType="suggestion"
+                      contentId={typeof suggestion === 'string' ? `legacy-${index}` : suggestion.id}
+                      context="enhanced_ats_score_expanded"
+                      metadata={typeof suggestion === 'string' ? {} : suggestion.metadata}
+                    />
                   </motion.div>
                 ))}
               </CardContent>

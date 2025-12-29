@@ -307,7 +307,7 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <div className="group/insight flex items-center justify-between p-4 bg-card border rounded-xl hover:from-muted/80 hover:to-muted/60 motion-surface cursor-help">
+                      <Card variant="interactive" className="group/insight flex items-center justify-between p-4 motion-surface cursor-help">
                         <div className="flex items-center">
                           <div className="p-3 rounded-xl bg-blue-500 shadow-md group-hover/insight:shadow-lg motion-control">
                             <Building className="w-5 h-5 text-white" />
@@ -324,7 +324,7 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
                         <span className="text-2xl font-bold text-blue-600">
                           {stats.recruitmentAgencyJobs || 0}
                         </span>
-                      </div>
+                      </Card>
                     </TooltipTrigger>
                     <TooltipContent>
                       <p>Jobs posted by recruitment agencies</p>
@@ -335,7 +335,7 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <div className="group/insight flex items-center justify-between p-4 bg-card rounded-xl hover:from-orange-100 hover:to-orange-200 motion-surface cursor-help">
+                      <Card variant="interactive" className="group/insight flex items-center justify-between p-4 motion-surface cursor-help">
                         <div className="flex items-center">
                           <div className="p-3 rounded-xl bg-orange-500 shadow-md group-hover/insight:shadow-lg motion-control">
                             <MapPin className="h-6 w-6 text-white" />
@@ -352,7 +352,7 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
                         <span className="text-2xl font-bold text-orange-600">
                           {getPercentage(stats.sponsoredJobs, stats.totalJobs)}%
                         </span>
-                      </div>
+                      </Card>
                     </TooltipTrigger>
                     <TooltipContent>
                       <p>Percentage of jobs that are sponsored</p>
@@ -360,7 +360,7 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
                   </Tooltip>
                 </TooltipProvider>
 
-                <div className="group/insight flex items-center justify-between p-4 bg-card rounded-xl hover:from-green-100 hover:to-green-200 motion-surface">
+                <Card variant="interactive" className="group/insight flex items-center justify-between p-4 motion-surface">
                   <div className="flex items-center">
                     <div className="p-3 rounded-xl bg-green-500 shadow-md group-hover/insight:shadow-lg motion-control">
                       <TrendingUp className="h-6 w-6 text-white" />
@@ -377,7 +377,7 @@ export function JobStatsDashboard({ stats }: JobStatsDashboardProps) {
                   <span className="text-2xl font-bold text-green-600">
                     {getPercentage(stats.totalApplications, stats.totalJobs)}%
                   </span>
-                </div>
+                </Card>
               </div>
             </CardContent>
           </Card>
