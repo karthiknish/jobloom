@@ -5,13 +5,12 @@ import { withApi } from "@/lib/api/withApi";
 /**
  * GET /api/admin/feedback/process
  * Automated job to process feedback and generate learning points.
- * Usually called by Vercel Cron.
  */
 export const GET = withApi({
-  auth: "none", // Manual check for admin or cron secret
+  auth: "none", // Manual check for admin or secret
   rateLimit: "admin",
 }, async ({ request, user }) => {
-  // 0. Authorization check: Admin user or Cron Secret
+  // 0. Authorization check: Admin user or Secret
   const authHeader = request.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
   const isCron = cronSecret && authHeader === `Bearer ${cronSecret}`;
@@ -20,7 +19,7 @@ export const GET = withApi({
   if (!isCron && !isAdmin) {
     return {
       success: false,
-      message: "Unauthorized: Admin access or valid cron secret required",
+      message: "Unauthorized: Admin access or valid secret required",
     };
   }
 

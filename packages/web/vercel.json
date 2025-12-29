@@ -2,15 +2,5 @@
   "buildCommand": "npm run build",
   "installCommand": "npm install",
   "devCommand": "npm run dev",
-  "framework": "nextjs",
-  "crons": [
-    {
-      "path": "/api/email/weekly-digest",
-      "schedule": "0 9 * * 1"
-    },
-    {
-      "path": "/api/admin/feedback/process",
-      "schedule": "0 0 * * *"
-    }
-  ]
+  "framework": "nextjs"
 }

@@ -10,17 +10,16 @@ export { OPTIONS };
 /**
  * POST /api/email/weekly-digest
  * Send weekly digest emails to all users with email notifications enabled
- * This should be called by a cron job (e.g., Vercel Cron)
  */
 export const POST = withApi({
   auth: "none",
 }, async ({ request }) => {
-  // Verify cron secret for security
+  // Verify secret for security
   const authHeader = request.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
   
   if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-    throw new Error("Unauthorized: Invalid cron secret");
+    throw new Error("Unauthorized: Invalid secret");
   }
 
   const db = getAdminDb();

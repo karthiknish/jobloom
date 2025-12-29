@@ -10,17 +10,16 @@ export { OPTIONS };
 /**
  * POST /api/email/follow-up-automation
  * Automatically send follow-up reminders for applications that are due
- * This should be called by a cron job (e.g., Vercel Cron)
  */
 export const POST = withApi({
   auth: "none",
 }, async ({ request }) => {
-  // Verify cron secret for security
+  // Verify secret for security
   const authHeader = request.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
   
   if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-    throw new Error("Unauthorized: Invalid cron secret");
+    throw new Error("Unauthorized: Invalid secret");
   }
 
   const db = getAdminDb();
@@ -48,7 +47,7 @@ export const POST = withApi({
 
     try {
       // Check if we already sent a follow-up email for this application recently
-      // (e.g., in the last 3 days to avoid spamming if the cron runs daily and followUpDate is still in the past)
+      // (e.g., in the last 3 days to avoid spamming if the job runs daily and followUpDate is still in the past)
       const threeDaysAgo = new Date();
       threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
       

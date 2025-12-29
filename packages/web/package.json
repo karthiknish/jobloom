@@ -14,7 +14,6 @@
     "build:ignore-types": "next build --no-lint",
     "vercel-build": "cd ../shared && npm run build && cd ../web && next build",
     "migrate-data": "node migrate-to-firestore.js",
-    "cron:process-feedback": "curl -X GET ${NEXT_PUBLIC_APP_URL}/api/admin/feedback/process -H \"Authorization: Bearer ${CRON_SECRET}\"",
     "test": "playwright test",
     "test:unit": "jest",
     "test:unit:watch": "jest --watch",
