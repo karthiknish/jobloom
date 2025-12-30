@@ -1,5 +1,5 @@
 import type { Viewport } from "next";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import FirebaseInitializer from "@/components/FirebaseInitializer";
@@ -11,12 +11,14 @@ import Footer from "@/components/Footer";
 import MobileNavigation from "@/components/MobileNavigation";
 import { AnalyticsProvider } from "@/providers/analytics-provider";
 import { PerformanceProvider } from "@/providers/performance-provider";
+import { PostHogProvider } from "@/providers/posthog-provider";
 import { JsonLd } from "@/components/JsonLd";
 import EmailVerificationBanner from "@/components/EmailVerificationBanner";
 import { ReportIssue } from "@/components/ReportIssue";
 import { rootMetadata } from "@/metadata";
 import { OnboardingTourProvider } from "@/providers/onboarding-tour-provider";
 import { SuccessAnimationProvider } from "@/components/ui/SuccessAnimation";
+import { QueryProvider } from "@/lib/query";
 import {
   generateOrganizationSchema,
   generateWebSiteSchema,
@@ -71,23 +73,29 @@ export default function RootLayout({
         </a>
         <FirebaseInitializer />
         <FirebaseAuthProvider>
-          <SubscriptionProvider>
-            <AnalyticsProvider>
-              <PerformanceProvider>
-                <OnboardingTourProvider>
-                  <SuccessAnimationProvider>
-                    <Header />
-                    <EmailVerificationBanner />
-                    <main id="main">{children}</main>
-                    <Footer />
-                    <MobileNavigation />
-                    <AppToaster />
-                    <ReportIssue position="bottom-left" />
-                  </SuccessAnimationProvider>
-                </OnboardingTourProvider>
-              </PerformanceProvider>
-            </AnalyticsProvider>
-          </SubscriptionProvider>
+          <PostHogProvider>
+            <QueryProvider>
+              <Suspense fallback={null}>
+                <SubscriptionProvider>
+                  <AnalyticsProvider>
+                    <PerformanceProvider>
+                      <OnboardingTourProvider>
+                        <SuccessAnimationProvider>
+                          <Header />
+                          <EmailVerificationBanner />
+                          <main id="main">{children}</main>
+                          <Footer />
+                          <MobileNavigation />
+                          <AppToaster />
+                          <ReportIssue position="bottom-left" />
+                        </SuccessAnimationProvider>
+                      </OnboardingTourProvider>
+                    </PerformanceProvider>
+                  </AnalyticsProvider>
+                </SubscriptionProvider>
+              </Suspense>
+            </QueryProvider>
+          </PostHogProvider>
         </FirebaseAuthProvider>
       </body>
     </html>

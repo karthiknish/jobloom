@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,7 +22,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { TiptapEditor } from "@/components/TiptapEditor";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const TiptapEditor = dynamic(
+  () => import("@/components/TiptapEditor").then((mod) => mod.TiptapEditor),
+  {
+    ssr: false,
+    loading: () => <Skeleton className="h-64 w-full" />,
+  }
+);
 import { ImageSelector } from "@/components/admin/ImageSelector";
 
 interface CreatePostDialogProps {

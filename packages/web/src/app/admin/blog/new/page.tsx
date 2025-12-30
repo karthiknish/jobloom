@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminAccessDenied } from "@/components/admin/AdminAccessDenied";
 import { Skeleton } from "@/components/ui/skeleton";
 import { showError, showSuccess } from "@/components/ui/Toast";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
-import { useApiMutation } from "@/hooks/useApi";
+import { queryKeys } from "@/hooks/queries";
 import { adminApi } from "@/utils/api/admin";
 import { BlogPostForm, type CreatePostData } from "../components/BlogPostForm";
 
@@ -27,6 +28,7 @@ function PageSkeleton() {
 
 export default function AdminBlogNewPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { user } = useFirebaseAuth();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 
@@ -46,13 +48,19 @@ export default function AdminBlogNewPage() {
     checkAdminAccess();
   }, [user?.uid]);
 
-  const createPostMutation = useApiMutation(async (data: CreatePostData) => {
-    return adminApi.blog.createBlogPost(data);
+  const createPostMutation = useMutation({
+    mutationFn: async (data: CreatePostData) => {
+      return adminApi.blog.createBlogPost(data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "blog"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.blogs.all() });
+    },
   });
 
   const handleSubmit = async (data: CreatePostData) => {
     try {
-      await createPostMutation.mutate(data);
+      await createPostMutation.mutateAsync(data);
       showSuccess("Post created successfully");
       router.push("/admin/blog");
     } catch {
@@ -83,7 +91,7 @@ export default function AdminBlogNewPage() {
           title="Create New Blog Post"
           description="Write and publish a new blog post."
           initialData={null}
-          isSubmitting={createPostMutation.loading}
+          isSubmitting={createPostMutation.isPending}
           onSubmit={handleSubmit}
           onCancel={() => router.push("/admin/blog")}
           submitLabel="Create Post"

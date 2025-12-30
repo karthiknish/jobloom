@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useEnhancedApi } from "@/hooks/useEnhancedApi";
+import { useQuery } from "@tanstack/react-query";
 import { dashboardApi } from "@/utils/api/dashboard";
 import { cvEvaluatorApi } from "@/utils/api/cvEvaluator";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
@@ -54,26 +54,29 @@ export function useGlobalSearch() {
     }
   }, []);
 
-  // Fetch user record
-  const { data: userRecord } = useEnhancedApi(
-    () =>
-      user?.uid
-        ? dashboardApi.getUserByFirebaseUid(user.uid)
-        : Promise.reject(new Error("No user")),
-    { immediate: !!user?.uid }
-  );
+  // Fetch user record using TanStack Query
+  const { data: userRecord, isLoading: isLoadingUser } = useQuery({
+    queryKey: ["dashboard", "user", user?.uid],
+    queryFn: () => dashboardApi.getUserByFirebaseUid(user!.uid),
+    enabled: !!user?.uid,
+    staleTime: 60 * 1000,
+  });
 
-  // Fetch applications for search
-  const { data: applications } = useEnhancedApi<Application[]>(
-    () => dashboardApi.getApplicationsByUser(userRecord!._id),
-    { immediate: !!userRecord }
-  );
+  // Fetch applications for search using TanStack Query
+  const { data: applications, isLoading: isLoadingApplications } = useQuery<Application[]>({
+    queryKey: ["dashboard", "applications", userRecord?._id],
+    queryFn: () => dashboardApi.getApplicationsByUser(userRecord!._id),
+    enabled: !!userRecord?._id,
+    staleTime: 30 * 1000,
+  });
 
-  // Fetch Resume analyses for search
-  const { data: cvAnalyses } = useEnhancedApi(
-    () => cvEvaluatorApi.getCvAnalysesByUser(userRecord!._id),
-    { immediate: !!userRecord }
-  );
+  // Fetch Resume analyses for search using TanStack Query
+  const { data: cvAnalyses, isLoading: isLoadingCvAnalyses } = useQuery({
+    queryKey: ["dashboard", "cvAnalyses", userRecord?._id],
+    queryFn: () => cvEvaluatorApi.getCvAnalysesByUser(userRecord!._id),
+    enabled: !!userRecord?._id,
+    staleTime: 60 * 1000,
+  });
 
   // Filter and search results
   const searchResults = useMemo((): SearchCategory[] => {
@@ -230,5 +233,6 @@ export function useGlobalSearch() {
     close,
     handleKeyDown,
     handleSelect,
+    isLoading: isLoadingUser || isLoadingApplications || isLoadingCvAnalyses,
   };
 }

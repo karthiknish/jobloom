@@ -2,12 +2,13 @@
 
 import { use, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminAccessDenied } from "@/components/admin/AdminAccessDenied";
 import { Skeleton } from "@/components/ui/skeleton";
 import { showError, showSuccess } from "@/components/ui/Toast";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
-import { useApiMutation, useApiQuery } from "@/hooks/useApi";
+import { queryKeys } from "@/hooks/queries";
 import { adminApi } from "@/utils/api/admin";
 import type { BlogPost } from "@/types/api";
 import { BlogPostForm, type CreatePostData } from "../../components/BlogPostForm";
@@ -32,6 +33,7 @@ export default function AdminBlogEditPage({
   params: Promise<{ postId: string }>;
 }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { user } = useFirebaseAuth();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 
@@ -53,23 +55,27 @@ export default function AdminBlogEditPage({
     checkAdminAccess();
   }, [user?.uid]);
 
-  const fetchPost = async () => {
-    const response = await adminApi.blog.getBlogPost(postId);
-    return response.post || response;
-  };
+  // Fetch post using TanStack Query
+  const { data: post, isLoading: postLoading } = useQuery<BlogPost>({
+    queryKey: ["admin", "blog", "post", postId],
+    queryFn: async () => {
+      const response = await adminApi.blog.getBlogPost(postId);
+      return response.post || response;
+    },
+    enabled: !!postId && isAdmin === true,
+    staleTime: 30 * 1000,
+  });
 
-  const { data: post, loading: postLoading } = useApiQuery<BlogPost>(
-    fetchPost,
-    [postId, isAdmin],
-    { enabled: !!postId && isAdmin === true },
-    `admin-blog-post-${postId}`
-  );
-
-  const updatePostMutation = useApiMutation(
-    async ({ data }: { data: CreatePostData }) => {
+  // Update mutation
+  const updatePostMutation = useMutation({
+    mutationFn: async ({ data }: { data: CreatePostData }) => {
       return adminApi.blog.updateBlogPost(postId, data);
-    }
-  );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "blog"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.blogs.all() });
+    },
+  });
 
   const initialData = useMemo<CreatePostData | null>(() => {
     if (!post) return null;
@@ -86,7 +92,7 @@ export default function AdminBlogEditPage({
 
   const handleSubmit = async (data: CreatePostData) => {
     try {
-      await updatePostMutation.mutate({ data });
+      await updatePostMutation.mutateAsync({ data });
       showSuccess("Post updated successfully");
       router.push("/admin/blog");
     } catch {
@@ -133,7 +139,7 @@ export default function AdminBlogEditPage({
           title="Edit Blog Post"
           description="Update the post and save your changes."
           initialData={initialData}
-          isSubmitting={updatePostMutation.loading}
+          isSubmitting={updatePostMutation.isPending}
           onSubmit={handleSubmit}
           onCancel={() => router.push("/admin/blog")}
           submitLabel="Update Post"

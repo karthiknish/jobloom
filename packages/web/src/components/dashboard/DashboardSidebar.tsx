@@ -165,6 +165,7 @@ export function DashboardSidebar({
             activeSection={activeSection}
             onSectionChange={onSectionChange}
             jobsCount={jobsCount}
+            data-tour="nav-tabs"
           />
         </Sidebar>
       </SidebarProvider>

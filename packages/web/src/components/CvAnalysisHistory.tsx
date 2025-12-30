@@ -10,7 +10,7 @@ import { Eye, Trash2, ArrowLeft, BarChart3, Search, FileText, Sparkles } from "l
 import { useToast } from "@/hooks/use-toast";
 import { LoadingSpinner } from "@/components/ui/loading";
 import type { CvAnalysis, Id } from "../types/api";
-import { useEnhancedApi } from "../hooks/useEnhancedApi";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { cvEvaluatorApi } from "../utils/api/cvEvaluator";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -51,13 +51,13 @@ export function CvAnalysisHistory({ analyses, optimistic }: CvAnalysisHistoryPro
     }
   }, [optimistic, analyses, filteredAnalyses]);
 
-  const { execute: deleteAnalysis } = useEnhancedApi(
-    async (variables: Record<string, unknown>) => {
-      const { analysisId } = variables;
-      return cvEvaluatorApi.deleteCvAnalysis(analysisId as string);
-    },
-    { immediate: false }
-  );
+  const queryClient = useQueryClient();
+  const { mutateAsync: deleteAnalysis } = useMutation({
+    mutationFn: (analysisId: string) => cvEvaluatorApi.deleteCvAnalysis(analysisId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cvAnalyses'] });
+    }
+  });
 
   const handleViewAnalysis = (analysis: CvAnalysis) => {
     setSelectedAnalysis(analysis);
@@ -70,7 +70,7 @@ export function CvAnalysisHistory({ analyses, optimistic }: CvAnalysisHistoryPro
     }
 
     try {
-      await deleteAnalysis({ analysisId: analysisId as Id<"cvAnalyses"> });
+      await deleteAnalysis(analysisId);
       toast({
         title: "Success",
         description: "Analysis deleted successfully",

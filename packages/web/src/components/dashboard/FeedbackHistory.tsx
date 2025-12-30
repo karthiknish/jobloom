@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useEnhancedApi } from "@/hooks/useEnhancedApi";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,14 +19,18 @@ interface FeedbackItem {
 }
 
 export function FeedbackHistory() {
-  const { data, loading, error } = useEnhancedApi(async () => {
-    const res = await fetch("/api/feedback");
-    if (!res.ok) throw new Error("Failed to fetch feedback");
-    const json = await res.json();
-    return json.data.feedback as FeedbackItem[];
-  }, { immediate: true });
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["feedback", "history"],
+    queryFn: async () => {
+      const res = await fetch("/api/feedback");
+      if (!res.ok) throw new Error("Failed to fetch feedback");
+      const json = await res.json();
+      return json.data.feedback as FeedbackItem[];
+    },
+    staleTime: 60 * 1000,
+  });
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="space-y-4">
         {[1, 2, 3].map((i) => (

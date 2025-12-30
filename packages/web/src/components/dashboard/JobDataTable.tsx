@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { format } from "date-fns";
 import type { ColumnDef, Row } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
@@ -39,7 +39,33 @@ interface JobDataTableProps {
   onToggleSelection?: (id: string) => void;
 }
 
-export function JobDataTable({
+const getStatusIcon = (status: string) => {
+  switch (status) {
+    case "applied":
+      return <Clock className="h-4 w-4 text-blue-500" />;
+    case "offered":
+      return <CheckCircle className="h-4 w-4 text-green-500" />;
+    case "rejected":
+      return <XCircle className="h-4 w-4 text-red-500" />;
+    default:
+      return <Clock className="h-4 w-4 text-muted-foreground" />;
+  }
+};
+
+const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
+  switch (status) {
+    case "applied":
+      return "default";
+    case "offered":
+      return "default";
+    case "rejected":
+      return "destructive";
+    default:
+      return "outline";
+  }
+};
+
+export const JobDataTable = React.memo(({
   applications,
   onEditApplication,
   onDeleteApplication,
@@ -47,7 +73,7 @@ export function JobDataTable({
   onChanged,
   selectedIds,
   onToggleSelection,
-}: JobDataTableProps) {
+}: JobDataTableProps) => {
   const [searchTerm, setSearchTerm] = useState("");
 
   const filteredApplications = useMemo(() => {
@@ -62,33 +88,7 @@ export function JobDataTable({
     });
   }, [applications, searchTerm]);
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "applied":
-        return <Clock className="h-4 w-4 text-blue-500" />;
-      case "offered":
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case "rejected":
-        return <XCircle className="h-4 w-4 text-red-500" />;
-      default:
-        return <Clock className="h-4 w-4 text-muted-foreground" />;
-    }
-  };
-
-  const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
-    switch (status) {
-      case "applied":
-        return "default";
-      case "offered":
-        return "default";
-      case "rejected":
-        return "destructive";
-      default:
-        return "outline";
-    }
-  };
-
-  const columns: ColumnDef<Application>[] = [
+  const columns: ColumnDef<Application>[] = useMemo(() => [
     {
       id: "select",
       header: () => <span className="sr-only">Select</span>,
@@ -261,7 +261,7 @@ export function JobDataTable({
         );
       },
     },
-  ];
+  ], [onDeleteApplication, onEditApplication, onToggleSelection, onViewApplication, selectedIds]);
 
   return (
     <div className="space-y-4">
@@ -302,4 +302,4 @@ export function JobDataTable({
       )}
     </div>
   );
-}
+});

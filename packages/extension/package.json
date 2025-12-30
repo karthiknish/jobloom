@@ -19,8 +19,8 @@
     "setup:chrome-store": "node scripts/setup-chrome-store.js"
   },
   "dependencies": {
-    "@hireall/shared": "*",
     "@google/generative-ai": "^0.24.1",
+    "@hireall/shared": "*",
     "@tiptap/extension-character-count": "^3.4.4",
     "@tiptap/extension-code-block": "^3.4.4",
     "@tiptap/extension-code-block-lowlight": "^3.4.4",
@@ -44,7 +44,8 @@
     "class-variance-authority": "^0.7.1",
     "firebase": "^10.13.1",
     "lowlight": "^3.3.0",
-    "lucide-react": "^0.539.0"
+    "lucide-react": "^0.539.0",
+    "posthog-js": "^1.311.0"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.246",

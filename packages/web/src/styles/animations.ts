@@ -110,6 +110,33 @@ export const scaleIn = animations.transitions.scaleIn;
 export const scaleOut = animations.transitions.scaleOut;
 export const bounceIn = animations.transitions.bounceIn;
 
+// Tailwind-compatible duration classes for use in className strings
+export const DURATION_CLASSES = {
+  fast: "duration-150",
+  normal: "duration-200", 
+  slow: "duration-300",
+  slower: "duration-500",
+  slowest: "duration-700",
+} as const;
+
+// Tailwind-compatible ease classes
+export const EASE_CLASSES = {
+  linear: "ease-linear",
+  in: "ease-in",
+  out: "ease-out",
+  inOut: "ease-in-out",
+} as const;
+
+// Common transition class combinations
+export const TRANSITION_PRESETS = {
+  fast: `transition-all ${DURATION_CLASSES.fast} ${EASE_CLASSES.out}`,
+  normal: `transition-all ${DURATION_CLASSES.normal} ${EASE_CLASSES.out}`,
+  slow: `transition-all ${DURATION_CLASSES.slow} ${EASE_CLASSES.out}`,
+  colors: `transition-colors ${DURATION_CLASSES.normal} ${EASE_CLASSES.out}`,
+  opacity: `transition-opacity ${DURATION_CLASSES.fast} ${EASE_CLASSES.out}`,
+  transform: `transition-transform ${DURATION_CLASSES.normal} ${EASE_CLASSES.out}`,
+} as const;
+
 // CSS-in-JS animation utilities for non-Framer Motion usage
 export const cssAnimations = {
   // CSS keyframes

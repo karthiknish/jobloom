@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { SkeletonGrid } from "@/components/ui/loading-skeleton";
 import { motion } from "framer-motion";
 import {
@@ -29,7 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useApiQuery } from "../../hooks/useApi";
+import { queryKeys, fetchApi } from "@/hooks/queries";
 import type { BlogPost } from "../../types/api";
 import { cn } from "@/lib/utils";
 
@@ -48,23 +49,27 @@ export default function BlogPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Fetch blog posts
-  const fetchBlogPosts = useCallback(() => {
-    return fetch(
-      `/api/blog/posts?page=${currentPage}&limit=9&search=${encodeURIComponent(
-        searchTerm
-      )}&category=${encodeURIComponent(selectedCategory ?? "")}`
-    ).then(async (res) => {
-      const json = await res.json();
+  // Fetch blog posts using TanStack Query
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: queryKeys.blogs.list({ 
+      page: currentPage, 
+      search: searchTerm, 
+      category: selectedCategory 
+    }),
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      params.set("page", String(currentPage));
+      params.set("limit", "9");
+      if (searchTerm) params.set("search", searchTerm);
+      if (selectedCategory) params.set("category", selectedCategory);
+      
+      const response = await fetch(`/api/blog/posts?${params.toString()}`);
+      const json = await response.json();
       // withApi wraps responses as { success, data, meta }
-      return json?.data ?? json;
-    });
-  }, [currentPage, searchTerm, selectedCategory]);
-
-  const { data, loading, refetch } = useApiQuery<BlogPostWithPagination>(
-    fetchBlogPosts,
-    [currentPage, searchTerm, selectedCategory]
-  );
+      return (json?.data ?? json) as BlogPostWithPagination;
+    },
+    staleTime: 30 * 1000, // 30 seconds
+  });
 
   const posts = data?.posts || [];
   const pagination = data?.pagination;
@@ -164,7 +169,7 @@ export default function BlogPage() {
           </div>
         </div>
 
-        {loading ? (
+        {isLoading ? (
           <SkeletonGrid items={6} />
         ) : posts.length === 0 ? (
           <motion.div

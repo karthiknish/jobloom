@@ -27,7 +27,15 @@ import {
 import { format, formatDistanceToNow } from "date-fns";
 
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
-import { useApiQuery, useApiMutation } from "@/hooks/useApi";
+import { 
+  useAdminUserStats, 
+  useAdminUsers, 
+  useAdminCreateUser, 
+  useAdminUpdateUser, 
+  useAdminDeleteUser, 
+  useAdminSetAdmin, 
+  useAdminRemoveAdmin 
+} from "@/hooks/queries";
 import { adminApi } from "@/utils/api/admin";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminAccessDenied } from "@/components/admin/AdminAccessDenied";
@@ -134,52 +142,25 @@ export default function AdminUserDashboardClient() {
   const canFetchAdminData = isAdmin === true;
 
   // Fetch user stats
-  const loadUserStats = useCallback(
-    () => adminApi.getUserStats(),
-    []
-  );
+  const { 
+    data: userStats, 
+    refetch: refetchStats,
+    isLoading: isStatsLoading 
+  } = useAdminUserStats(canFetchAdminData);
 
-  const { data: userStats, refetch: refetchStats } = useApiQuery(
-    loadUserStats,
-    [userRecord?._id, isAdmin],
-    { enabled: canFetchAdminData }
-  );
-
-  // Fetch all users with pagination
-  const loadAllUsers = useCallback(
-    () => adminApi.getAllUsers(),
-    []
-  );
-
-  const { data: usersData, refetch: refetchUsers } = useApiQuery(
-    loadAllUsers,
-    [userRecord?._id, isAdmin],
-    { enabled: canFetchAdminData }
-  );
+  // Fetch all users
+  const { 
+    data: usersData, 
+    refetch: refetchUsers,
+    isLoading: isUsersLoading 
+  } = useAdminUsers(canFetchAdminData);
 
   // Admin action mutations
-  const { mutate: setAdminUser } = useApiMutation((userId: string) => {
-    if (!userRecord?._id) return Promise.reject(new Error("No admin context id"));
-    return adminApi.setAdminUser(userId, userRecord._id);
-  });
-
-  const { mutate: removeAdminUser } = useApiMutation((userId: string) => {
-    if (!userRecord?._id) return Promise.reject(new Error("No admin context id"));
-    return adminApi.removeAdminUser(userId, userRecord._id);
-  });
-
-  const { mutate: deleteUser } = useApiMutation((userId: string) => {
-    if (!userRecord?._id) return Promise.reject(new Error("No admin context id"));
-    return adminApi.deleteUser(userId);
-  });
-
-  const { mutate: createUser, loading: isCreating } = useApiMutation((data: any) => {
-    return adminApi.users.createUser(data);
-  });
-
-  const { mutate: updateUser, loading: isUpdating } = useApiMutation(({ userId, data }: { userId: string, data: any }) => {
-    return adminApi.users.updateUser(userId, data);
-  });
+  const { mutateAsync: setAdminUser } = useAdminSetAdmin();
+  const { mutateAsync: removeAdminUser } = useAdminRemoveAdmin();
+  const { mutateAsync: deleteUser } = useAdminDeleteUser();
+  const { mutateAsync: createUser, isPending: isCreating } = useAdminCreateUser();
+  const { mutateAsync: updateUser, isPending: isUpdating } = useAdminUpdateUser();
 
   // Filter users based on search and filters
   const filteredUsers: User[] = (usersData?.users as User[] | undefined)?.filter((user) => {
@@ -364,9 +345,6 @@ export default function AdminUserDashboardClient() {
       }
       setShowCreateUser(false);
       setSelectedUser(null);
-      adminApi.invalidateCache("admin-users");
-      refetchUsers();
-      refetchStats();
     } catch (error: any) {
       showError(error.message || `Failed to ${dialogMode} user`);
     }
@@ -386,11 +364,9 @@ export default function AdminUserDashboardClient() {
 
   const handleSetAdmin = async (userId: string) => {
     try {
-      await setAdminUser(userId);
+      if (!userRecord?._id) throw new Error("No admin context id");
+      await setAdminUser({ userId, requesterId: userRecord._id });
       showSuccess("User granted admin privileges");
-      adminApi.invalidateCache("admin-users");
-      refetchUsers();
-      refetchStats();
     } catch (error) {
       showError("Failed to grant admin privileges");
     }
@@ -404,11 +380,9 @@ export default function AdminUserDashboardClient() {
       variant: "destructive",
       onConfirm: async () => {
         try {
-          await removeAdminUser(userId);
+          if (!userRecord?._id) throw new Error("No admin context id");
+          await removeAdminUser({ userId, requesterId: userRecord._id });
           showSuccess("Admin privileges removed");
-          adminApi.invalidateCache("admin-users");
-          refetchUsers();
-          refetchStats();
         } catch (error) {
           showError("Failed to remove admin privileges");
         }
@@ -426,9 +400,6 @@ export default function AdminUserDashboardClient() {
         try {
           await deleteUser(userId);
           showSuccess("User deleted successfully");
-          adminApi.invalidateCache("admin-users");
-          refetchUsers();
-          refetchStats();
         } catch (error) {
           showError("Failed to delete user");
         }
@@ -461,7 +432,7 @@ export default function AdminUserDashboardClient() {
     );
   }
 
-  if (adminLoading) {
+  if (adminLoading || isStatsLoading || isUsersLoading) {
     return (
       <AdminLayout title="User Dashboard">
         <div className="space-y-6">

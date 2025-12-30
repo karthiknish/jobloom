@@ -43,7 +43,7 @@ interface DashboardJobsViewProps {
   onImport?: () => void;
 }
 
-export function DashboardJobsView({
+export const DashboardJobsView = React.memo(({
   applications,
   boardMode,
   setBoardMode,
@@ -59,7 +59,7 @@ export function DashboardJobsView({
   onChanged,
   onAddJob,
   onImport,
-}: DashboardJobsViewProps) {
+}: DashboardJobsViewProps) => {
   // Check if mobile
   const isMobile = useIsMobile();
   
@@ -443,4 +443,4 @@ export function DashboardJobsView({
       />
     </motion.div>
   );
-}
+});

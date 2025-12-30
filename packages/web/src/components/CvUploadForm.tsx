@@ -27,7 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { showError, showSuccess, showWarning } from "@/components/ui/Toast";
-import { cvEvaluatorApi, type UploadLimits } from "@/utils/api/cvEvaluator";
+import { useCvEvaluator } from "@/hooks/useCvEvaluator";
 import { useOnboardingState } from "@/hooks/useOnboardingState";
 import { analytics } from "@/firebase/analytics";
 
@@ -72,40 +72,63 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted, onResum
   const [file, setFile] = useState<File | null>(null);
   const [targetRole, setTargetRole] = useState("");
   const [industry, setIndustry] = useState("");
-  const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [upgradePromptVisible, setUpgradePromptVisible] = useState(false);
   const [limitInfo, setLimitInfo] = useState<any>(null);
   const [showRealTimeFeedback, setShowRealTimeFeedback] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [sampleResume, setSampleResume] = useState<ResumeData | null>(null);
-  const [uploadLimits, setUploadLimits] = useState<UploadLimits>({
-    maxSize: 2 * 1024 * 1024, // 2MB default
+
+  const { 
+    uploadCv, 
+    uploading, 
+    uploadLimits: serverLimits, 
+    loadingLimits 
+  } = useCvEvaluator({
+    userId,
+    showNotifications: false, // We'll handle notifications here for custom logic if needed
+    onSuccess: (result) => {
+      analytics.logCvUploaded(result.analysisId || (file?.name ?? "unknown"), file?.size ?? 0, file?.type ?? "unknown");
+      showSuccess(
+        "Resume uploaded successfully",
+        "Our AI is analyzing your resume. You'll receive detailed feedback shortly."
+      );
+      setFile(null);
+      setTargetRole("");
+      setIndustry("");
+      const fileInput = document.getElementById("file-upload") as HTMLInputElement;
+      if (fileInput) fileInput.value = "";
+      
+      if (result.analysisId) {
+        if (!onboarding.hasUploadedCv) {
+          onboarding.markCvUploaded();
+        }
+        onUploadSuccess?.(result.analysisId);
+      }
+    },
+    onError: (error: any) => {
+      console.error("Upload error:", error);
+      if (error.details?.upgradeRequired) {
+        setUpgradePromptVisible(true);
+        setLimitInfo(error.details);
+        analytics.logFeatureUsed("cv_upload_upgrade_required", JSON.stringify(error.details));
+      } else {
+        showError(
+          "Upload failed",
+          `${error.message ? `${error.message}. ` : ""}Check the file format and size, then try again.`
+        );
+        analytics.logError("cv_upload_failed", error.message || "unknown_error", { fileType: file?.type, fileSize: file?.size });
+      }
+    }
+  });
+
+  const uploadLimits = serverLimits || {
+    maxSize: 2 * 1024 * 1024,
     maxSizeMB: 2,
     allowedTypes: ['application/pdf', 'text/plain'],
     allowedExtensions: ['pdf', 'txt'],
     description: 'Free users can upload CVs up to 2MB'
-  });
-  const [loadingLimits, setLoadingLimits] = useState(true);
-
-  // Fetch upload limits for the current user
-  useEffect(() => {
-    const fetchUploadLimits = async () => {
-      if (!user) return;
-      
-      try {
-        const result = await cvEvaluatorApi.getUploadLimits();
-        setUploadLimits(result.uploadLimits);
-        console.log('Upload limits loaded:', result.uploadLimits);
-      } catch (error) {
-        console.error('Error fetching upload limits:', error);
-      } finally {
-        setLoadingLimits(false);
-      }
-    };
-
-    fetchUploadLimits();
-  }, [user]);
+  };
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -143,7 +166,6 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted, onResum
       return;
     }
 
-    setUploading(true);
     setCurrentStep(1);
     onUploadStarted?.();
 
@@ -153,52 +175,12 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted, onResum
     }, 2000);
 
     try {
-      const result = await cvEvaluatorApi.uploadCv(file, {
-        userId,
+      await uploadCv(file, {
         targetRole,
         industry,
       });
-
-      analytics.logCvUploaded(result.analysisId || file.name, file.size, file.type);
-
-      showSuccess(
-        "Resume uploaded successfully",
-        "Our AI is analyzing your resume. You'll receive detailed feedback shortly."
-      );
-      setFile(null);
-      setTargetRole("");
-      setIndustry("");
-      // Reset file input
-      const fileInput = document.getElementById(
-        "file-upload"
-      ) as HTMLInputElement;
-      if (fileInput) fileInput.value = "";
-      if (result.analysisId) {
-        // Mark Resume uploaded for onboarding tracking
-        if (!onboarding.hasUploadedCv) {
-          onboarding.markCvUploaded();
-        }
-        // Notify parent so it can refetch & switch tabs
-          onUploadSuccess?.(result.analysisId);
-      }
-    } catch (error: any) {
-      console.error("Upload error:", error);
-      
-      if (error.details?.upgradeRequired) {
-        // Show upgrade prompt for limit reached
-        setUpgradePromptVisible(true);
-        setLimitInfo(error.details);
-        analytics.logFeatureUsed("cv_upload_upgrade_required", JSON.stringify(error.details));
-      } else {
-        showError(
-          "Upload failed",
-          `${error.message ? `${error.message}. ` : ""}Check the file format and size, then try again.`
-        );
-        analytics.logError("cv_upload_failed", error.message || "unknown_error", { fileType: file?.type, fileSize: file?.size });
-      }
     } finally {
       clearInterval(stepInterval);
-      setUploading(false);
     }
   };
 
@@ -564,7 +546,10 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted, onResum
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.2 }}
         >
-          <Card className="shadow-sm border-border bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+            <Card 
+              className="shadow-sm border-border bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200"
+              data-tour="cv-analysis"
+            >
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
                 <div>

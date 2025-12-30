@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -67,7 +67,7 @@ interface JobListProps {
   onToggleSelection?: (id: string) => void;
 }
 
-export function JobList({
+export const JobList = React.memo(({
   applications,
   onEditApplication,
   onDeleteApplication: _onDeleteApplication,
@@ -75,7 +75,7 @@ export function JobList({
   onChanged,
   selectedIds: externalSelectedIds,
   onToggleSelection,
-}: JobListProps) {
+}: JobListProps) => {
   const { plan } = useSubscription();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
@@ -298,4 +298,4 @@ export function JobList({
         )}
     </div>
   );
-}
+});

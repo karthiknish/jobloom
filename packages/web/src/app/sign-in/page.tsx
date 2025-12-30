@@ -5,9 +5,10 @@ import { AuthSkeleton } from "@/components/auth/AuthSkeletons";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useFirebaseAuth, getLastAuthMethod } from "@/providers/firebase-auth-provider";
 import { motion } from "framer-motion";
-import { Eye, EyeOff, Loader2, Mail, Lock, Chrome } from "lucide-react";
+import { Eye, EyeOff, Loader2, Mail, Lock, Chrome, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
@@ -34,16 +35,22 @@ function SignInInner() {
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [lastAuthMethod, setLastAuthMethod] = useState<string | null>(null);
+  const [rememberMe, setRememberMe] = useState(true);
   const isLoading = authLoading || isSubmitting;
   const { toast } = useToast();
 
   const fromExtension = search.get("from") === "extension";
   const redirectUrlComplete = search.get("redirect_url") || "/dashboard";
 
-  // Get last used auth method
+  // Get last used auth method and remember me preference
   useEffect(() => {
     const lastMethod = getLastAuthMethod();
     setLastAuthMethod(lastMethod);
+    // Load remember me preference from localStorage
+    const savedRememberMe = localStorage.getItem("hireall-remember-me");
+    if (savedRememberMe !== null) {
+      setRememberMe(savedRememberMe === "true");
+    }
   }, []);
 
   // Get auth method display info
@@ -145,6 +152,8 @@ function SignInInner() {
 
     setIsSubmitting(true);
     try {
+      // Store remember me preference
+      localStorage.setItem("hireall-remember-me", String(rememberMe));
       await signIn(email, password);
       await refreshToken();
       router.replace(redirectUrlComplete);
@@ -183,6 +192,8 @@ function SignInInner() {
   async function handleGoogle() {
     setIsSubmitting(true);
     try {
+      // Store remember me preference for Google sign-in too
+      localStorage.setItem("hireall-remember-me", String(rememberMe));
       await signInWithGoogle();
       await refreshToken();
       router.replace(redirectUrlComplete);
@@ -314,6 +325,25 @@ function SignInInner() {
                     {passwordError}
                   </motion.p>
                 )}
+              </div>
+
+              {/* Remember Me Checkbox */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="remember-me"
+                    checked={rememberMe}
+                    onCheckedChange={(checked) => setRememberMe(checked === true)}
+                    disabled={isLoading}
+                  />
+                  <Label
+                    htmlFor="remember-me"
+                    className="text-sm text-muted-foreground cursor-pointer select-none flex items-center gap-1.5"
+                  >
+                    <Shield className="h-3.5 w-3.5" />
+                    Keep me signed in
+                  </Label>
+                </div>
               </div>
 
               <Button

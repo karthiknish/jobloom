@@ -1,10 +1,10 @@
 /**
  * Enhanced Hook for CV Evaluator API
- * Integrates with the new error handling system
+ * Uses TanStack Query for data fetching and mutations
  */
 
-import { useState, useCallback } from 'react';
-import { useEnhancedApi } from './useEnhancedApi';
+import { useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { CvAnalysis, CvStats } from '@/types/api';
 import { cvEvaluatorApi } from '@/utils/api/cvEvaluator';
 import { FrontendApiError, apiClient } from '@/lib/api/client';
@@ -19,125 +19,110 @@ interface UseCvEvaluatorOptions {
 
 export function useCvEvaluator(options: UseCvEvaluatorOptions = {}) {
   const { userId, showNotifications = true, onError, onSuccess } = options;
+  const queryClient = useQueryClient();
 
-  // Get user's Resume analyses
+  // Get user's Resume analyses using TanStack Query
   const {
     data: analyses,
-    loading: loadingAnalyses,
+    isLoading: loadingAnalyses,
     error: analysesError,
-    execute: fetchAnalyses,
     refetch: refetchAnalyses
-  } = useEnhancedApi<CvAnalysis[]>(
-    useCallback(async () => {
-      if (!userId) {
-        throw new Error('User ID is required');
-      }
-      return cvEvaluatorApi.getUserCvAnalyses(userId);
-    }, [userId]),
-    {
-      immediate: !!userId,
-      onError: (error) => {
-        if (showNotifications) {
-          showError('Failed to load Resume analyses');
-        }
-        onError?.(error);
-      },
-      onSuccess
-    }
-  );
+  } = useQuery<CvAnalysis[]>({
+    queryKey: ['cvAnalyses', 'list', userId],
+    queryFn: () => cvEvaluatorApi.getUserCvAnalyses(userId!),
+    enabled: !!userId,
+    staleTime: 30 * 1000,
+  });
 
-  // Get CV statistics
+  // Get CV statistics using TanStack Query
   const {
     data: stats,
-    loading: loadingStats,
+    isLoading: loadingStats,
     error: statsError,
-    execute: fetchStats,
     refetch: refetchStats
-  } = useEnhancedApi<CvStats>(
-    useCallback(async () => {
-      if (!userId) {
-        throw new Error('User ID is required');
-      }
-      return cvEvaluatorApi.getCvAnalysisStats(userId);
-    }, [userId]),
-    {
-      immediate: !!userId,
-      onError: (error) => {
-        if (showNotifications) {
-          showError('Failed to load CV statistics');
-        }
-        onError?.(error);
-      },
-      onSuccess
-    }
-  );
+  } = useQuery<CvStats>({
+    queryKey: ['cvAnalyses', 'stats', userId],
+    queryFn: () => cvEvaluatorApi.getCvAnalysisStats(userId!),
+    enabled: !!userId,
+    staleTime: 30 * 1000,
+  });
 
-  // Upload and analyze CV
+  // Get upload limits using TanStack Query
   const {
-    data: uploadResult,
-    loading: uploading,
-    error: uploadError,
-    execute: uploadCv
-  } = useEnhancedApi(
-    useCallback(async (file: File, options?: {
-      targetRole?: string;
-      industry?: string;
+    data: limitsData,
+    isLoading: loadingLimits
+  } = useQuery({
+    queryKey: ['cvAnalyses', 'limits'],
+    queryFn: () => cvEvaluatorApi.getUploadLimits(),
+    staleTime: 24 * 60 * 60 * 1000, // 24 hours
+  });
+
+  // Upload and analyze CV mutation
+  const uploadMutation = useMutation({
+    mutationFn: async ({ file, options: uploadOptions }: {
+      file: File;
+      options?: { targetRole?: string; industry?: string };
     }) => {
       if (!userId) {
         throw new Error('User ID is required');
       }
-
       return apiClient.upload('/api/cv/upload', file, {
         userId,
-        targetRole: options?.targetRole,
-        industry: options?.industry
+        targetRole: uploadOptions?.targetRole,
+        industry: uploadOptions?.industry
       });
-    }, [userId]),
-    {
-      immediate: false,
-      showGlobalError: true,
-      onError: (error) => {
-        if (showNotifications) {
-          showError('CV upload failed');
-        }
-        onError?.(error);
-      },
-      onSuccess: (result) => {
-        if (showNotifications) {
-          showSuccess('Resume uploaded successfully! Analysis in progress...');
-        }
-        
-        // Refresh analyses after successful upload
-        refetchAnalyses();
-        refetchStats();
-        
-        onSuccess?.(result);
+    },
+    onSuccess: (result) => {
+      if (showNotifications) {
+        showSuccess('Resume uploaded successfully! Analysis in progress...');
       }
-    }
-  );
+      // Refresh analyses after successful upload
+      queryClient.invalidateQueries({ queryKey: ['cvAnalyses'] });
+      onSuccess?.(result);
+    },
+    onError: (error) => {
+      if (showNotifications) {
+        showError('CV upload failed');
+      }
+      onError?.(error as FrontendApiError);
+    },
+  });
 
-  // Delete Resume analysis
-  const deleteAnalysis = useCallback(async (analysisId: string) => {
-    try {
-      await cvEvaluatorApi.deleteCvAnalysis(analysisId);
-      
+  // Delete Resume analysis mutation
+  const deleteMutation = useMutation({
+    mutationFn: (analysisId: string) => cvEvaluatorApi.deleteCvAnalysis(analysisId),
+    onSuccess: () => {
       if (showNotifications) {
         showSuccess('Resume analysis deleted');
       }
-      
       // Refresh data
-      refetchAnalyses();
-      refetchStats();
-      
-      return true;
-    } catch (error) {
+      queryClient.invalidateQueries({ queryKey: ['cvAnalyses'] });
+    },
+    onError: (error) => {
       if (showNotifications) {
         showError('Failed to delete Resume analysis');
       }
       onError?.(error as FrontendApiError);
+    },
+  });
+
+  // Upload wrapper function matching original API
+  const uploadCv = useCallback((file: File, uploadOptions?: {
+    targetRole?: string;
+    industry?: string;
+  }) => {
+    return uploadMutation.mutateAsync({ file, options: uploadOptions });
+  }, [uploadMutation]);
+
+  // Delete wrapper function
+  const deleteAnalysis = useCallback(async (analysisId: string) => {
+    try {
+      await deleteMutation.mutateAsync(analysisId);
+      return true;
+    } catch {
       return false;
     }
-  }, [showNotifications, onError, refetchAnalyses, refetchStats]);
+  }, [deleteMutation]);
 
   // Refresh all data
   const refresh = useCallback(() => {
@@ -173,7 +158,7 @@ export function useCvEvaluator(options: UseCvEvaluatorOptions = {}) {
     // Data
     analyses: safeAnalyses,
     stats,
-    uploadResult,
+    uploadResult: uploadMutation.data,
     recentAnalysis,
     completedAnalyses,
     pendingAnalyses,
@@ -181,21 +166,24 @@ export function useCvEvaluator(options: UseCvEvaluatorOptions = {}) {
     
     // Loading states
     loading: loadingAnalyses || loadingStats,
-    uploading,
+    uploading: uploadMutation.isPending,
     
     // Error states
-    error: analysesError || statsError || uploadError,
+    error: analysesError || statsError || uploadMutation.error,
     
     // Actions
-    fetchAnalyses,
-    fetchStats,
+    fetchAnalyses: refetchAnalyses,
+    fetchStats: refetchStats,
     uploadCv,
     deleteAnalysis,
     refresh,
     refetchAnalyses,
     refetchStats,
-    getAnalysesByStatus
+    getAnalysesByStatus,
+    uploadLimits: limitsData?.uploadLimits,
+    loadingLimits
   };
 }
 
 export default useCvEvaluator;
+

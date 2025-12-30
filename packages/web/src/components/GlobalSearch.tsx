@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { FileText, Briefcase, FileCheck, ArrowRight, Clock, Command } from "lucide-react";
+import { FileText, Briefcase, FileCheck, ArrowRight, Clock, Command, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   CommandDialog,
@@ -33,6 +33,7 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
     searchResults,
     recentSearches,
     handleSelect,
+    isLoading,
   } = useGlobalSearch();
 
   // Handle close and reset
@@ -59,14 +60,21 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
       />
       <CommandList className="max-h-[60vh]">
         <CommandEmpty>
-          <div className="py-8 text-center">
-            <p className="text-muted-foreground text-sm">
-              No results found for &quot;{query}&quot;
-            </p>
-            <p className="text-muted-foreground/60 text-xs mt-1">
-              Try a different search term
-            </p>
-          </div>
+          {isLoading ? (
+            <div className="py-8 text-center flex flex-col items-center gap-2">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              <p className="text-muted-foreground text-sm">Searching...</p>
+            </div>
+          ) : (
+            <div className="py-8 text-center">
+              <p className="text-muted-foreground text-sm">
+                No results found for &quot;{query}&quot;
+              </p>
+              <p className="text-muted-foreground/60 text-xs mt-1">
+                Try a different search term
+              </p>
+            </div>
+          )}
         </CommandEmpty>
 
         {/* Search Results */}

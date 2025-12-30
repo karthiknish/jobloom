@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +22,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { TiptapEditor } from "@/components/TiptapEditor";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const TiptapEditor = dynamic(
+  () => import("@/components/TiptapEditor").then((mod) => mod.TiptapEditor),
+  {
+    ssr: false,
+    loading: () => <Skeleton className="h-64 w-full" />,
+  }
+);
 import { ImageSelector } from "@/components/admin/ImageSelector";
 import { Sparkles, Loader2 } from "lucide-react";
 import { showError, showSuccess } from "@/components/ui/Toast";

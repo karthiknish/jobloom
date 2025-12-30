@@ -4,8 +4,8 @@ import React, { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { motion } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
 
-import { useEnhancedApi } from "@/hooks/useEnhancedApi";
 import { dashboardApi } from "@/utils/api/dashboard";
 import { ApplicationForm } from "@/components/dashboard/ApplicationForm";
 import { JobForm } from "@/components/dashboard/JobForm";
@@ -141,37 +141,47 @@ export function Dashboard({ initialView = "dashboard" }: DashboardProps) {
   const onboarding = useOnboardingState();
   const tour = useTourContext();
   
-  // Auto-start dashboard tour for new users
+  // Auto-start dashboard tour for users who haven't completed it
   useEffect(() => {
     if (
       onboarding.isLoaded &&
-      onboarding.isNewUser &&
       !onboarding.hasCompletedDashboardTour &&
       user &&
       !loading
     ) {
-      // Small delay to ensure DOM is ready
+      // Small delay to let the initial layout settle
       const timer = setTimeout(() => {
         tour.startDashboardTour();
-      }, 1000);
+      }, 500);
       return () => clearTimeout(timer);
     }
-  }, [onboarding.isLoaded, onboarding.isNewUser, onboarding.hasCompletedDashboardTour, user, loading, tour]);
+  }, [onboarding.isLoaded, onboarding.hasCompletedDashboardTour, user, loading, tour]);
 
-  // Fetch user record
-  const { data: userRecord, loading: userRecordLoading, error: userRecordError, refetch: refetchUserRecord } = useEnhancedApi(
-    () =>
-      user && user.uid
-        ? dashboardApi.getUserByFirebaseUid(user.uid)
-        : Promise.reject(new Error("No user")),
-    { immediate: !!user?.uid }
-  );
+  // Fetch user record using TanStack Query
+  const { 
+    data: userRecord, 
+    isLoading: userRecordLoading, 
+    error: userRecordError, 
+    refetch: refetchUserRecord 
+  } = useQuery({
+    queryKey: ["dashboard", "user", user?.uid],
+    queryFn: () => dashboardApi.getUserByFirebaseUid(user!.uid),
+    enabled: !!user?.uid,
+    staleTime: 60 * 1000,
+  });
 
-  // Fetch applications
-  const { data: applications, refetch: refetchApplications, loading: applicationsLoading, error: applicationsError } = useEnhancedApi<Application[]>(
-    () => dashboardApi.getApplicationsByUser(userRecord!._id),
-    { immediate: !!userRecord }
-  );
+  // Fetch applications using TanStack Query
+  const { 
+    data: applications, 
+    refetch: refetchApplications, 
+    isLoading: applicationsLoading, 
+    error: applicationsError 
+  } = useQuery<Application[]>({
+    queryKey: ["dashboard", "applications", user?.uid],
+    queryFn: () => dashboardApi.getApplicationsByUser(user!.uid),
+    enabled: !!user?.uid,
+    staleTime: 30 * 1000,
+  });
 
   const safeApplications: Application[] = Array.isArray(applications)
     ? applications
@@ -181,25 +191,26 @@ export function Dashboard({ initialView = "dashboard" }: DashboardProps) {
         ? (applications as any).data
         : [];
 
-  // Fetch job stats
-  const { data: jobStats, refetch: refetchJobStats, loading: jobStatsLoading, error: jobStatsError } = useEnhancedApi(
-    () => dashboardApi.getJobStats(userRecord!._id),
-    { immediate: !!userRecord }
-  );
+  // Fetch job stats using TanStack Query
+  const { 
+    data: jobStats, 
+    refetch: refetchJobStats, 
+    isLoading: jobStatsLoading, 
+    error: jobStatsError 
+  } = useQuery({
+    queryKey: ["dashboard", "jobStats", user?.uid],
+    queryFn: () => dashboardApi.getJobStats(user!.uid),
+    enabled: !!user?.uid,
+    staleTime: 30 * 1000,
+  });
 
-  // Fetch Resume analyses
-  const { data: cvAnalyses } = useEnhancedApi(
-    () => cvEvaluatorApi.getCvAnalysesByUser(userRecord!._id),
-    { immediate: !!userRecord }
-  );
-
-  // Re-fetch when userRecord changes
-  useEffect(() => {
-    if (userRecord?._id) {
-      refetchApplications();
-      refetchJobStats();
-    }
-  }, [userRecord?._id]);
+  // Fetch Resume analyses using TanStack Query
+  const { data: cvAnalyses } = useQuery({
+    queryKey: ["dashboard", "cvAnalyses", user?.uid],
+    queryFn: () => cvEvaluatorApi.getCvAnalysesByUser(user!.uid),
+    enabled: !!user?.uid,
+    staleTime: 60 * 1000,
+  });
 
 
 
@@ -237,7 +248,7 @@ export function Dashboard({ initialView = "dashboard" }: DashboardProps) {
 
   // Define dashboard widgets using the hook
   const dashboardWidgets = useDashboardWidgets({
-    jobStats,
+    jobStats: jobStats ?? null,
     applications: safeApplications,
     hasApplications,
     userRecord,
@@ -535,6 +546,7 @@ export function Dashboard({ initialView = "dashboard" }: DashboardProps) {
           <JobImportModal
             isOpen={showImportModal}
             onClose={() => setShowImportModal(false)}
+            userRecord={userRecord}
             onImportComplete={() => {
               refetchJobStats();
               refetchApplications();

@@ -371,12 +371,14 @@ export function ValidationError({ error, onRetry }: { error: FrontendApiError; o
   );
 }
 
-export function NetworkError({ error, onRetry }: { error: FrontendApiError; onRetry?: () => void }) {
+export function NetworkError({ error, onRetry }: { error: FrontendApiError | Error | null; onRetry?: () => void }) {
+  const errorMessage = error?.message || 'An unexpected error occurred';
+  
   return (
     <div className="flex flex-col items-center justify-center min-h-[200px] p-8 text-center">
       <WifiOff className="w-12 h-12 text-gray-400 mb-4" />
       <h3 className="text-lg font-semibold text-gray-900 mb-2">Connection Error</h3>
-      <p className="text-gray-600 mb-6">{error.message}</p>
+      <p className="text-gray-600 mb-6">{errorMessage}</p>
       {onRetry && (
         <Button onClick={onRetry} className="flex items-center gap-2">
           <RefreshCw className="w-4 h-4" />

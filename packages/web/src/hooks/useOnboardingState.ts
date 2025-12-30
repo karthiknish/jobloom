@@ -138,6 +138,12 @@ export function useOnboardingState() {
     }
 
     loadFromFirebase();
+
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
   }, [user?.uid]);
 
   // Save state to Firebase (debounced)

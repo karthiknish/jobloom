@@ -1,5 +1,6 @@
 // Unified rate limiting system for the Hireall web application
-// Matches the extension's rate limiting configuration for consistency
+// Uses Upstash Redis for production-ready distributed rate limiting
+// Falls back to in-memory storage if Upstash is not configured
 
 import { SecurityLogger } from "@/utils/security";
 import {
@@ -7,13 +8,18 @@ import {
   safeLocalStorageRemove,
   safeLocalStorageSet,
 } from "@/utils/safeBrowserStorage";
-import { 
-  TIERED_RATE_LIMITS, 
+import {
+  TIERED_RATE_LIMITS,
   RATE_LIMITS,
   RateLimitConfig as SharedRateLimitConfig,
   RateLimits,
   UserTierLimits
 } from "@hireall/shared";
+import {
+  getUpstashRateLimiter,
+  isUpstashAvailable,
+  getRedisClient
+} from "./upstash";
 
 export { TIERED_RATE_LIMITS, RATE_LIMITS };
 import { UserTier } from "@/types/api";
@@ -54,12 +60,14 @@ interface EnhancedRateLimitState extends RateLimitState {
   lastBurstCheck: number;
 }
 
-// In-memory rate limiting store for server-side
-// In production, this should be replaced with Redis or similar
+// In-memory rate limiting store for server-side (fallback when Upstash unavailable)
 const serverRateLimitStore = new Map<string, EnhancedRateLimitState>();
 
 // Abuse detection thresholds
 const ABUSE_VIOLATION_THRESHOLD = 5;
+// Abuse tracking in Redis
+const ABUSE_KEY_PREFIX = "hireall:abuse:";
+const ABUSE_TTL_SECONDS = 60 * 60; // 1 hour TTL for abuse tracking
 const ABUSE_LOCK_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 const BURST_WINDOW_MS = 5000; // 5 seconds
 const BURST_THRESHOLD_MULTIPLIER = 0.5; // Max 50% of allowed requests in burst window
@@ -122,6 +130,102 @@ function checkSlidingWindow(
   const allowed = state.requests.length < config.maxRequests && !burstExceeded;
   
   return { allowed, burstExceeded };
+}
+
+/**
+ * Check rate limit using Upstash Redis (production)
+ * Returns null if Upstash is not available, triggering fallback to in-memory
+ */
+async function checkUpstashRateLimit(
+  identifier: string,
+  endpoint: string,
+  config: RateLimitConfig,
+  userTier: UserTier
+): Promise<RateLimitResult | null> {
+  const limiter = getUpstashRateLimiter(endpoint, config.maxRequests, config.windowMs);
+  if (!limiter) {
+    return null; // Fall back to in-memory
+  }
+
+  try {
+    const uniqueId = `${identifier}:${userTier}`;
+    const result = await limiter.limit(uniqueId);
+
+    // Check for abuse/lockout in Redis
+    const redis = getRedisClient();
+    let violations = 0;
+    let abuseDetected = false;
+    let lockedUntil: number | undefined;
+
+    if (redis) {
+      const abuseKey = `${ABUSE_KEY_PREFIX}${uniqueId}:${endpoint}`;
+      const abuseData = await redis.get<{ violations: number; lockedUntil?: number }>(abuseKey);
+
+      if (abuseData) {
+        violations = abuseData.violations || 0;
+        if (abuseData.lockedUntil && abuseData.lockedUntil > Date.now()) {
+          lockedUntil = abuseData.lockedUntil;
+          abuseDetected = true;
+        }
+      }
+
+      // If rate limited, increment violations
+      if (!result.success) {
+        violations++;
+        const lockDuration = violations >= ABUSE_VIOLATION_THRESHOLD
+          ? ABUSE_LOCK_WINDOW_MS * Math.min(violations - ABUSE_VIOLATION_THRESHOLD + 1, 4)
+          : 0;
+
+        lockedUntil = lockDuration > 0 ? Date.now() + lockDuration : undefined;
+        abuseDetected = lockDuration > 0;
+
+        await redis.set(abuseKey, { violations, lockedUntil }, { ex: ABUSE_TTL_SECONDS });
+
+        if (abuseDetected) {
+          SecurityLogger.logSecurityEvent({
+            type: "suspicious_request",
+            severity: "high",
+            ip: identifier,
+            details: {
+              endpoint,
+              violations,
+              lockoutMs: lockDuration,
+              reason: "repeated_violations",
+            },
+          });
+        }
+      }
+    }
+
+    // If locked due to abuse, return lockout response
+    if (lockedUntil && lockedUntil > Date.now()) {
+      const resetIn = lockedUntil - Date.now();
+      return {
+        allowed: false,
+        resetIn,
+        remaining: 0,
+        maxRequests: config.maxRequests,
+        identifier,
+        retryAfter: Math.ceil(resetIn / 1000),
+        violations,
+        abuseDetected: true,
+      };
+    }
+
+    return {
+      allowed: result.success,
+      remaining: result.remaining,
+      resetIn: result.reset - Date.now(),
+      maxRequests: result.limit,
+      identifier,
+      retryAfter: result.success ? 0 : Math.ceil((result.reset - Date.now()) / 1000),
+      violations,
+      abuseDetected,
+    };
+  } catch (error) {
+    console.error(`[RateLimiter] Upstash rate limit check failed for ${endpoint}:`, error);
+    return null; // Fall back to in-memory
+  }
 }
 
 // Client-side rate limiting utilities
@@ -399,7 +503,7 @@ export async function getUserTierFromAuth(authToken?: string): Promise<UserTier>
         // In Edge Runtime, we can't use getUserTier because it depends on firebase-admin
         // which uses Node.js modules like 'fs' and 'path'.
         // For now, we'll check for admin claims in the token payload.
-        if (payload.admin === true || payload.role === 'admin') {
+        if (payload.admin === true || payload.isAdmin === true || payload.role === 'admin') {
           return 'admin';
         }
         
@@ -407,14 +511,6 @@ export async function getUserTierFromAuth(authToken?: string): Promise<UserTier>
         if (payload.plan === 'premium') {
           return 'premium';
         }
-      }
-
-      // Fallback to email-based check if UID not found in payload
-      if (payload.email && (
-        payload.email.includes('admin') || 
-        payload.email.endsWith('@hireall.app')
-      )) {
-        return 'admin';
       }
     }
   } catch (error) {
@@ -426,6 +522,7 @@ export async function getUserTierFromAuth(authToken?: string): Promise<UserTier>
 }
 
 // Rate limiting with automatic user tier detection
+// Uses Upstash Redis in production, falls back to in-memory if unavailable
 export async function checkServerRateLimitWithAuth(
   identifier: string,
   endpoint: string,
@@ -433,7 +530,31 @@ export async function checkServerRateLimitWithAuth(
   config?: Partial<RateLimitConfig>
 ): Promise<RateLimitResult> {
   const userTier = await getUserTierFromAuth(authToken);
+  const rateLimitConfig = { ...getRateLimitConfig(endpoint, userTier), ...config };
+
+  // Try Upstash first (production-ready distributed rate limiting)
+  if (isUpstashAvailable()) {
+    const upstashResult = await checkUpstashRateLimit(
+      identifier,
+      endpoint,
+      rateLimitConfig,
+      userTier
+    );
+    if (upstashResult) {
+      return upstashResult;
+    }
+    // Fall through to in-memory if Upstash check returned null (error)
+  }
+
+  // Fallback to in-memory rate limiting
   return checkServerRateLimit(identifier, endpoint, config, userTier);
+}
+
+/**
+ * Check if Upstash rate limiting is configured and available
+ */
+export function isRateLimitingDistributed(): boolean {
+  return isUpstashAvailable();
 }
 
 export function getServerRateLimitStatus(

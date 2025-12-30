@@ -19,8 +19,8 @@ const buttonVariants = cva(
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
         premium: "bg-primary text-white hover:bg-primary/90 shadow-md hover:shadow-premium-xl transition-all duration-fast hover:-translate-y-0.5 active:translate-y-0 font-bold rounded-xl",
-        "gradient-premium": "bg-gradient-to-br from-[#667eea] to-[#764ba2] hover:shadow-premium-xl transition-all duration-fast hover:-translate-y-0.5 active:translate-y-0 text-white font-bold shadow-md rounded-xl",
-        "gradient-secondary": "bg-gradient-to-br from-white to-slate-50 text-secondary-foreground hover:bg-secondary/80 hover:shadow-premium-lg transition-all duration-fast hover:-translate-y-0.5 active:translate-y-0 font-bold shadow-sm border border-border rounded-xl",
+        "gradient-premium": "bg-gradient-to-br from-[var(--gradient-premium-from)] to-[var(--gradient-premium-to)] hover:shadow-premium-xl transition-all duration-fast hover:-translate-y-0.5 active:translate-y-0 text-white font-bold shadow-md rounded-xl",
+        "gradient-secondary": "bg-gradient-to-br from-[var(--gradient-secondary-from)] to-[var(--gradient-secondary-to)] text-secondary-foreground hover:bg-secondary/80 hover:shadow-premium-lg transition-all duration-fast hover:-translate-y-0.5 active:translate-y-0 font-bold shadow-sm border border-border rounded-xl",
         motion: "transition-all duration-fast ease-out-custom hover:-translate-y-0.5 hover:shadow-lg active:-translate-y-0.25 active:shadow-md",
       },
       size: {

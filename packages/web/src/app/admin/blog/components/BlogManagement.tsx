@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { showError, showSuccess } from "@/components/ui/Toast";
-import { useApiQuery, useApiMutation } from "@/hooks/useApi";
+import { queryKeys } from "@/hooks/queries";
 import { adminApi } from "@/utils/api/admin";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminAccessDenied } from "@/components/admin/AdminAccessDenied";
@@ -76,6 +77,7 @@ function BlogManagementSkeleton() {
 
 export function BlogManagement() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { user } = useFirebaseAuth();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -114,46 +116,54 @@ export function BlogManagement() {
     checkAdminAccess();
   }, [user?.uid]);
 
-  // Fetch blog posts and stats
-  const fetchPosts = useCallback(async (status?: string) => {
-    const response = await adminApi.blog.getBlogPosts(status);
-    return response.posts || response;
-  }, []);
-
-  const fetchStats = useCallback(async () => {
-    const response = await adminApi.blog.getBlogStats();
-    return response.stats || response;
-  }, []);
-
+  // Fetch blog posts using TanStack Query
   const {
     data: posts,
-    loading: postsLoading,
+    isLoading: postsLoading,
     refetch: refetchPosts,
-  } = useApiQuery(
-    () => fetchPosts(statusFilter),
-    [isAdmin, statusFilter],
-    { enabled: !!user && isAdmin === true },
-    "admin-blog-posts"
-  );
+  } = useQuery({
+    queryKey: ["admin", "blog", "posts", statusFilter],
+    queryFn: async () => {
+      const response = await adminApi.blog.getBlogPosts(statusFilter !== "all" ? statusFilter : undefined);
+      return response.posts || response;
+    },
+    enabled: !!user && isAdmin === true,
+    staleTime: 30 * 1000,
+  });
 
+  // Fetch blog stats using TanStack Query
   const {
     data: stats,
-    loading: statsLoading,
-  } = useApiQuery(
-    fetchStats,
-    [user?.uid, isAdmin],
-    { enabled: !!user && isAdmin === true },
-    "admin-blog-stats"
-  );
+    isLoading: statsLoading,
+  } = useQuery({
+    queryKey: ["admin", "blog", "stats"],
+    queryFn: async () => {
+      const response = await adminApi.blog.getBlogStats();
+      return response.stats || response;
+    },
+    enabled: !!user && isAdmin === true,
+    staleTime: 60 * 1000,
+  });
 
-  const updatePostMutation = useApiMutation(
-    async ({ postId, data }: { postId: string; data: any }) => {
+  // Update post mutation
+  const updatePostMutation = useMutation({
+    mutationFn: async ({ postId, data }: { postId: string; data: any }) => {
       return adminApi.blog.updateBlogPost(postId, data);
-    }
-  );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "blog"] });
+    },
+  });
 
-  const deletePostMutation = useApiMutation(async (postId: string) => {
-    return adminApi.blog.deleteBlogPost(postId);
+  // Delete post mutation
+  const deletePostMutation = useMutation({
+    mutationFn: async (postId: string) => {
+      return adminApi.blog.deleteBlogPost(postId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "blog"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.blogs.all() });
+    },
   });
 
   // Filter and paginate posts
@@ -190,7 +200,7 @@ export function BlogManagement() {
       description: "Are you sure you want to delete this post? This action cannot be undone.",
       onConfirm: async () => {
         try {
-          await deletePostMutation.mutate(postId);
+          await deletePostMutation.mutateAsync(postId);
           showSuccess("Post deleted successfully");
           refetchPosts();
         } catch (error) {
@@ -212,7 +222,7 @@ export function BlogManagement() {
       onConfirm: async () => {
         try {
           await Promise.all(
-            selectedPosts.map((postId) => deletePostMutation.mutate(postId))
+            selectedPosts.map((postId) => deletePostMutation.mutateAsync(postId))
           );
           showSuccess("Posts deleted successfully");
           setSelectedPosts([]);
@@ -228,7 +238,7 @@ export function BlogManagement() {
     try {
       await Promise.all(
         selectedPosts.map((postId) =>
-          updatePostMutation.mutate({ postId, data: { status: "archived" } })
+          updatePostMutation.mutateAsync({ postId, data: { status: "archived" } })
         )
       );
       showSuccess("Posts archived successfully");
@@ -243,7 +253,7 @@ export function BlogManagement() {
     try {
       await Promise.all(
         selectedPosts.map((postId) =>
-          updatePostMutation.mutate({ postId, data: { status: "published" } })
+          updatePostMutation.mutateAsync({ postId, data: { status: "published" } })
         )
       );
       showSuccess("Posts published successfully");
@@ -258,7 +268,7 @@ export function BlogManagement() {
     try {
       await Promise.all(
         selectedPosts.map((postId) =>
-          updatePostMutation.mutate({ postId, data: { status: "draft" } })
+          updatePostMutation.mutateAsync({ postId, data: { status: "draft" } })
         )
       );
       showSuccess("Posts set to draft successfully");

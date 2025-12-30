@@ -95,6 +95,9 @@ module.exports = (env, argv) => {
         GOOGLE_WEB_CLIENT_ID: "",
         NEXT_PUBLIC_GOOGLE_WEB_APP_CLIENT_ID: "",
         NEXT_PUBLIC_GOOGLE_WEB_CLIENT_ID: "",
+        // PostHog Analytics
+        NEXT_PUBLIC_POSTHOG_KEY: "",
+        NEXT_PUBLIC_POSTHOG_HOST: "https://us.i.posthog.com",
       };
 
       const missingRequired = REQUIRED_ENV_KEYS.filter((key) => {

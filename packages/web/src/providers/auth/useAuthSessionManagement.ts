@@ -9,6 +9,12 @@ import {
   getCookieValue,
 } from "./auth-utils";
 
+// Session duration constants
+const SESSION_PERSISTENCE_KEY = "hireall-remember-me";
+const SESSION_DURATION_LONG = 7 * 24 * 60 * 60 * 1000; // 7 days
+const SESSION_DURATION_SHORT = 2 * 60 * 60 * 1000; // 2 hours
+const SESSION_WARNING_BEFORE_EXPIRY = 60 * 60 * 1000; // 1 hour before expiry
+
 export interface AuthSessionManager {
   syncAuthStateToClient: (user: User | null) => void;
   syncSessionCookieWithServer: (user: User) => Promise<void>;
@@ -73,10 +79,20 @@ export function useAuthSessionManagement(
 
     clearSessionTimeouts();
 
-    const warningTimeout = setTimeout(() => {
-      setIsSessionExpiring(true);
-      console.warn("Session will expire in 1 hour");
-    }, 23 * 60 * 60 * 1000);
+    // Check remember me preference
+    const rememberMe = localStorage.getItem(SESSION_PERSISTENCE_KEY) === "true";
+    const sessionDuration = rememberMe ? SESSION_DURATION_LONG : SESSION_DURATION_SHORT;
+    const warningTime = sessionDuration - SESSION_WARNING_BEFORE_EXPIRY;
+
+    // Only show warning if there's enough time before expiry
+    if (warningTime > 0) {
+      const warningTimeout = setTimeout(() => {
+        setIsSessionExpiring(true);
+        const remainingMinutes = Math.round(SESSION_WARNING_BEFORE_EXPIRY / (60 * 1000));
+        console.warn(`Session will expire in ${remainingMinutes} minutes`);
+      }, warningTime);
+      (window as any).__sessionWarningTimeout = warningTimeout;
+    }
 
     const sessionTimeout = setTimeout(async () => {
       console.warn("Session expired, signing out...");
@@ -87,10 +103,13 @@ export function useAuthSessionManagement(
       } catch (error) {
         console.error("Error during automatic logout:", error);
       }
-    }, 24 * 60 * 60 * 1000);
+    }, sessionDuration);
 
-    (window as any).__sessionWarningTimeout = warningTimeout;
     (window as any).__sessionTimeout = sessionTimeout;
+
+    // Store session start time for reference
+    (window as any).__sessionStartTime = Date.now();
+    (window as any).__sessionDuration = sessionDuration;
   }, [clearSessionTimeouts, setIsSessionExpiring]);
 
   const syncSessionCookieWithServer = useCallback(

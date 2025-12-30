@@ -197,6 +197,12 @@ html {
   --ring: var(--color-ring);
   /* Surface color - elevated background for cards and panels */
   --surface: 0 0% 100%;
+
+  /* Gradient colors for premium buttons */
+  --gradient-premium-from: #667eea;
+  --gradient-premium-to: #764ba2;
+  --gradient-secondary-from: #ffffff;
+  --gradient-secondary-to: #f1f5f9;
 }
 
 /* Utility class for bg-surface */
@@ -692,6 +698,98 @@ body {
 
 .animation-delay-500 {
   animation-delay: 0.5s;
+}
+
+/* Loading state animations */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.loading-pulse {
+  animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.loading-spin {
+  animation: spin 1s linear infinite;
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg,
+    rgba(148, 163, 184, 0.1) 0%,
+    rgba(148, 163, 184, 0.3) 25%,
+    rgba(148, 163, 184, 0.1) 50%,
+    rgba(148, 163, 184, 0.3) 75%,
+    rgba(148, 163, 184, 0.1) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* Modal and drawer transition classes */
+.modal-enter {
+  opacity: 0;
+  transform: scale(0.9);
+}
+
+.modal-enter-active {
+  opacity: 1;
+  transform: scale(1);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.modal-exit {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.modal-exit-active {
+  opacity: 0;
+  transform: scale(0.9);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.drawer-enter {
+  opacity: 0;
+  transform: translateY(100%);
+}
+
+.drawer-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.drawer-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.drawer-exit-active {
+  opacity: 0;
+  transform: translateY(100%);
+  transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
 /* Shadow system (simplified) */

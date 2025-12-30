@@ -15,6 +15,7 @@ import { AuthError, createAuthError } from "./auth/auth-utils";
 import { useAuthSessionManagement } from "./auth/useAuthSessionManagement";
 import { usePopupSignIn } from "./auth/usePopupSignIn";
 import { useAuthActions } from "./auth/useAuthActions";
+import { SessionTimeoutWarning } from "@/components/auth/SessionTimeoutWarning";
 import type { AuthState } from "./auth/types";
 
 export { getLastAuthMethod } from "./auth/auth-utils";
@@ -243,5 +244,15 @@ export function FirebaseAuthProvider({
     clearError,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      <SessionTimeoutWarning
+        isVisible={isSessionExpiring && !!state.user}
+        onExtendSession={authActions.refreshToken}
+        onSignOut={authActions.signOut}
+        remainingMinutes={60}
+      />
+      {children}
+    </AuthContext.Provider>
+  );
 }

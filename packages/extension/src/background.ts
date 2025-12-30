@@ -19,8 +19,29 @@ import { signInWithGoogle, getAuthInstance, waitForAuthState } from "./firebase"
 // Import logging utility
 import { logger, log } from "./utils/logger";
 
-chrome.runtime.onInstalled.addListener(() => {
+// Import analytics
+import {
+  initAnalytics,
+  trackExtensionInstall,
+  trackAuth,
+  trackApiError,
+  trackRateLimitHit,
+  identifyUser,
+  resetIdentity,
+} from "./analytics";
+
+chrome.runtime.onInstalled.addListener((details) => {
   log.extension("Extension installed");
+
+  // Initialize analytics
+  initAnalytics().then(() => {
+    // Track install/update event
+    if (details.reason === "install") {
+      trackExtensionInstall("install");
+    } else if (details.reason === "update") {
+      trackExtensionInstall("update", details.previousVersion);
+    }
+  });
 
   // Ensure web app URL exists for API calls - reset localhost to production
   chrome.storage.sync.get(["webAppUrl"], (result: { webAppUrl?: string }) => {
@@ -53,6 +74,9 @@ chrome.runtime.onInstalled.addListener(() => {
   startRateLimitMonitoring();
   logger.info("Background", "Rate limiting and monitoring initialized");
 });
+
+// Initialize analytics on service worker start
+initAnalytics();
 
 // Initialize security components
 const messageRateLimiter = new ExtensionRateLimiter(60000, 50); // 50 messages per minute

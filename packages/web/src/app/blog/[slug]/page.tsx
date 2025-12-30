@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { motion, useScroll, useSpring } from "framer-motion";
 import {
   Calendar,
@@ -20,7 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { showSuccess } from "@/components/ui/Toast";
-import { useEnhancedApi } from "../../../hooks/useEnhancedApi";
+import { queryKeys } from "@/hooks/queries";
 import type { BlogPost } from "../../../types/api";
 import { blogApi } from "@/utils/api/blog";
 import { SafeNextImage } from "@/components/ui/SafeNextImage";
@@ -39,22 +40,21 @@ export default function BlogPostPage() {
     restDelta: 0.001
   });
 
-  // Fetch individual blog post using apiClient
-  const { data: post, loading: isLoading, error: postError } = useEnhancedApi<BlogPost>(
-    () => blogApi.getPost(slug as string),
-    {
-      immediate: shouldFetchPost,
-      // Avoid cross-page cache collisions (useEnhancedApi cache key is function-name based)
-      cacheTime: 0,
-      showGlobalError: false,
-    }
-  );
+  // Fetch individual blog post using TanStack Query
+  const { data: post, isLoading, error: postError } = useQuery({
+    queryKey: queryKeys.blogs.detail(slug || ""),
+    queryFn: () => blogApi.getPost(slug as string),
+    enabled: shouldFetchPost,
+    staleTime: 5 * 60 * 1000, // 5 minutes - blog posts are fairly static
+  });
 
-  // Fetch related posts using apiClient
-  const { data: relatedPostsData } = useEnhancedApi<{ posts: BlogPost[] }>(
-    () => blogApi.getRelated(3),
-    { immediate: true }
-  );
+  // Fetch related posts using TanStack Query
+  const { data: relatedPostsData } = useQuery({
+    queryKey: ["blogs", "related", slug],
+    queryFn: () => blogApi.getRelated(3),
+    enabled: shouldFetchPost,
+    staleTime: 5 * 60 * 1000,
+  });
 
   const relatedPosts = relatedPostsData?.posts
     .filter((p) => p.slug !== slug)

@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
-import { useEnhancedApi } from "@/hooks/useEnhancedApi";
+import { useQuery } from "@tanstack/react-query";
 import { dashboardApi, Job } from "@/utils/api/dashboard";
 import {
   importJobsFromCSV,
@@ -65,6 +65,7 @@ interface JobImportModalProps {
   isOpen: boolean;
   onClose: () => void;
   onImportComplete: () => void;
+  userRecord?: any;
 }
 
 interface ExtensionJob {
@@ -85,6 +86,7 @@ export function JobImportModal({
   isOpen,
   onClose,
   onImportComplete,
+  userRecord: userRecordProp,
 }: JobImportModalProps) {
   const { user } = useFirebaseAuth();
   const [importMethod, setImportMethod] = useState<"extension" | "csv" | "api" | "url">("extension");
@@ -113,14 +115,15 @@ export function JobImportModal({
   );
   const extensionSelection = useBulkSelection(extensionJobIds);
 
-  // Fetch user record
-  const { data: userRecord } = useEnhancedApi(
-    () =>
-      user && user.uid
-        ? dashboardApi.getUserByFirebaseUid(user.uid)
-        : Promise.reject(new Error("No user")),
-    { immediate: !!user?.uid }
-  );
+  // Fetch user record using TanStack Query (only if not provided as prop)
+  const { data: fetchedUserRecord } = useQuery({
+    queryKey: ["dashboard", "user", user?.uid],
+    queryFn: () => dashboardApi.getUserByFirebaseUid(user!.uid),
+    enabled: !!user?.uid && !userRecordProp,
+    staleTime: 60 * 1000,
+  });
+
+  const userRecord = userRecordProp || fetchedUserRecord;
 
   // Check if extension is installed
   useEffect(() => {
