@@ -5,6 +5,8 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { SafeImg } from "@/components/ui/SafeImg";
 
+import { sanitizeHtml } from "@/utils/security";
+
 function looksLikeHtml(input: string) {
   // Heuristic: treat as HTML if it contains tags.
   // This keeps existing Tiptap/HTML posts working while enabling Markdown posts.
@@ -17,10 +19,11 @@ export function BlogContent({ content }: { content: string }) {
   if (!normalized) return null;
 
   if (looksLikeHtml(normalized)) {
+    const sanitizedHtml = sanitizeHtml(normalized);
     return (
       <div
         className="prose prose-lg max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-a:text-primary prose-img:rounded-xl"
-        dangerouslySetInnerHTML={{ __html: normalized }}
+        dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
       />
     );
   }

@@ -130,6 +130,16 @@ export async function createSessionCookie(
   });
 
   const decoded = await auth.verifySessionCookie(sessionCookie, true);
+  
+  // SESSION FIXATION PROTECTION:
+  // Revoke existing refresh tokens and session cookies for this user 
+  // before establishing the new session.
+  try {
+    await auth.revokeRefreshTokens(decoded.uid);
+  } catch (err) {
+    console.warn("Failed to revoke previous tokens during session creation:", err);
+  }
+
   const hash = await hashSessionToken(sessionCookie);
   const db = getAdminDb();
   const sessionDoc = db
@@ -202,15 +212,6 @@ export async function verifySessionFromRequest(request: NextRequest) {
     const token = authHeader.substring(7).trim();
     if (token) {
       try {
-        // In development, allow mock tokens for testing
-        if (process.env.NODE_ENV === "development" && token.includes("bW9jay1zaWduYXR1cmUtZm9yLXRlc3Rpbmc")) {
-          return {
-            uid: "test-user-123",
-            email: "test@example.com",
-            email_verified: true
-          };
-        }
-
         // Basic token validation before attempting verification
         if (token.length < 100) {
           SecurityLogger.logSecurityEvent({
@@ -344,7 +345,7 @@ export function setSessionCookie(
     value: cookieValue,
     httpOnly: true,
     secure: process.env.NODE_ENV !== "development",
-    sameSite: "lax",
+    sameSite: "strict",
     path: "/",
     maxAge: Math.floor((expiresAt - Date.now()) / 1000),
   });
@@ -356,7 +357,7 @@ export function clearSessionCookieInResponse(response: NextResponse): void {
     value: "",
     httpOnly: true,
     secure: process.env.NODE_ENV !== "development",
-    sameSite: "lax",
+    sameSite: "strict",
     path: "/",
     maxAge: 0,
   });

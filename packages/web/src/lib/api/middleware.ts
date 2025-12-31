@@ -71,11 +71,14 @@ export async function authenticateRequest(request: NextRequest): Promise<{
 }> {
   const sessionClaims = await verifySessionFromRequest(request);
   if (sessionClaims) {
+    const { isUserAdmin } = await import("@/firebase/admin");
+    const isAdmin = await isUserAdmin(sessionClaims.uid);
+    
     return {
       uid: sessionClaims.uid,
       email: sessionClaims.email,
       name: (sessionClaims as any).name,
-      isAdmin: (sessionClaims as any).admin === true,
+      isAdmin,
     };
   }
 
@@ -91,11 +94,14 @@ export async function authenticateRequest(request: NextRequest): Promise<{
     throw new Error("Invalid authentication token");
   }
 
+  const { isUserAdmin } = await import("@/firebase/admin");
+  const isAdmin = await isUserAdmin(decodedToken.uid);
+
   return {
     uid: decodedToken.uid,
     email: decodedToken.email,
     name: decodedToken.name,
-    isAdmin: decodedToken.admin || false,
+    isAdmin,
   };
 }
 

@@ -12,7 +12,7 @@ const resetBodySchema = z.object({
 
 export const POST = withApi({
   auth: "none",
-  rateLimit: "auth",
+  rateLimit: "auth-strict",
   bodySchema: resetBodySchema,
 }, async ({ body }) => {
   const { token, password } = body;

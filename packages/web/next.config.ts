@@ -80,7 +80,7 @@ const nextConfig: NextConfig = {
 
     const contentSecurityPolicy = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://*.firebase.com https://*.googleapis.com https://*.googletagmanager.com https://apis.google.com https://accounts.google.com https://*.stripe.com",
+      "script-src 'self' 'unsafe-inline' https://www.gstatic.com https://*.firebase.com https://*.googleapis.com https://*.googletagmanager.com https://apis.google.com https://accounts.google.com https://*.stripe.com",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",
       "img-src 'self' data: https: blob:",

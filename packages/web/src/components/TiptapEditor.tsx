@@ -54,6 +54,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
+import { sanitizeHtml } from "@/utils/security";
 import {
   Popover,
   PopoverContent,
@@ -811,8 +812,9 @@ export function TiptapEditor({
           const converted = markdownToHtml(text);
           if (!converted.trim()) return false;
 
+          const sanitized = sanitizeHtml(converted);
           const dom = document.createElement("div");
-          dom.innerHTML = converted;
+          dom.innerHTML = sanitized;
 
           const parser = ProseMirrorDOMParser.fromSchema(view.state.schema);
           const slice = parser.parseSlice(dom, { preserveWhitespace: true });

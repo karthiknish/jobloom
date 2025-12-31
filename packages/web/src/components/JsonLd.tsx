@@ -5,20 +5,22 @@ interface JsonLdProps {
 }
 
 /**
+ * Safely stringify JSON-LD data to prevent XSS.
+ * Specifically handles </script> tags which could be used to break out of the script block.
+ */
+function safeJsonLd(data: object | object[]): string {
+  return JSON.stringify(data).replace(/</g, '\\u003c').replace(/>/g, '\\u003e');
+}
+
+/**
  * Server-side JSON-LD structured data component
  * Renders schema.org structured data in a script tag
  */
 export function JsonLd({ data }: JsonLdProps) {
-  const jsonLdString = JSON.stringify(
-    Array.isArray(data) ? data : data,
-    null,
-    0
-  );
-
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: jsonLdString }}
+      dangerouslySetInnerHTML={{ __html: safeJsonLd(data) }}
     />
   );
 }
@@ -33,7 +35,7 @@ export function JsonLdScript({ data }: JsonLdProps) {
       type="application/ld+json"
       strategy="afterInteractive"
       dangerouslySetInnerHTML={{
-        __html: JSON.stringify(data),
+        __html: safeJsonLd(data),
       }}
     />
   );

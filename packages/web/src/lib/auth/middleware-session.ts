@@ -26,13 +26,39 @@ export async function verifySessionCookieForMiddleware(
     const expiresAt = decoded.exp ? decoded.exp * 1000 : Date.now() + 5 * 60 * 1000;
 
     // Check admin status from custom claims
-    // Firebase Admin SDK provides custom claims in the decoded token
     const customClaims = decoded as any;
-    const isAdmin = Boolean(
+    const hasAdminClaim = Boolean(
       customClaims.admin === true ||
       customClaims.role === "admin" ||
       (customClaims.customClaims && customClaims.customClaims.admin === true)
     );
+
+    // DOUBLE-CHECK: Verify admin status against the database to prevent stale claims
+    let isAdmin = false;
+    if (hasAdminClaim) {
+      try {
+        const { getAdminDb } = await import("@/firebase/admin");
+        const db = getAdminDb();
+        const userDoc = await db.collection("users").doc(uid).get();
+        isAdmin = userDoc.data()?.isAdmin === true;
+        
+        if (hasAdminClaim && !isAdmin) {
+          SecurityLogger.logSecurityEvent({
+            type: "suspicious_request",
+            severity: "high",
+            userId: uid,
+            details: {
+              reason: "stale_admin_claim_detected",
+              message: "User has admin JWT claim but isAdmin is false in database"
+            }
+          });
+        }
+      } catch (dbError) {
+        console.error("Error verifying admin status in middleware:", dbError);
+        // Fail safe: if we can't verify, don't grant admin status
+        isAdmin = false;
+      }
+    }
 
     const claims: VerifiedSessionClaims = {
       uid,

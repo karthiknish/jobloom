@@ -240,23 +240,6 @@ function createApiErrorResponse(
 // AUTHENTICATION
 // ============================================================================
 
-const MOCK_SIGNATURE = "bW9jay1zaWduYXR1cmUtZm9yLXRlc3Rpbmc";
-
-function isMockToken(token: string): boolean {
-  return process.env.NODE_ENV === "development" && token.includes(MOCK_SIGNATURE);
-}
-
-function getMockUser(): AuthenticatedUser {
-  return {
-    uid: "test-user-123",
-    email: "test@example.com",
-    name: "Test User",
-    isAdmin: false,
-    emailVerified: true,
-    tier: "free",
-  };
-}
-
 // User tier cache for performance
 const userTierCache = new Map<string, { tier: 'free' | 'premium' | 'admin'; expiresAt: number }>();
 const USER_TIER_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
@@ -322,11 +305,6 @@ async function authenticateRequest(
   }
 
   const token = authHeader.substring(7);
-
-  // Handle mock token in development
-  if (isMockToken(token)) {
-    return { user: getMockUser(), token };
-  }
 
   // Verify Firebase token
   const decodedToken = await verifyIdToken(token);

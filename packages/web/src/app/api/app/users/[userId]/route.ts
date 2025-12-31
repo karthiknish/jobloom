@@ -73,11 +73,20 @@ export const GET = withApi({
   };
 });
 
+const updateUserSchema = z.object({
+  name: z.string().optional(),
+  emailVerified: z.boolean().optional(),
+  subscriptionStatus: z.string().nullable().optional(),
+  provider: z.string().nullable().optional(),
+  // Explicitly NOT including isAdmin, email, or subscriptionPlan
+  // to prevent mass assignment vulnerabilities.
+});
+
 // PUT /api/app/users/[userId] - Update user
 export const PUT = withApi({
   auth: 'admin',
   paramsSchema: userParamsSchema,
-  bodySchema: z.record(z.string(), z.any()),
+  bodySchema: updateUserSchema,
 }, async ({ params, body }) => {
   const { userId } = params;
   const db = getAdminDb();

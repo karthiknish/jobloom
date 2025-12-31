@@ -5,6 +5,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { JsonLd } from "@/components/JsonLd";
 import { generateFAQSchema } from "@/lib/structured-data";
 
 const faqs = [
@@ -39,10 +40,7 @@ export default function FAQSection() {
   return (
     <section className="py-20 bg-muted/30" id="faq">
       {/* FAQ Structured Data for SEO */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
-      />
+      <JsonLd data={faqSchema} />
       
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">

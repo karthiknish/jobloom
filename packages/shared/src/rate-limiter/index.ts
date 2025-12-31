@@ -94,4 +94,5 @@ export const RATE_LIMITS: RateLimits = {
   'admin': { maxRequests: 5, windowMs: 60000 },
   'addSponsoredCompany': { maxRequests: 5, windowMs: 60000 },
   'blog-admin': { maxRequests: 150, windowMs: 60000 },
+  'auth-strict': { maxRequests: 3, windowMs: 900000 }, // 3 per 15 minutes
 };

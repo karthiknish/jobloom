@@ -61,7 +61,15 @@ function isAllowedOrigin(origin: string | null | undefined): origin is string {
 
   const normalized = origin.toLowerCase();
   
-  return ALLOWED_DOMAIN_FRAGMENTS.some((fragment) => normalized.includes(fragment));
+  return ALLOWED_DOMAIN_FRAGMENTS.some((fragment) => {
+    try {
+      // Extract hostname if it's a full URL, otherwise use the string directly
+      const hostname = normalized.startsWith('http') ? new URL(normalized).hostname : normalized;
+      return hostname === fragment || hostname.endsWith(`.${fragment}`);
+    } catch {
+      return normalized === fragment || normalized.endsWith(`.${fragment}`);
+    }
+  });
 }
 
 function resolveOrigin(source: HeadersSource, explicit?: string | null): string | undefined {
