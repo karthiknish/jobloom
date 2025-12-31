@@ -11,11 +11,12 @@ const jobUpdateSchema = z.object({
   location: z.string().optional(),
   url: z.string().url().optional(),
   description: z.string().optional(),
+  salary: z.string().max(200).optional(),
   salaryRange: z.object({
     min: z.number().optional(),
     max: z.number().optional(),
     currency: z.string().optional(),
-  }).optional(),
+  }).optional().nullable(),
   remoteWork: z.boolean().optional(),
   isSponsored: z.boolean().optional(),
   isRecruitmentAgency: z.boolean().optional(),

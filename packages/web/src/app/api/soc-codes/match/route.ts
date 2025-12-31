@@ -175,7 +175,7 @@ async function matchToSocCode(
     JobTitleNormalizer.normalizeTitle(request.title);
 
   // Get all SOC codes (with reasonable limit for performance)
-  const snapshot = await db.collection('socCodes').limit(500).get();
+  const snapshot = await db.collection('socCodes').limit(2000).get();
   const socCodes: SocCodeDocument[] = snapshot.docs.map(doc => ({
     id: doc.id,
     ...(doc.data() as Omit<SocCodeDocument, 'id'>),

@@ -1,12 +1,14 @@
-import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb } from "@/firebase/admin";
 import { withApi, OPTIONS, z } from "@/lib/api/withApi";
+import { AuthorizationError } from "@/lib/api/errorResponse";
 
 // Re-export OPTIONS for CORS preflight
 export { OPTIONS };
 
+export const runtime = "nodejs";
+
 const userParamsSchema = z.object({
-  userId: z.string(),
+  userId: z.string().min(1, "User ID is required"),
 });
 
 // GET /api/app/jobs/user/[userId] - Get jobs for a specific user
@@ -17,8 +19,11 @@ export const GET = withApi({
   const { userId } = params;
 
   // Verify userId matches token
-  if (userId !== user!.uid) {
-    throw new Error("Unauthorized: User ID mismatch");
+  if (userId !== user!.uid && !user!.isAdmin) {
+    throw new AuthorizationError(
+      "Unauthorized: User ID mismatch",
+      "FORBIDDEN"
+    );
   }
 
   // Use Admin SDK for server-side Firestore access
@@ -32,6 +37,10 @@ export const GET = withApi({
     ...doc.data()
   }));
 
-  return jobs;
+  return {
+    jobs,
+    count: jobs.length,
+    message: 'Jobs retrieved successfully',
+  };
 });
 

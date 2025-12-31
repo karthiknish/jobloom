@@ -174,9 +174,22 @@ export class EnhancedJobBoardManager {
       for (const job of pendingJobs) {
         try {
           // Try to add to board
-          await this.addToBoard(job.jobData, job.status, true); // true = isRetry
-          console.log("Successfully synced pending job:", job.jobData.company);
-        } catch (error) {
+          const result = await this.addToBoard(job.jobData, job.status, true); // true = isRetry
+          
+          if (result) {
+            console.log("Successfully synced pending job:", job.jobData.company);
+            // Clean up ANY optimistic entries that might match this synced job
+            // (e.g. entries with pending- IDs for the same URL/Identifier)
+            await this.cleanupOptimisticEntry(job.jobData);
+          }
+        } catch (error: any) {
+          // If it's a hard duplicate on server, we can consider it "synced"
+          if (error.code === 'DUPLICATE_RECORD') {
+            console.log("Pending job already exists on server, clearing from queue:", job.jobData.company);
+            await this.cleanupOptimisticEntry(job.jobData);
+            continue; 
+          }
+
           console.error("Failed to sync pending job:", error);
           
           // Keep in queue if retry count < 5
@@ -202,8 +215,12 @@ export class EnhancedJobBoardManager {
 
   // Enhanced add to board with better data extraction
   async addToBoard(jobData: JobData, status: KanbanStatus = "interested", isRetry = false): Promise<JobBoardEntry | null> {
+    const normalizedUrl = normalizeJobUrl(jobData.url || "");
+    const jobIdentifier = extractJobIdentifier(jobData.url || "");
+    let userId: string | null = null;
+
     try {
-      const userId = await this.getUserId();
+      userId = await this.getUserId();
       if (!userId) {
         console.error('[HireAll] User not authenticated - no userId in storage. Please sign in via the extension popup.');
         throw new Error("User not authenticated");
@@ -212,8 +229,6 @@ export class EnhancedJobBoardManager {
       console.log('[HireAll] User authenticated:', { userId });
 
       // Check if job already exists
-      const normalizedUrl = normalizeJobUrl(jobData.url || "");
-      const jobIdentifier = extractJobIdentifier(jobData.url || "");
       const existingJob = await this.checkJobExists(normalizedUrl, userId, jobIdentifier);
       if (existingJob) {
         console.log("Job already exists in board:", existingJob.id);
@@ -285,43 +300,32 @@ export class EnhancedJobBoardManager {
         locationType: jobData.locationType
       };
 
-      // Create job first
-      console.log('[HireAll] Creating job via API:', {
-        company: jobPayload.company,
-        title: jobPayload.title,
-        userId: userId
-      });
-      
-      const jobResponse = await post<CreateJobResponse>("/api/app/jobs", jobPayload);
-      const createdJobId = jobResponse.id;
-      
-      console.log('[HireAll] Job created successfully:', { id: createdJobId });
-
-      if (!createdJobId) {
-        throw new Error("Failed to create job entry");
-      }
-
-      // Create application entry - MUST await to ensure it's created
-      const applicationPayload = {
-        jobId: createdJobId,
-        userId: userId,
-        status: status,
-        appliedDate: status === "applied" ? Date.now() : undefined,
-        notes: this.generateJobNotes(jobData)
+      // Create combined payload for atomic job and application creation
+      const combinedPayload = {
+        job: jobPayload,
+        application: {
+          status: status,
+          appliedDate: status === "applied" ? new Date().toISOString() : null,
+          notes: this.generateJobNotes(jobData)
+        }
       };
 
-      console.log('[HireAll] Creating application via API:', {
-        jobId: createdJobId,
-        userId: userId,
+      console.log('[HireAll] Creating Job + Application atomically:', {
+        company: jobPayload.company,
+        title: jobPayload.title,
         status: status
       });
       
-      try {
-        const appResponse = await post<{ id: string }>("/api/app/applications", applicationPayload);
-        console.log('[HireAll] Application created successfully:', { id: appResponse.id });
-      } catch (appError) {
-        console.error('[HireAll] Application creation failed:', appError);
-        // Still continue - job was created, user can retry application
+      const response = await post<{ jobId: string; applicationId: string }>("/api/app/jobs/add-with-application", combinedPayload);
+      const createdJobId = response.jobId;
+      
+      console.log('[HireAll] Job and Application created successfully:', { 
+        jobId: createdJobId,
+        applicationId: response.applicationId 
+      });
+
+      if (!createdJobId) {
+        throw new Error("Failed to create job entry (no ID returned)");
       }
 
       // Create job board entry
@@ -333,7 +337,7 @@ export class EnhancedJobBoardManager {
         url: jobData.url,
         dateAdded: new Date().toISOString(),
         status: status,
-        notes: applicationPayload.notes || "",
+        notes: combinedPayload.application.notes || "",
         salary: jobPayload.salary,
         description: jobData.description,
         skills: jobData.skills,
@@ -369,6 +373,21 @@ export class EnhancedJobBoardManager {
       return jobBoardEntry;
 
     } catch (error: any) {
+      // Handle server-side duplicate check (race condition fix)
+      if (error.status === 400 && error.code === 'DUPLICATE_RECORD') {
+        console.log("[HireAll] Duplicate job detected on server, fetching existing record...");
+        // Try to find the existing job to return its data
+        if (userId) {
+          const existing = await this.checkJobExists(normalizedUrl, userId, jobIdentifier);
+          if (existing) {
+            return existing;
+          }
+        }
+        // If not in local storage but server says duplicate, it must be on server only
+        // The next sync will pull it down. For now, return a placeholder or just null
+        return null;
+      }
+
       console.error("Failed to add job to board:", error);
       
       // If this is not a retry and it's a network/server error, queue it
@@ -383,8 +402,8 @@ export class EnhancedJobBoardManager {
         console.log("Queueing job for later sync due to error:", error.message);
         await this.queueJob(jobData, status);
         
-        // Return a temporary "optimistic" entry so UI updates
-        return {
+        // Create the optimistic entry
+        const optimisticEntry: JobBoardEntry = {
           id: "pending-" + crypto.randomUUID(),
           company: jobData.company,
           title: jobData.title,
@@ -402,9 +421,44 @@ export class EnhancedJobBoardManager {
           socCode: jobData.socCode,
           socMatchConfidence: jobData.socMatch?.confidence
         } as JobBoardEntry;
+
+        // Save optimistic entry to local storage so it appears in the list immediately
+        await this.updateLocalStorage(optimisticEntry);
+
+        return optimisticEntry;
       }
       
       throw error;
+    }
+  }
+
+  /**
+   * Cleans up optimistic "pending-" entries for a job that has been successfully synced
+   */
+  private async cleanupOptimisticEntry(jobData: JobData): Promise<void> {
+    try {
+      const { jobBoardData } = await safeChromeStorageGet("local", ["jobBoardData"], { jobBoardData: [] as JobBoardEntry[] }, "enhancedAddToBoard");
+      const normalizedUrl = normalizeJobUrl(jobData.url || "");
+      const jobIdentifier = extractJobIdentifier(jobData.url || "");
+
+      const filtered = jobBoardData.filter(job => {
+        const isPendingId = job.id.startsWith('pending-');
+        if (!isPendingId) return true;
+
+        const urlMatch = job.url === jobData.url || (job as any).normalizedUrl === normalizedUrl;
+        const idMatch = jobIdentifier && (job as any).jobIdentifier === jobIdentifier;
+        
+        return !(urlMatch || idMatch);
+      });
+
+      if (filtered.length !== jobBoardData.length) {
+        console.log(`[HireAll] Cleaned up ${jobBoardData.length - filtered.length} optimistic entries`);
+        await new Promise<void>((resolve) => {
+          chrome.storage.local.set({ jobBoardData: filtered }, () => resolve());
+        });
+      }
+    } catch (error) {
+      console.warn("Failed to cleanup optimistic entries:", error);
     }
   }
 
@@ -523,7 +577,18 @@ export class EnhancedJobBoardManager {
     try {
       const { jobBoardData } = await safeChromeStorageGet("local", ["jobBoardData"], { jobBoardData: [] as JobBoardEntry[] }, "enhancedAddToBoard");
       
-      const updatedData = [...jobBoardData, jobEntry];
+      const normalizedUrl = normalizeJobUrl(jobEntry.url || "");
+      const jobIdentifier = jobEntry.jobIdentifier;
+
+      // Filter out existing entries that match this one (including pending ones)
+      // This solves the "Pending entries not cleaned" issue by replacing them with real ones
+      const filtered = jobBoardData.filter(job => {
+        const urlMatch = job.url === jobEntry.url || (job as any).normalizedUrl === normalizedUrl;
+        const idMatch = jobIdentifier && (job as any).jobIdentifier === jobIdentifier;
+        return !(urlMatch || idMatch);
+      });
+
+      const updatedData = [jobEntry, ...filtered]; // Newest/Synced entry at top
       
       await new Promise<void>((resolve) => {
         chrome.storage.local.set({ jobBoardData: updatedData }, () => resolve());
@@ -589,33 +654,45 @@ export class EnhancedJobBoardManager {
         throw new Error("User not authenticated");
       }
 
-      const userJobs = await get<any[]>(`/api/app/jobs/user/${encodeURIComponent(userId)}`);
-      let jobs = userJobs.map(job => this.mapToJobBoardEntry(job));
+      // Use the joined applications endpoint to get both job data and status
+      const response = await get<any>(`/api/app/applications/user/${encodeURIComponent(userId)}`);
+      // Handle both raw array (legacy) and object-wrapped response
+      const userApplications = Array.isArray(response) ? response : (response?.applications || []);
+      
+      let jobs = userApplications.map((app: any) => {
+        // Flatten the joined job and application data
+        return this.mapToJobBoardEntry({
+          ...app.job,
+          status: app.status,
+          notes: app.notes,
+          appliedDate: app.appliedDate
+        });
+      });
 
       // Apply filters
       if (filters) {
         if (filters.status) {
-          jobs = jobs.filter(job => job.status === filters.status);
+          jobs = jobs.filter((job: JobBoardEntry) => job.status === filters.status);
         }
         if (filters.department) {
-          jobs = jobs.filter(job => job.department === filters.department);
+          jobs = jobs.filter((job: JobBoardEntry) => job.department === filters.department);
         }
         if (filters.seniority) {
-          jobs = jobs.filter(job => job.seniority === filters.seniority);
+          jobs = jobs.filter((job: JobBoardEntry) => job.seniority === filters.seniority);
         }
         if (filters.locationType) {
-          jobs = jobs.filter(job => job.locationType === filters.locationType);
+          jobs = jobs.filter((job: JobBoardEntry) => job.locationType === filters.locationType);
         }
         if (filters.isSponsored !== undefined) {
-          jobs = jobs.filter(job => job.isSponsored === filters.isSponsored);
+          jobs = jobs.filter((job: JobBoardEntry) => job.isSponsored === filters.isSponsored);
         }
         if (filters.minSocConfidence !== undefined) {
-          jobs = jobs.filter(job => (job.socMatchConfidence || 0) >= filters.minSocConfidence!);
+          jobs = jobs.filter((job: JobBoardEntry) => (job.socMatchConfidence || 0) >= filters.minSocConfidence!);
         }
       }
 
       // Sort by date added (newest first)
-      jobs.sort((a, b) => new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime());
+      jobs.sort((a: JobBoardEntry, b: JobBoardEntry) => new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime());
 
       return jobs;
     } catch (error) {
@@ -633,8 +710,10 @@ export class EnhancedJobBoardManager {
       }
 
       // Get current applications to find the right one
-      const applications = await get<any[]>(`/api/app/applications/user/${encodeURIComponent(userId)}`);
-      const application = applications.find(app => app.jobId === jobId);
+      const response = await get<any>(`/api/app/applications/user/${encodeURIComponent(userId)}`);
+      // Handle both formats
+      const applications = Array.isArray(response) ? response : (response?.applications || []);
+      const application = applications.find((app: any) => app.jobId === jobId);
 
       if (application) {
         const updateData = {
@@ -693,8 +772,10 @@ export class EnhancedJobBoardManager {
       }
 
       // Get current applications
-      const applications = await get<any[]>(`/api/app/applications/user/${encodeURIComponent(userId)}`);
-      const application = applications.find(app => app.jobId === jobId);
+      const response = await get<any>(`/api/app/applications/user/${encodeURIComponent(userId)}`);
+      // Handle both formats
+      const applications = Array.isArray(response) ? response : (response?.applications || []);
+      const application = applications.find((app: any) => app.jobId === jobId);
 
       if (application) {
         const existingNotes = application.notes || "";

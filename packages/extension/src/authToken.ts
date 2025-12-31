@@ -682,7 +682,41 @@ function isTokenForProject(payload: Record<string, any> | null): boolean {
   return audMatches && issMatches;
 }
 
+let pendingAcquirePromise: Promise<string | null> | null = null;
+
 export async function acquireIdToken(
+  forceRefresh = false,
+  options?: { skipMessageFallback?: boolean; isAuthenticatedContext?: boolean }
+): Promise<string | null> {
+  // Deduplicate concurrent token acquisitions to prevent race conditions
+  if (pendingAcquirePromise && !forceRefresh) {
+    console.debug("Hireall: Concurrent token acquisition in progress, waiting...");
+    return pendingAcquirePromise;
+  }
+
+  // We use a reference object to avoid "used before assigned" lint errors in the closure
+  const hold = { promise: (null as any) as Promise<string | null> };
+  
+  hold.promise = (async (): Promise<string | null> => {
+    try {
+      const result = await _performAcquireIdToken(forceRefresh, options);
+      return result;
+    } finally {
+      // Clear promise on completion so next request can start fresh if needed
+      if (pendingAcquirePromise === hold.promise) {
+        pendingAcquirePromise = null;
+      }
+    }
+  })();
+
+  if (!forceRefresh) {
+    pendingAcquirePromise = hold.promise;
+  }
+
+  return hold.promise;
+}
+
+async function _performAcquireIdToken(
   forceRefresh = false,
   options?: { skipMessageFallback?: boolean; isAuthenticatedContext?: boolean }
 ): Promise<string | null> {

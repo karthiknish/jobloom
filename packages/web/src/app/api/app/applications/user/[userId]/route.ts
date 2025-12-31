@@ -1,11 +1,14 @@
-import { withApi, z } from "@/lib/api/withApi";
+import { withApi, z, OPTIONS } from "@/lib/api/withApi";
 import { getAdminDb } from "@/firebase/admin";
 import { AuthorizationError } from "@/lib/api/errorResponse";
+
+// Re-export OPTIONS for CORS preflight
+export { OPTIONS };
 
 export const runtime = "nodejs";
 
 const userParamsSchema = z.object({
-  userId: z.string(),
+  userId: z.string().min(1, "User ID is required"),
 });
 
 export const GET = withApi({
@@ -15,6 +18,7 @@ export const GET = withApi({
 }, async ({ user, params }) => {
   const { userId } = params;
 
+  // Verify userId matches token or is admin
   if (user!.uid !== userId && !user!.isAdmin) {
     throw new AuthorizationError(
       "Access denied. You can only access your own applications.",
@@ -23,15 +27,45 @@ export const GET = withApi({
   }
 
   const db = getAdminDb();
+  
+  // 1. Fetch all applications for the user
+  // 1. Fetch all applications for the user
   const applicationsSnapshot = await db.collection("applications")
     .where("userId", "==", userId)
     .get();
 
-  const applications = [];
-  for (const doc of applicationsSnapshot.docs) {
+  if (applicationsSnapshot.empty) {
+    return {
+      applications: [],
+      count: 0,
+      message: 'No applications found',
+    };
+  }
+
+  // 2. Collect all unique job IDs
+  const applicationDocs = applicationsSnapshot.docs;
+  const jobIds = [...new Set(applicationDocs.map(doc => doc.data().jobId).filter(Boolean))];
+  
+  // 3. Batch fetch all referenced jobs
+  const jobDataMap = new Map();
+  if (jobIds.length > 0) {
+    // Firestore getAll takes up to 1000 document references
+    const jobRefs = jobIds.map(id => db.collection("jobs").doc(id));
+    const jobSnapshots = await db.getAll(...jobRefs);
+    
+    jobSnapshots.forEach(jobDoc => {
+      if (jobDoc.exists) {
+        jobDataMap.set(jobDoc.id, { id: jobDoc.id, _id: jobDoc.id, ...jobDoc.data() });
+      }
+    });
+  }
+
+  // 4. Map applications and attach job data from local map
+  const applications = applicationDocs.map(doc => {
     const data = doc.data();
-    let application: any = {
+    const application: any = {
       _id: doc.id,
+      id: doc.id,
       jobId: data.jobId,
       userId: data.userId,
       status: data.status,
@@ -43,55 +77,37 @@ export const GET = withApi({
       order: data.order
     };
 
-    if (data.jobId) {
-      try {
-        const jobDoc = await db.collection("jobs").doc(data.jobId).get();
-        if (jobDoc.exists) {
-          const jobData = jobDoc.data();
-          application.job = {
-            _id: jobDoc.id,
-            title: jobData?.title,
-            company: jobData?.company,
-            location: jobData?.location,
-            url: jobData?.url,
-            description: jobData?.description,
-            salary: jobData?.salary,
-            salaryRange: jobData?.salaryRange,
-            skills: jobData?.skills,
-            requirements: jobData?.requirements,
-            benefits: jobData?.benefits,
-            jobType: jobData?.jobType,
-            experienceLevel: jobData?.experienceLevel,
-            remoteWork: jobData?.remoteWork,
-            companySize: jobData?.companySize,
-            industry: jobData?.industry,
-            postedDate: jobData?.postedDate,
-            applicationDeadline: jobData?.applicationDeadline,
-            isSponsored: jobData?.isSponsored || false,
-            isRecruitmentAgency: jobData?.isRecruitmentAgency,
-            sponsorshipType: jobData?.sponsorshipType,
-            source: jobData?.source || "manual",
-            dateFound: jobData?.dateFound || jobData?.createdAt || Date.now(),
-            userId: jobData?.userId
-          };
-        }
-      } catch (error) {
-        console.warn(`Failed to fetch job details for job ${data.jobId}:`, error);
-      }
+    if (data.jobId && jobDataMap.has(data.jobId)) {
+      const jobData = jobDataMap.get(data.jobId);
+      application.job = {
+        ...jobData,
+        // Ensure dateFound fallback exists
+        dateFound: jobData.dateFound || jobData.createdAt || Date.now(),
+      };
     }
 
-    applications.push(application);
-  }
+    return application;
+  });
 
+  // 5. Sort applications
   applications.sort((a, b) => {
-    if (a.status !== b.status) return a.status.localeCompare(b.status);
+    // Sort by status if different
+    if (a.status !== b.status) return (a.status || '').localeCompare(b.status || '');
+    
+    // Then by order within same status
     const ao = a.order || 0;
     const bo = b.order || 0;
     if (ao !== bo) return ao - bo;
-    return (b.updatedAt || 0) - (a.updatedAt || 0);
+    
+    // Finally by most recently updated
+    const timeA = a.updatedAt?.toMillis?.() || new Date(a.updatedAt).getTime() || 0;
+    const timeB = b.updatedAt?.toMillis?.() || new Date(b.updatedAt).getTime() || 0;
+    return timeB - timeA;
   });
 
-  return applications;
+  return {
+    applications,
+    count: applications.length,
+    message: 'Applications retrieved successfully',
+  };
 });
-
-export { OPTIONS } from "@/lib/api/withApi";

@@ -63,6 +63,22 @@ if (typeof window !== 'undefined') {
   setTimeout(() => {
     clearInterval(announceInterval);
   }, 10000);
+
+  // Scrape and sync CSRF token to extension storage
+  const syncCsrfToken = () => {
+    try {
+      const csrfToken = getCookie('__csrf-token');
+      if (csrfToken && typeof chrome !== 'undefined' && chrome.storage?.local) {
+        chrome.storage.local.set({ '__csrf_token': csrfToken });
+      }
+    } catch (e) {
+      // Ignore
+    }
+  };
+
+  // Initial sync and periodic refresh
+  syncCsrfToken();
+  setInterval(syncCsrfToken, 30000);
 }
 
 interface UserInfo {

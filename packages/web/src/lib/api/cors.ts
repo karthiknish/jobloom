@@ -103,7 +103,7 @@ interface ApplyCorsOptions {
 }
 
 const DEFAULT_ALLOW_METHODS = "GET, POST, PUT, DELETE, PATCH, OPTIONS";
-const DEFAULT_ALLOW_HEADERS = "Content-Type, Authorization, X-Request-ID, X-HireAll-Request-Id, X-Requested-With, X-Client-Version";
+const DEFAULT_ALLOW_HEADERS = "Content-Type, Authorization, X-Request-ID, X-HireAll-Request-Id, X-Requested-With, X-Client-Version, X-CSRF-Token, X-Session-Hash, X-Client-Platform";
 const DEFAULT_MAX_AGE = 86400; // 24 hours
 
 export function applyCorsHeaders<T extends Response>(

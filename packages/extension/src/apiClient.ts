@@ -486,6 +486,23 @@ export async function apiRequest<T = any>(opts: ApiOptions): Promise<T> {
   // Backend emits/understands X-Request-ID; keep a single canonical header to avoid CORS allow-list mismatches.
   finalHeaders['X-Request-ID'] = requestId;
 
+  // CSRF protection: Add X-CSRF-Token header if available in storage for state-changing requests
+  if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
+    try {
+      const csrfStorage = await safeChromeStorageGet(
+        "local", 
+        ["__csrf_token"], 
+        { __csrf_token: "" }, 
+        "apiClient.csrf"
+      );
+      if (csrfStorage.__csrf_token) {
+        finalHeaders['X-CSRF-Token'] = csrfStorage.__csrf_token;
+      }
+    } catch (e) {
+      console.debug('Hireall: Failed to retrieve CSRF token from storage', e);
+    }
+  }
+
   // Acquire auth token if needed
   if (requiresAuth) {
     const authStart = Date.now();
