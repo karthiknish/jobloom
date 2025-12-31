@@ -262,10 +262,8 @@ export function useOnboardingState() {
   const completedCount = completionItems.filter(Boolean).length;
   const completionPercentage = Math.round((completedCount / completionItems.length) * 100);
 
-  // Check if user is a new user (within first 7 days)
-  const isNewUser = user?.metadata?.creationTime
-    ? (Date.now() - new Date(user.metadata.creationTime).getTime()) < 7 * 24 * 60 * 60 * 1000
-    : false;
+  // Check if tour should auto-start (not completed + no manual skip stored)
+  const shouldAutoStartTour = !state.hasCompletedDashboardTour;
 
   // Checklist items for UI
   const checklistItems = [
@@ -303,7 +301,7 @@ export function useOnboardingState() {
     ...state,
     isLoaded,
     isSaving,
-    isNewUser,
+    shouldAutoStartTour,
     completionPercentage,
     checklistItems,
     markWelcomeSeen,

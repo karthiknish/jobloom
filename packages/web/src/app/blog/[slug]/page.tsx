@@ -14,6 +14,7 @@ import {
   ArrowLeft,
   Eye,
   ArrowRight,
+  RefreshCw,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -41,7 +42,7 @@ export default function BlogPostPage() {
   });
 
   // Fetch individual blog post using TanStack Query
-  const { data: post, isLoading, error: postError } = useQuery({
+  const { data: post, isLoading, error: postError, refetch } = useQuery({
     queryKey: queryKeys.blogs.detail(slug || ""),
     queryFn: () => blogApi.getPost(slug as string),
     enabled: shouldFetchPost,
@@ -125,6 +126,35 @@ export default function BlogPostPage() {
             </div>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if (postError) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <Card className="max-w-md w-full border-red-100 bg-red-50/30">
+          <CardContent className="p-12 text-center">
+            <div className="mx-auto mb-6 h-16 w-16 rounded-full bg-red-100 flex items-center justify-center">
+              <RefreshCw className="h-8 w-8 text-red-600" />
+            </div>
+            <h3 className="text-2xl font-bold text-foreground mb-2">
+              Failed to load post
+            </h3>
+            <p className="text-muted-foreground mb-8">
+              We encountered an error while fetching this article. Please try again.
+            </p>
+            <div className="flex flex-col gap-3">
+              <Button onClick={() => refetch()} className="flex items-center gap-2 justify-center">
+                <RefreshCw className="h-4 w-4" />
+                Retry Loading
+              </Button>
+              <Link href="/blog">
+                <Button variant="ghost" className="w-full">Back to Blog</Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }

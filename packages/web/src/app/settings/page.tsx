@@ -35,7 +35,6 @@ const settingsSchema = z.object({
     pushNotifications: z.boolean(),
     newsletter: z.boolean(),
     marketingEmails: z.boolean(),
-    theme: z.string(),
     ukFiltersEnabled: z.boolean(),
     autoDetectJobs: z.boolean(),
     showSponsorButton: z.boolean(),
@@ -97,7 +96,6 @@ export default function SettingsPage() {
         pushNotifications: false,
         newsletter: true,
         marketingEmails: false,
-        theme: "light",
         ukFiltersEnabled: false,
         autoDetectJobs: true,
         showSponsorButton: true,
@@ -147,7 +145,6 @@ export default function SettingsPage() {
               pushNotifications: backendPrefs.pushNotifications ?? false,
               newsletter: backendPrefs.newsletter ?? true,
               marketingEmails: backendPrefs.marketingEmails ?? false,
-              theme: backendPrefs.theme ?? "light",
               ukFiltersEnabled: backendPrefs.ukFiltersEnabled ?? false,
               autoDetectJobs: backendPrefs.autoDetectJobs ?? true,
               showSponsorButton: backendPrefs.showSponsorButton ?? true,
@@ -199,12 +196,23 @@ export default function SettingsPage() {
       });
 
       // Update profile if changed
-      if (
-        values.profile.firstName !== originalData?.profile.firstName ||
-        values.profile.lastName !== originalData?.profile.lastName
-      ) {
+      const nameChanged = values.profile.firstName !== originalData?.profile.firstName ||
+                          values.profile.lastName !== originalData?.profile.lastName;
+      const avatarChanged = values.profile.avatar !== originalData?.profile.avatar;
+
+      if (nameChanged || avatarChanged) {
+        const fullName = `${values.profile.firstName} ${values.profile.lastName}`.trim();
+        
+        // 1. Update Firebase Auth Profile
         await updateProfile(firebaseUser, {
-          displayName: `${values.profile.firstName} ${values.profile.lastName}`.trim(),
+          displayName: fullName,
+          photoURL: values.profile.avatar,
+        });
+
+        // 2. Sync with Firestore root 'users' collection
+        await settingsApi.updateRootProfile({
+          name: fullName,
+          photoURL: values.profile.avatar,
         });
       }
 
@@ -240,16 +248,22 @@ export default function SettingsPage() {
         const chromeRuntime = chromeApi?.runtime;
         const storageSync = chromeApi?.storage?.sync;
         const storageSyncSet = storageSync?.set?.bind(storageSync);
+        
         if (storageSyncSet) {
+          console.log("[Settings] Synchronization started with browser extension...");
           await new Promise<void>((resolve, reject) => {
             storageSyncSet(syncData, () => {
               if (chromeRuntime?.lastError) {
+                console.warn("[Settings] Extension sync failed:", chromeRuntime.lastError.message);
                 reject(new Error(chromeRuntime.lastError.message || "Chrome runtime error"));
               } else {
+                console.log("[Settings] Extension sync successful.");
                 resolve();
               }
             });
           });
+        } else {
+          console.info("[Settings] Browser extension not detected. Skipping preference synchronization.");
         }
       }
 

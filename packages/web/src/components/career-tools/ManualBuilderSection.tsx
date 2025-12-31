@@ -15,7 +15,9 @@ import {
   BarChart3,
   Settings2,
   Zap,
-  Lightbulb
+  Lightbulb,
+  History as HistoryIcon,
+  GitCompare
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -36,7 +38,10 @@ import { ResumeScore } from "@/components/application/ResumeScore";
 import { EducationSection } from "@/components/resume/EducationSection";
 import { ProjectsSection } from "@/components/resume/ProjectsSection";
 import { ResumePreview } from "./ResumePreview";
+import { VersionHistory } from "./VersionHistory";
+import { ResumeDiffView } from "./ResumeDiffView";
 import type { CareerToolsState } from "./useCareerToolsState";
+import type { ResumeVersion } from "@/utils/api/resumeApi";
 import { cn } from "@/lib/utils";
 
 interface ManualBuilderSectionProps {
@@ -66,7 +71,22 @@ export function ManualBuilderSection({ state, tabsListClassName, tabsTriggerClas
     updateAdvancedProjects,
     educationItems,
     projectItems,
+    versionHistory,
+    isLoadingHistory,
+    restoreVersion,
+    deleteVersion,
   } = state;
+
+  const [diffOpen, setDiffOpen] = useState(false);
+  const [compareVersions, setCompareVersions] = useState<{v1: ResumeVersion | null, v2: ResumeVersion | null}>({
+    v1: null,
+    v2: null
+  });
+
+  const handleCompare = (v1: ResumeVersion, v2: ResumeVersion) => {
+    setCompareVersions({ v1, v2 });
+    setDiffOpen(true);
+  };
 
   const DUMMY_DATA = {
     personalInfo: {
@@ -165,9 +185,22 @@ export function ManualBuilderSection({ state, tabsListClassName, tabsTriggerClas
     { id: 'readiness', icon: ShieldCheck, label: 'Readiness', color: 'text-green-500', bg: 'bg-green-50' },
     { id: 'score', icon: BarChart3, label: 'Resume Score', color: 'text-primary', bg: 'bg-primary/5' },
     { id: 'settings', icon: Settings2, label: 'Export Settings', color: 'text-slate-600', bg: 'bg-slate-50' },
+    { id: 'history', icon: HistoryIcon, label: 'Version History', color: 'text-indigo-500', bg: 'bg-indigo-50' },
     { id: 'actions', icon: Zap, label: 'Quick Actions', color: 'text-amber-500', bg: 'bg-amber-50' },
     { id: 'tips', icon: Lightbulb, label: 'Pro Tips', color: 'text-yellow-500', bg: 'bg-yellow-50' },
   ];
+
+  const sidebarIcons: Record<string, React.ReactNode> = {
+    history: (
+      <VersionHistory 
+        versions={versionHistory}
+        isLoading={isLoadingHistory}
+        onRestore={restoreVersion}
+        onDelete={deleteVersion}
+        onCompare={handleCompare}
+      />
+    )
+  };
 
   return (
     <div className="space-y-6">
@@ -180,12 +213,16 @@ export function ManualBuilderSection({ state, tabsListClassName, tabsTriggerClas
             onMouseEnter={() => setHoveredSidebarItem(item.id)}
             onMouseLeave={() => setHoveredSidebarItem(null)}
           >
-            <button className={cn(
-              "w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300",
-              hoveredSidebarItem === item.id ? cn(item.bg, item.color, "scale-110 shadow-sm") : "text-muted-foreground hover:text-foreground"
-            )}>
-              <item.icon className="h-5 w-5" />
-            </button>
+            {item.id === 'history' ? (
+              sidebarIcons.history
+            ) : (
+              <button className={cn(
+                "w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300",
+                hoveredSidebarItem === item.id ? cn(item.bg, item.color, "scale-110 shadow-sm") : "text-muted-foreground hover:text-foreground"
+              )}>
+                <item.icon className="h-5 w-5" />
+              </button>
+            )}
 
             {/* Floating Card Content - Drops Down */}
             <AnimatePresence>
@@ -630,6 +667,13 @@ export function ManualBuilderSection({ state, tabsListClassName, tabsTriggerClas
           </div>
         </aside>
       </div>
+
+      <ResumeDiffView 
+        open={diffOpen}
+        onOpenChange={setDiffOpen}
+        v1={compareVersions.v1}
+        v2={compareVersions.v2}
+      />
     </div>
   );
 }

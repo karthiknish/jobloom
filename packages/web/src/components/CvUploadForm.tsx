@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { UploadCloud, CheckCircle2, Loader2, Lightbulb, FileText, Check } from "lucide-react";
+import { UploadCloud, CheckCircle2, Loader2, Lightbulb, FileText, Check, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
@@ -30,6 +30,7 @@ import { showError, showSuccess, showWarning } from "@/components/ui/Toast";
 import { useCvEvaluator } from "@/hooks/useCvEvaluator";
 import { useOnboardingState } from "@/hooks/useOnboardingState";
 import { analytics } from "@/firebase/analytics";
+import { DEFAULT_UPLOAD_LIMITS } from "@/config/uploadLimits.constants";
 
 interface CvUploadFormProps {
   userId: string;
@@ -83,7 +84,9 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted, onResum
     uploadCv, 
     uploading, 
     uploadLimits: serverLimits, 
-    loadingLimits 
+    loadingLimits,
+    limitsError,
+    fetchLimits
   } = useCvEvaluator({
     userId,
     showNotifications: false, // We'll handle notifications here for custom logic if needed
@@ -113,22 +116,30 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted, onResum
         setLimitInfo(error.details);
         analytics.logFeatureUsed("cv_upload_upgrade_required", JSON.stringify(error.details));
       } else {
-        showError(
-          "Upload failed",
-          `${error.message ? `${error.message}. ` : ""}Check the file format and size, then try again.`
-        );
-        analytics.logError("cv_upload_failed", error.message || "unknown_error", { fileType: file?.type, fileSize: file?.size });
+        // Handle specific validation errors from server
+        let errorTitle = "Upload failed";
+        let errorMessage = error.message || "Check the file format and size, then try again.";
+
+        if (error.code === 'FILE_TOO_LARGE' || error.field === 'size') {
+          errorTitle = "File Too Large";
+          const maxMB = error.details?.maxSizeMB || "unknown";
+          errorMessage = `Your file exceeds the ${maxMB}MB limit. Please compress it or upgrade your plan.`;
+        } else if (error.code === 'INVALID_FILE_TYPE' || error.field === 'type' || error.field === 'extension') {
+          errorTitle = "Unsupported Format";
+          errorMessage = "Please upload a PDF or Microsoft Word document.";
+        }
+
+        showError(errorTitle, errorMessage);
+        analytics.logError("cv_upload_failed", error.message || "unknown_error", { 
+          fileType: file?.type, 
+          fileSize: file?.size,
+          errorCode: error.code
+        });
       }
     }
   });
 
-  const uploadLimits = serverLimits || {
-    maxSize: 2 * 1024 * 1024,
-    maxSizeMB: 2,
-    allowedTypes: ['application/pdf', 'text/plain'],
-    allowedExtensions: ['pdf', 'txt'],
-    description: 'Free users can upload CVs up to 2MB'
-  };
+  const uploadLimits = serverLimits || DEFAULT_UPLOAD_LIMITS;
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -295,9 +306,20 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted, onResum
       <Card className="shadow-sm border-border">
         <CardHeader className="pb-4">
           <CardTitle className="text-lg">Upload Your resume for Analysis</CardTitle>
-          <CardDescription className="text-base">
+          <CardDescription className="text-base flex items-center flex-wrap gap-1">
             Get AI-powered insights to improve your resume. Supported formats: PDF,
             TXT (max {uploadLimits.maxSizeMB}MB)
+            {limitsError && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-6 px-1.5 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50 gap-1 ml-1"
+                onClick={() => fetchLimits()}
+              >
+                <RefreshCw className="h-3 w-3" />
+                Retry Limits
+              </Button>
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent>

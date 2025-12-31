@@ -102,17 +102,32 @@ export const GET = withApi({
       
       let snapshot;
       
-      // Strategy 1: Try prefix match on nameLower field (fastest if index exists)
+      // Strategy 1: Try prefix match on searchName field (consistently used by check API)
       try {
         const prefixQuery = sponsorsRef
-          .where("nameLower", ">=", searchLower)
-          .where("nameLower", "<=", searchUpper)
+          .where("searchName", ">=", searchLower)
+          .where("searchName", "<=", searchUpper)
           .where("isActive", "==", true)
           .limit(limitNum);
         
         snapshot = await prefixQuery.get();
       } catch (e) {
         snapshot = { empty: true, docs: [] };
+      }
+
+      // Strategy 2: Try prefix match on nameLower field (legacy fallback)
+      if (snapshot.empty) {
+        try {
+          const legacyQuery = sponsorsRef
+            .where("nameLower", ">=", searchLower)
+            .where("nameLower", "<=", searchUpper)
+            .where("isActive", "==", true)
+            .limit(limitNum);
+          
+          snapshot = await legacyQuery.get();
+        } catch (e) {
+          snapshot = { empty: true, docs: [] };
+        }
       }
       
       // Strategy 2: Try prefix match on name field (case-sensitive but common)
@@ -264,8 +279,14 @@ export const POST = withApi({
   const companyData = await request.json();
   
   const db = getAdminDb();
+  const name = (companyData.name || companyData.company || "").trim();
+  const searchName = name.toLowerCase();
+  
   const docRef = await db.collection("sponsors").add({
     ...companyData,
+    name,
+    searchName,
+    nameLower: searchName,
     isActive: companyData.isActive ?? true,
     createdAt: Date.now(),
     createdBy: user!.uid

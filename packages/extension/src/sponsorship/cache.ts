@@ -18,15 +18,17 @@ class SponsorshipCache {
   private inFlight = new Map<string, Promise<any>>();
 
   /**
-   * Get a cached value if it exists and hasn't expired
+   * Get a cached value if it exists and hasn't expired.
+   * Returns undefined if key is missing or expired.
+   * Returns T (which could be null) if cached.
    */
-  get<T>(key: string): T | null {
+  get<T>(key: string): T | undefined {
     const entry = this.cache.get(key);
-    if (!entry) return null;
+    if (!entry) return undefined;
     
     if (Date.now() > entry.expiresAt) {
       this.cache.delete(key);
-      return null;
+      return undefined;
     }
     
     return entry.value as T;
@@ -68,7 +70,7 @@ class SponsorshipCache {
   ): Promise<T> {
     // Check cache first
     const cached = this.get<T>(key);
-    if (cached !== null || this.has(key)) {
+    if (cached !== undefined || this.has(key)) {
       console.debug(`[SponsorshipCache] Cache hit for ${key}`);
       return cached as T;
     }

@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { useSubscription } from "@/providers/subscription-provider";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
+import { generateContentHash, getCachedAIResponse, setCachedAIResponse } from "@/utils/ai-cache";
 
 interface JobAISummaryProps {
   jobDescription: string;
@@ -51,6 +52,17 @@ export function JobAISummary({ jobDescription, jobId }: JobAISummaryProps) {
     setError(null);
 
     try {
+      // Check cache first
+      const payloadHash = await generateContentHash(jobDescription);
+      const cachedData = getCachedAIResponse<AISummaryData>(payloadHash);
+      
+      if (cachedData) {
+        setSummary(cachedData);
+        setIsExpanded(true);
+        setIsLoading(false);
+        return;
+      }
+
       const token = await user?.getIdToken();
       const response = await fetch("/api/ai/job-summary", {
         method: "POST",
@@ -67,6 +79,9 @@ export function JobAISummary({ jobDescription, jobId }: JobAISummaryProps) {
         throw new Error(result.error?.message || "Failed to generate summary");
       }
 
+      // Store in cache
+      setCachedAIResponse(payloadHash, result.data);
+      
       setSummary(result.data);
       setIsExpanded(true);
     } catch (err: any) {

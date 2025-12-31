@@ -16,6 +16,7 @@ import {
   ArrowRight,
   Sparkles,
   TrendingUp,
+  RefreshCw,
 } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
@@ -50,7 +51,7 @@ export default function BlogPage() {
   const [currentPage, setCurrentPage] = useState(1);
 
   // Fetch blog posts using TanStack Query
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: queryKeys.blogs.list({ 
       page: currentPage, 
       search: searchTerm, 
@@ -171,6 +172,30 @@ export default function BlogPage() {
 
         {isLoading ? (
           <SkeletonGrid items={6} />
+        ) : error ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center py-24 bg-red-50/30 rounded-3xl border border-dashed border-red-200"
+          >
+            <div className="mx-auto mb-6 h-16 w-16 rounded-full bg-red-100 flex items-center justify-center">
+              <RefreshCw className="w-8 h-8 text-red-600" />
+            </div>
+            <h3 className="text-2xl font-semibold text-foreground mb-2">
+              Failed to load articles
+            </h3>
+            <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+              We encountered an error while fetching the blog posts. This might be a temporary issue.
+            </p>
+            <Button
+              variant="default"
+              onClick={() => refetch()}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Try Again
+            </Button>
+          </motion.div>
         ) : posts.length === 0 ? (
           <motion.div
             initial={{ opacity: 0 }}

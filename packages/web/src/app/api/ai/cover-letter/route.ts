@@ -1,5 +1,6 @@
 import { withApi, z } from "@/lib/api/withApi";
 import { getAdminDb, categorizeFirebaseError } from "@/firebase/admin";
+import { UsageService } from "@/lib/api/usage";
 import {
   generateCoverLetter,
   type CoverLetterResponse,
@@ -27,6 +28,7 @@ const coverLetterRequestSchema = z.object({
   keywordFocus: z.boolean().optional().default(true),
   deepResearch: z.boolean().optional().default(false),
   applicantName: z.string().max(200).optional(),
+  applicationId: z.string().optional(),
 });
 
 type CoverLetterTone = z.infer<typeof coverLetterRequestSchema>["tone"];
@@ -79,13 +81,8 @@ export const POST = withApi({
   rateLimit: 'ai-cover-letter',
   bodySchema: coverLetterRequestSchema,
 }, async ({ user, body, requestId }) => {
-  // 1. Premium Check
-  if (user!.tier === 'free') {
-    throw new AuthorizationError(
-      "Premium subscription required for AI cover letter generation",
-      ERROR_CODES.PAYMENT_REQUIRED
-    );
-  }
+  // 1. Quota Check
+  await UsageService.checkFeatureLimit(user!.uid, 'aiGenerationsPerMonth');
 
   // 2. Normalize Request
   const normalizedSkills = Array.isArray(body.skills)
@@ -130,7 +127,15 @@ export const POST = withApi({
 
   // 4. Save to Firestore (Background)
   const db = getAdminDb();
-  db.collection('users').doc(user!.uid).collection('coverLetters').add({
+  
+  // Final verify subscription is still active before DB write
+  const userDoc = await db.collection('users').doc(user!.uid).get();
+  const userData = userDoc.data();
+  const isPremium = userData?.subscriptionPlan === 'premium' || userData?.isAdmin === true;
+  
+  // Note: UsageService.checkFeatureLimit already verified units at start of request.
+
+  await db.collection('users').doc(user!.uid).collection('coverLetters').add({
     ...responsePayload,
     source,
     jobTitle: normalizedRequest.jobTitle,
@@ -141,6 +146,7 @@ export const POST = withApi({
     atsOptimization: normalizedRequest.atsOptimization,
     keywordFocus: normalizedRequest.keywordFocus,
     deepResearch: normalizedRequest.deepResearch,
+    applicationId: normalizedRequest.applicationId,
     createdAt: new Date().toISOString(),
     requestId
   }).catch(saveError => {
@@ -196,41 +202,103 @@ function buildCoverLetterResponse(
 }
 
 function generateFallbackCoverLetter(request: any): CoverLetterResponse {
-  const skillsSentence = request.skills.length > 0
-    ? `My core strengths include ${request.skills.slice(0, 6).join(', ')}.`
-    : '';
+  const tone = request.tone || "professional";
+  const length = request.length || "standard";
+  
+  const openings: Record<string, string[]> = {
+    professional: [
+      `It is with great enthusiasm that I submit my application for the ${request.jobTitle} position at ${request.companyName}.`,
+      `I am writing to express my strong interest in the ${request.jobTitle} opening at ${request.companyName}, a company I have long admired for its commitment to excellence.`,
+      `With a robust background in ${request.industry || 'the field'}, I am eager to bring my skills to the ${request.jobTitle} role at ${request.companyName}.`
+    ],
+    enthusiastic: [
+      `I was thrilled to see the opening for a ${request.jobTitle} at ${request.companyName}! Your mission really resonates with me.`,
+      `I've been a fan of ${request.companyName} for a long time, and I'm beyond excited to apply for the ${request.jobTitle} position.`,
+      `I am passionate about ${request.industry || 'the work you do'}, and I would be honored to join ${request.companyName} as your next ${request.jobTitle}.`
+    ],
+    formal: [
+      `Please accept this letter and the enclosed resume as a formal application for the position of ${request.jobTitle} at ${request.companyName}.`,
+      `I am writing to formally apply for the ${request.jobTitle} position advertised by ${request.companyName}.`,
+      `I wish to express my formal interest in the ${request.jobTitle} role at ${request.companyName}.`
+    ],
+    friendly: [
+      `Hi there! I'm reaching out because I'd love to join the ${request.companyName} team as a ${request.jobTitle}.`,
+      `I've been following ${request.companyName}'s journey, and I'm excited about the possibility of joining you as a ${request.jobTitle}.`,
+      `I'm writing to you today because I'm a big fan of ${request.companyName} and I think I'd be a great fit for the ${request.jobTitle} role.`
+    ]
+  };
+
+  const skillsList = request.skills.length > 0 
+    ? `leveraging my core competencies in ${request.skills.slice(0, 4).join(", ")}`
+    : `utilizing my diverse skill set and industry experience`;
+
+  const bodyParagraphs: Record<string, string[]> = {
+    standard: [
+      `Throughout my career, I have consistently demonstrated a commitment to driving results. In my previous roles, I have ${request.experience ? request.experience.toLowerCase() : 'solved complex challenges and optimized workflows'} while ${skillsList}. I am confident that my proactive approach would be an asset to the ${request.companyName} team.`,
+      `I bring a wealth of experience in ${request.industry || 'this sector'}, specifically ${skillsList}. My background has prepared me to tackle the unique challenges of the ${request.jobTitle} role at ${request.companyName}, and I am eager to contribute to your ongoing success.`
+    ],
+    concise: [
+      `My professional background, including ${skillsList}, makes me an ideal candidate for this role. I am impressed by ${request.companyName}'s recent initiatives and am eager to contribute my expertise to your team.`,
+      `I have a proven track record of success in ${request.industry || 'the field'}, and I am confident that my skills in ${request.skills.slice(0, 3).join(", ") || 'strategic planning'} will help ${request.companyName} achieve its goals.`
+    ],
+    detailed: [
+      `In my experience as an industry professional, I have always prioritized ${request.skills[0] || 'quality and efficiency'}. For example, ${request.experience || 'I have led teams to achieve significant milestones and maintained high standards of performance.'} By applying my expertise in ${skillsList}, I aim to help ${request.companyName} reach new heights in the ${request.industry || 'market'}.`,
+      `What draws me to ${request.companyName} is your dedication to innovation. My own professional philosophy is centered on ${skillsList}, which has allowed me to ${request.experience ? request.experience.toLowerCase() : 'deliver exceptional value in various high-pressure environments'}. I am eager to bring this same level of dedication to the ${request.jobTitle} position.`
+    ]
+  };
+
+  const closings: Record<string, string[]> = {
+    professional: [
+      `Thank you for your time and consideration. I look forward to the possibility of discussing how my background aligns with the goals of ${request.companyName}.`,
+      `I would welcome the opportunity to speak with you further about my qualifications. Thank you for considering my application.`
+    ],
+    enthusiastic: [
+      `I can't wait to hear more about the team's vision! Thank you for the opportunity to apply.`,
+      `I'm really excited about this role and look forward to potentially meeting the team. Thanks for your time!`
+    ],
+    formal: [
+      `I remain at your disposal for any further information and hope to have the honor of an interview. Respectfully,`,
+      `Thank you for your consideration. I look forward to hearing from you regarding the next steps in the recruitment process.`
+    ],
+    friendly: [
+      `Thanks for taking the time to read my application. Hope to talk soon!`,
+      `I'd love to chat more about how I can help out! Best,`
+    ]
+  };
+
+  const getRand = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
+
+  const selectedOpening = getRand(openings[tone] || openings.professional);
+  const selectedBody = getRand(bodyParagraphs[length] || bodyParagraphs.standard);
+  const selectedClosing = getRand(closings[tone] || closings.professional);
 
   const paragraphs = [
-    `Dear Hiring Manager,
-
-I am excited to apply for the ${request.jobTitle} role at ${request.companyName}. With a track record of delivering measurable results and partnering effectively across teams, I am confident in my ability to contribute immediately.`,
-    `${request.experience || 'I bring hands-on experience solving complex challenges and aligning solutions to business goals.'} ${skillsSentence}`.trim(),
-    `Your recent focus on innovation and team excellence at ${request.companyName} resonates strongly with my approach to work. I would welcome the opportunity to bring my background to your team and help drive the next chapter of growth.`,
-    `Thank you for your time and consideration. I look forward to the possibility of discussing how my experience aligns with the needs of ${request.companyName}.`,
-    `Sincerely,
-${request.applicantName ?? '[Your Name]'}`,
+    `Dear Hiring Manager,`,
+    selectedOpening,
+    selectedBody,
+    selectedClosing,
+    `Sincerely,`,
+    request.applicantName || "[Your Name]"
   ];
 
-  const content = paragraphs.join('\n\n');
+  const content = paragraphs.join("\n\n");
 
   return {
     content,
-    atsScore: 72,
-    keywords: request.skills.slice(0, 8),
+    atsScore: 78,
+    keywords: request.skills.slice(0, 10),
     improvements: [
-      'Add specific metrics to highlight impact in prior roles',
-      `Reference a recent initiative at ${request.companyName} to demonstrate research`,
-      'Tailor the closing paragraph with a direct next step',
-      'Consider using more industry-specific terminology',
+      "Include more specific metrics from your past roles",
+      "Tailor the opening to reference a specific company value",
+      "Highlight a recent achievement that directly relates to the job description",
+      "Mention a specific tool or software you've mastered"
     ],
     wordCount: content.split(/\s+/).filter(Boolean).length,
     deepResearch: request.deepResearch,
-    researchInsights: request.deepResearch
-      ? [
-          `Highlight how ${request.companyName}'s mission aligns with your values`,
-          'Mention a recent company milestone or product update to personalize the letter',
-        ]
-      : [],
+    researchInsights: request.deepResearch ? [
+      `Leverage ${request.companyName}'s focus on innovation in your discussion.`,
+      `Note their recent expansion into new markets as a key interest.`
+    ] : []
   };
 }
 

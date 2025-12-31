@@ -196,7 +196,7 @@ export function KanbanBoard({
           {byCol[col].map((a, idx) => (
             <React.Fragment key={a._id}>
               <li
-                draggable={!isSaving}
+                draggable={!isSaving && savingApplicationId !== a._id}
                 onDragStart={onDragStart(a._id)}
                 onDragEnd={() => {
                   setDraggedId(null);
@@ -204,10 +204,21 @@ export function KanbanBoard({
                 }}
                 className={`
                   group relative rounded-lg bg-card border border-border/60 p-3 shadow-sm min-w-0
-                  hover:shadow-md hover:border-primary/30 motion-surface cursor-grab active:cursor-grabbing
+                  hover:shadow-md hover:border-primary/30 motion-surface cursor-grab active:cursor-grabbing transition-all
                   ${draggedId === a._id ? 'opacity-50 ring-2 ring-primary ring-offset-2' : ''}
+                  ${savingApplicationId === a._id ? 'animate-pulse border-primary/40 pointer-events-none ring-1 ring-primary/20' : ''}
                 `}
               >
+                {/* Saving Overlay */}
+                {savingApplicationId === a._id && (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/60 backdrop-blur-[1px] rounded-lg">
+                    <div className="flex flex-col items-center gap-2">
+                      <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                      <span className="text-[10px] font-bold text-primary uppercase tracking-wider">Saving</span>
+                    </div>
+                  </div>
+                )}
+
                 <div className="font-medium text-sm text-foreground mb-1 line-clamp-2 leading-tight break-words">
                   {a.job?.title}
                 </div>
@@ -226,18 +237,13 @@ export function KanbanBoard({
                   <div className="text-[10px] text-muted-foreground">
                     {new Date(a.job?.dateFound || Date.now()).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                   </div>
-                  {savingApplicationId === a._id && (
-                    <div className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                      Saving
-                    </div>
-                  )}
                   {onView && (
                     <Button 
                       type="button"
                       size="sm" 
                       variant="ghost" 
                       className="h-6 px-2 text-xs hover:bg-primary/10 hover:text-primary"
+                      disabled={savingApplicationId === a._id}
                       onClick={(e) => {
                         e.stopPropagation();
                         onView(a);

@@ -1,37 +1,19 @@
-/**
- * Resume PDF Color System
- * 
- * Hireall brand colors and themed color schemes.
- */
-
 import jsPDF from 'jspdf';
+import { ThemeColor, ColorScheme } from './types';
 
-export interface ThemeColor {
-  r: number;
-  g: number;
-  b: number;
-}
-
-export interface ColorScheme {
-  primary: ThemeColor;
-  secondary: ThemeColor;
-  accent: ThemeColor;
-  text: ThemeColor;
-  textLight: ThemeColor;
-  background: ThemeColor;
-  border: ThemeColor;
-}
-
+// Hireall brand color schemes
 export const COLOR_SCHEMES: Record<string, ColorScheme> = {
+  // Default Hireall teal theme
   hireall: {
-    primary: { r: 16, g: 183, b: 127 },
-    secondary: { r: 15, g: 118, b: 110 },
-    accent: { r: 45, g: 212, b: 191 },
-    text: { r: 31, g: 41, b: 55 },
-    textLight: { r: 107, g: 114, b: 128 },
-    background: { r: 249, g: 250, b: 251 },
-    border: { r: 209, g: 213, b: 219 },
+    primary: { r: 16, g: 183, b: 127 },      // Teal - main brand color
+    secondary: { r: 15, g: 118, b: 110 },    // Darker teal
+    accent: { r: 45, g: 212, b: 191 },       // Lighter teal
+    text: { r: 31, g: 41, b: 55 },           // Dark gray
+    textLight: { r: 107, g: 114, b: 128 },   // Medium gray
+    background: { r: 249, g: 250, b: 251 },  // Light gray
+    border: { r: 209, g: 213, b: 219 },      // Border gray
   },
+  // Professional blue
   blue: {
     primary: { r: 37, g: 99, b: 235 },
     secondary: { r: 30, g: 64, b: 175 },
@@ -41,6 +23,7 @@ export const COLOR_SCHEMES: Record<string, ColorScheme> = {
     background: { r: 239, g: 246, b: 255 },
     border: { r: 191, g: 219, b: 254 },
   },
+  // Elegant gray
   gray: {
     primary: { r: 55, g: 65, b: 81 },
     secondary: { r: 31, g: 41, b: 55 },
@@ -50,6 +33,7 @@ export const COLOR_SCHEMES: Record<string, ColorScheme> = {
     background: { r: 249, g: 250, b: 251 },
     border: { r: 209, g: 213, b: 219 },
   },
+  // Nature green
   green: {
     primary: { r: 22, g: 163, b: 74 },
     secondary: { r: 21, g: 128, b: 61 },
@@ -59,6 +43,7 @@ export const COLOR_SCHEMES: Record<string, ColorScheme> = {
     background: { r: 240, g: 253, b: 244 },
     border: { r: 187, g: 247, b: 208 },
   },
+  // Creative purple
   purple: {
     primary: { r: 147, g: 51, b: 234 },
     secondary: { r: 126, g: 34, b: 206 },
@@ -68,6 +53,7 @@ export const COLOR_SCHEMES: Record<string, ColorScheme> = {
     background: { r: 250, g: 245, b: 255 },
     border: { r: 233, g: 213, b: 255 },
   },
+  // Warm orange
   orange: {
     primary: { r: 234, g: 88, b: 12 },
     secondary: { r: 194, g: 65, b: 12 },
@@ -79,10 +65,16 @@ export const COLOR_SCHEMES: Record<string, ColorScheme> = {
   },
 };
 
+/**
+ * Get color scheme by name, defaults to Hireall theme
+ */
 export function getColorScheme(name?: string): ColorScheme {
   return COLOR_SCHEMES[name || 'hireall'] || COLOR_SCHEMES.hireall;
 }
 
+/**
+ * Apply colors to PDF
+ */
 export function applyTextColor(pdf: jsPDF, color: ThemeColor): void {
   pdf.setTextColor(color.r, color.g, color.b);
 }

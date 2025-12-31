@@ -1,6 +1,7 @@
 import { withApi, z } from "@/lib/api/withApi";
 import { getAdminDb, Timestamp } from "@/firebase/admin";
 import { SUBSCRIPTION_LIMITS, Subscription, SubscriptionPlan } from "@/types/api";
+import { UsageService } from "@/lib/api/usage";
 
 export const runtime = "nodejs";
 
@@ -73,53 +74,7 @@ export const GET = withApi({
   const limits = SUBSCRIPTION_LIMITS[plan] ?? SUBSCRIPTION_LIMITS.free;
 
   // Get current usage for this month
-  const startOfMonth = new Date();
-  startOfMonth.setDate(1);
-  startOfMonth.setHours(0, 0, 0, 0);
-
-  let cvAnalysesCount = 0;
-  let applicationsCount = 0;
-
-  // Resume analyses usage
-  try {
-    const cvAnalysesQuery = await db.collection("cvAnalyses")
-      .where("userId", "==", userId)
-      .where("createdAt", ">=", Timestamp.fromDate(startOfMonth))
-      .get();
-    cvAnalysesCount = cvAnalysesQuery.size;
-  } catch (indexError: any) {
-    if (indexError?.code === 9) {
-      try {
-        const allCvAnalyses = await db.collection("cvAnalyses")
-          .where("userId", "==", userId)
-          .get();
-        const startOfMonthTimestamp = Timestamp.fromDate(startOfMonth);
-        cvAnalysesCount = allCvAnalyses.docs.filter(doc => {
-          const createdAt = doc.data().createdAt;
-          return createdAt && createdAt >= startOfMonthTimestamp;
-        }).length;
-      } catch {
-        cvAnalysesCount = 0;
-      }
-    } else {
-      cvAnalysesCount = 0;
-    }
-  }
-
-  // Application usage
-  try {
-    const applicationsQuery = await db.collection("applications")
-      .where("userId", "==", userId)
-      .get();
-    applicationsCount = applicationsQuery.size;
-  } catch {
-    applicationsCount = 0;
-  }
-
-  const currentUsage = {
-    cvAnalyses: cvAnalysesCount,
-    applications: applicationsCount,
-  };
+  const currentUsage = await UsageService.getMonthlyUsage(userId);
 
   const customerPortalUrl = subscription?.customerPortalUrl ?? userData?.stripeCustomerPortalUrl ?? null;
   const checkoutUrl = userData?.pendingCheckoutUrl ?? null;

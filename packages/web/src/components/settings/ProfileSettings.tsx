@@ -8,14 +8,44 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useFormContext } from "react-hook-form";
 import { FormField, FormItem, FormControl, FormMessage } from "@/components/ui/form";
+import { Camera, Loader2 } from "lucide-react";
+import { uploadProfilePicture } from "@/firebase/storage";
+import { useToast } from "@/hooks/use-toast";
 
 interface ProfileSettingsProps {
   firebaseUser: any;
 }
 
 export function ProfileSettings({ firebaseUser }: ProfileSettingsProps) {
-  const { control, watch } = useFormContext();
+  const { control, watch, setValue } = useFormContext();
   const formData = watch();
+  const toast = useToast();
+  const [isUploading, setIsUploading] = React.useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !firebaseUser?.uid) return;
+
+    try {
+      setIsUploading(true);
+      const result = await uploadProfilePicture(file, firebaseUser.uid);
+      setValue("profile.avatar", result.downloadURL, { shouldDirty: true });
+      toast.success("Avatar uploaded", "Click 'Save Changes' to apply your new profile picture.");
+    } catch (error: any) {
+      console.error("Avatar upload failed:", error);
+      toast.error("Upload failed", error.message || "Could not upload profile picture.");
+    } finally {
+      setIsUploading(false);
+      // Reset input value so same file can be selected again
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -42,12 +72,32 @@ export function ProfileSettings({ firebaseUser }: ProfileSettingsProps) {
             transition={{ duration: 0.6, delay: 0.4 }}
             className="flex items-center gap-6"
           >
-            <Avatar className="h-24 w-24">
-              <AvatarImage src={formData.profile.avatar} alt="Profile" />
-              <AvatarFallback className="text-xl bg-primary/10 text-primary">
-                {formData.profile.firstName?.[0]}{formData.profile.lastName?.[0]}
-              </AvatarFallback>
-            </Avatar>
+            <div className="relative group cursor-pointer" onClick={handleAvatarClick}>
+              <Avatar className={`h-24 w-24 border-2 transition-all ${isUploading ? 'opacity-50' : 'group-hover:border-primary/50'}`}>
+                <AvatarImage src={formData.profile.avatar} alt="Profile" />
+                <AvatarFallback className="text-xl bg-primary/10 text-primary">
+                  {formData.profile.firstName?.[0]}{formData.profile.lastName?.[0]}
+                </AvatarFallback>
+              </Avatar>
+              
+              <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
+                {isUploading ? (
+                  <Loader2 className="h-6 w-6 text-white animate-spin" />
+                ) : (
+                  <Camera className="h-6 w-6 text-white" />
+                )}
+              </div>
+              
+              <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                accept="image/jpeg,image/png,image/gif,image/webp"
+                onChange={handleFileChange}
+                disabled={isUploading}
+              />
+            </div>
+
             <div className="space-y-1">
               <h3 className="text-lg font-medium text-foreground">
                 {formData.profile.firstName} {formData.profile.lastName}

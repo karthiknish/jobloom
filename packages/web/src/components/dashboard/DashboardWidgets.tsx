@@ -20,6 +20,7 @@ interface DashboardWidgetsProps {
   onDeleteApplication: (applicationId: string) => void;
   onViewApplication: (application: Application) => void;
   onRefetchApplications: () => void;
+  onAddJob?: () => void;
 }
 
 export function useDashboardWidgets({
@@ -31,6 +32,7 @@ export function useDashboardWidgets({
   onDeleteApplication,
   onViewApplication,
   onRefetchApplications,
+  onAddJob,
 }: DashboardWidgetsProps) {
   // Ensure applications is always an array
   const safeApplications = Array.isArray(applications) ? applications : [];
@@ -59,7 +61,7 @@ export function useDashboardWidgets({
               message="No upcoming follow-ups scheduled." 
               action={{
                 label: "Add Job",
-                onClick: () => (document.querySelector('[data-tour="add-job-btn"]') as HTMLButtonElement)?.click()
+                onClick: () => onAddJob?.()
               }}
             />
           ),

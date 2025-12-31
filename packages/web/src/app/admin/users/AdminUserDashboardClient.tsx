@@ -36,6 +36,7 @@ import {
   useAdminSetAdmin, 
   useAdminRemoveAdmin 
 } from "@/hooks/queries";
+import { cn } from "@/lib/utils";
 import { adminApi } from "@/utils/api/admin";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminAccessDenied } from "@/components/admin/AdminAccessDenied";
@@ -145,6 +146,7 @@ export default function AdminUserDashboardClient() {
   const { 
     data: userStats, 
     refetch: refetchStats,
+    error: statsError,
     isLoading: isStatsLoading 
   } = useAdminUserStats(canFetchAdminData);
 
@@ -152,6 +154,7 @@ export default function AdminUserDashboardClient() {
   const { 
     data: usersData, 
     refetch: refetchUsers,
+    error: usersError,
     isLoading: isUsersLoading 
   } = useAdminUsers(canFetchAdminData);
 
@@ -578,6 +581,35 @@ export default function AdminUserDashboardClient() {
             </Button>
           </div>
         </motion.div>
+
+        {/* Global Error State for critical data */}
+        {(statsError || usersError) && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="rounded-xl bg-red-50 border border-red-200 p-4 flex flex-col sm:flex-row items-center justify-between gap-4"
+          >
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
+                <AlertCircle className="h-5 w-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-red-900">Connection Error</h3>
+                <p className="text-xs text-red-700">Some dashboard data failed to load. Please try refreshing.</p>
+              </div>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleRefreshData}
+              disabled={isRefreshing}
+              className="border-red-200 hover:bg-red-100 text-red-700 w-full sm:w-auto"
+            >
+              <RefreshCw className={cn("h-4 w-4 mr-2", isRefreshing && "animate-spin")} />
+              Retry Everything
+            </Button>
+          </motion.div>
+        )}
 
         {/* Stats Cards */}
         {userStats && (
@@ -1125,11 +1157,29 @@ export default function AdminUserDashboardClient() {
                   </TableBody>
                 </Table>
 
-                {filteredUsers.length === 0 && (
+                {filteredUsers.length === 0 && !usersError && (
                   <div className="text-center py-12 text-muted-foreground bg-gray-50/50">
                     {searchTerm || statusFilter !== "all" || planFilter !== "all"
                       ? "No users match your filters"
                       : "No users found"}
+                  </div>
+                )}
+
+                {usersError && (
+                  <div className="text-center py-16 bg-red-50/30">
+                    <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-red-100 flex items-center justify-center">
+                      <RefreshCw className="h-6 w-6 text-red-600" />
+                    </div>
+                    <h3 className="text-lg font-bold mb-2">Failed to load users</h3>
+                    <p className="text-muted-foreground mb-6 max-w-xs mx-auto">We encountered an error while fetching the user directory.</p>
+                    <Button 
+                      variant="outline"
+                      onClick={() => refetchUsers()}
+                      className="border-red-200"
+                    >
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Retry User List
+                    </Button>
                   </div>
                 )}
               </div>

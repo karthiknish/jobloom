@@ -5,6 +5,7 @@ import { getAdminDb } from "@/firebase/admin";
 import { withApi, OPTIONS } from "@/lib/api/withApi";
 import { AuthorizationError, NotFoundError, ConflictError } from "@/lib/api/errorResponse";
 import { ERROR_CODES } from "@/lib/api/errorCodes";
+import { NotificationService } from "@/lib/api/notifications";
 
 // Re-export OPTIONS for CORS preflight
 export { OPTIONS };
@@ -161,6 +162,15 @@ export const POST = withApi({
     applicationId: applicationId || null,
     messageId: result.messageId,
     sentAt: new Date().toISOString(),
+  });
+
+  // 17. Create in-app and push notification
+  await NotificationService.createNotification({
+    userId,
+    type: reminderType === "follow_up" ? "follow_up" : "reminder",
+    title: subject,
+    message: notes || `Don't forget to check your application for ${emailProps.jobTitle} at ${emailProps.companyName}.`,
+    actionUrl: applicationId ? `/dashboard?appId=${applicationId}` : "/dashboard",
   });
 
   return {

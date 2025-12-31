@@ -14,6 +14,11 @@ import { JobImportModal } from "@/components/dashboard/JobImportModal";
 import { JobDetailsModal } from "@/components/dashboard/JobDetailsModal";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Progress } from "@/components/ui/progress";
+import { ErrorDisplay } from "@/components/ui/error-display";
+import { FrontendApiError } from "@/lib/api/client";
+import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 
 import { useDashboardLayout } from "@/hooks/useDashboardLayout";
 import { useApplicationManagement } from "@/hooks/useApplicationManagement";
@@ -86,6 +91,23 @@ export function Dashboard({ initialView = "dashboard" }: DashboardProps) {
   );
 
   const [view, setView] = useState<DashboardView>(initialView);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [companyFilter, setCompanyFilter] = useState<string>("all");
+  const [showReminderAlert, setShowReminderAlert] = useState(true);
+
+  // Fetch user preferences using TanStack Query
+  const { 
+    data: preferences, 
+    isLoading: prefsLoading,
+    isFetched: prefsFetched
+  } = useQuery({
+    queryKey: ["preferences", user?.uid],
+    queryFn: () => settingsApi.getPreferences(),
+    enabled: !!user?.uid,
+    staleTime: 5 * 60 * 1000,
+  });
+
   const [boardMode, setBoardMode] = useState<BoardMode>(() => {
     // Load from localStorage on initial render (fallback while API loads)
     if (typeof window !== 'undefined') {
@@ -96,30 +118,25 @@ export function Dashboard({ initialView = "dashboard" }: DashboardProps) {
     }
     return "list";
   });
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [companyFilter, setCompanyFilter] = useState<string>("all");
-  const [showReminderAlert, setShowReminderAlert] = useState(true);
+  
+  const hasSyncedPrefs = React.useRef(false);
 
-  // Load boardMode from user settings on mount
+  // Sync boardMode with preferences only once when they first load
   useEffect(() => {
-    if (!user?.uid) return;
-    
-    settingsApi.getPreferences()
-      .then((response) => {
-        const savedMode = response?.preferences?.boardMode;
-        if (savedMode === 'kanban' || savedMode === 'list') {
-          setBoardMode(savedMode);
-          localStorage.setItem('hireall_dashboard_board_mode', savedMode);
-        }
-      })
-      .catch((error) => {
-        console.error('Failed to load preferences:', error);
-      });
-  }, [user?.uid]);
+    if (prefsFetched && preferences?.preferences?.boardMode && !hasSyncedPrefs.current) {
+      const apiMode = preferences.preferences.boardMode as BoardMode;
+      if (apiMode === 'kanban' || apiMode === 'list') {
+        setBoardMode(apiMode);
+        localStorage.setItem('hireall_dashboard_board_mode', apiMode);
+        hasSyncedPrefs.current = true;
+      }
+    }
+  }, [preferences, prefsFetched]);
 
   // Persist boardMode preference to both localStorage and API
   const handleBoardModeChange = (mode: BoardMode) => {
+    if (mode === boardMode) return;
+    
     setBoardMode(mode);
     localStorage.setItem('hireall_dashboard_board_mode', mode);
     
@@ -145,7 +162,7 @@ export function Dashboard({ initialView = "dashboard" }: DashboardProps) {
   useEffect(() => {
     if (
       onboarding.isLoaded &&
-      !onboarding.hasCompletedDashboardTour &&
+      onboarding.shouldAutoStartTour &&
       user &&
       !loading
     ) {
@@ -213,6 +230,14 @@ export function Dashboard({ initialView = "dashboard" }: DashboardProps) {
   });
 
 
+  // Consolidate errors for display
+  const dashboardError = (userRecordError || applicationsError || jobStatsError) as FrontendApiError | null;
+
+  const handleRetryData = async () => {
+    if (userRecordError) refetchUserRecord();
+    if (applicationsError) refetchApplications();
+    if (jobStatsError) refetchJobStats();
+  };
 
   // Initialize management hooks after refetch functions are available
   const applicationManagement = useApplicationManagement(refetchApplications);
@@ -256,6 +281,7 @@ export function Dashboard({ initialView = "dashboard" }: DashboardProps) {
     onDeleteApplication: applicationManagement.handleDeleteApplication,
     onViewApplication: applicationManagement.handleViewApplication,
     onRefetchApplications: refetchApplications,
+    onAddJob: () => setShowJobForm(true),
   });
 
   // Destructure application management BEFORE conditional returns
@@ -304,7 +330,8 @@ export function Dashboard({ initialView = "dashboard" }: DashboardProps) {
     loading ||
     (userRecordLoading && !userRecord) ||
     (!!userRecord && applicationsLoading && !applications) ||
-    (!!userRecord && jobStatsLoading && !jobStats);
+    (!!userRecord && jobStatsLoading && !jobStats) ||
+    (prefsLoading && !hasSyncedPrefs.current);
   
   if (isDataLoading) {
     return <DashboardSkeleton />;
@@ -334,6 +361,7 @@ export function Dashboard({ initialView = "dashboard" }: DashboardProps) {
 
 
   return (
+    <ErrorBoundary name="Dashboard">
     <div className="min-h-screen bg-background pt-16">
       {/* Clean background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -363,6 +391,16 @@ export function Dashboard({ initialView = "dashboard" }: DashboardProps) {
             }}
             enabled={isMobile}
           >
+        {/* Global Dashboard Error State */}
+        {dashboardError && (
+          <ErrorDisplay 
+            error={dashboardError} 
+            onRetry={handleRetryData}
+            variant="banner"
+            className="mb-8"
+          />
+        )}
+
         {/* Premium Upgrade Banner for Free Users */}
         {plan === "free" && <PremiumUpgradeBanner className="mb-6" />}
 
@@ -490,23 +528,37 @@ export function Dashboard({ initialView = "dashboard" }: DashboardProps) {
             )}
 
             {view === "jobs" && (
-              <DashboardJobsView
-                applications={safeApplications}
-                boardMode={boardMode}
-                setBoardMode={handleBoardModeChange}
-                searchTerm={searchTerm}
-                setSearchTerm={setSearchTerm}
-                statusFilter={statusFilter}
-                setStatusFilter={setStatusFilter}
-                companyFilter={companyFilter}
-                setCompanyFilter={setCompanyFilter}
-                onEditApplication={handleEditApplication}
-                onDeleteApplication={handleDeleteApplicationWrapper}
-                onViewApplication={handleViewApplication}
-                onChanged={refetchApplications}
-                onAddJob={() => setShowJobForm(true)}
-                onImport={() => setShowImportModal(true)}
-              />
+              !prefsFetched ? (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <Skeleton className="h-10 w-64" />
+                    <Skeleton className="h-10 w-32" />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <Skeleton key={i} className="h-48 w-full rounded-xl" />
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <DashboardJobsView
+                  applications={safeApplications}
+                  boardMode={boardMode}
+                  setBoardMode={handleBoardModeChange}
+                  searchTerm={searchTerm} // Note: This is already debounced via DashboardFilters.tsx
+                  setSearchTerm={setSearchTerm}
+                  statusFilter={statusFilter}
+                  setStatusFilter={setStatusFilter}
+                  companyFilter={companyFilter}
+                  setCompanyFilter={setCompanyFilter}
+                  onEditApplication={handleEditApplication}
+                  onDeleteApplication={handleDeleteApplicationWrapper}
+                  onViewApplication={handleViewApplication}
+                  onChanged={refetchApplications}
+                  onAddJob={() => setShowJobForm(true)}
+                  onImport={() => setShowImportModal(true)}
+                />
+              )
             )}
 
             {view === "feedback" && (
@@ -594,6 +646,7 @@ export function Dashboard({ initialView = "dashboard" }: DashboardProps) {
         )}
       </div>
       </div>
-    </div>
+      </div>
+    </ErrorBoundary>
   );
 }

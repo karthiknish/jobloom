@@ -29,6 +29,7 @@ export interface CoverLetterRequest {
   atsOptimization?: boolean;
   keywordFocus?: boolean;
   deepResearch?: boolean;
+  applicationId?: string;
 }
 
 export interface EditorRequest {
@@ -38,12 +39,39 @@ export interface EditorRequest {
   length?: string;
 }
 
+export interface ResumeResponse {
+  content: string;
+  sections: {
+    summary: string;
+    experience: string;
+    skills: string;
+    education: string;
+  };
+  atsScore: number;
+  keywords: string[];
+  suggestions: string[];
+  wordCount: number;
+  source?: 'gemini' | 'fallback' | 'mock';
+}
+
+export interface CoverLetterResponse {
+  content: string;
+  atsScore: number;
+  keywords: string[];
+  improvements: string[];
+  tone: string;
+  wordCount: number;
+  source?: 'gemini' | 'fallback' | 'mock';
+  deepResearch?: boolean;
+  researchInsights?: string[];
+}
+
 export const aiApi = {
   generateResume: (payload: ResumeRequest) =>
-    apiClient.post<any>("/ai/resume", payload),
+    apiClient.post<ResumeResponse>("/ai/resume", payload),
 
   generateCoverLetter: (payload: CoverLetterRequest) =>
-    apiClient.post<any>("/ai/cover-letter", payload),
+    apiClient.post<CoverLetterResponse>("/ai/cover-letter", payload),
 
   generateEditorContent: (payload: EditorRequest) =>
     apiClient.post<{ content: string }>("/ai/editor", {
@@ -52,4 +80,10 @@ export const aiApi = {
       length: "medium",
       ...payload,
     }),
+
+  getCoverLetterHistory: () =>
+    apiClient.get<any[]>("/ai/cover-letter/history"),
+
+  deleteCoverLetterHistory: (id: string) =>
+    apiClient.delete(`/ai/cover-letter/history?id=${id}`),
 };

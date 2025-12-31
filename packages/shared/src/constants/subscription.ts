@@ -12,9 +12,7 @@ export const SUBSCRIPTION_LIMITS: Record<SubscriptionPlan, SubscriptionLimits> =
     advancedAnalytics: false,
     prioritySupport: false,
     customAlerts: false,
-    teamCollaboration: false,
-    apiAccess: false,
-    apiRateLimit: 10,
+    aiGenerationsPerMonth: 3,
   },
   premium: {
     cvAnalysesPerMonth: -1, // unlimited
@@ -23,8 +21,6 @@ export const SUBSCRIPTION_LIMITS: Record<SubscriptionPlan, SubscriptionLimits> =
     advancedAnalytics: true,
     prioritySupport: true,
     customAlerts: true,
-    teamCollaboration: true,
-    apiAccess: true,
-    apiRateLimit: 200,
+    aiGenerationsPerMonth: -1,
   },
 };

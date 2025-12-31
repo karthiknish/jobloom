@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   Dialog,
@@ -102,6 +103,7 @@ export function JobDetailsModal({
   onEdit,
   onChanged,
 }: JobDetailsModalProps) {
+  const router = useRouter();
   useRestoreFocus(open);
 
   const statusOptions = useMemo(
@@ -144,6 +146,11 @@ export function JobDetailsModal({
     if (job?.url) {
       window.open(job.url, "_blank", "noopener,noreferrer");
     }
+  };
+
+  const handleGenerateCoverLetter = () => {
+    onOpenChange(false);
+    router.push(`/career-tools?section=cover-letter&appId=${application._id}`);
   };
 
   return (
@@ -587,6 +594,16 @@ export function JobDetailsModal({
                   View Posting
                 </Button>
               )}
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleGenerateCoverLetter}
+                className="flex-1 h-12 gap-2 border-primary/20 text-primary hover:bg-primary/5 font-semibold"
+              >
+                <Sparkles className="h-4 w-4" />
+                Cover Letter
+              </Button>
               
               <Button
                 variant="ghost"

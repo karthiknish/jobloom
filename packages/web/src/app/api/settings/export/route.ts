@@ -1,13 +1,26 @@
 import { getAdminDb, getAdminStorage } from "@/firebase/admin";
 import { withApi, OPTIONS } from "@/lib/api/withApi";
+import { UsageService } from "@/lib/api/usage";
+import { AuthorizationError } from "@/lib/api/errorResponse";
 
 export { OPTIONS };
 
 export const GET = withApi({
   auth: 'required',
-}, async ({ user }) => {
+}, async ({ user, query }) => {
   const db = getAdminDb();
   const userId = user!.uid;
+
+  // Validate export format
+  const format = (query.format || 'json').toLowerCase();
+  const isAllowed = await UsageService.isFormatAllowed(userId, format);
+
+  if (!isAllowed) {
+    throw new AuthorizationError(
+      `Your current plan does not support exporting in ${format.toUpperCase()} format. Please upgrade to Premium for full export access.`,
+      'FORBIDDEN'
+    );
+  }
 
   // Initialize bucket only when needed
   const bucket = getAdminStorage().bucket();

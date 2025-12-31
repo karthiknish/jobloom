@@ -3,6 +3,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import { withApi, OPTIONS } from "@/lib/api/withApi";
 import { getAdminDb } from "@/firebase/admin";
 import { AuthorizationError } from "@/lib/api/errorResponse";
+import { UsageService } from "@/lib/api/usage";
 
 // Re-export OPTIONS for CORS preflight
 export { OPTIONS };
@@ -41,6 +42,11 @@ export const POST = withApi({
       'FORBIDDEN'
     );
   }
+
+  const userId = body.userId.trim();
+  
+  // Enforce application limits
+  await UsageService.checkFeatureLimit(userId, 'applicationsPerMonth');
 
   const db = getAdminDb();
 

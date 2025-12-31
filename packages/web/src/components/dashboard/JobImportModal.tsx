@@ -116,7 +116,12 @@ export function JobImportModal({
   const extensionSelection = useBulkSelection(extensionJobIds);
 
   // Fetch user record using TanStack Query (only if not provided as prop)
-  const { data: fetchedUserRecord } = useQuery({
+  const { 
+    data: fetchedUserRecord, 
+    error: userRecordError,
+    refetch: refetchUserRecord,
+    isLoading: isUserRecordLoading
+  } = useQuery({
     queryKey: ["dashboard", "user", user?.uid],
     queryFn: () => dashboardApi.getUserByFirebaseUid(user!.uid),
     enabled: !!user?.uid && !userRecordProp,
@@ -587,7 +592,28 @@ export function JobImportModal({
 
           <Separator />
 
-          {/* Extension Import Section */}
+          {userRecordError && !userRecord && (
+            <div className="rounded-xl bg-red-50 border border-red-100 p-6 text-center">
+              <div className="mx-auto mb-3 h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
+                <AlertTriangle className="h-5 w-5 text-red-600" />
+              </div>
+              <h3 className="text-sm font-bold text-red-900 mb-1">Failed to Load User Data</h3>
+              <p className="text-xs text-red-700 mb-4">
+                We couldn't retrieve your account information. This is required to import jobs.
+              </p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => refetchUserRecord()}
+                className="border-red-200 hover:bg-red-100 text-red-700"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Retry Loading
+              </Button>
+            </div>
+          )}
+
+          {/* Import Method Selection */}
           <AnimatePresence mode="wait">
             {importMethod === "extension" && (
               <motion.div

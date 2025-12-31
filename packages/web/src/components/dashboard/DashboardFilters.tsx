@@ -45,7 +45,7 @@ export function DashboardFilters({
   React.useEffect(() => {
     const timer = setTimeout(() => {
       setSearchTerm(localSearchTerm);
-    }, 300);
+    }, 500);
     return () => clearTimeout(timer);
   }, [localSearchTerm, setSearchTerm]);
   return (

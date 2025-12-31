@@ -55,4 +55,6 @@ export const settingsApi = {
   exportData: () => apiClient.get<any>("/settings/export"),
   deleteAccount: (payload: { confirmation: string; reason?: string }) =>
     apiClient.post<any>("/settings/delete-account", payload),
+  updateRootProfile: (payload: { name?: string; photoURL?: string }) =>
+    apiClient.patch<any>("/app/profile", payload),
 };

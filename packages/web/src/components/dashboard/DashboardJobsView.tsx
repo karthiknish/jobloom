@@ -94,10 +94,13 @@ export const DashboardJobsView = React.memo(({
     }
   }, [safeApplications]);
   
-  // Filtered applications
+  // Use deferred value for search to keep UI responsive on large lists
+  const deferredSearchTerm = React.useDeferredValue(searchTerm);
+  
+  // Filtered applications - now using deferredSearchTerm for extra performance
   const filteredApplications = useMemo(() => 
-    filterApplications(optimisticApplications, searchTerm, statusFilter, companyFilter),
-    [optimisticApplications, searchTerm, statusFilter, companyFilter]
+    filterApplications(optimisticApplications, deferredSearchTerm, statusFilter, companyFilter),
+    [optimisticApplications, deferredSearchTerm, statusFilter, companyFilter]
   );
   
   // Unique companies for filter

@@ -216,13 +216,7 @@ function SignUpInner() {
     setLoading(true);
     try {
       await signInWithGoogle();
-      // Send email verification for Google accounts too
-      try {
-        await sendEmailVerification();
-      } catch (verificationError) {
-        console.warn('Failed to send email verification:', verificationError);
-      }
-      router.replace(`/verify-email?redirect_url=${encodeURIComponent('/dashboard')}`);
+      router.replace(redirectUrlComplete);
     } catch (err: unknown) {
       const error = err as { code?: string; message?: string };
 

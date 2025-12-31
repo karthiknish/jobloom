@@ -13,6 +13,7 @@
 import { z } from "zod";
 import { withApi, OPTIONS } from "@/lib/api/withApi";
 import { getAdminDb } from "@/firebase/admin";
+import { UsageService } from "@/lib/api/usage";
 import { AuthorizationError } from "@/lib/api/errorResponse";
 import { ERROR_CODES } from "@/lib/api/errorCodes";
 import {
@@ -78,21 +79,8 @@ export const POST = withApi({
   rateLimit: 'ai-resume',
   bodySchema: resumeRequestSchema,
 }, async ({ user, body, requestId }) => {
-  // Check subscription tier
-  const db = getAdminDb();
-  const userDoc = await db.collection("users").doc(user!.uid).get();
-  const userData = userDoc.data();
-
-  const isAdmin = userData?.isAdmin === true;
-  const isPremium = userData?.subscription?.tier === 'premium' || 
-                    userData?.subscription?.status === 'active';
-
-  if (!userData || (!isPremium && !isAdmin)) {
-    throw new AuthorizationError(
-      "Premium subscription required for AI resume generation",
-      ERROR_CODES.PAYMENT_REQUIRED
-    );
-  }
+  // Check monthly limit
+  await UsageService.checkFeatureLimit(user!.uid, 'aiGenerationsPerMonth');
 
   // Normalize the request
   const resumeRequest: ResumeGenerationRequest = {
@@ -109,6 +97,7 @@ export const POST = withApi({
   };
 
   // Generate resume
+  const db = getAdminDb();
   let aiResult: ResumeGenerationResult;
   let source: ResumeApiResponse["source"] = "gemini";
 
@@ -159,7 +148,7 @@ function buildResumeResponse(
   const summary = sanitize(result.summary) ||
     generateProfessionalSummary(request.jobTitle, request.experience, request.level, request.industry);
   const experience = sanitize(result.experience) ||
-    generateExperienceSection(request.experience, request.level);
+    generateExperienceSection(request.experience, request.level, request.industry);
   const skills = sanitize(result.skills) ||
     generateSkillsSection(request.skills, request.industry, request.level);
   const education = sanitize(result.education) ||
@@ -208,7 +197,7 @@ function buildResumeResponse(
 
 function generateFallbackResume(request: ResumeGenerationRequest): ResumeGenerationResult {
   const summary = generateProfessionalSummary(request.jobTitle, request.experience, request.level, request.industry);
-  const experience = generateExperienceSection(request.experience, request.level);
+  const experience = generateExperienceSection(request.experience, request.level, request.industry);
   const skills = generateSkillsSection(request.skills, request.industry, request.level);
   const education = generateEducationSection(request.education);
   const content = generateResumeContent({
@@ -227,67 +216,145 @@ function generateProfessionalSummary(
   industry: string
 ): string {
   const levelMap: Record<string, string[]> = {
-    entry: ["motivated", "detail-oriented", "eager to learn"],
-    mid: ["skilled", "results-driven", "collaborative"],
-    senior: ["experienced", "strategic", "leadership"],
-    executive: ["visionary", "accomplished", "transformational"]
+    entry: ["Motivated and fast-learning", "Dedicated and detail-oriented", "Ambitious and proactive"],
+    mid: ["Dynamic and results-driven", "Skilled and collaborative", "Strategic-thinking and efficient"],
+    senior: ["Seasoned and strategic", "Accomplished leadership-focused", "Expert and innovation-driven"],
+    executive: ["Visionary and transformational", "High-impact and results-oriented", "Accomplished C-suite"]
   };
 
   const industryMap: Record<string, string[]> = {
-    technology: ["software development", "system architecture", "technical solutions"],
-    healthcare: ["patient care", "medical protocols", "healthcare delivery"],
-    finance: ["financial analysis", "risk management", "investment strategies"],
-    marketing: ["brand development", "campaign management", "market research"],
+    technology: [
+      "software development and lifecycle management", 
+      "implementing scalable technical solutions", 
+      "leveraging agile methodologies to drive efficiency"
+    ],
+    healthcare: [
+      "delivering high-quality patient care", 
+      "navigating complex medical protocols and compliance", 
+      "optimizing healthcare delivery systems"
+    ],
+    finance: [
+      "advanced financial modeling and risk assessment", 
+      "driving profitability through strategic investment", 
+      "comprehensive budget management and reporting"
+    ],
+    marketing: [
+      "executing multi-channel brand strategies", 
+      "leveraging data analytics for campaign optimization", 
+      "driving engagement through creative storytelling"
+    ],
+    education: [
+      "fostering inclusive learning environments",
+      "developing innovative curriculum standards",
+      "leveraging educational technology for student success"
+    ]
   };
 
   const levelWords = levelMap[level] || levelMap.mid;
-  const industryWords = industryMap[industry] || industryMap.technology;
+  const industryWords = industryMap[industry.toLowerCase()] || industryMap.technology;
+
+  const prefix = levelWords[Math.floor(Math.random() * levelWords.length)];
+  const focus = industryWords[Math.floor(Math.random() * industryWords.length)];
 
   return `PROFESSIONAL SUMMARY
-${levelWords[Math.floor(Math.random() * levelWords.length)]} professional with expertise in ${industryWords[Math.floor(Math.random() * industryWords.length)]}. 
-Seeking ${jobTitle} position where I can leverage my skills and experience to drive organizational success.`;
+${prefix} professional with a strong track record in ${focus}. Proven ability to align ${industry} strategies with organizational goals to deliver measurable results. Seeking to leverage expertise in a ${jobTitle} role to drive innovation and team success.`;
 }
 
-function generateExperienceSection(experience: string, level: string): string {
-  const actionVerbs = level === 'senior' || level === 'executive' 
-    ? ["Led", "Directed", "Managed", "Oversaw", "Transformed"]
-    : ["Developed", "Implemented", "Contributed", "Assisted", "Executed"];
+function generateExperienceSection(experience: string, level: string, industry: string): string {
+  const industryAchievements: Record<string, string[]> = {
+    technology: [
+      "Streamlined deployment pipelines, reducing release time by 25%.",
+      "Architected and implemented a robust microservices architecture.",
+      "Collaborated with cross-functional teams to deliver high-priority features ahead of schedule.",
+      "Optimized system performance, resulting in a 30% reduction in latency."
+    ],
+    healthcare: [
+      "Improved patient satisfaction scores by 15% through protocol optimization.",
+      "Ensured 100% compliance with HIPAA and other regulatory standards.",
+      "Coordinated between medical departments to streamline patient flow.",
+      "Implemented a new electronic health record system with minimal downtime."
+    ],
+    finance: [
+      "Reduced operational costs by 20% through strategic vendor negotiations.",
+      "Managed a $2M annual budget with strict adherence to fiscal targets.",
+      "Developed advanced risk models that identified potential savings of $500k.",
+      "Automated monthly reporting processes, saving 15 hours per week."
+    ],
+    marketing: [
+      "Increased organic web traffic by 40% through targeted SEO initiatives.",
+      "Led a successful product launch campaign that exceeded sales targets by 20%.",
+      "Optimized ad spend ROI by 25% using deep data analytics.",
+      "Managed community engagement across social platforms, increasing followers by 10k."
+    ]
+  };
 
-  const randomAction = actionVerbs[Math.floor(Math.random() * actionVerbs.length)];
+  const genericAchievements = [
+    "Successfully managed multiple complex projects from inception to completion.",
+    "Improved team productivity by implementing new workflow standards.",
+    "Consistently exceeded performance targets and received multiple commendations.",
+    "Mentored junior team members and fostered a culture of continuous learning."
+  ];
+
+  const industrySpecific = industryAchievements[industry.toLowerCase()] || [];
+  const allAchievements = [...industrySpecific, ...genericAchievements];
+  
+  // Select 3 random unique achievements
+  const selected = [];
+  const pool = [...allAchievements];
+  for (let i = 0; i < 3 && pool.length > 0; i++) {
+    const idx = Math.floor(Math.random() * pool.length);
+    selected.push(pool.splice(idx, 1)[0]);
+  }
+
+  const actionVerbs = level === 'senior' || level === 'executive' 
+    ? ["Directed", "Orchestrated", "Spearheaded", "Transformed", "Pioneered"]
+    : ["Implemented", "Executed", "Optimized", "Facilitated", "Produced"];
+
+  const primaryAction = actionVerbs[Math.floor(Math.random() * actionVerbs.length)];
 
   return `PROFESSIONAL EXPERIENCE
-${randomAction} key initiatives that resulted in measurable improvements.
+${primaryAction} high-impact initiatives and collaborated with key stakeholders to deliver consistent value.
 
-- Collaborated with cross-functional teams to deliver projects on time and within budget
-- Developed and implemented innovative solutions to complex business challenges
+${selected.map(item => `- ${item}`).join('\n')}
 
+---
+FORMER ROLES & INPUT DATA:
 ${experience}`;
 }
 
 function generateSkillsSection(skills: string[], industry: string, level: string): string {
   const industrySkills: Record<string, string[]> = {
-    technology: ["JavaScript", "Python", "React", "Node.js", "AWS", "Docker", "Git", "SQL"],
-    healthcare: ["Patient Care", "Medical Terminology", "HIPAA Compliance", "Electronic Health Records"],
-    finance: ["Financial Analysis", "Excel", "QuickBooks", "Risk Assessment", "Budget Management"],
-    marketing: ["Digital Marketing", "SEO/SEM", "Content Strategy", "Analytics", "Social Media"],
+    technology: ["JavaScript/TypeScript", "React/Next.js", "Node.js", "Python", "AWS/Cloud", "Docker/K8s", "Git", "SQL/NoSQL", "Agile/Scrum"],
+    healthcare: ["Patient Care", "Medical Terminology", "HIPAA Compliance", "Electronic Health Records", "Clinical Research", "Emergency Care"],
+    finance: ["Financial Analysis", "Modeling", "Reporting", "QuickBooks/ERP", "Risk Assessment", "Compliance", "Tax Strategy"],
+    marketing: ["SEO/SEM", "Content Strategy", "Digital Ads", "Google Analytics", "Social Media", "CRM", "Brand Management"],
   };
 
-  const defaultSkills = industrySkills[industry] || industrySkills.technology;
-  const allSkills = Array.from(new Set([...skills, ...defaultSkills]));
+  const defaultSkills = industrySkills[industry.toLowerCase()] || industrySkills.technology;
+  const combined = Array.from(new Set([...skills, ...defaultSkills]));
+  
+  const technical = combined.slice(0, 10);
+  const core = [
+    "Problem Solving", 
+    "Strategic Planning", 
+    "Team Leadership", 
+    "Effective Communication", 
+    "Adaptability", 
+    "Project Management"
+  ];
 
-  return `TECHNICAL SKILLS
-${allSkills.join(" | ")}
+  return `TECHNICAL & CORE COMPETENCIES
+${technical.join(" | ")}
 
-SOFT SKILLS
-- Communication and Presentation
-- Problem Solving and Critical Thinking
-- Team Collaboration and Leadership`;
+PROFESSIONAL SKILLS
+${core.join(" • ")}`;
 }
 
 function generateEducationSection(education: string): string {
-  return `EDUCATION
-${education || "- Bachelor's Degree in relevant field"}
-- Additional certifications and professional development`;
+  return `EDUCATION & CERTIFICATIONS
+${education || "- Bachelor's Degree in relevant field (Honors Candidate)"}
+- Professional Development: Continuous learning in industry-standard tools and methodologies
+- Certifications: Relevant professional licenses and certifications obtained`;
 }
 
 function generateResumeContent(sections: {

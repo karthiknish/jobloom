@@ -32,7 +32,7 @@ export const GET = withApi({
 
   return {
     sessions,
-    note: "Firebase Auth limitations prevent listing all active sessions. Only the current session is shown."
+    note: "Due to Firebase Auth's privacy model, individual session tracking is limited. Only your current session is displayed here. If you suspect unauthorized access, we recommend using 'Revoke All Sessions' to secure your account immediately."
   };
 });
 

@@ -11,16 +11,17 @@ import { showSuccess, showError } from "@/components/ui/Toast";
 import type { CareerToolsSection } from "./CareerToolsSidebar";
 import type { ResumeData as CVResumeData } from "@/types/resume";
 import type { ResumeScore as ATSResumeScore } from "@/lib/ats";
-import type { ResumeData as AdvancedResumeData } from "@/components/application/types";
+import type { ResumeData, ResumeScore } from "@/components/application/types";
 import {
   LEGACY_STORAGE_KEYS,
   STORAGE_KEYS,
   readAndMigrateJsonFromStorage,
   writeJsonToStorage,
 } from "@/constants/storageKeys";
+import { resumeApi, type ResumeVersion } from "@/utils/api/resumeApi";
 
 // Default advanced resume data
-const defaultAdvancedResumeData: AdvancedResumeData = {
+const defaultResumeData: ResumeData = {
   personalInfo: {
     fullName: "",
     email: "",
@@ -52,8 +53,8 @@ export function useCareerToolsState() {
   // Resume Builder state
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
-  const [advancedResumeData, setAdvancedResumeData] = useState<AdvancedResumeData>(defaultAdvancedResumeData);
-  const [advancedResumeScore, setAdvancedResumeScore] = useState(calculateResumeScore(defaultAdvancedResumeData));
+  const [advancedResumeData, setAdvancedResumeData] = useState<ResumeData>(defaultResumeData);
+  const [advancedResumeScore, setAdvancedResumeScore] = useState<ResumeScore>(calculateResumeScore(defaultResumeData));
   const [activeBuilderTab, setActiveBuilderTab] = useState("theme");
   const [resumeOptions, setResumeOptions] = useState<ResumePDFOptions>({
     template: 'modern',
@@ -61,6 +62,8 @@ export function useCareerToolsState() {
     fontSize: 11,
     font: 'helvetica'
   });
+  const [versionHistory, setVersionHistory] = useState<ResumeVersion[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
   const showManualResumeActions = activeSection === "manual-builder";
 
@@ -155,12 +158,53 @@ export function useCareerToolsState() {
 
   // Load saved resume data on mount
   useEffect(() => {
-    const parsedData = readAndMigrateJsonFromStorage<any>(
-      STORAGE_KEYS.resumeData,
-      LEGACY_STORAGE_KEYS.resumeData
-    );
-    if (parsedData) setAdvancedResumeData(parsedData);
-  }, []);
+    async function initResume() {
+      // 1. Try Firestore first if user is logged in
+      if (user?.uid) {
+        try {
+          const latest = await resumeApi.getLatestResumeVersion(user.uid);
+          if (latest) {
+            setAdvancedResumeData(latest.data);
+            setResumeOptions(latest.options);
+            return;
+          }
+        } catch (error) {
+          console.warn('Failed to load resume from Firestore:', error);
+        }
+      }
+
+      // 2. Fallback to localStorage migration
+      const parsedData = readAndMigrateJsonFromStorage<any>(
+        STORAGE_KEYS.resumeData,
+        LEGACY_STORAGE_KEYS.resumeData
+      );
+      if (parsedData) setAdvancedResumeData(parsedData);
+    }
+
+    if (!authLoading) {
+      initResume();
+    }
+  }, [user?.uid, authLoading]);
+
+  // Load history when manual builder is active
+  useEffect(() => {
+    if (showManualResumeActions && user?.uid) {
+      fetchHistory();
+    }
+  }, [showManualResumeActions, user?.uid]);
+
+  const fetchHistory = useCallback(async () => {
+    if (!user?.uid) return;
+    setIsLoadingHistory(true);
+    try {
+      const history = await resumeApi.getResumeVersions(user.uid);
+      setVersionHistory(history);
+    } catch (error) {
+      console.error('Failed to fetch resume history:', error);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  }, [user?.uid]);
 
   // Update score when data changes
   useEffect(() => {
@@ -168,20 +212,53 @@ export function useCareerToolsState() {
   }, [advancedResumeData]);
 
   // Resume actions
-  const saveResume = useCallback(async () => {
+  const saveResume = useCallback(async (name?: string) => {
+    if (!user?.uid) {
+      showError("Please sign in to save your resume");
+      return;
+    }
+
     setSaving(true);
     try {
+      // 1. Save to Firestore (Snapshot)
+      await resumeApi.saveResumeVersion(
+        user.uid,
+        advancedResumeData,
+        resumeOptions,
+        advancedResumeScore,
+        name
+      );
+
+      // 2. Keep localStorage as a local secondary backup/cache
       writeJsonToStorage(STORAGE_KEYS.resumeData, advancedResumeData, LEGACY_STORAGE_KEYS.resumeData);
-      await new Promise(resolve => setTimeout(resolve, 500));
+      
       setDirty(false);
-      showSuccess("Resume saved successfully!");
+      showSuccess("Resume version saved!");
+      fetchHistory(); // Refresh history list
     } catch (error) {
       console.error('Save error:', error);
-      showError("Failed to save resume");
+      showError("Failed to save resume version");
     } finally {
       setSaving(false);
     }
-  }, [advancedResumeData]);
+  }, [user?.uid, advancedResumeData, resumeOptions, advancedResumeScore, fetchHistory]);
+
+  const restoreVersion = useCallback((version: ResumeVersion) => {
+    setAdvancedResumeData(version.data);
+    setResumeOptions(version.options);
+    setDirty(true);
+    showSuccess("Resume version restored! Don't forget to save if you want to keep it as latest.");
+  }, []);
+
+  const deleteVersion = useCallback(async (versionId: string) => {
+    try {
+      await resumeApi.deleteResumeVersion(versionId);
+      setVersionHistory(prev => prev.filter(v => v.id !== versionId));
+      showSuccess("Version removed from history");
+    } catch (error) {
+      showError("Failed to delete version");
+    }
+  }, []);
 
   const exportResume = useCallback(async () => {
     try {
@@ -214,27 +291,27 @@ export function useCareerToolsState() {
   }, [advancedResumeData, resumeOptions]);
 
   // Update handlers
-  const updateAdvancedPersonalInfo = useCallback((personalInfo: AdvancedResumeData['personalInfo']) => {
+  const updateAdvancedPersonalInfo = useCallback((personalInfo: ResumeData['personalInfo']) => {
     setAdvancedResumeData(prev => ({ ...prev, personalInfo }));
     setDirty(true);
   }, []);
 
-  const updateAdvancedExperience = useCallback((experience: AdvancedResumeData['experience']) => {
+  const updateAdvancedExperience = useCallback((experience: ResumeData['experience']) => {
     setAdvancedResumeData(prev => ({ ...prev, experience }));
     setDirty(true);
   }, []);
 
-  const updateAdvancedSkills = useCallback((skills: AdvancedResumeData['skills']) => {
+  const updateAdvancedSkills = useCallback((skills: ResumeData['skills']) => {
     setAdvancedResumeData(prev => ({ ...prev, skills }));
     setDirty(true);
   }, []);
 
-  const updateAdvancedEducation = useCallback((education: AdvancedResumeData['education']) => {
+  const updateAdvancedEducation = useCallback((education: ResumeData['education']) => {
     setAdvancedResumeData(prev => ({ ...prev, education }));
     setDirty(true);
   }, []);
 
-  const updateAdvancedProjects = useCallback((projects: AdvancedResumeData['projects']) => {
+  const updateAdvancedProjects = useCallback((projects: ResumeData['projects']) => {
     setAdvancedResumeData(prev => ({ ...prev, projects }));
     setDirty(true);
   }, []);
@@ -389,6 +466,13 @@ export function useCareerToolsState() {
     exportResume,
     previewResume,
     handleResumeImport,
+    restoreVersion,
+    deleteVersion,
+    fetchHistory,
+    
+    // History State
+    versionHistory,
+    isLoadingHistory,
     
     // Update handlers
     updateAdvancedPersonalInfo,

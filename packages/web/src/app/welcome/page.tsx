@@ -7,13 +7,11 @@ import { motion } from "framer-motion";
 import { CheckCircle, ArrowRight, Sparkles, Target, Zap, Loader2, PlayCircle, Plus, Chrome } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useTourContext } from "@/providers/onboarding-tour-provider";
 
 function WelcomeInner() {
   const router = useRouter();
   const search = useSearchParams();
   const { user } = useFirebaseAuth();
-  const tour = useTourContext();
 
   const [redirectUrl] = useState(search.get("redirect_url") || "/dashboard");
 
@@ -30,12 +28,8 @@ function WelcomeInner() {
   };
 
   const handleStartTour = () => {
-    // Go to dashboard and start the tour
+    // Go to dashboard; the Dashboard component will handle auto-starting the tour
     router.replace('/dashboard');
-    // Small delay to ensure dashboard loads first
-    setTimeout(() => {
-      tour.startDashboardTour();
-    }, 500);
   };
 
   if (!user) {

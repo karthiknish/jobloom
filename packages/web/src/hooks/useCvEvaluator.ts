@@ -50,7 +50,9 @@ export function useCvEvaluator(options: UseCvEvaluatorOptions = {}) {
   // Get upload limits using TanStack Query
   const {
     data: limitsData,
-    isLoading: loadingLimits
+    isLoading: loadingLimits,
+    error: limitsError,
+    refetch: refetchLimits
   } = useQuery({
     queryKey: ['cvAnalyses', 'limits'],
     queryFn: () => cvEvaluatorApi.getUploadLimits(),
@@ -174,14 +176,17 @@ export function useCvEvaluator(options: UseCvEvaluatorOptions = {}) {
     // Actions
     fetchAnalyses: refetchAnalyses,
     fetchStats: refetchStats,
+    fetchLimits: refetchLimits,
     uploadCv,
     deleteAnalysis,
     refresh,
     refetchAnalyses,
     refetchStats,
+    refetchLimits,
     getAnalysesByStatus,
     uploadLimits: limitsData?.uploadLimits,
-    loadingLimits
+    loadingLimits,
+    limitsError
   };
 }
 

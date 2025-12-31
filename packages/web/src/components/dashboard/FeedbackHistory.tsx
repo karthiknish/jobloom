@@ -5,9 +5,10 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MessageSquare, ThumbsUp, ThumbsDown, Brain, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { MessageSquare, ThumbsUp, ThumbsDown, Brain, Clock, RefreshCw } from "lucide-react";
 
 interface FeedbackItem {
   id: string;
@@ -19,7 +20,7 @@ interface FeedbackItem {
 }
 
 export function FeedbackHistory() {
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["feedback", "history"],
     queryFn: async () => {
       const res = await fetch("/api/feedback");
@@ -42,9 +43,21 @@ export function FeedbackHistory() {
 
   if (error) {
     return (
-      <Card className="border-red-200 bg-red-50">
-        <CardContent className="pt-6">
-          <p className="text-red-600">Failed to load feedback history. Please try again later.</p>
+      <Card className="border-red-100 bg-red-50/50 dark:bg-red-900/10 dark:border-red-900/20">
+        <CardContent className="pt-6 flex flex-col items-center text-center">
+          <div className="h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/20 flex items-center justify-center mb-4">
+            <RefreshCw className="h-6 w-6 text-red-600" />
+          </div>
+          <p className="text-red-600 font-medium mb-4">Failed to load feedback history</p>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => refetch()}
+            className="border-red-200 hover:bg-red-100 dark:border-red-800"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Try Again
+          </Button>
         </CardContent>
       </Card>
     );

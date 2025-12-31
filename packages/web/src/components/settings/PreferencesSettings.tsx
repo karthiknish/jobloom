@@ -38,38 +38,6 @@ export function PreferencesSettings() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-8">
-          {/* Appearance Section */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-              Appearance
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={control}
-                name="preferences.theme"
-                render={({ field }) => (
-                  <FormItem className="space-y-1.5 p-4 rounded-xl border border-border/50 bg-muted/20">
-                    <FormLabel className="text-sm font-semibold flex items-center gap-1.5">
-                      Visual Theme
-                      <HelpTooltip content="Choose between light or dark mode, or follow your system settings." />
-                    </FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <FormControl>
-                        <SelectTrigger className="input-premium bg-background">
-                          <SelectValue placeholder="Select theme" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="light">Light</SelectItem>
-                        <SelectItem value="dark">Dark</SelectItem>
-                        <SelectItem value="system">System Default</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-              />
-            </div>
-          </div>
 
           {/* Core Feature Defaults */}
           <div className="space-y-4">

@@ -16,9 +16,11 @@ import { BlogTable } from "./BlogTable";
 import { BlogPagination } from "./BlogPagination";
 import { BulkActions } from "./BulkActions";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { Button } from "@/components/ui/button";
 import type { BlogPost } from "@/types/api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
+import { RefreshCw, AlertCircle } from "lucide-react";
 
 function BlogManagementSkeleton() {
   return (
@@ -120,6 +122,7 @@ export function BlogManagement() {
   const {
     data: posts,
     isLoading: postsLoading,
+    error: postsError,
     refetch: refetchPosts,
   } = useQuery({
     queryKey: ["admin", "blog", "posts", statusFilter],
@@ -135,6 +138,8 @@ export function BlogManagement() {
   const {
     data: stats,
     isLoading: statsLoading,
+    error: statsError,
+    refetch: refetchStats,
   } = useQuery({
     queryKey: ["admin", "blog", "stats"],
     queryFn: async () => {
@@ -340,6 +345,19 @@ export function BlogManagement() {
               </Card>
             ))}
           </div>
+        ) : statsError ? (
+          <Card className="border-red-100 bg-red-50/30">
+            <CardContent className="p-6 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <AlertCircle className="h-5 w-5 text-red-600" />
+                <p className="text-red-600 font-medium">Failed to load statistics</p>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => refetchStats()} className="border-red-200">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Retry
+              </Button>
+            </CardContent>
+          </Card>
         ) : (
           <BlogStats stats={stats} />
         )}
@@ -391,6 +409,18 @@ export function BlogManagement() {
                     <Skeleton className="h-8 w-24" />
                   </div>
                 ))}
+              </div>
+            ) : postsError ? (
+              <div className="p-12 text-center">
+                <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-red-100 flex items-center justify-center">
+                  <RefreshCw className="h-6 w-6 text-red-600" />
+                </div>
+                <h3 className="text-lg font-bold mb-2 text-foreground">Failed to load blog posts</h3>
+                <p className="text-muted-foreground mb-6 max-w-xs mx-auto">We encountered an error while fetching the list of articles. Please try again.</p>
+                <Button onClick={() => refetchPosts()} className="flex items-center gap-2 mx-auto">
+                  <RefreshCw className="h-4 w-4" />
+                  Retry Fetching
+                </Button>
               </div>
             ) : paginatedPosts.length > 0 ? (
               <>

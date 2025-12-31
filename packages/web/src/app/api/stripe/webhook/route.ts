@@ -8,6 +8,7 @@ import {
   createInternalError,
 } from "@/lib/api/errorResponse";
 import { withApi } from "@/lib/api/withApi";
+import { NotificationService } from "@/lib/api/notifications";
 
 export const runtime = "nodejs";
 
@@ -143,11 +144,24 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
       
       // Update subscription payment status
       await getDb().collection("subscriptions").doc(subscriptionId).update({
-        lastPaymentAt: FieldValue.serverTimestamp(),
-        lastPaymentAmount: invoice.amount_paid / 100,
         lastPaymentCurrency: invoice.currency,
         updatedAt: FieldValue.serverTimestamp(),
       });
+
+      // Notify user of successful renewal
+      const subDoc = await getDb().collection("subscriptions").doc(subscriptionId).get();
+      if (subDoc.exists) {
+        const subData = subDoc.data();
+        if (subData?.userId) {
+          await NotificationService.createNotification({
+            userId: subData.userId,
+            type: "achievement", // Or "system"
+            title: "Subscription Renewed",
+            message: `Your premium subscription has been successfully renewed. Thank you for being a part of HireAll!`,
+            actionUrl: "/settings?tab=subscription",
+          });
+        }
+      }
     }
   }, "invoice.payment_succeeded");
 }
@@ -177,10 +191,34 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
             paymentFailedAt: FieldValue.serverTimestamp(),
             updatedAt: FieldValue.serverTimestamp(),
           });
+
+          // Send notification to user
+          await NotificationService.createNotification({
+            userId: subscriptionData.userId,
+            type: "alert",
+            title: "Payment Failed",
+            message: "Your latest subscription payment failed. Please update your payment method to avoid service interruption.",
+            actionUrl: "/settings?tab=subscription",
+          });
         }
       }
     }
   }, "invoice.payment_failed");
+}
+
+async function handleTrialWillEnd(subscription: Stripe.Subscription) {
+  return await withWebhookRetry(async () => {
+    const userId = subscription.metadata?.userId;
+    if (!userId) return;
+
+    await NotificationService.createNotification({
+      userId,
+      type: "alert",
+      title: "Trial Ending Soon",
+      message: "Your premium trial is ending in 3 days. Hope you enjoyed the features!",
+      actionUrl: "/settings?tab=subscription",
+    });
+  }, "customer.subscription.trial_will_end");
 }
 
 async function handleCustomerUpdated(customer: Stripe.Customer) {
@@ -271,8 +309,7 @@ export const POST = withApi({
       }
       case "customer.subscription.trial_will_end": {
         const subscription = event.data.object as Stripe.Subscription;
-        // Handle trial ending notification
-        console.log(`Trial ending for subscription ${subscription.id}`);
+        await handleTrialWillEnd(subscription);
         break;
       }
       default: {

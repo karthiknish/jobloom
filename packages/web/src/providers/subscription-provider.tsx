@@ -21,6 +21,7 @@ export interface SubscriptionState {
   currentUsage?: {
     cvAnalyses: number;
     applications: number;
+    aiGenerations: number;
   };
   isLoading: boolean;
   error: string | null;

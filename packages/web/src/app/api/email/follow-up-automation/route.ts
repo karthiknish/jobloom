@@ -3,6 +3,7 @@ import { sendEmail } from "@/lib/email";
 import { renderReminderEmailHtml, renderReminderEmailText, REMINDER_EMAIL_SUBJECT } from "@/emails/reminderEmail";
 import { getAdminDb } from "@/firebase/admin";
 import { withApi, OPTIONS } from "@/lib/api/withApi";
+import { NotificationService } from "@/lib/api/notifications";
 
 // Re-export OPTIONS for CORS preflight
 export { OPTIONS };
@@ -134,6 +135,15 @@ export const POST = withApi({
           messageId: result.messageId,
           sentAt: new Date().toISOString(),
           automated: true,
+        });
+
+        // Create in-app and push notification
+        await NotificationService.createNotification({
+          userId,
+          type: "follow_up",
+          title: subject,
+          message: `It's time to follow up on your application for ${emailProps.jobTitle} at ${emailProps.companyName}.`,
+          actionUrl: `/dashboard?appId=${applicationId}`,
         });
       } else {
         results.errors++;

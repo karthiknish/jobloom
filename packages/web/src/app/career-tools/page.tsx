@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Save, Download, Eye } from "lucide-react";
 import { ensureFirebaseApp } from "@/firebase/client";
@@ -179,6 +180,10 @@ const ResumeImporter = dynamic(
 );
 
 export default function CareerToolsPage() {
+  const searchParams = useSearchParams();
+  const sectionParam = searchParams.get("section");
+  const appIdParam = searchParams.get("appId");
+
   // Ensure Firebase initialized
   useEffect(() => {
     ensureFirebaseApp();
@@ -208,6 +213,13 @@ export default function CareerToolsPage() {
     refresh,
   } = state;
 
+  // Handle section from URL
+  useEffect(() => {
+    if (sectionParam && ["dashboard", "ai-generator", "manual-builder", "import", "cv-optimizer", "cover-letter"].includes(sectionParam)) {
+      setActiveSection(sectionParam as any);
+    }
+  }, [sectionParam, setActiveSection]);
+
   // Onboarding state and tour
   const onboarding = useOnboardingState();
   const tour = useTourContext();
@@ -217,7 +229,7 @@ export default function CareerToolsPage() {
   useEffect(() => {
     if (
       onboarding.isLoaded &&
-      onboarding.isNewUser &&
+      onboarding.shouldAutoStartTour &&
       !localStorage.getItem('hireall_career_wizard_shown') &&
       user &&
       !authLoading
@@ -228,13 +240,13 @@ export default function CareerToolsPage() {
       }, 800);
       return () => clearTimeout(timer);
     }
-  }, [onboarding.isLoaded, onboarding.isNewUser, user, authLoading]);
+  }, [onboarding.isLoaded, onboarding.shouldAutoStartTour, user, authLoading]);
 
   // Auto-start Resume evaluator tour for new users
   useEffect(() => {
     if (
       onboarding.isLoaded &&
-      onboarding.isNewUser &&
+      onboarding.shouldAutoStartTour &&
       !onboarding.hasCompletedCvTour &&
       user &&
       !authLoading &&
@@ -245,7 +257,7 @@ export default function CareerToolsPage() {
       }, 1000);
       return () => clearTimeout(timer);
     }
-  }, [onboarding.isLoaded, onboarding.isNewUser, onboarding.hasCompletedCvTour, user, authLoading, tour, activeSection]);
+  }, [onboarding.isLoaded, onboarding.shouldAutoStartTour, onboarding.hasCompletedCvTour, user, authLoading, tour, activeSection]);
 
   // Loading state
   if (authLoading) {
@@ -306,7 +318,7 @@ export default function CareerToolsPage() {
           />
         );
       case "cover-letter":
-        return <AICoverLetterGenerator />;
+        return <AICoverLetterGenerator applicationId={appIdParam || undefined} />;
       default:
         return <CareerDashboard state={state} onSectionChange={setActiveSection} />;
     }

@@ -68,12 +68,14 @@ service cloud.firestore {
       
       allow create: if isOwner(userId)
         && request.resource.data.keys().hasOnly([
-          'email', 'name', 'displayName', 'createdAt', 'updatedAt', 
+          'email', 'name', 'displayName', 'createdAt', 'updatedAt',
           'provider', 'isAdmin', 'subscriptionPlan', 'photoURL',
           'emailPreferences', 'lastLoginAt', 'emailVerified'
         ])
         // Non-admin cannot force isAdmin true on create
         && ( !('isAdmin' in request.resource.data) || request.resource.data.isAdmin == false )
+        // Prevent users from setting themselves as premium on create
+        && ( !('subscriptionPlan' in request.resource.data) || request.resource.data.subscriptionPlan == 'free' )
         && validTimestamps(true);
 
       allow update: if (
@@ -98,6 +100,38 @@ service cloud.firestore {
       allow read: if resource.data.visibility == 'public' || isOwner(userId) || isAdmin();
       allow create: if isOwner(userId);
       allow update, delete: if isOwner(userId) || isAdmin();
+    }
+
+    // ============ USER COVER LETTERS SUBCOLLECTION ============
+    match /users/{userId}/coverLetters/{docId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId)
+        && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isOwner(userId) || isAdmin();
+    }
+
+    // ============ USER AI RESUMES SUBCOLLECTION ============
+    match /users/{userId}/aiResumes/{docId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId)
+        && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isOwner(userId) || isAdmin();
+    }
+
+    // ============ USER CV HISTORY SUBCOLLECTION ============
+    match /users/{userId}/cv_history/{docId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId);
+      allow update, delete: if isOwner(userId) || isAdmin();
+    }
+
+    // ============ USER NOTIFICATIONS SUBCOLLECTION ============
+    match /users/{userId}/notifications/{notificationId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if false; // Server-side only
+      allow update: if isOwner(userId)
+        && request.resource.data.keys().hasOnly(['read', 'readAt']);
+      allow delete: if isOwner(userId);
     }
 
     // ============ CV ANALYSES ============
@@ -161,6 +195,11 @@ service cloud.firestore {
     match /contacts/{contactId} {
       // Anyone can create a contact (for contact form, issue reports, volunteer apps)
       allow create: if true
+        // Required fields must be present
+        && ('name' in request.resource.data)
+        && ('email' in request.resource.data)
+        && ('message' in request.resource.data)
+        // Validate field lengths
         && validStringLength('name', 100)
         && validStringLength('email', 254)
         && validStringLength('message', 10000)
@@ -173,6 +212,9 @@ service cloud.firestore {
     // For the Report Issue feature - saved as contacts but can have separate collection
     match /issueReports/{reportId} {
       allow create: if true
+        // Required fields must be present
+        && ('description' in request.resource.data)
+        // Validate field lengths
         && validStringLength('description', 5000)
         && validStringLength('page', 500);
       allow read, update, delete: if isAdmin();
@@ -182,6 +224,10 @@ service cloud.firestore {
     match /volunteerApplications/{applicationId} {
       // Anyone can submit a volunteer application
       allow create: if true
+        // Required fields must be present
+        && ('name' in request.resource.data)
+        && ('email' in request.resource.data)
+        // Validate field lengths
         && validStringLength('name', 100)
         && validStringLength('email', 254)
         && validStringLength('message', 5000);

@@ -70,6 +70,7 @@ interface TourContextType {
   markTourComplete: (tourId: string) => void;
   shouldShowTour: (tourId: string) => boolean;
   resetTour: (tourId: string) => void;
+  activeTourId: string;
 }
 
 const TourContext = createContext<TourContextType | undefined>(undefined);
@@ -223,14 +224,51 @@ import { ErrorBoundaryWrapper } from "@/components/ui/error-boundary";
 
 // Main Tour Provider
 export function OnboardingTourProvider({ children }: { children: React.ReactNode }) {
+  return (
+    <ErrorBoundaryWrapper>
+      <ReactTourProvider
+        steps={[]} // Initial steps empty, will be set by TourInner
+        styles={{
+          popover: (base) => ({
+            ...base,
+            borderRadius: "12px",
+            boxShadow: "0 10px 40px rgba(0, 0, 0, 0.15)",
+            padding: 0,
+          }),
+          maskArea: (base) => ({
+            ...base,
+            rx: 8,
+          }),
+          badge: (base) => ({
+            ...base,
+            display: "none",
+          }),
+          close: (base) => ({
+            ...base,
+            display: "none",
+          }),
+        }}
+        ContentComponent={MemoizedContentWrapper}
+        onClickClose={({ setIsOpen }) => {
+          setIsOpen(false);
+        }}
+        padding={{ mask: 8, popover: [12, 12] }}
+        showBadge={false}
+      >
+        <TourInnerProvider>{children}</TourInnerProvider>
+      </ReactTourProvider>
+    </ErrorBoundaryWrapper>
+  );
+}
+
+// Separate component to use the useTour hook and provide context
+function TourInnerProvider({ children }: { children: React.ReactNode }) {
   const { user } = useFirebaseAuth();
   const onboarding = useOnboardingState();
+  const tour = useTour();
   
-  const [isOpen, setIsOpen] = useState(false);
-  const [currentStep, setCurrentStep] = useState(0);
-  const [activeTour, setActiveTour] = useState<StepType[]>(DASHBOARD_TOUR_STEPS);
   const [activeTourId, setActiveTourId] = useState<string>(TOUR_IDS.dashboard);
-  const [filteredSteps, setFilteredSteps] = useState<StepType[]>([]);
+  const [activeTourSteps, setActiveTourSteps] = useState<StepType[]>(DASHBOARD_TOUR_STEPS);
 
   const filterStepsForPage = useCallback((steps: StepType[]) => {
     if (typeof window === "undefined") return steps;
@@ -246,8 +284,8 @@ export function OnboardingTourProvider({ children }: { children: React.ReactNode
   // Update filtered steps when active tour or DOM changes
   useEffect(() => {
     const updateSteps = () => {
-      const filtered = filterStepsForPage(activeTour);
-      setFilteredSteps(filtered);
+      const filtered = filterStepsForPage(activeTourSteps);
+      tour.setSteps?.(filtered);
     };
 
     updateSteps();
@@ -266,27 +304,27 @@ export function OnboardingTourProvider({ children }: { children: React.ReactNode
     });
 
     return () => observer.disconnect();
-  }, [activeTour, filterStepsForPage]);
+  }, [activeTourSteps, filterStepsForPage, tour.setSteps]);
 
   // Restore current step from localStorage
   useEffect(() => {
-    if (typeof window !== "undefined" && isOpen) {
+    if (typeof window !== "undefined" && tour.isOpen) {
       const savedStep = localStorage.getItem(`hireall:tour_step:${activeTourId}`);
       if (savedStep) {
         const step = parseInt(savedStep, 10);
-        if (!isNaN(step) && step < filteredSteps.length) {
-          setCurrentStep(step);
+        if (!isNaN(step) && step < tour.steps.length) {
+          tour.setCurrentStep?.(step);
         }
       }
     }
-  }, [isOpen, activeTourId, filteredSteps.length]);
+  }, [tour.isOpen, activeTourId, tour.steps.length, tour.setCurrentStep]);
 
   // Persist current step to localStorage
   useEffect(() => {
-    if (typeof window !== "undefined" && isOpen) {
-      localStorage.setItem(`hireall:tour_step:${activeTourId}`, currentStep.toString());
+    if (typeof window !== "undefined" && tour.isOpen) {
+      localStorage.setItem(`hireall:tour_step:${activeTourId}`, tour.currentStep.toString());
     }
-  }, [currentStep, activeTourId, isOpen]);
+  }, [tour.currentStep, activeTourId, tour.isOpen]);
 
   const hasCompletedTour = useCallback((tourId: string) => {
     if (tourId === TOUR_IDS.dashboard) return onboarding.hasCompletedDashboardTour;
@@ -312,15 +350,15 @@ export function OnboardingTourProvider({ children }: { children: React.ReactNode
 
   const startDashboardTour = useCallback(() => {
     setActiveTourId(TOUR_IDS.dashboard);
-    setActiveTour(DASHBOARD_TOUR_STEPS);
-    setIsOpen(true);
-  }, []);
+    setActiveTourSteps(DASHBOARD_TOUR_STEPS);
+    tour.setIsOpen?.(true);
+  }, [tour.setIsOpen]);
 
   const startCvEvaluatorTour = useCallback(() => {
     setActiveTourId(TOUR_IDS.cvEvaluator);
-    setActiveTour(CV_EVALUATOR_TOUR_STEPS);
-    setIsOpen(true);
-  }, []);
+    setActiveTourSteps(CV_EVALUATOR_TOUR_STEPS);
+    tour.setIsOpen?.(true);
+  }, [tour.setIsOpen]);
 
   const resetTour = useCallback(async (tourId: string) => {
     if (tourId === "dashboard") {
@@ -340,6 +378,7 @@ export function OnboardingTourProvider({ children }: { children: React.ReactNode
     markTourComplete,
     shouldShowTour,
     resetTour,
+    activeTourId, // Pass this so ContentComponent can access it
   }), [
     startDashboardTour,
     startCvEvaluatorTour,
@@ -347,78 +386,32 @@ export function OnboardingTourProvider({ children }: { children: React.ReactNode
     markTourComplete,
     shouldShowTour,
     resetTour,
+    activeTourId,
   ]);
-
-  // Sync internal tour state with external controller
-  const TourStateSync = () => {
-    const { isOpen: tourOpen, setIsOpen: setTourOpen, setCurrentStep: setTourStep, currentStep: tourStep } = useTour();
-    
-    useEffect(() => {
-      if (isOpen !== tourOpen) {
-        setTourOpen(isOpen);
-      }
-    }, [isOpen, tourOpen, setTourOpen]);
-
-    useEffect(() => {
-      if (currentStep !== tourStep) {
-        setTourStep(currentStep);
-      }
-    }, [currentStep, tourStep, setTourStep]);
-
-    // Update parent state if tour closes/changes internally
-    useEffect(() => {
-      if (tourOpen !== isOpen) setIsOpen(tourOpen);
-      if (tourStep !== currentStep) setCurrentStep(tourStep);
-    }, [tourOpen, tourStep]);
-
-    return null;
-  };
 
   return (
     <TourContext.Provider value={contextValue}>
-      <ErrorBoundaryWrapper>
-        <ReactTourProvider
-          steps={filteredSteps}
-          styles={{
-            popover: (base) => ({
-              ...base,
-              borderRadius: "12px",
-              boxShadow: "0 10px 40px rgba(0, 0, 0, 0.15)",
-              padding: 0,
-            }),
-            maskArea: (base) => ({
-              ...base,
-              rx: 8,
-            }),
-            badge: (base) => ({
-              ...base,
-              display: "none",
-            }),
-            close: (base) => ({
-              ...base,
-              display: "none",
-            }),
-          }}
-          ContentComponent={(props) => (
-            <ContentComponent 
-              {...props} 
-              activeTourId={activeTourId} 
-              onComplete={markTourComplete} 
-            />
-          )}
-          onClickClose={({ setIsOpen }) => {
-            setIsOpen(false);
-          }}
-          padding={{ mask: 8, popover: [12, 12] }}
-          showBadge={false}
-        >
-          <TourStateSync />
-          {children}
-        </ReactTourProvider>
-      </ErrorBoundaryWrapper>
+      {children}
     </TourContext.Provider>
   );
 }
+
+// Stable reference for the content component
+const MemoizedContentWrapper = (props: any) => {
+  return <TourContentProxy {...props} />;
+};
+
+// Proxy component to bridge between ReactTour and our Context
+const TourContentProxy = (props: any) => {
+  const context = useTourContext();
+  return (
+    <ContentComponent 
+      {...props} 
+      activeTourId={context.activeTourId} 
+      onComplete={context.markTourComplete} 
+    />
+  );
+};
 
 // Hook to trigger tour from anywhere
 export function useTourTrigger() {

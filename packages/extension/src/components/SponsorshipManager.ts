@@ -220,8 +220,8 @@ export class SponsorshipManager {
 
     // Check cache first
     const cached = sponsorshipCache.get<SponsorshipRecord | null>(key);
-    if (cached !== null && sponsorshipCache.has(key)) {
-      if (!cached) {
+    if (cached !== undefined && sponsorshipCache.has(key)) {
+      if (cached === null) {
         return null;
       }
 
@@ -406,11 +406,15 @@ export class SponsorshipManager {
 
   static getRequiredSkillsForSponsorRoute(sponsorRoute: string): string[] {
     const routeSkills: Record<string, string[]> = {
-      "software developer": ["javascript", "python", "react", "node.js"],
-      "data analyst": ["sql", "python", "excel", "tableau"],
+      "software developer": ["javascript", "python", "react", "node.js", "typescript"],
+      "data analyst": ["sql", "python", "excel", "tableau", "bi"],
       "project manager": ["project management", "agile", "scrum", "stakeholder management"],
-      "marketing manager": ["marketing", "digital marketing", "seo", "analytics"],
-      "software engineer": ["java", "python", "c++", "system design"],
+      "marketing manager": ["marketing", "digital marketing", "seo", "analytics", "content"],
+      "software engineer": ["java", "python", "c++", "system design", "go", "ruby"],
+      "accountant": ["accounting", "audit", "tax", "ifrs", "acca"],
+      "product manager": ["product strategy", "roadmap", "user research", "agile"],
+      "graphic designer": ["photoshop", "illustrator", "indesign", "figma", "ui", "ux"],
+      "nurse": ["nursing", "patient care", "medical", "healthcare"],
     };
 
     return routeSkills[sponsorRoute.toLowerCase()] || [];
@@ -516,14 +520,15 @@ export class SponsorshipManager {
             };
             return mapped;
           }
+          return null; // Cache 'not found'
         } catch (error) {
           console.warn("SponsorshipManager: failed to load SOC details", error);
           if (error instanceof Error && (error.message.includes('CORS') || error.message.includes('Failed to fetch'))) {
-            console.info("Hireall: SOC details fetch failed due to CORS or network issue - this is a server-side configuration issue");
+            console.info("Hireall: SOC details fetch failed due to CORS or network issue");
           }
+          // Do not cache errors
+          throw error;
         }
-
-        return null;
       }
     );
   }

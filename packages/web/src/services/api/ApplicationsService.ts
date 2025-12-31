@@ -183,6 +183,27 @@ export class ApplicationsService {
     
     await batch.commit();
   }
+
+  /**
+   * Bulk update follow-up date for multiple applications
+   */
+  async bulkUpdateFollowUp(applicationIds: string[], followUpDate?: number): Promise<void> {
+    if (!applicationIds.length) return;
+    const db = getDb();
+    if (!db) throw new Error("Firestore not initialized");
+
+    const batch = writeBatch(db);
+    const now = Date.now();
+
+    applicationIds.forEach((id) => {
+      batch.update(doc(db, "applications", id), { 
+        followUpDate: followUpDate || null, 
+        updatedAt: now 
+      });
+    });
+
+    await batch.commit();
+  }
 }
 
 export const applicationsService = new ApplicationsService();

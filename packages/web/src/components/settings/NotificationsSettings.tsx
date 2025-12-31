@@ -10,6 +10,19 @@ import { FormField, FormItem, FormControl, FormLabel, FormDescription } from "@/
 import { useToast } from "@/hooks/use-toast";
 import { HelpTooltip } from "@/components/ui/HelpTooltip";
 
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
 export function NotificationsSettings() {
   const { control } = useFormContext();
   const toast = useToast();
@@ -99,7 +112,43 @@ export function NotificationsSettings() {
                                   "Please enable notifications in your browser settings."
                                 );
                               } else {
-                                field.onChange(true);
+                                // Register service worker for push
+                                if ("serviceWorker" in navigator) {
+                                  void navigator.serviceWorker.ready.then((registration) => {
+                                    const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+                                    if (!publicKey) {
+                                      console.error("VAPID public key missing");
+                                      return;
+                                    }
+
+                                    return registration.pushManager.subscribe({
+                                      userVisibleOnly: true,
+                                      applicationServerKey: urlBase64ToUint8Array(publicKey),
+                                    });
+                                  }).then((subscription) => {
+                                    if (subscription) {
+                                      // Send subscription to server
+                                      return fetch("/api/settings/notifications/push", {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({ subscription }),
+                                      });
+                                    }
+                                  }).then((res) => {
+                                    if (res?.ok) {
+                                      field.onChange(true);
+                                      toast.success("Notifications enabled", "You will now receive real-time updates.");
+                                    } else if (res) {
+                                      throw new Error("Failed to save subscription");
+                                    }
+                                  }).catch((error) => {
+                                    console.error("Push subscription failed:", error);
+                                    toast.error("Bridge failed", "Could not connect to browser notification service.");
+                                    field.onChange(false);
+                                  });
+                                } else {
+                                  field.onChange(true);
+                                }
                               }
                             });
                           } else {

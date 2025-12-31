@@ -37,7 +37,7 @@ export const dashboardApi = {
     applicationsService.bulkUpdateStatus(applicationIds, status),
 
   bulkUpdateApplicationsFollowUp: (applicationIds: string[], followUpDate?: number) => 
-    applicationsService.update(applicationIds[0], { followUpDate } as any), // Improved in service later if needed
+    applicationsService.bulkUpdateFollowUp(applicationIds, followUpDate),
 
   updateApplicationOrder: (applicationId: string, order: number) => 
     applicationsService.updateOrder(applicationId, order),

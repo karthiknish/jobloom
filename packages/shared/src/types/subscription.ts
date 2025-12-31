@@ -12,9 +12,7 @@ export interface SubscriptionLimits {
   advancedAnalytics: boolean;
   prioritySupport: boolean;
   customAlerts: boolean;
-  teamCollaboration: boolean;
-  apiAccess: boolean;
-  apiRateLimit: number;
+  aiGenerationsPerMonth: number;
 }
 
 export interface Subscription {

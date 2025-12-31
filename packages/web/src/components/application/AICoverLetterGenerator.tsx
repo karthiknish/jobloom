@@ -18,9 +18,13 @@ import {
   Building2,
   PenTool,
   CheckCircle2,
+  Info,
+  History,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,8 +36,10 @@ import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { useSubscription } from "@/providers/subscription-provider";
 import { showSuccess, showError, showInfo } from "@/components/ui/Toast";
 import { aiApi } from "@/utils/api/ai";
+import { dashboardApi } from "@/utils/api/dashboard";
 import PDFGenerator, { PDFOptions } from "@/lib/pdfGenerator";
 import { cn } from "@/lib/utils";
+import { generateContentHash, getCachedAIResponse, setCachedAIResponse } from "@/utils/ai-cache";
 
 interface CoverLetterData {
   jobTitle: string;
@@ -46,6 +52,7 @@ interface CoverLetterData {
 }
 
 interface GeneratedCoverLetter {
+  _id?: string;
   content: string;
   atsScore: number;
   keywords: string[];
@@ -54,6 +61,14 @@ interface GeneratedCoverLetter {
   wordCount: number;
   deepResearch?: boolean;
   researchInsights?: string[];
+  source?: 'gemini' | 'fallback' | 'mock';
+  createdAt?: string;
+  jobTitle?: string;
+  companyName?: string;
+}
+
+interface AICoverLetterGeneratorProps {
+  applicationId?: string;
 }
 
 const containerVariants = {
@@ -65,7 +80,7 @@ const containerVariants = {
   }
 };
 
-export function AICoverLetterGenerator() {
+export function AICoverLetterGenerator({ applicationId }: AICoverLetterGeneratorProps) {
   const { user } = useFirebaseAuth();
   const { plan, isAdmin } = useSubscription();
   const [isGenerating, setIsGenerating] = useState(false);
@@ -92,6 +107,33 @@ export function AICoverLetterGenerator() {
     font: 'helvetica'
   });
 
+  const [history, setHistory] = useState<GeneratedCoverLetter[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+
+  const fetchHistory = async () => {
+    setLoadingHistory(true);
+    try {
+      const data = await aiApi.getCoverLetterHistory();
+      setHistory(data);
+    } catch (err) {
+      console.error("History Error:", err);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
+  const deleteHistoryItem = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    try {
+      await aiApi.deleteCoverLetterHistory(id);
+      setHistory(prev => prev.filter(item => item._id !== id));
+      showSuccess("Deleted", "Cover letter removed from history.");
+    } catch (err) {
+      showError("Delete Failed", "Failed to remove cover letter.");
+    }
+  };
+
   const jobDescriptionChars = formData.jobDescription.length;
   const experienceChars = formData.experience.length;
 
@@ -112,43 +154,38 @@ export function AICoverLetterGenerator() {
       return;
     }
 
-    if (plan === "free" && !isAdmin) {
-      const mockLetter: GeneratedCoverLetter = {
-        content: `Dear Hiring Manager,\n\nI am writing to express my enthusiastic interest in the ${formData.jobTitle} position at ${formData.companyName}, as advertised. With a strong professional background and a proven track record of delivering exceptional results, I am confident that my skills and experiences make me an ideal candidate for this role.\n\nIn my previous experience, I have consistently demonstrated a commitment to excellence and a passion for ${formData.skills.slice(0, 3).join(", ") || "professional growth"}. I was particularly drawn to ${formData.companyName} because of its reputation for innovation and its dedication to ${deepResearch ? "market-leading products" : "excellence"}. I am eager to bring my unique perspective and technical proficiency to your team.\n\nMy key strengths include:\n${formData.skills.map(skill => `• ${skill}`).join("\n") || "• Strategic problem-solving\n• Collaborative teamwork\n• Results-driven approach"}\n\nI am excited about the possibility of contributing to ${formData.companyName} and would welcome the opportunity to discuss my qualifications with you in more detail. Thank you for your time and consideration.\n\nSincerely,\n\n${user?.displayName || "[Your Name]"}`,
-        atsScore: 85,
-        keywords: ["strategic", "collaborative", "results-driven", "innovative"],
-        improvements: [
-          "Include a specific project that matches the job requirements",
-          "Quantify your achievements with numbers or percentages",
-          "Custom-tailor the opening sentence to current company news",
-        ],
-        tone: formData.tone,
-        wordCount: 280,
-        deepResearch,
-        researchInsights: deepResearch
-          ? [
-              `Highlight how ${formData.companyName}'s mission aligns with your personal values`,
-              "Mention a recent industry award the company received",
-              "Reference their recent expansion into new markets",
-            ]
-          : [],
-      };
-
-      setGeneratedLetter(mockLetter);
-      setEditedContent(mockLetter.content);
-      showInfo("Demo Mode", "This is a sample cover letter. Upgrade for full AI generation.");
-      return;
-    }
 
     setIsGenerating(true);
     
     try {
+      // Check cache first (only for premium users as free uses mock)
+      const cachePayload = {
+        ...formData,
+        atsOptimization,
+        keywordFocus,
+        deepResearch,
+      };
+      const payloadHash = await generateContentHash(cachePayload);
+      const cachedData = getCachedAIResponse<GeneratedCoverLetter>(payloadHash);
+      
+      if (cachedData) {
+        setGeneratedLetter(cachedData);
+        setEditedContent(cachedData.content ?? "");
+        showSuccess("Success", "Loaded from history!");
+        setIsGenerating(false);
+        return;
+      }
+
       const payload = await aiApi.generateCoverLetter({
         ...formData,
         atsOptimization,
         keywordFocus,
         deepResearch,
+        applicationId,
       });
+
+      // Store in cache
+      setCachedAIResponse(payloadHash, payload);
 
       setGeneratedLetter(payload);
       setEditedContent(payload.content ?? "");
@@ -186,6 +223,7 @@ Sincerely,
           `Highlight how ${formData.companyName}'s culture aligns with your values`,
           "Reference a recent company initiative to show research"
         ] : [],
+        source: 'fallback',
       };
       
       setGeneratedLetter(mockLetter);
@@ -206,6 +244,32 @@ Sincerely,
       setEditedContent("");
     }
   }, [generatedLetter]);
+
+  useEffect(() => {
+    if (applicationId && user?.uid) {
+      // Fetch application details to pre-fill
+      dashboardApi.getApplicationsByUser(user.uid)
+        .then((apps: any[]) => {
+          const app = apps.find((a: any) => a._id === applicationId);
+          if (app && app.job) {
+            setFormData(prev => ({
+              ...prev,
+              jobTitle: app.job.title || prev.jobTitle,
+              companyName: app.job.company || prev.companyName,
+              jobDescription: app.job.description || prev.jobDescription,
+            }));
+            
+            if (app.job.skills && Array.isArray(app.job.skills)) {
+               setFormData(prev => ({
+                 ...prev,
+                 skills: Array.from(new Set([...prev.skills, ...app.job.skills]))
+               }));
+            }
+          }
+        })
+        .catch((err: any) => console.error("Failed to pre-fill from application:", err));
+    }
+  }, [applicationId, user?.uid]);
 
   const previewWordCount = useMemo(() => {
     const content = (editedContent || "").trim();
@@ -330,28 +394,6 @@ Sincerely,
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {plan === "free" && !isAdmin && (
-            <div className="ml-11 p-4 bg-amber-100/50 border border-amber-200 rounded-xl flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-1.5 bg-amber-100 rounded-full">
-                  <Sparkles className="h-4 w-4 text-amber-600" />
-                </div>
-                <div>
-                  <h4 className="font-semibold text-amber-900">Premium Feature</h4>
-                  <p className="text-sm text-amber-700">
-                    Upgrade to generate unlimited AI-powered cover letters with ATS optimization
-                  </p>
-                </div>
-              </div>
-              <Button 
-                size="sm" 
-                className="bg-amber-600 hover:bg-amber-700 text-white shadow-sm"
-                onClick={() => window.location.href = '/upgrade'}
-              >
-                Upgrade Now
-              </Button>
-            </div>
-          )}
         </CardContent>
       </Card>
 
@@ -613,45 +655,137 @@ Sincerely,
         </Card>
 
         {/* Generated Output */}
-        <Card className="shadow-lg border-muted/40 flex flex-col h-full">
+        <Card className="shadow-lg border-muted/40 flex flex-col h-full overflow-hidden">
           <CardHeader className="pb-4 border-b bg-muted/10">
             <CardTitle className="flex items-center justify-between">
               <span className="flex items-center gap-2">
                 <FileText className="h-5 w-5 text-primary" />
-                Generated Cover Letter
+                {showHistory ? "Version History" : "Generated Cover Letter"}
               </span>
-              {generatedLetter && (
-                <div className="flex flex-wrap gap-2">
-                  <Button size="sm" variant="outline" onClick={copyToClipboard}>
-                    <Copy className="h-4 w-4 mr-1" />
-                    Copy
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="default" 
-                    onClick={downloadPDF}
-                    disabled={downloadingPDF}
-                    className="bg-green-600 hover:bg-green-700 text-white shadow-sm"
-                  >
-                    {downloadingPDF ? (
-                      <>
-                        <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
-                        Generating...
-                      </>
-                    ) : (
-                      <>
-                        <Download className="h-4 w-4 mr-1" />
-                        Download PDF
-                      </>
-                    )}
-                  </Button>
-                </div>
-              )}
+              <div className="flex items-center gap-2">
+                <Button 
+                  size="sm" 
+                  variant={showHistory ? "default" : "outline"} 
+                  onClick={() => {
+                    if (!showHistory) fetchHistory();
+                    setShowHistory(!showHistory);
+                  }}
+                  className="gap-2"
+                >
+                  <History className="h-4 w-4" />
+                  History
+                </Button>
+                
+                {!showHistory && generatedLetter && (
+                  <div className="flex flex-wrap gap-2">
+                    <Button size="sm" variant="outline" onClick={copyToClipboard}>
+                      <Copy className="h-4 w-4 mr-1" />
+                      Copy
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="default" 
+                      onClick={downloadPDF}
+                      disabled={downloadingPDF}
+                      className="bg-green-600 hover:bg-green-700 text-white shadow-sm"
+                    >
+                      {downloadingPDF ? (
+                        <>
+                          <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                          Generating...
+                        </>
+                      ) : (
+                        <>
+                          <Download className="h-4 w-4 mr-1" />
+                          Download PDF
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </div>
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 p-6 bg-muted/5">
-            {generatedLetter ? (
-              <div className="space-y-6">
+          <CardContent className="flex-1 p-0 bg-muted/5 overflow-y-auto">
+            {showHistory ? (
+              <div className="p-4 space-y-3">
+                {loadingHistory ? (
+                  <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                    <RefreshCw className="h-8 w-8 text-primary animate-spin" />
+                    <p className="text-sm text-muted-foreground">Loading your history...</p>
+                  </div>
+                ) : history.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center space-y-4">
+                    <div className="p-3 bg-muted rounded-full">
+                      <History className="h-8 w-8 text-muted-foreground/50" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium">No history yet</h4>
+                      <p className="text-sm text-muted-foreground max-w-[200px]">Generated letters will appear here for easy access later.</p>
+                    </div>
+                  </div>
+                ) : (
+                  history.map((item) => (
+                    <div 
+                      key={item._id}
+                      onClick={() => {
+                        setGeneratedLetter(item);
+                        setEditedContent(item.content);
+                        setShowHistory(false);
+                      }}
+                      className={cn(
+                        "group p-4 bg-white border rounded-xl shadow-sm hover:border-primary/50 hover:shadow-md transition-all cursor-pointer relative",
+                        generatedLetter?._id === item._id && "border-primary ring-2 ring-primary/10"
+                      )}
+                    >
+                      <div className="flex items-start justify-between gap-4 mb-2">
+                        <div>
+                          <h5 className="font-bold text-sm leading-tight text-foreground line-clamp-1">{item.jobTitle || "Untitled Position"}</h5>
+                          <p className="text-xs text-muted-foreground mt-0.5">{item.companyName || "Unknown Company"}</p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className={cn(
+                            "text-[10px] font-bold px-1.5 py-0.5 rounded",
+                            (item as any).atsScore >= 80 ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
+                          )}>
+                            {(item as any).atsScore}%
+                          </span>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => deleteHistoryItem(e, item._id!)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground line-clamp-2 italic">
+                        &quot;{item.content.slice(0, 100)}...&quot;
+                      </p>
+                      <div className="mt-3 flex items-center justify-between">
+                        <span className="text-[10px] text-muted-foreground">
+                          {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "Recent"}
+                        </span>
+                        <Badge variant="secondary" className="text-[9px] px-1.5 py-0">{item.tone}</Badge>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            ) : generatedLetter ? (
+              <div className="p-6 space-y-6">
+                {/* Fallback Notification */}
+                {generatedLetter.source === 'fallback' && (
+                  <Alert className="bg-blue-50 border-blue-200 text-blue-800 py-3">
+                    <Info className="h-4 w-4 text-blue-600" />
+                    <AlertTitle className="text-xs font-bold uppercase tracking-tight mb-1">AI Service Unavailable</AlertTitle>
+                    <AlertDescription className="text-xs leading-relaxed">
+                      We&apos;ve generated a high-quality template based on your experience. You can edit this directly or try re-generating in a few minutes.
+                    </AlertDescription>
+                  </Alert>
+                )}
+
                 {/* ATS Score */}
                 <div className="p-5 bg-white rounded-xl border shadow-sm">
                   <div className="flex items-center justify-between mb-3">
@@ -741,17 +875,38 @@ Sincerely,
                 )}
               </div>
             ) : (
-              <div className="h-full flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-xl border-muted-foreground/20 bg-muted/10">
+              <div className="h-full flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-xl border-muted-foreground/20 bg-muted/10 my-4 mx-6">
                 <div className="p-4 bg-background rounded-full shadow-sm mb-4">
                   <FileText className="h-8 w-8 text-muted-foreground/50" />
                 </div>
-                <h3 className="text-lg font-medium text-foreground mb-2">Ready to Generate</h3>
-                <p className="text-muted-foreground max-w-xs">
-                  Fill in the job details on the left and click "Generate Cover Letter" to create your personalized document.
-                </p>
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">No Letter Generated</h3>
+                  <p className="text-sm text-muted-foreground mt-1 max-w-[250px]">
+                    Fill in the form and click generate, or check your history for previous letters.
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="mt-6"
+                    onClick={() => {
+                      fetchHistory();
+                      setShowHistory(true);
+                    }}
+                  >
+                    <History className="h-4 w-4 mr-2" />
+                    View History
+                  </Button>
+                </div>
               </div>
             )}
           </CardContent>
+          {!showHistory && !generatedLetter && (
+            <CardFooter className="bg-muted/5 border-t py-4 text-center justify-center">
+              <p className="text-xs text-muted-foreground">
+                Your generated cover letters are saved automatically to your history.
+              </p>
+            </CardFooter>
+          )}
         </Card>
       </div>
     </motion.div>

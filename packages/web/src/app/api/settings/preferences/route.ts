@@ -4,7 +4,6 @@ import { getAdminDb } from "@/firebase/admin";
 export const runtime = "nodejs";
 
 const preferencesSchema = z.object({
-  theme: z.string().optional(),
   language: z.string().optional(),
   timezone: z.string().optional(),
   goals: z
@@ -40,7 +39,6 @@ const preferencesSchema = z.object({
 });
 
 const defaultPreferences = {
-  theme: 'system',
   language: 'en',
   timezone: 'UTC',
   goals: {

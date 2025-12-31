@@ -55,8 +55,31 @@ function VerifyEmailInner() {
     }
   };
 
-  const handleContinue = () => {
-    router.replace(`/welcome?redirect_url=${encodeURIComponent(redirectUrlComplete)}`);
+  const handleContinue = async () => {
+    setLoading(true);
+    try {
+      // Force reload user to get latest verification status
+      if (user) {
+        await user.reload();
+        if (user.emailVerified) {
+          router.replace(`/welcome?redirect_url=${encodeURIComponent(redirectUrlComplete)}`);
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Email not verified",
+            description: "Please check your email and click the verification link before continuing.",
+          });
+        }
+      }
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to refresh user status. Please try again.",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (verificationStatus === 'checking') {
@@ -199,8 +222,13 @@ function VerifyEmailInner() {
                   variant="premium"
                   size="xl"
                   className="w-full"
+                  disabled={loading}
                 >
-                  Continue to Welcome
+                  {loading && !user?.emailVerified ? (
+                    <LoadingSpinner size="sm" label="Checking..." className="flex-row gap-2" />
+                  ) : (
+                    "I've Verified My Email"
+                  )}
                 </Button>
               </motion.div>
             </div>

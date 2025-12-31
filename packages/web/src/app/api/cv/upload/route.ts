@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminDb, getAdminStorage, Timestamp, FieldValue } from "@/firebase/admin";
+import mammoth from "mammoth";
 import { SUBSCRIPTION_LIMITS } from "@/types/api";
 import {
   sanitizeFileName,
@@ -16,6 +17,7 @@ import {
 } from "@/config/uploadLimits";
 import { withApi } from "@/lib/api/withApi";
 import { analyzeResume, type ResumeAnalysisResponse } from "@/services/ai/geminiService";
+import { UsageService } from "@/lib/api/usage";
 
 // ============ ROBUSTNESS UTILITIES ============
 // ... (rest of the utilities)
@@ -138,81 +140,6 @@ const parsePDF = async (buffer: Buffer): Promise<PDFParseResult> => {
 // Get Firestore instance using the centralized admin initialization
 const db = getAdminDb();
 
-// Helper function to check subscription limits
-async function checkSubscriptionLimits(
-  userId: string
-): Promise<{
-  allowed: boolean;
-  plan: string;
-  currentUsage: number;
-  limit: number;
-}> {
-  try {
-    // Get user record to find subscription info
-    const userDoc = await db.collection("users").doc(userId).get();
-    const userData = userDoc.data();
-
-    // Admin users have unlimited access
-    if (userData?.isAdmin === true) {
-      return {
-        allowed: true,
-        plan: "admin",
-        currentUsage: 0,
-        limit: -1, // Unlimited
-      };
-    }
-
-    let plan = "free";
-    if (userData?.subscriptionId) {
-      // Check if subscription is active
-      const subscriptionDoc = await db
-        .collection("subscriptions")
-        .doc(userData.subscriptionId)
-        .get();
-      const subscription = subscriptionDoc.data();
-
-      if (subscription?.status === "active" && subscription?.plan) {
-        plan = subscription.plan;
-      }
-    }
-
-    // Count current month's Resume analyses
-    const startOfMonth = new Date();
-    startOfMonth.setDate(1);
-    startOfMonth.setHours(0, 0, 0, 0);
-
-    const cvAnalyses = await db
-      .collection("cvAnalyses")
-      .where("userId", "==", userId)
-      .where(
-        "createdAt",
-        ">=",
-        Timestamp.fromDate(startOfMonth)
-      )
-      .get();
-
-    const currentUsage = cvAnalyses.size;
-    const limit =
-      SUBSCRIPTION_LIMITS[plan as keyof typeof SUBSCRIPTION_LIMITS]
-        .cvAnalysesPerMonth;
-
-    return {
-      allowed: limit === -1 || currentUsage < limit,
-      plan,
-      currentUsage,
-      limit: limit === -1 ? -1 : limit,
-    };
-  } catch (error) {
-    console.error("Error checking subscription limits:", error);
-    // Default to free plan limits on error
-    return {
-      allowed: false,
-      plan: "free",
-      currentUsage: 0,
-      limit: SUBSCRIPTION_LIMITS.free.cvAnalysesPerMonth,
-    };
-  }
-}
 
 import { 
   createValidationError, 
@@ -274,13 +201,7 @@ export const POST = withApi({
   const sanitizedIndustry = typeof sanitized.industry === "string" ? sanitized.industry : "";
 
   // Check subscription limits
-  const limitCheck = await checkSubscriptionLimits(userId);
-  if (!limitCheck.allowed) {
-    throw new RateLimitError(
-      `Resume analysis limit reached. You've used ${limitCheck.currentUsage} of ${limitCheck.limit} analyses this month.`,
-      3600 // 1 hour retry after
-    );
-  }
+  await UsageService.checkFeatureLimit(userId, 'cvAnalysesPerMonth');
 
   // Get upload limits based on user's subscription plan
   const uploadLimits = await getUploadLimitsForUser(userId);
@@ -306,7 +227,15 @@ export const POST = withApi({
   }
 
   // Generate unique filename with sanitization
-  const fileExtension = file.type === "application/pdf" ? "pdf" : "txt";
+  const getExtension = (mimeType: string, originalName: string) => {
+    if (mimeType === "application/pdf") return "pdf";
+    if (mimeType === "text/plain") return "txt";
+    if (mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") return "docx";
+    if (mimeType === "application/msword") return "doc";
+    return originalName.split('.').pop()?.toLowerCase() || "bin";
+  };
+  
+  const fileExtension = getExtension(file.type, file.name);
   const sanitizedBaseName = sanitizeFileName(file.name.replace(/\.[^/.]+$/, ""));
   const fileName = `${Date.now()}-${Math.random()
     .toString(36)
@@ -396,9 +325,17 @@ async function performCvAnalysis(
       updatedAt: FieldValue.serverTimestamp(),
     });
 
-    const text = fileType === "application/pdf"
-      ? await extractTextFromPDF(fileBuffer)
-      : fileBuffer.toString();
+    let text = "";
+    if (fileType === "application/pdf") {
+      text = await extractTextFromPDF(fileBuffer);
+    } else if (
+      fileType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" || 
+      fileType === "application/msword"
+    ) {
+      text = await extractTextFromDocx(fileBuffer);
+    } else {
+      text = fileBuffer.toString();
+    }
 
     const heuristicAnalysis = await analyzeCvText(text, targetRole, industry, fileType);
 
@@ -467,6 +404,25 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
     
     return sanitized;
   }, 'PDF text extraction', 2); // Only 2 retries for PDF parsing
+}
+
+/**
+ * Extract text from DOCX using mammoth
+ */
+async function extractTextFromDocx(buffer: Buffer): Promise<string> {
+  try {
+    const result = await mammoth.extractRawText({ buffer });
+    const text = result.value;
+    
+    if (!text || text.trim().length < 10) {
+      throw new Error('Word document appears to have no extractable text content');
+    }
+    
+    return sanitizeExtractedText(text);
+  } catch (error) {
+    console.error('[CV Upload] Word document text extraction failed:', error);
+    throw new Error('Failed to extract text from Word document. Please try a different format or PDF.');
+  }
 }
 
 function mergeUniqueStrings(
