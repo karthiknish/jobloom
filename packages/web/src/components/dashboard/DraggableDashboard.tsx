@@ -89,6 +89,7 @@ function SortableWidget({ widget, onToggleVisibility, customizing, onRequestCust
                 {...attributes}
                 {...listeners}
                 aria-label="Reorder widget"
+                aria-describedby="dnd-instructions"
               >
                 <GripVertical className="h-4 w-4" />
               </Button>
@@ -241,6 +242,13 @@ export function DraggableDashboard({
 
   return (
     <div className={`space-y-6 ${className}`}>
+      {/* Screen reader instructions for drag and drop */}
+      <div id="dnd-instructions" className="sr-only">
+        To reorder widgets, focus the grip handle and press Space to lift. 
+        Use the arrow keys to move the widget, then press Space again to drop. 
+        Press Escape to cancel.
+      </div>
+
       {/* Customization Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">

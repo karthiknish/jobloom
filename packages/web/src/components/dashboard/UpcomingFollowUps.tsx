@@ -89,7 +89,7 @@ export function UpcomingFollowUps({ applications, onChanged }: { applications: A
             {type === 'overdue' ? <AlertCircle className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
             {getDueDateLabel(a.followUpDate!)}
           </div>
-          <Badge variant="outline" className="text-[10px] h-4 px-1.5 capitalize">
+          <Badge variant="outline" className="text-xxs h-4 px-1.5 capitalize">
             {a.status}
           </Badge>
         </div>

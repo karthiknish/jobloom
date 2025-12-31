@@ -40,7 +40,7 @@ export const Step2ProfessionalInfo: React.FC<Step2ProfessionalInfoProps> = ({
       exit={{ opacity: 0, x: -10 }}
       className="space-y-5"
     >
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
           <Label htmlFor="jobTitle" className="flex items-center gap-2">
             <Briefcase className="h-3.5 w-3.5 text-muted-foreground" />

@@ -159,7 +159,7 @@ export function Sparkline({
               x={point.x}
               y={point.y - 10}
               textAnchor="middle"
-              className="text-[10px] fill-foreground font-medium"
+              className="text-xxs fill-foreground font-medium"
             >
               {point.value}
             </text>

@@ -104,7 +104,7 @@ export function PremiumFeatureHint({
             <Button
               size="sm"
               variant="ghost"
-              className="h-5 px-2 text-[10px] font-semibold text-amber-700 hover:text-amber-800 hover:bg-amber-200/50"
+              className="h-5 px-2 text-xxs font-semibold text-amber-700 hover:text-amber-800 hover:bg-amber-200/50"
             >
               Upgrade
             </Button>

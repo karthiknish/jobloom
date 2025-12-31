@@ -191,7 +191,7 @@ export default function MobileNavigation() {
                   />
                 </motion.div>
                 <span className={cn(
-                  "text-[10px] font-medium w-full text-center truncate",
+                  "text-xxs font-medium w-full text-center truncate",
                   isActive ? "text-primary" : "text-current"
                 )}>
                   {item.name}

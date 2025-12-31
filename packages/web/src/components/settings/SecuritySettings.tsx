@@ -25,7 +25,8 @@ import { getAuth, EmailAuthProvider, reauthenticateWithCredential, updatePasswor
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { settingsApi } from "@/utils/api/settings";
 import { useFormContext } from "react-hook-form";
-import { FormField, FormItem, FormControl } from "@/components/ui/form";
+import { FormField, FormItem, FormControl, FormMessage } from "@/components/ui/form";
+import { PasswordStrength } from "@/components/ui/PasswordStrength";
 
 interface SecuritySettingsProps {
   user: any;
@@ -98,18 +99,8 @@ export function SecuritySettings({ user }: SecuritySettingsProps) {
       return;
     }
 
-    if (formData.security.newPassword !== formData.security.confirmPassword) {
-      toast.error("Password Mismatch", "New passwords do not match.");
-      return;
-    }
-
-    if (formData.security.newPassword.length < 6) {
-      toast.error("Password Too Short", "Password must be at least 6 characters long.");
-      return;
-    }
-
     if (!formData.security.currentPassword) {
-      toast.error("Current Password Required", "Please enter your current password.");
+      toast.error("Current Password Required", "Please enter your current password to continue.");
       return;
     }
 
@@ -258,7 +249,7 @@ export function SecuritySettings({ user }: SecuritySettingsProps) {
                 name="security.currentPassword"
                 render={({ field }) => (
                   <FormItem className="space-y-2">
-                    <Label className="text-sm font-semibold text-foreground">
+                    <Label required className="text-sm font-semibold text-foreground">
                       Current Password
                     </Label>
                     <FormControl>
@@ -269,6 +260,7 @@ export function SecuritySettings({ user }: SecuritySettingsProps) {
                         className="input-premium"
                       />
                     </FormControl>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -278,17 +270,21 @@ export function SecuritySettings({ user }: SecuritySettingsProps) {
                 name="security.newPassword"
                 render={({ field }) => (
                   <FormItem className="space-y-2">
-                    <Label className="text-sm font-semibold text-foreground">
+                    <Label required className="text-sm font-semibold text-foreground">
                       New Password
                     </Label>
                     <FormControl>
-                      <Input
-                        {...field}
-                        type="password"
-                        placeholder="Enter new password"
-                        className="input-premium"
-                      />
+                      <div className="space-y-3">
+                        <Input
+                          {...field}
+                          type="password"
+                          placeholder="Enter new password"
+                          className="input-premium"
+                        />
+                        <PasswordStrength password={field.value || ""} />
+                      </div>
                     </FormControl>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -298,7 +294,7 @@ export function SecuritySettings({ user }: SecuritySettingsProps) {
                 name="security.confirmPassword"
                 render={({ field }) => (
                   <FormItem className="space-y-2">
-                    <Label className="text-sm font-semibold text-foreground">
+                    <Label required className="text-sm font-semibold text-foreground">
                       Confirm New Password
                     </Label>
                     <FormControl>
@@ -309,6 +305,7 @@ export function SecuritySettings({ user }: SecuritySettingsProps) {
                         className="input-premium"
                       />
                     </FormControl>
+                    <FormMessage />
                   </FormItem>
                 )}
               />

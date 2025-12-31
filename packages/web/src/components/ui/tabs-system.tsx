@@ -194,7 +194,7 @@ export function TabsSystem({
                   isActive && variant === "pills" 
                     ? "bg-white/20 text-white" 
                     : "bg-primary/10 text-primary",
-                  size === "sm" ? "h-4 w-4 text-[10px]" : "h-5 w-5"
+                  size === "sm" ? "h-4 w-4 text-xxs" : "h-5 w-5"
                 )}>
                   {typeof tab.badge === "number" && tab.badge > 99 ? "99+" : tab.badge}
                 </span>

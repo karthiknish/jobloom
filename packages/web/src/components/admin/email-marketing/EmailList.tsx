@@ -35,6 +35,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { showSuccess, showError } from "@/components/ui/Toast";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 interface EmailListProps {
   emailList: any[];
@@ -533,21 +534,21 @@ export function EmailList({
         </div>
         
         {filteredSubscribers.length === 0 && (
-          <div className="text-center py-12">
-            <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No subscribers found</h3>
-            <p className="text-gray-500 mb-4">
-              {searchTerm || selectedStatus !== "all" || selectedSegment !== "all"
-                ? "Try adjusting your search or filter criteria"
-                : "Start building your email list by adding subscribers"
+          <div className="py-12">
+            <EmptyState
+              icon={Users}
+              title={searchTerm || selectedStatus !== "all" || selectedSegment !== "all" ? "No matches found" : "No subscribers yet"}
+              description={searchTerm || selectedStatus !== "all" || selectedSegment !== "all"
+                ? "Try adjusting your search or filter criteria to find what you're looking for."
+                : "Start building your email list by adding your first subscriber manually or importing a list."
               }
-            </p>
-            {!searchTerm && selectedStatus === "all" && selectedSegment === "all" && (
-              <Button onClick={handleAddSubscriber}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Subscriber
-              </Button>
-            )}
+              primaryAction={!searchTerm && selectedStatus === "all" && selectedSegment === "all" ? {
+                label: "Add Subscriber",
+                onClick: handleAddSubscriber,
+                icon: Plus
+              } : undefined}
+              className="border-0 shadow-none bg-transparent"
+            />
           </div>
         )}
       </div>

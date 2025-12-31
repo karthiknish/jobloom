@@ -98,7 +98,7 @@ export function ResumeDiffView({ v1, v2, open, onOpenChange }: ResumeDiffViewPro
                       <span className="text-xs text-muted-foreground">{item.data.startDate} - {item.data.current ? 'Present' : item.data.endDate}</span>
                     </div>
                     {item.status === 'modified' && (
-                       <p className="text-[10px] mt-2 text-amber-600 font-medium italic">Content within this role has changed</p>
+                       <p className="text-xxs mt-2 text-amber-600 font-medium italic">Content within this role has changed</p>
                     )}
                   </DiffBlock>
                 ))}
@@ -130,7 +130,7 @@ export function ResumeDiffView({ v1, v2, open, onOpenChange }: ResumeDiffViewPro
                     <h4 className="font-bold text-sm mb-2">{item.data.category}</h4>
                     <div className="flex flex-wrap gap-1">
                       {item.data.skills.map((skill: string, sIdx: number) => (
-                        <Badge key={sIdx} variant="secondary" className="text-[10px]">{skill}</Badge>
+                        <Badge key={sIdx} variant="secondary" className="text-xxs">{skill}</Badge>
                       ))}
                     </div>
                   </DiffBlock>
@@ -147,7 +147,7 @@ export function ResumeDiffView({ v1, v2, open, onOpenChange }: ResumeDiffViewPro
                     <p className="text-sm text-muted-foreground">{item.data.description}</p>
                     <div className="flex flex-wrap gap-1 mt-2">
                        {item.data.technologies.map((tech: string, tIdx: number) => (
-                         <Badge key={tIdx} variant="outline" className="text-[10px]">{tech}</Badge>
+                         <Badge key={tIdx} variant="outline" className="text-xxs">{tech}</Badge>
                        ))}
                     </div>
                   </DiffBlock>
@@ -209,7 +209,7 @@ function DiffField({ label, diff, isLongText }: { label: string, diff: DiffItem<
       diff.status === 'modified' ? "bg-amber-500/5 border-amber-500/20" :
       "bg-muted/30 border-transparent"
     )}>
-      <Label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 block">{label}</Label>
+      <Label className="text-xxs uppercase tracking-wider text-muted-foreground mb-1 block">{label}</Label>
       <div className="text-sm font-medium">
         {diff.status === 'modified' ? (
           <div className="space-y-1">

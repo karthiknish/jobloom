@@ -48,8 +48,8 @@ const settingsSchema = z.object({
   }),
   security: z.object({
     currentPassword: z.string().optional(),
-    newPassword: z.string().optional(),
-    confirmPassword: z.string().optional(),
+    newPassword: z.string().min(6, "Password must be at least 6 characters").optional().or(z.literal("")),
+    confirmPassword: z.string().optional().or(z.literal("")),
   }).refine((data) => {
     if (data.newPassword && data.newPassword !== data.confirmPassword) {
       return false;

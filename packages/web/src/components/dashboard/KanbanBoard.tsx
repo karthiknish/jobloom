@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { ApplicationStatusBadge } from "@/components/ui/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Loader2, Move, DownloadCloud, GripVertical } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   Tooltip,
   TooltipContent,
@@ -211,10 +212,10 @@ export function KanbanBoard({
               >
                 {/* Saving Overlay */}
                 {savingApplicationId === a._id && (
-                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/60 backdrop-blur-[1px] rounded-lg">
+                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/80 backdrop-blur-[1px] rounded-lg">
                     <div className="flex flex-col items-center gap-2">
                       <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                      <span className="text-[10px] font-bold text-primary uppercase tracking-wider">Saving</span>
+                      <span className="text-xxs font-bold text-primary uppercase tracking-wider">Saving</span>
                     </div>
                   </div>
                 )}
@@ -234,7 +235,7 @@ export function KanbanBoard({
 
                 
                 <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/30">
-                  <div className="text-[10px] text-muted-foreground">
+                  <div className="text-xxs text-muted-foreground">
                     {new Date(a.job?.dateFound || Date.now()).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                   </div>
                   {onView && (
@@ -278,28 +279,37 @@ export function KanbanBoard({
               onDragOver={onDragOver}
               onDrop={onDrop(col)}
               onDragEnter={() => setActiveDrop({ status: col, beforeId: null })}
-              className={
-                "h-28 border-2 border-dashed rounded-lg flex flex-col items-center justify-center text-xs transition-colors " +
-                (draggedId
+              className={cn(
+                "h-32 border-2 border-dashed rounded-xl flex flex-col items-center justify-center text-xs transition-all duration-200",
+                draggedId
                   ? activeDrop?.status === col
-                    ? "border-primary/50 bg-primary/5 text-primary"
-                    : "border-border/50 bg-background/40 text-muted-foreground"
-                  : "border-border/40 text-muted-foreground/60")
-              }
+                    ? "border-primary bg-primary/5 text-primary scale-[1.02] shadow-sm"
+                    : "border-primary/30 bg-primary/5 text-primary/70"
+                  : "border-border/40 bg-background/40 text-muted-foreground/60"
+              )}
             >
-              <div className="flex items-center gap-2">
-                {draggedId ? (
-                  <DownloadCloud className="h-4 w-4" />
-                ) : (
-                  <Move className="h-4 w-4" />
-                )}
-                <span className="font-medium">
-                  {draggedId ? "Release to drop" : "Drag a card here"}
+              <div className="flex flex-col items-center gap-2">
+                <div className={cn(
+                  "p-2 rounded-full mb-1 transition-colors",
+                  draggedId && activeDrop?.status === col ? "bg-primary/20" : "bg-muted/50"
+                )}>
+                  {draggedId ? (
+                    <DownloadCloud className={cn("h-5 w-5", activeDrop?.status === col ? "text-primary" : "text-primary/60")} />
+                  ) : (
+                    <Move className="h-5 w-5 opacity-40" />
+                  )}
+                </div>
+                <span className="font-semibold px-4 text-center">
+                  {draggedId 
+                    ? activeDrop?.status === col ? "Release to drop" : "Drop here to move"
+                    : `No ${col} applications`}
+                </span>
+                <span className="text-xxs text-muted-foreground/70 px-4 text-center">
+                  {draggedId 
+                    ? "We'll update the status automatically" 
+                    : "Drag cards here to update status"}
                 </span>
               </div>
-              <span className="mt-1 text-[10px] text-muted-foreground">
-                {draggedId ? "We'll save this automatically" : "Reorder by dragging cards"}
-              </span>
             </div>
           )}
         </ul>

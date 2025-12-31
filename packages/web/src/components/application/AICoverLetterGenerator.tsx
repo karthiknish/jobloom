@@ -410,7 +410,7 @@ Sincerely,
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6 pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="jobTitle" className="flex items-center gap-2">
                   <Briefcase className="h-3.5 w-3.5 text-muted-foreground" />
@@ -513,7 +513,7 @@ Sincerely,
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="tone">Tone</Label>
                 <Select value={formData.tone} onValueChange={(value: any) => setFormData(prev => ({ ...prev, tone: value }))}>
@@ -745,7 +745,7 @@ Sincerely,
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           <span className={cn(
-                            "text-[10px] font-bold px-1.5 py-0.5 rounded",
+                            "text-xxs font-bold px-1.5 py-0.5 rounded",
                             (item as any).atsScore >= 80 ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
                           )}>
                             {(item as any).atsScore}%
@@ -764,7 +764,7 @@ Sincerely,
                         &quot;{item.content.slice(0, 100)}...&quot;
                       </p>
                       <div className="mt-3 flex items-center justify-between">
-                        <span className="text-[10px] text-muted-foreground">
+                        <span className="text-xxs text-muted-foreground">
                           {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "Recent"}
                         </span>
                         <Badge variant="secondary" className="text-[9px] px-1.5 py-0">{item.tone}</Badge>
@@ -835,7 +835,7 @@ Sincerely,
                   <Textarea
                     value={editedContent}
                     onChange={(e) => setEditedContent(e.target.value)}
-                    className="min-h-[400px] p-8 bg-white text-black shadow-md border rounded-sm font-serif text-[11pt] leading-relaxed resize-y"
+                    className="min-h-[300px] sm:min-h-[400px] p-8 bg-white text-black shadow-md border rounded-sm font-serif text-sm leading-relaxed resize-y"
                   />
                 </div>
 

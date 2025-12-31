@@ -107,7 +107,7 @@ export const ResumeOutput: React.FC<ResumeOutputProps> = ({
                 </span>
               </div>
               <Progress value={generatedResume.atsScore} className="h-2.5" />
-              <p className="text-[10px] text-muted-foreground mt-2 text-right font-medium uppercase tracking-wider">
+              <p className="text-xxs text-muted-foreground mt-2 text-right font-medium uppercase tracking-wider">
                 {getAtsScoreLabel(generatedResume.atsScore).label}
               </p>
             </div>
@@ -115,13 +115,13 @@ export const ResumeOutput: React.FC<ResumeOutputProps> = ({
             {/* Keywords */}
             {generatedResume.keywords.length > 0 && (
               <div className="space-y-3">
-                <h4 className="font-bold flex items-center gap-2 text-[10px] text-muted-foreground uppercase tracking-widest">
+                <h4 className="font-bold flex items-center gap-2 text-xxs text-muted-foreground uppercase tracking-widest">
                   <Zap className="h-3.5 w-3.5 text-amber-500" />
                   Keywords Optimized
                 </h4>
                 <div className="flex flex-wrap gap-2">
                   {generatedResume.keywords.map(keyword => (
-                    <Badge key={keyword} variant="outline" className="px-2 py-0.5 text-[10px] bg-emerald-50 text-emerald-700 border-emerald-100 border">
+                    <Badge key={keyword} variant="outline" className="px-2 py-0.5 text-xxs bg-emerald-50 text-emerald-700 border-emerald-100 border">
                       <CheckCircle className="h-2.5 w-2.5 mr-1" />
                       {keyword}
                     </Badge>
@@ -133,8 +133,8 @@ export const ResumeOutput: React.FC<ResumeOutputProps> = ({
             {/* Resume Content - Document View */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <h4 className="font-bold text-[10px] text-muted-foreground uppercase tracking-widest">Preview</h4>
-                <div className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded-md font-medium">
+                <h4 className="font-bold text-xxs text-muted-foreground uppercase tracking-widest">Preview</h4>
+                <div className="text-xxs text-muted-foreground bg-muted px-2 py-0.5 rounded-md font-medium">
                   {previewWordCount} words • {formData.style}
                 </div>
               </div>
@@ -142,14 +142,14 @@ export const ResumeOutput: React.FC<ResumeOutputProps> = ({
               <Textarea
                 value={editedContent}
                 onChange={(e) => setEditedContent(e.target.value)}
-                className="p-6 sm:p-8 bg-white text-black shadow-inner border rounded-sm min-h-[400px] max-h-[500px] overflow-y-auto font-sans text-[9pt] leading-relaxed resize-y"
+                className="p-6 sm:p-8 bg-white text-black shadow-inner border rounded-sm min-h-[300px] sm:min-h-[400px] max-h-[500px] overflow-y-auto font-sans text-sm leading-relaxed resize-y"
               />
             </div>
 
             {/* Suggestions */}
             {generatedResume.suggestions.length > 0 && (
               <div className="p-4 bg-amber-50/50 border border-amber-100 rounded-xl">
-                <h4 className="font-bold mb-3 flex items-center gap-2 text-[10px] text-amber-700 uppercase tracking-widest">
+                <h4 className="font-bold mb-3 flex items-center gap-2 text-xxs text-amber-700 uppercase tracking-widest">
                   <Lightbulb className="h-3.5 w-3.5" />
                   AI Suggestions
                 </h4>

@@ -17,7 +17,7 @@ const badgeVariants = cva(
           "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
         outline: "text-foreground",
         orange: cn("border-transparent", themeColors.warning.bg, themeColors.warning.text),
-        purple: cn("border-transparent", themeColors.primary.bg, themeColors.primary.text),
+        purple: cn("border-transparent", themeColors.accent.bg, themeColors.accent.text),
         teal: cn("border-transparent", themeColors.info.bg, themeColors.info.text),
         green: cn("border-transparent", themeColors.success.bg, themeColors.success.text),
         yellow: cn("border-transparent", themeColors.warning.bg, themeColors.warning.text),

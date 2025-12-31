@@ -2,6 +2,7 @@
 
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
+import { themeColors } from "@/styles/theme-colors";
 
 const statusBadgeVariants = cva(
   "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-colors",
@@ -22,7 +23,7 @@ const statusBadgeVariants = cva(
         // Application Status variants - using theme tokens
         status_interested: "bg-secondary text-secondary-foreground",
         status_applied: "bg-info-soft text-info",
-        status_interviewing: "bg-purple-500/10 text-purple-700 dark:text-purple-400",
+        status_interviewing: cn(themeColors.accent.bg, themeColors.accent.text),
         status_offer: "bg-success-soft text-success",
         status_rejected: "bg-destructive/10 text-destructive",
         status_withdrawn: "bg-muted text-muted-foreground",
@@ -40,7 +41,7 @@ const statusBadgeVariants = cva(
         neutral: "bg-muted text-muted-foreground",
       },
       size: {
-        sm: "text-[10px] px-2 py-0.5",
+        sm: "text-xxs px-2 py-0.5",
         default: "text-xs px-2.5 py-1",
         lg: "text-sm px-3 py-1.5",
       },

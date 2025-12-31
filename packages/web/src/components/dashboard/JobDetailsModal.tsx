@@ -365,7 +365,7 @@ export function JobDetailsModal({
                         <MapPin className="h-4 w-4 text-blue-500" />
                       </div>
                       <div>
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Location</p>
+                        <p className="text-xxs text-gray-400 font-bold uppercase tracking-wider mb-0.5">Location</p>
                         <p className="font-semibold text-gray-800 leading-tight">{job.location}</p>
                       </div>
                     </motion.div>
@@ -383,7 +383,7 @@ export function JobDetailsModal({
                         <DollarSign className="h-4 w-4 text-green-600" />
                       </div>
                       <div>
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Salary</p>
+                        <p className="text-xxs text-gray-400 font-bold uppercase tracking-wider mb-0.5">Salary</p>
                         <p className="font-bold text-green-700 leading-tight">
                           {getSalaryDisplay(job.salary)}
                         </p>
@@ -403,7 +403,7 @@ export function JobDetailsModal({
                         <Calendar className="h-4 w-4 text-orange-500" />
                       </div>
                       <div>
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Date Found</p>
+                        <p className="text-xxs text-gray-400 font-bold uppercase tracking-wider mb-0.5">Date Found</p>
                         <p className="font-semibold text-gray-800 leading-tight">{formatDate(job.dateFound)}</p>
                       </div>
                     </motion.div>
@@ -421,7 +421,7 @@ export function JobDetailsModal({
                         <Target className="h-4 w-4 text-purple-500" />
                       </div>
                       <div>
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Source</p>
+                        <p className="text-xxs text-gray-400 font-bold uppercase tracking-wider mb-0.5">Source</p>
                         <p className="font-semibold text-gray-800 leading-tight capitalize">{job.source}</p>
                       </div>
                     </motion.div>
@@ -531,7 +531,7 @@ export function JobDetailsModal({
                           <Briefcase className="h-4 w-4 text-blue-600" />
                         </div>
                         <div>
-                          <p className="text-[10px] text-blue-800/60 font-bold uppercase tracking-wider mb-0.5">Applied On</p>
+                          <p className="text-xxs text-blue-800/60 font-bold uppercase tracking-wider mb-0.5">Applied On</p>
                           <p className="font-bold text-blue-900">{formatDate(application.appliedDate)}</p>
                         </div>
                       </div>
@@ -544,7 +544,7 @@ export function JobDetailsModal({
                           <Clock className="h-4 w-4 text-amber-600" />
                         </div>
                         <div>
-                          <p className="text-[10px] text-amber-800/60 font-bold uppercase tracking-wider mb-0.5">Follow-up</p>
+                          <p className="text-xxs text-amber-800/60 font-bold uppercase tracking-wider mb-0.5">Follow-up</p>
                           <p className="font-bold text-amber-900">{formatDate(application.followUpDate)}</p>
                         </div>
                       </div>
@@ -559,7 +559,7 @@ export function JobDetailsModal({
                         <h5 className="font-bold text-gray-800">Internal Notes</h5>
                       </div>
                       <div className="relative p-4 rounded-xl bg-white border border-gray-100 shadow-sm italic text-gray-600 text-sm leading-relaxed">
-                        <div className="absolute -top-2 left-4 px-2 bg-white text-[10px] text-gray-400 font-bold uppercase tracking-widest">Personal Reflection</div>
+                        <div className="absolute -top-2 left-4 px-2 bg-white text-xxs text-gray-400 font-bold uppercase tracking-widest">Personal Reflection</div>
                         {application.notes}
                       </div>
                     </div>

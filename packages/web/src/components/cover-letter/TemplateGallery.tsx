@@ -83,7 +83,7 @@ export function TemplateGallery({
             )}>
               {template.name}
             </span>
-            <span className="text-[10px] text-gray-400 leading-tight">
+            <span className="text-xxs text-gray-400 leading-tight">
               {template.description}
             </span>
           </button>

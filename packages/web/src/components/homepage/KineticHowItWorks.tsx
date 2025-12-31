@@ -22,6 +22,9 @@ export function KineticHowItWorks() {
   return (
     <section className="py-24 bg-background border-t border-border" id="how-it-works">
       <div className="container px-4 md:px-6 mx-auto">
+        <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-foreground mb-16 text-center">
+          How It Works
+        </h2>
         <div className="grid md:grid-cols-3 gap-12 relative">
           {/* Connecting Line (Desktop) */}
           <div className="hidden md:block absolute top-12 left-0 w-full h-0.5 bg-muted -z-10" />

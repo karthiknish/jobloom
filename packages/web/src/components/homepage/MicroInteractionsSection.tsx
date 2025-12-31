@@ -42,7 +42,7 @@ function InteractionCard({ title, description, children, delay = 0 }: Interactio
         <div className="mb-6">{children}</div>
         <div className="flex items-center gap-2 mb-2">
           <h3 className="text-lg font-bold text-foreground">{title}</h3>
-          <div className="px-1.5 py-0.5 rounded-md bg-primary/10 text-[10px] font-bold text-primary uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity duration-fast">
+          <div className="px-1.5 py-0.5 rounded-md bg-primary/10 text-xxs font-bold text-primary uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity duration-fast">
             Live Demo
           </div>
         </div>
@@ -131,7 +131,7 @@ function ResumeScoreDemo() {
                 className="flex flex-col items-center"
               >
                 <Search className="w-6 h-6 text-primary animate-pulse" />
-                <span className="text-[10px] font-bold text-primary mt-1">SCANNING</span>
+                <span className="text-xxs font-bold text-primary mt-1">SCANNING</span>
               </motion.div>
             ) : (
               <motion.div
@@ -143,7 +143,7 @@ function ResumeScoreDemo() {
                 <span className="text-3xl font-black tracking-tighter" style={{ color }}>
                   {score}%
                 </span>
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">ATS Score</span>
+                <span className="text-xxs font-bold text-muted-foreground uppercase tracking-widest">ATS Score</span>
               </motion.div>
             )}
           </AnimatePresence>
@@ -159,7 +159,7 @@ function ResumeScoreDemo() {
         />
       )}
 
-      <div className="absolute bottom-3 right-3 text-[10px] font-bold text-muted-foreground flex items-center gap-1.5 bg-background/50 backdrop-blur-sm px-2 py-1 rounded-full border border-border/50">
+      <div className="absolute bottom-3 right-3 text-xxs font-bold text-muted-foreground flex items-center gap-1.5 bg-background/50 backdrop-blur-sm px-2 py-1 rounded-full border border-border/50">
         <MousePointer2 className="w-3 h-3 text-primary" /> CLICK TO OPTIMIZE
       </div>
     </div>
@@ -186,7 +186,7 @@ function SponsoredJobDemo() {
             <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
               <div className="w-2/3 h-full bg-blue-400/50" />
             </div>
-            <span className="text-[10px] text-muted-foreground font-medium">Promoted</span>
+            <span className="text-xxs text-muted-foreground font-medium">Promoted</span>
           </div>
         </div>
       </div>
@@ -199,7 +199,7 @@ function SponsoredJobDemo() {
             exit={{ opacity: 0, x: 20, scale: 0.8 }}
             className="absolute top-4 right-4 z-10"
           >
-            <div className="px-3 py-1.5 bg-emerald-500 text-white text-[10px] font-black rounded-lg flex items-center gap-1.5 shadow-lg shadow-emerald-500/30 border border-emerald-400">
+            <div className="px-3 py-1.5 bg-emerald-500 text-white text-xxs font-black rounded-lg flex items-center gap-1.5 shadow-lg shadow-emerald-500/30 border border-emerald-400">
               <Sparkles className="w-3.5 h-3.5" /> UK SPONSOR VERIFIED
             </div>
           </motion.div>
@@ -219,7 +219,7 @@ function SponsoredJobDemo() {
         className="absolute bottom-0 left-0 h-1.5 bg-gradient-to-r from-emerald-400 via-teal-500 to-emerald-600"
       />
       
-      <div className="absolute bottom-3 right-3 text-[10px] font-bold text-muted-foreground flex items-center gap-1.5 bg-background/50 backdrop-blur-sm px-2 py-1 rounded-full border border-border/50">
+      <div className="absolute bottom-3 right-3 text-xxs font-bold text-muted-foreground flex items-center gap-1.5 bg-background/50 backdrop-blur-sm px-2 py-1 rounded-full border border-border/50">
         <MousePointer2 className="w-3 h-3 text-primary" /> CLICK TO VERIFY
       </div>
     </div>
@@ -264,7 +264,7 @@ function ApplicationPipelineDemo() {
               >
                 <Icon className={`w-5 h-5 ${isActive || isCompleted ? "text-white" : "text-muted-foreground"}`} />
               </motion.div>
-              <span className={`text-[10px] font-black uppercase tracking-tighter ${isActive ? "text-orange-600" : "text-muted-foreground"}`}>
+              <span className={`text-xxs font-black uppercase tracking-tighter ${isActive ? "text-orange-600" : "text-muted-foreground"}`}>
                 {stage.label}
               </span>
             </div>
@@ -292,7 +292,7 @@ function ApplicationPipelineDemo() {
         </motion.div>
       )}
       
-      <div className="absolute bottom-3 right-3 text-[10px] font-bold text-muted-foreground flex items-center gap-1.5 bg-background/50 backdrop-blur-sm px-2 py-1 rounded-full border border-border/50">
+      <div className="absolute bottom-3 right-3 text-xxs font-bold text-muted-foreground flex items-center gap-1.5 bg-background/50 backdrop-blur-sm px-2 py-1 rounded-full border border-border/50">
         <MousePointer2 className="w-3 h-3 text-primary" /> CLICK TO ADVANCE
       </div>
     </div>
@@ -386,7 +386,7 @@ function AIWritingDemo() {
         </AnimatePresence>
       </div>
       
-      <div className="absolute bottom-3 right-3 text-[10px] font-bold text-muted-foreground flex items-center gap-1.5 bg-background/50 backdrop-blur-sm px-2 py-1 rounded-full border border-border/50">
+      <div className="absolute bottom-3 right-3 text-xxs font-bold text-muted-foreground flex items-center gap-1.5 bg-background/50 backdrop-blur-sm px-2 py-1 rounded-full border border-border/50">
         <MousePointer2 className="w-3 h-3 text-primary" /> CLICK TO WRITE
       </div>
     </div>

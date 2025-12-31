@@ -111,7 +111,7 @@ export const AIResumeGenerator: React.FC = () => {
               ))}
             </div>
             
-            <div className="flex justify-between text-[10px] sm:text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">
+            <div className="flex justify-between text-xxs sm:text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">
               <span className={cn(step === 1 && "text-primary")}>Personal</span>
               <span className={cn(step === 2 && "text-primary")}>Experience</span>
               <span className={cn(step === 3 && "text-primary")}>Style</span>

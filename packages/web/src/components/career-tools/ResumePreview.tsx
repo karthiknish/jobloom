@@ -129,7 +129,7 @@ export function ResumePreview({ data, options, className }: ResumePreviewProps) 
               Live Preview ({template.charAt(0).toUpperCase() + template.slice(1)})
             </span>
           </div>
-          <Badge variant="outline" className={cn("text-[10px] font-bold uppercase tracking-wider border-none", theme.primaryLight, theme.primary)}>
+          <Badge variant="outline" className={cn("text-xxs font-bold uppercase tracking-wider border-none", theme.primaryLight, theme.primary)}>
             Real-time
           </Badge>
         </CardTitle>
@@ -344,7 +344,7 @@ function ModernLayout({ data, theme }: { data: ResumeData; theme: any }) {
                 {project.technologies && project.technologies.length > 0 && (
                   <div className="flex flex-wrap gap-1.5">
                     {project.technologies.map((tech, i) => (
-                      <span key={i} className={cn("text-[10px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded", theme.primaryLight, theme.primary)}>
+                      <span key={i} className={cn("text-xxs font-black uppercase tracking-widest px-1.5 py-0.5 rounded", theme.primaryLight, theme.primary)}>
                         {tech}
                       </span>
                     ))}
@@ -462,7 +462,7 @@ function CreativeLayout({ data, theme }: { data: ResumeData; theme: any }) {
           <h3 className="text-[12px] font-bold uppercase tracking-widest border-b border-white/20 pb-2">Skills</h3>
           <div className="flex flex-wrap gap-2">
             {skills.flatMap(g => g.skills).map((s, i) => (
-              <span key={i} className="text-[10px] bg-white/10 px-2 py-1 rounded">{s}</span>
+              <span key={i} className="text-xxs bg-white/10 px-2 py-1 rounded">{s}</span>
             ))}
           </div>
         </div>

@@ -112,7 +112,7 @@ export function FeedbackHistory() {
                     </div>
                   </div>
                 </div>
-                <Badge variant={item.status === "verified" ? "default" : "secondary"} className="text-[10px] uppercase tracking-wider">
+                <Badge variant={item.status === "verified" ? "default" : "secondary"} className="text-xxs uppercase tracking-wider">
                   {item.status === "verified" ? (
                     <span className="flex items-center gap-1">
                       <Brain className="h-3 w-3" /> Verified Improvement

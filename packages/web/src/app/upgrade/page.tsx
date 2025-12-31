@@ -257,7 +257,7 @@ export default function UpgradePage() {
                                 (limitation, limitationIndex) => (
                                   <li
                                     key={limitationIndex}
-                                    className="flex items-start text-sm text-muted-foreground/70"
+                                    className="flex items-start text-sm text-muted-foreground"
                                   >
                                     <span className="w-4 h-4 mr-3 flex-shrink-0 text-center text-muted-foreground">
                                       •

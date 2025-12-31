@@ -153,7 +153,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 </div>
                 <div className="p-0 bg-slate-950 overflow-hidden">
                   <div className="flex border-b border-white/5 bg-white/5">
-                    <div className="px-4 py-2 text-[10px] font-bold text-white/40 uppercase tracking-widest border-r border-white/5">
+                    <div className="px-4 py-2 text-xxs font-bold text-white/40 uppercase tracking-widest border-r border-white/5">
                       Error Message
                     </div>
                   </div>
@@ -162,18 +162,18 @@ export class ErrorBoundary extends Component<Props, State> {
                   </div>
                   
                   <div className="flex border-y border-white/5 bg-white/5">
-                    <div className="px-4 py-2 text-[10px] font-bold text-white/40 uppercase tracking-widest border-r border-white/5">
+                    <div className="px-4 py-2 text-xxs font-bold text-white/40 uppercase tracking-widest border-r border-white/5">
                       Component Stack Trace
                     </div>
                   </div>
-                  <div className="p-4 font-mono text-[10px] text-slate-400 overflow-auto max-h-[400px] leading-relaxed scrollbar-thin scrollbar-thumb-white/10">
+                  <div className="p-4 font-mono text-xxs text-slate-400 overflow-auto max-h-[400px] leading-relaxed scrollbar-thin scrollbar-thumb-white/10">
                     <pre className="whitespace-pre-wrap">
                       {this.state.errorInfo.componentStack}
                     </pre>
                   </div>
                 </div>
               </div>
-              <p className="text-[10px] text-center text-muted-foreground mt-3 italic">
+              <p className="text-xxs text-center text-muted-foreground mt-3 italic">
                 This diagnostic view is only visible in development mode.
               </p>
             </div>

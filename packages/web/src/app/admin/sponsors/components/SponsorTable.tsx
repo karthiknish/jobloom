@@ -27,7 +27,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Edit, Trash2, Eye, MoreHorizontal, Building2, ExternalLink, ChevronLeft, ChevronRight } from "lucide-react";
+import { Edit, Trash2, Eye, MoreHorizontal, Building2, ExternalLink, ChevronLeft, ChevronRight, Users } from "lucide-react";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 interface Sponsor {
   _id: string;
@@ -183,106 +184,119 @@ export function SponsorTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {currentSponsors.map((sponsor: Sponsor) => (
-              <TableRow key={sponsor._id} className="hover:bg-gray-50 transition-colors border-gray-100 group">
-                <TableCell className="pl-4">
-                  <Checkbox
-                    checked={selectedSponsors.includes(sponsor._id)}
-                    onCheckedChange={(checked) => handleSelectSponsor(sponsor._id, checked as boolean)}
-                    aria-label="Select sponsor"
-                    className="border-gray-300 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+            {currentSponsors.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} className="p-0 border-0">
+                  <EmptyState
+                    icon={Users}
+                    title="No sponsors found"
+                    description="No sponsors match your current filters or search criteria."
+                    className="border-0 rounded-none py-12"
                   />
                 </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-9 w-9 border border-gray-200 bg-white">
-                      {sponsor.logo ? (
-                        <AvatarImage src={sponsor.logo} alt={sponsor.name} />
-                      ) : null}
-                      <AvatarFallback className="bg-blue-50 text-blue-600 font-medium">
-                        {sponsor.name.slice(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <div className="font-medium text-foreground">{sponsor.name}</div>
-                      {sponsor.aliases && sponsor.aliases.length > 0 && (
-                        <div className="text-xs text-muted-foreground">
-                          {sponsor.aliases.slice(0, 2).join(", ")}
-                          {sponsor.aliases.length > 2 && "..."}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant="outline"
-                    className={`capitalize font-medium ${getSponsorshipTypeBadge(sponsor.sponsorshipType)}`}
-                  >
-                    {sponsor.sponsorshipType}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Building2 className="h-3 w-3 text-gray-400" />
-                    <span className="capitalize text-sm text-gray-600">{sponsor.industry || "Unknown"}</span>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant={sponsor.isActive !== false ? "default" : "secondary"}
-                    className={sponsor.isActive !== false 
-                      ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200" 
-                      : "bg-gray-100 text-gray-600 border-gray-200"}
-                  >
-                    {sponsor.isActive !== false ? "Active" : "Inactive"}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-muted-foreground text-sm">
-                  {new Date(sponsor.createdAt).toLocaleDateString()}
-                </TableCell>
-                <TableCell className="text-right pr-4">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-gray-100 data-[state=open]:bg-gray-100">
-                        <MoreHorizontal className="h-4 w-4 text-gray-500" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48 border-gray-200">
-                      <DropdownMenuItem onClick={() => onViewSponsor(sponsor)} className="cursor-pointer">
-                        <Eye className="mr-2 h-4 w-4 text-gray-500" />
-                        View Details
-                      </DropdownMenuItem>
-                      {sponsor.website && (
-                        <DropdownMenuItem asChild className="cursor-pointer">
-                          <a
-                            href={sponsor.website}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center"
-                          >
-                            <ExternalLink className="mr-2 h-4 w-4 text-gray-500" />
-                            Visit Website
-                          </a>
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuItem onClick={() => onEditSponsor(sponsor)} className="cursor-pointer">
-                        <Edit className="mr-2 h-4 w-4 text-gray-500" />
-                        Edit Sponsor
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator className="bg-gray-100" />
-                      <DropdownMenuItem
-                        onClick={() => onDeleteSponsor(sponsor._id)}
-                        className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete Sponsor
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              currentSponsors.map((sponsor: Sponsor) => (
+                <TableRow key={sponsor._id} className="hover:bg-gray-50 transition-colors border-gray-100 group">
+                  <TableCell className="pl-4">
+                    <Checkbox
+                      checked={selectedSponsors.includes(sponsor._id)}
+                      onCheckedChange={(checked) => handleSelectSponsor(sponsor._id, checked as boolean)}
+                      aria-label="Select sponsor"
+                      className="border-gray-300 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-9 w-9 border border-gray-200 bg-white">
+                        {sponsor.logo ? (
+                          <AvatarImage src={sponsor.logo} alt={sponsor.name} />
+                        ) : null}
+                        <AvatarFallback className="bg-blue-50 text-blue-600 font-medium">
+                          {sponsor.name.slice(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="font-medium text-foreground">{sponsor.name}</div>
+                        {sponsor.aliases && sponsor.aliases.length > 0 && (
+                          <div className="text-xs text-muted-foreground">
+                            {sponsor.aliases.slice(0, 2).join(", ")}
+                            {sponsor.aliases.length > 2 && "..."}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant="outline"
+                      className={`capitalize font-medium ${getSponsorshipTypeBadge(sponsor.sponsorshipType)}`}
+                    >
+                      {sponsor.sponsorshipType}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Building2 className="h-3 w-3 text-gray-400" />
+                      <span className="capitalize text-sm text-gray-600">{sponsor.industry || "Unknown"}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={sponsor.isActive !== false ? "default" : "secondary"}
+                      className={sponsor.isActive !== false 
+                        ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200" 
+                        : "bg-gray-100 text-gray-600 border-gray-200"}
+                    >
+                      {sponsor.isActive !== false ? "Active" : "Inactive"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground text-sm">
+                    {new Date(sponsor.createdAt).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell className="text-right pr-4">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-gray-100 data-[state=open]:bg-gray-100">
+                          <MoreHorizontal className="h-4 w-4 text-gray-500" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48 border-gray-200">
+                        <DropdownMenuItem onClick={() => onViewSponsor(sponsor)} className="cursor-pointer">
+                          <Eye className="mr-2 h-4 w-4 text-gray-500" />
+                          View Details
+                        </DropdownMenuItem>
+                        {sponsor.website && (
+                          <DropdownMenuItem asChild className="cursor-pointer">
+                            <a
+                              href={sponsor.website}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center"
+                            >
+                              <ExternalLink className="mr-2 h-4 w-4 text-gray-500" />
+                              Visit Website
+                            </a>
+                          </DropdownMenuItem>
+                        )}
+                        <DropdownMenuItem onClick={() => onEditSponsor(sponsor)} className="cursor-pointer">
+                          <Edit className="mr-2 h-4 w-4 text-gray-500" />
+                          Edit Sponsor
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator className="bg-gray-100" />
+                        <DropdownMenuItem
+                          onClick={() => onDeleteSponsor(sponsor._id)}
+                          className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete Sponsor
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>

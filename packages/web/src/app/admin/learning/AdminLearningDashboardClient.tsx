@@ -247,10 +247,10 @@ export default function AdminLearningDashboardClient() {
                     <TableRow key={point._id} className="group">
                       <TableCell>
                         <div className="flex flex-col gap-1">
-                          <Badge variant="outline" className="capitalize text-[10px] w-fit">
+                          <Badge variant="outline" className="capitalize text-xxs w-fit">
                             {point.contentType.replace('_', ' ')}
                           </Badge>
-                          <span className="text-[10px] text-muted-foreground">{point.context}</span>
+                          <span className="text-xxs text-muted-foreground">{point.context}</span>
                         </div>
                       </TableCell>
                       <TableCell className="max-w-md">
@@ -262,7 +262,7 @@ export default function AdminLearningDashboardClient() {
                               <p>{point.recommendation}</p>
                             </div>
                           )}
-                          <p className="text-[10px] text-muted-foreground pt-1 italic">
+                          <p className="text-xxs text-muted-foreground pt-1 italic">
                             Detected {formatDistanceToNow(new Date(point.createdAt))} ago
                           </p>
                         </div>
@@ -270,7 +270,7 @@ export default function AdminLearningDashboardClient() {
                       <TableCell className="text-center">
                         <div className="flex flex-col items-center">
                           <span className="text-lg font-bold text-gray-700">{point.occurrenceCount}</span>
-                          <span className="text-[10px] text-muted-foreground">Reports</span>
+                          <span className="text-xxs text-muted-foreground">Reports</span>
                         </div>
                       </TableCell>
                       <TableCell>

@@ -19,8 +19,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Edit, Trash2, Eye, MoreHorizontal } from "lucide-react";
+import { Edit, Trash2, Eye, MoreHorizontal, Building2, ExternalLink, ChevronLeft, ChevronRight, Users } from "lucide-react";
 import type { BlogPost } from "@/types/api";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 interface BlogTableProps {
   posts: BlogPost[];
@@ -82,80 +83,93 @@ export function BlogTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {posts.map((post: BlogPost) => (
-            <TableRow key={post._id} className="hover:bg-gray-50 transition-colors border-gray-200">
-              <TableCell>
-                <Checkbox
-                  checked={selectedPosts.includes(post._id)}
-                  onCheckedChange={(checked) => handleSelectPost(post._id, checked as boolean)}
-                  aria-label="Select post"
-                  className="border-gray-300"
+          {posts.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={8} className="p-0 border-0">
+                <EmptyState
+                  icon={Edit}
+                  title="No blog posts found"
+                  description="You haven't created any blog posts yet or your current filters don't match any posts."
+                  className="border-0 rounded-none py-12"
                 />
               </TableCell>
-              <TableCell className="font-medium max-w-xs">
-                <div className="truncate text-foreground" title={post.title}>
-                  {post.title}
-                </div>
-              </TableCell>
-              <TableCell>
-                <Badge
-                  variant={
-                    post.status === "published"
-                      ? "default"
-                      : post.status === "draft"
-                      ? "secondary"
-                      : "outline"
-                  }
-                  className={
-                    post.status === "published"
-                      ? "bg-green-100 text-green-700 hover:bg-green-200 border-0"
-                      : post.status === "draft"
-                      ? "bg-yellow-100 text-yellow-700 hover:bg-yellow-200 border-0"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0"
-                  }
-                >
-                  {post.status}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <Badge variant="outline" className="font-normal border-gray-200 text-gray-600">
-                  {post.category}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-gray-600">{post.viewCount || 0}</TableCell>
-              <TableCell className="text-gray-600">{post.likeCount || 0}</TableCell>
-              <TableCell className="text-gray-600 text-sm">
-                {new Date(post.createdAt).toLocaleDateString()}
-              </TableCell>
-              <TableCell className="text-right">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0 text-gray-500 hover:text-foreground">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="border-gray-200">
-                    <DropdownMenuItem onClick={() => onViewPost(post)} className="text-gray-700 focus:bg-gray-100">
-                      <Eye className="mr-2 h-4 w-4" />
-                      View
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onEditPost(post)} className="text-gray-700 focus:bg-gray-100">
-                      <Edit className="mr-2 h-4 w-4" />
-                      Edit
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator className="bg-gray-200" />
-                    <DropdownMenuItem
-                      onClick={() => onDeletePost(post._id)}
-                      className="text-red-600 focus:text-red-700 focus:bg-red-50"
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
             </TableRow>
-          ))}
+          ) : (
+            posts.map((post: BlogPost) => (
+              <TableRow key={post._id} className="hover:bg-gray-50 transition-colors border-gray-200">
+                <TableCell>
+                  <Checkbox
+                    checked={selectedPosts.includes(post._id)}
+                    onCheckedChange={(checked) => handleSelectPost(post._id, checked as boolean)}
+                    aria-label="Select post"
+                    className="border-gray-300"
+                  />
+                </TableCell>
+                <TableCell className="font-medium max-w-xs">
+                  <div className="truncate text-foreground" title={post.title}>
+                    {post.title}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Badge
+                    variant={
+                      post.status === "published"
+                        ? "default"
+                        : post.status === "draft"
+                        ? "secondary"
+                        : "outline"
+                    }
+                    className={
+                      post.status === "published"
+                        ? "bg-green-100 text-green-700 hover:bg-green-200 border-0"
+                        : post.status === "draft"
+                        ? "bg-yellow-100 text-yellow-700 hover:bg-yellow-200 border-0"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0"
+                    }
+                  >
+                    {post.status}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge variant="outline" className="font-normal border-gray-200 text-gray-600">
+                    {post.category}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-gray-600">{post.viewCount || 0}</TableCell>
+                <TableCell className="text-gray-600">{post.likeCount || 0}</TableCell>
+                <TableCell className="text-gray-600 text-sm">
+                  {new Date(post.createdAt).toLocaleDateString()}
+                </TableCell>
+                <TableCell className="text-right">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="h-8 w-8 p-0 text-gray-500 hover:text-foreground">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="border-gray-200">
+                      <DropdownMenuItem onClick={() => onViewPost(post)} className="text-gray-700 focus:bg-gray-100">
+                        <Eye className="mr-2 h-4 w-4" />
+                        View
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onEditPost(post)} className="text-gray-700 focus:bg-gray-100">
+                        <Edit className="mr-2 h-4 w-4" />
+                        Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator className="bg-gray-200" />
+                      <DropdownMenuItem
+                        onClick={() => onDeletePost(post._id)}
+                        className="text-red-600 focus:text-red-700 focus:bg-red-50"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
         </TableBody>
       </Table>
     </div>

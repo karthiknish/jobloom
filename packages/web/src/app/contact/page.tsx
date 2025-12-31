@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useApiMutation } from "../../hooks/useApi";
 import { contactApi } from "../../utils/api/contact";
 import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/ui/LoadingButton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -213,33 +214,21 @@ export default function ContactPage() {
                   />
 
                   <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                    <Button
+                    <LoadingButton
                       type="submit"
-                      disabled={isSubmitting || !isValid}
+                      loading={isSubmitting}
+                      disabled={!isValid}
                       variant="premium"
                       className="w-full h-12 text-base"
                       size="lg"
+                      loadingIcon={<Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      loadingText="Sending..."
                     >
-                      {isSubmitting ? (
-                        <motion.div
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          className="flex items-center justify-center"
-                        >
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          <span>Sending...</span>
-                        </motion.div>
-                      ) : (
-                        <motion.div
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          className="flex items-center justify-center"
-                        >
-                          <Send className="mr-2 h-4 w-4" />
-                          <span>Send Message</span>
-                        </motion.div>
-                      )}
-                    </Button>
+                      <div className="flex items-center justify-center">
+                        <Send className="mr-2 h-4 w-4" />
+                        <span>Send Message</span>
+                      </div>
+                    </LoadingButton>
                   </motion.div>
                 </form>
               </Form>

@@ -229,7 +229,7 @@ export const CoverLetterGenerator: React.FC<CoverLetterGeneratorProps> = ({
           {letterScore > 0 && (
             <div className="text-right px-4 py-2 bg-white rounded-xl border shadow-sm">
               <div className={cn("text-2xl font-black", themeColors.primary.text)}>{letterScore}%</div>
-              <div className="text-[10px] uppercase tracking-wider font-bold text-gray-400">Quality Score</div>
+              <div className="text-xxs uppercase tracking-wider font-bold text-gray-400">Quality Score</div>
             </div>
           )}
         </div>
@@ -268,7 +268,7 @@ export const CoverLetterGenerator: React.FC<CoverLetterGeneratorProps> = ({
                   <SelectItem value="purple">Creative Purple</SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-[10px] text-gray-400 mt-2 md:col-span-2 lg:col-span-3">
+              <p className="text-xxs text-gray-400 mt-2 md:col-span-2 lg:col-span-3">
                 This color will be used for headers and accents in your PDF.
               </p>
             </div>

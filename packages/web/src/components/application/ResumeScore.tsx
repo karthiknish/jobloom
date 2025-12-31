@@ -170,7 +170,7 @@ export function ResumeScore({ score, enhanced = true, compact = false }: ResumeS
                   <p className="text-xs font-medium text-amber-900">
                     Boost score by 30+ points
                   </p>
-                  <p className="text-[10px] text-amber-700">
+                  <p className="text-xxs text-amber-700">
                     AI optimization & expert tips
                   </p>
                 </div>

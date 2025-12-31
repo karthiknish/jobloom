@@ -127,7 +127,7 @@ export function VersionHistory({
                         <h4 className="font-bold text-sm truncate max-w-[200px]">
                           {version.name || "Untitled Revision"}
                         </h4>
-                        <Badge variant="secondary" className="text-[10px] h-4">
+                        <Badge variant="secondary" className="text-xxs h-4">
                           Score: {version.score.overall}
                         </Badge>
                       </div>

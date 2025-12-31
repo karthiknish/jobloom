@@ -7,6 +7,7 @@ import { useFirebaseAuth, getLastAuthMethod } from "@/providers/firebase-auth-pr
 import { motion } from "framer-motion";
 import { Eye, EyeOff, Loader2, Mail, Lock, Chrome, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/ui/LoadingButton";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -346,32 +347,26 @@ function SignInInner() {
                 </div>
               </div>
 
-              <Button
+              <LoadingButton
                 type="submit"
                 variant="premium"
                 size="xl"
                 className="w-full"
-                disabled={isLoading}
+                loading={isLoading}
+                loadingText="Signing in..."
               >
-                {isLoading ? (
-                  <div className="flex items-center justify-center">
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    <span>Signing in...</span>
+                <div className="flex items-center justify-center">
+                  <div className="flex items-center">
+                    <span>Sign in</span>
+                    {lastAuthMethod === "email" && (
+                      <div className="ml-2 flex items-center text-xxs bg-white/20 px-2 py-0.5 rounded-full text-white">
+                        <div className="w-1.5 h-1.5 bg-white rounded-full mr-1 animate-pulse" />
+                        <span>Last used</span>
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  <div className="flex items-center justify-center">
-                    <div className="flex items-center">
-                      <span>Sign in</span>
-                      {lastAuthMethod === "email" && (
-                        <div className="ml-2 flex items-center text-[10px] bg-white/20 px-2 py-0.5 rounded-full text-white">
-                          <div className="w-1.5 h-1.5 bg-white rounded-full mr-1 animate-pulse" />
-                          <span>Last used</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </Button>
+                </div>
+              </LoadingButton>
             </motion.form>
 
             <div className="relative my-6">
@@ -383,33 +378,27 @@ function SignInInner() {
               </div>
             </div>
 
-            <Button
+            <LoadingButton
               variant="gradient-secondary"
               onClick={handleGoogle}
               size="xl"
               className="w-full"
-              disabled={isLoading}
+              loading={isLoading}
+              loadingText="Redirecting to Google..."
             >
-              {isLoading ? (
-                <div className="flex items-center justify-center">
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  <span>Redirecting to Google...</span>
+              <div className="flex items-center justify-center">
+                <div className="relative">
+                  <Chrome className="mr-2 h-5 w-5" />
+                  {lastAuthMethod === "google" && (
+                    <div
+                      className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full"
+                      title="Last used method"
+                    />
+                  )}
                 </div>
-              ) : (
-                <div className="flex items-center justify-center">
-                  <div className="relative">
-                    <Chrome className="mr-2 h-5 w-5" />
-                    {lastAuthMethod === "google" && (
-                      <div
-                        className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full"
-                        title="Last used method"
-                      />
-                    )}
-                  </div>
-                  <span>{lastAuthMethod === "google" ? "Continue with Google (Last used)" : "Continue with Google"}</span>
-                </div>
-              )}
-            </Button>
+                <span>{lastAuthMethod === "google" ? "Continue with Google (Last used)" : "Continue with Google"}</span>
+              </div>
+            </LoadingButton>
 
             <motion.div
               initial={{ opacity: 0 }}

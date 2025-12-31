@@ -103,7 +103,7 @@ export function SettingsTabs({
                   {activeTabLabel}
                 </span>
                 {showDescriptions && (
-                  <span className="text-[10px] text-muted-foreground truncate w-full">
+                  <span className="text-xxs text-muted-foreground truncate w-full">
                     {SETTINGS_TABS.find(t => t.id === activeTab)?.description}
                   </span>
                 )}
@@ -121,7 +121,7 @@ export function SettingsTabs({
                   {tab.icon && <tab.icon className="h-4 w-4" />}
                   <div className="flex flex-col">
                     <span className="font-medium">{tab.label}</span>
-                    <span className="text-[10px] text-muted-foreground">{tab.description}</span>
+                    <span className="text-xxs text-muted-foreground">{tab.description}</span>
                   </div>
                 </div>
               </SelectItem>

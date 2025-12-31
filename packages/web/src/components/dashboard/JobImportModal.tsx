@@ -479,7 +479,7 @@ export function JobImportModal({
                 <Layers className="h-4 w-4 text-emerald-600" />
                 Select Import Method
               </Label>
-              <Badge variant="outline" className="text-[10px] font-bold text-emerald-600 bg-emerald-50 border-emerald-200 uppercase tracking-tighter">
+              <Badge variant="outline" className="text-xxs font-bold text-emerald-600 bg-emerald-50 border-emerald-200 uppercase tracking-tighter">
                 Most Popular: Extension
               </Badge>
             </div>
@@ -517,7 +517,7 @@ export function JobImportModal({
                       "block font-bold text-sm",
                       importMethod === "extension" ? "text-emerald-900" : "text-foreground"
                     )}>Extension</span>
-                    <p className="text-[10px] text-muted-foreground leading-tight font-medium">Auto-sync from job sites as you browse</p>
+                    <p className="text-xxs text-muted-foreground leading-tight font-medium">Auto-sync from job sites as you browse</p>
                   </div>
                 </div>
                 {isExtensionInstalled && (
@@ -553,7 +553,7 @@ export function JobImportModal({
                       "block font-bold text-sm",
                       importMethod === "csv" ? "text-emerald-900" : "text-foreground"
                     )}>CSV Upload</span>
-                    <p className="text-[10px] text-muted-foreground leading-tight font-medium">Bulk import your existing database</p>
+                    <p className="text-xxs text-muted-foreground leading-tight font-medium">Bulk import your existing database</p>
                   </div>
                 </div>
               </button>
@@ -583,7 +583,7 @@ export function JobImportModal({
                       "block font-bold text-sm",
                       importMethod === "url" ? "text-emerald-900" : "text-foreground"
                     )}>Job Link</span>
-                    <p className="text-[10px] text-muted-foreground leading-tight font-medium">Extract details from any job listing</p>
+                    <p className="text-xxs text-muted-foreground leading-tight font-medium">Extract details from any job listing</p>
                   </div>
                 </div>
               </button>
@@ -752,12 +752,12 @@ export function JobImportModal({
                                     </p>
                                     <div className="flex items-center gap-2 mt-1">
                                       {job.source && (
-                                        <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                                        <Badge variant="outline" className="text-xxs px-1.5 py-0">
                                           {job.source}
                                         </Badge>
                                       )}
                                       {job.isSponsored && (
-                                        <Badge className="text-[10px] px-1.5 py-0 bg-green-500 hover:bg-green-500">
+                                        <Badge className="text-xxs px-1.5 py-0 bg-green-500 hover:bg-green-500">
                                           Sponsored
                                         </Badge>
                                       )}
@@ -928,7 +928,7 @@ export function JobImportModal({
                           Parse
                         </Button>
                       </div>
-                      <p className="text-[10px] text-muted-foreground italic px-1">
+                      <p className="text-xxs text-muted-foreground italic px-1">
                         We&apos;ll use AI to extract title, company, and salary directly from the link.
                       </p>
                     </div>
@@ -952,7 +952,7 @@ export function JobImportModal({
                         </div>
                         <h4 className="font-bold text-sm text-emerald-900 uppercase tracking-tight">Parsed Successfully</h4>
                       </div>
-                      <Badge variant="outline" className="bg-white border-emerald-200 text-emerald-700 text-[10px] font-bold">
+                      <Badge variant="outline" className="bg-white border-emerald-200 text-emerald-700 text-xxs font-bold">
                         AI Result
                       </Badge>
                     </div>

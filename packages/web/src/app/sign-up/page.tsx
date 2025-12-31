@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
+import { PasswordStrength } from "@/components/ui/PasswordStrength";
 
 function SignUpInner() {
   const router = useRouter();
@@ -33,7 +34,6 @@ function SignUpInner() {
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [nameError, setNameError] = useState<string | null>(null);
-  const [passwordStrength, setPasswordStrength] = useState<number>(0);
   const { toast } = useToast();
 
   const redirectUrlComplete = search.get("redirect_url") || "/welcome";
@@ -87,21 +87,6 @@ function SignUpInner() {
     return null;
   };
 
-  const calculatePasswordStrength = (password: string): number => {
-    let strength = 0;
-
-    // Length check
-    if (password.length >= 8) strength += 1;
-    if (password.length >= 12) strength += 1;
-
-    // Character variety
-    if (/[a-z]/.test(password)) strength += 1; // lowercase
-    if (/[A-Z]/.test(password)) strength += 1; // uppercase
-    if (/[0-9]/.test(password)) strength += 1; // numbers
-    if (/[^A-Za-z0-9]/.test(password)) strength += 1; // special characters
-
-    return Math.min(strength, 5);
-  };
 
   // Real-time validation
   const handleNameChange = (value: string) => {
@@ -117,7 +102,6 @@ function SignUpInner() {
   const handlePasswordChange = (value: string) => {
     setPassword(value);
     setPasswordError(validatePassword(value));
-    setPasswordStrength(calculatePasswordStrength(value));
   };
 
   // Auto-trigger Google sign-up if requested via query
@@ -327,7 +311,7 @@ function SignUpInner() {
               </div>
 
               <div className="space-y-3">
-                <Label htmlFor="email" className="text-sm font-semibold text-foreground">Email</Label>
+                <Label htmlFor="email" required className="text-sm font-semibold text-foreground">Email</Label>
                 <div className="relative group">
                   <Mail className="absolute left-4 top-3.5 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-premium" />
                   <Input
@@ -353,7 +337,7 @@ function SignUpInner() {
               </div>
 
               <div className="space-y-3">
-                <Label htmlFor="password" className="text-sm font-semibold text-foreground">Password</Label>
+                <Label htmlFor="password" required className="text-sm font-semibold text-foreground">Password</Label>
                 <div className="relative group">
                   <Lock className="absolute left-4 top-3.5 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-premium" />
                   <Input
@@ -383,65 +367,7 @@ function SignUpInner() {
                 </div>
                 
                 {/* Password Strength Indicator */}
-                {password && (
-                  <motion.div 
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    className="space-y-2"
-                  >
-                    <div className="flex gap-1">
-                      {[1, 2, 3, 4, 5].map((level) => (
-                        <motion.div
-                          key={level}
-                          initial={{ scaleX: 0 }}
-                          animate={{ scaleX: 1 }}
-                          transition={{ duration: 0.2, delay: level * 0.05 }}
-                          className={`h-1.5 flex-1 rounded-full transition-colors duration-300 ${
-                            level <= passwordStrength
-                              ? passwordStrength <= 2
-                                ? 'bg-destructive shadow-[0_0_8px_rgba(239,68,68,0.5)]'
-                                : passwordStrength <= 3
-                                ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]'
-                                : 'bg-primary shadow-[0_0_8px_rgba(16,185,129,0.5)]'
-                              : 'bg-muted'
-                          }`}
-                        />
-                      ))}
-                    </div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className={`font-semibold transition-colors duration-300 ${
-                        passwordStrength <= 2 ? 'text-destructive' : 
-                        passwordStrength <= 3 ? 'text-amber-600' : 
-                        'text-primary'
-                      }`}>
-                        {passwordStrength === 0 && 'Very weak'}
-                        {passwordStrength === 1 && 'Weak'}
-                        {passwordStrength === 2 && 'Fair'}
-                        {passwordStrength === 3 && 'Good'}
-                        {passwordStrength === 4 && 'Strong'}
-                        {passwordStrength === 5 && 'Very strong'}
-                      </span>
-                      <div className="flex gap-3 text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          {password.length >= 8 ? (
-                            <Check className="h-3 w-3 text-primary" />
-                          ) : (
-                            <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/30" />
-                          )}
-                          <span className={password.length >= 8 ? "text-foreground font-medium" : ""}>8+ chars</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          {/[^A-Za-z0-9]/.test(password) ? (
-                            <Check className="h-3 w-3 text-primary" />
-                          ) : (
-                            <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/30" />
-                          )}
-                          <span className={/[^A-Za-z0-9]/.test(password) ? "text-foreground font-medium" : ""}>Special</span>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
+                <PasswordStrength password={password} className="mt-2" />
                 
                 {passwordError && (
                   <p className="text-sm text-destructive mt-1">{passwordError}</p>

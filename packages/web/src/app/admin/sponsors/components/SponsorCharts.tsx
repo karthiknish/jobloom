@@ -27,7 +27,7 @@ export function SponsorCharts({ stats }: SponsorChartsProps) {
   };
 
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
+    <div className="grid gap-6 md:grid-cols-2">
       {/* Sponsorship Type Distribution */}
       <Card className="border-gray-200">
         <CardHeader>

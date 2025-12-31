@@ -138,7 +138,7 @@ export function CareerToolsSidebar({
                     </div>
                   )}
                   {isActive && (
-                    <div className="mt-2 pt-2 border-t border-border/50 flex items-center gap-1 text-[10px] font-bold text-primary uppercase tracking-wider">
+                    <div className="mt-2 pt-2 border-t border-border/50 flex items-center gap-1 text-xxs font-bold text-primary uppercase tracking-wider">
                       <div className="w-1 h-1 rounded-full bg-primary animate-pulse" />
                       Active Section
                     </div>

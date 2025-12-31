@@ -200,7 +200,7 @@ export const Step3TemplateSelection: React.FC<Step3TemplateSelectionProps> = ({
               <div className="flex items-center justify-between mb-1">
                 <h4 className="font-bold text-sm tracking-tight">{style.label}</h4>
                 {formData.style === style.value && (
-                  <Badge variant="default" className="text-[10px] px-1.5 py-0">Selected</Badge>
+                  <Badge variant="default" className="text-xxs px-1.5 py-0">Selected</Badge>
                 )}
               </div>
               <p className="text-xs text-muted-foreground line-clamp-1">{style.description}</p>

@@ -617,7 +617,7 @@ export default function AdminUserDashboardClient() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4"
+            className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4"
           >
             <Card className="hover:bg-gray-50 transition-all duration-200 border-gray-200">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -687,7 +687,7 @@ export default function AdminUserDashboardClient() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="grid grid-cols-1 gap-6 xl:grid-cols-3"
+            className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3"
           >
             <Card className="xl:col-span-2 border-gray-200">
               <CardHeader>

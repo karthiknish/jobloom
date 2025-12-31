@@ -41,17 +41,17 @@ export const BentoCard = ({
   return (
     <div
       className={cn(
-        "row-span-1 rounded-xl group/bento hover:shadow-xl transition duration-200 shadow-input p-4 bg-white border border-slate-100 justify-between flex flex-col space-y-4",
+        "row-span-1 rounded-xl group/bento hover:shadow-xl transition duration-200 shadow-input p-4 bg-card border border-border justify-between flex flex-col space-y-4",
         className
       )}
     >
       {header}
       <div className="group-hover/bento:translate-x-2 transition duration-200">
         {icon}
-        <div className="font-sans font-bold text-slate-800 mb-2 mt-2">
+        <h3 className="font-sans font-bold text-foreground mb-2 mt-2">
           {title}
-        </div>
-        <div className="font-sans font-normal text-slate-500 text-xs">
+        </h3>
+        <div className="font-sans font-normal text-muted-foreground text-xs">
           {description}
         </div>
         {cta && (

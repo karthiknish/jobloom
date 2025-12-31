@@ -23,7 +23,7 @@ export function BentoFeatures() {
           />
         </div>
       ),
-      icon: <FileText className="h-4 w-4 text-muted-foreground" />,
+      icon: <FileText className="icon-sm text-muted-foreground" />,
       className: "md:col-span-2",
       cta: "Build Resume",
       href: "/resume-builder"
@@ -42,7 +42,7 @@ export function BentoFeatures() {
           />
         </div>
       ),
-      icon: <PenTool className="h-4 w-4 text-primary" />,
+      icon: <PenTool className="icon-sm text-primary" />,
       className: "md:col-span-1",
       cta: "Write Letter",
       href: "/cover-letter"
@@ -51,7 +51,7 @@ export function BentoFeatures() {
       title: "Volunteer Program",
       description: "Gain real experience working with UK clients. Build your portfolio while helping others.",
       header: (
-        <div className="flex flex-1 w-full h-full min-h-[6rem] rounded-xl overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100">
+        <div className="flex flex-1 w-full h-full min-h-[6rem] rounded-xl overflow-hidden bg-gradient-to-br from-info-soft to-secondary/30 border border-info/10">
           <Image 
             src="/images/bento/volunteer-program.png" 
             alt="Volunteer Program" 
@@ -61,7 +61,7 @@ export function BentoFeatures() {
           />
         </div>
       ),
-      icon: <MessageSquare className="h-4 w-4 text-blue-500" />,
+      icon: <MessageSquare className="icon-sm text-info" />,
       className: "md:col-span-1",
       cta: "Learn More",
       href: "/volunteer"
@@ -70,7 +70,7 @@ export function BentoFeatures() {
       title: "Application Tracker",
       description: "Kanban board to organize your job search. Never miss a follow-up again.",
       header: (
-        <div className="flex flex-1 w-full h-full min-h-[6rem] rounded-xl overflow-hidden bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-100">
+        <div className="flex flex-1 w-full h-full min-h-[6rem] rounded-xl overflow-hidden bg-gradient-to-br from-warning-soft to-secondary/30 border border-warning/10">
           <Image 
             src="/images/bento/application-tracker.png" 
             alt="Application Tracker" 
@@ -80,7 +80,7 @@ export function BentoFeatures() {
           />
         </div>
       ),
-      icon: <LayoutDashboard className="h-4 w-4 text-orange-500" />,
+      icon: <LayoutDashboard className="icon-sm text-warning" />,
       className: "md:col-span-2",
       cta: "View Board",
       href: "/dashboard"

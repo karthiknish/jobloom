@@ -118,7 +118,7 @@ export function JobSelector({
           </div>
         )}
         {jobs.length > 5 && !searchTerm && (
-          <p className="text-center text-[10px] text-gray-400">
+          <p className="text-center text-xxs text-gray-400">
             Showing latest 5 jobs. Use search to find more.
           </p>
         )}

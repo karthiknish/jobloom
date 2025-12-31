@@ -104,7 +104,7 @@ export function EmailHistory({ applicationId }: EmailHistoryProps) {
                         {item.reminderType || item.type}
                       </Badge>
                       {item.automated && (
-                        <Badge variant="secondary" className="text-[10px] h-4 px-1">
+                        <Badge variant="secondary" className="text-xxs h-4 px-1">
                           Auto
                         </Badge>
                       )}

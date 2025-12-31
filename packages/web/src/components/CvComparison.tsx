@@ -173,7 +173,7 @@ export function CvComparison({ analyses, onBack }: CvComparisonProps) {
                                 analysis.analysisStatus === "processing" ? "secondary" :
                                 "destructive"
                               }
-                              className="text-[10px] px-2 h-5 font-bold uppercase tracking-wider"
+                              className="text-xxs px-2 h-5 font-bold uppercase tracking-wider"
                             >
                               {analysis.analysisStatus}
                             </Badge>
@@ -293,7 +293,7 @@ export function CvComparison({ analyses, onBack }: CvComparisonProps) {
               {/* Strengths */}
               {analysis.strengths && analysis.strengths.length > 0 && (
                 <div className="space-y-3">
-                  <h4 className={cn("font-bold text-[10px] uppercase tracking-widest flex items-center gap-2", themeColors.success.text)}>
+                  <h4 className={cn("font-bold text-xxs uppercase tracking-widest flex items-center gap-2", themeColors.success.text)}>
                     <CheckCircle className="h-3.5 w-3.5" />
                     Key Strengths
                   </h4>
@@ -311,7 +311,7 @@ export function CvComparison({ analyses, onBack }: CvComparisonProps) {
               {/* Weaknesses */}
               {analysis.weaknesses && analysis.weaknesses.length > 0 && (
                 <div className="space-y-3">
-                  <h4 className={cn("font-bold text-[10px] uppercase tracking-widest flex items-center gap-2", themeColors.error.text)}>
+                  <h4 className={cn("font-bold text-xxs uppercase tracking-widest flex items-center gap-2", themeColors.error.text)}>
                     <AlertTriangle className="h-3.5 w-3.5" />
                     Areas to Improve
                   </h4>
@@ -329,7 +329,7 @@ export function CvComparison({ analyses, onBack }: CvComparisonProps) {
               {/* ATS Score */}
               {analysis.atsCompatibility && (
                 <div className="space-y-3 border-t pt-4">
-                  <h4 className={cn("font-bold text-[10px] uppercase tracking-widest flex items-center gap-2", themeColors.primary.text)}>
+                  <h4 className={cn("font-bold text-xxs uppercase tracking-widest flex items-center gap-2", themeColors.primary.text)}>
                     <Target className="h-3.5 w-3.5" />
                     ATS Optimization
                   </h4>
@@ -350,19 +350,19 @@ export function CvComparison({ analyses, onBack }: CvComparisonProps) {
               {/* Keyword Analysis */}
               {analysis.keywordAnalysis && (
                 <div className="space-y-3 border-t pt-4">
-                  <h4 className={cn("font-bold text-[10px] uppercase tracking-widest flex items-center gap-2", themeColors.info.text)}>
+                  <h4 className={cn("font-bold text-xxs uppercase tracking-widest flex items-center gap-2", themeColors.info.text)}>
                     <Search className="h-3.5 w-3.5" />
                     Keywords Found
                   </h4>
                   <div className="flex gap-2 flex-wrap">
                     {analysis.keywordAnalysis.presentKeywords?.slice(0, 5).map((keyword, i) => (
-                      <Badge key={i} variant="secondary" className="text-[10px] px-2 py-0.5 bg-blue-50 text-blue-700 border-blue-100">
+                      <Badge key={i} variant="secondary" className="text-xxs px-2 py-0.5 bg-blue-50 text-blue-700 border-blue-100">
                         {keyword}
                       </Badge>
                     ))}
                     {analysis.keywordAnalysis.presentKeywords &&
                      analysis.keywordAnalysis.presentKeywords.length > 5 && (
-                      <Badge variant="outline" className="text-[10px] px-2 py-0.5">
+                      <Badge variant="outline" className="text-xxs px-2 py-0.5">
                         +{analysis.keywordAnalysis.presentKeywords.length - 5} more
                       </Badge>
                     )}
@@ -403,7 +403,7 @@ export function CvComparison({ analyses, onBack }: CvComparisonProps) {
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="text-right">
-                      <p className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-1">Delta</p>
+                      <p className="text-xxs uppercase tracking-widest font-bold text-muted-foreground mb-1">Delta</p>
                       <div className="flex items-center gap-2 justify-end">
                         {improvement > 0 && <TrendingUp className={cn("h-5 w-5", themeColors.success.icon)} />}
                         {improvement < 0 && <TrendingDown className={cn("h-5 w-5", themeColors.error.icon)} />}
@@ -418,7 +418,7 @@ export function CvComparison({ analyses, onBack }: CvComparisonProps) {
                     </div>
                     <div className="h-12 w-px bg-border mx-2" />
                     <div>
-                      <p className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-1">Range</p>
+                      <p className="text-xxs uppercase tracking-widest font-bold text-muted-foreground mb-1">Range</p>
                       <p className="text-xl font-bold">{firstScore} → {lastScore}</p>
                     </div>
                   </div>

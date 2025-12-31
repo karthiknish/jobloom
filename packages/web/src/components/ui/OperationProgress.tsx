@@ -163,7 +163,7 @@ export function OperationProgress({
                       )}
                     >
                       <div className={cn(
-                        "w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-medium",
+                        "w-5 h-5 rounded-full flex items-center justify-center text-xxs font-medium",
                         isComplete && "bg-green-100 text-green-600",
                         isCurrent && "bg-primary/10 text-primary",
                         isPending && "bg-muted text-muted-foreground"

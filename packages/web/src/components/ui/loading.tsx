@@ -114,7 +114,7 @@ const LoadingOverlay = ({ className, ...props }: LoadingProps) => {
   return (
     <div
       className={cn(
-        "absolute inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-[1px]",
+        "absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-[1px]",
         className
       )}
     >

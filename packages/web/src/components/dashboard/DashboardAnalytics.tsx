@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FeatureGate } from "@/components/UpgradePrompt";
 import { useSubscription } from "@/providers/subscription-provider";
-import { TrendingUp, MapPin, CheckCircle, BarChart3, DollarSign } from "lucide-react";
+import { TrendingUp, MapPin, CheckCircle, BarChart3, DollarSign, Search, FileText } from "lucide-react";
 import { CvAnalysisHistory } from "@/components/CvAnalysisHistory";
 import { EmptyState, EmptyStateInline } from "@/components/ui/EmptyState";
 import { GoalsSettingsModal } from "@/components/dashboard/GoalsSettingsModal";
@@ -142,6 +142,37 @@ export function DashboardAnalytics({
   const jobTypeSuccess = getSuccessRateByJobType(safeApplications);
   const salaryGrowth = calculateSalaryGrowth(safeApplications);
   const salaryMetrics = calculateSalaryMetrics(safeApplications);
+
+  if (safeApplications.length === 0 && safeCvAnalyses.length === 0) {
+    return (
+      <motion.div
+        variants={slideInUp}
+        initial="hidden"
+        animate="visible"
+        className="space-y-6"
+      >
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-foreground">Analytics & Insights</h2>
+        </div>
+        <EmptyState
+          icon={BarChart3}
+          title="No analytics available"
+          description="Start applying for jobs or analyze your CV to see your job search performance and insights here."
+          primaryAction={{
+            label: "Explore Jobs",
+            href: "/dashboard/jobs",
+            icon: Search
+          }}
+          secondaryAction={{
+            label: "Analyze CV",
+            onClick: () => (document.getElementById('cv-upload-input')?.click()),
+            icon: FileText
+          }}
+          className="py-24"
+        />
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
@@ -372,7 +403,7 @@ export function DashboardAnalytics({
                         <div className="flex items-center gap-3">
                           <span className="text-sm font-bold">{stage.count}</span>
                           {index > 0 && (
-                            <Badge variant="secondary" className="text-[10px] h-5">
+                            <Badge variant="secondary" className="text-xxs h-5">
                               {stage.percentage}% conv.
                             </Badge>
                           )}
@@ -436,7 +467,7 @@ export function DashboardAnalytics({
                               style={{ width: `${company.rate}%` }}
                             />
                           </div>
-                          <span className="text-[10px] font-medium w-6">{company.rate}%</span>
+                          <span className="text-xxs font-medium w-6">{company.rate}%</span>
                         </div>
                       </div>
                     ))}
@@ -464,7 +495,7 @@ export function DashboardAnalytics({
                     </div>
                     <div className="flex items-baseline gap-1">
                       <span className="text-xl font-bold">{type.rate}%</span>
-                      <span className="text-[10px] text-muted-foreground">success rate</span>
+                      <span className="text-xxs text-muted-foreground">success rate</span>
                     </div>
                     <div className="mt-3 w-full bg-muted rounded-full h-1.5">
                       <div 
@@ -533,7 +564,7 @@ export function DashboardAnalytics({
                               style={{ height: `${Math.max(5, height)}%` }}
                             >
                               {count > 0 && (
-                                <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-popover text-popover-foreground text-[10px] px-1.5 py-0.5 rounded border shadow-sm opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-20">
+                                <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-popover text-popover-foreground text-xxs px-1.5 py-0.5 rounded border shadow-sm opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-20">
                                   {count} jobs
                                 </div>
                               )}
@@ -675,7 +706,7 @@ export function DashboardAnalytics({
 function AnalyticsTeaser() {
   return (
     <div className="relative mt-8">
-      <div className="absolute inset-0 bg-background/60 backdrop-blur-[4px] z-10 flex flex-col items-center justify-center p-6 text-center rounded-2xl border border-dashed border-primary/30">
+      <div className="absolute inset-0 bg-background/80 backdrop-blur-[4px] z-10 flex flex-col items-center justify-center p-6 text-center rounded-2xl border border-dashed border-primary/30">
         <div className="bg-primary/10 p-3 rounded-full mb-4">
           <TrendingUp className="h-8 w-8 text-primary" />
         </div>

@@ -409,7 +409,7 @@ export function ManualBuilderSection({ state, tabsListClassName, tabsTriggerClas
                 <SelectTrigger className="w-full h-14 bg-white border-border/50 shadow-md rounded-xl px-4 focus:ring-2 focus:ring-primary/20">
                   <div className="flex items-center gap-3 w-full">
                     <div className="flex flex-col items-start">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Current Step</span>
+                      <span className="text-xxs font-bold uppercase tracking-wider text-muted-foreground">Current Step</span>
                       <div className="text-sm font-bold text-foreground">
                         <SelectValue />
                       </div>
@@ -656,7 +656,7 @@ export function ManualBuilderSection({ state, tabsListClassName, tabsTriggerClas
                 <Eye className="h-3 w-3" />
                 Live Preview
               </span>
-              <Badge variant="outline" className="text-[10px] font-bold">Real-time</Badge>
+              <Badge variant="outline" className="text-xxs font-bold">Real-time</Badge>
             </div>
             <div className="p-1">
               <ResumePreview 

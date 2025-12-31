@@ -109,7 +109,7 @@ export function PremiumUpgradeCard({
               <div className="p-1.5 bg-white/20 rounded-lg">
                 <Crown className="h-4 w-4 text-white" />
               </div>
-              <Badge className="bg-white/20 text-white text-[10px] border-0">
+              <Badge className="bg-white/20 text-white text-xxs border-0">
                 Premium
               </Badge>
             </div>
@@ -206,7 +206,7 @@ export function PremiumUpgradeCard({
                   <h3 className="font-bold text-lg text-foreground">
                     Upgrade to Premium
                   </h3>
-                  <Badge className="bg-amber-100 text-amber-700 text-[10px] border-0">
+                  <Badge className="bg-amber-100 text-amber-700 text-xxs border-0">
                     Limited Offer
                   </Badge>
                 </div>

@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { LoadingButton } from "@/components/ui/LoadingButton";
 import { 
   Loader2, 
   AlertCircle, 
@@ -341,15 +342,15 @@ export function JobForm({ onSubmit, onCancel, initialData, isEditing = false }: 
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onFormSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
                 control={form.control}
                 name="title"
                 render={({ field }) => (
                   <FormItem className="space-y-2">
-                    <FormLabel className="flex items-center gap-2">
+                    <FormLabel required className="flex items-center gap-2">
                       <Briefcase className="h-4 w-4 text-muted-foreground" />
-                      Job Title <span className="text-red-500">*</span>
+                      Job Title
                     </FormLabel>
                     <FormControl>
                       <Input 
@@ -371,9 +372,9 @@ export function JobForm({ onSubmit, onCancel, initialData, isEditing = false }: 
                 name="company"
                 render={({ field }) => (
                   <FormItem className="space-y-2">
-                    <FormLabel className="flex items-center gap-2">
+                    <FormLabel required className="flex items-center gap-2">
                       <Building2 className="h-4 w-4 text-muted-foreground" />
-                      Company <span className="text-red-500">*</span>
+                      Company
                     </FormLabel>
                     <FormControl>
                       <Input 
@@ -463,7 +464,7 @@ export function JobForm({ onSubmit, onCancel, initialData, isEditing = false }: 
               )}
             />
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <FormField
                 control={form.control}
                 name="jobType"
@@ -536,7 +537,7 @@ export function JobForm({ onSubmit, onCancel, initialData, isEditing = false }: 
               )}
             />
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 items-start">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 items-start">
               <div className="space-y-4 pt-2">
                 <FormField
                   control={form.control}
@@ -621,22 +622,14 @@ export function JobForm({ onSubmit, onCancel, initialData, isEditing = false }: 
           <Button variant="outline" onClick={onCancel} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button 
+          <LoadingButton 
             onClick={form.handleSubmit(onFormSubmit)} 
-            disabled={isSubmitting}
+            loading={isSubmitting}
+            loadingText={isEditing ? "Saving..." : "Adding..."}
             className="min-w-[120px]"
           >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                {isEditing ? "Saving..." : "Adding..."}
-              </>
-            ) : (
-              <>
-                {isEditing ? "Save Changes" : "Add Job"}
-              </>
-            )}
-          </Button>
+            {isEditing ? "Save Changes" : "Add Job"}
+          </LoadingButton>
         </div>
         </CardFooter>
       </Card>

@@ -411,7 +411,7 @@ export function Dashboard({ initialView = "dashboard" }: DashboardProps) {
             animate={{ opacity: 1, y: 0 }}
             className="mb-6 p-5 bg-primary rounded-2xl text-primary-foreground shadow-lg"
           >
-            <div className="flex flex-col md:flex-row items-center justify-between gap-5">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
               <div className="flex items-start gap-4">
                 <div className="p-3 bg-primary-foreground/20 rounded-xl">
                   <Sparkles className="h-6 w-6 text-primary-foreground" />

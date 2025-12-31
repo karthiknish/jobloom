@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/form";
 import { Loader2, PlusCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/ui/LoadingButton";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -236,7 +237,7 @@ export function ApplicationForm({
                 name="status"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Application Status</FormLabel>
+                    <FormLabel required>Application Status</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
@@ -333,10 +334,14 @@ export function ApplicationForm({
               <Button type="button" variant="outline" className="motion-button" onClick={onCancel}>
                 Cancel
               </Button>
-              <Button type="submit" className="motion-button" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              <LoadingButton 
+                type="submit" 
+                className="motion-button" 
+                loading={isSubmitting}
+                loadingText={application ? "Updating..." : "Creating..."}
+              >
                 {application ? "Update Application" : "Create Application"}
-              </Button>
+              </LoadingButton>
             </div>
           </form>
         </Form>

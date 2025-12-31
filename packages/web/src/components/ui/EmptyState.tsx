@@ -37,29 +37,29 @@ interface EmptyStateProps {
 const iconColorClasses = {
   primary: "bg-primary/10 text-primary",
   muted: "bg-muted text-muted-foreground",
-  success: "bg-green-500/10 text-green-600",
-  warning: "bg-amber-500/10 text-amber-600", 
-  error: "bg-red-500/10 text-red-600",
+  success: "bg-success-soft text-success",
+  warning: "bg-warning-soft text-warning", 
+  error: "bg-destructive-soft text-destructive",
 };
 
 const sizeClasses = {
   sm: {
     container: "py-8 px-4",
-    icon: "h-12 w-12",
-    iconWrapper: "h-16 w-16",
+    icon: "icon-lg",
+    iconWrapper: "h-14 w-14",
     title: "text-lg",
     description: "text-sm",
   },
   md: {
     container: "py-12 px-6",
-    icon: "h-10 w-10",
-    iconWrapper: "h-20 w-20",
+    icon: "icon-xl",
+    iconWrapper: "h-18 w-18",
     title: "text-xl",
     description: "text-base",
   },
   lg: {
     container: "py-16 px-8",
-    icon: "h-12 w-12",
+    icon: "icon-2xl",
     iconWrapper: "h-24 w-24",
     title: "text-2xl",
     description: "text-lg",

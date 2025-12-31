@@ -48,7 +48,7 @@ export function DashboardHeader({
       aria-label="Dashboard Overview"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center py-8 gap-5">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center py-8 gap-6">
           {/* Left Section - Title & User Info */}
           <div className="flex items-start md:items-center gap-4">
             <motion.div
@@ -58,7 +58,7 @@ export function DashboardHeader({
               whileHover={{ scale: 1.05, rotate: 2 }}
               className="h-12 w-12 md:h-14 md:w-14 rounded-2xl bg-white/20 flex items-center justify-center shadow-lg"
             >
-              <Briefcase className="h-6 w-6 md:h-7 md:w-7 text-white" />
+              <Briefcase className="icon-lg md:icon-xl text-white" />
             </motion.div>
             <div>
               <motion.h1
@@ -91,12 +91,12 @@ export function DashboardHeader({
                 >
                   {plan === "premium" ? (
                     <>
-                      <Sparkles className="h-3 w-3 inline mr-1" />
+                      <Sparkles className="icon-xs inline mr-1" />
                       Premium
                     </>
                   ) : (
                     <>
-                      <Rocket className="h-3 w-3 inline mr-1" />
+                      <Rocket className="icon-xs inline mr-1" />
                       Free
                     </>
                   )}
@@ -108,7 +108,7 @@ export function DashboardHeader({
                       variant="outline"
                       className="text-xs font-medium border-emerald-200 text-emerald-700 bg-emerald-50 hidden sm:inline-flex"
                     >
-                      <Zap className="h-3 w-3 mr-1" />
+                      <Zap className="icon-xs mr-1" />
                       {currentUsage.cvAnalyses}/
                       {limits.cvAnalysesPerMonth === -1
                         ? "∞"
@@ -132,7 +132,7 @@ export function DashboardHeader({
                     className="motion-button shadow-lg hover:shadow-xl bg-white text-primary hover:bg-white/90 border border-primary/10 gap-2 font-semibold"
                     aria-label="Import jobs from extension"
                   >
-                    <Chrome className="h-4 w-4" />
+                    <Chrome className="icon-sm" />
                     <span className="hidden sm:inline">Import from Extension</span>
                     <span className="sm:hidden">Import</span>
                   </Button>
@@ -153,7 +153,7 @@ export function DashboardHeader({
                     className="motion-button text-primary-foreground/90 hover:text-primary-foreground hover:bg-white/20 gap-2"
                     aria-label="Add new job manually"
                   >
-                    <FilePlus className="h-4 w-4" />
+                    <FilePlus className="icon-sm" />
                     <span className="hidden sm:inline">Add Job</span>
                   </Button>
                 </TooltipTrigger>
@@ -172,7 +172,7 @@ export function DashboardHeader({
                     className="motion-button text-primary-foreground/70 hover:text-primary-foreground hover:bg-white/10 gap-2"
                     aria-label="Track existing application"
                   >
-                    <ClipboardList className="h-4 w-4" />
+                    <ClipboardList className="icon-sm" />
                     <span className="hidden md:inline">Track Application</span>
                   </Button>
                 </TooltipTrigger>

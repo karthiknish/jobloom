@@ -72,7 +72,19 @@ export function ProfileSettings({ firebaseUser }: ProfileSettingsProps) {
             transition={{ duration: 0.6, delay: 0.4 }}
             className="flex items-center gap-6"
           >
-            <div className="relative group cursor-pointer" onClick={handleAvatarClick}>
+            <div 
+              className="relative group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-full" 
+              onClick={handleAvatarClick}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  handleAvatarClick();
+                }
+              }}
+              role="button"
+              tabIndex={0}
+              aria-label="Change profile picture"
+            >
               <Avatar className={`h-24 w-24 border-2 transition-all ${isUploading ? 'opacity-50' : 'group-hover:border-primary/50'}`}>
                 <AvatarImage src={formData.profile.avatar} alt="Profile" />
                 <AvatarFallback className="text-xl bg-primary/10 text-primary">

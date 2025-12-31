@@ -139,12 +139,12 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
       <div className="px-4 py-2.5 border-t border-border/50 bg-muted/30 flex items-center justify-between text-xs text-muted-foreground">
         <div className="flex items-center gap-4">
           <span className="flex items-center gap-1">
-            <kbd className="px-1.5 py-0.5 bg-muted rounded text-[10px] font-mono">↑</kbd>
-            <kbd className="px-1.5 py-0.5 bg-muted rounded text-[10px] font-mono">↓</kbd>
+            <kbd className="px-1.5 py-0.5 bg-muted rounded text-xxs font-mono">↑</kbd>
+            <kbd className="px-1.5 py-0.5 bg-muted rounded text-xxs font-mono">↓</kbd>
             <span className="ml-1">to navigate</span>
           </span>
           <span className="flex items-center gap-1">
-            <kbd className="px-1.5 py-0.5 bg-muted rounded text-[10px] font-mono">↵</kbd>
+            <kbd className="px-1.5 py-0.5 bg-muted rounded text-xxs font-mono">↵</kbd>
             <span className="ml-1">to select</span>
           </span>
         </div>

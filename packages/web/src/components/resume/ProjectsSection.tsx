@@ -144,7 +144,7 @@ export function ProjectsSection({ data, onChange }: ProjectsSectionProps) {
             const completeness = getCompleteness(watchProjects?.[index] || {});
             return (
               <div key={field.id} className="relative group p-6 border rounded-xl bg-background transition-all hover:shadow-md hover:border-primary/20">
-                <div className="absolute -top-3 left-4 px-2 py-0.5 bg-background border rounded-md text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                <div className="absolute -top-3 left-4 px-2 py-0.5 bg-background border rounded-md text-xxs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
                   Project #{index + 1}
                   {completeness > 0 && (
                     <span className={cn(

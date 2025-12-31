@@ -9,7 +9,7 @@ interface AdminStatsProps {
 
 export function AdminStats({ stats }: AdminStatsProps) {
   return (
-    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 mb-8">
+    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-8">
       <Card>
         <CardContent className="p-5">
           <div className="flex items-center">

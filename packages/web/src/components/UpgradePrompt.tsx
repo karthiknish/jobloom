@@ -280,7 +280,7 @@ export function UpgradePrompt({ feature, variant = "default" }: UpgradePromptPro
                       <div className="mb-4">
                         {(() => {
                           const Icon = getIcon(feature.icon);
-                          return <Icon className="h-8 w-8 text-primary" />;
+                          return <Icon className="icon-xl text-primary" />;
                         })()}
                       </div>
                       <h3 className="text-lg font-semibold text-foreground mb-2">

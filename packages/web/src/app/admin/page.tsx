@@ -308,7 +308,7 @@ export default function AdminPage() {
                     {`${stats?.aiFeedback.total ?? 0} total (${stats?.aiFeedback.newThisWeek ?? 0} new)`}
                   </p>
                   {stats?.aiFeedback.verifiedLearningPoints !== undefined && (
-                    <p className="text-[10px] text-purple-600 font-medium flex items-center gap-1">
+                    <p className="text-xxs text-purple-600 font-medium flex items-center gap-1">
                       <Brain className="h-2.5 w-2.5" />
                       {stats.aiFeedback.verifiedLearningPoints} verified insights
                     </p>
