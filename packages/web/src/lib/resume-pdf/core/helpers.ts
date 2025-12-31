@@ -1,7 +1,8 @@
 import jsPDF from 'jspdf';
 import { ResumeData } from '@/types/resume';
 import { ResumePDFOptions } from './types';
-import { getColorScheme, applyTextColor, applyDrawColor } from './colors';
+import { getColorScheme, applyTextColor, applyDrawColor, applyFillColor } from './colors';
+export { getColorScheme, applyTextColor, applyFillColor, applyDrawColor };
 
 export function addHeader(pdf: jsPDF, data: ResumeData, opts: ResumePDFOptions, pageWidth: number, currentY: number): number {
   const colors = getColorScheme(opts.colorScheme);
