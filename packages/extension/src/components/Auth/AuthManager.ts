@@ -34,13 +34,37 @@ const validateEmail = (email: string): string | null => {
 
 const validatePassword = (password: string): string | null => {
   if (!password) return "Password is required";
-  if (password.length < 6) return "Password must be at least 6 characters";
+  if (password.length < 8) return "Password must be at least 8 characters";
   if (password.length > 128) return "Password is too long";
 
-  // Check for common weak passwords
+  // Check for complexity (at least one number or special character)
+  const hasComplexity = /[\d!@#$%^&*()_+\-=\[\]{}|;':",./<>?\\`~]/.test(password);
+  if (!hasComplexity) {
+    return "Password must contain at least one number or special character";
+  }
+
+  // Check for sequential characters (e.g., "12345", "abcde")
+  const sequential = /(?:012|123|234|345|456|567|678|789|abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz)/i;
+  if (sequential.test(password)) {
+    return "Password cannot contain sequential characters";
+  }
+
+  // Check for repeated characters (e.g., "aaa", "111")
+  const repeated = /(.)\1{2,}/;
+  if (repeated.test(password)) {
+    return "Password cannot contain repeated characters";
+  }
+
+  // Expanded common password blocklist (50+ entries)
   const commonPasswords = [
-    'password', '123456', 'qwerty', 'admin', 'letmein', 'welcome',
-    'monkey', 'dragon', 'master', 'sunshine', 'princess', 'football'
+    'password', '123456', '12345678', 'qwerty', 'admin', 'letmein', 'welcome',
+    'monkey', 'dragon', 'master', 'sunshine', 'princess', 'football', 'iloveyou',
+    'trustno1', 'batman', 'superman', 'shadow', 'michael', 'jennifer', 'hunter',
+    'charlie', 'andrew', 'jordan', 'jessica', 'ashley', 'bailey', 'passw0rd',
+    'mustang', 'access', 'starwars', 'whatever', 'freedom', 'nothing', 'secret',
+    'summer', 'winter', 'spring', 'autumn', 'baseball', 'soccer', 'hockey',
+    'killer', 'pepper', 'daniel', 'joshua', 'maggie', 'nicole', 'chelsea',
+    'biteme', 'hello', 'scooter', 'golfer', 'cookie', 'junior', 'dallas'
   ];
   if (commonPasswords.includes(password.toLowerCase())) {
     return "Please choose a stronger password";

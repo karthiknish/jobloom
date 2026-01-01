@@ -41,6 +41,40 @@ interface AuthFailureTracker {
   lastFailureTime: number;
 }
 
+/**
+ * Validate extracted token data from injected scripts.
+ * Helps prevent using malformed or potentially malicious data from XSS-compromised pages.
+ */
+function isValidExtractedToken(data: any): data is { token: string; userId?: string; userEmail?: string; success?: boolean } {
+  if (!data || typeof data !== 'object') return false;
+  if (typeof data.token !== 'string') return false;
+  if (data.token.length < 100 || data.token.length > 2000) return false;
+  
+  // Verify it's a JWT structure (header.payload.signature)
+  const parts = data.token.split('.');
+  if (parts.length !== 3) return false;
+  
+  // Validate each part is base64url-encoded
+  const base64urlRegex = /^[A-Za-z0-9_-]+$/;
+  for (const part of parts) {
+    if (!part || !base64urlRegex.test(part)) return false;
+  }
+  
+  // Validate userId if present (should be alphanumeric)
+  if (data.userId !== undefined && typeof data.userId !== 'string') return false;
+  if (data.userId && !/^[a-zA-Z0-9_-]{1,128}$/.test(data.userId)) return false;
+  
+  // Validate userEmail if present
+  if (data.userEmail !== undefined && typeof data.userEmail !== 'string') return false;
+  if (data.userEmail && data.userEmail.length > 254) return false;
+  if (data.userEmail) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(data.userEmail)) return false;
+  }
+  
+  return true;
+}
+
 function isChromeStorageAvailable(): boolean {
   return typeof chrome !== "undefined" && !!chrome.storage?.local;
 }
@@ -382,8 +416,10 @@ export async function getSessionProof(): Promise<SessionProof | null> {
 }
 
 export async function setSessionProof(params: { sessionHash: string; expiresAt: number }): Promise<void> {
-  if (!params.sessionHash || params.sessionHash.length < 8) {
-    console.warn("Hireall: Invalid session hash provided to setSessionProof");
+  // Validate session hash format: must be 32-128 hex characters
+  const sessionHashRegex = /^[a-f0-9]{32,128}$/i;
+  if (!params.sessionHash || !sessionHashRegex.test(params.sessionHash)) {
+    console.warn("Hireall: Invalid session hash provided to setSessionProof - must be 32-128 hex characters");
     return;
   }
   const proof: SessionProof = {
@@ -408,8 +444,8 @@ async function getTokenFromHireallTab(forceRefresh: boolean): Promise<CachedAuth
       url: [
         "https://hireall.app/*",
         "https://*.hireall.app/*",
-        "https://*.vercel.app/*",
-        "https://*.netlify.app/*",
+        "https://hireall-*.vercel.app/*",
+        "https://hireall-*.netlify.app/*",
         "http://localhost:3000/*"
       ]
     });
@@ -515,6 +551,12 @@ async function getTokenFromHireallTab(forceRefresh: boolean): Promise<CachedAuth
       });
 
       if (response?.token) {
+        // Validate extracted token data to mitigate XSS risks
+        if (!isValidExtractedToken(response)) {
+          console.warn("Hireall: Extracted token data failed validation, skipping");
+          continue;
+        }
+        
         let expiresAt = Date.now() + DEFAULT_TOKEN_TTL_MS;
         const payload = decodeJwtPayload(response.token);
         if (payload) {

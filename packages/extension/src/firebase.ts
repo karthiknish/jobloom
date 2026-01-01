@@ -275,6 +275,25 @@ export const signInWithGoogle = async (): Promise<User> => {
       .map(b => b.toString(16).padStart(2, '0'))
       .join('');
     
+    // Generate CSRF-protection state parameter
+    const state = Array.from(crypto.getRandomValues(new Uint8Array(16)))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+    
+    // Store state for validation (expires in 5 minutes)
+    if (chrome.storage?.session) {
+      await chrome.storage.session.set({ 
+        oauthState: state, 
+        oauthStateExp: Date.now() + 300000 
+      });
+    } else {
+      // Fallback to local storage if session storage not available
+      await chrome.storage.local.set({ 
+        oauthState: state, 
+        oauthStateExp: Date.now() + 300000 
+      });
+    }
+    
     const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
     authUrl.searchParams.set('client_id', GOOGLE_WEB_APP_CLIENT_ID);
     authUrl.searchParams.set('redirect_uri', redirectUrl);
@@ -282,6 +301,7 @@ export const signInWithGoogle = async (): Promise<User> => {
     authUrl.searchParams.set('scope', scopes);
     authUrl.searchParams.set('prompt', 'select_account');
     authUrl.searchParams.set('nonce', nonce);
+    authUrl.searchParams.set('state', state);
 
     const authUrlString = authUrl.toString();
     logger.debug('Firebase', 'Launching web auth flow...', { authUrl: authUrlString, clientId: GOOGLE_WEB_APP_CLIENT_ID });
@@ -334,6 +354,40 @@ export const signInWithGoogle = async (): Promise<User> => {
       // This can happen for user cancellations or misconfiguration.
       throw new Error(oauthErrorDescription ? `${oauthError}: ${oauthErrorDescription}` : oauthError);
     }
+    
+    // Validate state parameter for CSRF protection
+    const returnedState = hashParams.get('state');
+    const storedStateData = chrome.storage?.session 
+      ? await chrome.storage.session.get(['oauthState', 'oauthStateExp'])
+      : await chrome.storage.local.get(['oauthState', 'oauthStateExp']);
+    
+    // Clear stored state immediately after retrieval
+    if (chrome.storage?.session) {
+      await chrome.storage.session.remove(['oauthState', 'oauthStateExp']);
+    } else {
+      await chrome.storage.local.remove(['oauthState', 'oauthStateExp']);
+    }
+    
+    if (!returnedState || !storedStateData.oauthState) {
+      logger.error('Firebase', 'OAuth state parameter missing', { 
+        hasReturnedState: !!returnedState, 
+        hasStoredState: !!storedStateData.oauthState 
+      });
+      throw new Error('OAuth state validation failed: missing state');
+    }
+    
+    if (returnedState !== storedStateData.oauthState) {
+      logger.error('Firebase', 'OAuth state parameter mismatch (potential CSRF attack)');
+      throw new Error('OAuth state validation failed: state mismatch');
+    }
+    
+    if (storedStateData.oauthStateExp && Date.now() > storedStateData.oauthStateExp) {
+      logger.error('Firebase', 'OAuth state expired');
+      throw new Error('OAuth state validation failed: state expired');
+    }
+    
+    logger.debug('Firebase', 'OAuth state validated successfully');
+    
     const accessToken = hashParams.get('access_token');
 
     if (!accessToken) {

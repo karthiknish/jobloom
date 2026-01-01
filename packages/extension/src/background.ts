@@ -10,9 +10,9 @@ import {
   sanitizeJobData,
   validateJobData,
   SecureStorage,
-  ExtensionRateLimiter,
   ExtensionSecurityLogger
 } from "./security";
+import { PersistentRateLimiter, clearAllRateLimitData } from "./utils/PersistentRateLimiter";
 // Import Firebase - static import since dynamic imports don't work reliably in service workers
 import { signInWithGoogle, getAuthInstance, waitForAuthState } from "./firebase";
 
@@ -72,16 +72,25 @@ chrome.runtime.onInstalled.addListener((details) => {
   // Initialize rate limiting cleanup and monitoring
   initRateLimitCleanup();
   startRateLimitMonitoring();
+  
+  // Clear stale rate limit data on install/update to prevent issues
+  clearAllRateLimitData().then(() => {
+    logger.info("Background", "Rate limit data cleared for fresh start");
+  }).catch(err => {
+    logger.warn("Background", "Failed to clear rate limit data", { error: err });
+  });
+  
   logger.info("Background", "Rate limiting and monitoring initialized");
 });
 
 // Initialize analytics on service worker start
 initAnalytics();
 
-// Initialize security components
-const messageRateLimiter = new ExtensionRateLimiter(60000, 50); // 50 messages per minute
-const authRateLimiter = new ExtensionRateLimiter(15 * 60 * 1000, 5); // 5 auth attempts per 15 minutes
-const apiProxyRateLimiter = new ExtensionRateLimiter(60000, 400); // higher limit for API proxying
+// Initialize security components with persistent rate limiting
+// These survive service worker restarts, preventing bypass via worker termination
+const messageRateLimiter = new PersistentRateLimiter('msg', 60000, 50); // 50 messages per minute
+const authRateLimiter = new PersistentRateLimiter('auth', 15 * 60 * 1000, 5); // 5 auth attempts per 15 minutes
+const apiProxyRateLimiter = new PersistentRateLimiter('api', 60000, 400); // higher limit for API proxying
 
 function isAllowedProxyUrl(url: string, baseUrl: string): boolean {
   try {
@@ -108,13 +117,14 @@ async function fetchWithTimeoutInBackground(url: string, init: RequestInit, time
   }
 }
 
-// Enhanced authentication rate limiting
-function checkAuthRateLimit(identifier: string): { allowed: boolean; retryAfter?: number } {
-  const isAllowed = authRateLimiter.isAllowed(identifier);
+// Enhanced authentication rate limiting (now async for persistent storage)
+async function checkAuthRateLimitAsync(identifier: string): Promise<{ allowed: boolean; retryAfter?: number }> {
+  const isAllowed = await authRateLimiter.isAllowed(identifier);
   
   if (!isAllowed) {
-    // Calculate retry after time (when the window resets)
-    const retryAfter = Math.ceil(authRateLimiter['windowMs'] / 1000); // Convert to seconds
+    // Get actual reset time from persistent storage
+    const resetTime = await authRateLimiter.getResetTime(identifier);
+    const retryAfter = Math.ceil(resetTime / 1000); // Convert to seconds
     
     logger.warn("Background", "Auth rate limit exceeded", {
       identifier,
@@ -149,8 +159,8 @@ async function syncAuthStateFromSite(options: { tabId?: number; userIdOverride?:
   const targetPatterns = [
     "https://hireall.app/*",
     "https://*.hireall.app/*",
-    "https://*.vercel.app/*",
-    "https://*.netlify.app/*",
+    "https://hireall-*.vercel.app/*",
+    "https://hireall-*.netlify.app/*",
   ];
 
   const tryUpdateStorage = (userId: string, userEmail?: string | null) => {
@@ -440,19 +450,24 @@ chrome.runtime.onMessage.addListener((request: any, sender: chrome.runtime.Messa
     return;
   }
 
-  // Rate limiting
+  // Rate limiting (using sync method for immediate response, async updates happen in background)
   if (request?.action === 'apiProxy') {
-    if (!apiProxyRateLimiter.isAllowed(senderId)) {
+    if (!apiProxyRateLimiter.isAllowedSync(senderId)) {
       ExtensionSecurityLogger.logSuspiciousActivity('api_proxy_rate_limit_exceeded', { senderId });
       logger.warn('Background', 'API proxy rate limit exceeded', { senderId });
       sendResponse({ success: false, error: 'Rate limit exceeded' });
       return;
     }
-  } else if (!messageRateLimiter.isAllowed(senderId)) {
+    // Also update persistent storage asynchronously
+    void apiProxyRateLimiter.isAllowed(senderId);
+  } else if (!messageRateLimiter.isAllowedSync(senderId)) {
     ExtensionSecurityLogger.logSuspiciousActivity('rate_limit_exceeded', { senderId });
     logger.warn("Background", "Rate limit exceeded", { senderId });
     sendResponse({ error: 'Rate limit exceeded' });
     return;
+  } else {
+    // Also update persistent storage asynchronously
+    void messageRateLimiter.isAllowed(senderId);
   }
 
   if (request.action === "addJob") {
@@ -710,22 +725,24 @@ chrome.runtime.onMessage.addListener((request: any, sender: chrome.runtime.Messa
   } else if (request.action === "googleSignIn") {
     // Run OAuth from background so the popup closing doesn't interrupt the flow.
     const authIdentifier = sender.tab?.id?.toString() || sender.id || 'popup';
-    const rateLimitCheck = checkAuthRateLimit(authIdentifier);
-
-    if (!rateLimitCheck.allowed) {
-      sendResponse({
-        success: false,
-        error: 'Too many authentication attempts. Please try again later.',
-        retryAfter: rateLimitCheck.retryAfter,
-      });
-      return true;
-    }
-
-    // Respond immediately to avoid MV3 message port timeouts during OAuth.
-    // The actual result will be persisted (storage) and broadcast via AUTH_STATE_CHANGED.
-    sendResponse({ success: true, started: true });
-
+    
+    // Handle async rate limit check and OAuth flow
     void (async () => {
+      const rateLimitCheck = await checkAuthRateLimitAsync(authIdentifier);
+
+      if (!rateLimitCheck.allowed) {
+        sendResponse({
+          success: false,
+          error: 'Too many authentication attempts. Please try again later.',
+          retryAfter: rateLimitCheck.retryAfter,
+        });
+        return;
+      }
+
+      // Respond immediately to avoid MV3 message port timeouts during OAuth.
+      // The actual result will be persisted (storage) and broadcast via AUTH_STATE_CHANGED.
+      sendResponse({ success: true, started: true });
+
       try {
         const user = await signInWithGoogle();
         logger.info('Background', 'Google sign-in successful', { userId: user?.uid });
@@ -783,7 +800,6 @@ chrome.runtime.onMessage.addListener((request: any, sender: chrome.runtime.Messa
             hireallLastGoogleSignInError: { message, at: Date.now() },
           });
         }
-
       }
     })();
 
@@ -851,54 +867,57 @@ chrome.runtime.onMessage.addListener((request: any, sender: chrome.runtime.Messa
     // After web app login, capture Firebase UID and store
     logger.info("Background", "Authentication successful, capturing Firebase UID");
 
-    // Apply authentication rate limiting
+    // Apply authentication rate limiting (async)
     const authIdentifier = sender.tab?.id?.toString() || sender.id || 'unknown';
-    const rateLimitCheck = checkAuthRateLimit(authIdentifier);
     
-    if (!rateLimitCheck.allowed) {
-      logger.warn("Background", "Authentication rate limit exceeded", {
-        authIdentifier,
-        retryAfter: rateLimitCheck.retryAfter
+    void (async () => {
+      const rateLimitCheck = await checkAuthRateLimitAsync(authIdentifier);
+      
+      if (!rateLimitCheck.allowed) {
+        logger.warn("Background", "Authentication rate limit exceeded", {
+          authIdentifier,
+          retryAfter: rateLimitCheck.retryAfter
+        });
+        sendResponse({ 
+          error: 'Too many authentication attempts. Please try again later.',
+          retryAfter: rateLimitCheck.retryAfter 
+        });
+        return;
+      }
+
+      const messageData = (request?.data ?? {}) as { userId?: string; userEmail?: string; token?: string };
+      const overrideUid = messageData.userId ?? (typeof request.userId === "string" ? request.userId : undefined);
+      const overrideEmail = messageData.userEmail ?? (typeof request.userEmail === "string" ? request.userEmail : undefined);
+
+      logger.debug("Background", "Auth success data", {
+        hasOverrideUid: !!overrideUid,
+        hasOverrideEmail: !!overrideEmail,
+        hasTabId: !!sender.tab?.id
       });
-      sendResponse({ 
-        error: 'Too many authentication attempts. Please try again later.',
-        retryAfter: rateLimitCheck.retryAfter 
-      });
-      return;
-    }
 
-  const messageData = (request?.data ?? {}) as { userId?: string; userEmail?: string; token?: string };
-    const overrideUid = messageData.userId ?? (typeof request.userId === "string" ? request.userId : undefined);
-    const overrideEmail = messageData.userEmail ?? (typeof request.userEmail === "string" ? request.userEmail : undefined);
+      try {
+        const result = sender.tab?.id
+          ? await syncAuthStateFromSite({ tabId: sender.tab.id, userIdOverride: overrideUid, userEmailOverride: overrideEmail })
+          : overrideUid
+            ? await syncAuthStateFromSite({ userIdOverride: overrideUid, userEmailOverride: overrideEmail })
+            : { updated: false, userId: undefined, userEmail: undefined };
 
-    logger.debug("Background", "Auth success data", {
-      hasOverrideUid: !!overrideUid,
-      hasOverrideEmail: !!overrideEmail,
-      hasTabId: !!sender.tab?.id
-    });
-
-    const syncPromise = sender.tab?.id
-      ? syncAuthStateFromSite({ tabId: sender.tab.id, userIdOverride: overrideUid, userEmailOverride: overrideEmail })
-      : overrideUid
-        ? syncAuthStateFromSite({ userIdOverride: overrideUid, userEmailOverride: overrideEmail })
-        : Promise.resolve({ updated: false, userId: undefined, userEmail: undefined });
-
-    syncPromise
-      .then((result) => {
         const resolvedUserId = result.userId ?? overrideUid ?? undefined;
         const resolvedEmail = result.userEmail ?? overrideEmail ?? undefined;
 
         if (typeof messageData.token === "string" && messageData.token.length > 0) {
-          cacheAuthToken({
-            token: messageData.token,
-            userId: resolvedUserId,
-            userEmail: resolvedEmail,
-            source: "background"
-          }).catch((error) => {
+          try {
+            await cacheAuthToken({
+              token: messageData.token,
+              userId: resolvedUserId,
+              userEmail: resolvedEmail,
+              source: "background"
+            });
+          } catch (error) {
             logger.warn("Background", "Failed to cache auth token from authSuccess", {
               error: error instanceof Error ? error.message : String(error)
             });
-          });
+          }
         }
 
         if (result.updated) {
@@ -912,8 +931,7 @@ chrome.runtime.onMessage.addListener((request: any, sender: chrome.runtime.Messa
           userId: resolvedUserId ?? null,
           userEmail: resolvedEmail ?? null,
         });
-      })
-      .catch((error) => {
+      } catch (error) {
         logger.error("Background", "Error syncing auth state from authSuccess", {
           error: error instanceof Error ? error.message : String(error)
         });
@@ -921,7 +939,8 @@ chrome.runtime.onMessage.addListener((request: any, sender: chrome.runtime.Messa
           success: false,
           error: error instanceof Error ? error.message : "Unknown error",
         });
-      });
+      }
+    })();
 
     return true;
   } else if (request.action === "fetchUserPreferences") {
