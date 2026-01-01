@@ -29,6 +29,22 @@ export interface AdminAnalyticsResponse {
   };
 }
 
+export interface TimeSeriesPoint {
+  date: string;
+  signups: number;
+  applications: number;
+  revenue: number;
+}
+
+export interface TimeSeriesResponse {
+  data: TimeSeriesPoint[];
+  range: string;
+  count: number;
+  timestamp: string;
+}
+
 export const analyticsApi = {
   getAdminAnalytics: () => apiClient.get<AdminAnalyticsResponse>("/admin/analytics"),
+  getTimeSeriesAnalytics: (range: string = "30d") => 
+    apiClient.get<TimeSeriesResponse>(`/admin/analytics/time-series?range=${range}`),
 };

@@ -111,6 +111,13 @@ html {
   /* Amber 100 */
   --color-destructive-soft: 0 96% 95%;
   /* Red 100 */
+
+  /* Chart colors */
+  --chart-1: 160 84% 39%;   /* Emerald 500 */
+  --chart-2: 217 91% 60%;   /* Blue 500 */
+  --chart-3: 38 92% 50%;    /* Amber 500 */
+  --chart-4: 215 25% 40%;   /* Slate 600 */
+  --chart-5: 239 84% 67%;   /* Indigo 400 */
 }
 
 /*

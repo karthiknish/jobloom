@@ -37,7 +37,12 @@ import { useAnalytics } from "@/providers/analytics-provider";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { EmptyState } from "@/components/ui/empty-state";
-import { analyticsApi } from "@/utils/api/analytics";
+import { analyticsApi, TimeSeriesPoint } from "@/utils/api/analytics";
+import { 
+  UserGrowthChart, 
+  ApplicationActivityChart, 
+  RevenueTrendChart 
+} from "./AdminCharts";
 
 function AnalyticsDashboardSkeleton() {
   return (
@@ -176,6 +181,9 @@ export function AnalyticsDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("overview");
+  const [timeSeriesData, setTimeSeriesData] = useState<TimeSeriesPoint[]>([]);
+  const [isTimeSeriesLoading, setIsTimeSeriesLoading] = useState(false);
+  const [selectedRange, setSelectedRange] = useState("30d");
   const { trackPageView } = useAnalytics();
   const { toast } = useToast();
 
@@ -247,13 +255,26 @@ export function AnalyticsDashboard() {
     }
   }, [toast]);
 
+  const fetchTimeSeriesData = useCallback(async (range: string) => {
+    try {
+      setIsTimeSeriesLoading(true);
+      const response = await analyticsApi.getTimeSeriesAnalytics(range);
+      setTimeSeriesData(response.data);
+    } catch (err) {
+      console.error('Failed to load time-series data:', err);
+    } finally {
+      setIsTimeSeriesLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     // Track dashboard view
     trackPageView('/admin/analytics', 'Analytics Dashboard');
     
     // Load analytics data
     fetchAnalyticsData();
-  }, [trackPageView, fetchAnalyticsData]);
+    fetchTimeSeriesData(selectedRange);
+  }, [trackPageView, fetchAnalyticsData, fetchTimeSeriesData, selectedRange]);
 
   if (isLoading) {
     return <AnalyticsDashboardSkeleton />;
@@ -425,14 +446,75 @@ export function AnalyticsDashboard() {
           </Select>
         </div>
         {/* Desktop Tabs */}
-        <TabsList className="hidden sm:grid w-full grid-cols-4 lg:w-[400px]">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="engagement">Engagement</TabsTrigger>
-          <TabsTrigger value="conversions">Conversions</TabsTrigger>
-          <TabsTrigger value="performance">Performance</TabsTrigger>
-        </TabsList>
+        <div className="flex items-center justify-between">
+          <TabsList className="hidden sm:grid w-full grid-cols-4 lg:w-[400px]">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="engagement">Engagement</TabsTrigger>
+            <TabsTrigger value="conversions">Conversions</TabsTrigger>
+            <TabsTrigger value="performance">Performance</TabsTrigger>
+          </TabsList>
+          
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-muted-foreground hidden sm:inline">Range:</span>
+            <Select value={selectedRange} onValueChange={setSelectedRange}>
+              <SelectTrigger className="w-[100px] h-8 text-xs">
+                <SelectValue placeholder="Range" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="7d">Last 7d</SelectItem>
+                <SelectItem value="30d">Last 30d</SelectItem>
+                <SelectItem value="90d">Last 90d</SelectItem>
+                <SelectItem value="1y">Last 1y</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
 
         <TabsContent value="overview" className="space-y-6">
+          {/* Time Series Charts */}
+          <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card className="border-gray-200 shadow-sm lg:col-span-2">
+              <CardContent className="pt-6">
+                {isTimeSeriesLoading ? (
+                  <Skeleton className="h-[300px] w-full" />
+                ) : (
+                  <UserGrowthChart 
+                    data={timeSeriesData} 
+                    title="User Growth" 
+                    description={`New signups over the last ${selectedRange === '1y' ? 'year' : selectedRange.replace('d', ' days')}`}
+                  />
+                )}
+              </CardContent>
+            </Card>
+            
+            <Card className="border-gray-200 shadow-sm">
+              <CardContent className="pt-6">
+                {isTimeSeriesLoading ? (
+                  <Skeleton className="h-[300px] w-full" />
+                ) : (
+                  <ApplicationActivityChart 
+                    data={timeSeriesData} 
+                    title="Application Activity" 
+                    description="Daily job applications created"
+                  />
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="border-gray-200 shadow-sm">
+              <CardContent className="pt-6">
+                {isTimeSeriesLoading ? (
+                  <Skeleton className="h-[300px] w-full" />
+                ) : (
+                  <RevenueTrendChart 
+                    data={timeSeriesData} 
+                    title="Revenue Trend" 
+                    description="Daily subscription revenue"
+                  />
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
           <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card className="border-gray-200 shadow-sm">
               <CardHeader>
