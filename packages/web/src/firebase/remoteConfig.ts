@@ -268,10 +268,6 @@ export const remoteConfig = {
     return isFeatureEnabled('notifications');
   },
 
-  get isDarkModeEnabled(): boolean {
-    return false;
-  },
-
   get isBetaFeaturesEnabled(): boolean {
     return isFeatureEnabled('beta_features');
   },

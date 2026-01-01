@@ -171,6 +171,7 @@ export const POST = withApi({
     title: subject,
     message: notes || `Don't forget to check your application for ${emailProps.jobTitle} at ${emailProps.companyName}.`,
     actionUrl: applicationId ? `/dashboard?appId=${applicationId}` : "/dashboard",
+    skipEmail: true,
   });
 
   return {

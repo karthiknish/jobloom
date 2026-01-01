@@ -1,5 +1,11 @@
 import { getAdminDb } from "@/firebase/admin";
 import webpush from "web-push";
+import { sendEmail } from "@/lib/email";
+import { 
+  renderNotificationEmailHtml, 
+  renderNotificationEmailText, 
+  NOTIFICATION_EMAIL_SUBJECT 
+} from "@/emails/notificationEmail";
 
 interface CreateNotificationOptions {
   userId: string;
@@ -8,6 +14,7 @@ interface CreateNotificationOptions {
   message: string;
   actionUrl?: string;
   icon?: string;
+  skipEmail?: boolean;
 }
 
 export class NotificationService {
@@ -29,11 +36,11 @@ export class NotificationService {
   }
 
   /**
-   * Create an in-app notification and optionally send a push notification
+   * Create an in-app notification and optionally send a push notification and email
    */
   static async createNotification(options: CreateNotificationOptions) {
     const db = getAdminDb();
-    const { userId, type, title, message, actionUrl, icon } = options;
+    const { userId, type, title, message, actionUrl, icon, skipEmail = false } = options;
 
     // 1. Create in-app notification
     const notificationData = {
@@ -49,7 +56,55 @@ export class NotificationService {
 
     const docRef = await db.collection("users").doc(userId).collection("notifications").add(notificationData);
 
-    // 2. Send push notification to all user's subscriptions
+    // 2. Fetch user for preferences and email
+    const userDoc = await db.collection("users").doc(userId).get();
+    const userData = userDoc.data();
+    const userEmail = userData?.email;
+    const prefs = userData?.preferences || {};
+    const emailNotificationsEnabled = prefs.emailNotifications !== false; // Default to true
+
+    // 3. Send email if enabled and not skipped
+    if (!skipEmail && emailNotificationsEnabled && userEmail) {
+      const emailHtml = renderNotificationEmailHtml({
+        userName: userData?.name || userData?.displayName,
+        title,
+        message,
+        type,
+        actionUrl,
+      });
+
+      const emailText = renderNotificationEmailText({
+        userName: userData?.name || userData?.displayName,
+        title,
+        message,
+        type,
+        actionUrl,
+      });
+
+      try {
+        const emailResult = await sendEmail({
+          to: userEmail,
+          subject: title || NOTIFICATION_EMAIL_SUBJECT,
+          html: emailHtml,
+          text: emailText,
+        });
+
+        if (emailResult.success) {
+          // Log email send
+          await db.collection("emailSends").add({
+            userId,
+            notificationId: docRef.id,
+            type: "real_time_notification",
+            messageId: emailResult.messageId,
+            sentAt: new Date().toISOString(),
+          });
+        }
+      } catch (error) {
+        console.error("Failed to send real-time notification email:", error);
+      }
+    }
+
+    // 4. Send push notification to all user's subscriptions
     await this.sendPushNotification(userId, {
       title,
       body: message,

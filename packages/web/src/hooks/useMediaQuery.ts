@@ -4,13 +4,12 @@ import { useState, useEffect } from "react";
 
 /**
  * useMediaQuery - React hook for responsive design
- * 
+ *
  * @param query - CSS media query string
  * @returns boolean indicating if the media query matches
- * 
+ *
  * @example
  * const isDesktop = useMediaQuery("(min-width: 768px)");
- * const isDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
  */
 export function useMediaQuery(query: string): boolean {
   const [matches, setMatches] = useState(false);

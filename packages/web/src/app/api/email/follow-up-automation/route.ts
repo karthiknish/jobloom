@@ -144,6 +144,7 @@ export const POST = withApi({
           title: subject,
           message: `It's time to follow up on your application for ${emailProps.jobTitle} at ${emailProps.companyName}.`,
           actionUrl: `/dashboard?appId=${applicationId}`,
+          skipEmail: true,
         });
       } else {
         results.errors++;

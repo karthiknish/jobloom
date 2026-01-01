@@ -6,6 +6,8 @@ import { withApi, OPTIONS } from "@/lib/api/withApi";
 import { AuthorizationError, NotFoundError, ConflictError } from "@/lib/api/errorResponse";
 import { ERROR_CODES } from "@/lib/api/errorCodes";
 
+import { NotificationService } from "@/lib/api/notifications";
+
 // Re-export OPTIONS for CORS preflight
 export { OPTIONS };
 
@@ -184,6 +186,16 @@ export const POST = withApi({
     newStatus,
     messageId: result.messageId,
     sentAt: new Date().toISOString(),
+  });
+
+  // Create in-app and push notification (skip email as we sent it manually)
+  await NotificationService.createNotification({
+    userId,
+    type: "system",
+    title: `Status Updated: ${jobTitle}`,
+    message: `The status of your application at ${companyName} has changed from ${previousStatus} to ${newStatus}.`,
+    actionUrl: `/dashboard?appId=${applicationId}`,
+    skipEmail: true,
   });
 
   return {

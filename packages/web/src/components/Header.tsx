@@ -23,7 +23,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-// Dark mode removed; ModeToggle no longer used
 import {
   Sheet,
   SheetContent,
