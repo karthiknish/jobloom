@@ -50,7 +50,7 @@ export default function TermsOfService() {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <div className="relative overflow-hidden bg-slate-50 dark:bg-slate-950/50 border-b border-border pb-16 pt-24 sm:pb-20 sm:pt-32 lg:pb-28">
+      <div className="relative overflow-hidden bg-slate-50  border-b border-border pb-16 pt-24 sm:pb-20 sm:pt-32 lg:pb-28">
         <div className="absolute inset-0 bg-grid-pattern opacity-[0.03] text-primary" />
         
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -153,7 +153,7 @@ export default function TermsOfService() {
               </div>
             </section>
 
-            <div className="prose prose-slate dark:prose-invert max-w-none">
+            <div className="prose prose-slate  max-w-none">
               <p className="text-lg text-muted-foreground leading-relaxed mb-12">
                 Welcome to HireAll! These Terms of Service (&ldquo;Terms&rdquo;) govern your use of the HireAll platform, Chrome extension, and related services (collectively, the &ldquo;Service&rdquo;). By accessing or using the Service, you agree to be bound by these Terms.
               </p>
@@ -161,12 +161,12 @@ export default function TermsOfService() {
               <div className="space-y-20">
                 <section id="eligibility" className="scroll-mt-32">
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center border border-border">
+                    <div className="w-12 h-12 rounded-xl bg-slate-100  flex items-center justify-center border border-border">
                       <UserCheck className="w-6 h-6 text-primary" />
                     </div>
                     <h2 className="text-2xl font-black m-0">1. Eligibility</h2>
                   </div>
-                  <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-8 border border-border">
+                  <div className="bg-slate-50  rounded-2xl p-8 border border-border">
                     <p className="text-muted-foreground leading-relaxed m-0">
                       You must be at least 18 years old to use the Service. By using the Service, you represent that you meet this eligibility requirement. The Service is not available to any users previously removed from the Service by HireAll.
                     </p>
@@ -175,12 +175,12 @@ export default function TermsOfService() {
 
                 <section id="account" className="scroll-mt-32">
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center border border-border">
+                    <div className="w-12 h-12 rounded-xl bg-slate-100  flex items-center justify-center border border-border">
                       <Shield className="w-6 h-6 text-primary" />
                     </div>
                     <h2 className="text-2xl font-black m-0">2. Account Responsibilities</h2>
                   </div>
-                  <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-8 border border-border">
+                  <div className="bg-slate-50  rounded-2xl p-8 border border-border">
                     <p className="text-muted-foreground mb-6">
                       You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account. You agree to:
                     </p>
@@ -201,12 +201,12 @@ export default function TermsOfService() {
 
                 <section id="use" className="scroll-mt-32">
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center border border-border">
+                    <div className="w-12 h-12 rounded-xl bg-slate-100  flex items-center justify-center border border-border">
                       <Gavel className="w-6 h-6 text-primary" />
                     </div>
                     <h2 className="text-2xl font-black m-0">3. Acceptable Use</h2>
                   </div>
-                  <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-8 border border-border">
+                  <div className="bg-slate-50  rounded-2xl p-8 border border-border">
                     <p className="text-muted-foreground leading-relaxed m-0">
                       You agree not to misuse the Service, including attempting to gain unauthorized access, interfering with the operation of the Service, or using the Service for any illegal purpose. You must not transmit any worms or viruses or any code of a destructive nature.
                     </p>
@@ -215,12 +215,12 @@ export default function TermsOfService() {
 
                 <section id="extension" className="scroll-mt-32">
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center border border-border">
+                    <div className="w-12 h-12 rounded-xl bg-slate-100  flex items-center justify-center border border-border">
                       <ClipboardList className="w-6 h-6 text-primary" />
                     </div>
                     <h2 className="text-2xl font-black m-0">4. Chrome Extension Usage</h2>
                   </div>
-                  <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-8 border border-border">
+                  <div className="bg-slate-50  rounded-2xl p-8 border border-border">
                     <p className="text-muted-foreground leading-relaxed m-0">
                       The HireAll Chrome extension highlights sponsored job listings and helps track applications. By installing the extension, you grant it permission to read the job listings you visit to provide this functionality. We respect your privacy and only collect data necessary for the Service's operation.
                     </p>
@@ -229,12 +229,12 @@ export default function TermsOfService() {
 
                 <section id="termination" className="scroll-mt-32">
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center border border-border">
+                    <div className="w-12 h-12 rounded-xl bg-slate-100  flex items-center justify-center border border-border">
                       <Ban className="w-6 h-6 text-primary" />
                     </div>
                     <h2 className="text-2xl font-black m-0">5. Termination</h2>
                   </div>
-                  <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-8 border border-border">
+                  <div className="bg-slate-50  rounded-2xl p-8 border border-border">
                     <p className="text-muted-foreground leading-relaxed m-0">
                       We reserve the right to suspend or terminate your access to the Service at any time, without notice, if you violate these Terms or for any other reason at our sole discretion. Upon termination, your right to use the Service will immediately cease.
                     </p>
@@ -243,12 +243,12 @@ export default function TermsOfService() {
 
                 <section id="billing" className="scroll-mt-32">
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center border border-border">
+                    <div className="w-12 h-12 rounded-xl bg-slate-100  flex items-center justify-center border border-border">
                       <FileText className="w-6 h-6 text-primary" />
                     </div>
                     <h2 className="text-2xl font-black m-0">6. Subscriptions & Billing</h2>
                   </div>
-                  <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-8 border border-border">
+                  <div className="bg-slate-50  rounded-2xl p-8 border border-border">
                     <p className="text-muted-foreground leading-relaxed m-0">
                       Some parts of the Service may require a paid subscription. Prices, billing periods, renewal rules, and any applicable trial terms will be shown at checkout or in your account. Payments may be processed by third-party payment providers.
                     </p>
@@ -257,12 +257,12 @@ export default function TermsOfService() {
 
                 <section id="ai" className="scroll-mt-32">
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center border border-border">
+                    <div className="w-12 h-12 rounded-xl bg-slate-100  flex items-center justify-center border border-border">
                       <Zap className="w-6 h-6 text-primary" />
                     </div>
                     <h2 className="text-2xl font-black m-0">7. AI Features</h2>
                   </div>
-                  <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-8 border border-border">
+                  <div className="bg-slate-50  rounded-2xl p-8 border border-border">
                     <p className="text-muted-foreground leading-relaxed m-0">
                       The Service may offer AI-assisted features (for example, generating or improving resumes and cover letters). AI outputs may be inaccurate or incomplete and should be reviewed before you rely on them. You are responsible for the content you submit and the decisions you make based on any output.
                     </p>
@@ -271,12 +271,12 @@ export default function TermsOfService() {
 
                 <section id="disclaimers" className="scroll-mt-32">
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center border border-border">
+                    <div className="w-12 h-12 rounded-xl bg-slate-100  flex items-center justify-center border border-border">
                       <AlertTriangle className="w-6 h-6 text-primary" />
                     </div>
                     <h2 className="text-2xl font-black m-0">8. Disclaimers</h2>
                   </div>
-                  <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-8 border border-border">
+                  <div className="bg-slate-50  rounded-2xl p-8 border border-border">
                     <p className="text-muted-foreground leading-relaxed m-0 italic">
                       The Service is provided on an “as is” and “as available” basis. To the maximum extent permitted by law, HireAll disclaims all warranties, whether express or implied, including implied warranties of merchantability, fitness for a particular purpose, and non-infringement.
                     </p>
@@ -285,12 +285,12 @@ export default function TermsOfService() {
 
                 <section id="liability" className="scroll-mt-32">
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center border border-border">
+                    <div className="w-12 h-12 rounded-xl bg-slate-100  flex items-center justify-center border border-border">
                       <Gavel className="w-6 h-6 text-primary" />
                     </div>
                     <h2 className="text-2xl font-black m-0">9. Limitation of Liability</h2>
                   </div>
-                  <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-8 border border-border">
+                  <div className="bg-slate-50  rounded-2xl p-8 border border-border">
                     <p className="text-muted-foreground leading-relaxed m-0">
                       To the maximum extent permitted by law, HireAll will not be liable for any indirect, incidental, special, consequential, or punitive damages, or any loss of profits or revenues, whether incurred directly or indirectly, arising from your use of the Service.
                     </p>
@@ -299,7 +299,7 @@ export default function TermsOfService() {
 
                 <section id="contact" className="scroll-mt-32">
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center border border-border">
+                    <div className="w-12 h-12 rounded-xl bg-slate-100  flex items-center justify-center border border-border">
                       <HelpCircle className="w-6 h-6 text-primary" />
                     </div>
                     <h2 className="text-2xl font-black m-0">10. Contact</h2>
@@ -320,12 +320,12 @@ export default function TermsOfService() {
 
                 <section id="changes" className="scroll-mt-32">
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center border border-border">
+                    <div className="w-12 h-12 rounded-xl bg-slate-100  flex items-center justify-center border border-border">
                       <Scale className="w-6 h-6 text-primary" />
                     </div>
                     <h2 className="text-2xl font-black m-0">11. Changes to These Terms</h2>
                   </div>
-                  <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-8 border border-border">
+                  <div className="bg-slate-50  rounded-2xl p-8 border border-border">
                     <p className="text-muted-foreground leading-relaxed m-0">
                       We may update these Terms from time to time. If we make material changes, we will take reasonable steps to notify you (for example, by posting an updated version on this page). Your continued use of the Service after changes become effective means you accept the updated Terms.
                     </p>

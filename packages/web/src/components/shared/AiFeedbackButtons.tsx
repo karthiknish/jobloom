@@ -41,7 +41,7 @@ export const AiFeedbackButtons: React.FC<AiFeedbackButtonsProps> = ({
 
   if (givenSentiment) {
     return (
-      <div className="flex items-center space-x-1 text-xs text-green-500 bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded-full">
+      <div className="flex items-center space-x-1 text-xs text-green-500 bg-green-50  px-2 py-1 rounded-full">
         <Check size={12} />
         <span>Feedback received</span>
       </div>
@@ -53,7 +53,7 @@ export const AiFeedbackButtons: React.FC<AiFeedbackButtonsProps> = ({
       <button
         onClick={() => handleFeedback('positive')}
         disabled={isSubmitting}
-        className="p-1 text-slate-400 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors"
+        className="p-1 text-slate-400 hover:text-green-500 hover:bg-green-50  rounded transition-colors"
         title="Helpful"
       >
         <ThumbsUp size={16} />
@@ -61,7 +61,7 @@ export const AiFeedbackButtons: React.FC<AiFeedbackButtonsProps> = ({
       <button
         onClick={() => handleFeedback('negative')}
         disabled={isSubmitting}
-        className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+        className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50  rounded transition-colors"
         title="Not helpful"
       >
         <ThumbsDown size={16} />

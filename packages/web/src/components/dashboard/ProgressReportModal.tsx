@@ -166,7 +166,7 @@ STATUS BREAKDOWN
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-primary/10 dark:bg-primary/20 rounded-xl p-4 border border-primary/20"
+                className="bg-primary/10  rounded-xl p-4 border border-primary/20"
               >
                 <Briefcase className="h-5 w-5 text-primary mb-2" />
                 <p className="text-2xl font-bold text-foreground">{totalApplications}</p>
@@ -177,9 +177,9 @@ STATUS BREAKDOWN
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="bg-green-500/10 dark:bg-green-500/20 rounded-xl p-4 border border-green-500/20"
+                className="bg-green-500/10  rounded-xl p-4 border border-green-500/20"
               >
-                <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 mb-2" />
+                <CheckCircle2 className="h-5 w-5 text-green-600  mb-2" />
                 <p className="text-2xl font-bold text-foreground">{statusBreakdown.offered}</p>
                 <p className="text-xs text-muted-foreground">Offers</p>
               </motion.div>
@@ -188,9 +188,9 @@ STATUS BREAKDOWN
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
-                className="bg-amber-500/10 dark:bg-amber-500/20 rounded-xl p-4 border border-amber-500/20"
+                className="bg-amber-500/10  rounded-xl p-4 border border-amber-500/20"
               >
-                <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400 mb-2" />
+                <Clock className="h-5 w-5 text-amber-600  mb-2" />
                 <p className="text-2xl font-bold text-foreground">{responseRate}%</p>
                 <p className="text-xs text-muted-foreground">Response Rate</p>
               </motion.div>

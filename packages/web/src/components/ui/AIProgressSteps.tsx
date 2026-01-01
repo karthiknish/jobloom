@@ -46,7 +46,7 @@ export function AIProgressSteps({ steps, currentStep, className }: AIProgressSte
             transition={{ delay: index * 0.1 }}
             className={cn(
               "flex items-center gap-3 p-3 rounded-lg border transition-colors",
-              isComplete && "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800",
+              isComplete && "bg-green-50  border-green-200 ",
               isCurrent && "bg-primary/5 border-primary/30 shadow-sm",
               isPending && "bg-muted/30 border-border opacity-60"
             )}
@@ -87,7 +87,7 @@ export function AIProgressSteps({ steps, currentStep, className }: AIProgressSte
               <p
                 className={cn(
                   "font-medium text-sm",
-                  isComplete && "text-green-700 dark:text-green-300",
+                  isComplete && "text-green-700 ",
                   isCurrent && "text-foreground",
                   isPending && "text-muted-foreground"
                 )}

@@ -568,12 +568,12 @@ body {
   box-shadow: 0 8px 18px -14px rgba(0, 0, 0, 0.55), 0 6px 14px -12px rgba(255, 255, 255, 0.16);
 }
 
-.motion-button-on-dark:hover,
-.motion-button-on-dark:focus-visible {
+.motion-button-on-
+.motion-button-on- {
   box-shadow: 0 14px 28px -16px rgba(0, 0, 0, 0.65), 0 10px 22px -14px rgba(255, 255, 255, 0.2);
 }
 
-.motion-button-on-dark:active {
+.motion-button-on- {
   box-shadow: 0 10px 22px -16px rgba(0, 0, 0, 0.6), 0 8px 18px -14px rgba(255, 255, 255, 0.18);
 }
 
@@ -1149,11 +1149,6 @@ textarea:focus-visible,
     --color-ring: 160 100% 35%;
   }
 
-  .dark {
-    --color-border: 215 25% 60%;
-    --color-muted-foreground: 215 25% 70%;
-  }
-
   /* Ensure all text has sufficient contrast */
   body {
     -webkit-font-smoothing: antialiased;
@@ -1232,16 +1227,6 @@ textarea:focus-visible,
     --sidebar-accent: 240 4.8% 95.9%;
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-  .dark {
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }

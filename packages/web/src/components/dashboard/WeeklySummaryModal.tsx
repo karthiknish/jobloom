@@ -249,8 +249,8 @@ export function WeeklySummaryModal({
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.1 }}
                       className={`flex items-center gap-3 p-3 rounded-lg ${
-                        highlight.type === "success" ? "bg-green-50 dark:bg-green-900/20" :
-                        highlight.type === "highlight" ? "bg-amber-50 dark:bg-amber-900/20" :
+                        highlight.type === "success" ? "bg-green-50 " :
+                        highlight.type === "highlight" ? "bg-amber-50 " :
                         "bg-muted/50"
                       }`}
                     >
@@ -270,9 +270,9 @@ export function WeeklySummaryModal({
               <CardContent className="space-y-3">
                 {[
                   { label: "Added", curr: thisWeekStats.added, prev: lastWeekStats.added, icon: <Briefcase className="h-4 w-4" />, color: "text-primary" },
-                  { label: "Applied", curr: thisWeekStats.applied, prev: lastWeekStats.applied, icon: <Clock className="h-4 w-4" />, color: "text-amber-600 dark:text-amber-400" },
-                  { label: "Offered", curr: thisWeekStats.offered, prev: lastWeekStats.offered, icon: <CheckCircle2 className="h-4 w-4" />, color: "text-green-600 dark:text-green-400" },
-                  { label: "Rejected", curr: thisWeekStats.rejected, prev: lastWeekStats.rejected, icon: <XCircle className="h-4 w-4" />, color: "text-red-500 dark:text-red-400" },
+                  { label: "Applied", curr: thisWeekStats.applied, prev: lastWeekStats.applied, icon: <Clock className="h-4 w-4" />, color: "text-amber-600 " },
+                  { label: "Offered", curr: thisWeekStats.offered, prev: lastWeekStats.offered, icon: <CheckCircle2 className="h-4 w-4" />, color: "text-green-600 " },
+                  { label: "Rejected", curr: thisWeekStats.rejected, prev: lastWeekStats.rejected, icon: <XCircle className="h-4 w-4" />, color: "text-red-500 " },
                 ].map((item) => (
                   <div key={item.label} className="flex items-center justify-between">
                     <div className="flex items-center gap-2">

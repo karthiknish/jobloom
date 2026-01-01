@@ -114,21 +114,21 @@ export function InlineHint({
 }) {
   const variants = {
     info: {
-      bg: "bg-blue-50 dark:bg-blue-900/20",
-      border: "border-blue-200 dark:border-blue-800",
-      text: "text-blue-700 dark:text-blue-300",
+      bg: "bg-blue-50 ",
+      border: "border-blue-200 ",
+      text: "text-blue-700 ",
       icon: "text-blue-500",
     },
     success: {
-      bg: "bg-green-50 dark:bg-green-900/20",
-      border: "border-green-200 dark:border-green-800",
-      text: "text-green-700 dark:text-green-300",
+      bg: "bg-green-50 ",
+      border: "border-green-200 ",
+      text: "text-green-700 ",
       icon: "text-green-500",
     },
     warning: {
-      bg: "bg-amber-50 dark:bg-amber-900/20",
-      border: "border-amber-200 dark:border-amber-800",
-      text: "text-amber-700 dark:text-amber-300",
+      bg: "bg-amber-50 ",
+      border: "border-amber-200 ",
+      text: "text-amber-700 ",
       icon: "text-amber-500",
     },
   };

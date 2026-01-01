@@ -69,10 +69,10 @@ export const themeColors = {
   // Purple/Accent states (for interview, in-progress, etc.)
   accent: {
     bg: "bg-purple-500/10",
-    text: "text-purple-700 dark:text-purple-400",
+    text: "text-purple-700 ",
     border: "border-purple-500/20",
     icon: "text-purple-600",
-    badge: "bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/30",
+    badge: "bg-purple-500/10 text-purple-700  border-purple-500/30",
   },
 
   // Muted/Subtle elements

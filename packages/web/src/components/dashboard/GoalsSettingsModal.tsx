@@ -116,7 +116,7 @@ export function GoalsSettingsModal({
             <CardContent className="pt-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-primary/10 dark:bg-primary/20">
+                  <div className="p-2 rounded-lg bg-primary/10 ">
                     <Briefcase className="h-4 w-4 text-primary" />
                   </div>
                   <div>
@@ -148,8 +148,8 @@ export function GoalsSettingsModal({
             <CardContent className="pt-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-teal-500/10 dark:bg-teal-500/20">
-                    <TrendingUp className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+                  <div className="p-2 rounded-lg bg-teal-500/10 ">
+                    <TrendingUp className="h-4 w-4 text-teal-600 " />
                   </div>
                   <div>
                     <Label className="text-sm font-medium">Response Rate Target</Label>

@@ -172,11 +172,11 @@ function SponsoredJobDemo() {
 
   return (
     <div 
-      className="relative h-40 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-xl p-5 cursor-pointer overflow-hidden border border-border/50 group/demo"
+      className="relative h-40 bg-gradient-to-br from-blue-50/50 to-indigo-50/50   rounded-xl p-5 cursor-pointer overflow-hidden border border-border/50 group/demo"
       onClick={() => setIsChecked(!isChecked)}
     >
       <div className="flex items-start gap-4">
-        <div className="w-12 h-12 rounded-xl bg-white dark:bg-slate-900 shadow-sm flex items-center justify-center border border-border/50 group-hover/demo:scale-110 transition-transform duration-300">
+        <div className="w-12 h-12 rounded-xl bg-white  shadow-sm flex items-center justify-center border border-border/50 group-hover/demo:scale-110 transition-transform duration-300">
           <Briefcase className="w-6 h-6 text-blue-600" />
         </div>
         <div className="flex-1">
@@ -241,7 +241,7 @@ function ApplicationPipelineDemo() {
 
   return (
     <div 
-      className="relative h-40 bg-gradient-to-br from-orange-50/50 to-amber-50/50 dark:from-orange-950/20 dark:to-amber-950/20 rounded-xl p-5 cursor-pointer border border-border/50 group/demo"
+      className="relative h-40 bg-gradient-to-br from-orange-50/50 to-amber-50/50   rounded-xl p-5 cursor-pointer border border-border/50 group/demo"
       onClick={nextStage}
     >
       <div className="flex justify-between items-center relative z-10">
@@ -273,7 +273,7 @@ function ApplicationPipelineDemo() {
       </div>
       
       {/* Progress line */}
-      <div className="absolute top-[44px] left-10 right-10 h-1 bg-muted dark:bg-slate-800 rounded-full overflow-hidden">
+      <div className="absolute top-[44px] left-10 right-10 h-1 bg-muted  rounded-full overflow-hidden">
         <motion.div
           initial={false}
           animate={{ width: `${(activeStage / (stages.length - 1)) * 100}%` }}
@@ -330,7 +330,7 @@ function AIWritingDemo() {
 
   return (
     <div 
-      className="relative h-40 bg-gradient-to-br from-purple-50/50 to-pink-50/50 dark:from-purple-950/20 dark:to-pink-950/20 rounded-xl p-5 cursor-pointer overflow-hidden border border-border/50 group/demo"
+      className="relative h-40 bg-gradient-to-br from-purple-50/50 to-pink-50/50   rounded-xl p-5 cursor-pointer overflow-hidden border border-border/50 group/demo"
       onClick={startTyping}
     >
       <div className="flex items-center justify-between mb-3">
@@ -338,7 +338,7 @@ function AIWritingDemo() {
           <div className="w-8 h-8 rounded-lg bg-purple-500 flex items-center justify-center shadow-lg shadow-purple-500/20">
             <Zap className="w-4 h-4 text-white" />
           </div>
-          <span className="text-xs font-black text-purple-600 dark:text-purple-400 uppercase tracking-widest">AI WRITER</span>
+          <span className="text-xs font-black text-purple-600  uppercase tracking-widest">AI WRITER</span>
         </div>
         {isTyping && (
           <div className="flex gap-1">

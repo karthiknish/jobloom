@@ -423,7 +423,7 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted, onResum
               <motion.div
                 initial={{ opacity: 0, y: -5 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex items-start gap-2 p-3 rounded-lg border bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-sm text-blue-700 dark:text-blue-300"
+                className="flex items-start gap-2 p-3 rounded-lg border bg-blue-50  border-blue-200  text-sm text-blue-700 "
               >
                 <Lightbulb className="h-4 w-4 mt-0.5 shrink-0 text-blue-500" />
                 <span>

@@ -64,28 +64,28 @@ interface JobDetailsModalProps {
 
 const statusConfig: Record<string, { color: string; bg: string; icon: React.ReactNode }> = {
   interested: {
-    color: "text-blue-600 dark:text-blue-400",
-    bg: "bg-blue-100 dark:bg-blue-900/30",
+    color: "text-blue-600 ",
+    bg: "bg-blue-100 ",
     icon: <Star className="h-4 w-4" />,
   },
   applied: {
-    color: "text-blue-600 dark:text-blue-400",
-    bg: "bg-blue-100 dark:bg-blue-900/30",
+    color: "text-blue-600 ",
+    bg: "bg-blue-100 ",
     icon: <Clock className="h-4 w-4" />,
   },
   offered: {
-    color: "text-green-600 dark:text-green-400",
-    bg: "bg-green-100 dark:bg-green-900/30",
+    color: "text-green-600 ",
+    bg: "bg-green-100 ",
     icon: <CheckCircle2 className="h-4 w-4" />,
   },
   rejected: {
-    color: "text-red-600 dark:text-red-400",
-    bg: "bg-red-100 dark:bg-red-900/30",
+    color: "text-red-600 ",
+    bg: "bg-red-100 ",
     icon: <X className="h-4 w-4" />,
   },
   withdrawn: {
-    color: "text-gray-600 dark:text-gray-400",
-    bg: "bg-gray-100 dark:bg-gray-900/30",
+    color: "text-gray-600 ",
+    bg: "bg-gray-100 ",
     icon: <AlertCircle className="h-4 w-4" />,
   },
 };

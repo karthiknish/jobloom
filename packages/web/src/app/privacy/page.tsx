@@ -49,7 +49,7 @@ export default function PrivacyPolicy() {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <div className="relative overflow-hidden bg-slate-50 dark:bg-slate-950/50 border-b border-border pb-16 pt-24 sm:pb-20 sm:pt-32 lg:pb-28">
+      <div className="relative overflow-hidden bg-slate-50  border-b border-border pb-16 pt-24 sm:pb-20 sm:pt-32 lg:pb-28">
         <div className="absolute inset-0 bg-grid-pattern opacity-[0.03] text-primary" />
         
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -152,7 +152,7 @@ export default function PrivacyPolicy() {
               </div>
             </section>
 
-            <div className="prose prose-slate dark:prose-invert max-w-none">
+            <div className="prose prose-slate  max-w-none">
               <p className="text-lg text-muted-foreground leading-relaxed mb-12">
                 Your privacy is important to us. This Privacy Policy explains how
                 HireAll (&ldquo;we&rdquo;, &ldquo;our&rdquo;, or &ldquo;us&rdquo;) collects, uses, and protects your personal information when you use our website, Chrome extension, and related services (collectively, the &ldquo;Service&rdquo;).
@@ -161,12 +161,12 @@ export default function PrivacyPolicy() {
               <div className="space-y-20">
                 <section id="collection" className="scroll-mt-32">
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center border border-border">
+                    <div className="w-12 h-12 rounded-xl bg-slate-100  flex items-center justify-center border border-border">
                       <Database className="w-6 h-6 text-primary" />
                     </div>
                     <h2 className="text-2xl font-black m-0">1. Information We Collect</h2>
                   </div>
-                  <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-8 border border-border">
+                  <div className="bg-slate-50  rounded-2xl p-8 border border-border">
                     <p className="text-muted-foreground leading-relaxed m-0">
                       We collect information you provide directly, such as your name and email address when you create an account, plus any content you submit (for example, resumes, job descriptions, and notes). We also automatically collect certain information when you use the Service, such as log data and device information.
                       Our Chrome extension may access the pages you visit in order to identify job listings and provide features like sponsored-label detection and application tracking.
@@ -176,12 +176,12 @@ export default function PrivacyPolicy() {
 
                 <section id="usage" className="scroll-mt-32">
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center border border-border">
+                    <div className="w-12 h-12 rounded-xl bg-slate-100  flex items-center justify-center border border-border">
                       <Eye className="w-6 h-6 text-primary" />
                     </div>
                     <h2 className="text-2xl font-black m-0">2. How We Use Information</h2>
                   </div>
-                  <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-8 border border-border">
+                  <div className="bg-slate-50  rounded-2xl p-8 border border-border">
                     <p className="text-muted-foreground leading-relaxed m-0">
                       We use your information to deliver and improve the Service, provide customer support, communicate updates, prevent abuse, and maintain security.
                       <strong> We do not sell your personal information.</strong>
@@ -191,12 +191,12 @@ export default function PrivacyPolicy() {
 
                 <section id="cookies" className="scroll-mt-32">
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center border border-border">
+                    <div className="w-12 h-12 rounded-xl bg-slate-100  flex items-center justify-center border border-border">
                       <Cookie className="w-6 h-6 text-primary" />
                     </div>
                     <h2 className="text-2xl font-black m-0">3. Cookies & Analytics</h2>
                   </div>
-                  <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-8 border border-border">
+                  <div className="bg-slate-50  rounded-2xl p-8 border border-border">
                     <p className="text-muted-foreground leading-relaxed m-0">
                       We may use cookies and similar technologies to keep you signed in, remember preferences, measure performance, and improve the Service. You can control cookies through your browser settings; some features may not function properly if cookies are disabled.
                     </p>
@@ -205,12 +205,12 @@ export default function PrivacyPolicy() {
 
                 <section id="providers" className="scroll-mt-32">
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center border border-border">
+                    <div className="w-12 h-12 rounded-xl bg-slate-100  flex items-center justify-center border border-border">
                       <Share2 className="w-6 h-6 text-primary" />
                     </div>
                     <h2 className="text-2xl font-black m-0">4. Service Providers</h2>
                   </div>
-                  <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-8 border border-border">
+                  <div className="bg-slate-50  rounded-2xl p-8 border border-border">
                     <p className="text-muted-foreground leading-relaxed m-0">
                       We use trusted third-party service providers to operate the Service (for example, hosting, authentication, email delivery, analytics, payments, and AI processing). These providers may process personal information on our behalf to provide their services, subject to appropriate safeguards.
                     </p>
@@ -219,12 +219,12 @@ export default function PrivacyPolicy() {
 
                 <section id="security" className="scroll-mt-32">
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center border border-border">
+                    <div className="w-12 h-12 rounded-xl bg-slate-100  flex items-center justify-center border border-border">
                       <Lock className="w-6 h-6 text-primary" />
                     </div>
                     <h2 className="text-2xl font-black m-0">5. Data Security</h2>
                   </div>
-                  <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-8 border border-border">
+                  <div className="bg-slate-50  rounded-2xl p-8 border border-border">
                     <p className="text-muted-foreground leading-relaxed m-0">
                       We employ industry-standard security measures—encryption in transit and at rest—to protect your data from unauthorized access. Our systems are regularly audited for security vulnerabilities.
                     </p>
@@ -233,12 +233,12 @@ export default function PrivacyPolicy() {
 
                 <section id="choices" className="scroll-mt-32">
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center border border-border">
+                    <div className="w-12 h-12 rounded-xl bg-slate-100  flex items-center justify-center border border-border">
                       <Users className="w-6 h-6 text-primary" />
                     </div>
                     <h2 className="text-2xl font-black m-0">6. Your Choices</h2>
                   </div>
-                  <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-8 border border-border">
+                  <div className="bg-slate-50  rounded-2xl p-8 border border-border">
                     <p className="text-muted-foreground leading-relaxed m-0">
                       You may access, update, or delete your personal information at any time from your account dashboard or by contacting us. You also have the right to export your data in a machine-readable format.
                     </p>
@@ -247,12 +247,12 @@ export default function PrivacyPolicy() {
 
                 <section id="retention" className="scroll-mt-32">
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center border border-border">
+                    <div className="w-12 h-12 rounded-xl bg-slate-100  flex items-center justify-center border border-border">
                       <Shield className="w-6 h-6 text-primary" />
                     </div>
                     <h2 className="text-2xl font-black m-0">7. Data Retention</h2>
                   </div>
-                  <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-8 border border-border">
+                  <div className="bg-slate-50  rounded-2xl p-8 border border-border">
                     <p className="text-muted-foreground leading-relaxed m-0">
                       We retain personal information for as long as needed to provide the Service and for legitimate business purposes (such as security, dispute resolution, and compliance). You can request deletion of your account data by contacting us.
                     </p>
@@ -261,12 +261,12 @@ export default function PrivacyPolicy() {
 
                 <section id="changes" className="scroll-mt-32">
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center border border-border">
+                    <div className="w-12 h-12 rounded-xl bg-slate-100  flex items-center justify-center border border-border">
                       <ShieldCheck className="w-6 h-6 text-primary" />
                     </div>
                     <h2 className="text-2xl font-black m-0">8. Changes to This Policy</h2>
                   </div>
-                  <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-8 border border-border">
+                  <div className="bg-slate-50  rounded-2xl p-8 border border-border">
                     <p className="text-muted-foreground leading-relaxed m-0">
                       We may update this Privacy Policy from time to time. We will post the updated version on this page and update the “Last updated” date. For material changes, we will notify you via email or a prominent notice on our Service.
                     </p>
@@ -275,7 +275,7 @@ export default function PrivacyPolicy() {
 
                 <section id="contact" className="scroll-mt-32">
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center border border-border">
+                    <div className="w-12 h-12 rounded-xl bg-slate-100  flex items-center justify-center border border-border">
                       <Mail className="w-6 h-6 text-primary" />
                     </div>
                     <h2 className="text-2xl font-black m-0">9. Contact Us</h2>

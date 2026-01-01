@@ -126,19 +126,19 @@ export function UkVisaBadge({ job, userCriteria, compact = false }: UkVisaBadgeP
   const config = {
     eligible: {
       variant: "default" as const,
-      className: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-300",
+      className: "bg-green-100 text-green-800   border-green-300",
       icon: <CheckCircle className="h-3 w-3" />,
       label: "UK Visa Eligible",
     },
     partial: {
       variant: "outline" as const,
-      className: "border-amber-300 text-amber-700 dark:text-amber-400",
+      className: "border-amber-300 text-amber-700 ",
       icon: <AlertTriangle className="h-3 w-3" />,
       label: "Verify Eligibility",
     },
     ineligible: {
       variant: "outline" as const,
-      className: "border-red-300 text-red-600 dark:text-red-400",
+      className: "border-red-300 text-red-600 ",
       icon: <Shield className="h-3 w-3" />,
       label: "Not Eligible",
     },

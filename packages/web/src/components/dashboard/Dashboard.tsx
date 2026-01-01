@@ -455,12 +455,12 @@ export function Dashboard({ initialView = "dashboard" }: DashboardProps) {
           >
             <div className={`p-4 rounded-xl border flex items-center justify-between gap-4 ${
               overdueReminders.length > 0 
-                ? "bg-red-50 border-red-100 dark:bg-red-900/20 dark:border-red-900/30" 
-                : "bg-amber-50 border-amber-100 dark:bg-amber-900/20 dark:border-amber-900/30"
+                ? "bg-red-50 border-red-100  " 
+                : "bg-amber-50 border-amber-100  "
             }`}>
               <div className="flex items-center gap-3">
                 <div className={`p-2 rounded-lg ${
-                  overdueReminders.length > 0 ? "bg-red-100 dark:bg-red-900/40" : "bg-amber-100 dark:bg-amber-900/40"
+                  overdueReminders.length > 0 ? "bg-red-100 " : "bg-amber-100 "
                 }`}>
                   {overdueReminders.length > 0 ? (
                     <AlertCircle className={`h-5 w-5 ${overdueReminders.length > 0 ? "text-red-600" : "text-amber-600"}`} />
@@ -469,7 +469,7 @@ export function Dashboard({ initialView = "dashboard" }: DashboardProps) {
                   )}
                 </div>
                 <div>
-                  <p className={`font-semibold text-sm ${overdueReminders.length > 0 ? "text-red-800 dark:text-red-300" : "text-amber-800 dark:text-amber-300"}`}>
+                  <p className={`font-semibold text-sm ${overdueReminders.length > 0 ? "text-red-800 " : "text-amber-800 "}`}>
                     {overdueReminders.length > 0 
                       ? `You have ${overdueReminders.length} overdue follow-up${overdueReminders.length === 1 ? '' : 's'}!` 
                       : `You have ${todayReminders.length} follow-up${todayReminders.length === 1 ? '' : 's'} scheduled for today.`}

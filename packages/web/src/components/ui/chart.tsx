@@ -10,13 +10,11 @@ export type ChartConfig = {
   [k in string]: {
     label?: React.ReactNode
     icon?: React.ComponentType
-  } & (
-    | { color?: string; theme?: never }
-    | { color?: never; theme: Record<keyof Themes, string> }
-  )
+    color?: string
+  }
 }
 
-type Themes = { light: string; dark: string }
+// No theme support needed, only light mode.
 
 interface ChartContextProps {
   config: ChartConfig
@@ -54,9 +52,7 @@ const ChartContainer = React.forwardRef<
         style={
           {
             ...Object.entries(config).reduce((acc, [key, value]) => {
-              const colorValue =
-                value.theme?.[typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"] ||
-                value.color
+              const colorValue = value.color
               if (colorValue) {
                 acc[`--color-${key}`] = colorValue
               }
@@ -79,7 +75,7 @@ ChartContainer.displayName = "Chart"
 
 const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
   const colorConfig = Object.entries(config).filter(
-    ([_, config]) => config.theme || config.color
+    ([_, config]) => config.color
   )
 
   if (!colorConfig.length) {
@@ -89,22 +85,17 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
   return (
     <style
       dangerouslySetInnerHTML={{
-        __html: ["light", "dark"]
-          .map((theme) => {
-            return `
+        __html: `
 [data-chart="${id}"] {
 ${colorConfig
   .map(([key, itemConfig]) => {
-    const color =
-      itemConfig.theme?.[theme as keyof Themes] || itemConfig.color
+    const color = itemConfig.color
     return color ? `  --color-${key}: ${color};` : null
   })
   .filter(Boolean)
   .join("\n")}
 }
-`
-          })
-          .join("\n"),
+`,
       }}
     />
   )

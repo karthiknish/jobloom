@@ -65,9 +65,9 @@ export function UpcomingFollowUps({ applications, onChanged }: { applications: A
       exit={{ opacity: 0, x: 10 }}
       className={`group flex items-center justify-between gap-3 p-3 rounded-xl border transition-all hover:shadow-sm ${
         type === 'overdue' 
-          ? 'bg-red-50/50 border-red-100 dark:bg-red-900/10 dark:border-red-900/30' 
+          ? 'bg-red-50/50 border-red-100   
           : type === 'today'
-          ? 'bg-amber-50/50 border-amber-100 dark:bg-amber-900/10 dark:border-amber-900/30'
+          ? 'bg-amber-50/50 border-amber-100  
           : 'bg-muted/30 border-border/50'
       }`}
     >
@@ -82,8 +82,8 @@ export function UpcomingFollowUps({ applications, onChanged }: { applications: A
         </div>
         <div className="flex items-center gap-2">
           <div className={`flex items-center gap-1 text-xs font-medium ${
-            type === 'overdue' ? 'text-red-600 dark:text-red-400' : 
-            type === 'today' ? 'text-amber-600 dark:text-amber-400' : 
+            type === 'overdue' ? 'text-red-600  : 
+            type === 'today' ? 'text-amber-600  : 
             'text-muted-foreground'
           }`}>
             {type === 'overdue' ? <AlertCircle className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
@@ -98,7 +98,7 @@ export function UpcomingFollowUps({ applications, onChanged }: { applications: A
         <Button 
           size="sm" 
           variant="ghost" 
-          className="h-8 w-8 p-0 rounded-full hover:bg-green-100 hover:text-green-600 dark:hover:bg-green-900/30"
+          className="h-8 w-8 p-0 rounded-full hover:bg-green-100 hover:text-green-600 "
           onClick={() => markDone(a._id)}
           title="Mark as done"
         >

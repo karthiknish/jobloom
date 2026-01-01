@@ -213,7 +213,7 @@ export function JobAISummary({ jobDescription, jobId }: JobAISummaryProps) {
                             <DollarSign className="h-3.5 w-3.5" />
                             AI Salary Estimate
                           </div>
-                          <p className="text-sm font-semibold text-green-600 dark:text-green-400">
+                          <p className="text-sm font-semibold text-green-600 ">
                             {summary.salaryEstimate}
                           </p>
                         </div>
