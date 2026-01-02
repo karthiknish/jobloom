@@ -146,12 +146,19 @@ export function validateCsrf(request: NextRequest): void {
   const cookieToken = request.cookies.get(CSRF_COOKIE_NAME)?.value;
   const providedToken = extractCsrfCandidate(request);
 
-  if (!cookieToken || !providedToken) {
-    throw new Error("Missing CSRF token");
+  if (!cookieToken) {
+    console.error("CSRF validation failed: No CSRF cookie found");
+    throw new Error("Missing CSRF token in cookie");
+  }
+
+  if (!providedToken) {
+    console.error("CSRF validation failed: No CSRF token provided in request");
+    throw new Error("Missing CSRF token in request");
   }
 
   // Simple timing-safe comparison for edge runtime compatibility
   if (cookieToken.length !== providedToken.length) {
+    console.error("CSRF validation failed: Token length mismatch");
     throw new Error("Invalid CSRF token");
   }
   
@@ -161,6 +168,7 @@ export function validateCsrf(request: NextRequest): void {
   }
   
   if (result !== 0) {
+    console.error("CSRF validation failed: Token value mismatch");
     throw new Error("Invalid CSRF token");
   }
 }

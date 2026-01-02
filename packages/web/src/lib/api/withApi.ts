@@ -440,6 +440,7 @@ export function withApi<
     // Declare user and token outside try block for access in catch block
     let user: AuthenticatedUser | null = null;
     let token: string | null = null;
+    const handledByProxy = request.headers.get("x-hireall-proxy") === "1";
 
     try {
       // 1. Authentication
@@ -480,7 +481,7 @@ export function withApi<
       }
 
       // 2. CSRF Protection
-      if (!skipCsrf && !isExtension && ["POST", "PUT", "PATCH", "DELETE"].includes(request.method)) {
+      if (!handledByProxy && !skipCsrf && !isExtension && ["POST", "PUT", "PATCH", "DELETE"].includes(request.method)) {
         try {
           validateCsrf(request);
         } catch (csrfError) {
@@ -513,7 +514,7 @@ export function withApi<
       
       const rateLimitKey = rateLimit || (applyGeneralRateLimit ? 'general' : undefined);
 
-      if (rateLimitKey) {
+      if (!handledByProxy && rateLimitKey) {
         const identifier = user?.uid || getClientIdentifier(request);
         const authToken = request.headers.get("authorization")?.substring(7);
         

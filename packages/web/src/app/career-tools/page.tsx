@@ -253,7 +253,7 @@ export default function CareerToolsPage() {
       activeSection === "cv-optimizer"
     ) {
       const timer = setTimeout(() => {
-        tour.startCvEvaluatorTour();
+        tour?.startCvEvaluatorTour?.();
       }, 1000);
       return () => clearTimeout(timer);
     }

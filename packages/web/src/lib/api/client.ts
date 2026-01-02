@@ -122,6 +122,8 @@ class ApiClient {
     const method = (config.method || 'GET').toUpperCase();
     let lastError: FrontendApiError | null = null;
 
+    const isMutatingMethod = ["POST", "PUT", "PATCH", "DELETE"].includes(method);
+
     // Request deduplication for GET requests
     const requestKey = `${method}:${url}`;
     if (method === 'GET' && this.pendingRequests.has(requestKey)) {
@@ -134,6 +136,28 @@ class ApiClient {
         ...config.headers,
         'Authorization': await this.getAuthToken()
       };
+    }
+
+    // Add CSRF header for mutating requests (required by middleware in production).
+    // Token is issued as a readable cookie by the proxy/middleware.
+    if (isMutatingMethod && typeof document !== 'undefined') {
+      const existingHeaderKey = Object.keys(config.headers ?? {}).find(
+        (key) => key.toLowerCase() === 'x-csrf-token' || key.toLowerCase() === 'x-xsrf-token'
+      );
+
+      if (!existingHeaderKey) {
+        const csrfToken = document.cookie
+          .split('; ')
+          .find((row) => row.startsWith('__csrf-token='))
+          ?.split('=')[1];
+
+        if (csrfToken) {
+          config.headers = {
+            ...config.headers,
+            'x-csrf-token': csrfToken,
+          };
+        }
+      }
     }
 
     // Set default headers

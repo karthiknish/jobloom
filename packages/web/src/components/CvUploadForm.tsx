@@ -6,6 +6,7 @@ import { UploadCloud, CheckCircle2, Loader2, Lightbulb, FileText, Check, Refresh
 import { Button } from "@/components/ui/button";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
+import { Skeleton } from "@/components/ui/skeleton";
 import { RealTimeAtsFeedback } from "./RealTimeAtsFeedback";
 import { calculateResumeScore } from "@/lib/ats";
 import type { ResumeData } from "@/types/resume";
@@ -140,6 +141,48 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted, onResum
   });
 
   const uploadLimits = serverLimits || DEFAULT_UPLOAD_LIMITS;
+
+  // Skeleton state: show a pleasant placeholder while fetching dynamic limits.
+  // We keep this scoped to limits-loading so uploads remain responsive.
+  if (loadingLimits) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="w-full max-w-2xl mx-auto"
+      >
+        <Card className="shadow-sm border-border">
+          <CardHeader className="pb-4">
+            <Skeleton className="h-6 w-64" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-[28rem] max-w-full" />
+              <Skeleton className="h-4 w-56" />
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <Skeleton className="h-44 w-full rounded-lg" />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-40" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-3 w-48" />
+              </div>
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-28" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-3 w-52" />
+              </div>
+            </div>
+            <Skeleton className="h-40 w-full rounded-lg" />
+          </CardContent>
+          <CardFooter className="flex justify-end pt-4">
+            <Skeleton className="h-10 w-28" />
+          </CardFooter>
+        </Card>
+      </motion.div>
+    );
+  }
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -306,20 +349,22 @@ export function CvUploadForm({ userId, onUploadSuccess, onUploadStarted, onResum
       <Card className="shadow-sm border-border">
         <CardHeader className="pb-4">
           <CardTitle className="text-lg">Upload Your resume for Analysis</CardTitle>
-          <CardDescription className="text-base flex items-center flex-wrap gap-1">
-            Get AI-powered insights to improve your resume. Supported formats: PDF,
-            TXT (max {uploadLimits.maxSizeMB}MB)
-            {limitsError && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="h-6 px-1.5 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50 gap-1 ml-1"
-                onClick={() => fetchLimits()}
-              >
-                <RefreshCw className="h-3 w-3" />
-                Retry Limits
-              </Button>
-            )}
+          <CardDescription className="text-base">
+            <span className="flex items-center flex-wrap gap-1">
+              Get AI-powered insights to improve your resume. Supported formats: PDF,
+              TXT (max {uploadLimits.maxSizeMB}MB)
+              {limitsError && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-1.5 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50 gap-1 ml-1"
+                  onClick={() => fetchLimits()}
+                >
+                  <RefreshCw className="h-3 w-3" />
+                  Retry Limits
+                </Button>
+              )}
+            </span>
           </CardDescription>
         </CardHeader>
         <CardContent>

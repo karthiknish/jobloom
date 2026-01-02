@@ -714,8 +714,12 @@ export async function proxy(request: NextRequest) {
 
   let response: NextResponse;
 
+  const requestHeaders = new Headers(request.headers);
+  // Mark this request as having passed through our security proxy.
+  // Route handlers can use this to avoid double-applying CSRF / rate limiting.
+  requestHeaders.set("x-hireall-proxy", "1");
+
   if (sessionClaims) {
-    const requestHeaders = new Headers(request.headers);
     requestHeaders.set("x-hireall-user-id", sessionClaims.uid);
     if (sessionClaims.email) {
       requestHeaders.set("x-hireall-user-email", sessionClaims.email);
@@ -724,15 +728,13 @@ export async function proxy(request: NextRequest) {
       "x-hireall-user-role",
       sessionClaims.isAdmin ? "admin" : "user",
     );
-
-    response = NextResponse.next({
-      request: {
-        headers: requestHeaders,
-      },
-    });
-  } else {
-    response = NextResponse.next();
   }
+
+  response = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
 
   return finalizeResponse(request, response, requestId);
 }

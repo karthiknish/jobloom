@@ -38,7 +38,9 @@ const Toaster = ({ ...props }: ToasterProps) => {
             "group-[.toaster]:!bg-amber-50 group-[.toaster]:!border-amber-200 group-[.toaster]:!text-amber-900",
           info:
             "group-[.toaster]:!bg-blue-50 group-[.toaster]:!border-blue-200 group-[.toaster]:!text-blue-900",
-          description: "group-[.toast]:text-muted-foreground",
+          // Ensure description remains readable even in dark theme
+          // when we force light variant backgrounds (e.g. red-50).
+          description: "text-current/80",
           actionButton:
             "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",
           cancelButton:

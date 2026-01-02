@@ -7,5 +7,6 @@ export const metadata: Metadata = generatePageMetadata("/extension/connect", {
 });
 
 export default function ExtensionConnectLayout({ children }: { children: ReactNode }) {
-  return children;
+  // The global Header is fixed; add top padding so this route isn't hidden underneath it.
+  return <div className="min-h-screen pt-20 md:pt-24">{children}</div>;
 }

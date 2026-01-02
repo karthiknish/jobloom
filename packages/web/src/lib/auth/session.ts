@@ -130,15 +130,6 @@ export async function createSessionCookie(
   });
 
   const decoded = await auth.verifySessionCookie(sessionCookie, true);
-  
-  // SESSION FIXATION PROTECTION:
-  // Revoke existing refresh tokens and session cookies for this user 
-  // before establishing the new session.
-  try {
-    await auth.revokeRefreshTokens(decoded.uid);
-  } catch (err) {
-    console.warn("Failed to revoke previous tokens during session creation:", err);
-  }
 
   const hash = await hashSessionToken(sessionCookie);
   const db = getAdminDb();
@@ -147,6 +138,28 @@ export async function createSessionCookie(
     .doc(decoded.uid)
     .collection("sessions")
     .doc(hash);
+
+  // SESSION FIXATION PROTECTION:
+  // Invalidate prior server-side sessions without revoking Firebase refresh tokens.
+  // Revoking refresh tokens here can immediately break the current client's token
+  // refresh flow and cause sign-in/sign-out loops.
+  try {
+    const sessionsCollection = db
+      .collection(SESSION_COLLECTION)
+      .doc(decoded.uid)
+      .collection("sessions");
+
+    const existing = await sessionsCollection.limit(25).get();
+    const batch = db.batch();
+    existing.docs.forEach((docSnap) => {
+      if (docSnap.id !== hash) {
+        batch.delete(docSnap.ref);
+      }
+    });
+    await batch.commit();
+  } catch (err) {
+    console.warn("Failed to clear previous server sessions during session creation:", err);
+  }
 
   await sessionDoc.set(
     {

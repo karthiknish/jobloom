@@ -14,25 +14,76 @@ export default function ConnectExtensionClient() {
   const onboarding = useOnboardingState();
 
   useEffect(() => {
-    const w = window as any;
-    const storedUser = localStorage.getItem("__firebase_user");
-    const parsed = storedUser ? JSON.parse(storedUser) : {};
-    const id = w.__firebase_user?.id || parsed?.id;
+    let isMounted = true;
+    let intervalId: number | undefined;
+    let timeoutId: number | undefined;
 
-    if (id) {
-      const stringId = String(id);
+    const readUserId = () => {
+      const w = window as any;
+      const storedUser = localStorage.getItem("__firebase_user");
+      const parsed = storedUser ? JSON.parse(storedUser) : {};
+      const id = w.__firebase_user?.id || parsed?.id;
+      return id ? String(id) : null;
+    };
+
+    const connectWithUid = (stringId: string) => {
+      if (!isMounted) return;
       setUid(stringId);
       setConnectionStatus('connected');
+      setErrorMessage(null);
       window.postMessage({ type: "FIREBASE_AUTH_SUCCESS", uid: stringId }, window.location.origin);
-      
-      // Mark extension connected for onboarding tracking
+
       if (!onboarding.hasConnectedExtension) {
         onboarding.markExtensionConnected();
       }
-    } else {
-      setConnectionStatus('error');
-      setErrorMessage('No authentication found. Please sign in first.');
+    };
+
+    const tryConnect = () => {
+      const id = readUserId();
+      if (id) {
+        connectWithUid(id);
+        return true;
+      }
+      return false;
+    };
+
+    const handleMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      if (event.data?.type === "FIREBASE_AUTH_SUCCESS" && event.data?.uid) {
+        connectWithUid(String(event.data.uid));
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+
+    // Initial attempt
+    if (!tryConnect()) {
+      setConnectionStatus('connecting');
+
+      // Poll briefly while Firebase hydrates auth state.
+      intervalId = window.setInterval(() => {
+        if (tryConnect()) {
+          if (intervalId) window.clearInterval(intervalId);
+          if (timeoutId) window.clearTimeout(timeoutId);
+        }
+      }, 250);
+
+      // Only show an error after a grace period.
+      timeoutId = window.setTimeout(() => {
+        if (!isMounted) return;
+        if (!tryConnect()) {
+          setConnectionStatus('error');
+          setErrorMessage('No authentication found. Please sign in first.');
+        }
+      }, 4000);
     }
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener('message', handleMessage);
+      if (intervalId) window.clearInterval(intervalId);
+      if (timeoutId) window.clearTimeout(timeoutId);
+    };
   }, [onboarding]);
 
   useEffect(() => {
@@ -59,7 +110,7 @@ export default function ConnectExtensionClient() {
   };
 
   return (
-    <div className="max-w-lg mx-auto py-16 px-6">
+    <div className="max-w-lg mx-auto py-12 px-6">
       <h1 className="text-xl font-semibold mb-2">Connect your Extension</h1>
       <p className="text-sm text-muted-foreground mb-6">
         Keep this tab open while you sign in. The extension will automatically connect to your account.

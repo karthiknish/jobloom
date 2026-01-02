@@ -73,9 +73,11 @@ export function useAuthActions({
 
         await signInWithEmailAndPassword(auth, email, password);
 
-        if (auth.currentUser) {
-          await syncSessionCookieWithServer(auth.currentUser);
+        if (!auth.currentUser) {
+          throw new Error("No authenticated user");
         }
+
+        await syncSessionCookieWithServer(auth.currentUser);
 
         showSuccess("Successfully signed in!");
       } catch (error) {
@@ -190,11 +192,13 @@ export function useAuthActions({
       }
 
       const auth = getAuthClient();
-      if (auth?.currentUser) {
-        await syncSessionCookieWithServer(auth.currentUser);
-        // Only show success after session is established
-        showSuccess("Successfully signed in with Google!");
+      if (!auth?.currentUser) {
+        throw new Error("No authenticated user");
       }
+
+      await syncSessionCookieWithServer(auth.currentUser);
+      // Only show success after session is established
+      showSuccess("Successfully signed in with Google!");
     } catch (error: any) {
       // ... (error handling)
       handleAuthError(error);
@@ -453,7 +457,11 @@ export function useAuthActions({
       const auth = getAuthClient();
       if (!auth || !auth.currentUser) throw new Error("No authenticated user");
 
-      await auth.currentUser.getIdToken(true);
+      // Avoid forcing an STS refresh here (getIdToken(true)) because it triggers
+      // a call to `securetoken.googleapis.com/v1/token` which will hard-fail if
+      // the Firebase API key / project is misconfigured or restricted.
+      // The session sync flow already fetches an ID token and retries with a
+      // forced refresh only when the server rejects the token.
       await syncSessionCookieWithServer(auth.currentUser);
       setupSessionTimeouts();
       setIsSessionExpiring(false);

@@ -117,7 +117,24 @@ export function useAuthSessionManagement(
       if (typeof window === "undefined") return;
 
       try {
-        const idToken = await user.getIdToken();
+        let idToken: string | null = null;
+        try {
+          idToken = await user.getIdToken();
+        } catch (tokenError: any) {
+          // Handle IndexedDB errors during HMR or page navigation
+          const isIndexedDBError =
+            tokenError?.name === "InvalidStateError" ||
+            tokenError?.message?.includes("IDBDatabase") ||
+            tokenError?.message?.includes("database connection is closing");
+
+          if (isIndexedDBError) {
+            console.warn(
+              "[AuthSession] IndexedDB error during token retrieval - likely HMR or navigation. Skipping sync."
+            );
+            return;
+          }
+          throw tokenError;
+        }
         if (!idToken) return;
 
         if (
@@ -132,7 +149,7 @@ export function useAuthSessionManagement(
 
           if (!csrfToken) {
             try {
-              await fetch("/api/auth/session", {
+              const response = await fetch("/api/auth/session", {
                 method: "GET",
                 credentials: "include",
                 cache: "no-store",
@@ -140,6 +157,13 @@ export function useAuthSessionManagement(
                   "Cache-Control": "no-store",
                 },
               });
+
+              if (!response.ok) {
+                console.warn("CSRF token fetch failed with status:", response.status);
+              }
+
+              // Wait a bit for the cookie to be set
+              await new Promise(resolve => setTimeout(resolve, 100));
             } catch (csrfFetchError) {
               console.warn("Failed to prime CSRF token", csrfFetchError);
             }
@@ -149,7 +173,7 @@ export function useAuthSessionManagement(
 
           if (!csrfToken) {
             console.warn(
-              "Missing CSRF token; skipping session cookie sync to avoid 401 response"
+              "Missing CSRF token; skipping session cookie sync to avoid 403 response"
             );
             return undefined;
           }
@@ -180,14 +204,27 @@ export function useAuthSessionManagement(
           attempt: number
         ): Promise<void> => {
           let idTokenToUse: string | null = null;
-          
+
           try {
             idTokenToUse = await user.getIdToken(forceTokenRefresh);
           } catch (tokenError: any) {
+            // Handle IndexedDB errors during HMR or page navigation
+            const isIndexedDBError =
+              tokenError?.name === "InvalidStateError" ||
+              tokenError?.message?.includes("IDBDatabase") ||
+              tokenError?.message?.includes("database connection is closing");
+
+            if (isIndexedDBError) {
+              console.warn(
+                "[AuthSession] IndexedDB error during token refresh - likely HMR or navigation. Skipping sync."
+              );
+              return;
+            }
+
             const errorCode = tokenError?.code || "";
-            const isTerminalError = 
-              errorCode === "auth/user-token-expired" || 
-              errorCode === "auth/user-disabled" || 
+            const isTerminalError =
+              errorCode === "auth/user-token-expired" ||
+              errorCode === "auth/user-disabled" ||
               errorCode === "auth/user-not-found" ||
               errorCode === "auth/id-token-expired" ||
               errorCode === "auth/invalid-user-token";
@@ -204,7 +241,7 @@ export function useAuthSessionManagement(
               }
               return;
             }
-            
+
             // Re-throw if not terminal so it can be handled by the outer catch
             throw tokenError;
           }
@@ -243,30 +280,58 @@ export function useAuthSessionManagement(
             return;
           }
 
-          let errorMessage: string | undefined;
+          const responseText = await response.text().catch(() => "");
+          let errorData: any;
           try {
-            const data = await response.json();
-            if (
-              data &&
-              typeof data === "object" &&
-              typeof (data as any).error === "string"
-            ) {
-              errorMessage = (data as any).error;
-            }
+            errorData = responseText ? JSON.parse(responseText) : undefined;
           } catch {
-            // ignore JSON parsing errors
+            errorData = undefined;
           }
 
+          const errorCode =
+            typeof errorData?.error?.code === "string"
+              ? errorData.error.code
+              : typeof errorData?.code === "string"
+                ? errorData.code
+                : undefined;
+
+          const errorMessage =
+            typeof errorData?.error?.message === "string"
+              ? errorData.error.message
+              : typeof errorData?.message === "string"
+                ? errorData.message
+                : typeof responseText === "string" && responseText.trim()
+                  ? responseText.trim().slice(0, 500)
+                  : undefined;
+
           const normalizedError = (errorMessage || "").toLowerCase();
+          const isCsrfFailure = normalizedError.includes("csrf");
 
+          // Log in dev only to avoid noisy prod consoles.
+          if (process.env.NODE_ENV === "development") {
+            console.error(
+              `[AuthSession] Session sync failed (status ${response.status})`,
+              {
+                statusText: response.statusText,
+                errorCode,
+                errorMessage,
+                hasCsrfToken: !!csrfToken,
+                attempt,
+              },
+              errorData
+            );
+          }
+
+          // Handle CSRF failures (withApi returns 403; some older code paths returned 401)
+          if ((response.status === 401 || response.status === 403) && isCsrfFailure && attempt < 2) {
+            document.cookie = `${CSRF_COOKIE_NAME}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;`;
+            lastSessionTokenRef.current = null;
+            await executeSync(false, attempt + 1);
+            return;
+          }
+
+          // Handle token failures by forcing an ID token refresh
           if (response.status === 401 && attempt < 2) {
-            if (normalizedError.includes("csrf")) {
-              document.cookie = `${CSRF_COOKIE_NAME}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;`;
-              lastSessionTokenRef.current = null;
-              await executeSync(false, attempt + 1);
-              return;
-            }
-
             await executeSync(true, attempt + 1);
             return;
           }

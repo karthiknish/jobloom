@@ -52,6 +52,7 @@ async function validateUserSession(decoded: any): Promise<void> {
 
 export const GET = withApi({
   auth: "none",
+  skipCsrf: true, // Skip CSRF validation for GET request that sets the CSRF token
 }, async ({ request }) => {
   const response = createSuccessResponse({ ok: true }, "Session endpoint available");
   await ensureCsrfCookie(request, response);
@@ -68,8 +69,17 @@ export const POST = withApi({
   auth: "none",
   rateLimit: "auth",
   bodySchema: sessionBodySchema,
+  skipCsrf: true, // We validate CSRF manually below
 }, async ({ request, body }) => {
-  validateCsrf(request);
+  try {
+    validateCsrf(request);
+  } catch (csrfError) {
+    console.error("CSRF validation failed:", csrfError);
+    throw createAuthError(
+      csrfError instanceof Error ? csrfError.message : "CSRF validation failed",
+      ERROR_CODES.FORBIDDEN
+    );
+  }
 
   const { idToken } = body;
 
@@ -116,8 +126,17 @@ export const POST = withApi({
 
 export const DELETE = withApi({
   auth: "none",
+  skipCsrf: true, // We validate CSRF manually below
 }, async ({ request }) => {
-  validateCsrf(request);
+  try {
+    validateCsrf(request);
+  } catch (csrfError) {
+    console.error("CSRF validation failed on DELETE:", csrfError);
+    throw createAuthError(
+      csrfError instanceof Error ? csrfError.message : "CSRF validation failed",
+      ERROR_CODES.FORBIDDEN
+    );
+  }
 
   const response = createSuccessResponse({ ok: true }, "Session revoked successfully");
   

@@ -13,7 +13,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
-import { useToast } from "@/hooks/use-toast";
 import { animations } from "@/styles/animations";
 
 function SignInInner() {
@@ -26,7 +25,6 @@ function SignInInner() {
     loading: authLoading,
     user,
     isInitialized,
-    refreshToken,
   } = useFirebaseAuth();
 
   const [email, setEmail] = useState("");
@@ -38,7 +36,6 @@ function SignInInner() {
   const [lastAuthMethod, setLastAuthMethod] = useState<string | null>(null);
   const [rememberMe, setRememberMe] = useState(true);
   const isLoading = authLoading || isSubmitting;
-  const { toast } = useToast();
 
   const fromExtension = search.get("from") === "extension";
   const redirectUrlComplete = search.get("redirect_url") || "/dashboard";
@@ -117,14 +114,13 @@ function SignInInner() {
       try {
         // Use popup auth for both extension and regular flows for smoother experience
         await signInWithGoogle();
-        await refreshToken();
         router.replace(redirectUrlComplete);
       } catch (err) {
         console.error("Auto-sign-in error:", err);
         setIsSubmitting(false);
       }
     })();
-  }, [redirectUrlComplete, refreshToken, router, search, signInWithGoogle]);
+  }, [redirectUrlComplete, router, search, signInWithGoogle]);
 
   useEffect(() => {
     if (!isInitialized) return;
@@ -156,35 +152,10 @@ function SignInInner() {
       // Store remember me preference
       localStorage.setItem("hireall-remember-me", String(rememberMe));
       await signIn(email, password);
-      await refreshToken();
       router.replace(redirectUrlComplete);
     } catch (err: unknown) {
-      const error = err as { code?: string; message?: string };
-      // Surface errors via toast for consistent messaging
-      const message = (() => {
-        switch (error.code) {
-          case 'auth/user-not-found':
-            return "No account found with this email address";
-          case 'auth/wrong-password':
-            return "Incorrect password. Please try again";
-          case 'auth/too-many-requests':
-            return "Too many failed attempts. Please try again later or reset your password";
-          case 'auth/user-disabled':
-            return "This account has been disabled. Please contact support";
-          case 'auth/invalid-email':
-            return "Invalid email address format";
-          case 'auth/network-request-failed':
-            return "Network error. Please check your connection and try again";
-          default:
-            return error?.message || "Sign in failed. Please try again";
-        }
-      })();
-
-      toast({
-        variant: "destructive",
-        title: "Authentication error",
-        description: message,
-      });
+      // Errors are already surfaced globally by the auth provider.
+      console.error("Password sign-in error:", err);
     } finally {
       setIsSubmitting(false);
     }
@@ -196,31 +167,10 @@ function SignInInner() {
       // Store remember me preference for Google sign-in too
       localStorage.setItem("hireall-remember-me", String(rememberMe));
       await signInWithGoogle();
-      await refreshToken();
       router.replace(redirectUrlComplete);
     } catch (err: unknown) {
-      const error = err as { code?: string; message?: string };
-      const message = (() => {
-        switch (error.code) {
-          case 'auth/popup-closed-by-user':
-            return "Sign-in popup was closed before completion";
-          case 'auth/popup-blocked':
-            return "Sign-in popup was blocked by your browser. Please allow popups";
-          case 'auth/cancelled-popup-request':
-            return "Sign-in was cancelled";
-          case 'auth/network-request-failed':
-            return "Network error. Please check your connection and try again";
-          default:
-            return error?.message || "Google sign-in failed. Please try again";
-        }
-      })();
-
-      toast({
-        variant: "destructive",
-        title: "Authentication error",
-        description: message,
-      });
-      setIsSubmitting(false);
+      // Errors are already surfaced globally by the auth provider.
+      console.error("Google sign-in error:", err);
     }
   }
 

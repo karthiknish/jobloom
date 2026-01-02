@@ -30,6 +30,8 @@ class ExtensionAuthBridge {
   private static instance: ExtensionAuthBridge;
   private isInitialized = false;
 
+  private waitForUserPromise: Promise<any | null> | null = null;
+
   private constructor() {
     this.initialize();
   }
@@ -222,6 +224,52 @@ class ExtensionAuthBridge {
     });
   }
 
+  private async waitForUser(timeoutMs: number): Promise<any | null> {
+    if (typeof window === 'undefined') return null;
+
+    const auth = getAuthClient();
+    if (!auth) return null;
+
+    if (auth.currentUser) return auth.currentUser;
+
+    if (this.waitForUserPromise) {
+      return this.waitForUserPromise;
+    }
+
+    this.waitForUserPromise = new Promise(async (resolve) => {
+      let settled = false;
+
+      const settle = (user: any | null) => {
+        if (settled) return;
+        settled = true;
+        this.waitForUserPromise = null;
+        resolve(user);
+      };
+
+      const timeoutId = window.setTimeout(() => {
+        settle(null);
+      }, timeoutMs);
+
+      try {
+        const { onAuthStateChanged } = await import('firebase/auth');
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+          window.clearTimeout(timeoutId);
+          try {
+            unsubscribe();
+          } catch {
+            // ignore
+          }
+          settle(user ?? null);
+        });
+      } catch (error) {
+        window.clearTimeout(timeoutId);
+        settle(null);
+      }
+    });
+
+    return this.waitForUserPromise;
+  }
+
   public async getAuthToken(forceRefresh = false): Promise<ExtensionAuthResponse> {
     try {
       const auth = getAuthClient();
@@ -229,7 +277,12 @@ class ExtensionAuthBridge {
         throw new Error('Firebase auth not initialized');
       }
 
-      const user = auth.currentUser;
+      let user = auth.currentUser;
+      if (!user) {
+        // Give Firebase a moment to hydrate auth state on page load.
+        user = await this.waitForUser(2500);
+      }
+
       if (!user) {
         return { success: false, error: 'No authenticated user' };
       }

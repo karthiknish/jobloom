@@ -168,7 +168,7 @@ export function Dashboard({ initialView = "dashboard" }: DashboardProps) {
     ) {
       // Small delay to let the initial layout settle
       const timer = setTimeout(() => {
-        tour.startDashboardTour();
+        tour?.startDashboardTour?.();
       }, 500);
       return () => clearTimeout(timer);
     }

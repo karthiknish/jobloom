@@ -29,7 +29,7 @@ export function FeaturesSettings({ showBillingButton, billingPortalLoading, onBi
     analytics.logFeatureUsed("onboarding_tour", "settings_help_section");
     router.push('/dashboard');
     setTimeout(() => {
-      tour.startDashboardTour();
+      tour?.startDashboardTour?.();
     }, 500);
   };
 
@@ -223,9 +223,9 @@ export function FeaturesSettings({ showBillingButton, billingPortalLoading, onBi
                     </div>
                     <Button
                       onClick={() => {
-                        tour.resetTour("dashboard");
+                        tour?.resetTour?.("dashboard");
                         router.push('/dashboard');
-                        setTimeout(() => tour.startDashboardTour(), 500);
+                        setTimeout(() => tour?.startDashboardTour?.(), 500);
                       }}
                       variant="outline"
                       size="sm"
@@ -253,9 +253,9 @@ export function FeaturesSettings({ showBillingButton, billingPortalLoading, onBi
                     </div>
                     <Button
                       onClick={() => {
-                        tour.resetTour("cv_evaluator");
+                        tour?.resetTour?.("cv_evaluator");
                         router.push('/career-tools');
-                        setTimeout(() => tour.startCvEvaluatorTour(), 500);
+                        setTimeout(() => tour?.startCvEvaluatorTour?.(), 500);
                       }}
                       variant="outline"
                       size="sm"

@@ -5,6 +5,7 @@ import {
   GoogleAuthProvider,
   connectAuthEmulator,
   initializeAuth,
+  setPersistence,
   browserLocalPersistence,
   indexedDBLocalPersistence,
   inMemoryPersistence,
@@ -128,12 +129,12 @@ export function ensureFirebaseApp(): FirebaseApp | undefined {
       let auth: Auth;
 
       try {
+        const persistenceOrder = isDevelopment
+          ? [browserLocalPersistence, indexedDBLocalPersistence, inMemoryPersistence]
+          : [indexedDBLocalPersistence, browserLocalPersistence, inMemoryPersistence];
+
         auth = initializeAuth(app, {
-          persistence: [
-            indexedDBLocalPersistence,
-            browserLocalPersistence,
-            inMemoryPersistence,
-          ],
+          persistence: persistenceOrder,
           popupRedirectResolver: browserPopupRedirectResolver,
         });
       } catch (authInitError) {
@@ -143,6 +144,30 @@ export function ensureFirebaseApp(): FirebaseApp | undefined {
             "[FirebaseClient] Falling back to existing auth instance",
             authInitError
           );
+        }
+      }
+
+      // If IndexedDB is in a transient closing state (common during HMR), force
+      // localStorage persistence to avoid noisy errors and sign-out loops.
+      if (isDevelopment) {
+        try {
+          // No-op if already set, but protects us if Auth fell back to an instance
+          // that defaulted to IndexedDB persistence.
+          setPersistence(auth, browserLocalPersistence).catch((persistenceError: any) => {
+            if (isIndexedDBConnectionClosingError(persistenceError)) {
+              console.warn(
+                "[FirebaseClient] IndexedDB unstable; forcing in-memory auth persistence for this session"
+              );
+              setPersistence(auth, inMemoryPersistence).catch(() => {
+                // If even that fails, keep going; auth will still function but may be transient.
+              });
+              return;
+            }
+
+            console.warn("[FirebaseClient] Failed to set auth persistence:", persistenceError);
+          });
+        } catch (persistenceError: any) {
+          console.warn("[FirebaseClient] Failed to set auth persistence:", persistenceError);
         }
       }
 
@@ -211,23 +236,19 @@ async function initializePerformance(): Promise<void> {
       services.performance = getPerformance(services.app!);
     }
   } catch (error: any) {
-    // Suppress IndexedDB errors during development (common with HMR)
-    const isIndexedDBError = 
-      error?.name === "InvalidStateError" || 
-      error?.message?.includes("IDBDatabase") ||
-      error?.message?.includes("database connection is closing");
-    
-    if (isIndexedDBError && process.env.NODE_ENV === "development") {
-      console.warn(
-        "[FirebaseClient] Performance Monitoring initialization skipped due to IndexedDB issue (common during HMR). Clear site data to resolve."
-      );
+    if (isIndexedDBConnectionClosingError(error)) {
+      if (process.env.NODE_ENV === "development") {
+        console.warn(
+          "[FirebaseClient] Performance Monitoring initialization skipped due to IndexedDB issue (common during HMR). Clear site data to resolve."
+        );
+      }
     } else {
       console.warn(
         "Firebase Performance Monitoring initialization failed:",
         error
       );
     }
-    
+
     if (services) {
       services.performance = undefined;
     }
@@ -272,6 +293,18 @@ function setupEmulators(): void {
   }
 }
 
+// Helper to check if an error is an IndexedDB connection closing error
+function isIndexedDBConnectionClosingError(error: any): boolean {
+  if (!error) return false;
+  const message = error?.message || error?.reason?.message || String(error);
+  return (
+    error?.name === "InvalidStateError" ||
+    message.includes("IDBDatabase") ||
+    message.includes("database connection is closing") ||
+    message.includes("The database connection is closing")
+  );
+}
+
 // Connection monitoring
 function setupConnectionMonitoring(): void {
   if (typeof window === "undefined") return;
@@ -285,6 +318,18 @@ function setupConnectionMonitoring(): void {
   window.addEventListener("offline", () => {
     connectionState.isOnline = false;
     handleDisconnection();
+  });
+
+  // Global handler for uncaught IndexedDB errors (common during HMR)
+  window.addEventListener("unhandledrejection", (event) => {
+    if (isIndexedDBConnectionClosingError(event.reason)) {
+      event.preventDefault();
+      if (process.env.NODE_ENV === "development") {
+        console.warn(
+          "[FirebaseClient] Suppressed IndexedDB connection closing error (common during HMR). Refresh the page if issues persist."
+        );
+      }
+    }
   });
 
   // Monitor Firebase connection
