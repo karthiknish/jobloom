@@ -8,7 +8,7 @@ import { SubscriptionProvider } from "@/providers/subscription-provider";
 import { AppToaster } from "@/components/ui/Toast";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-
+import MobileNavigation from "@/components/MobileNavigation";
 import { AnalyticsProvider } from "@/providers/analytics-provider";
 import { PerformanceProvider } from "@/providers/performance-provider";
 import { PostHogProvider } from "@/providers/posthog-provider";
@@ -85,6 +85,7 @@ export default function RootLayout({
                           <EmailVerificationBanner />
                           <main id="main">{children}</main>
                           <Footer />
+                          <MobileNavigation />
 
                           <AppToaster />
                           <ReportIssue position="bottom-left" />
