@@ -77,9 +77,6 @@ const TourContext = createContext<TourContextType | undefined>(undefined);
 
 export function useTourContext() {
   const context = useContext(TourContext);
-  if (!context) {
-    throw new Error("useTourContext must be used within TourProvider");
-  }
   return context;
 }
 
@@ -404,6 +401,12 @@ const MemoizedContentWrapper = (props: any) => {
 // Proxy component to bridge between ReactTour and our Context
 const TourContentProxy = (props: any) => {
   const context = useTourContext();
+  
+  // Context may not be available during initial render
+  if (!context) {
+    return null;
+  }
+  
   return (
     <ContentComponent 
       {...props} 
@@ -416,21 +419,26 @@ const TourContentProxy = (props: any) => {
 // Hook to trigger tour from anywhere
 export function useTourTrigger() {
   const tour = useTour();
-  const { markTourComplete, startDashboardTour, startCvEvaluatorTour, resetTour } = useTourContext();
+  const context = useTourContext();
 
   const startTour = useCallback((tourId: string) => {
+    if (!context) return;
     if (tourId === "dashboard") {
-      startDashboardTour();
+      context.startDashboardTour();
     } else if (tourId === "cv_evaluator") {
-      startCvEvaluatorTour();
+      context.startCvEvaluatorTour();
     }
     tour.setIsOpen(true);
-  }, [tour, startDashboardTour, startCvEvaluatorTour]);
+  }, [tour, context]);
 
   const endTour = useCallback((tourId: string) => {
     tour.setIsOpen(false);
-    markTourComplete(tourId);
-  }, [tour, markTourComplete]);
+    context?.markTourComplete(tourId);
+  }, [tour, context]);
+
+  const resetTour = useCallback((tourId: string) => {
+    context?.resetTour(tourId);
+  }, [context]);
 
   return {
     startTour,

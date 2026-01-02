@@ -179,7 +179,36 @@ export function useAuthSessionManagement(
           forceTokenRefresh: boolean,
           attempt: number
         ): Promise<void> => {
-          const idTokenToUse = await user.getIdToken(forceTokenRefresh);
+          let idTokenToUse: string | null = null;
+          
+          try {
+            idTokenToUse = await user.getIdToken(forceTokenRefresh);
+          } catch (tokenError: any) {
+            const errorCode = tokenError?.code || "";
+            const isTerminalError = 
+              errorCode === "auth/user-token-expired" || 
+              errorCode === "auth/user-disabled" || 
+              errorCode === "auth/user-not-found" ||
+              errorCode === "auth/id-token-expired" ||
+              errorCode === "auth/invalid-user-token";
+
+            if (isTerminalError) {
+              console.warn("Terminal auth error detected during session sync. Signing out...", errorCode);
+              const auth = getAuthClient();
+              if (auth) {
+                await signOut(auth).catch(() => {
+                  // Fallback: clear cookies and reload if signOut fails
+                  document.cookie = "session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+                  if (typeof window !== "undefined") window.location.href = "/sign-in";
+                });
+              }
+              return;
+            }
+            
+            // Re-throw if not terminal so it can be handled by the outer catch
+            throw tokenError;
+          }
+
           if (!idTokenToUse) {
             return;
           }
@@ -276,7 +305,12 @@ export function useAuthSessionManagement(
         sessionSyncPromiseRef.current = syncPromise
           .catch((error) => {
             lastSessionTokenRef.current = null;
-            console.error("Failed to sync server session cookie", error);
+            
+            // Avoid logging terminal errors as "failed sync" twice
+            const msg = error?.message || "";
+            if (!msg.includes("Terminal auth error")) {
+              console.error("Failed to sync server session cookie", error);
+            }
             throw error;
           })
           .finally(() => {
@@ -286,7 +320,10 @@ export function useAuthSessionManagement(
         await sessionSyncPromiseRef.current;
       } catch (error) {
         lastSessionTokenRef.current = null;
-        console.error("Session cookie sync failed", error);
+        // Outer catch remains for generic failures
+        if (!(error instanceof Error && error.message.includes("Terminal auth error"))) {
+          console.error("Session cookie sync failed", error);
+        }
       }
     }, []
   );

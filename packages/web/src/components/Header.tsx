@@ -143,18 +143,14 @@ export default function Header() {
 
       {visibleAdminLinks.length > 0 && (
         <MenubarMenu>
-          <MenubarTrigger className="font-medium text-sm text-muted-foreground hover:text-foreground">
-            Admin
+          <MenubarTrigger asChild className="font-medium text-sm cursor-pointer">
+            <Link
+              href="/admin"
+              className="text-muted-foreground hover:text-foreground transition-colors px-3 py-2"
+            >
+              Admin
+            </Link>
           </MenubarTrigger>
-          <MenubarContent>
-            {visibleAdminLinks.map((link) => (
-              <MenubarItem key={link.href} asChild>
-                <Link href={link.href}>
-                  {link.label}
-                </Link>
-              </MenubarItem>
-            ))}
-          </MenubarContent>
         </MenubarMenu>
       )}
     </Menubar>
@@ -372,7 +368,6 @@ export default function Header() {
 
                   <nav className="flex flex-col space-y-6 flex-1">
                     <div className="space-y-3">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground/70">Main</p>
                       <div className="flex flex-col space-y-2">
                         {mobileMainLinks.map(renderMobileLink)}
                       </div>

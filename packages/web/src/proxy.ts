@@ -40,6 +40,9 @@ const CONTENT_SECURITY_POLICY = (() => {
     "https://www.google-analytics.com",
     "https://www.googletagmanager.com",
     "https://*.googleapis.com",
+    "https://us.i.posthog.com",
+    "https://us-assets.i.posthog.com",
+    "https://app.posthog.com",
   ];
 
   if (CUSTOM_AUTH_ORIGIN && !connectSrc.includes(CUSTOM_AUTH_ORIGIN)) {
@@ -61,9 +64,9 @@ const CONTENT_SECURITY_POLICY = (() => {
 
   const directives = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://www.googletagmanager.com https://www.google-analytics.com https://apis.google.com https://accounts.google.com",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://www.googletagmanager.com https://www.google-analytics.com https://apis.google.com https://accounts.google.com https://us.i.posthog.com https://us-assets.i.posthog.com",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-    "img-src 'self' data: blob: https://www.google-analytics.com https://www.googletagmanager.com https://*.googleusercontent.com",
+    "img-src 'self' data: blob: https://www.google-analytics.com https://www.googletagmanager.com https://*.googleusercontent.com https://us.i.posthog.com https://us-assets.i.posthog.com",
     "font-src 'self' https://fonts.gstatic.com",
     `connect-src ${connectSrc.join(" ")}`,
     `frame-src ${frameSrc.join(" ")}`,

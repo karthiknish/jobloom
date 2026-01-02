@@ -179,7 +179,7 @@ export function useAuthActions({
         "google",
         createGooglePopupProvider,
         {
-          successMessage: "Successfully signed in with Google!",
+          successMessage: "", // Don't show success yet - wait for session sync
           beforeAttempt: () => storeLastAuthMethod("google"),
         }
       );
@@ -192,6 +192,8 @@ export function useAuthActions({
       const auth = getAuthClient();
       if (auth?.currentUser) {
         await syncSessionCookieWithServer(auth.currentUser);
+        // Only show success after session is established
+        showSuccess("Successfully signed in with Google!");
       }
     } catch (error: any) {
       // ... (error handling)

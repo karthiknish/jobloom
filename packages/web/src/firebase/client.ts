@@ -206,13 +206,31 @@ async function initializeAnalytics(): Promise<void> {
 async function initializePerformance(): Promise<void> {
   try {
     if (services) {
+      // Defer performance initialization to avoid IDB race conditions during HMR
+      await new Promise((resolve) => setTimeout(resolve, 100));
       services.performance = getPerformance(services.app!);
     }
-  } catch (error) {
-    console.warn(
-      "Firebase Performance Monitoring initialization failed:",
-      error
-    );
+  } catch (error: any) {
+    // Suppress IndexedDB errors during development (common with HMR)
+    const isIndexedDBError = 
+      error?.name === "InvalidStateError" || 
+      error?.message?.includes("IDBDatabase") ||
+      error?.message?.includes("database connection is closing");
+    
+    if (isIndexedDBError && process.env.NODE_ENV === "development") {
+      console.warn(
+        "[FirebaseClient] Performance Monitoring initialization skipped due to IndexedDB issue (common during HMR). Clear site data to resolve."
+      );
+    } else {
+      console.warn(
+        "Firebase Performance Monitoring initialization failed:",
+        error
+      );
+    }
+    
+    if (services) {
+      services.performance = undefined;
+    }
   }
 }
 

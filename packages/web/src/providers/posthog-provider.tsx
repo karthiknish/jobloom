@@ -3,7 +3,7 @@
 import posthog from "posthog-js";
 import { PostHogProvider as PHProvider, usePostHog } from "posthog-js/react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useEffect, Suspense } from "react";
+import { useEffect, Suspense, useState } from "react";
 import { useFirebaseAuth } from "./firebase-auth-provider";
 
 // Initialize PostHog only on client side
@@ -74,12 +74,25 @@ function PostHogUserIdentifier() {
 }
 
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const isConfigured =
     typeof window !== "undefined" &&
     process.env.NEXT_PUBLIC_POSTHOG_KEY &&
     process.env.NEXT_PUBLIC_POSTHOG_HOST;
 
+  // If not configured, just return children
   if (!isConfigured) {
+    return <>{children}</>;
+  }
+
+  // During SSR and initial client hydration, return null or children directly
+  // return children to ensure the HTML structure matches the server
+  if (!mounted) {
     return <>{children}</>;
   }
 

@@ -53,13 +53,23 @@ export const showSuccess = (message: string, description?: string) =>
   toast.success(message, { description });
 
 export const showError = (message: string, description?: string) => {
+  // Handle empty/undefined messages
+  if (!message || message.trim() === "") {
+    toast.error(DEFAULT_ERROR_MESSAGE, { description });
+    return;
+  }
+  
   // Use humanizeError for comprehensive pattern matching
   const humanized = humanizeError(message);
   // Fall back to existing sanitization if humanizeError returns default
   const finalMessage = humanized !== "Something went wrong. Please try again." 
     ? humanized 
     : sanitizeMessage(message);
-  toast.error(finalMessage, { 
+    
+  // Final safeguard - never show empty toast
+  const displayMessage = finalMessage?.trim() || DEFAULT_ERROR_MESSAGE;
+  
+  toast.error(displayMessage, { 
     description: description ? sanitizeMessage(description) : undefined 
   });
 };

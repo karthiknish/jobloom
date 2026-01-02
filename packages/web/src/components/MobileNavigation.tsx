@@ -13,7 +13,7 @@ import {
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { authApi } from "@/utils/api/auth";
 import { useSubscription } from "@/providers/subscription-provider";
 
@@ -79,11 +79,13 @@ export default function MobileNavigation() {
   }, [user]);
 
   // Only show authenticated navigation items if user is logged in
-  const visibleItems = navigationItems.filter(item => {
-    if (item.requiresAuth && !user) return false;
-    if (item.requiresAdmin && !isAdmin) return false;
-    return true;
-  });
+  const visibleItems = useMemo(() => {
+    return navigationItems.filter(item => {
+      if (item.requiresAuth && !user) return false;
+      if (item.requiresAdmin && !isAdmin) return false;
+      return true;
+    });
+  }, [user, isAdmin]);
 
   // Update indicator position based on active tab
   useEffect(() => {
@@ -96,9 +98,17 @@ export default function MobileNavigation() {
     if (activeIndex >= 0) {
       const navWidth = navRef.current.offsetWidth;
       const itemWidth = navWidth / visibleItems.length;
-      setIndicatorPosition({
-        left: activeIndex * itemWidth,
-        width: itemWidth,
+      const newLeft = activeIndex * itemWidth;
+      
+      // Only update if position changed significantly
+      setIndicatorPosition(prev => {
+        if (Math.abs(prev.left - newLeft) < 0.1 && Math.abs(prev.width - itemWidth) < 0.1) {
+          return prev;
+        }
+        return {
+          left: newLeft,
+          width: itemWidth,
+        };
       });
     }
   }, [pathname, visibleItems]);

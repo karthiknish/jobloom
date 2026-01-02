@@ -39,6 +39,8 @@ export const securityConfig = {
         "https://apis.google.com",
         "https://accounts.google.com",
         "https://*.stripe.com",
+        "https://us.i.posthog.com",
+        "https://us-assets.i.posthog.com",
       ],
       styleSrc: [
         "'self'",
@@ -54,6 +56,8 @@ export const securityConfig = {
         "data:",
         "https:",
         "blob:",
+        "https://us.i.posthog.com",
+        "https://us-assets.i.posthog.com",
       ],
       connectSrc: [
         "'self'",
@@ -66,6 +70,9 @@ export const securityConfig = {
         "https://*.google.com",
         "https://*.gstatic.com",
         "https://*.googleusercontent.com",
+        "https://us.i.posthog.com",
+        "https://us-assets.i.posthog.com",
+        "https://app.posthog.com",
         "wss://*.firebaseio.com",
       ],
       frameSrc: [

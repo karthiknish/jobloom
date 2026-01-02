@@ -72,7 +72,9 @@ export function usePopupSignIn() {
 
           try {
             await signInWithPopup(auth, provider);
-            showSuccess(options.successMessage);
+            if (options.successMessage) {
+              showSuccess(options.successMessage);
+            }
           } catch (error: any) {
             const code = error?.code as string | undefined;
             if (
