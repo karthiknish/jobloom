@@ -66,8 +66,8 @@ function getCompanyColor(company: string): string {
 
 function getCompanyLogoHTML(company: string, logoUrl?: string): string {
   if (logoUrl) {
-    // Use lazy loading for images to improve performance
-    return `<img src="${logoUrl}" alt="${company}" class="company-logo-img" loading="lazy" decoding="async" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+    // Use data-src and lazy-logo class for IntersectionObserver lazy loading
+    return `<img data-src="${logoUrl}" alt="${company}" class="company-logo-img lazy-logo" loading="lazy" decoding="async" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
             <div class="company-logo-placeholder" style="display:none; background-color: ${getCompanyColor(company)}">${company.charAt(0).toUpperCase()}</div>`;
   }
 

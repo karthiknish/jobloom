@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -19,8 +20,7 @@ import {
 
 export type CareerToolsSection = 
   | "dashboard"
-  | "ai-generator"
-  | "manual-builder" 
+  | "resume"
   | "import"
   | "cv-optimizer"
   | "cover-letter";
@@ -37,8 +37,7 @@ const navItems: NavItem[] = [
   // Dashboard
   { id: "dashboard", label: "Dashboard", icon: <BarChart3 className="h-4 w-4" />, description: "Stats & Insights" },
   // Build group
-  { id: "ai-generator", label: "AI Generator", icon: <Sparkles className="h-4 w-4" />, group: "Build", description: "Create resume with AI" },
-  { id: "manual-builder", label: "Manual Builder", icon: <PenLine className="h-4 w-4" />, group: "Build", description: "Build step by step" },
+  { id: "resume", label: "Resume", icon: <PenLine className="h-4 w-4" />, group: "Build", description: "AI or manual builder" },
   { id: "import", label: "Import Resume", icon: <Upload className="h-4 w-4" />, group: "Build", description: "Import from file" },
   // Analyze group
   { id: "cv-optimizer", label: "Resume Optimizer", icon: <Search className="h-4 w-4" />, description: "ATS score & history" },
@@ -59,6 +58,41 @@ export function CareerToolsSidebar({
 }: CareerToolsSidebarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [hoveredItem, setHoveredItem] = useState<CareerToolsSection | null>(null);
+  const [hoverCard, setHoverCard] = useState<{ item: NavItem; anchorEl: HTMLElement } | null>(null);
+
+  const hoverCardPos = useMemo(() => {
+    if (!hoverCard) return null;
+    if (typeof window === "undefined") return null;
+    const rect = hoverCard.anchorEl.getBoundingClientRect();
+    const left = rect.right + 12;
+    const estimatedHeight = 140;
+    const minTop = 8;
+    const maxTop = Math.max(minTop, window.innerHeight - estimatedHeight - 8);
+    const top = Math.min(Math.max(rect.top, minTop), maxTop);
+    return { top, left };
+  }, [hoverCard]);
+
+  const clearHoverCard = useCallback(() => {
+    setHoveredItem(null);
+    setHoverCard(null);
+  }, []);
+
+  // Keep the portal-positioned card aligned on scroll/resize.
+  useEffect(() => {
+    if (!hoverCard) return;
+
+    const handle = () => {
+      // Force recompute by refreshing state reference.
+      setHoverCard((prev) => (prev ? { ...prev } : prev));
+    };
+
+    window.addEventListener("scroll", handle, true);
+    window.addEventListener("resize", handle);
+    return () => {
+      window.removeEventListener("scroll", handle, true);
+      window.removeEventListener("resize", handle);
+    };
+  }, [hoverCard]);
 
   // Group items by their group property
   const buildItems = navItems.filter(item => item.group === "Build");
@@ -72,8 +106,12 @@ export function CareerToolsSidebar({
       <div 
         key={item.id}
         className="relative"
-        onMouseEnter={() => isDesktop && setHoveredItem(item.id)}
-        onMouseLeave={() => isDesktop && setHoveredItem(null)}
+        onMouseEnter={(e) => {
+          if (!isDesktop) return;
+          setHoveredItem(item.id);
+          setHoverCard({ item, anchorEl: e.currentTarget as HTMLElement });
+        }}
+        onMouseLeave={() => isDesktop && clearHoverCard()}
       >
         <motion.button
           whileHover={{ scale: 1.05 }}
@@ -119,35 +157,8 @@ export function CareerToolsSidebar({
           )}
         </motion.button>
 
-        {/* Desktop Hover Tooltip/Card */}
-        {isDesktop && (
-          <AnimatePresence>
-            {isHovered && (
-              <motion.div
-                initial={{ opacity: 0, x: 10, scale: 0.95 }}
-                animate={{ opacity: 1, x: 0, scale: 1 }}
-                exit={{ opacity: 0, x: 10, scale: 0.95 }}
-                transition={{ duration: 0.15 }}
-                className="absolute left-full ml-3 top-0 z-50"
-              >
-                <div className="bg-popover text-popover-foreground border border-border shadow-xl rounded-xl p-3 w-48 backdrop-blur-md">
-                  <div className="font-bold text-sm">{item.label}</div>
-                  {item.description && (
-                    <div className="text-xs text-muted-foreground mt-1">
-                      {item.description}
-                    </div>
-                  )}
-                  {isActive && (
-                    <div className="mt-2 pt-2 border-t border-border/50 flex items-center gap-1 text-xxs font-bold text-primary uppercase tracking-wider">
-                      <div className="w-1 h-1 rounded-full bg-primary animate-pulse" />
-                      Active Section
-                    </div>
-                  )}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        )}
+        {/* Desktop Hover Tooltip/Card rendered via portal (avoids being covered by fixed header) */}
+        {isDesktop && isHovered && null}
       </div>
     );
   };
@@ -236,6 +247,38 @@ export function CareerToolsSidebar({
           </div>
         </div>
       </div>
+
+      {/* Desktop hover card portal */}
+      {hoverCard && hoverCardPos && typeof document !== "undefined" &&
+        createPortal(
+          <AnimatePresence>
+            <motion.div
+              key={hoverCard.item.id}
+              initial={{ opacity: 0, x: 10, scale: 0.98 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: 10, scale: 0.98 }}
+              transition={{ duration: 0.12 }}
+              style={{ position: "fixed", top: hoverCardPos.top, left: hoverCardPos.left, zIndex: 2000 }}
+              className="pointer-events-none"
+            >
+              <div className="pointer-events-none bg-popover/95 text-popover-foreground border border-border shadow-xl rounded-xl p-3 w-48 backdrop-blur-md">
+                <div className="font-bold text-sm">{hoverCard.item.label}</div>
+                {hoverCard.item.description && (
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {hoverCard.item.description}
+                  </div>
+                )}
+                {activeSection === hoverCard.item.id && (
+                  <div className="mt-2 pt-2 border-t border-border/50 flex items-center gap-1 text-xxs font-bold text-primary uppercase tracking-wider">
+                    <div className="w-1 h-1 rounded-full bg-primary animate-pulse" />
+                    Active Section
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </AnimatePresence>,
+          document.body
+        )}
     </>
   );
 }

@@ -2,6 +2,7 @@
 import { popupController } from "./controllers/PopupController";
 import { logger } from "./utils/logger";
 import { EXT_COLORS } from "./theme";
+import "./popup.css";
 
 /**
  * Injects theme colors as CSS variables into the document root.
@@ -9,7 +10,7 @@ import { EXT_COLORS } from "./theme";
  */
 function injectThemeVariables() {
   const root = document.documentElement;
-  
+
   // Map EXT_COLORS to CSS variable names
   // Note: We convert camelCase to kebab-case
   Object.entries(EXT_COLORS).forEach(([key, value]) => {
@@ -18,7 +19,7 @@ function injectThemeVariables() {
       root.style.setProperty(cssVarName, value);
     }
   });
-  
+
   logger.debug('Popup', 'Theme variables injected');
 }
 
@@ -26,10 +27,10 @@ function injectThemeVariables() {
 document.addEventListener('DOMContentLoaded', async () => {
   try {
     logger.info('Popup', 'Initializing popup...');
-    
+
     // Inject theme variables first
     injectThemeVariables();
-    
+
     await popupController.initialize();
     logger.info('Popup', 'Popup initialized successfully');
   } catch (error) {

@@ -1,10 +1,8 @@
-"use client";
-
-import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
 import { Separator } from "@/components/ui/separator";
 import { CHROME_EXTENSION_URL, GITHUB_URL, LINKEDIN_URL, TWITTER_URL, isExternalUrl } from "@/config/links";
+import { FooterClient } from "./FooterClient";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -14,12 +12,7 @@ export default function Footer() {
   const linkedinIsExternal = isExternalUrl(LINKEDIN_URL);
 
   return (
-    <motion.footer
-      initial={{ opacity: 0 }}
-      whileInView={{ opacity: 1 }}
-      transition={{ duration: 0.4 }}
-      className="text-foreground"
-    >
+    <FooterClient>
       {/* Decorative gradient top border */}
       <div className="h-1 bg-gradient-to-r from-primary via-primary/80 to-secondary" />
 
@@ -80,7 +73,7 @@ export default function Footer() {
           <div className="text-center sm:text-left">
             <h4 className="font-semibold mb-4">Company</h4>
             <ul className="space-y-2 text-sm flex flex-col items-center sm:items-start">
-            
+
               <li>
                 <Link
                   href="/blog"
@@ -193,6 +186,6 @@ export default function Footer() {
           </div>
         </div>
       </div>
-    </motion.footer>
+    </FooterClient>
   );
 }

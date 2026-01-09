@@ -1,6 +1,6 @@
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
-import { 
-  getAuth, 
+import {
+  getAuth,
   GoogleAuthProvider,
   signInWithEmailAndPassword as firebaseSignInWithEmailAndPassword,
   createUserWithEmailAndPassword as firebaseCreateUserWithEmailAndPassword,
@@ -9,6 +9,12 @@ import {
   sendPasswordResetEmail as firebaseSendPasswordResetEmail,
   signInWithCredential as firebaseSignInWithCredential,
 } from 'firebase/auth/web-extension';
+import {
+  getFirestore as firebaseGetFirestore,
+  doc as firebaseDoc,
+  setDoc as firebaseSetDoc,
+  Firestore
+} from 'firebase/firestore';
 
 // Import types from firebase/auth (web-extension re-exports these)
 import type { Auth, User } from 'firebase/auth';
@@ -62,7 +68,7 @@ export function ensureFirebase(): FirebaseApp {
   if (initializationError) {
     throw initializationError;
   }
-  
+
   if (!app) {
     const configValidation = validateConfig(firebaseConfig);
     if (!configValidation.valid) {
@@ -72,7 +78,7 @@ export function ensureFirebase(): FirebaseApp {
       );
       throw initializationError;
     }
-    
+
     try {
       app = getApps().length ? getApps()[0]! : initializeApp(firebaseConfig);
       isInitialized = true;
@@ -96,9 +102,9 @@ export function getAuthInstance(): Auth {
   if (cachedAuth) {
     return cachedAuth;
   }
-  
+
   const firebaseApp = ensureFirebase();
-  
+
   // firebase/auth/web-extension handles persistence automatically
   // No need to configure persistence manually like with firebase/auth
   // Note: In sandboxed content scripts (like on LinkedIn), Firebase may fail
@@ -166,19 +172,19 @@ export function waitForAuthState(): Promise<User | null> {
   return new Promise((resolve) => {
     try {
       const auth = getAuthInstance();
-      
+
       // If already have a user, resolve immediately
       if (auth.currentUser) {
         resolve(auth.currentUser);
         return;
       }
-      
+
       // Wait for auth state change
       const unsubscribe = onAuthStateChanged(auth, (user) => {
         unsubscribe();
         resolve(user);
       });
-      
+
       // Timeout after 5 seconds
       setTimeout(() => {
         resolve(auth.currentUser);
@@ -206,7 +212,7 @@ export interface FirebaseStatus {
  */
 export function getFirebaseStatus(): FirebaseStatus {
   const user = cachedAuth?.currentUser || null;
-  
+
   return {
     initialized: isInitialized,
     authInitialized,
@@ -226,7 +232,7 @@ const signInWithGoogleToken = async (): Promise<User> => {
 
   // Get OAuth token from Chrome's account system
   const authResult = await chrome.identity.getAuthToken({ interactive: true });
-  
+
   if (!authResult?.token) {
     throw new Error('Failed to get auth token from Chrome. Please ensure Chrome browser sign-in is enabled.');
   }
@@ -235,13 +241,13 @@ const signInWithGoogleToken = async (): Promise<User> => {
 
   // Create Firebase credential from the OAuth token
   const credential = GoogleAuthProvider.credential(null, authResult.token);
-  
+
   // Sign in to Firebase with the credential
   const auth = getAuthInstance();
   const result = await firebaseSignInWithCredential(auth, credential);
-  
+
   logger.debug('Firebase', 'Successfully signed in with Google (token method)', { uid: result.user.uid });
-  
+
   return result.user;
 };
 
@@ -269,31 +275,31 @@ export const signInWithGoogle = async (): Promise<User> => {
 
     // Build the OAuth URL - use id_token response type (implicit flow for ID tokens is still supported)
     const scopes = ['openid', 'email', 'profile'].join(' ');
-    
+
     // Generate a random nonce for security
     const nonce = Array.from(crypto.getRandomValues(new Uint8Array(16)))
       .map(b => b.toString(16).padStart(2, '0'))
       .join('');
-    
+
     // Generate CSRF-protection state parameter
     const state = Array.from(crypto.getRandomValues(new Uint8Array(16)))
       .map(b => b.toString(16).padStart(2, '0'))
       .join('');
-    
+
     // Store state for validation (expires in 5 minutes)
     if (chrome.storage?.session) {
-      await chrome.storage.session.set({ 
-        oauthState: state, 
-        oauthStateExp: Date.now() + 300000 
+      await chrome.storage.session.set({
+        oauthState: state,
+        oauthStateExp: Date.now() + 300000
       });
     } else {
       // Fallback to local storage if session storage not available
-      await chrome.storage.local.set({ 
-        oauthState: state, 
-        oauthStateExp: Date.now() + 300000 
+      await chrome.storage.local.set({
+        oauthState: state,
+        oauthStateExp: Date.now() + 300000
       });
     }
-    
+
     const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
     authUrl.searchParams.set('client_id', GOOGLE_WEB_APP_CLIENT_ID);
     authUrl.searchParams.set('redirect_uri', redirectUrl);
@@ -354,40 +360,40 @@ export const signInWithGoogle = async (): Promise<User> => {
       // This can happen for user cancellations or misconfiguration.
       throw new Error(oauthErrorDescription ? `${oauthError}: ${oauthErrorDescription}` : oauthError);
     }
-    
+
     // Validate state parameter for CSRF protection
     const returnedState = hashParams.get('state');
-    const storedStateData = chrome.storage?.session 
+    const storedStateData = chrome.storage?.session
       ? await chrome.storage.session.get(['oauthState', 'oauthStateExp'])
       : await chrome.storage.local.get(['oauthState', 'oauthStateExp']);
-    
+
     // Clear stored state immediately after retrieval
     if (chrome.storage?.session) {
       await chrome.storage.session.remove(['oauthState', 'oauthStateExp']);
     } else {
       await chrome.storage.local.remove(['oauthState', 'oauthStateExp']);
     }
-    
+
     if (!returnedState || !storedStateData.oauthState) {
-      logger.error('Firebase', 'OAuth state parameter missing', { 
-        hasReturnedState: !!returnedState, 
-        hasStoredState: !!storedStateData.oauthState 
+      logger.error('Firebase', 'OAuth state parameter missing', {
+        hasReturnedState: !!returnedState,
+        hasStoredState: !!storedStateData.oauthState
       });
       throw new Error('OAuth state validation failed: missing state');
     }
-    
+
     if (returnedState !== storedStateData.oauthState) {
       logger.error('Firebase', 'OAuth state parameter mismatch (potential CSRF attack)');
       throw new Error('OAuth state validation failed: state mismatch');
     }
-    
+
     if (storedStateData.oauthStateExp && Date.now() > storedStateData.oauthStateExp) {
       logger.error('Firebase', 'OAuth state expired');
       throw new Error('OAuth state validation failed: state expired');
     }
-    
+
     logger.debug('Firebase', 'OAuth state validated successfully');
-    
+
     const accessToken = hashParams.get('access_token');
 
     if (!accessToken) {
@@ -398,13 +404,13 @@ export const signInWithGoogle = async (): Promise<User> => {
 
     // Create Firebase credential from the OAuth token
     const credential = GoogleAuthProvider.credential(null, accessToken);
-    
+
     // Sign in to Firebase with the credential
     const auth = getAuthInstance();
     const result = await firebaseSignInWithCredential(auth, credential);
-    
+
     logger.debug('Firebase', 'Successfully signed in with Google', { uid: result.user.uid });
-    
+
     return result.user;
   } catch (error: any) {
     logger.error('Firebase', 'Google sign-in failed', { error });
@@ -459,6 +465,15 @@ export const signUpWithEmail = async (email: string, password: string): Promise<
   const result = await firebaseCreateUserWithEmailAndPassword(auth, email, password);
   return result.user;
 };
+
+// Firestore functions
+export function getFirestore(): Firestore {
+  const firebaseApp = ensureFirebase();
+  return firebaseGetFirestore(firebaseApp);
+}
+
+export const doc = firebaseDoc;
+export const setDoc = firebaseSetDoc;
 
 // Re-export types for convenience
 export type { Auth, User };

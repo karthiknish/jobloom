@@ -42,7 +42,9 @@ service cloud.firestore {
     function userUpdateIsSafe(userId) {
       return isOwner(userId)
         && !(("isAdmin" in request.resource.data)
-             && request.resource.data.isAdmin != resource.data.isAdmin);
+             && request.resource.data.isAdmin != resource.data.isAdmin)
+        && !(("hasCompletedOnboarding" in request.resource.data)
+             && request.resource.data.hasCompletedOnboarding == false && resource.data.hasCompletedOnboarding == true);
     }
 
     // Disallow client changes to immutable timestamp fields unless creating
@@ -71,7 +73,7 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly([
           'email', 'name', 'displayName', 'createdAt', 'updatedAt',
           'provider', 'isAdmin', 'subscriptionPlan', 'photoURL',
-          'emailPreferences', 'lastLoginAt', 'emailVerified'
+          'emailPreferences', 'lastLoginAt', 'emailVerified', 'hasCompletedOnboarding'
         ])
         // Non-admin cannot force isAdmin true on create
         && ( !('isAdmin' in request.resource.data) || request.resource.data.isAdmin == false )

@@ -2,13 +2,30 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { Eye, Mail, Phone, MapPin, Linkedin, Globe, Briefcase, GraduationCap, Code, FolderOpen } from "lucide-react";
+import { Eye, Mail, Phone, MapPin, Linkedin, Github, Globe, Briefcase, GraduationCap, Code, FolderOpen } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { ResumeData } from "@/components/application/types";
 import type { ResumePDFOptions } from "@/lib/resumePDFGenerator";
 import { cn } from "@/lib/utils";
+
+function formatUrlDisplay(raw?: string) {
+  if (!raw) return "";
+  return raw
+    .trim()
+    .replace(/^https?:\/\//i, "")
+    .replace(/^www\./i, "")
+    .replace(/\/$/, "");
+}
+
+function formatUrlHref(raw?: string) {
+  if (!raw) return "";
+  const trimmed = raw.trim();
+  if (!trimmed) return "";
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+}
 
 interface ResumePreviewProps {
   data: ResumeData;
@@ -71,10 +88,33 @@ const THEME_COLORS = {
  * Live preview component that shows resume content in real-time
  * Updates as user types in the form fields
  */
-export function ResumePreview({ data, options, className }: ResumePreviewProps) {
+export const ResumePreview = React.memo(function ResumePreview({ data, options, className }: ResumePreviewProps) {
   const { personalInfo, experience, education, skills, projects } = data;
   const theme = THEME_COLORS[options?.colorScheme || 'hireall'] || THEME_COLORS.hireall;
   const template = options?.template || 'modern';
+
+  const PAGE_WIDTH_PX = 595;
+  const containerRef = React.useRef<HTMLDivElement | null>(null);
+  const [pageScale, setPageScale] = React.useState(1);
+
+  React.useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const update = () => {
+      const availableWidth = el.clientWidth;
+      if (!availableWidth) return;
+      const nextScale = Math.min(1, availableWidth / PAGE_WIDTH_PX);
+      setPageScale((prev) => (Math.abs(prev - nextScale) < 0.01 ? prev : nextScale));
+    };
+
+    update();
+
+    const resizeObserver = new ResizeObserver(() => update());
+    resizeObserver.observe(el);
+
+    return () => resizeObserver.disconnect();
+  }, []);
   
   const hasContent = Boolean(
     personalInfo?.fullName ||
@@ -136,14 +176,24 @@ export function ResumePreview({ data, options, className }: ResumePreviewProps) 
       </CardHeader>
       <ScrollArea className="h-[calc(100vh-400px)] lg:h-[calc(100vh-200px)]">
         <CardContent className="p-0">
-          <div className="bg-white mx-auto my-4 shadow-2xl border border-slate-200/60 min-h-[842px] w-full max-w-[595px] origin-top transition-transform duration-500">
-            {renderTemplate()}
+          <div ref={containerRef} className="w-full flex justify-center py-4">
+            <div style={{ width: PAGE_WIDTH_PX * pageScale }} className="shrink-0">
+              <div
+                className="bg-white shadow-2xl border border-slate-200/60 min-h-[842px] origin-top-left"
+                style={{
+                  width: PAGE_WIDTH_PX,
+                  transform: `scale(${pageScale})`,
+                }}
+              >
+                {renderTemplate()}
+              </div>
+            </div>
           </div>
         </CardContent>
       </ScrollArea>
     </Card>
   );
-}
+});
 
 /**
  * MODERN LAYOUT
@@ -187,16 +237,37 @@ function ModernLayout({ data, theme }: { data: ResumeData; theme: any }) {
 
         <div className="flex flex-wrap gap-x-4 gap-y-2 mt-2 text-[12px] font-semibold">
           {personalInfo?.linkedin && (
-            <span className="flex items-center gap-1.5 text-blue-600">
+            <a
+              href={formatUrlHref(personalInfo.linkedin)}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1.5 text-blue-600 hover:underline"
+            >
               <Linkedin className="h-3.5 w-3.5" />
-              LinkedIn
-            </span>
+              {formatUrlDisplay(personalInfo.linkedin)}
+            </a>
+          )}
+          {personalInfo?.github && (
+            <a
+              href={formatUrlHref(personalInfo.github)}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1.5 text-slate-700 hover:underline"
+            >
+              <Github className="h-3.5 w-3.5" />
+              {formatUrlDisplay(personalInfo.github)}
+            </a>
           )}
           {personalInfo?.website && (
-            <span className="flex items-center gap-1.5 text-primary">
+            <a
+              href={formatUrlHref(personalInfo.website)}
+              target="_blank"
+              rel="noreferrer"
+              className={cn("flex items-center gap-1.5 hover:underline", theme.primary)}
+            >
               <Globe className={cn("h-3.5 w-3.5", theme.primary)} />
-              Portfolio
-            </span>
+              {formatUrlDisplay(personalInfo.website)}
+            </a>
           )}
         </div>
 
@@ -380,8 +451,9 @@ function ClassicLayout({ data, theme }: { data: ResumeData; theme: any }) {
           {personalInfo?.location && <span>• {personalInfo.location}</span>}
         </div>
         <div className="flex justify-center flex-wrap gap-x-3 text-[11px] font-bold text-slate-500">
-          {personalInfo?.linkedin && <span>LINKEDIN: {personalInfo.linkedin}</span>}
-          {personalInfo?.website && <span>PORTFOLIO: {personalInfo.website}</span>}
+          {personalInfo?.linkedin && <span>LINKEDIN: {formatUrlDisplay(personalInfo.linkedin)}</span>}
+          {personalInfo?.github && <span>GITHUB: {formatUrlDisplay(personalInfo.github)}</span>}
+          {personalInfo?.website && <span>PORTFOLIO: {formatUrlDisplay(personalInfo.website)}</span>}
         </div>
       </div>
 
@@ -446,15 +518,48 @@ function ClassicLayout({ data, theme }: { data: ResumeData; theme: any }) {
 function CreativeLayout({ data, theme }: { data: ResumeData; theme: any }) {
   const { personalInfo, experience, education, skills, projects } = data;
   return (
-    <div className="flex min-h-[842px]">
+    <div className="flex min-h-[842px] min-w-0">
       {/* Sidebar */}
-      <div className={cn("w-[200px] p-8 text-white space-y-8", theme.primaryBg)}>
+      <div className={cn("w-[200px] min-w-0 p-8 text-white space-y-8", theme.primaryBg)}>
         <div className="space-y-4">
           <h2 className="text-2xl font-black leading-tight uppercase">{personalInfo?.fullName}</h2>
           <div className="space-y-3 text-[11px] opacity-90">
-            {personalInfo?.email && <div className="flex items-center gap-2"><Mail className="h-3 w-3" /> {personalInfo.email}</div>}
-            {personalInfo?.phone && <div className="flex items-center gap-2"><Phone className="h-3 w-3" /> {personalInfo.phone}</div>}
-            {personalInfo?.location && <div className="flex items-center gap-2"><MapPin className="h-3 w-3" /> {personalInfo.location}</div>}
+            {personalInfo?.email && (
+              <div className="flex items-start gap-2 min-w-0">
+                <Mail className="h-3 w-3 flex-shrink-0 mt-0.5" />
+                <span className="min-w-0 break-words">{personalInfo.email}</span>
+              </div>
+            )}
+            {personalInfo?.phone && (
+              <div className="flex items-start gap-2 min-w-0">
+                <Phone className="h-3 w-3 flex-shrink-0 mt-0.5" />
+                <span className="min-w-0 break-words">{personalInfo.phone}</span>
+              </div>
+            )}
+            {personalInfo?.location && (
+              <div className="flex items-start gap-2 min-w-0">
+                <MapPin className="h-3 w-3 flex-shrink-0 mt-0.5" />
+                <span className="min-w-0 break-words">{personalInfo.location}</span>
+              </div>
+            )}
+            {personalInfo?.linkedin && (
+              <div className="flex items-start gap-2 min-w-0">
+                <Linkedin className="h-3 w-3 flex-shrink-0 mt-0.5" />
+                <span className="min-w-0 break-words">{formatUrlDisplay(personalInfo.linkedin)}</span>
+              </div>
+            )}
+            {personalInfo?.github && (
+              <div className="flex items-start gap-2 min-w-0">
+                <Github className="h-3 w-3 flex-shrink-0 mt-0.5" />
+                <span className="min-w-0 break-words">{formatUrlDisplay(personalInfo.github)}</span>
+              </div>
+            )}
+            {personalInfo?.website && (
+              <div className="flex items-start gap-2 min-w-0">
+                <Globe className="h-3 w-3 flex-shrink-0 mt-0.5" />
+                <span className="min-w-0 break-words">{formatUrlDisplay(personalInfo.website)}</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -469,11 +574,11 @@ function CreativeLayout({ data, theme }: { data: ResumeData; theme: any }) {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-10 space-y-8 bg-white">
+      <div className="flex-1 min-w-0 p-10 space-y-8 bg-white">
         {personalInfo?.summary && (
           <div className="space-y-3">
             <h3 className={cn("text-[14px] font-black uppercase tracking-widest", theme.primary)}>About Me</h3>
-            <p className="text-[13px] text-slate-600 leading-relaxed">{personalInfo.summary}</p>
+            <p className="text-[13px] text-slate-600 leading-relaxed break-words">{personalInfo.summary}</p>
           </div>
         )}
 
@@ -482,12 +587,14 @@ function CreativeLayout({ data, theme }: { data: ResumeData; theme: any }) {
           <div className="space-y-8">
             {experience.map((exp, index) => (
               <div key={exp.id || index} className="space-y-2">
-                <div className="flex justify-between items-baseline">
-                  <h4 className="font-bold text-slate-900">{exp.position}</h4>
-                  <span className="text-[11px] font-bold text-slate-400">{exp.startDate} - {exp.current ? "Present" : exp.endDate}</span>
+                <div className="flex items-baseline justify-between gap-3 min-w-0">
+                  <h4 className="font-bold text-slate-900 min-w-0 break-words">{exp.position}</h4>
+                  <span className="text-[11px] font-bold text-slate-400 shrink-0 whitespace-nowrap">
+                    {exp.startDate} - {exp.current ? "Present" : exp.endDate}
+                  </span>
                 </div>
                 <div className={cn("text-[13px] font-bold", theme.primary)}>{exp.company}</div>
-                <p className="text-[12px] text-slate-500">{exp.description}</p>
+                <p className="text-[12px] text-slate-500 break-words">{exp.description}</p>
               </div>
             ))}
           </div>
@@ -510,7 +617,7 @@ function ExecutiveLayout({ data, theme }: { data: ResumeData; theme: any }) {
       </div>
 
       <div className="grid grid-cols-3 gap-10">
-        <div className="col-span-2 space-y-8">
+        <div className="col-span-2 space-y-8 min-w-0">
           <section className="space-y-4">
             <h3 className="text-[11px] font-bold uppercase tracking-[0.3em] text-slate-400">Executive Profile</h3>
             <p className="text-[14px] text-slate-800 leading-relaxed italic">&ldquo;{personalInfo.summary}&rdquo;</p>
@@ -529,7 +636,7 @@ function ExecutiveLayout({ data, theme }: { data: ResumeData; theme: any }) {
                   {exp.achievements.map((ach, j) => (
                     <li key={j} className="text-[13px] text-slate-700 flex gap-3">
                       <span className="text-slate-300">•</span>
-                      {ach}
+                      <span className="min-w-0 break-words">{ach}</span>
                     </li>
                   ))}
                 </ul>
@@ -538,13 +645,21 @@ function ExecutiveLayout({ data, theme }: { data: ResumeData; theme: any }) {
           </section>
         </div>
 
-        <div className="space-y-8">
+        <div className="space-y-8 min-w-0">
           <section className="space-y-4">
             <h3 className="text-[11px] font-bold uppercase tracking-[0.3em] text-slate-400">Contact</h3>
             <div className="space-y-2 text-[12px] text-slate-600">
-              <p>{personalInfo.email}</p>
-              <p>{personalInfo.phone}</p>
-              <p className={theme.primary}>{personalInfo.linkedin}</p>
+              <p className="break-words">{personalInfo.email}</p>
+              <p className="break-words">{personalInfo.phone}</p>
+              {personalInfo?.linkedin && (
+                <p className={cn("break-words", theme.primary)}>{formatUrlDisplay(personalInfo.linkedin)}</p>
+              )}
+              {personalInfo?.github && (
+                <p className={cn("break-words", theme.primary)}>{formatUrlDisplay(personalInfo.github)}</p>
+              )}
+              {personalInfo?.website && (
+                <p className={cn("break-words", theme.primary)}>{formatUrlDisplay(personalInfo.website)}</p>
+              )}
             </div>
           </section>
 
@@ -552,7 +667,7 @@ function ExecutiveLayout({ data, theme }: { data: ResumeData; theme: any }) {
             <h3 className="text-[11px] font-bold uppercase tracking-[0.3em] text-slate-400">Expertise</h3>
             <div className="flex flex-col gap-2">
               {skills.flatMap(g => g.skills).map((s, i) => (
-                <span key={i} className="text-[12px] text-slate-700 font-medium border-b border-slate-100 pb-1">{s}</span>
+                <span key={i} className="text-[12px] text-slate-700 font-medium border-b border-slate-100 pb-1 break-words">{s}</span>
               ))}
             </div>
           </section>
@@ -576,6 +691,13 @@ function TechnicalLayout({ data, theme }: { data: ResumeData; theme: any }) {
           <span>{personalInfo.phone}</span>
           <span>{personalInfo.location}</span>
         </div>
+        {(personalInfo?.linkedin || personalInfo?.github || personalInfo?.website) && (
+          <div className="flex flex-wrap gap-4 text-slate-600">
+            {personalInfo?.linkedin && <span>linkedin:{formatUrlDisplay(personalInfo.linkedin)}</span>}
+            {personalInfo?.github && <span>github:{formatUrlDisplay(personalInfo.github)}</span>}
+            {personalInfo?.website && <span>web:{formatUrlDisplay(personalInfo.website)}</span>}
+          </div>
+        )}
       </div>
 
       <section className="space-y-4">

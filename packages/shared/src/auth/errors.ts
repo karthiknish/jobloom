@@ -27,6 +27,7 @@ export const AUTH_ERRORS: Record<string, string> = {
   "auth/popup-blocked": "Sign-in popup was blocked by your browser.",
   "auth/popup-closed-by-user": "Sign-in popup was closed before completing.",
   "auth/popup-already-in-progress": "Another sign-in window is already open. Please finish it before starting a new one.",
+  "auth/unauthorized-domain": "This site isn’t authorized for Firebase sign-in. Add the current domain (e.g. localhost) in Firebase Console → Authentication → Settings → Authorized domains.",
   "auth/web-storage-unsupported": "Browser storage is blocked. Enable cookies or switch to a different browser.",
   "auth/operation-not-supported-in-this-environment": "This browser does not support popup sign-in. Please try a different browser or use the email option instead.",
   "auth/internal-error": "Something went wrong while contacting Google. Please try again.",
@@ -42,6 +43,11 @@ export function sanitizeAuthMessage(message?: string): string {
   cleaned = cleaned.replace(/\([^)]*\)/g, "").trim();
 
   if (!cleaned) return DEFAULT_AUTH_ERROR_MESSAGE;
+
+  // Guard against useless messages like "." or just punctuation.
+  if (cleaned.length < 2 || /^[\p{P}\p{S}\s]+$/u.test(cleaned)) {
+    return DEFAULT_AUTH_ERROR_MESSAGE;
+  }
 
   return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
 }

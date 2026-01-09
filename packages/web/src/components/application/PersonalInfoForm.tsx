@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import { User, Mail, Phone, MapPin, Linkedin, Github, Globe, FileText, CheckCircle2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { ResumeData } from "./types";
 import { cn } from "@/lib/utils";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -37,42 +37,80 @@ export function PersonalInfoForm({ data, onChange }: PersonalInfoFormProps) {
     mode: "onChange",
   });
 
-  const { watch, control, reset } = form;
-  const values = watch();
+  const { control, reset } = form;
+  const values = useWatch({ control });
 
-  // Sync data from props if it changes externally
-  useEffect(() => {
-    reset(data);
-  }, [data, reset]);
+  const normalize = useCallback(
+    (value: Partial<PersonalInfoValues> | undefined): ResumeData["personalInfo"] => ({
+      fullName: value?.fullName || "",
+      email: value?.email || "",
+      phone: value?.phone || "",
+      location: value?.location || "",
+      linkedin: value?.linkedin || "",
+      github: value?.github || "",
+      website: value?.website || "",
+      summary: value?.summary || "",
+    }),
+    []
+  );
 
-  // Sync internal form changes back to parent
+  const isSamePersonalInfo = useCallback(
+    (a: ResumeData["personalInfo"], b: ResumeData["personalInfo"]) =>
+      a.fullName === b.fullName &&
+      a.email === b.email &&
+      a.phone === b.phone &&
+      a.location === b.location &&
+      a.linkedin === b.linkedin &&
+      a.github === b.github &&
+      a.website === b.website &&
+      a.summary === b.summary,
+    []
+  );
+
+  const debounceMs = 150;
+  const changeTimeoutRef = useRef<number | null>(null);
+  const emitChange = useCallback(
+    (next: ResumeData["personalInfo"]) => {
+      if (changeTimeoutRef.current) window.clearTimeout(changeTimeoutRef.current);
+      changeTimeoutRef.current = window.setTimeout(() => {
+        onChange(next);
+      }, debounceMs);
+    },
+    [onChange]
+  );
+
   useEffect(() => {
-    const subscription = form.watch((value) => {
-      // Clean up value to match data structure (handle undefined vs empty string)
-      const cleanedValue = {
-        ...value,
-        linkedin: value.linkedin || "",
-        github: value.github || "",
-        website: value.website || "",
-      };
-      
-      if (JSON.stringify(data) !== JSON.stringify(cleanedValue)) {
-        onChange(cleanedValue as ResumeData['personalInfo']);
-      }
-    });
-    return () => subscription.unsubscribe();
-  }, [form.watch, onChange, data]);
+    return () => {
+      if (changeTimeoutRef.current) window.clearTimeout(changeTimeoutRef.current);
+    };
+  }, []);
+
+  // Sync data from props if it changes externally (avoid resetting on every keystroke)
+  useEffect(() => {
+    const current = normalize(form.getValues());
+    if (!isSamePersonalInfo(current, data)) {
+      reset(data);
+    }
+  }, [data, form, isSamePersonalInfo, normalize, reset]);
+
+  // Sync internal form changes back to parent (debounced to keep typing snappy)
+  useEffect(() => {
+    const cleanedValue = normalize(values);
+    if (!isSamePersonalInfo(cleanedValue, data)) {
+      emitChange(cleanedValue);
+    }
+  }, [data, emitChange, isSamePersonalInfo, normalize, values]);
 
   // Calculate completion percentage using values from react-hook-form
   const requiredFields = ['fullName', 'email', 'phone', 'location', 'summary'] as const;
   const optionalFields = ['linkedin', 'github', 'website'] as const;
   
-  const filledRequired = requiredFields.filter(f => values[f]?.toString().trim()).length;
-  const filledOptional = optionalFields.filter(f => values[f]?.toString().trim()).length;
+  const filledRequired = requiredFields.filter(f => values?.[f]?.toString().trim()).length;
+  const filledOptional = optionalFields.filter(f => values?.[f]?.toString().trim()).length;
   const completionPercent = Math.round(((filledRequired / requiredFields.length) * 80) + ((filledOptional / optionalFields.length) * 20));
 
   const getFieldStatus = (name: keyof PersonalInfoValues) => {
-    const value = values[name];
+    const value = values?.[name];
     const error = form.getFieldState(name).error;
     return value && value.toString().trim().length > 0 && !error;
   };
@@ -226,7 +264,7 @@ export function PersonalInfoForm({ data, onChange }: PersonalInfoFormProps) {
             Online Presence
             <span className="text-xs font-normal">(Optional but recommended)</span>
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="space-y-4">
             <FormField
               control={control}
               name="linkedin"

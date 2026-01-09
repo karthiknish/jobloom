@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import { Plus, Trash2, Briefcase, Building2, MapPin, Calendar, Award, GripVertical, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -64,29 +64,76 @@ export function ExperienceForm({ data, onChange }: ExperienceFormProps) {
     name: "experience",
   });
 
-  React.useEffect(() => {
-    const currentValues = form.getValues("experience");
-    if (JSON.stringify(data) !== JSON.stringify(currentValues)) {
+  const isSameExperience = useCallback(
+    (a: ResumeData["experience"], b: ResumeData["experience"]) => {
+      if (a.length !== b.length) return false;
+      for (let i = 0; i < a.length; i++) {
+        const ai = a[i];
+        const bi = b[i];
+        if (!ai || !bi) return false;
+        if ((ai.id || "") !== (bi.id || "")) return false;
+        if ((ai.company || "") !== (bi.company || "")) return false;
+        if ((ai.position || "") !== (bi.position || "")) return false;
+        if ((ai.location || "") !== (bi.location || "")) return false;
+        if ((ai.startDate || "") !== (bi.startDate || "")) return false;
+        if ((ai.endDate || "") !== (bi.endDate || "")) return false;
+        if (!!ai.current !== !!bi.current) return false;
+        if ((ai.description || "") !== (bi.description || "")) return false;
+        const aa = ai.achievements || [];
+        const ba = bi.achievements || [];
+        if (aa.length !== ba.length) return false;
+        for (let j = 0; j < aa.length; j++) {
+          if ((aa[j] || "") !== (ba[j] || "")) return false;
+        }
+      }
+      return true;
+    },
+    []
+  );
+
+  const normalizeExperience = useCallback(
+    (raw: typeof watchFieldArray | undefined): ResumeData["experience"] =>
+      (raw || []).map((exp) => ({
+        ...exp,
+        location: exp?.location || "",
+        endDate: exp?.endDate || "",
+        description: exp?.description || "",
+        achievements: exp?.achievements || [],
+      })) as ResumeData["experience"],
+    []
+  );
+
+  const debounceMs = 200;
+  const changeTimeoutRef = useRef<number | null>(null);
+  const emitChange = useCallback(
+    (next: ResumeData["experience"]) => {
+      if (changeTimeoutRef.current) window.clearTimeout(changeTimeoutRef.current);
+      changeTimeoutRef.current = window.setTimeout(() => {
+        onChange(next);
+      }, debounceMs);
+    },
+    [onChange]
+  );
+
+  useEffect(() => {
+    return () => {
+      if (changeTimeoutRef.current) window.clearTimeout(changeTimeoutRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    const currentValues = normalizeExperience(form.getValues("experience") as any);
+    if (!isSameExperience(data, currentValues)) {
       form.reset({ experience: data });
     }
-  }, [data, form]);
+  }, [data, form, isSameExperience, normalizeExperience]);
 
-  React.useEffect(() => {
-    if (watchFieldArray) {
-      // Ensure we don't have undefined values that cause stringify mismatch
-      const cleanedValues = watchFieldArray.map(exp => ({
-        ...exp,
-        location: exp.location || "",
-        endDate: exp.endDate || "",
-        description: exp.description || "",
-        achievements: exp.achievements || []
-      }));
-
-      if (JSON.stringify(data) !== JSON.stringify(cleanedValues)) {
-        onChange(cleanedValues as ResumeData['experience']);
-      }
+  useEffect(() => {
+    const cleanedValues = normalizeExperience(watchFieldArray);
+    if (!isSameExperience(data, cleanedValues)) {
+      emitChange(cleanedValues);
     }
-  }, [watchFieldArray, onChange, data]);
+  }, [data, emitChange, isSameExperience, normalizeExperience, watchFieldArray]);
 
   const addExperience = () => {
     append({
@@ -220,7 +267,7 @@ export function ExperienceForm({ data, onChange }: ExperienceFormProps) {
 
             {/* Card Content with FormFields */}
             <div className="p-6 space-y-5">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4">
                 <FormField
                   control={form.control}
                   name={`experience.${index}.position`}
@@ -241,6 +288,7 @@ export function ExperienceForm({ data, onChange }: ExperienceFormProps) {
                     </FormItem>
                   )}
                 />
+
                 <FormField
                   control={form.control}
                   name={`experience.${index}.company`}
@@ -261,9 +309,7 @@ export function ExperienceForm({ data, onChange }: ExperienceFormProps) {
                     </FormItem>
                   )}
                 />
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <FormField
                   control={form.control}
                   name={`experience.${index}.location`}
@@ -284,6 +330,7 @@ export function ExperienceForm({ data, onChange }: ExperienceFormProps) {
                     </FormItem>
                   )}
                 />
+
                 <FormField
                   control={form.control}
                   name={`experience.${index}.startDate`}
@@ -304,6 +351,7 @@ export function ExperienceForm({ data, onChange }: ExperienceFormProps) {
                     </FormItem>
                   )}
                 />
+
                 <FormField
                   control={form.control}
                   name={`experience.${index}.endDate`}

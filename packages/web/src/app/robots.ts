@@ -1,32 +1,29 @@
 import type { MetadataRoute } from "next";
+import { SITE_URL } from "@/seo.config";
 
 export default function robots(): MetadataRoute.Robots {
-  const siteUrl = process.env.SITE_URL || "https://hireall.app";
-
   return {
     rules: [
       {
         userAgent: "*",
         allow: "/",
         disallow: [
-          "/api",
           "/api/",
-          "/admin",
           "/admin/",
           "/dashboard/",
           "/settings/",
-          "/sign-in",
-          "/sign-up",
-          "/verify-email",
-          "/welcome",
           "/auth/",
           "/application/",
           "/cv-evaluator",
           "/extension/connect",
+          "/sign-in",
+          "/sign-up",
+          "/verify-email",
+          "/welcome",
         ],
       },
     ],
-    sitemap: `${siteUrl}/sitemap.xml`,
-    host: siteUrl,
+    sitemap: `${SITE_URL}/sitemap.xml`,
+    host: SITE_URL,
   };
 }

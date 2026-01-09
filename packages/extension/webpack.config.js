@@ -4,10 +4,12 @@ const fs = require("fs");
 const dotenv = require("dotenv");
 const webpack = require("webpack");
 const TerserPlugin = require("terser-webpack-plugin");
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const CssMinimizerPlugin = require("css-minimizer-webpack-plugin");
 
 module.exports = (env, argv) => {
   const isProduction = argv.mode === 'production';
-  
+
   return {
     entry: {
       background: "./src/background.ts",
@@ -30,7 +32,7 @@ module.exports = (env, argv) => {
         // Add CSS handling
         {
           test: /\.css$/,
-          use: ['style-loader', 'css-loader'],
+          use: [isProduction ? MiniCssExtractPlugin.loader : 'style-loader', 'css-loader'],
         },
       ],
     },
@@ -39,7 +41,9 @@ module.exports = (env, argv) => {
     },
     output: {
       filename: "[name].js",
+      chunkFilename: "[name].chunk.js",
       path: path.resolve(__dirname, "dist"),
+      publicPath: "",
       clean: true,
     },
     optimization: {
@@ -59,8 +63,12 @@ module.exports = (env, argv) => {
           },
           extractComments: false,
         }),
+        new CssMinimizerPlugin(),
       ] : [],
-      splitChunks: false,
+      splitChunks: {
+        chunks: "all",
+        name: false,
+      },
     },
     performance: {
       hints: isProduction ? 'warning' : false,
@@ -68,7 +76,7 @@ module.exports = (env, argv) => {
       maxEntrypointSize: 1000000, // 1MB
     },
     devtool: isProduction ? false : 'inline-source-map',
-    
+
     plugins: (() => {
       // Manually load .env once to avoid duplicate DefinePlugin warnings
       const envPath = path.resolve(__dirname, ".env");
@@ -131,22 +139,22 @@ module.exports = (env, argv) => {
         }),
         new CopyPlugin({
           patterns: [
-            { 
-              from: "manifest.json", 
+            {
+              from: "manifest.json",
               to: "manifest.json",
               transform: (content) => {
                 if (!isProduction) return content;
-                
+
                 // For production builds, remove localhost URLs
                 const manifest = JSON.parse(content.toString());
-                
+
                 // Filter out localhost from host_permissions
                 if (manifest.host_permissions) {
                   manifest.host_permissions = manifest.host_permissions.filter(
                     url => !url.includes('localhost') && !url.includes('127.0.0.1')
                   );
                 }
-                
+
                 // Filter out localhost from content_scripts matches
                 if (manifest.content_scripts) {
                   manifest.content_scripts = manifest.content_scripts
@@ -158,18 +166,19 @@ module.exports = (env, argv) => {
                     }))
                     .filter(script => script.matches.length > 0);
                 }
-                
+
                 return JSON.stringify(manifest, null, 2);
               }
             },
             { from: "src/popup.html", to: "popup.html" },
-            { from: "src/popup.css", to: "popup.css" },
-            { from: "src/styles", to: "styles", noErrorOnMissing: true },
             { from: "src/animations.css", to: "animations.css", noErrorOnMissing: true },
             { from: "public", to: ".", noErrorOnMissing: true },
             { from: "src/styles.css", to: "styles.css", noErrorOnMissing: true },
           ],
         }),
+        ...(isProduction ? [new MiniCssExtractPlugin({
+          filename: "[name].css",
+        })] : []),
       ];
     })(),
   };

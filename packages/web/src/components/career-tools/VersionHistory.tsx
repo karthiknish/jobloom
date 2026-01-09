@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import type { ResumeVersion } from "@/utils/api/resumeApi";
 
@@ -63,9 +64,14 @@ export function VersionHistory({
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <button className="w-10 h-10 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-slate-50 transition-all duration-300">
-          <HistoryIcon className="h-5 w-5" />
-        </button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button className="w-10 h-10 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-slate-50 transition-all duration-300">
+              <HistoryIcon className="h-5 w-5" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">Version History</TooltipContent>
+        </Tooltip>
       </SheetTrigger>
       <SheetContent className="w-[400px] sm:w-[540px] p-0 flex flex-col">
         <div className="p-6 border-b">

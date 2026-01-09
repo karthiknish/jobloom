@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,14 +47,81 @@ interface ProjectsSectionProps {
   onChange: (items: ProjectItem[]) => void;
 }
 
+type ProjectFormItem = {
+  id: string;
+  name: string;
+  description: string;
+  technologies: string;
+  link: string;
+  github: string;
+};
+
 export function ProjectsSection({ data, onChange }: ProjectsSectionProps) {
+  const normalizePropToForm = useCallback(
+    (items: ProjectItem[] | undefined): ProjectFormItem[] =>
+      (items || []).map((item) => ({
+        id: item?.id || "",
+        name: item?.name || "",
+        description: item?.description || "",
+        technologies: Array.isArray(item?.technologies) ? item.technologies.join(", ") : (item?.technologies as unknown as string) || "",
+        link: item?.link || "",
+        github: item?.github || "",
+      })),
+    []
+  );
+
+  const normalizeWatchToForm = useCallback(
+    (items: Array<Partial<ProjectFormItem>> | undefined): ProjectFormItem[] =>
+      (items || []).map((item) => ({
+        id: item?.id || "",
+        name: item?.name || "",
+        description: item?.description || "",
+        technologies: (item?.technologies as unknown as string) || "",
+        link: item?.link || "",
+        github: item?.github || "",
+      })),
+    []
+  );
+
+  const isSameProjectFormItems = useCallback((a: ProjectFormItem[], b: ProjectFormItem[]) => {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+      const ai = a[i];
+      const bi = b[i];
+      if (
+        ai.id !== bi.id ||
+        ai.name !== bi.name ||
+        ai.description !== bi.description ||
+        ai.technologies !== bi.technologies ||
+        ai.link !== bi.link ||
+        ai.github !== bi.github
+      ) {
+        return false;
+      }
+    }
+    return true;
+  }, []);
+
+  const toProjectItems = useCallback((items: ProjectFormItem[]): ProjectItem[] => {
+    return items.map((item) => ({
+      id: item.id || generateResumeId(),
+      name: item.name || "",
+      description: item.description || "",
+      technologies: (item.technologies || "")
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
+      link: item.link || "",
+      github: item.github || "",
+    }));
+  }, []);
+
+  const normalizedPropFormItems = useMemo(() => normalizePropToForm(data), [data, normalizePropToForm]);
+
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(projectSchema),
     defaultValues: {
-      projects: data.map(item => ({
-        ...item,
-        technologies: item.technologies.join(", ")
-      })),
+      projects: normalizedPropFormItems,
     },
     mode: "onChange",
   });
@@ -70,33 +137,36 @@ export function ProjectsSection({ data, onChange }: ProjectsSectionProps) {
   });
 
   useEffect(() => {
-    const currentValues = form.getValues("projects");
-    const normalizedData = data.map(item => ({
-      ...item,
-      technologies: Array.isArray(item.technologies) ? item.technologies.join(", ") : item.technologies
-    }));
-
-    if (JSON.stringify(normalizedData) !== JSON.stringify(currentValues)) {
-      form.reset({ projects: normalizedData });
+    const current = normalizeWatchToForm(form.getValues("projects") as unknown as ProjectFormItem[]);
+    if (!isSameProjectFormItems(current, normalizedPropFormItems)) {
+      form.reset({ projects: normalizedPropFormItems });
     }
-  }, [data, form]);
+  }, [form, isSameProjectFormItems, normalizeWatchToForm, normalizedPropFormItems]);
+
+  const debounceMs = 150;
+  const changeTimeoutRef = useRef<number | null>(null);
+  const emitChange = useCallback(
+    (next: ProjectFormItem[]) => {
+      if (changeTimeoutRef.current) window.clearTimeout(changeTimeoutRef.current);
+      changeTimeoutRef.current = window.setTimeout(() => {
+        onChange(toProjectItems(next));
+      }, debounceMs);
+    },
+    [onChange, toProjectItems]
+  );
 
   useEffect(() => {
-    if (watchProjects) {
-      const items = watchProjects.map(item => ({
-        ...item,
-        technologies: typeof item.technologies === 'string' 
-          ? item.technologies.split(",").map(s => s.trim()).filter(Boolean) 
-          : item.technologies,
-        link: item.link || "",
-        github: item.github || ""
-      }));
-      
-      if (JSON.stringify(data) !== JSON.stringify(items)) {
-        onChange(items as ProjectItem[]);
-      }
+    return () => {
+      if (changeTimeoutRef.current) window.clearTimeout(changeTimeoutRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    const cleaned = normalizeWatchToForm(watchProjects as unknown as ProjectFormItem[]);
+    if (!isSameProjectFormItems(cleaned, normalizedPropFormItems)) {
+      emitChange(cleaned);
     }
-  }, [watchProjects, onChange, data]);
+  }, [emitChange, isSameProjectFormItems, normalizeWatchToForm, normalizedPropFormItems, watchProjects]);
 
   const addProject = () => {
     append({

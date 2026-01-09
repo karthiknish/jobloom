@@ -8,12 +8,12 @@ import { getSalaryDisplay } from "@/utils/dashboard";
 import { ApplicationStatusBadge } from "@/components/ui/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { DataTable } from "@/components/ui/data-table";
+import { VirtualizedDataTable } from "@/components/ui/virtualized-data-table";
 import { DataTableColumnActions } from "@/components/ui/data-table";
-import { 
-  Building2, 
-  MapPin, 
-  Calendar, 
+import {
+  Building2,
+  MapPin,
+  Calendar,
   DollarSign,
   Briefcase,
   ExternalLink,
@@ -148,7 +148,7 @@ export const JobDataTable = React.memo(({
       cell: ({ row }) => {
         const salary = row.original.job?.salary;
         if (!salary) return <span className="text-muted-foreground text-sm">-</span>;
-        
+
         return (
           <div className="flex items-center gap-1">
             <DollarSign className="h-4 w-4 text-muted-foreground" />
@@ -164,13 +164,13 @@ export const JobDataTable = React.memo(({
       cell: ({ row }) => {
         const date = row.original.job?.dateFound;
         if (!date) return <span className="text-muted-foreground text-sm">-</span>;
-        
+
         // Validate the date before formatting
         const dateObj = new Date(date);
         if (isNaN(dateObj.getTime())) {
           return <span className="text-muted-foreground text-sm">-</span>;
         }
-        
+
         return (
           <div className="flex items-center gap-1">
             <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -208,7 +208,7 @@ export const JobDataTable = React.memo(({
         const sponsorshipType = job?.sponsorshipType;
         const socCode = job?.likelySocCode;
         const socConfidence = job?.socMatchConfidence;
-        
+
         return (
           <div className="space-y-1">
             {isSponsored && (
@@ -265,14 +265,15 @@ export const JobDataTable = React.memo(({
 
   return (
     <div className="space-y-4">
-      <DataTable
+      <VirtualizedDataTable
         columns={columns}
         data={filteredApplications}
         searchKey="jobTitle"
         searchPlaceholder="Search jobs by title, company, or location..."
         onRowClick={onViewApplication}
+        containerHeight="500px"
       />
-      
+
       {filteredApplications.length === 0 && applications.length > 0 && (
         <div className="text-center py-8">
           <p className="text-muted-foreground">
@@ -287,7 +288,7 @@ export const JobDataTable = React.memo(({
           </Button>
         </div>
       )}
-      
+
       {applications.length === 0 && (
         <div className="text-center py-12">
           <Briefcase className="h-12 w-12 text-muted-foreground mx-auto mb-4" />

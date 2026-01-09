@@ -82,28 +82,49 @@ async function verifySessionCookieValue(
     const decoded = await auth.verifySessionCookie(sessionCookie, true);
     const hash = await hashSessionToken(sessionCookie);
     const db = getAdminDb();
-    const doc = await db
+    const docRef = db
       .collection(SESSION_COLLECTION)
       .doc(decoded.uid)
       .collection("sessions")
-      .doc(hash)
-      .get();
+      .doc(hash);
 
+    const doc = await docRef.get();
+    const nowIso = new Date().toISOString();
+
+    // If the Firebase session cookie is valid, a missing server-side record is not necessarily
+    // suspicious. This can happen due to best-effort pruning, multi-tab race conditions, or
+    // historical data gaps. We self-heal the store instead of failing auth.
     if (!doc.exists) {
-      SecurityLogger.logSecurityEvent({
-        type: "suspicious_request",
-        severity: "medium",
-        details: {
-          reason: "Session cookie not found in store",
+      if (process.env.NODE_ENV === "production" || process.env.SESSION_STORE_DEBUG === "1") {
+        SecurityLogger.logSecurityEvent({
+          type: "suspicious_request",
+          severity: "low",
+          details: {
+            reason: "Session cookie missing in store; repaired",
+          },
+          userId: decoded.uid,
+          ip: context.ip ?? "unknown",
+        });
+      }
+
+      const expiresAt = typeof (decoded as any)?.exp === "number" ? (decoded as any).exp * 1000 : undefined;
+      await docRef.set(
+        {
+          createdAt: nowIso,
+          lastSeenAt: nowIso,
+          expiresAt: expiresAt ?? Date.now() + SESSION_EXPIRY_SECONDS * 1000,
+          userAgent: "unknown",
+          ip: context.ip ?? "unknown",
         },
-        userId: decoded.uid,
-        ip: context.ip ?? "unknown",
-      });
-      return null;
+        { merge: true },
+      );
+
+      return decoded;
     }
 
-    await doc.ref.update({ lastSeenAt: new Date().toISOString() });
-
+    // Use set(merge) to avoid NOT_FOUND races that can happen with update() if a doc is
+    // deleted between the read and write.
+    await docRef.set({ lastSeenAt: nowIso }, { merge: true });
     return decoded;
   } catch (error) {
     SecurityLogger.logSecurityEvent({
@@ -139,26 +160,43 @@ export async function createSessionCookie(
     .collection("sessions")
     .doc(hash);
 
-  // SESSION FIXATION PROTECTION:
-  // Invalidate prior server-side sessions without revoking Firebase refresh tokens.
-  // Revoking refresh tokens here can immediately break the current client's token
-  // refresh flow and cause sign-in/sign-out loops.
+  // Best-effort pruning:
+  // Keep multiple sessions (multi-device/multi-tab) but prune expired and cap count.
+  // This avoids auth races where an in-flight request still uses an older cookie.
   try {
     const sessionsCollection = db
       .collection(SESSION_COLLECTION)
       .doc(decoded.uid)
       .collection("sessions");
 
-    const existing = await sessionsCollection.limit(25).get();
-    const batch = db.batch();
-    existing.docs.forEach((docSnap) => {
-      if (docSnap.id !== hash) {
-        batch.delete(docSnap.ref);
+    const snapshot = await sessionsCollection.limit(50).get();
+    if (snapshot.empty) {
+      // nothing to prune
+    } else {
+      const now = Date.now();
+      const docs = snapshot.docs;
+
+      const expired = docs.filter((d) => {
+        const exp = d.get("expiresAt");
+        return typeof exp === "number" && exp > 0 && exp < now;
+      });
+
+      const maxSessions = 25;
+      const nonCurrent = docs.filter((d) => d.id !== hash);
+      const overflow = Math.max(0, docs.length - maxSessions);
+      const toDelete = [...expired, ...nonCurrent.slice(0, overflow)].filter((d, idx, arr) => {
+        // de-dupe refs by id
+        return arr.findIndex((x) => x.id === d.id) === idx;
+      });
+
+      if (toDelete.length > 0) {
+        const batch = db.batch();
+        toDelete.forEach((docSnap) => batch.delete(docSnap.ref));
+        await batch.commit();
       }
-    });
-    await batch.commit();
+    }
   } catch (err) {
-    console.warn("Failed to clear previous server sessions during session creation:", err);
+    console.warn("Failed to prune server sessions during session creation:", err);
   }
 
   await sessionDoc.set(
@@ -196,7 +234,7 @@ export async function verifySessionHashForUser(
       return false;
     }
 
-    await doc.ref.update({ lastSeenAt: new Date().toISOString() });
+    await doc.ref.set({ lastSeenAt: new Date().toISOString() }, { merge: true });
     return true;
   } catch (error) {
     SecurityLogger.logSecurityEvent({

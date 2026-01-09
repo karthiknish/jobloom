@@ -11,12 +11,19 @@ const userParamsSchema = z.object({
   userId: z.string().min(1, "User ID is required"),
 });
 
+const querySchema = z.object({
+  limit: z.string().optional().transform(val => val ? Math.min(parseInt(val, 10), 100) : 50),
+  cursor: z.string().optional(),
+});
+
 // GET /api/app/jobs/user/[userId] - Get jobs for a specific user
 export const GET = withApi({
   auth: "required",
   paramsSchema: userParamsSchema,
-}, async ({ params, user }) => {
+  querySchema: querySchema,
+}, async ({ params, user, query }) => {
   const { userId } = params;
+  const { limit, cursor } = query;
 
   // Verify userId matches token
   if (userId !== user!.uid && !user!.isAdmin) {
@@ -28,8 +35,17 @@ export const GET = withApi({
 
   // Use Admin SDK for server-side Firestore access
   const db = getAdminDb();
-  const jobsRef = db.collection('jobs');
-  const snapshot = await jobsRef.where('userId', '==', userId).get();
+  let jobsQuery = db.collection('jobs')
+    .where('userId', '==', userId)
+    .orderBy('createdAt', 'desc')
+    .limit(limit);
+
+  if (cursor) {
+    const cursorValue = /^\d+$/.test(cursor) ? parseInt(cursor, 10) : cursor;
+    jobsQuery = jobsQuery.startAfter(cursorValue);
+  }
+
+  const snapshot = await jobsQuery.get();
 
   const jobs = snapshot.docs.map(doc => ({
     _id: doc.id,
@@ -37,9 +53,13 @@ export const GET = withApi({
     ...doc.data()
   }));
 
+  const lastDoc = snapshot.docs[snapshot.docs.length - 1];
+  const nextCursor = lastDoc ? (lastDoc.data().createdAt?.toMillis?.() || lastDoc.data().createdAt) : null;
+
   return {
     jobs,
     count: jobs.length,
+    nextCursor,
     message: 'Jobs retrieved successfully',
   };
 });

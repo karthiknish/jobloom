@@ -7,7 +7,7 @@ export type SeoMeta = {
   ogType?: "website" | "article" | "profile";
 };
 
-const SITE_URL = "https://hireall.app";
+const SITE_URL = process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://hireall.app";
 const DEFAULT_OG_IMAGE = "/og-image.png";
 
 const DEFAULT_META: SeoMeta = {

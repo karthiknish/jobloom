@@ -11,12 +11,19 @@ const userParamsSchema = z.object({
   userId: z.string().min(1, "User ID is required"),
 });
 
+const querySchema = z.object({
+  limit: z.string().optional().transform(val => val ? Math.min(parseInt(val, 10), 100) : 50),
+  cursor: z.string().optional(),
+});
+
 export const GET = withApi({
   auth: 'required',
   rateLimit: 'applications',
   paramsSchema: userParamsSchema,
-}, async ({ user, params }) => {
+  querySchema: querySchema,
+}, async ({ user, params, query }) => {
   const { userId } = params;
+  const { limit, cursor } = query;
 
   // Verify userId matches token or is admin
   if (user!.uid !== userId && !user!.isAdmin) {
@@ -27,32 +34,41 @@ export const GET = withApi({
   }
 
   const db = getAdminDb();
-  
-  // 1. Fetch all applications for the user
-  // 1. Fetch all applications for the user
-  const applicationsSnapshot = await db.collection("applications")
+
+  // 1. Fetch applications for the user with pagination
+  let applicationsQuery = db.collection("applications")
     .where("userId", "==", userId)
-    .get();
+    .orderBy("updatedAt", "desc")
+    .limit(limit);
+
+  if (cursor) {
+    // If cursor is a number (timestamp), parse it, otherwise use as is
+    const cursorValue = /^\d+$/.test(cursor) ? parseInt(cursor, 10) : cursor;
+    applicationsQuery = applicationsQuery.startAfter(cursorValue);
+  }
+
+  const applicationsSnapshot = await applicationsQuery.get();
 
   if (applicationsSnapshot.empty) {
     return {
       applications: [],
       count: 0,
+      nextCursor: null,
       message: 'No applications found',
     };
   }
 
-  // 2. Collect all unique job IDs
   const applicationDocs = applicationsSnapshot.docs;
+
+  // 2. Collect all unique job IDs
   const jobIds = [...new Set(applicationDocs.map(doc => doc.data().jobId).filter(Boolean))];
-  
+
   // 3. Batch fetch all referenced jobs
   const jobDataMap = new Map();
   if (jobIds.length > 0) {
-    // Firestore getAll takes up to 1000 document references
-    const jobRefs = jobIds.map(id => db.collection("jobs").doc(id));
+    const jobRefs = jobIds.map(id => db.collection("jobs").doc(id as string));
     const jobSnapshots = await db.getAll(...jobRefs);
-    
+
     jobSnapshots.forEach(jobDoc => {
       if (jobDoc.exists) {
         jobDataMap.set(jobDoc.id, { id: jobDoc.id, _id: jobDoc.id, ...jobDoc.data() });
@@ -60,28 +76,19 @@ export const GET = withApi({
     });
   }
 
-  // 4. Map applications and attach job data from local map
+  // 4. Map applications and attach job data
   const applications = applicationDocs.map(doc => {
     const data = doc.data();
     const application: any = {
       _id: doc.id,
       id: doc.id,
-      jobId: data.jobId,
-      userId: data.userId,
-      status: data.status,
-      appliedDate: data.appliedDate,
-      notes: data.notes,
-      followUpDate: data.followUpDate,
-      createdAt: data.createdAt,
-      updatedAt: data.updatedAt,
-      order: data.order
+      ...data,
     };
 
     if (data.jobId && jobDataMap.has(data.jobId)) {
       const jobData = jobDataMap.get(data.jobId);
       application.job = {
         ...jobData,
-        // Ensure dateFound fallback exists
         dateFound: jobData.dateFound || jobData.createdAt || Date.now(),
       };
     }
@@ -89,25 +96,17 @@ export const GET = withApi({
     return application;
   });
 
-  // 5. Sort applications
-  applications.sort((a, b) => {
-    // Sort by status if different
-    if (a.status !== b.status) return (a.status || '').localeCompare(b.status || '');
-    
-    // Then by order within same status
-    const ao = a.order || 0;
-    const bo = b.order || 0;
-    if (ao !== bo) return ao - bo;
-    
-    // Finally by most recently updated
-    const timeA = a.updatedAt?.toMillis?.() || new Date(a.updatedAt).getTime() || 0;
-    const timeB = b.updatedAt?.toMillis?.() || new Date(b.updatedAt).getTime() || 0;
-    return timeB - timeA;
-  });
+  // Calculate nextCursor from the last document's updatedAt
+  const lastDoc = applicationDocs[applicationDocs.length - 1];
+  const lastUpdatedAt = lastDoc.data().updatedAt;
+
+  // Convert Firestore Timestamp to millis if necessary for consistent cursor usage
+  const nextCursor = lastUpdatedAt?.toMillis ? lastUpdatedAt.toMillis() : lastUpdatedAt;
 
   return {
     applications,
     count: applications.length,
+    nextCursor,
     message: 'Applications retrieved successfully',
   };
 });

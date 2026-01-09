@@ -53,6 +53,8 @@ export class JobTracker {
   private isHighlighting = false;
   private sponsorButtonsEnabled = true;
 
+  private abortController = new AbortController();
+
   constructor() {
     this.ensureStyles();
   }
@@ -87,8 +89,20 @@ export class JobTracker {
     // Merge with card-specific data if provided
     if (jobData.company) extracted.company = jobData.company;
     if (jobData.title) extracted.title = jobData.title;
-    
+
     return extracted;
+  }
+
+  destroy(): void {
+    this.abortController.abort();
+    if (this.observer) {
+      this.observer.disconnect();
+      this.observer = null;
+    }
+    if (this.mutationTimeout) window.clearTimeout(this.mutationTimeout);
+    if (this.updateCardsTimeout) window.clearTimeout(this.updateCardsTimeout);
+    if (this.cleanupInterval) window.clearInterval(this.cleanupInterval);
+    console.debug("Hireall: JobTracker destroyed and cleaned up");
   }
 
   initialize(): void {
@@ -216,19 +230,19 @@ export class JobTracker {
     this.sponsorButtonsEnabled = enabled;
     this.refreshCardControls();
   }
-  
+
   setOverlayEnabled(enabled: boolean): void {
     const controls = document.querySelectorAll<HTMLDivElement>(`.${this.controlsClass}`);
     controls.forEach(control => {
       control.style.display = enabled ? 'flex' : 'none';
     });
-    
+
     // Also hide badge elements if overlay is disabled
     const badges = document.querySelectorAll<HTMLElement>(`.${this.badgeClass}`);
     badges.forEach(badge => {
       badge.style.display = enabled ? 'inline-flex' : 'none';
     });
-    
+
     console.debug('Hireall: Overlay visibility updated:', enabled);
   }
 
@@ -436,7 +450,7 @@ export class JobTracker {
     }
 
     const icon = UIComponents.createIcon(result.isSponsored ? "flag" : "alertCircle", 14, "#fff");
-    const label = result.isSponsored 
+    const label = result.isSponsored
       ? (result.sponsorshipType ? result.sponsorshipType.replace(/_/g, " ") : "Sponsored")
       : "Not Sponsored";
     const labelParts = [label];
@@ -515,7 +529,7 @@ export class JobTracker {
     sponsorButton.addEventListener("click", (event) => {
       event.stopPropagation();
       void this.checkJobSponsorshipFromButton(card, sponsorButton);
-    });
+    }, { signal: this.abortController.signal });
     return sponsorButton;
   }
 
@@ -541,7 +555,7 @@ export class JobTracker {
     addButton.addEventListener("click", (event) => {
       event.stopPropagation();
       void this.addJobToBoardFromButton(card, addButton);
-    });
+    }, { signal: this.abortController.signal });
     return addButton;
   }
 
@@ -569,7 +583,7 @@ export class JobTracker {
 
     button.addEventListener("click", async (event) => {
       event.stopPropagation();
-      
+
       // Get job data for this card
       const jobData = await UnifiedJobParser.extractJobFromElement(card, window.location.href);
       if (!jobData) {
@@ -579,18 +593,18 @@ export class JobTracker {
 
       // Create a temporary ID if job hasn't been saved yet
       const jobId = (jobData as any).id || `temp-${Date.now()}`;
-      
+
       // Create and show quick notes
       const quickNotes = new QuickNotes(jobId, "", {
         onSave: (note) => {
           // Update button appearance
           button.style.background = note ? EXT_COLORS.warning : 'rgba(107, 114, 128, 0.8)';
-          button.innerHTML = note 
+          button.innerHTML = note
             ? `${UIComponents.createIcon("fileText", 12, "#fff")} <span>Note</span>`
             : `${UIComponents.createIcon("edit3", 12, "#fff")} <span>Note</span>`;
         }
       });
-      
+
       // Toggle the panel
       const panel = button.parentElement?.querySelector(".hireall-quick-notes-panel");
       if (panel) {
@@ -602,7 +616,7 @@ export class JobTracker {
         // Replace our button with the QuickNotes button
         button.replaceWith(noteBtn);
       }
-    });
+    }, { signal: this.abortController.signal });
 
     return button;
   }
@@ -631,12 +645,12 @@ export class JobTracker {
     button.addEventListener("mouseenter", () => {
       button.style.background = EXT_COLORS.info;
       button.innerHTML = UIComponents.createIcon("edit2", 14, "#fff");
-    });
+    }, { signal: this.abortController.signal });
 
     button.addEventListener("mouseleave", () => {
       button.style.background = "rgba(107, 114, 128, 0.15)";
       button.innerHTML = UIComponents.createIcon("edit2", 14, "#6b7280");
-    });
+    }, { signal: this.abortController.signal });
 
     button.addEventListener("click", async (event) => {
       event.stopPropagation();
@@ -665,7 +679,7 @@ export class JobTracker {
       );
 
       modal.show();
-    });
+    }, { signal: this.abortController.signal });
 
     return button;
   }
@@ -734,7 +748,7 @@ export class JobTracker {
     try {
       const result = await this.checkSponsorship(jobData, card);
       this.showSponsorToast(jobData, result);
-      
+
       // Only highlight if we got a valid result (not an error)
       if (result.status !== "error") {
         // Green for sponsored, orange for confirmed not sponsored
@@ -808,7 +822,7 @@ export class JobTracker {
 
       // Add to board using enhanced manager (handles sponsorship pre-check internally)
       const result = await EnhancedJobBoardManager.getInstance().addToBoard(jobData);
-      
+
       if (result) {
         button.innerHTML = `${UIComponents.createIcon("checkCircle", 12, "#fff")} <span>Added</span>`;
         // Check if it was a queued job (optimistic)

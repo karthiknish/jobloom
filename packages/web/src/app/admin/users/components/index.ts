@@ -1,6 +1,9 @@
 // Re-export all components for easy importing
 export { UserStatsCards } from "./UserStatsCards";
-export { VerificationCard } from "./VerificationCard";
-export { QuickActionsCard } from "./QuickActionsCard";
+export { UserVerificationSnapshot } from "./UserVerificationSnapshot";
+export { UserQuickActions } from "./UserQuickActions";
 export { RecentUsersTable } from "./RecentUsersTable";
-export { SubscriptionDistribution } from "./SubscriptionDistribution";
+export { UserDistribution } from "./UserDistribution";
+export { UserFilters } from "./UserFilters";
+export { DashboardUserTable } from "./DashboardUserTable";
+export { CreateUserDialog } from "./CreateUserDialog";

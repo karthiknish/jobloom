@@ -236,7 +236,7 @@ class ExtensionAuthBridge {
       return this.waitForUserPromise;
     }
 
-    this.waitForUserPromise = new Promise(async (resolve) => {
+    this.waitForUserPromise = new Promise((resolve) => {
       let settled = false;
 
       const settle = (user: any | null) => {
@@ -250,21 +250,23 @@ class ExtensionAuthBridge {
         settle(null);
       }, timeoutMs);
 
-      try {
-        const { onAuthStateChanged } = await import('firebase/auth');
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
+      void (async () => {
+        try {
+          const { onAuthStateChanged } = await import('firebase/auth');
+          const unsubscribe = onAuthStateChanged(auth, (user) => {
+            window.clearTimeout(timeoutId);
+            try {
+              unsubscribe();
+            } catch {
+              // ignore
+            }
+            settle(user ?? null);
+          });
+        } catch {
           window.clearTimeout(timeoutId);
-          try {
-            unsubscribe();
-          } catch {
-            // ignore
-          }
-          settle(user ?? null);
-        });
-      } catch (error) {
-        window.clearTimeout(timeoutId);
-        settle(null);
-      }
+          settle(null);
+        }
+      })();
     });
 
     return this.waitForUserPromise;

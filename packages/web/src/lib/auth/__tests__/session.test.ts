@@ -60,16 +60,24 @@ describe("Session Management", () => {
   const mockDb = {
     collection: jest.fn().mockReturnThis(),
     doc: jest.fn().mockReturnThis(),
+    limit: jest.fn().mockReturnThis(),
     get: jest.fn(),
     set: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
+    batch: jest.fn(() => ({
+      delete: jest.fn(),
+      commit: jest.fn(),
+    })),
   };
 
   beforeEach(() => {
     jest.clearAllMocks();
     (getAdminAuth as jest.Mock).mockReturnValue(mockAuth);
     (getAdminDb as jest.Mock).mockReturnValue(mockDb);
+
+    // Default: pruning snapshot is empty (no-op)
+    mockDb.get.mockResolvedValue({ empty: true, docs: [], size: 0 });
   });
 
   const createRequest = (options: { 
@@ -90,7 +98,7 @@ describe("Session Management", () => {
       const request = createRequest({ cookies: { [SESSION_COOKIE_NAME]: sessionCookie } });
       
       mockAuth.verifySessionCookie.mockResolvedValue({ uid: "user-123" });
-      mockDb.get.mockResolvedValue({ exists: true, ref: { update: jest.fn() } });
+      mockDb.get.mockResolvedValue({ exists: true });
 
       const decoded = await verifySessionFromRequest(request);
       
@@ -116,7 +124,7 @@ describe("Session Management", () => {
       expect(decoded).toBeNull();
     });
 
-    it("should return null and log event if session cookie is not in DB", async () => {
+    it("should repair missing session record and still authenticate", async () => {
       const sessionCookie = "stale-session-cookie";
       const request = createRequest({ cookies: { [SESSION_COOKIE_NAME]: sessionCookie } });
       
@@ -125,7 +133,8 @@ describe("Session Management", () => {
 
       const decoded = await verifySessionFromRequest(request);
       
-      expect(decoded).toBeNull();
+      expect(decoded).toEqual({ uid: "user-123" });
+      expect(mockDb.set).toHaveBeenCalled();
     });
   });
 

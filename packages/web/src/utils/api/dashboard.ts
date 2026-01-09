@@ -1,26 +1,27 @@
 import { jobsService } from "@/services/api/JobsService";
-import { applicationsService } from "@/services/api/ApplicationsService";
+import { applicationsService, PaginatedApplications } from "@/services/api/ApplicationsService";
 import { userService } from "@/services/api/UserService";
 import { Job, Application, JobStats } from "@/types/dashboard";
 import { ImportJob, ImportResult } from "@/types/jobImport";
 
-export type { Job, Application, JobStats };
+export type { Job, Application, JobStats, PaginatedApplications };
 
 export const dashboardApi = {
   getUserByFirebaseUid: (uid: string) => userService.getFirebaseUser(uid),
 
-  getApplicationsByUser: (userId: string) => applicationsService.getByUser(userId),
+  getApplicationsByUser: (userId: string, options?: { limit?: number; cursor?: string | number }) =>
+    applicationsService.getByUser(userId, options),
 
   getJobStats: (userId: string) => jobsService.getStats(userId),
 
-  updateApplicationStatus: (applicationId: string, status: string) => 
+  updateApplicationStatus: (applicationId: string, status: string) =>
     applicationsService.updateStatus(applicationId, status),
 
   createJob: (data: Partial<Job>) => jobsService.create(data),
 
   createApplication: (data: Partial<Application>) => applicationsService.create(data),
 
-  updateApplication: (applicationId: string, data: Partial<Application>) => 
+  updateApplication: (applicationId: string, data: Partial<Application>) =>
     applicationsService.update(applicationId, data),
 
   deleteApplication: (applicationId: string) => applicationsService.delete(applicationId),
@@ -33,13 +34,13 @@ export const dashboardApi = {
 
   bulkRestoreApplications: (applicationIds: string[]) => applicationsService.bulkRestore(applicationIds),
 
-  bulkUpdateApplicationsStatus: (applicationIds: string[], status: string) => 
+  bulkUpdateApplicationsStatus: (applicationIds: string[], status: string) =>
     applicationsService.bulkUpdateStatus(applicationIds, status),
 
-  bulkUpdateApplicationsFollowUp: (applicationIds: string[], followUpDate?: number) => 
+  bulkUpdateApplicationsFollowUp: (applicationIds: string[], followUpDate?: number) =>
     applicationsService.bulkUpdateFollowUp(applicationIds, followUpDate),
 
-  updateApplicationOrder: (applicationId: string, order: number) => 
+  updateApplicationOrder: (applicationId: string, order: number) =>
     applicationsService.updateOrder(applicationId, order),
 
   // These will be moved to a SettingsService/UserService soon
@@ -95,7 +96,7 @@ export const dashboardApi = {
     await setDoc(doc(db, "user_settings", uid), partial, { merge: true });
   },
 
-  importJobsFromCSV: (data: { userId: string; jobs: ImportJob[] }) => 
+  importJobsFromCSV: (data: { userId: string; jobs: ImportJob[] }) =>
     jobsService.importFromCSV(data.userId, data.jobs),
 
   importJobsFromAPI: (data: any) => jobsService.importFromAPI(data),

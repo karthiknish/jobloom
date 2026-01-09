@@ -6,7 +6,7 @@ import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 
-import { dashboardApi } from "@/utils/api/dashboard";
+import { dashboardApi, PaginatedApplications } from "@/utils/api/dashboard";
 import { ApplicationForm } from "@/components/dashboard/ApplicationForm";
 import { JobForm } from "@/components/dashboard/JobForm";
 
@@ -97,8 +97,8 @@ export function Dashboard({ initialView = "dashboard" }: DashboardProps) {
   const [showReminderAlert, setShowReminderAlert] = useState(true);
 
   // Fetch user preferences using TanStack Query
-  const { 
-    data: preferences, 
+  const {
+    data: preferences,
     isLoading: prefsLoading,
     isFetched: prefsFetched
   } = useQuery({
@@ -118,7 +118,7 @@ export function Dashboard({ initialView = "dashboard" }: DashboardProps) {
     }
     return "list";
   });
-  
+
   const hasSyncedPrefs = React.useRef(false);
 
   // Sync boardMode with preferences only once when they first load
@@ -136,10 +136,10 @@ export function Dashboard({ initialView = "dashboard" }: DashboardProps) {
   // Persist boardMode preference to both localStorage and API
   const handleBoardModeChange = (mode: BoardMode) => {
     if (mode === boardMode) return;
-    
+
     setBoardMode(mode);
     localStorage.setItem('hireall_dashboard_board_mode', mode);
-    
+
     // Save to user settings API
     if (user) {
       settingsApi.updatePreferences({
@@ -153,11 +153,11 @@ export function Dashboard({ initialView = "dashboard" }: DashboardProps) {
 
   // Use the new hooks
   const { dashboardLayout, handleLayoutChange } = useDashboardLayout();
-  
+
   // Onboarding state and tour
   const onboarding = useOnboardingState();
   const tour = useTourContext();
-  
+
   // Auto-start dashboard tour for users who haven't completed it
   useEffect(() => {
     if (
@@ -175,11 +175,11 @@ export function Dashboard({ initialView = "dashboard" }: DashboardProps) {
   }, [onboarding.isLoaded, onboarding.hasCompletedDashboardTour, user, loading, tour]);
 
   // Fetch user record using TanStack Query
-  const { 
-    data: userRecord, 
-    isLoading: userRecordLoading, 
-    error: userRecordError, 
-    refetch: refetchUserRecord 
+  const {
+    data: userRecord,
+    isLoading: userRecordLoading,
+    error: userRecordError,
+    refetch: refetchUserRecord
   } = useQuery({
     queryKey: ["dashboard", "user", user?.uid],
     queryFn: () => dashboardApi.getUserByFirebaseUid(user!.uid),
@@ -187,13 +187,12 @@ export function Dashboard({ initialView = "dashboard" }: DashboardProps) {
     staleTime: 60 * 1000,
   });
 
-  // Fetch applications using TanStack Query
-  const { 
-    data: applications, 
-    refetch: refetchApplications, 
-    isLoading: applicationsLoading, 
-    error: applicationsError 
-  } = useQuery<Application[]>({
+  const {
+    data: applications,
+    refetch: refetchApplications,
+    isLoading: applicationsLoading,
+    error: applicationsError
+  } = useQuery<PaginatedApplications>({
     queryKey: ["dashboard", "applications", user?.uid],
     queryFn: () => dashboardApi.getApplicationsByUser(user!.uid),
     enabled: !!user?.uid,
@@ -209,11 +208,11 @@ export function Dashboard({ initialView = "dashboard" }: DashboardProps) {
         : [];
 
   // Fetch job stats using TanStack Query
-  const { 
-    data: jobStats, 
-    refetch: refetchJobStats, 
-    isLoading: jobStatsLoading, 
-    error: jobStatsError 
+  const {
+    data: jobStats,
+    refetch: refetchJobStats,
+    isLoading: jobStatsLoading,
+    error: jobStatsError
   } = useQuery({
     queryKey: ["dashboard", "jobStats", user?.uid],
     queryFn: () => dashboardApi.getJobStats(user!.uid),
@@ -257,7 +256,7 @@ export function Dashboard({ initialView = "dashboard" }: DashboardProps) {
   const overdueReminders = safeApplications.filter(
     (app) => app.followUpDate && isPast(new Date(app.followUpDate)) && !isToday(new Date(app.followUpDate))
   );
-  
+
   const todayReminders = safeApplications.filter(
     (app) => app.followUpDate && isToday(new Date(app.followUpDate))
   );
@@ -332,7 +331,7 @@ export function Dashboard({ initialView = "dashboard" }: DashboardProps) {
     (!!userRecord && applicationsLoading && !applications) ||
     (!!userRecord && jobStatsLoading && !jobStats) ||
     (prefsLoading && !hasSyncedPrefs.current);
-  
+
   if (isDataLoading) {
     return <DashboardSkeleton />;
   }
@@ -362,290 +361,288 @@ export function Dashboard({ initialView = "dashboard" }: DashboardProps) {
 
   return (
     <ErrorBoundary name="Dashboard">
-    <div className="min-h-screen bg-background pt-16">
-      {/* Clean background */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 right-20 w-96 h-96 bg-muted/30 rounded-full filter blur-3xl"></div>
-        <div className="absolute bottom-20 left-20 w-80 h-80 bg-muted/20 rounded-full filter blur-2xl"></div>
-      </div>
+      <div className="min-h-screen bg-background pt-16">
+        {/* Clean background */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-20 right-20 w-96 h-96 bg-muted/30 rounded-full filter blur-3xl"></div>
+          <div className="absolute bottom-20 left-20 w-80 h-80 bg-muted/20 rounded-full filter blur-2xl"></div>
+        </div>
 
-      <div className="relative z-10">
-        {/* Header */}
-        <DashboardHeader
-          onImportJobs={() => setShowImportModal(true)}
-          onAddJob={() => setShowJobForm(true)}
-          onAddApplication={() => setShowApplicationForm(true)}
-        />
-
-        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-          {/* Breadcrumbs for navigation */}
-          <Breadcrumbs className="mb-4" />
-
-          {/* PullToRefresh wrapper for mobile */}
-          <PullToRefresh
-            onRefresh={async () => {
-              await Promise.all([
-                refetchApplications(),
-                refetchJobStats(),
-              ]);
-            }}
-            enabled={isMobile}
-          >
-        {/* Global Dashboard Error State */}
-        {dashboardError && (
-          <ErrorDisplay 
-            error={dashboardError} 
-            onRetry={handleRetryData}
-            variant="banner"
-            className="mb-8"
+        <div className="relative z-10">
+          {/* Header */}
+          <DashboardHeader
+            onImportJobs={() => setShowImportModal(true)}
+            onAddJob={() => setShowJobForm(true)}
+            onAddApplication={() => setShowApplicationForm(true)}
           />
-        )}
 
-        {/* Premium Upgrade Banner for Free Users */}
-        {plan === "free" && <PremiumUpgradeBanner className="mb-6" />}
+          <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+            {/* Breadcrumbs for navigation */}
+            <Breadcrumbs className="mb-4" />
 
-        {/* Welcome / Onboarding Banner */}
-        {hasApplications && safeApplications.length < 5 && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-6 p-5 bg-primary rounded-2xl text-primary-foreground shadow-lg"
-          >
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-              <div className="flex items-start gap-4">
-                <div className="p-3 bg-primary-foreground/20 rounded-xl">
-                  <Sparkles className="h-6 w-6 text-primary-foreground" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold mb-1 text-primary-foreground">Kickstart your job search</h2>
-                  <p className="text-primary-foreground/80 max-w-xl text-sm">
-                    You&apos;ve added your first applications. Import more jobs using the browser extension or optimize your resume with our AI CV Evaluator.
-                  </p>
-                </div>
-              </div>
-              <div className="flex gap-2 flex-shrink-0">
-                <Button 
-                  onClick={() => setShowImportModal(true)}
-                  variant="secondary" 
-                  size="sm"
-                  className="shadow-md"
+            {/* PullToRefresh wrapper for mobile */}
+            <PullToRefresh
+              onRefresh={async () => {
+                await Promise.all([
+                  refetchApplications(),
+                  refetchJobStats(),
+                ]);
+              }}
+              enabled={isMobile}
+            >
+              {/* Global Dashboard Error State */}
+              {dashboardError && (
+                <ErrorDisplay
+                  error={dashboardError}
+                  onRetry={handleRetryData}
+                  variant="banner"
+                  className="mb-8"
+                />
+              )}
+
+              {/* Premium Upgrade Banner for Free Users */}
+              {plan === "free" && <PremiumUpgradeBanner className="mb-6" />}
+
+              {/* Welcome / Onboarding Banner */}
+              {hasApplications && safeApplications.length < 5 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mb-6 p-5 bg-primary rounded-2xl text-primary-foreground shadow-lg"
                 >
-                  Import Jobs
-                </Button>
-                <Button 
-                  onClick={() => window.location.href = '/career-tools'}
-                  variant="ghost" 
-                  size="sm"
-                  data-tour="cv-evaluator"
-                  className="bg-white/20 text-white border border-white/30 hover:bg-white/30"
-                >
-                  Optimize CV
-                </Button>
-              </div>
-            </div>
-          </motion.div>
-        )}
+                  <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div className="flex items-start gap-4">
+                      <div className="p-3 bg-primary-foreground/20 rounded-xl">
+                        <Sparkles className="h-6 w-6 text-primary-foreground" />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-bold mb-1 text-primary-foreground">Kickstart your job search</h2>
+                        <p className="text-primary-foreground/80 max-w-xl text-sm">
+                          You&apos;ve added your first applications. Import more jobs using the browser extension or optimize your resume with our AI CV Evaluator.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 flex-shrink-0">
+                      <Button
+                        onClick={() => setShowImportModal(true)}
+                        variant="secondary"
+                        size="sm"
+                        className="shadow-md"
+                      >
+                        Import Jobs
+                      </Button>
+                      <Button
+                        onClick={() => window.location.href = '/career-tools'}
+                        variant="ghost"
+                        size="sm"
+                        data-tour="cv-evaluator"
+                        className="bg-white/20 text-white border border-white/30 hover:bg-white/30"
+                      >
+                        Optimize CV
+                      </Button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
 
-        {/* Reminder Alert */}
-        {showReminderAlert && (overdueReminders.length > 0 || todayReminders.length > 0) && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            className="mb-6 overflow-hidden"
-          >
-            <div className={`p-4 rounded-xl border flex items-center justify-between gap-4 ${
-              overdueReminders.length > 0 
-                ? "bg-red-50 border-red-100  " 
-                : "bg-amber-50 border-amber-100  "
-            }`}>
-              <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-lg ${
-                  overdueReminders.length > 0 ? "bg-red-100 " : "bg-amber-100 "
-                }`}>
-                  {overdueReminders.length > 0 ? (
-                    <AlertCircle className={`h-5 w-5 ${overdueReminders.length > 0 ? "text-red-600" : "text-amber-600"}`} />
-                  ) : (
-                    <Bell className="h-5 w-5 text-amber-600" />
+              {/* Reminder Alert */}
+              {showReminderAlert && (overdueReminders.length > 0 || todayReminders.length > 0) && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  className="mb-6 overflow-hidden"
+                >
+                  <div className={`p-4 rounded-xl border flex items-center justify-between gap-4 ${overdueReminders.length > 0
+                      ? "bg-red-50 border-red-100  "
+                      : "bg-amber-50 border-amber-100  "
+                    }`}>
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-lg ${overdueReminders.length > 0 ? "bg-red-100 " : "bg-amber-100 "
+                        }`}>
+                        {overdueReminders.length > 0 ? (
+                          <AlertCircle className={`h-5 w-5 ${overdueReminders.length > 0 ? "text-red-600" : "text-amber-600"}`} />
+                        ) : (
+                          <Bell className="h-5 w-5 text-amber-600" />
+                        )}
+                      </div>
+                      <div>
+                        <p className={`font-semibold text-sm ${overdueReminders.length > 0 ? "text-red-800 " : "text-amber-800 "}`}>
+                          {overdueReminders.length > 0
+                            ? `You have ${overdueReminders.length} overdue follow-up${overdueReminders.length === 1 ? '' : 's'}!`
+                            : `You have ${todayReminders.length} follow-up${todayReminders.length === 1 ? '' : 's'} scheduled for today.`}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Don't let these opportunities slip away. Check your reminders below.
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowReminderAlert(false)}
+                      className="h-8 w-8 p-0 rounded-full"
+                      aria-label="Close reminder alert"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Sidebar Navigation + Content (matches Career Tools layout) */}
+              <div className="flex gap-6">
+                <DashboardSidebar
+                  activeSection={(view as DashboardSection) || "dashboard"}
+                  onSectionChange={(next) => setView(next)}
+                  jobsCount={safeApplications.length}
+                />
+
+                <div className="flex-1 min-w-0">
+                  {view === "dashboard" &&
+                    (hasData ? (
+                      <DraggableDashboard
+                        widgets={dashboardWidgets}
+                        onLayoutChange={handleLayoutChange}
+                        savedLayout={
+                          dashboardLayout.length > 0 ? dashboardLayout : undefined
+                        }
+                      />
+                    ) : (
+                      <DashboardEmptyState
+                        onImportJobs={() => setShowImportModal(true)}
+                        onAddJob={() => setShowJobForm(true)}
+                        onAddApplication={() => setShowApplicationForm(true)}
+                        userRecord={userRecord}
+                      />
+                    ))}
+
+                  {view === "analytics" && (
+                    <DashboardAnalytics
+                      applications={safeApplications}
+                      cvAnalyses={cvAnalyses || []}
+                      jobStats={jobStats}
+                    />
+                  )}
+
+                  {view === "jobs" && (
+                    !prefsFetched ? (
+                      <div className="space-y-6">
+                        <div className="flex items-center justify-between">
+                          <Skeleton className="h-10 w-64" />
+                          <Skeleton className="h-10 w-32" />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                          {Array.from({ length: 6 }).map((_, i) => (
+                            <Skeleton key={i} className="h-48 w-full rounded-xl" />
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <DashboardJobsView
+                        applications={safeApplications}
+                        boardMode={boardMode}
+                        setBoardMode={handleBoardModeChange}
+                        searchTerm={searchTerm} // Note: This is already debounced via DashboardFilters.tsx
+                        setSearchTerm={setSearchTerm}
+                        statusFilter={statusFilter}
+                        setStatusFilter={setStatusFilter}
+                        companyFilter={companyFilter}
+                        setCompanyFilter={setCompanyFilter}
+                        onEditApplication={handleEditApplication}
+                        onDeleteApplication={handleDeleteApplicationWrapper}
+                        onViewApplication={handleViewApplication}
+                        onChanged={refetchApplications}
+                        onAddJob={() => setShowJobForm(true)}
+                        onImport={() => setShowImportModal(true)}
+                      />
+                    )
+                  )}
+
+                  {view === "feedback" && (
+                    <FeedbackHistory />
                   )}
                 </div>
-                <div>
-                  <p className={`font-semibold text-sm ${overdueReminders.length > 0 ? "text-red-800 " : "text-amber-800 "}`}>
-                    {overdueReminders.length > 0 
-                      ? `You have ${overdueReminders.length} overdue follow-up${overdueReminders.length === 1 ? '' : 's'}!` 
-                      : `You have ${todayReminders.length} follow-up${todayReminders.length === 1 ? '' : 's'} scheduled for today.`}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Don't let these opportunities slip away. Check your reminders below.
-                  </p>
-                </div>
               </div>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setShowReminderAlert(false)}
-                className="h-8 w-8 p-0 rounded-full"
-                aria-label="Close reminder alert"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          </motion.div>
-        )}
+            </PullToRefresh>
 
-        {/* Sidebar Navigation + Content (matches Career Tools layout) */}
-        <div className="flex gap-6">
-          <DashboardSidebar
-            activeSection={(view as DashboardSection) || "dashboard"}
-            onSectionChange={(next) => setView(next)}
-            jobsCount={safeApplications.length}
-          />
-
-          <div className="flex-1 min-w-0">
-            {view === "dashboard" &&
-              (hasData ? (
-                <DraggableDashboard
-                  widgets={dashboardWidgets}
-                  onLayoutChange={handleLayoutChange}
-                  savedLayout={
-                    dashboardLayout.length > 0 ? dashboardLayout : undefined
-                  }
+            {/* Modals */}
+            <Dialog
+              open={showApplicationForm}
+              onOpenChange={setShowApplicationForm}
+            >
+              <DialogContent className="max-w-4xl max-h-[90vh] w-[95vw] md:w-full overflow-y-auto">
+                <ApplicationForm
+                  application={editingApplication || undefined}
+                  onSubmit={handleApplicationSubmit}
+                  onCancel={() => {
+                    setShowApplicationForm(false);
+                    setEditingApplication(null);
+                  }}
                 />
-              ) : (
-                <DashboardEmptyState
-                  onImportJobs={() => setShowImportModal(true)}
-                  onAddJob={() => setShowJobForm(true)}
-                  onAddApplication={() => setShowApplicationForm(true)}
-                  userRecord={userRecord}
-                />
-              ))}
+              </DialogContent>
+            </Dialog>
 
-            {view === "analytics" && (
-              <DashboardAnalytics
-                applications={applications || []}
-                cvAnalyses={cvAnalyses || []}
-                jobStats={jobStats}
+            <Dialog open={showJobForm} onOpenChange={setShowJobForm}>
+              <DialogContent className="max-w-4xl max-h-[90vh] w-[95vw] md:w-full overflow-y-auto">
+                <JobForm
+                  onSubmit={handleJobSubmit}
+                  onCancel={() => setShowJobForm(false)}
+                />
+              </DialogContent>
+            </Dialog>
+
+            {showImportModal && (
+              <JobImportModal
+                isOpen={showImportModal}
+                onClose={() => setShowImportModal(false)}
+                userRecord={userRecord}
+                onImportComplete={() => {
+                  refetchJobStats();
+                  refetchApplications();
+                }}
               />
             )}
 
-            {view === "jobs" && (
-              !prefsFetched ? (
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between">
-                    <Skeleton className="h-10 w-64" />
-                    <Skeleton className="h-10 w-32" />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {Array.from({ length: 6 }).map((_, i) => (
-                      <Skeleton key={i} className="h-48 w-full rounded-xl" />
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <DashboardJobsView
-                  applications={safeApplications}
-                  boardMode={boardMode}
-                  setBoardMode={handleBoardModeChange}
-                  searchTerm={searchTerm} // Note: This is already debounced via DashboardFilters.tsx
-                  setSearchTerm={setSearchTerm}
-                  statusFilter={statusFilter}
-                  setStatusFilter={setStatusFilter}
-                  companyFilter={companyFilter}
-                  setCompanyFilter={setCompanyFilter}
-                  onEditApplication={handleEditApplication}
-                  onDeleteApplication={handleDeleteApplicationWrapper}
-                  onViewApplication={handleViewApplication}
-                  onChanged={refetchApplications}
-                  onAddJob={() => setShowJobForm(true)}
-                  onImport={() => setShowImportModal(true)}
-                />
-              )
-            )}
+            <JobDetailsModal
+              application={selectedApplication}
+              open={!!selectedApplication}
+              onOpenChange={(open) => !open && setSelectedApplication(null)}
+              onEdit={(app) => {
+                setSelectedApplication(null);
+                handleEditApplication(app);
+              }}
+              onChanged={() => {
+                refetchJobStats();
+                refetchApplications();
+              }}
+            />
 
-            {view === "feedback" && (
-              <FeedbackHistory />
+            {/* Upgrade prompt for premium features */}
+            <Dialog open={showUpgradePrompt} onOpenChange={setShowUpgradePrompt}>
+              <DialogContent className="w-[95vw] max-w-4xl max-h-[85vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>{upgradeTitle}</DialogTitle>
+                  <DialogDescription className="text-sm leading-relaxed">
+                    {upgradeDescription}
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="mt-4">
+                  <UpgradePrompt feature={upgradeFeature} variant="dialog" />
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            <WelcomeDialog />
+
+            {/* Mobile FAB for adding jobs */}
+            {isMobile && (
+              <MobileFAB
+                onClick={() => setShowJobForm(true)}
+                label="Add Job"
+              />
             )}
           </div>
         </div>
-        </PullToRefresh>
-
-        {/* Modals */}
-        <Dialog
-          open={showApplicationForm}
-          onOpenChange={setShowApplicationForm}
-        >
-          <DialogContent className="max-w-4xl max-h-[90vh] w-[95vw] md:w-full overflow-y-auto">
-            <ApplicationForm
-              application={editingApplication || undefined}
-              onSubmit={handleApplicationSubmit}
-              onCancel={() => {
-                setShowApplicationForm(false);
-                setEditingApplication(null);
-              }}
-            />
-          </DialogContent>
-        </Dialog>
-
-        <Dialog open={showJobForm} onOpenChange={setShowJobForm}>
-          <DialogContent className="max-w-4xl max-h-[90vh] w-[95vw] md:w-full overflow-y-auto">
-            <JobForm
-              onSubmit={handleJobSubmit}
-              onCancel={() => setShowJobForm(false)}
-            />
-          </DialogContent>
-        </Dialog>
-
-        {showImportModal && (
-          <JobImportModal
-            isOpen={showImportModal}
-            onClose={() => setShowImportModal(false)}
-            userRecord={userRecord}
-            onImportComplete={() => {
-              refetchJobStats();
-              refetchApplications();
-            }}
-          />
-        )}
-
-        <JobDetailsModal
-          application={selectedApplication}
-          open={!!selectedApplication}
-          onOpenChange={(open) => !open && setSelectedApplication(null)}
-          onEdit={(app) => {
-            setSelectedApplication(null);
-            handleEditApplication(app);
-          }}
-          onChanged={() => {
-            refetchJobStats();
-            refetchApplications();
-          }}
-        />
-
-        {/* Upgrade prompt for premium features */}
-        <Dialog open={showUpgradePrompt} onOpenChange={setShowUpgradePrompt}>
-          <DialogContent className="w-[95vw] max-w-4xl max-h-[85vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>{upgradeTitle}</DialogTitle>
-              <DialogDescription className="text-sm leading-relaxed">
-                {upgradeDescription}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="mt-4">
-              <UpgradePrompt feature={upgradeFeature} variant="dialog" />
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        <WelcomeDialog />
-
-        {/* Mobile FAB for adding jobs */}
-        {isMobile && (
-          <MobileFAB
-            onClick={() => setShowJobForm(true)}
-            label="Add Job"
-          />
-        )}
-      </div>
-      </div>
       </div>
     </ErrorBoundary>
   );

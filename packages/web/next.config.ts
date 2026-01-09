@@ -1,16 +1,25 @@
 import type { NextConfig } from "next";
+import withBundleAnalyzer from "@next/bundle-analyzer";
 
 const nextConfig: NextConfig = {
   /* config options here */
+  transpilePackages: ["@hireall/shared"],
   typescript: {
     ignoreBuildErrors: false,
   },
-  
+
   // Production optimizations
   compress: true,
   poweredByHeader: false,
   generateEtags: true,
-  
+
+  compiler: {
+    // Remove console.log in production, but keep errors and warnings for debugging
+    removeConsole: process.env.NODE_ENV === "production" ? {
+      exclude: ["error", "warn"],
+    } : false,
+  },
+
   // Image optimization - using remotePatterns (Next.js 16 best practice)
   images: {
     remotePatterns: [
@@ -30,7 +39,7 @@ const nextConfig: NextConfig = {
     formats: ['image/webp', 'image/avif'],
     minimumCacheTTL: 60 * 60 * 24 * 7, // 7 days
   },
-  
+
   // Turbopack configuration (Next.js 16 uses Turbopack by default)
   // Empty config silences the webpack migration warning
   turbopack: {},
@@ -172,4 +181,8 @@ const nextConfig: NextConfig = {
   serverExternalPackages: [],
 };
 
-export default nextConfig;
+const analyzer = withBundleAnalyzer({
+  enabled: process.env.ANALYZE === "true",
+});
+
+export default analyzer(nextConfig);

@@ -12,6 +12,7 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
+  Row,
 } from "@tanstack/react-table"
 
 import { cn } from "@/lib/utils"
@@ -41,6 +42,39 @@ interface DataTableProps<TData, TValue> {
   searchPlaceholder?: string
   onRowClick?: (row: TData) => void
 }
+
+interface DataTableRowProps<TData> {
+  row: Row<TData>
+  onRowClick?: (row: TData) => void
+}
+
+const DataTableRow = <TData,>({ row, onRowClick }: DataTableRowProps<TData>) => {
+  return (
+    <TableRow
+      data-state={row.getIsSelected() && "selected"}
+      className={cn(
+        "hover:bg-muted/50 transition-colors",
+        onRowClick && "cursor-pointer"
+      )}
+      onClick={() => onRowClick?.(row.original)}
+    >
+      {row.getVisibleCells().map((cell) => (
+        <TableCell key={cell.id}>
+          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+        </TableCell>
+      ))}
+    </TableRow>
+  )
+}
+
+// Fixed generic memoization
+const MemoizedDataTableRow = React.memo(DataTableRow, (prevProps, nextProps) => {
+  return (
+    prevProps.row.getIsSelected() === nextProps.row.getIsSelected() &&
+    prevProps.row.original === nextProps.row.original &&
+    prevProps.onRowClick === nextProps.onRowClick
+  )
+}) as typeof DataTableRow
 
 export function DataTable<TData, TValue>({
   columns,
@@ -119,48 +153,41 @@ export function DataTable<TData, TValue>({
       <div className="rounded-md border border-border/70 bg-card/50 backdrop-blur-sm">
         <div className="w-full overflow-x-auto">
           <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => {
+                    return (
+                      <TableHead key={header.id}>
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
                             header.column.columnDef.header,
                             header.getContext()
                           )}
-                    </TableHead>
-                  )
-                })}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                  className={`hover:bg-muted/50 transition-colors ${onRowClick ? 'cursor-pointer' : ''}`}
-                  onClick={() => onRowClick?.(row.original)}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
+                      </TableHead>
+                    )
+                  })}
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
-                  No results.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <MemoizedDataTableRow<TData>
+                    key={row.id}
+                    row={row}
+                    onRowClick={onRowClick}
+                  />
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={columns.length} className="h-24 text-center">
+                    No results.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
           </Table>
         </div>
       </div>

@@ -24,6 +24,7 @@ export class JobEditModal {
   private overlay: HTMLDivElement | null = null;
   private jobData: JobEditData;
   private onSave?: (data: JobEditData) => void;
+  private abortController = new AbortController();
 
   constructor(jobData: JobEditData, onSave?: (data: JobEditData) => void) {
     this.jobData = { ...jobData };
@@ -53,23 +54,23 @@ export class JobEditModal {
     `;
     button.innerHTML = UIComponents.createIcon("edit2", 14, "#6b7280");
     button.title = "Edit job details";
-    
+
     button.addEventListener("mouseenter", () => {
       button.style.background = EXT_COLORS.info;
       button.innerHTML = UIComponents.createIcon("edit2", 14, "#fff");
     });
-    
+
     button.addEventListener("mouseleave", () => {
       button.style.background = "rgba(107, 114, 128, 0.15)";
       button.innerHTML = UIComponents.createIcon("edit2", 14, "#6b7280");
     });
-    
+
     button.addEventListener("click", (e) => {
       e.stopPropagation();
       const modal = new JobEditModal(jobData, onSave);
       modal.show();
     });
-    
+
     return button;
   }
 
@@ -93,7 +94,7 @@ export class JobEditModal {
       justify-content: center;
       animation: hireallFadeIn 0.2s ease;
     `;
-    
+
     // Create modal
     this.modal = document.createElement("div");
     this.modal.className = "hireall-edit-modal";
@@ -107,7 +108,7 @@ export class JobEditModal {
       overflow: hidden;
       animation: hireallSlideIn 0.25s ease;
     `;
-    
+
     // Header
     const header = document.createElement("div");
     header.style.cssText = `
@@ -120,7 +121,7 @@ export class JobEditModal {
     header.innerHTML = `
       <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: #1f2937;">Edit Job Details</h3>
     `;
-    
+
     const closeBtn = document.createElement("button");
     closeBtn.innerHTML = UIComponents.createIcon("x", 18, "#6b7280");
     closeBtn.style.cssText = `
@@ -133,19 +134,19 @@ export class JobEditModal {
       align-items: center;
       justify-content: center;
     `;
-    closeBtn.addEventListener("click", () => this.close());
+    closeBtn.addEventListener("click", () => this.close(), { signal: this.abortController.signal });
     header.appendChild(closeBtn);
-    
+
     this.modal.appendChild(header);
-    
+
     // Form
     const form = document.createElement("form");
     form.style.cssText = `padding: 20px;`;
     form.addEventListener("submit", (e) => {
       e.preventDefault();
       this.save();
-    });
-    
+    }, { signal: this.abortController.signal });
+
     // Form fields
     const fields = [
       { name: "title", label: "Job Title", value: this.jobData.title, required: true },
@@ -153,12 +154,12 @@ export class JobEditModal {
       { name: "location", label: "Location", value: this.jobData.location, required: false },
       { name: "salary", label: "Salary", value: this.jobData.salary || "", required: false },
     ];
-    
+
     fields.forEach(field => {
       const group = this.createFormGroup(field.name, field.label, field.value, field.required);
       form.appendChild(group);
     });
-    
+
     // Status select
     const statusGroup = document.createElement("div");
     statusGroup.style.cssText = `margin-bottom: 16px;`;
@@ -167,7 +168,7 @@ export class JobEditModal {
         Status
       </label>
     `;
-    
+
     const statusSelect = document.createElement("select");
     statusSelect.name = "status";
     statusSelect.style.cssText = `
@@ -181,7 +182,7 @@ export class JobEditModal {
       outline: none;
       cursor: pointer;
     `;
-    
+
     const statuses = [
       { value: "interested", label: "Interested" },
       { value: "applied", label: "Applied" },
@@ -190,7 +191,7 @@ export class JobEditModal {
       { value: "rejected", label: "Rejected" },
       { value: "withdrawn", label: "Withdrawn" },
     ];
-    
+
     statuses.forEach(status => {
       const option = document.createElement("option");
       option.value = status.value;
@@ -200,10 +201,10 @@ export class JobEditModal {
       }
       statusSelect.appendChild(option);
     });
-    
+
     statusGroup.appendChild(statusSelect);
     form.appendChild(statusGroup);
-    
+
     // Actions
     const actions = document.createElement("div");
     actions.style.cssText = `
@@ -214,7 +215,7 @@ export class JobEditModal {
       padding-top: 16px;
       border-top: 1px solid #e5e7eb;
     `;
-    
+
     const cancelBtn = document.createElement("button");
     cancelBtn.type = "button";
     cancelBtn.textContent = "Cancel";
@@ -228,8 +229,8 @@ export class JobEditModal {
       cursor: pointer;
       color: #6b7280;
     `;
-    cancelBtn.addEventListener("click", () => this.close());
-    
+    cancelBtn.addEventListener("click", () => this.close(), { signal: this.abortController.signal });
+
     const saveBtn = document.createElement("button");
     saveBtn.type = "submit";
     saveBtn.textContent = "Save Changes";
@@ -244,31 +245,30 @@ export class JobEditModal {
       color: #fff;
       box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
     `;
-    
+
     actions.appendChild(cancelBtn);
     actions.appendChild(saveBtn);
     form.appendChild(actions);
-    
+
     this.modal.appendChild(form);
     this.overlay.appendChild(this.modal);
     document.body.appendChild(this.overlay);
-    
+
     // Close on overlay click
     this.overlay.addEventListener("click", (e) => {
       if (e.target === this.overlay) {
         this.close();
       }
-    });
-    
+    }, { signal: this.abortController.signal });
+
     // Close on Escape
     const escHandler = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         this.close();
-        document.removeEventListener("keydown", escHandler);
       }
     };
-    document.addEventListener("keydown", escHandler);
-    
+    document.addEventListener("keydown", escHandler, { signal: this.abortController.signal });
+
     // Focus first input
     const firstInput = form.querySelector("input");
     if (firstInput) {
@@ -282,7 +282,7 @@ export class JobEditModal {
   private createFormGroup(name: string, label: string, value: string, required: boolean): HTMLDivElement {
     const group = document.createElement("div");
     group.style.cssText = `margin-bottom: 16px;`;
-    
+
     const labelEl = document.createElement("label");
     labelEl.style.cssText = `
       display: block;
@@ -295,7 +295,7 @@ export class JobEditModal {
     if (required) {
       labelEl.innerHTML += ` <span style="color: #ef4444;">*</span>`;
     }
-    
+
     const input = document.createElement("input");
     input.type = "text";
     input.name = name;
@@ -311,18 +311,18 @@ export class JobEditModal {
       transition: border-color 0.2s ease;
       box-sizing: border-box;
     `;
-    
+
     input.addEventListener("focus", () => {
       input.style.borderColor = EXT_COLORS.success;
-    });
-    
+    }, { signal: this.abortController.signal });
+
     input.addEventListener("blur", () => {
       input.style.borderColor = "#e5e7eb";
-    });
-    
+    }, { signal: this.abortController.signal });
+
     group.appendChild(labelEl);
     group.appendChild(input);
-    
+
     return group;
   }
 
@@ -332,13 +332,13 @@ export class JobEditModal {
   private async save(): Promise<void> {
     const form = this.modal?.querySelector("form");
     if (!form) return;
-    
+
     const saveBtn = form.querySelector("button[type='submit']") as HTMLButtonElement;
     if (saveBtn) {
       saveBtn.disabled = true;
       saveBtn.textContent = "Saving...";
     }
-    
+
     // Collect form data
     const formData = new FormData(form);
     const updatedData: JobEditData = {
@@ -349,16 +349,16 @@ export class JobEditModal {
       salary: formData.get("salary") as string,
       status: formData.get("status") as string,
     };
-    
+
     try {
       // Get user ID
       const { firebaseUid, userId } = await safeChromeStorageGet("sync", ["firebaseUid", "userId"], { firebaseUid: null, userId: null }, "JobEditModal");
       const uid = firebaseUid || userId;
-      
+
       if (!uid) {
         throw new Error("User not authenticated");
       }
-      
+
       // Update via API
       await put(`/api/app/jobs/${this.jobData.id}`, {
         title: updatedData.title,
@@ -367,22 +367,22 @@ export class JobEditModal {
         salary: updatedData.salary,
         userId: uid,
       });
-      
+
       // Update status if changed
       if (updatedData.status && updatedData.status !== this.jobData.status) {
         const manager = EnhancedJobBoardManager.getInstance();
         await manager.updateJobStatus(this.jobData.id, updatedData.status);
       }
-      
+
       // Callback
       this.onSave?.(updatedData);
-      
+
       UIComponents.showToast("Job updated successfully", { type: "success" });
       this.close();
     } catch (error) {
       console.error("Failed to update job:", error);
       UIComponents.showToast("Failed to update job", { type: "error" });
-      
+
       if (saveBtn) {
         saveBtn.disabled = false;
         saveBtn.textContent = "Save Changes";
@@ -394,6 +394,7 @@ export class JobEditModal {
    * Close the modal
    */
   private close(): void {
+    this.abortController.abort();
     if (this.overlay) {
       this.overlay.remove();
       this.overlay = null;

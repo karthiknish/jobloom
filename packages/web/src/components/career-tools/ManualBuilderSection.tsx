@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState, useTransition } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   CheckCircle2, 
@@ -16,8 +16,7 @@ import {
   Settings2,
   Zap,
   Lightbulb,
-  History as HistoryIcon,
-  GitCompare
+  History as HistoryIcon
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -42,7 +41,90 @@ import { VersionHistory } from "./VersionHistory";
 import { ResumeDiffView } from "./ResumeDiffView";
 import type { CareerToolsState } from "./useCareerToolsState";
 import type { ResumeVersion } from "@/utils/api/resumeApi";
+import type { ResumeData } from "@/components/application/types";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
 import { cn } from "@/lib/utils";
+
+const SAMPLE_PREVIEW_DATA: ResumeData = {
+  personalInfo: {
+    fullName: "Alex Thompson",
+    email: "alex.thompson@example.com",
+    phone: "+1 (555) 000-1234",
+    location: "San Francisco, CA",
+    summary:
+      "Results-driven Software Engineer with 5+ years of experience in building scalable web applications. Expert in React, Node.js, and cloud architecture with a proven track record of improving system performance by 40%.",
+    linkedin: "linkedin.com/in/alexthompson",
+    github: "",
+    website: "alexthompson.dev",
+  },
+  experience: [
+    {
+      id: "1",
+      company: "TechFlow Systems",
+      position: "Senior Full Stack Developer",
+      location: "Remote",
+      startDate: "Jan 2021",
+      endDate: "Present",
+      current: true,
+      description: "Leading the core platform team to modernize legacy infrastructure.",
+      achievements: [
+        "Architected a microservices-based solution that reduced latency by 35%",
+        "Mentored 5 junior developers and implemented rigorous code review standards",
+        "Reduced cloud infrastructure costs by $12k/year through optimization",
+      ],
+    },
+    {
+      id: "2",
+      company: "Innovate AI",
+      position: "Software Engineer",
+      location: "San Francisco, CA",
+      startDate: "June 2018",
+      endDate: "Dec 2020",
+      current: false,
+      description: "Developed and maintained customer-facing AI dashboards.",
+      achievements: [
+        "Built a real-time data visualization engine using D3.js and React",
+        "Improved test coverage from 45% to 92% across the main repository",
+      ],
+    },
+  ],
+  education: [
+    {
+      id: "1",
+      institution: "Stanford University",
+      degree: "Bachelor of Science",
+      field: "Computer Science",
+      graduationDate: "2018",
+      gpa: "",
+      honors: "Cum Laude",
+    },
+  ],
+  skills: [
+    { category: "Languages", skills: ["TypeScript", "JavaScript", "Python", "Go", "SQL"] },
+    {
+      category: "Frameworks",
+      skills: ["React", "Next.js", "Node.js", "Express", "Tailwind CSS"],
+    },
+    { category: "Tools", skills: ["Docker", "AWS", "Git", "Kubernetes", "CI/CD"] },
+  ],
+  projects: [
+    {
+      id: "1",
+      name: "OpenSource Analytics",
+      description: "A privacy-focused analytics platform for developers.",
+      technologies: ["Next.js", "PostgreSQL", "Redis"],
+      link: "",
+      github: "",
+    },
+  ],
+  certifications: [],
+  languages: [],
+};
 
 interface ManualBuilderSectionProps {
   state: CareerToolsState;
@@ -77,6 +159,8 @@ export function ManualBuilderSection({ state, tabsListClassName, tabsTriggerClas
     deleteVersion,
   } = state;
 
+  const [isPendingTabChange, startTabTransition] = useTransition();
+
   const [diffOpen, setDiffOpen] = useState(false);
   const [compareVersions, setCompareVersions] = useState<{v1: ResumeVersion | null, v2: ResumeVersion | null}>({
     v1: null,
@@ -88,79 +172,17 @@ export function ManualBuilderSection({ state, tabsListClassName, tabsTriggerClas
     setDiffOpen(true);
   };
 
-  const DUMMY_DATA = {
-    personalInfo: {
-      fullName: "Alex Thompson",
-      email: "alex.thompson@example.com",
-      phone: "+1 (555) 000-1234",
-      location: "San Francisco, CA",
-      summary: "Results-driven Software Engineer with 5+ years of experience in building scalable web applications. Expert in React, Node.js, and cloud architecture with a proven track record of improving system performance by 40%.",
-      linkedin: "linkedin.com/in/alexthompson",
-      website: "alexthompson.dev"
-    },
-    experience: [
-      {
-        id: "1",
-        company: "TechFlow Systems",
-        position: "Senior Full Stack Developer",
-        location: "Remote",
-        startDate: "Jan 2021",
-        endDate: "Present",
-        current: true,
-        description: "Leading the core platform team to modernize legacy infrastructure.",
-        achievements: [
-          "Architected a microservices-based solution that reduced latency by 35%",
-          "Mentored 5 junior developers and implemented rigorous code review standards",
-          "Reduced cloud infrastructure costs by $12k/year through optimization"
-        ]
-      },
-      {
-        id: "2",
-        company: "Innovate AI",
-        position: "Software Engineer",
-        location: "San Francisco, CA",
-        startDate: "June 2018",
-        endDate: "Dec 2020",
-        current: false,
-        description: "Developed and maintained customer-facing AI dashboards.",
-        achievements: [
-          "Built a real-time data visualization engine using D3.js and React",
-          "Improved test coverage from 45% to 92% across the main repository"
-        ]
-      }
-    ],
-    education: [
-      {
-        id: "1",
-        institution: "Stanford University",
-        degree: "Bachelor of Science",
-        field: "Computer Science",
-        graduationDate: "2018",
-        honors: "Cum Laude"
-      }
-    ],
-    skills: [
-      { category: "Languages", skills: ["TypeScript", "JavaScript", "Python", "Go", "SQL"] },
-      { category: "Frameworks", skills: ["React", "Next.js", "Node.js", "Express", "Tailwind CSS"] },
-      { category: "Tools", skills: ["Docker", "AWS", "Git", "Kubernetes", "CI/CD"] }
-    ],
-    projects: [
-      {
-        id: "1",
-        name: "OpenSource Analytics",
-        description: "A privacy-focused analytics platform for developers.",
-        technologies: ["Next.js", "PostgreSQL", "Redis"]
-      }
-    ]
-  };
+  const previewData: ResumeData = useMemo(() => {
+    if (activeBuilderTab === "theme") return SAMPLE_PREVIEW_DATA;
+    return {
+      ...advancedResumeData,
+      education: educationItems as any,
+      projects: projectItems as any,
+    };
+  }, [activeBuilderTab, advancedResumeData, educationItems, projectItems]);
 
-  const previewData = activeBuilderTab === "theme" ? DUMMY_DATA : {
-    personalInfo: advancedResumeData.personalInfo,
-    experience: advancedResumeData.experience,
-    education: educationItems,
-    skills: advancedResumeData.skills,
-    projects: projectItems,
-  };
+  const deferredPreviewData = useDeferredValue(previewData);
+  const deferredResumeOptions = useDeferredValue(resumeOptions);
 
   const templates = [
     { id: 'modern', name: 'Modern', desc: 'Clean and professional' },
@@ -179,7 +201,15 @@ export function ManualBuilderSection({ state, tabsListClassName, tabsTriggerClas
     { id: 'orange', name: 'Warm Orange', color: 'bg-orange-600' },
   ];
 
-  const [hoveredSidebarItem, setHoveredSidebarItem] = useState<string | null>(null);
+  const [openSidebarItem, setOpenSidebarItem] = useState<string | null>(null);
+
+  const [isDesktop, setIsDesktop] = useState(false);
+  useEffect(() => {
+    const checkDesktop = () => setIsDesktop(window.innerWidth >= 1024);
+    checkDesktop();
+    window.addEventListener("resize", checkDesktop);
+    return () => window.removeEventListener("resize", checkDesktop);
+  }, []);
 
   const sidebarItems = [
     { id: 'readiness', icon: ShieldCheck, label: 'Readiness', color: 'text-green-500', bg: 'bg-green-50' },
@@ -205,37 +235,45 @@ export function ManualBuilderSection({ state, tabsListClassName, tabsTriggerClas
   return (
     <div className="space-y-6">
       {/* Top Sidebar - Horizontal Icon Bar */}
-      <div className="flex items-center justify-center gap-4 p-2 bg-white/50 backdrop-blur-md rounded-2xl border border-border/50 shadow-sm sticky top-20 z-[100]">
-        {sidebarItems.map((item) => (
-          <div 
-            key={item.id}
-            className="relative group"
-            onMouseEnter={() => setHoveredSidebarItem(item.id)}
-            onMouseLeave={() => setHoveredSidebarItem(null)}
-          >
-            {item.id === 'history' ? (
-              sidebarIcons.history
-            ) : (
-              <button className={cn(
-                "w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300",
-                hoveredSidebarItem === item.id ? cn(item.bg, item.color, "scale-110 shadow-sm") : "text-muted-foreground hover:text-foreground"
-              )}>
-                <item.icon className="h-5 w-5" />
-              </button>
-            )}
+      <TooltipProvider delayDuration={150}>
+        <div className="flex items-center justify-center gap-4 p-2 bg-white/50 backdrop-blur-md rounded-2xl border border-border/50 shadow-sm sticky top-20 z-[100]">
+          {sidebarItems.map((item) => (
+            <div 
+              key={item.id}
+              className="relative"
+            >
+              {item.id === 'history' ? (
+                sidebarIcons.history
+              ) : (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={() => setOpenSidebarItem((prev) => (prev === item.id ? null : item.id))}
+                      className={cn(
+                        "w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300",
+                        openSidebarItem === item.id ? cn(item.bg, item.color, "scale-110 shadow-sm") : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      <item.icon className="h-5 w-5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">{item.label}</TooltipContent>
+                </Tooltip>
+              )}
 
             {/* Floating Card Content - Drops Down */}
             <AnimatePresence>
-              {hoveredSidebarItem === item.id && (
+              {openSidebarItem === item.id && item.id !== 'history' && (
                 <motion.div
                   initial={{ opacity: 0, y: 10, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.95 }}
                   transition={{ duration: 0.2 }}
-                  className="absolute top-full left-1/2 -translate-x-1/2 mt-4 w-[380px] pointer-events-auto z-[110]"
+                  className="absolute top-full left-1/2 -translate-x-1/2 mt-4 w-[380px] pointer-events-none z-[110]"
                 >
                   {item.id === 'readiness' && showManualResumeActions && (
-                    <Card className="shadow-2xl border-primary/10">
+                    <Card className="pointer-events-auto shadow-2xl border-primary/10">
                       <CardHeader className="pb-3">
                         <CardTitle className="text-base flex items-center justify-between gap-2">
                           <span>Export readiness</span>
@@ -290,7 +328,7 @@ export function ManualBuilderSection({ state, tabsListClassName, tabsTriggerClas
                   )}
 
                   {item.id === 'score' && (
-                    <Card className="shadow-2xl border-primary/10">
+                    <Card className="pointer-events-auto shadow-2xl border-primary/10">
                       <CardHeader className="pb-3">
                         <CardTitle className="text-base flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full bg-primary" />
@@ -304,7 +342,7 @@ export function ManualBuilderSection({ state, tabsListClassName, tabsTriggerClas
                   )}
 
                   {item.id === 'settings' && (
-                    <Card className="shadow-2xl border-primary/10">
+                    <Card className="pointer-events-auto shadow-2xl border-primary/10">
                       <CardHeader className="pb-3">
                         <CardTitle className="text-base">Export Settings</CardTitle>
                       </CardHeader>
@@ -351,7 +389,7 @@ export function ManualBuilderSection({ state, tabsListClassName, tabsTriggerClas
                   )}
 
                   {item.id === 'actions' && (
-                    <Card className="shadow-2xl border-primary/10">
+                    <Card className="pointer-events-auto shadow-2xl border-primary/10">
                       <CardHeader className="pb-3">
                         <CardTitle className="text-base">Quick Actions</CardTitle>
                       </CardHeader>
@@ -380,7 +418,7 @@ export function ManualBuilderSection({ state, tabsListClassName, tabsTriggerClas
                   )}
 
                   {item.id === 'tips' && (
-                    <Card className="shadow-2xl border-primary/10 bg-muted/50">
+                    <Card className="pointer-events-auto shadow-2xl border-primary/10 bg-white">
                       <CardHeader className="pb-2">
                         <CardTitle className="text-sm text-foreground">Pro Tips</CardTitle>
                       </CardHeader>
@@ -395,17 +433,21 @@ export function ManualBuilderSection({ state, tabsListClassName, tabsTriggerClas
                 </motion.div>
               )}
             </AnimatePresence>
-          </div>
-        ))}
-      </div>
+            </div>
+          ))}
+        </div>
+      </TooltipProvider>
 
-      <div className="flex flex-col lg:flex-row gap-6 relative">
-        {/* Main Content */}
-        <div className="flex-1 min-w-0 space-y-6">
-          <Tabs value={activeBuilderTab} onValueChange={setActiveBuilderTab} className="space-y-4">
+      {(() => {
+        const builderTabs = (
+          <Tabs
+            value={activeBuilderTab}
+            onValueChange={(v) => startTabTransition(() => setActiveBuilderTab(v as any))}
+            className="space-y-4"
+          >
             {/* Mobile Navigation - Dropdown for better responsiveness */}
             <div className="lg:hidden mb-4">
-              <Select value={activeBuilderTab} onValueChange={setActiveBuilderTab}>
+              <Select value={activeBuilderTab} onValueChange={(v) => startTabTransition(() => setActiveBuilderTab(v as any))}>
                 <SelectTrigger className="w-full h-14 bg-white border-border/50 shadow-md rounded-xl px-4 focus:ring-2 focus:ring-primary/20">
                   <div className="flex items-center gap-3 w-full">
                     <div className="flex flex-col items-start">
@@ -429,14 +471,16 @@ export function ManualBuilderSection({ state, tabsListClassName, tabsTriggerClas
             </div>
 
             {/* Desktop Navigation - Standard Tabs */}
-            <TabsList className={cn("hidden lg:flex flex-wrap h-auto p-1 bg-muted/50 gap-1", tabsListClassName)}>
-              <TabsTrigger value="theme" className={cn("flex-1 min-w-[80px]", tabsTriggerClassName)}>Theme</TabsTrigger>
-              <TabsTrigger value="personal" className={cn("flex-1 min-w-[80px]", tabsTriggerClassName)}>Personal</TabsTrigger>
-              <TabsTrigger value="experience" className={cn("flex-1 min-w-[100px]", tabsTriggerClassName)}>Experience</TabsTrigger>
-              <TabsTrigger value="education" className={cn("flex-1 min-w-[100px]", tabsTriggerClassName)}>Education</TabsTrigger>
-              <TabsTrigger value="skills" className={cn("flex-1 min-w-[80px]", tabsTriggerClassName)}>Skills</TabsTrigger>
-              <TabsTrigger value="projects" className={cn("flex-1 min-w-[80px]", tabsTriggerClassName)}>Projects</TabsTrigger>
-            </TabsList>
+            <div className="hidden lg:block sticky top-0 z-20 -mx-2 px-2 pt-2 pb-3 bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+              <TabsList className={cn("flex flex-wrap h-auto p-1 bg-muted/50 gap-1", tabsListClassName)}>
+                <TabsTrigger value="theme" className={cn("flex-1 min-w-[80px]", tabsTriggerClassName)}>Theme</TabsTrigger>
+                <TabsTrigger value="personal" className={cn("flex-1 min-w-[80px]", tabsTriggerClassName)}>Personal</TabsTrigger>
+                <TabsTrigger value="experience" className={cn("flex-1 min-w-[100px]", tabsTriggerClassName)}>Experience</TabsTrigger>
+                <TabsTrigger value="education" className={cn("flex-1 min-w-[100px]", tabsTriggerClassName)}>Education</TabsTrigger>
+                <TabsTrigger value="skills" className={cn("flex-1 min-w-[80px]", tabsTriggerClassName)}>Skills</TabsTrigger>
+                <TabsTrigger value="projects" className={cn("flex-1 min-w-[80px]", tabsTriggerClassName)}>Projects</TabsTrigger>
+              </TabsList>
+            </div>
 
             <TabsContent value="theme">
               <Card className="bg-gradient-to-br from-muted/20 to-transparent border-muted/40">
@@ -501,7 +545,7 @@ export function ManualBuilderSection({ state, tabsListClassName, tabsTriggerClas
                   </div>
 
                   <div className="flex justify-end mt-6 pt-4 border-t">
-                    <Button onClick={() => setActiveBuilderTab("personal")} className="gap-2">
+                    <Button onClick={() => startTabTransition(() => setActiveBuilderTab("personal"))} className="gap-2">
                       Start Building Your Resume
                       <ArrowRight className="h-4 w-4" />
                     </Button>
@@ -527,7 +571,7 @@ export function ManualBuilderSection({ state, tabsListClassName, tabsTriggerClas
                     <Button variant="outline" onClick={() => setActiveBuilderTab("theme")}>
                       ← Back to Theme
                     </Button>
-                    <Button onClick={() => setActiveBuilderTab("experience")}>
+                    <Button onClick={() => startTabTransition(() => setActiveBuilderTab("experience"))}>
                       Continue to Experience →
                     </Button>
                   </div>
@@ -552,7 +596,7 @@ export function ManualBuilderSection({ state, tabsListClassName, tabsTriggerClas
                     <Button variant="outline" onClick={() => setActiveBuilderTab("personal")}>
                       ← Back to Personal Info
                     </Button>
-                    <Button onClick={() => setActiveBuilderTab("education")}>
+                    <Button onClick={() => startTabTransition(() => setActiveBuilderTab("education"))}>
                       Continue to Education →
                     </Button>
                   </div>
@@ -577,7 +621,7 @@ export function ManualBuilderSection({ state, tabsListClassName, tabsTriggerClas
                     <Button variant="outline" onClick={() => setActiveBuilderTab("experience")}>
                       ← Back to Experience
                     </Button>
-                    <Button onClick={() => setActiveBuilderTab("skills")}>
+                    <Button onClick={() => startTabTransition(() => setActiveBuilderTab("skills"))}>
                       Continue to Skills →
                     </Button>
                   </div>
@@ -602,7 +646,7 @@ export function ManualBuilderSection({ state, tabsListClassName, tabsTriggerClas
                     <Button variant="outline" onClick={() => setActiveBuilderTab("education")}>
                       ← Back to Education
                     </Button>
-                    <Button onClick={() => setActiveBuilderTab("projects")}>
+                    <Button onClick={() => startTabTransition(() => setActiveBuilderTab("projects"))}>
                       Continue to Projects →
                     </Button>
                   </div>
@@ -639,34 +683,77 @@ export function ManualBuilderSection({ state, tabsListClassName, tabsTriggerClas
               </Card>
             </TabsContent>
 
-            <TabsContent value="preview" className="lg:hidden">
-              <ResumePreview 
-                data={previewData as any}
-                options={resumeOptions}
-              />
-            </TabsContent>
+            {!isDesktop && (
+              <TabsContent value="preview" className="lg:hidden">
+                <ResumePreview 
+                  data={deferredPreviewData as any}
+                  options={deferredResumeOptions}
+                />
+              </TabsContent>
+            )}
           </Tabs>
-        </div>
+        );
 
-        {/* Permanent Live Preview (Desktop) */}
-        <aside className="hidden lg:block w-[400px] flex-shrink-0 sticky top-24 h-fit max-h-[calc(100vh-140px)] overflow-y-auto overscroll-contain scrollbar-hide">
-          <div className="bg-white rounded-2xl border border-border/50 shadow-xl overflow-hidden">
-            <div className="p-3 bg-muted/30 border-b flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                <Eye className="h-3 w-3" />
-                Live Preview
-              </span>
-              <Badge variant="outline" className="text-xxs font-bold">Real-time</Badge>
+        if (!isDesktop) {
+          return (
+            <div className="flex flex-col gap-6 relative">
+              {/* Main Content */}
+              <div className="flex-1 min-w-0 space-y-6">
+                {builderTabs}
+              </div>
             </div>
-            <div className="p-1">
-              <ResumePreview 
-                data={previewData as any}
-                options={resumeOptions}
-              />
-            </div>
+          );
+        }
+
+        return (
+          <div className="relative h-[calc(100vh-140px)]">
+            <ResizablePanelGroup orientation="horizontal" className="gap-0 h-full">
+              <ResizablePanel
+                defaultSize={40}
+                minSize={30}
+                className="min-w-0 overflow-auto pr-3"
+              >
+                <div className="max-w-[760px] mx-auto pt-2">
+                  {builderTabs}
+                </div>
+              </ResizablePanel>
+
+              <ResizableHandle withHandle className="mx-2 bg-transparent hover:bg-primary/20 transition-colors" />
+
+              <ResizablePanel
+                defaultSize={60}
+                minSize={40}
+                className="min-w-0 overflow-hidden"
+              >
+                <div className="h-full overflow-hidden rounded-2xl border border-border/50 bg-white shadow-xl flex flex-col">
+                  <div className="p-3 bg-muted/30 border-b flex items-center justify-between">
+                    <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                      <Eye className="h-3 w-3" />
+                      Live Preview
+                    </span>
+                    <Badge variant="outline" className="text-xxs font-bold">Real-time</Badge>
+                  </div>
+                  <div className="relative p-3 flex-1 overflow-auto overscroll-contain scrollbar-hide">
+                    {isPendingTabChange && (
+                      <div className="absolute inset-0 z-10 bg-background/40 backdrop-blur-[1px] flex items-start justify-end p-3 pointer-events-none">
+                        <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/80 px-3 py-1.5 text-xs text-muted-foreground shadow-sm">
+                          Updating preview…
+                        </div>
+                      </div>
+                    )}
+                    <div className="w-full flex justify-center">
+                      <ResumePreview 
+                        data={deferredPreviewData as any}
+                        options={deferredResumeOptions}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </ResizablePanel>
+            </ResizablePanelGroup>
           </div>
-        </aside>
-      </div>
+        );
+      })()}
 
       <ResumeDiffView 
         open={diffOpen}

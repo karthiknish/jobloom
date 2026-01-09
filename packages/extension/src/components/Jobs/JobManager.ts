@@ -15,16 +15,16 @@ export class JobManager {
   private queuedFilter: string | undefined | null = null;
   private lastLoadJobsAt = 0;
   private lastLoadJobsKey = "all";
-  
-  private constructor() {}
-  
+
+  private constructor() { }
+
   public static getInstance(): JobManager {
     if (!JobManager.instance) {
       JobManager.instance = new JobManager();
     }
     return JobManager.instance;
   }
-  
+
   public async loadJobs(filterType?: string): Promise<void> {
     const requestedKey = filterType ?? "all";
 
@@ -49,10 +49,10 @@ export class JobManager {
 
       const { EnhancedJobBoardManager } = await import("../../enhancedAddToBoard");
       const allJobs = await EnhancedJobBoardManager.getInstance().getAllJobs();
-      
+
       // Fetch pending jobs
       const { pendingJobs } = await safeChromeStorageGet("local", ["pendingJobs"], { pendingJobs: [] as any[] }, "JobManager");
-      
+
       // Convert pending jobs to JobBoardEntry format for display
       const pendingEntries = pendingJobs.map((p: any) => ({
         id: p.id || `pending-${Date.now()}`,
@@ -87,7 +87,7 @@ export class JobManager {
           }
         });
       }
-      
+
       // Map JobBoardEntry to JobStatus
       const mappedJobs: JobStatus[] = filteredJobs.map(job => ({
         id: job.id,
@@ -103,7 +103,7 @@ export class JobManager {
         logoUrl: (job as any).logoUrl, // Map logoUrl if available
         dateAdded: job.dateAdded
       }));
-      
+
       this.jobs = mappedJobs;
       await this.renderJobs();
 
@@ -141,16 +141,17 @@ export class JobManager {
 
     return this.loadJobsInFlight;
   }
-  
+
   private static readonly BATCH_SIZE = 20;
   private renderedCount = 0;
   private observer: IntersectionObserver | null = null;
-  
+  private logoObserver: IntersectionObserver | null = null;
+
   private async renderJobs(): Promise<void> {
     const jobList = document.getElementById("job-list") as HTMLElement;
-    
+
     if (!jobList) return;
-    
+
     // Show enhanced empty state if no jobs
     if (this.jobs.length === 0) {
       // Show the enhanced empty state
@@ -160,99 +161,118 @@ export class JobManager {
       }
       return;
     }
-    
+
     // Hide empty state
     const emptyState = document.getElementById("empty-state");
     if (emptyState) {
       emptyState.classList.add("hidden");
     }
-    
+
     // Update job count
     const jobCount = document.getElementById("jobs-count-display") as HTMLElement;
     if (jobCount) {
       jobCount.textContent = this.jobs.length.toString();
     }
-    
+
     // Store job count for skeleton loader
     chrome.storage.local.set({ cachedJobCount: this.jobs.length });
-    
+
     // Check if UK filters are enabled
     const ukFiltersEnabled = await this.checkUKFiltersEnabled();
-    
+
     // Reset state for fresh render
     this.renderedCount = 0;
     jobList.innerHTML = '';
-    
-    // Disconnect previous observer
+
+    // Disconnect previous observers
     if (this.observer) {
       this.observer.disconnect();
       this.observer = null;
     }
-    
+    if (this.logoObserver) {
+      this.logoObserver.disconnect();
+      this.logoObserver = null;
+    }
+
+    // Setup logo observer
+    this.setupLogoObserver();
+
     // Render first batch immediately
     this.renderBatch(jobList, ukFiltersEnabled);
-    
+
     // Setup intersection observer for infinite scroll
     if (this.jobs.length > JobManager.BATCH_SIZE) {
       this.setupScrollObserver(jobList, ukFiltersEnabled);
     }
-    
+
     // Update active filter button
     popupUI.setActiveFilter(this.activeFilter);
   }
-  
+
   private renderBatch(container: HTMLElement, ukFiltersEnabled: boolean): void {
     const startIndex = this.renderedCount;
     const endIndex = Math.min(startIndex + JobManager.BATCH_SIZE, this.jobs.length);
-    
+
     if (startIndex >= this.jobs.length) return;
-    
+
     const fragment = document.createDocumentFragment();
-    
+
     for (let i = startIndex; i < endIndex; i++) {
       const job = this.jobs[i];
       let html = createJobItemHTML(job, ukFiltersEnabled);
-      
+
       // Add pending indicator if needed
       if ((job as any).isPending) {
         html = html.replace('<div class="job-card">', '<div class="job-card pending-job" style="opacity: 0.7; border-left: 3px solid orange;">');
         html = html.replace('<h3 class="job-title">', '<h3 class="job-title"><span style="font-size: 10px; background: orange; color: white; padding: 2px 4px; border-radius: 4px; margin-right: 4px;">QUEUED</span>');
       }
-      
+
       // Create DOM element from HTML
       const template = document.createElement('template');
       template.innerHTML = html.trim();
       const element = template.content.firstChild as HTMLElement;
-      
+
       fragment.appendChild(element);
-      
+
       // Check eligibility for sponsored jobs
       if (ukFiltersEnabled && job.sponsored && !(job as any).isPending) {
         this.checkUKEligibilityForJob(job.id);
       }
     }
-    
+
     container.appendChild(fragment);
+
+    // Observe new logos for lazy loading
+    const newLogos = fragment.querySelectorAll('.lazy-logo');
+    newLogos.forEach(logo => this.logoObserver?.observe(logo));
+
+    // If fragment was already appended, query container
+    const appendedLogos = container.querySelectorAll('.lazy-logo:not([data-observed])');
+    appendedLogos.forEach(logo => {
+      this.logoObserver?.observe(logo);
+      (logo as HTMLElement).dataset.observed = 'true';
+    });
+
     this.renderedCount = endIndex;
   }
-  
+
   private setupScrollObserver(container: HTMLElement, ukFiltersEnabled: boolean): void {
     // Create sentinel element for infinite scroll
     const sentinel = document.createElement('div');
     sentinel.className = 'scroll-sentinel';
     sentinel.style.cssText = 'height: 1px; width: 100%;';
     container.appendChild(sentinel);
-    
+
     this.observer = new IntersectionObserver(
       (entries) => {
         entries.forEach(entry => {
           if (entry.isIntersecting && this.renderedCount < this.jobs.length) {
             // Remove old sentinel
             sentinel.remove();
-            
+
             // Render next batch
             this.renderBatch(container, ukFiltersEnabled);
-            
+
             // Add new sentinel if more items remain
             if (this.renderedCount < this.jobs.length) {
               container.appendChild(sentinel);
@@ -266,19 +286,43 @@ export class JobManager {
         threshold: 0
       }
     );
-    
+
     this.observer.observe(sentinel);
   }
 
-  
+  private setupLogoObserver(): void {
+    this.logoObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const img = entry.target as HTMLImageElement;
+            const src = img.dataset.src;
+            if (src) {
+              img.src = src;
+              img.classList.remove('lazy-logo');
+              img.removeAttribute('data-src');
+            }
+            this.logoObserver?.unobserve(img);
+          }
+        });
+      },
+      {
+        root: document.querySelector('.app-content'),
+        rootMargin: '50px',
+        threshold: 0
+      }
+    );
+  }
+
+
   private renderEmptyState(errorMessage?: string): void {
     const jobList = document.getElementById("job-list") as HTMLElement;
     const jobCount = document.getElementById("jobs-count-display") as HTMLElement;
-    
+
     if (!jobList || !jobCount) return;
-    
+
     jobCount.textContent = "0";
-    
+
     const emptyHTML = `
       <div class="empty-state-container">
         <div class="empty-icon-wrapper">
@@ -291,29 +335,29 @@ export class JobManager {
         </button>
       </div>
     `;
-    
+
     jobList.innerHTML = emptyHTML;
   }
-  
+
   public async changeJobStatus(jobId: string, newStatus: string): Promise<void> {
     try {
       popupUI.showLoading(`status-btn-${jobId}`);
-      
+
       const { EnhancedJobBoardManager } = await import("../../enhancedAddToBoard");
       const result = await EnhancedJobBoardManager.getInstance().updateJobStatus(jobId, newStatus as "interested" | "applied" | "rejected" | "offered" | "withdrawn");
-      
+
       if (result) {
         // Update the job in local array
         const jobIndex = this.jobs.findIndex(job => job.id === jobId);
         if (jobIndex !== -1) {
           this.jobs[jobIndex].status = newStatus;
         }
-        
+
         // Update UI
         updateJobStatusDisplay(jobId, newStatus);
-        
+
         popupUI.showSuccess(`Job marked as ${newStatus}`);
-        
+
         // Refresh jobs if we're not on 'all' filter
         if (this.activeFilter && this.activeFilter !== 'all') {
           setTimeout(() => this.loadJobs(this.activeFilter), 1000);
@@ -321,7 +365,7 @@ export class JobManager {
       } else {
         throw new Error('Failed to update job status');
       }
-      
+
     } catch (error) {
       console.error('Error updating job status:', error);
       popupUI.showError('Failed to update job status');
@@ -329,7 +373,7 @@ export class JobManager {
       popupUI.hideLoading(`status-btn-${jobId}`);
     }
   }
-  
+
   public async checkJobSponsor(jobId: string, companyName: string): Promise<void> {
     try {
       const sponsorBtn = document.getElementById(`sponsor-btn-${jobId}`) as HTMLElement;
@@ -344,13 +388,13 @@ export class JobManager {
         }
         return;
       }
-      
+
       if (sponsorBtn) sponsorBtn.style.display = 'none';
       if (sponsorStatus) {
         sponsorStatus.className = "sponsor-status checking";
         sponsorStatus.innerHTML = '<div class="spinner-small"></div> Checking...';
       }
-      
+
       const record = await fetchSponsorRecord(normalizedCompany);
 
       if (!record) {
@@ -382,11 +426,11 @@ export class JobManager {
         sponsorStatus!.className = "sponsor-status not-licensed";
         sponsorStatus!.innerHTML = 'Not a Skilled Worker sponsor';
       }
-      
+
     } catch (error: any) {
       console.error('Error checking sponsor:', error);
       const sponsorStatus = document.getElementById(`sponsor-status-${jobId}`) as HTMLElement;
-      
+
       if (error.code === 'NOT_LICENSED') {
         sponsorStatus!.className = "sponsor-status not-licensed";
         sponsorStatus!.innerHTML = 'License required. <a href="#" onclick="chrome.tabs.create({url: chrome.runtime.getURL(\'options.html\')})">Upgrade now</a>';
@@ -400,17 +444,17 @@ export class JobManager {
       }
     }
   }
-  
+
   private async checkUKEligibilityForJob(jobId: string): Promise<void> {
     try {
       const job = this.jobs.find(j => j.id === jobId);
       if (!job || !job.sponsored) return;
-      
+
       const eligibility = await this.checkUKEligibility(job);
-      
+
       const eligibilityBadge = document.querySelector(`[data-job-id="${jobId}"].badge-uk-checking`) as HTMLElement;
       if (!eligibilityBadge) return;
-      
+
       if (eligibility === null) {
         eligibilityBadge.style.display = 'none';
       } else if (eligibility) {
@@ -424,7 +468,7 @@ export class JobManager {
         eligibilityBadge.style.color = "#dc2626";
         eligibilityBadge.textContent = "Not Eligible";
       }
-      
+
     } catch (error) {
       console.error('Error checking UK eligibility:', error);
       const eligibilityBadge = document.querySelector(`[data-job-id="${jobId}"].badge-uk-checking`) as HTMLElement;
@@ -433,7 +477,7 @@ export class JobManager {
       }
     }
   }
-  
+
   private async checkUKEligibility(job: JobStatus): Promise<boolean | null> {
     try {
       // Parse salary string to number if possible
@@ -457,22 +501,22 @@ export class JobManager {
         title: job.title,
         company: job.company,
         location: job.location,
-        salary: { 
+        salary: {
           min: salaryMin,
-          original: job.salary 
+          original: job.salary
         },
         source: job.url || 'unknown'
       };
 
       const assessment = await SponsorshipManager.assessUkEligibility(jobData as any);
       return assessment ? assessment.eligible : null;
-      
+
     } catch (error) {
       console.error('Error checking UK eligibility:', error);
       return null;
     }
   }
-  
+
   private async checkUKFiltersEnabled(): Promise<boolean> {
     try {
       const criteria = await UserProfileManager.getUserVisaCriteria();
@@ -482,19 +526,19 @@ export class JobManager {
       return false;
     }
   }
-  
+
   public getJobs(): JobStatus[] {
     return this.jobs;
   }
-  
+
   public getJobsCount(): number {
     return this.jobs.length;
   }
-  
+
   public getSponsoredJobsCount(): number {
     return this.jobs.filter(job => job.sponsored).length;
   }
-  
+
   public getAppliedJobsCount(): number {
     return this.jobs.filter(job => job.status === 'applied').length;
   }

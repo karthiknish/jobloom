@@ -1,95 +1,85 @@
 import type { MetadataRoute } from "next";
-import { headers } from "next/headers";
-
-async function getRequestBaseUrl(): Promise<string> {
-  const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "hireall.app";
-  const proto = h.get("x-forwarded-proto") ?? "https";
-  return `${proto}://${host}`;
-}
+import { getAdminDb } from "@/firebase/admin";
+import { SITE_URL } from "@/seo.config";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const siteUrl = process.env.SITE_URL || "https://hireall.app";
-
   const staticEntries: MetadataRoute.Sitemap = [
     {
-      url: `${siteUrl}/`,
+      url: `${SITE_URL}/`,
       lastModified: new Date(),
       changeFrequency: "daily",
       priority: 1.0,
     },
     {
-      url: `${siteUrl}/blog`,
+      url: `${SITE_URL}/blog`,
       lastModified: new Date(),
       changeFrequency: "daily",
       priority: 0.8,
     },
     {
-      url: `${siteUrl}/career-tools`,
+      url: `${SITE_URL}/career-tools`,
       lastModified: new Date(),
       changeFrequency: "weekly",
       priority: 0.8,
     },
     {
-      url: `${siteUrl}/contact`,
+      url: `${SITE_URL}/contact`,
       lastModified: new Date(),
       changeFrequency: "monthly",
       priority: 0.6,
     },
     {
-      url: `${siteUrl}/volunteer`,
+      url: `${SITE_URL}/volunteer`,
       lastModified: new Date(),
       changeFrequency: "monthly",
       priority: 0.5,
     },
     {
-      url: `${siteUrl}/upgrade`,
+      url: `${SITE_URL}/upgrade`,
       lastModified: new Date(),
       changeFrequency: "weekly",
       priority: 0.7,
     },
     {
-      url: `${siteUrl}/privacy`,
+      url: `${SITE_URL}/privacy`,
       lastModified: new Date(),
       changeFrequency: "yearly",
       priority: 0.3,
     },
     {
-      url: `${siteUrl}/terms`,
+      url: `${SITE_URL}/terms`,
       lastModified: new Date(),
       changeFrequency: "yearly",
       priority: 0.3,
     },
     {
-      url: `${siteUrl}/conditions`,
+      url: `${SITE_URL}/conditions`,
       lastModified: new Date(),
       changeFrequency: "yearly",
       priority: 0.3,
     },
   ];
 
-  // Blog posts (published only)
+  // Blog posts (published only) - Fetch directly from Firestore
   let blogEntries: MetadataRoute.Sitemap = [];
   try {
-    const baseUrl = await getRequestBaseUrl();
-    const res = await fetch(`${baseUrl}/api/blog/slugs`, {
-      next: { revalidate: 3600 },
-    });
+    const db = getAdminDb();
+    const postsSnapshot = await db.collection("blogPosts")
+      .where("status", "==", "published")
+      .select("slug")
+      .get();
 
-    if (res.ok) {
-      const data = (await res.json()) as { slugs?: string[] };
-      const slugs = Array.isArray(data.slugs) ? data.slugs : [];
-      blogEntries = slugs
-        .filter((slug) => typeof slug === "string" && slug.length > 0)
-        .map((slug) => ({
-          url: `${siteUrl}/blog/${encodeURIComponent(slug)}`,
-          lastModified: new Date(),
-          changeFrequency: "weekly",
-          priority: 0.7,
-        }));
-    }
-  } catch {
-    // If Firestore/admin isn’t available in some environments, fall back to static entries.
+    blogEntries = postsSnapshot.docs
+      .map(doc => doc.data().slug)
+      .filter((slug): slug is string => typeof slug === "string" && slug.length > 0)
+      .map((slug) => ({
+        url: `${SITE_URL}/blog/${encodeURIComponent(slug)}`,
+        lastModified: new Date(),
+        changeFrequency: "weekly",
+        priority: 0.7,
+      }));
+  } catch (error) {
+    console.error("Error generating blog sitemap entries:", error);
   }
 
   return [...staticEntries, ...blogEntries];

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { verifyIdToken } from "@/firebase/admin";
 import {
   clearSessionCookieInResponse,
@@ -11,9 +11,9 @@ import {
   validateCsrf,
 } from "@/lib/security/csrf";
 import { 
-  createAuthError, 
   createSuccessResponse,
 } from "@/lib/api/errorResponse";
+import { AuthorizationError } from "@/lib/api/errorResponse";
 import { ERROR_CODES } from "@/lib/api/errorCodes";
 import { withApi } from "@/lib/api/withApi";
 import { z } from "zod";
@@ -33,20 +33,20 @@ function getClientIp(request: NextRequest): string {
 
 async function validateUserSession(decoded: any): Promise<void> {
   if (!decoded?.uid) {
-    throw createAuthError("Invalid authentication token", ERROR_CODES.INVALID_TOKEN);
+    throw new AuthorizationError("Invalid authentication token", ERROR_CODES.INVALID_TOKEN);
   }
 
   if (!decoded?.email) {
-    throw createAuthError("Email verification required", ERROR_CODES.EMAIL_NOT_VERIFIED);
+    throw new AuthorizationError("Email verification required", ERROR_CODES.EMAIL_NOT_VERIFIED);
   }
 
   if (decoded.email_verified === false) {
-    throw createAuthError("Please verify your email before signing in", ERROR_CODES.EMAIL_NOT_VERIFIED);
+    throw new AuthorizationError("Please verify your email before signing in", ERROR_CODES.EMAIL_NOT_VERIFIED);
   }
 
   // Check if account is disabled
   if (decoded.disabled === true) {
-    throw createAuthError("Account has been disabled", ERROR_CODES.ACCOUNT_DISABLED);
+    throw new AuthorizationError("Account has been disabled", ERROR_CODES.ACCOUNT_DISABLED);
   }
 }
 
@@ -75,7 +75,7 @@ export const POST = withApi({
     validateCsrf(request);
   } catch (csrfError) {
     console.error("CSRF validation failed:", csrfError);
-    throw createAuthError(
+    throw new AuthorizationError(
       csrfError instanceof Error ? csrfError.message : "CSRF validation failed",
       ERROR_CODES.FORBIDDEN
     );
@@ -87,7 +87,7 @@ export const POST = withApi({
   const decoded = await verifyIdToken(idToken);
   
   if (!decoded) {
-    throw createAuthError("Failed to verify ID token", ERROR_CODES.INVALID_TOKEN);
+    throw new AuthorizationError("Failed to verify ID token", ERROR_CODES.INVALID_TOKEN);
   }
   
   await validateUserSession(decoded);
@@ -132,7 +132,7 @@ export const DELETE = withApi({
     validateCsrf(request);
   } catch (csrfError) {
     console.error("CSRF validation failed on DELETE:", csrfError);
-    throw createAuthError(
+    throw new AuthorizationError(
       csrfError instanceof Error ? csrfError.message : "CSRF validation failed",
       ERROR_CODES.FORBIDDEN
     );

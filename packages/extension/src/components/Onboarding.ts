@@ -110,12 +110,12 @@ export class Onboarding {
     this.container = document.createElement("div");
     this.container.className = "onboarding-overlay";
     this.container.innerHTML = this.renderStep();
-    
+
     // Add styles
     this.injectStyles();
-    
+
     document.body.appendChild(this.container);
-    
+
     // Animate in
     requestAnimationFrame(() => {
       this.container?.classList.add("visible");
@@ -127,7 +127,7 @@ export class Onboarding {
    */
   hide(): void {
     if (!this.container) return;
-    
+
     this.container.classList.remove("visible");
     setTimeout(() => {
       this.container?.remove();
@@ -220,6 +220,7 @@ export class Onboarding {
     await new Promise<void>((resolve) => {
       chrome.storage.local.set({ onboardingDismissed: true }, () => resolve());
     });
+    this.saveToFirebase();
     this.hide();
     this.onSkip?.();
   }
@@ -229,8 +230,35 @@ export class Onboarding {
    */
   async complete(): Promise<void> {
     await Onboarding.markCompleted();
+    this.saveToFirebase();
     this.hide();
     this.onComplete?.();
+  }
+
+  /**
+   * Save onboarding state to Firebase
+   */
+  private async saveToFirebase(): Promise<void> {
+    try {
+      // Lazy load dependencies to avoid circular imports if any
+      const { authManager } = await import("./Auth/AuthManager");
+      const { getFirestore, doc, setDoc } = await import("../firebase");
+
+      const user = authManager.getCurrentUser();
+      if (!user?.uid) return;
+
+      const db = getFirestore();
+      const userDoc = doc(db, "users", user.uid);
+
+      await setDoc(userDoc, {
+        hasCompletedOnboarding: true,
+        updatedAt: Date.now()
+      }, { merge: true });
+
+      console.log("Onboarding state saved to Firebase");
+    } catch (error) {
+      console.error("Failed to save onboarding state to Firebase:", error);
+    }
   }
 
   /**
@@ -249,7 +277,7 @@ export class Onboarding {
   private goToAuth(): void {
     this.hide();
     Onboarding.markCompleted();
-    
+
     // Trigger auth tab click
     const authTab = document.querySelector('[data-tab="auth"]') as HTMLElement;
     authTab?.click();
@@ -260,7 +288,7 @@ export class Onboarding {
    */
   private updateView(): void {
     if (!this.container) return;
-    
+
     const modal = this.container.querySelector(".onboarding-modal");
     if (modal) {
       modal.classList.add("transitioning");
@@ -333,7 +361,9 @@ export class Onboarding {
         background: linear-gradient(145deg, #1f2937, #111827);
         border-radius: 20px;
         width: 340px;
-        max-height: 90vh;
+        max-height: 520px;
+        display: flex;
+        flex-direction: column;
         overflow: hidden;
         position: relative;
         box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
@@ -378,8 +408,10 @@ export class Onboarding {
       }
       
       .onboarding-content {
-        padding: 48px 28px 24px;
+        padding: 40px 24px 20px;
         text-align: center;
+        flex: 1;
+        overflow-y: auto;
       }
       
       .onboarding-icon {
@@ -517,7 +549,7 @@ export class Onboarding {
         background: rgba(255, 255, 255, 0.15);
       }
     `;
-    
+
     document.head.appendChild(style);
   }
 }

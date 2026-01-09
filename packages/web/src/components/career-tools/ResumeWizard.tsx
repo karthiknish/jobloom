@@ -13,15 +13,30 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type { CareerToolsSection } from "./CareerToolsSidebar";
+import type { ResumeMode } from "./useCareerToolsState";
 
 interface ResumeWizardProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSelectOption: (section: CareerToolsSection) => void;
+  onSelectOption: (next: { section: CareerToolsSection; resumeMode?: ResumeMode }) => void;
 }
 
-const options = [
+type WizardOption = {
+  key: string;
+  id: CareerToolsSection;
+  resumeMode?: ResumeMode;
+  icon: any;
+  title: string;
+  description: string;
+  features: string[];
+  color: string;
+  bg: string;
+  border: string;
+};
+
+const options: WizardOption[] = [
   {
+    key: "cv-optimizer",
     id: "cv-optimizer" as CareerToolsSection,
     icon: FileSearch,
     title: "Optimize Existing CV",
@@ -32,7 +47,9 @@ const options = [
     border: "border-blue-500/20 hover:border-blue-500/40",
   },
   {
-    id: "ai-generator" as CareerToolsSection,
+    key: "resume-ai",
+    id: "resume" as CareerToolsSection,
+    resumeMode: "ai" as ResumeMode,
     icon: Sparkles,
     title: "Generate New CV with AI",
     description: "Create a tailored resume from scratch using our industry-leading AI models",
@@ -42,7 +59,9 @@ const options = [
     border: "border-purple-500/20 hover:border-purple-500/40",
   },
   {
-    id: "manual-builder" as CareerToolsSection,
+    key: "resume-manual",
+    id: "resume" as CareerToolsSection,
+    resumeMode: "manual" as ResumeMode,
     icon: PenTool,
     title: "Guided CV Builder",
     description: "Craft your perfect resume step-by-step with real-time formatting control",
@@ -52,6 +71,7 @@ const options = [
     border: "border-green-500/20 hover:border-green-500/40",
   },
   {
+    key: "import",
     id: "import" as CareerToolsSection,
     icon: Upload,
     title: "Import & Edit CV",
@@ -66,8 +86,8 @@ const options = [
 export function ResumeWizard({ open, onOpenChange, onSelectOption }: ResumeWizardProps) {
   const [hoveredOption, setHoveredOption] = useState<string | null>(null);
 
-  const handleSelect = (section: CareerToolsSection) => {
-    onSelectOption(section);
+  const handleSelect = (section: CareerToolsSection, resumeMode?: ResumeMode) => {
+    onSelectOption({ section, resumeMode });
     onOpenChange(false);
   };
 
@@ -85,18 +105,18 @@ export function ResumeWizard({ open, onOpenChange, onSelectOption }: ResumeWizar
           <AnimatePresence>
             {options.map((option, index) => (
               <motion.div
-                key={option.id}
+                key={option.key}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
               >
                 <Card
                   className={`cursor-pointer transition-all duration-200 ${option.border} ${
-                    hoveredOption === option.id ? "shadow-lg scale-[1.02]" : ""
+                    hoveredOption === option.key ? "shadow-lg scale-[1.02]" : ""
                   }`}
-                  onMouseEnter={() => setHoveredOption(option.id)}
+                  onMouseEnter={() => setHoveredOption(option.key)}
                   onMouseLeave={() => setHoveredOption(null)}
-                  onClick={() => handleSelect(option.id)}
+                  onClick={() => handleSelect(option.id, option.resumeMode)}
                 >
                   <CardContent className="p-5">
                     <div className="flex items-start gap-4">

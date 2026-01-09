@@ -8,6 +8,12 @@ import { Save, Download, Eye } from "lucide-react";
 import { ensureFirebaseApp } from "@/firebase/client";
 import { useOnboardingState } from "@/hooks/useOnboardingState";
 import { useTourContext } from "@/providers/onboarding-tour-provider";
+import {
+  LEGACY_STORAGE_KEYS,
+  STORAGE_KEYS,
+  readAndMigrateJsonFromStorage,
+  writeJsonToStorage,
+} from "@/constants/storageKeys";
 import { Button } from "@/components/ui/button";
 import { ErrorBoundaryWrapper } from "@/components/ui/error-boundary";
 import { LoadingPage } from "@/components/ui/loading";
@@ -21,9 +27,11 @@ import {
   ResumeWizard
 } from "@/components/career-tools";
 import { CareerDashboard } from "@/components/career-tools/CareerDashboard";
+import type { ResumeData as SharedResumeData } from "@/types/resume";
 
 const AIResumeGenerator = dynamic(() => import("@/components/application/AIResumeGenerator").then(mod => mod.AIResumeGenerator), { ssr: false, loading: () => <SkeletonCard /> });
 const AICoverLetterGenerator = dynamic(() => import("@/components/application/AICoverLetterGenerator").then(mod => mod.AICoverLetterGenerator), { ssr: false, loading: () => <SkeletonCard /> });
+const TemplateCoverLetterGenerator = dynamic(() => import("@/components/CoverLetterGenerator").then(mod => mod.CoverLetterGenerator), { ssr: false, loading: () => <SkeletonCard /> });
 const CvUploadSection = dynamic(() => import("@/components/cv-evaluator/CvUploadSection").then(mod => mod.CvUploadSection), { ssr: false, loading: () => <SkeletonCard /> });
 const CvAnalysisHistory = dynamic(() => import("@/components/CvAnalysisHistory").then(mod => mod.CvAnalysisHistory), { ssr: false, loading: () => <SkeletonCard /> });
 const CvImprovementTracker = dynamic(() => import("@/components/CvImprovementTracker").then(mod => mod.CvImprovementTracker), { ssr: false, loading: () => <SkeletonCard /> });
@@ -37,7 +45,7 @@ import {
   SelectItem,
   SelectTrigger,
 } from "@/components/ui/select";
-import { Search, History as HistoryIcon, LayoutDashboard, Sparkles as SparklesIcon } from "lucide-react";
+import { Search, History as HistoryIcon, LayoutDashboard, Sparkles as SparklesIcon, FileText } from "lucide-react";
 
 const dashboardTabsListClassName =
   "bg-background/80 backdrop-blur-sm p-1 rounded-xl border border-border/50 shadow-sm w-full flex flex-wrap gap-1 h-auto sm:inline-flex sm:w-auto sm:flex-nowrap";
@@ -88,7 +96,19 @@ function CVOptimizerSection({
   currentAtsScore,
   setCurrentAtsScore,
 }: CVOptimizerSectionProps) {
-  const [cvTab, setCvTab] = useState("analyze");
+  const [cvTab, setCvTabInternal] = useState(() => {
+    const stored = readAndMigrateJsonFromStorage<string>(
+      STORAGE_KEYS.careerToolsCvTab,
+      LEGACY_STORAGE_KEYS.careerToolsCvTab
+    );
+    if (stored && ["analyze", "history"].includes(stored)) return stored;
+    return "analyze";
+  });
+
+  const setCvTab = (next: string) => {
+    setCvTabInternal(next);
+    writeJsonToStorage(STORAGE_KEYS.careerToolsCvTab, next, LEGACY_STORAGE_KEYS.careerToolsCvTab);
+  };
   
   return (
     <div className="space-y-6">
@@ -195,6 +215,10 @@ export default function CareerToolsPage() {
     authLoading,
     activeSection,
     setActiveSection,
+    resumeMode,
+    setResumeMode,
+    coverLetterMode,
+    setCoverLetterMode,
     showManualResumeActions,
     saving,
     dirty,
@@ -215,10 +239,24 @@ export default function CareerToolsPage() {
 
   // Handle section from URL
   useEffect(() => {
-    if (sectionParam && ["dashboard", "ai-generator", "manual-builder", "import", "cv-optimizer", "cover-letter"].includes(sectionParam)) {
+    if (!sectionParam) return;
+
+    if (sectionParam === "ai-generator") {
+      setResumeMode("ai");
+      setActiveSection("resume");
+      return;
+    }
+
+    if (sectionParam === "manual-builder") {
+      setResumeMode("manual");
+      setActiveSection("resume");
+      return;
+    }
+
+    if (["dashboard", "resume", "import", "cv-optimizer", "cover-letter"].includes(sectionParam)) {
       setActiveSection(sectionParam as any);
     }
-  }, [sectionParam, setActiveSection]);
+  }, [sectionParam, setActiveSection, setResumeMode]);
 
   // Onboarding state and tour
   const onboarding = useOnboardingState();
@@ -292,15 +330,32 @@ export default function CareerToolsPage() {
     switch (activeSection) {
       case "dashboard":
         return <CareerDashboard state={state} onSectionChange={setActiveSection} />;
-      case "ai-generator":
-        return <AIResumeGenerator />;
-      case "manual-builder":
+      case "resume":
         return (
-          <ManualBuilderSection
-            state={state}
-            tabsListClassName={dashboardTabsListClassName}
-            tabsTriggerClassName={dashboardTabsTriggerClassName}
-          />
+          <div className="space-y-6">
+            <Tabs value={resumeMode} onValueChange={(v) => setResumeMode(v as any)}>
+              <TabsList className={dashboardTabsListClassName}>
+                <TabsTrigger value="ai" className={dashboardTabsTriggerClassName}>
+                  <SparklesIcon className="h-4 w-4 mr-2" />
+                  AI Resume
+                </TabsTrigger>
+                <TabsTrigger value="manual" className={dashboardTabsTriggerClassName}>
+                  <LayoutDashboard className="h-4 w-4 mr-2" />
+                  Manual Builder
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+
+            {resumeMode === "ai" ? (
+              <AIResumeGenerator />
+            ) : (
+              <ManualBuilderSection
+                state={state}
+                tabsListClassName={dashboardTabsListClassName}
+                tabsTriggerClassName={dashboardTabsTriggerClassName}
+              />
+            )}
+          </div>
         );
       case "import":
         return <ResumeImporter onImport={handleResumeImport} />;
@@ -318,7 +373,30 @@ export default function CareerToolsPage() {
           />
         );
       case "cover-letter":
-        return <AICoverLetterGenerator applicationId={appIdParam || undefined} />;
+        return (
+          <div className="space-y-6">
+            <Tabs value={coverLetterMode} onValueChange={(v) => setCoverLetterMode(v as any)}>
+              <TabsList className={dashboardTabsListClassName}>
+                <TabsTrigger value="ai" className={dashboardTabsTriggerClassName}>
+                  <SparklesIcon className="h-4 w-4 mr-2" />
+                  AI Generator
+                </TabsTrigger>
+                <TabsTrigger value="builder" className={dashboardTabsTriggerClassName}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Template Builder
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+
+            {coverLetterMode === "ai" ? (
+              <AICoverLetterGenerator applicationId={appIdParam || undefined} />
+            ) : (
+              <TemplateCoverLetterGenerator
+                resumeData={state.advancedResumeData as unknown as SharedResumeData}
+              />
+            )}
+          </div>
+        );
       default:
         return <CareerDashboard state={state} onSectionChange={setActiveSection} />;
     }
@@ -431,7 +509,14 @@ export default function CareerToolsPage() {
     <ResumeWizard
       open={showWizard}
       onOpenChange={setShowWizard}
-      onSelectOption={setActiveSection}
+      onSelectOption={(next) => {
+        if (next.section === "resume") {
+          if (next.resumeMode) setResumeMode(next.resumeMode);
+          setActiveSection("resume");
+          return;
+        }
+        setActiveSection(next.section);
+      }}
     />
     </>
   );

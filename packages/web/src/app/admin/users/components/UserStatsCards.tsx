@@ -2,20 +2,20 @@
 
 import { motion } from "framer-motion";
 import { Users, Activity, Crown, TrendingUp } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { UserStats } from "../types";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { UserStats } from "../types";
 
 interface UserStatsCardsProps {
-    stats: UserStats;
+    userStats: UserStats;
 }
 
-export function UserStatsCards({ stats }: UserStatsCardsProps) {
+export function UserStatsCards({ userStats }: UserStatsCardsProps) {
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4"
+            className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4"
         >
             <Card className="hover:bg-gray-50 transition-all duration-200 border-gray-200">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -25,9 +25,9 @@ export function UserStatsCards({ stats }: UserStatsCardsProps) {
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold text-foreground">{stats.totalUsers}</div>
+                    <div className="text-2xl font-bold text-foreground">{userStats.totalUsers}</div>
                     <p className="text-xs text-muted-foreground mt-1">
-                        +{stats.newUsersThisMonth} this month
+                        +{userStats.newUsersThisMonth} this month
                     </p>
                 </CardContent>
             </Card>
@@ -40,7 +40,7 @@ export function UserStatsCards({ stats }: UserStatsCardsProps) {
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold text-foreground">{stats.activeUsers}</div>
+                    <div className="text-2xl font-bold text-foreground">{userStats.activeUsers}</div>
                     <p className="text-xs text-muted-foreground mt-1">Recently active</p>
                 </CardContent>
             </Card>
@@ -53,7 +53,7 @@ export function UserStatsCards({ stats }: UserStatsCardsProps) {
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold text-foreground">{stats.adminUsers}</div>
+                    <div className="text-2xl font-bold text-foreground">{userStats.adminUsers}</div>
                     <p className="text-xs text-muted-foreground mt-1">System administrators</p>
                 </CardContent>
             </Card>
@@ -66,7 +66,7 @@ export function UserStatsCards({ stats }: UserStatsCardsProps) {
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold text-foreground">{stats.recentLogins}</div>
+                    <div className="text-2xl font-bold text-foreground">{userStats.recentLogins}</div>
                     <p className="text-xs text-muted-foreground mt-1">Last 7 days</p>
                 </CardContent>
             </Card>

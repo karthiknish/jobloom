@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Plus, Trash2, Zap, Code, Users, Wrench, Star, Lightbulb, X, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { ResumeData } from "./types";
 import { skillCategories } from "./constants";
 import { cn } from "@/lib/utils";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm, useFieldArray, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -23,6 +23,13 @@ const skillsSchema = z.object({
 });
 
 type SkillsValues = z.infer<typeof skillsSchema>;
+
+type SkillsWatchValues = {
+  skills?: Array<{
+    category?: string;
+    skills?: string[];
+  }>;
+};
 
 interface SkillsFormProps {
   data: ResumeData['skills'];
@@ -59,35 +66,75 @@ export function SkillsForm({ data, onChange }: SkillsFormProps) {
     mode: "onChange",
   });
 
-  const { control, watch, reset, setValue } = form;
+  const { control, reset, setValue } = form;
   const { fields, append, remove } = useFieldArray({
     control,
     name: "skills",
   });
 
-  const values = watch();
+  const values = useWatch({ control });
 
-  // Sync data from props if it changes externally
-  useEffect(() => {
-    reset({ skills: data });
-  }, [data, reset]);
-
-  // Sync internal form changes back to parent
-  useEffect(() => {
-    const subscription = form.watch((value) => {
-      if (value.skills) {
-        const cleanedSkills = value.skills.map(s => ({
-          category: s?.category || "",
-          skills: s?.skills || []
-        }));
-        
-        if (JSON.stringify(data) !== JSON.stringify(cleanedSkills)) {
-          onChange(cleanedSkills as ResumeData['skills']);
+  const isSameSkills = useCallback(
+    (a: ResumeData["skills"], b: ResumeData["skills"]) => {
+      if (a.length !== b.length) return false;
+      for (let i = 0; i < a.length; i++) {
+        if ((a[i]?.category || "") !== (b[i]?.category || "")) return false;
+        const as = a[i]?.skills || [];
+        const bs = b[i]?.skills || [];
+        if (as.length !== bs.length) return false;
+        for (let j = 0; j < as.length; j++) {
+          if ((as[j] || "") !== (bs[j] || "")) return false;
         }
       }
-    });
-    return () => subscription.unsubscribe();
-  }, [form.watch, onChange, data]);
+      return true;
+    },
+    []
+  );
+
+  const normalizeSkills = useCallback(
+    (raw: SkillsWatchValues | undefined): ResumeData["skills"] => {
+      const list = raw?.skills || [];
+      return list.map((s) => ({
+        category: s?.category || "",
+        skills: s?.skills || [],
+      }));
+    },
+    []
+  );
+
+  const debounceMs = 200;
+  const changeTimeoutRef = useRef<number | null>(null);
+  const emitChange = useCallback(
+    (next: ResumeData["skills"]) => {
+      if (changeTimeoutRef.current) window.clearTimeout(changeTimeoutRef.current);
+      changeTimeoutRef.current = window.setTimeout(() => {
+        onChange(next);
+      }, debounceMs);
+    },
+    [onChange]
+  );
+
+  useEffect(() => {
+    return () => {
+      if (changeTimeoutRef.current) window.clearTimeout(changeTimeoutRef.current);
+    };
+  }, []);
+
+  // Sync data from props if it changes externally (avoid resetting on every keystroke)
+  useEffect(() => {
+    const current = normalizeSkills({ skills: form.getValues("skills") } as SkillsWatchValues);
+    if (!isSameSkills(current, data)) {
+      reset({ skills: data });
+    }
+  }, [data, form, isSameSkills, normalizeSkills, reset]);
+
+  // Sync internal form changes back to parent (debounced to keep typing snappy)
+  useEffect(() => {
+    const cleanedSkills = normalizeSkills(values);
+    if (!isSameSkills(cleanedSkills, data)) {
+      emitChange(cleanedSkills);
+    }
+  }, [data, emitChange, isSameSkills, normalizeSkills, values]);
 
   const toggleCategory = (index: number) => {
     setExpandedCategories(prev =>
@@ -107,7 +154,7 @@ export function SkillsForm({ data, onChange }: SkillsFormProps) {
     const skillToAdd = skill || skillInputs[categoryIndex]?.trim();
     if (!skillToAdd) return;
 
-    const currentSkills = values.skills[categoryIndex].skills;
+    const currentSkills = values?.skills?.[categoryIndex]?.skills || [];
     if (!currentSkills.includes(skillToAdd)) {
       setValue(`skills.${categoryIndex}.skills`, [...currentSkills, skillToAdd], { shouldDirty: true });
     }
@@ -115,7 +162,7 @@ export function SkillsForm({ data, onChange }: SkillsFormProps) {
   };
 
   const removeSkill = (categoryIndex: number, skillIndex: number) => {
-    const currentSkills = values.skills[categoryIndex].skills;
+    const currentSkills = values?.skills?.[categoryIndex]?.skills || [];
     const nextSkills = currentSkills.filter((_, i) => i !== skillIndex);
     setValue(`skills.${categoryIndex}.skills`, nextSkills, { shouldDirty: true });
   };

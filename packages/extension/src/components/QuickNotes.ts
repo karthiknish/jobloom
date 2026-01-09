@@ -21,6 +21,7 @@ export class QuickNotes {
   private jobId: string;
   private currentNote: string;
   private config: QuickNotesConfig;
+  private abortController = new AbortController();
 
   constructor(jobId: string, currentNote: string = "", config: QuickNotesConfig = {}) {
     this.jobId = jobId;
@@ -54,16 +55,16 @@ export class QuickNotes {
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
       transition: all 0.2s ease;
     `;
-    
+
     const icon = this.currentNote ? "fileText" : "edit3";
     const label = this.currentNote ? "View Note" : "Add Note";
     button.innerHTML = `${UIComponents.createIcon(icon, 12, "#fff")} <span>${label}</span>`;
-    
+
     button.addEventListener("click", (e) => {
       e.stopPropagation();
       this.toggle(button);
-    });
-    
+    }, { signal: this.abortController.signal });
+
     return button;
   }
 
@@ -83,9 +84,9 @@ export class QuickNotes {
    */
   private expand(button: HTMLButtonElement): void {
     if (this.container) return;
-    
+
     this.isExpanded = true;
-    
+
     // Create container
     this.container = document.createElement("div");
     this.container.className = "hireall-quick-notes-panel";
@@ -102,7 +103,7 @@ export class QuickNotes {
       z-index: 10000;
       animation: hireallSlideUp 0.2s ease;
     `;
-    
+
     // Header
     const header = document.createElement("div");
     header.style.cssText = `
@@ -118,7 +119,7 @@ export class QuickNotes {
       </span>
     `;
     this.container.appendChild(header);
-    
+
     // Textarea
     this.textarea = document.createElement("textarea");
     this.textarea.className = "hireall-quick-notes-input";
@@ -139,25 +140,25 @@ export class QuickNotes {
       transition: border-color 0.2s ease;
       box-sizing: border-box;
     `;
-    
+
     this.textarea.addEventListener("input", () => {
       this.currentNote = this.textarea!.value;
       const counter = header.querySelector("span:last-child");
       if (counter) {
         counter.textContent = `${this.currentNote.length}/${this.config.maxLength}`;
       }
-    });
-    
+    }, { signal: this.abortController.signal });
+
     this.textarea.addEventListener("focus", () => {
       this.textarea!.style.borderColor = EXT_COLORS.success;
-    });
-    
+    }, { signal: this.abortController.signal });
+
     this.textarea.addEventListener("blur", () => {
       this.textarea!.style.borderColor = "#e5e7eb";
-    });
-    
+    }, { signal: this.abortController.signal });
+
     this.container.appendChild(this.textarea);
-    
+
     // Action buttons
     const actions = document.createElement("div");
     actions.style.cssText = `
@@ -166,7 +167,7 @@ export class QuickNotes {
       gap: 8px;
       margin-top: 10px;
     `;
-    
+
     const cancelBtn = document.createElement("button");
     cancelBtn.textContent = "Cancel";
     cancelBtn.style.cssText = `
@@ -182,8 +183,8 @@ export class QuickNotes {
     cancelBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       this.collapse();
-    });
-    
+    }, { signal: this.abortController.signal });
+
     const saveBtn = document.createElement("button");
     saveBtn.textContent = "Save Note";
     saveBtn.style.cssText = `
@@ -200,36 +201,39 @@ export class QuickNotes {
     saveBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       this.save(button);
-    });
-    
+    }, { signal: this.abortController.signal });
+
     actions.appendChild(cancelBtn);
     actions.appendChild(saveBtn);
     this.container.appendChild(actions);
-    
+
     // Insert into DOM
     const parent = button.parentElement;
     if (parent) {
       parent.style.position = "relative";
       parent.appendChild(this.container);
     }
-    
+
     // Focus textarea
     setTimeout(() => this.textarea?.focus(), 50);
-    
+
     // Close on outside click
     const closeHandler = (e: MouseEvent) => {
       if (!this.container?.contains(e.target as Node) && e.target !== button) {
         this.collapse();
-        document.removeEventListener("click", closeHandler);
       }
     };
-    setTimeout(() => document.addEventListener("click", closeHandler), 100);
+    setTimeout(() => document.addEventListener("click", closeHandler, { signal: this.abortController.signal }), 100);
   }
 
   /**
    * Collapse the notes panel
    */
   private collapse(): void {
+    this.abortController.abort();
+    // Re-initialize for next expansion if needed
+    this.abortController = new AbortController();
+
     if (this.container) {
       this.container.remove();
       this.container = null;
@@ -247,27 +251,27 @@ export class QuickNotes {
       saveBtn.disabled = true;
       saveBtn.textContent = "Saving...";
     }
-    
+
     try {
       // Update via EnhancedJobBoardManager
       const manager = EnhancedJobBoardManager.getInstance();
       await manager.updateJobStatus(this.jobId, "interested", this.currentNote);
-      
+
       // Update button appearance
       button.style.background = this.currentNote ? EXT_COLORS.warning : 'rgba(107, 114, 128, 0.8)';
       const icon = this.currentNote ? "fileText" : "edit3";
       const label = this.currentNote ? "View Note" : "Add Note";
       button.innerHTML = `${UIComponents.createIcon(icon, 12, "#fff")} <span>${label}</span>`;
-      
+
       // Callback
       this.config.onSave?.(this.currentNote);
-      
+
       UIComponents.showToast("Note saved", { type: "success" });
       this.collapse();
     } catch (error) {
       console.error("Failed to save note:", error);
       UIComponents.showToast("Failed to save note", { type: "error" });
-      
+
       if (saveBtn) {
         saveBtn.disabled = false;
         saveBtn.textContent = "Save Note";

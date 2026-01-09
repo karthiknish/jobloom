@@ -1,4 +1,3 @@
-"use client";
 import {
   Accordion,
   AccordionContent,
@@ -41,7 +40,7 @@ export default function FAQSection() {
     <section className="py-20 bg-muted/30" id="faq">
       {/* FAQ Structured Data for SEO */}
       <JsonLd data={faqSchema} />
-      
+
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-3xl font-bold text-foreground sm:text-4xl font-serif">

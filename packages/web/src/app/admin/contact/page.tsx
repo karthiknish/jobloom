@@ -97,7 +97,27 @@ export default function AdminContactDashboard() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedContact, setSelectedContact] = useState<ContactSubmission | null>(null);
   const [showContactDetails, setShowContactDetails] = useState(false);
-  const [responseDraft, setResponseDraft] = useState("");
+
+  const copyToClipboard = useCallback(
+    async (value: string, label: string) => {
+      try {
+        if (!value) return;
+        await navigator.clipboard.writeText(value);
+        toast({
+          title: "Copied",
+          description: `${label} copied to clipboard`,
+        });
+      } catch (error) {
+        console.error("Failed to copy to clipboard", error);
+        toast({
+          title: "Copy failed",
+          description: "Your browser blocked clipboard access.",
+          variant: "destructive",
+        });
+      }
+    },
+    [toast]
+  );
 
   // Confirm Dialog State
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -109,7 +129,7 @@ export default function AdminContactDashboard() {
     isOpen: false,
     title: "",
     description: "",
-    onConfirm: () => {},
+    onConfirm: () => { },
   });
 
   const canFetchAdminData = isAdmin === true;
@@ -183,10 +203,10 @@ export default function AdminContactDashboard() {
 
     const averageResponseHours = responseTimes.length
       ? Math.round(
-          responseTimes.reduce((acc, diff) => acc + diff, 0) /
-            responseTimes.length /
-            (1000 * 60 * 60)
-        )
+        responseTimes.reduce((acc, diff) => acc + diff, 0) /
+        responseTimes.length /
+        (1000 * 60 * 60)
+      )
       : null;
 
     const responseRate = total ? Math.round((responded / total) * 100) : 0;
@@ -351,33 +371,6 @@ export default function AdminContactDashboard() {
     }
   };
 
-  const handleSaveResponse = async () => {
-    if (!selectedContact) return;
-    try {
-      await updateContact({
-        contactId: selectedContact._id,
-        updates: {
-          response: responseDraft,
-          status: "responded",
-          respondedBy: userRecord?.email ?? "",
-          respondedAt: Date.now(),
-        },
-      });
-      toast({
-        title: "Response Saved",
-        description: "Response saved and contact marked as responded",
-      });
-      setShowContactDetails(false);
-      refetchContacts();
-    } catch (error) {
-      console.error("Failed to save response", error);
-      toast({
-        title: "Error",
-        description: "Unable to save response",
-        variant: "destructive",
-      });
-    }
-  };
 
   const handleDeleteContact = async (contact: ContactSubmission) => {
     setConfirmDialog({
@@ -406,25 +399,9 @@ export default function AdminContactDashboard() {
 
   const handleOpenDetails = (contact: ContactSubmission) => {
     setSelectedContact(contact);
-    setResponseDraft(contact.response ?? "");
     setShowContactDetails(true);
   };
 
-  const handleResendEmail = (contact: ContactSubmission) => {
-    const subject = contact.subject ? `Re: ${contact.subject}` : "Re: HireAll inquiry";
-    const message = responseDraft || contact.response || "Hi there, following up on your inquiry.";
-    const mailto = `mailto:${encodeURIComponent(contact.email)}?subject=${encodeURIComponent(
-      subject
-    )}&body=${encodeURIComponent(message)}`;
-
-    if (typeof window !== "undefined") {
-      window.open(mailto, "_blank");
-      toast({
-        title: "Email Composer Opened",
-        description: `Opened email composer for ${contact.email}`,
-      });
-    }
-  };
 
   if (adminLoading) {
     return <LoadingPage label="Loading contact dashboard..." />;
@@ -772,103 +749,110 @@ export default function AdminContactDashboard() {
 
         {/* Contact details dialog */}
         <Dialog open={showContactDetails} onOpenChange={setShowContactDetails}>
-          <DialogContent className="max-w-3xl">
-            <DialogHeader>
-              <DialogTitle>Contact conversation</DialogTitle>
-              <DialogDescription>
-                Manage the response lifecycle for {selectedContact?.name}
-              </DialogDescription>
+          <DialogContent className="max-w-4xl h-[85vh] p-0 flex flex-col">
+            <DialogHeader className="px-6 py-4 border-b bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <DialogTitle className="flex items-center gap-2">
+                    <MessageSquare className="h-5 w-5 text-primary" />
+                    Contact conversation
+                  </DialogTitle>
+                  <DialogDescription className="truncate">
+                    {selectedContact ? `Manage the response lifecycle for ${selectedContact.name}` : ""}
+                  </DialogDescription>
+                </div>
+                {selectedContact ? getStatusBadge(selectedContact.status) : null}
+              </div>
+
+              {selectedContact ? (
+                <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-base font-semibold truncate">{selectedContact.name}</p>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <span className="truncate">{selectedContact.email}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => copyToClipboard(selectedContact.email, "Email")}
+                        aria-label="Copy email"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                </div>
+              ) : null}
             </DialogHeader>
 
-            {selectedContact && (
-              <div className="space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div>
-                    <p className="text-lg font-semibold">{selectedContact.name}</p>
-                    <p className="text-sm text-muted-foreground">{selectedContact.email}</p>
+            {selectedContact ? (
+              <div className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden px-6 py-5 space-y-6">
+                {/* Conversation */}
+                <div className="space-y-3">
+                  {/* Incoming */}
+                  <div className="flex items-end gap-3 min-w-0">
+                    <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center border border-primary/10">
+                      <Mail className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="min-w-0 max-w-[calc(100%-3rem)] sm:max-w-[80%] md:max-w-[42rem] rounded-2xl rounded-bl-md border bg-muted/30 px-4 py-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-sm font-medium truncate">{selectedContact.subject || "(No subject)"}</p>
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">
+                          {formatDistanceToNow(new Date(selectedContact.createdAt), { addSuffix: true })}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-sm whitespace-pre-wrap break-words leading-relaxed">{selectedContact.message}</p>
+                    </div>
                   </div>
-                  {getStatusBadge(selectedContact.status)}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Subject</p>
-                    <p className="mt-1 text-sm">
-                      {selectedContact.subject || "(No subject)"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Received</p>
-                    <p className="mt-1 text-sm">
-                      {format(new Date(selectedContact.createdAt), "PPpp")}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Last updated</p>
-                    <p className="mt-1 text-sm">
-                      {format(new Date(selectedContact.updatedAt), "PPpp")}
-                    </p>
-                  </div>
-                  {selectedContact.respondedAt && (
+                {/* Metadata */}
+                <div className="rounded-xl border bg-background p-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Responded</p>
-                      <p className="mt-1 text-sm">
-                        {format(new Date(selectedContact.respondedAt), "PPpp")} by {" "}
-                        {selectedContact.respondedBy || "Unknown"}
-                      </p>
+                      <p className="text-xs font-medium text-muted-foreground">Received</p>
+                      <p className="mt-1 text-sm">{format(new Date(selectedContact.createdAt), "PPpp")}</p>
                     </div>
-                  )}
-                </div>
-
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Message</p>
-                  <div className="mt-2 rounded-md border bg-muted/40 p-4 text-sm whitespace-pre-wrap">
-                    {selectedContact.message}
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground">Last updated</p>
+                      <p className="mt-1 text-sm">{format(new Date(selectedContact.updatedAt), "PPpp")}</p>
+                    </div>
+                    {selectedContact.respondedAt ? (
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground">Responded</p>
+                        <p className="mt-1 text-sm">
+                          {format(new Date(selectedContact.respondedAt), "PPpp")} by {selectedContact.respondedBy || "Unknown"}
+                        </p>
+                      </div>
+                    ) : null}
                   </div>
                 </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium text-muted-foreground">Response notes</p>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleUpdateStatus(selectedContact, "archived")}
-                        disabled={updateLoading}
-                      >
-                        <Archive className="h-4 w-4 mr-2" /> Archive
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleResendEmail(selectedContact)}
-                      >
-                        <Reply className="h-4 w-4 mr-2" /> Resend email
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={handleSaveResponse}
-                        disabled={updateLoading}
-                      >
-                        <Send className="h-4 w-4 mr-2" /> Save & mark responded
-                      </Button>
-                    </div>
-                  </div>
-                  <Textarea
-                    placeholder="Log the reply you sent or internal follow-up notes..."
-                    value={responseDraft}
-                    onChange={(event) => setResponseDraft(event.target.value)}
-                    rows={6}
-                  />
-                </div>
+              </div>
+            ) : (
+              <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground">
+                Select a conversation to view details.
               </div>
             )}
 
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowContactDetails(false)}>
-                Close
-              </Button>
+            <DialogFooter className="px-6 py-4 border-t bg-background">
+              <div className="w-full flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2">
+                <Button variant="outline" onClick={() => setShowContactDetails(false)} className="w-full sm:w-auto">
+                  Close
+                </Button>
+
+                {selectedContact ? (
+                  <Button
+                    variant="outline"
+                    onClick={() => handleUpdateStatus(selectedContact, "archived")}
+                    disabled={updateLoading}
+                    className="w-full sm:w-auto"
+                  >
+                    <Archive className="h-4 w-4 mr-2" /> Archive
+                  </Button>
+                ) : null}
+              </div>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -885,4 +869,3 @@ export default function AdminContactDashboard() {
     </AdminLayout>
   );
 }
-

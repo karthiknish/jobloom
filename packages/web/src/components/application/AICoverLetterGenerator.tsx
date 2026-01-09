@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Sparkles,
@@ -40,6 +40,12 @@ import { dashboardApi } from "@/utils/api/dashboard";
 import PDFGenerator, { PDFOptions } from "@/lib/pdfGenerator";
 import { cn } from "@/lib/utils";
 import { generateContentHash, getCachedAIResponse, setCachedAIResponse } from "@/utils/ai-cache";
+import {
+  LEGACY_STORAGE_KEYS,
+  STORAGE_KEYS,
+  readAndMigrateJsonFromStorage,
+  writeJsonToStorage,
+} from "@/constants/storageKeys";
 
 interface CoverLetterData {
   jobTitle: string;
@@ -71,6 +77,18 @@ interface AICoverLetterGeneratorProps {
   applicationId?: string;
 }
 
+type CoverLetterDraft = {
+  v: 1;
+  updatedAt: number;
+  formData: CoverLetterData;
+  editedContent: string;
+  atsOptimization: boolean;
+  keywordFocus: boolean;
+  deepResearch: boolean;
+  pdfOptions: PDFOptions;
+  showHistory: boolean;
+};
+
 const containerVariants = {
   hidden: { opacity: 0, y: 20 },
   visible: { 
@@ -83,33 +101,89 @@ const containerVariants = {
 export function AICoverLetterGenerator({ applicationId }: AICoverLetterGeneratorProps) {
   const { user } = useFirebaseAuth();
   const { plan, isAdmin } = useSubscription();
+
+  const initialDraft = readAndMigrateJsonFromStorage<CoverLetterDraft>(
+    STORAGE_KEYS.coverLetterDraft,
+    LEGACY_STORAGE_KEYS.coverLetterDraft
+  );
+
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedLetter, setGeneratedLetter] = useState<GeneratedCoverLetter | null>(null);
-  const [editedContent, setEditedContent] = useState("");
-  const [formData, setFormData] = useState<CoverLetterData>({
-    jobTitle: "",
-    companyName: "",
-    jobDescription: "",
-    skills: [],
-    experience: "",
-    tone: "professional",
-    length: "standard",
+  const [editedContent, setEditedContent] = useState(() => initialDraft?.editedContent ?? "");
+  const [formData, setFormData] = useState<CoverLetterData>(() => {
+    if (initialDraft?.formData) {
+      return {
+        jobTitle: initialDraft.formData.jobTitle || "",
+        companyName: initialDraft.formData.companyName || "",
+        jobDescription: initialDraft.formData.jobDescription || "",
+        skills: Array.isArray(initialDraft.formData.skills) ? initialDraft.formData.skills : [],
+        experience: initialDraft.formData.experience || "",
+        tone: initialDraft.formData.tone || "professional",
+        length: initialDraft.formData.length || "standard",
+      };
+    }
+
+    return {
+      jobTitle: "",
+      companyName: "",
+      jobDescription: "",
+      skills: [],
+      experience: "",
+      tone: "professional",
+      length: "standard",
+    };
   });
   const [skillInput, setSkillInput] = useState("");
-  const [atsOptimization, setAtsOptimization] = useState(true);
-  const [keywordFocus, setKeywordFocus] = useState(true);
-  const [deepResearch, setDeepResearch] = useState(false);
+  const [atsOptimization, setAtsOptimization] = useState(() => initialDraft?.atsOptimization ?? true);
+  const [keywordFocus, setKeywordFocus] = useState(() => initialDraft?.keywordFocus ?? true);
+  const [deepResearch, setDeepResearch] = useState(() => initialDraft?.deepResearch ?? false);
   const [downloadingPDF, setDownloadingPDF] = useState(false);
-  const [pdfOptions, setPdfOptions] = useState<PDFOptions>({
-    template: 'modern',
-    colorScheme: 'hireall',
-    fontSize: 12,
-    font: 'helvetica'
+  const [pdfOptions, setPdfOptions] = useState<PDFOptions>(() => {
+    if (initialDraft?.pdfOptions) return initialDraft.pdfOptions;
+    return {
+      template: 'modern',
+      colorScheme: 'hireall',
+      fontSize: 12,
+      font: 'helvetica'
+    };
   });
 
   const [history, setHistory] = useState<GeneratedCoverLetter[]>([]);
-  const [showHistory, setShowHistory] = useState(false);
+  const [showHistory, setShowHistory] = useState(() => initialDraft?.showHistory ?? false);
   const [loadingHistory, setLoadingHistory] = useState(false);
+
+  const draftSaveTimeoutRef = useRef<number | null>(null);
+  const suppressDraftWritesRef = useRef(false);
+
+  // Debounced autosave of in-progress form state
+  useEffect(() => {
+    if (suppressDraftWritesRef.current) return;
+    if (typeof window === "undefined") return;
+
+    if (draftSaveTimeoutRef.current) window.clearTimeout(draftSaveTimeoutRef.current);
+    draftSaveTimeoutRef.current = window.setTimeout(() => {
+      const payload: CoverLetterDraft = {
+        v: 1,
+        updatedAt: Date.now(),
+        formData,
+        editedContent,
+        atsOptimization,
+        keywordFocus,
+        deepResearch,
+        pdfOptions,
+        showHistory,
+      };
+      writeJsonToStorage(
+        STORAGE_KEYS.coverLetterDraft,
+        payload,
+        LEGACY_STORAGE_KEYS.coverLetterDraft
+      );
+    }, 250);
+
+    return () => {
+      if (draftSaveTimeoutRef.current) window.clearTimeout(draftSaveTimeoutRef.current);
+    };
+  }, [atsOptimization, deepResearch, editedContent, formData, keywordFocus, pdfOptions, showHistory]);
 
   const fetchHistory = async () => {
     setLoadingHistory(true);

@@ -221,7 +221,10 @@ export function CareerDashboard({ state, onSectionChange }: CareerDashboardProps
               <Button 
                 variant="secondary" 
                 className="w-full justify-start gap-2"
-                onClick={() => onSectionChange("ai-generator")}
+                onClick={() => {
+                  state.setResumeMode?.("ai");
+                  onSectionChange("resume");
+                }}
               >
                 <Sparkles className="h-4 w-4" />
                 Generate AI Resume

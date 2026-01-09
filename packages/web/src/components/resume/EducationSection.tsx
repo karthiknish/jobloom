@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,6 +58,62 @@ export function EducationSection({ data, onChange }: EducationSectionProps) {
     mode: "onChange",
   });
 
+  const normalizeEducationItem = useCallback(
+    (edu: Partial<EducationItem> | undefined): EducationItem => ({
+      id: edu?.id || "",
+      institution: edu?.institution || "",
+      degree: edu?.degree || "",
+      field: edu?.field || "",
+      graduationDate: edu?.graduationDate || "",
+      gpa: edu?.gpa || "",
+      honors: edu?.honors || "",
+    }),
+    []
+  );
+
+  const normalizeEducationList = useCallback(
+    (items: Array<Partial<EducationItem>> | undefined): EducationItem[] => (items || []).map(normalizeEducationItem),
+    [normalizeEducationItem]
+  );
+
+  const isSameEducation = useCallback((a: EducationItem[], b: EducationItem[]) => {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+      const ai = a[i];
+      const bi = b[i];
+      if (
+        ai.id !== bi.id ||
+        ai.institution !== bi.institution ||
+        ai.degree !== bi.degree ||
+        ai.field !== bi.field ||
+        ai.graduationDate !== bi.graduationDate ||
+        (ai.gpa || "") !== (bi.gpa || "") ||
+        (ai.honors || "") !== (bi.honors || "")
+      ) {
+        return false;
+      }
+    }
+    return true;
+  }, []);
+
+  const debounceMs = 150;
+  const changeTimeoutRef = useRef<number | null>(null);
+  const emitChange = useCallback(
+    (next: EducationItem[]) => {
+      if (changeTimeoutRef.current) window.clearTimeout(changeTimeoutRef.current);
+      changeTimeoutRef.current = window.setTimeout(() => {
+        onChange(next);
+      }, debounceMs);
+    },
+    [onChange]
+  );
+
+  useEffect(() => {
+    return () => {
+      if (changeTimeoutRef.current) window.clearTimeout(changeTimeoutRef.current);
+    };
+  }, []);
+
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "education",
@@ -69,29 +125,20 @@ export function EducationSection({ data, onChange }: EducationSectionProps) {
   });
 
   useEffect(() => {
-    const currentValues = form.getValues("education");
-    if (JSON.stringify(data) !== JSON.stringify(currentValues)) {
-      form.reset({ education: data });
+    const normalizedProp = normalizeEducationList(data);
+    const current = normalizeEducationList(form.getValues("education") as unknown as EducationItem[]);
+    if (!isSameEducation(current, normalizedProp)) {
+      form.reset({ education: normalizedProp });
     }
-  }, [data, form]);
+  }, [data, form, isSameEducation, normalizeEducationList]);
 
   useEffect(() => {
-    if (watchEducation) {
-      const cleanedEducation = watchEducation.map(edu => ({
-        ...edu,
-        gpa: edu?.gpa || "",
-        honors: edu?.honors || "",
-        institution: edu?.institution || "",
-        degree: edu?.degree || "",
-        field: edu?.field || "",
-        graduationDate: edu?.graduationDate || ""
-      }));
-
-      if (JSON.stringify(data) !== JSON.stringify(cleanedEducation)) {
-        onChange(cleanedEducation as EducationItem[]);
-      }
+    const normalizedProp = normalizeEducationList(data);
+    const cleanedEducation = normalizeEducationList(watchEducation as unknown as EducationItem[]);
+    if (!isSameEducation(cleanedEducation, normalizedProp)) {
+      emitChange(cleanedEducation);
     }
-  }, [watchEducation, onChange, data]);
+  }, [data, emitChange, isSameEducation, normalizeEducationList, watchEducation]);
 
   const addEducation = () => {
     append({

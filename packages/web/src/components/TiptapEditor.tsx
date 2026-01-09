@@ -851,8 +851,7 @@ export function TiptapEditor({
       {editor && (
         <BubbleMenu
           editor={editor}
-          appendTo={() => document.body}
-          options={{ strategy: "fixed" }}
+          options={{ appendTo: () => document.body, strategy: "fixed" } as any}
           style={{ zIndex: 10000 }}
         >
           <div className="flex items-center gap-1 p-1 bg-background border border-border rounded-lg shadow-lg">
@@ -895,8 +894,7 @@ export function TiptapEditor({
       {editor && (
         <FloatingMenu
           editor={editor}
-          appendTo={() => document.body}
-          options={{ strategy: "fixed" }}
+          options={{ appendTo: () => document.body, strategy: "fixed" } as any}
           style={{ zIndex: 10000 }}
         >
           <div className="flex items-center gap-1 p-1 bg-background border border-border rounded-lg shadow-lg">
