@@ -3,7 +3,7 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { dashboardApi } from "@/utils/api/dashboard";
+import { dashboardApi, type PaginatedApplications } from "@/utils/api/dashboard";
 import { cvEvaluatorApi } from "@/utils/api/cvEvaluator";
 import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
 import { Application } from "@/types/dashboard";
@@ -63,18 +63,24 @@ export function useGlobalSearch() {
   });
 
   // Fetch applications for search using TanStack Query
-  const { data: applications, isLoading: isLoadingApplications } = useQuery<Application[]>({
-    queryKey: ["dashboard", "applications", userRecord?._id],
-    queryFn: () => dashboardApi.getApplicationsByUser(userRecord!._id),
-    enabled: !!userRecord?._id,
+  // API returns PaginatedApplications; we select the array for search UX.
+  const { data: applications, isLoading: isLoadingApplications } = useQuery<
+    PaginatedApplications,
+    Error,
+    Application[]
+  >({
+    queryKey: ["dashboard", "applications", user?.uid],
+    queryFn: () => dashboardApi.getApplicationsByUser(user!.uid),
+    enabled: !!user?.uid,
     staleTime: 30 * 1000,
+    select: (data) => data?.applications ?? [],
   });
 
   // Fetch Resume analyses for search using TanStack Query
   const { data: cvAnalyses, isLoading: isLoadingCvAnalyses } = useQuery({
-    queryKey: ["dashboard", "cvAnalyses", userRecord?._id],
-    queryFn: () => cvEvaluatorApi.getCvAnalysesByUser(userRecord!._id),
-    enabled: !!userRecord?._id,
+    queryKey: ["dashboard", "cvAnalyses", user?.uid],
+    queryFn: () => cvEvaluatorApi.getCvAnalysesByUser(user!.uid),
+    enabled: !!user?.uid,
     staleTime: 60 * 1000,
   });
 

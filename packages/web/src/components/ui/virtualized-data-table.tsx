@@ -205,7 +205,7 @@ export function VirtualizedDataTable<TData, TValue>({
                         style={{ height: `${totalSize}px` }}
                     >
                         {rows.length > 0 ? (
-                            virtualRows.map((virtualRow) => {
+                            virtualRows.map((virtualRow: { index: number; size: number; start: number }) => {
                                 const row = rows[virtualRow.index] as Row<TData>
                                 return (
                                     <MemoizedDataTableRow<TData>

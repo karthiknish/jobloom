@@ -37,6 +37,7 @@ import { useSubscription } from "@/providers/subscription-provider";
 import { showSuccess, showError, showInfo } from "@/components/ui/Toast";
 import { aiApi } from "@/utils/api/ai";
 import { dashboardApi } from "@/utils/api/dashboard";
+import type { Application, PaginatedApplications } from "@/utils/api/dashboard";
 import PDFGenerator, { PDFOptions } from "@/lib/pdfGenerator";
 import { cn } from "@/lib/utils";
 import { generateContentHash, getCachedAIResponse, setCachedAIResponse } from "@/utils/ai-cache";
@@ -323,20 +324,23 @@ Sincerely,
     if (applicationId && user?.uid) {
       // Fetch application details to pre-fill
       dashboardApi.getApplicationsByUser(user.uid)
-        .then((apps: any[]) => {
-          const app = apps.find((a: any) => a._id === applicationId);
+        .then((result: PaginatedApplications) => {
+          const apps: Application[] = result?.applications ?? [];
+          const app = apps.find((a) => a._id === applicationId);
           if (app && app.job) {
+            const job = app.job;
+            const jobSkills = Array.isArray(job.skills) ? job.skills : [];
             setFormData(prev => ({
               ...prev,
-              jobTitle: app.job.title || prev.jobTitle,
-              companyName: app.job.company || prev.companyName,
-              jobDescription: app.job.description || prev.jobDescription,
+              jobTitle: job.title || prev.jobTitle,
+              companyName: job.company || prev.companyName,
+              jobDescription: job.description || prev.jobDescription,
             }));
             
-            if (app.job.skills && Array.isArray(app.job.skills)) {
+            if (jobSkills.length > 0) {
                setFormData(prev => ({
                  ...prev,
-                 skills: Array.from(new Set([...prev.skills, ...app.job.skills]))
+                 skills: Array.from(new Set([...prev.skills, ...jobSkills]))
                }));
             }
           }
