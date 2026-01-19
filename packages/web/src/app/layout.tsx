@@ -2,8 +2,7 @@ import type { Viewport } from "next";
 import { Suspense, type ReactNode } from "react";
 import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
-import FirebaseInitializer from "@/components/FirebaseInitializer";
-import { FirebaseAuthProvider } from "@/providers/firebase-auth-provider";
+import { BetterAuthProvider } from "@/providers/better-auth-provider";
 import { SubscriptionProvider } from "@/providers/subscription-provider";
 import { AppToaster } from "@/components/ui/Toast";
 import Header from "@/components/Header";
@@ -19,6 +18,7 @@ import { rootMetadata } from "@/metadata";
 import { OnboardingTourProvider } from "@/providers/onboarding-tour-provider";
 import { SuccessAnimationProvider } from "@/components/ui/SuccessAnimation";
 import { QueryProvider } from "@/lib/query";
+import { ConvexAuthProvider } from "@/providers/convex-provider";
 import {
   generateOrganizationSchema,
   generateWebSiteSchema,
@@ -71,9 +71,9 @@ export default function RootLayout({
         >
           Skip to content
         </a>
-        <FirebaseInitializer />
-        <FirebaseAuthProvider>
-          <PostHogProvider>
+        <BetterAuthProvider>
+          <ConvexAuthProvider>
+            <PostHogProvider>
             <QueryProvider>
               <Suspense fallback={null}>
                 <SubscriptionProvider>
@@ -97,7 +97,8 @@ export default function RootLayout({
               </Suspense>
             </QueryProvider>
           </PostHogProvider>
-        </FirebaseAuthProvider>
+          </ConvexAuthProvider>
+        </BetterAuthProvider>
       </body>
     </html>
   );
