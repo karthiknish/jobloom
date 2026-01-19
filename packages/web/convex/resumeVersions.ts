@@ -43,6 +43,7 @@ export const create = mutation({
     userId: v.id("users"),
     fileName: v.string(),
     fileUrl: v.string(),
+    storageId: v.optional(v.id("_storage")),
     fileSize: v.number(),
     contentType: v.string(),
     parsedContent: v.optional(v.string()),

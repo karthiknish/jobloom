@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { useFormContext } from "react-hook-form";
 import { FormField, FormItem, FormControl, FormMessage } from "@/components/ui/form";
 import { Camera, Loader2 } from "lucide-react";
-import { uploadProfilePicture } from "@/firebase/storage";
+import { useStorageUpload } from "@/hooks/useStorage";
 import { useToast } from "@/hooks/use-toast";
 
 interface ProfileSettingsProps {
@@ -20,7 +20,7 @@ export function ProfileSettings({ firebaseUser }: ProfileSettingsProps) {
   const { control, watch, setValue } = useFormContext();
   const formData = watch();
   const toast = useToast();
-  const [isUploading, setIsUploading] = React.useState(false);
+  const { uploadProfilePicture, uploading: isUploading } = useStorageUpload();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const handleAvatarClick = () => {
@@ -29,18 +29,18 @@ export function ProfileSettings({ firebaseUser }: ProfileSettingsProps) {
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !firebaseUser?.uid) return;
+    if (!file) return;
 
     try {
-      setIsUploading(true);
-      const result = await uploadProfilePicture(file, firebaseUser.uid);
-      setValue("profile.avatar", result.downloadURL, { shouldDirty: true });
-      toast.success("Avatar uploaded", "Click 'Save Changes' to apply your new profile picture.");
+      const result = await uploadProfilePicture(file);
+      if (result) {
+        setValue("profile.avatar", result.url, { shouldDirty: true });
+        toast.success("Avatar uploaded", "Click 'Save Changes' to apply your new profile picture.");
+      }
     } catch (error: any) {
       console.error("Avatar upload failed:", error);
       toast.error("Upload failed", error.message || "Could not upload profile picture.");
     } finally {
-      setIsUploading(false);
       // Reset input value so same file can be selected again
       if (fileInputRef.current) fileInputRef.current.value = "";
     }

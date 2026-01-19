@@ -7,6 +7,7 @@ export default defineSchema({
     name: v.optional(v.string()),
     imageUrl: v.optional(v.string()),
     image: v.optional(v.string()),
+    storageId: v.optional(v.id("_storage")),
     emailVerified: v.optional(v.boolean()),
     firebaseUid: v.optional(v.string()),
     createdAt: v.number(),
@@ -173,6 +174,7 @@ export default defineSchema({
     userId: v.id("users"),
     fileName: v.string(),
     fileUrl: v.string(),
+    storageId: v.optional(v.id("_storage")),
     fileSize: v.number(),
     contentType: v.string(),
     parsedContent: v.optional(v.string()),
@@ -217,6 +219,18 @@ export default defineSchema({
     .index("by_userId", ["userId"])
     .index("by_userId_read", ["userId", "read"])
     .index("by_userId_createdAt", ["userId", "createdAt"]),
+
+  ai_feedback: defineTable({
+    userId: v.id("users"),
+    contentType: v.string(),
+    contentId: v.string(),
+    sentiment: v.string(),
+    context: v.optional(v.string()),
+    metadata: v.optional(v.any()),
+    createdAt: v.number(),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_contentId", ["contentId"]),
 
   sponsorships: defineTable({
     domain: v.string(),

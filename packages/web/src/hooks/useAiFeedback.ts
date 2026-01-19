@@ -1,31 +1,35 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { useFirebaseAuth } from "@/providers/firebase-auth-provider";
-import { createFirestoreCollection } from "@/firebase/firestore";
-import { CreateAiFeedbackRequest, AiFeedback, FeedbackSentiment } from "@hireall/shared";
+import { CreateAiFeedbackRequest } from "@hireall/shared";
 import { useAnalytics } from "@/providers/analytics-provider";
+import { useMutation, useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
 
 /**
  * Hook to handle user feedback on AI-generated content
  */
 export function useAiFeedback() {
-  const { user } = useFirebaseAuth();
   const { trackEvent } = useAnalytics();
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const feedbackCollection = createFirestoreCollection<AiFeedback & { createdAt: any; updatedAt: any }>("ai_feedback");
+  
+  const user = useQuery(api.users.viewer);
+  const createFeedback = useMutation(api.ai_feedback.create);
 
   const submitFeedback = useCallback(async (request: CreateAiFeedbackRequest) => {
-    if (!user) return;
+    if (!user) return false;
 
     setIsSubmitting(true);
     try {
-      // 1. Save to Firestore for long-term learning
-      await feedbackCollection.create({
-        ...request,
-        userId: user.uid,
-      } as any);
+      // 1. Save to Convex for long-term learning
+      await createFeedback({
+        userId: user._id,
+        contentType: request.contentType,
+        contentId: request.contentId,
+        sentiment: request.sentiment,
+        context: request.context,
+        metadata: request.metadata,
+      });
 
       // 2. Track as analytics event for immediate monitoring
       trackEvent("ai_feedback_given", {
@@ -43,7 +47,7 @@ export function useAiFeedback() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [user, trackEvent, feedbackCollection]);
+  }, [user, trackEvent, createFeedback]);
 
   const recordPositiveFeedback = useCallback((
     contentType: CreateAiFeedbackRequest['contentType'],
