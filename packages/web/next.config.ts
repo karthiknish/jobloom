@@ -164,6 +164,11 @@ const nextConfig: NextConfig = {
   },
 
   async rewrites() {
+    const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL || "";
+    const convexSiteUrl = convexUrl.includes("convex.cloud")
+      ? convexUrl.replace("convex.cloud", "convex.site")
+      : "http://127.0.0.1:8001";
+
     return {
       // Ensure legacy routes are routed before checking filesystem
       beforeFiles: [
@@ -173,7 +178,12 @@ const nextConfig: NextConfig = {
         },
       ],
       afterFiles: [],
-      fallback: [],
+      fallback: [
+        {
+          source: "/api/auth/:path*",
+          destination: `${convexSiteUrl}/api/auth/:path*`,
+        },
+      ],
     };
   },
 
