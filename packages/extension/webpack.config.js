@@ -78,15 +78,18 @@ module.exports = (env, argv) => {
     devtool: isProduction ? false : 'inline-source-map',
 
     plugins: (() => {
-      // Manually load .env once to avoid duplicate DefinePlugin warnings
-      const envPath = path.resolve(__dirname, ".env");
-      if (fs.existsSync(envPath)) {
-        const parsed = dotenv.config({ path: envPath }).parsed || {};
-        // Merge parsed into process.env without overwriting existing explicit vars
-        for (const [k, v] of Object.entries(parsed)) {
-          if (process.env[k] === undefined) process.env[k] = v;
+      // Manually load .env and .env.local
+      // Load .env.local first so it takes precedence over .env (since dotenv doesn't overwrite by default)
+      [".env.local", ".env"].forEach((filename) => {
+        const envPath = path.resolve(__dirname, filename);
+        if (fs.existsSync(envPath)) {
+          const parsed = dotenv.config({ path: envPath }).parsed || {};
+          // Merge parsed into process.env without overwriting existing explicit vars
+          for (const [k, v] of Object.entries(parsed)) {
+            if (process.env[k] === undefined) process.env[k] = v;
+          }
         }
-      }
+      });
       const REQUIRED_ENV_KEYS = [
         "NEXT_PUBLIC_FIREBASE_API_KEY",
         "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN",
@@ -98,6 +101,7 @@ module.exports = (env, argv) => {
 
       const OPTIONAL_DEFAULTS = {
         WEB_APP_URL: "https://hireall.app",
+        NEXT_PUBLIC_CONVEX_URL: "",
         NEXT_PUBLIC_FIREBASE_CUSTOM_AUTH_DOMAIN: "",
         GOOGLE_WEB_APP_CLIENT_ID: "",
         GOOGLE_WEB_CLIENT_ID: "",
