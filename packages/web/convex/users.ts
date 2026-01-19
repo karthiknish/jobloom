@@ -20,6 +20,16 @@ export const get = query({
   },
 });
 
+export const getByFirebaseUid = query({
+  args: { firebaseUid: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("users")
+      .withIndex("by_firebaseUid", (q) => q.eq("firebaseUid", args.firebaseUid))
+      .unique();
+  },
+});
+
 export const updateProfile = mutation({
   args: {
     userId: v.id("users"),

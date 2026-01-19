@@ -13,6 +13,7 @@ import type * as auth from "../auth.js";
 import type * as jobs from "../jobs.js";
 import type * as quickNotes from "../quickNotes.js";
 import type * as sponsorships from "../sponsorships.js";
+import type * as users from "../users.js";
 
 import type {
   ApiFromModules,
@@ -26,6 +27,7 @@ declare const fullApi: ApiFromModules<{
   jobs: typeof jobs;
   quickNotes: typeof quickNotes;
   sponsorships: typeof sponsorships;
+  users: typeof users;
 }>;
 
 /**

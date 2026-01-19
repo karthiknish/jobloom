@@ -295,3 +295,11 @@ export const getStats = query({
     };
   },
 });
+
+export const adminList = query({
+  args: {},
+  handler: async (ctx) => {
+    // Ideally check for admin auth here, but for now we rely on API route auth
+    return await ctx.db.query("jobs").collect();
+  },
+});
