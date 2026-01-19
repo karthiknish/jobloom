@@ -107,3 +107,7 @@ firebase-service-account.json
 
 # Archives
 *.zip
+PRD.md
+.ralphy/config.yaml
+.gitignore
+.gitignore
